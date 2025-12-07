@@ -1,5 +1,5 @@
 import sys
-import logging
+
 from PySide6.QtWidgets import QApplication, QMainWindow, QDockWidget
 from PySide6.QtCore import Qt
 from src.core.logging_config import setup_logging, get_logger
@@ -120,7 +120,7 @@ class MainWindow(QMainWindow):
 
     def add_relation(self, source_id, target_id, rel_type, bidirectional: bool = False):
         logger.info(
-            f"Adding relation {source_id} -> {target_id} [{rel_type}] (bidirectional={bidirectional})"
+            f"Adding rel {source_id} -> {target_id} [{rel_type}] (bi={bidirectional})"
         )
         cmd = AddRelationCommand(
             self.db_service, source_id, target_id, rel_type, bidirectional=bidirectional

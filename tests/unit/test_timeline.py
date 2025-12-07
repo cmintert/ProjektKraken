@@ -1,4 +1,3 @@
-import pytest
 from src.gui.widgets.timeline import TimelineWidget, EventItem
 from src.core.events import Event
 

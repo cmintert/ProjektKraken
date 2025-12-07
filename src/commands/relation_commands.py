@@ -49,7 +49,7 @@ class AddRelationCommand(BaseCommand):
         """
         try:
             logger.info(
-                f"Adding relation: {self.source_id} -> {self.target_id} ({self.rel_type})"
+                f"Add rel: {self.source_id}->{self.target_id} ({self.rel_type})"
             )
 
             # Forward

@@ -53,8 +53,8 @@ def test_remove_relation_command(db_service):
 
     # Undo (Placeholder check)
     cmd.undo()
-    # Currently Undo doesn't restore because we haven't implemented backup logic in RemoveRelationCommand
-    # So we just verify it doesn't crash.
+    # Currently Undo doesn't restore (Placeholder).
+    # We just verify it doesn't crash.
 
 
 def test_update_relation_command(db_service):
