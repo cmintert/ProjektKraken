@@ -11,7 +11,11 @@ from src.commands.event_commands import (
     DeleteEventCommand,
     UpdateEventCommand,
 )
-from src.commands.relation_commands import AddRelationCommand
+from src.commands.relation_commands import (
+    AddRelationCommand,
+    RemoveRelationCommand,
+    UpdateRelationCommand,
+)
 from src.core.events import Event
 
 # Initialize Logging
@@ -51,6 +55,8 @@ class MainWindow(QMainWindow):
 
         self.event_editor.save_requested.connect(self.update_event)
         self.event_editor.add_relation_requested.connect(self.add_relation)
+        self.event_editor.remove_relation_requested.connect(self.remove_relation)
+        self.event_editor.update_relation_requested.connect(self.update_relation)
 
         # Seed some data if empty
         self.seed_data()
@@ -105,6 +111,29 @@ class MainWindow(QMainWindow):
         if cmd.execute():
             # Refresh editor details to show new relation
             self.load_event_details(source_id)
+
+    def remove_relation(self, rel_id):
+        logger.info(f"Removing relation {rel_id}")
+        cmd = RemoveRelationCommand(self.db_service, rel_id)
+        if cmd.execute():
+            # We need to refresh the display, but how do we know the source_id?
+            # MainWindow keeps no current state. event_editor does.
+            # We can re-load the currently loaded event from editor state?
+            # Or pass source_id in signal?
+            # Let's rely on Editor knowing its state? No, Editor is dumb-ish.
+            # Best way: Editor has `_current_event_id`.
+            # Let's just pull it.
+            current_id = self.event_editor._current_event_id
+            if current_id:
+                self.load_event_details(current_id)
+
+    def update_relation(self, rel_id, target_id, rel_type):
+        logger.info(f"Updating relation {rel_id}")
+        cmd = UpdateRelationCommand(self.db_service, rel_id, target_id, rel_type)
+        if cmd.execute():
+            current_id = self.event_editor._current_event_id
+            if current_id:
+                self.load_event_details(current_id)
 
     def closeEvent(self, event):
         self.db_service.close()

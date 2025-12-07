@@ -106,3 +106,75 @@ class RemoveRelationCommand(BaseCommand):
         Reverts the deletion (Not fully implemented yet, needs backup logic).
         """
         pass
+
+
+class UpdateRelationCommand(BaseCommand):
+    """
+    Command to update a relationship.
+    """
+
+    def __init__(
+        self,
+        db_service: DatabaseService,
+        rel_id: str,
+        target_id: str,
+        rel_type: str,
+        attributes: Dict[str, Any] = None,
+    ):
+        """
+        Initializes the UpdateRelation command.
+
+        Args:
+            db_service (DatabaseService): The database service.
+            rel_id (str): The ID of the relationship.
+            target_id (str): The new target ID.
+            rel_type (str): The new relationship type.
+            attributes (Dict[str, Any]): The new attributes.
+        """
+        super().__init__(db_service)
+        self.rel_id = rel_id
+        self.target_id = target_id
+        self.rel_type = rel_type
+        self.attributes = attributes or {}
+
+        self._previous_state: Dict[str, Any] = None
+
+    def execute(self) -> bool:
+        """
+        Executes the update, snapshotting the old state.
+
+        Returns:
+            bool: True if successful.
+        """
+        # Snapshot
+        current = self.db.get_relation(self.rel_id)
+        if not current:
+            logger.warning(f"Cannot update relation {self.rel_id}: Not found")
+            return False
+
+        self._previous_state = current
+
+        try:
+            logger.info(f"Updating relation {self.rel_id}")
+            self.db.update_relation(
+                self.rel_id, self.target_id, self.rel_type, self.attributes
+            )
+            self._is_executed = True
+            return True
+        except Exception as e:
+            logger.error(f"Failed to update relation: {e}")
+            return False
+
+    def undo(self) -> None:
+        """
+        Reverts the update.
+        """
+        if self._is_executed and self._previous_state:
+            logger.info(f"Undoing UpdateRelation: {self.rel_id}")
+            self.db.update_relation(
+                self.rel_id,
+                self._previous_state["target_id"],
+                self._previous_state["rel_type"],
+                self._previous_state["attributes"],
+            )
+            self._is_executed = False

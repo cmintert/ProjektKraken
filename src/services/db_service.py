@@ -350,6 +350,29 @@ class DatabaseService:
             relations.append(data)
         return relations
 
+    def get_relation(self, rel_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Retrieves a single relation by its ID.
+
+        Args:
+            rel_id (str): The unique identifier of the relation.
+
+        Returns:
+            Optional[Dict[str, Any]]: The relation dict or None.
+        """
+        sql = "SELECT * FROM relations WHERE id = ?"
+        if not self._connection:
+            self.connect()
+
+        cursor = self._connection.execute(sql, (rel_id,))
+        row = cursor.fetchone()
+        if row:
+            data = dict(row)
+            if data.get("attributes"):
+                data["attributes"] = json.loads(data["attributes"])
+            return data
+        return None
+
     def delete_relation(self, rel_id: str) -> None:
         """
         Deletes a relationship by its ID.
@@ -359,3 +382,41 @@ class DatabaseService:
         """
         with self.transaction() as conn:
             conn.execute("DELETE FROM relations WHERE id = ?", (rel_id,))
+
+    def update_relation(
+        self,
+        rel_id: str,
+        target_id: str,
+        rel_type: str,
+        attributes: Dict[str, Any] = None,
+    ) -> None:
+        """
+        Updates an existing relationship.
+
+        Args:
+            rel_id (str): The ID of the relation to update.
+            target_id (str): New target ID.
+            rel_type (str): New relationship type.
+            attributes (Dict[str, Any]): New attributes.
+
+        Raises:
+            sqlite3.Error: If DB fails.
+        """
+        if attributes is None:
+            attributes = {}
+
+        sql = """
+            UPDATE relations
+            SET target_id = ?, rel_type = ?, attributes = ?
+            WHERE id = ?
+        """
+        with self.transaction() as conn:
+            conn.execute(
+                sql,
+                (
+                    target_id,
+                    rel_type,
+                    json.dumps(attributes),
+                    rel_id,
+                ),
+            )
