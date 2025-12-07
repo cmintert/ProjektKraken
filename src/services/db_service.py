@@ -273,3 +273,89 @@ class DatabaseService:
                 data["attributes"] = json.loads(data["attributes"])
             return Entity.from_dict(data)
         return None
+
+    # --------------------------------------------------------------------------
+    # Relation CRUD
+    # --------------------------------------------------------------------------
+
+    def insert_relation(
+        self,
+        source_id: str,
+        target_id: str,
+        rel_type: str,
+        attributes: Dict[str, Any] = None,
+    ) -> str:
+        """
+        Creates a directed relationship between two objects.
+
+        Args:
+            source_id (str): ID of the source object.
+            target_id (str): ID of the target object.
+            rel_type (str): Type of relationship (e.g., "caused").
+            attributes (Dict[str, Any]): Optional metadata.
+
+        Returns:
+            str: The UUID of the newly created relation.
+
+        Raises:
+            sqlite3.Error: If DB fails.
+        """
+        import uuid
+        import time
+
+        if attributes is None:
+            attributes = {}
+
+        rel_id = str(uuid.uuid4())
+        created_at = time.time()
+
+        sql = """
+            INSERT INTO relations (id, source_id, target_id, rel_type, attributes, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """
+        with self.transaction() as conn:
+            conn.execute(
+                sql,
+                (
+                    rel_id,
+                    source_id,
+                    target_id,
+                    rel_type,
+                    json.dumps(attributes),
+                    created_at,
+                ),
+            )
+        return rel_id
+
+    def get_relations(self, source_id: str) -> List[Dict[str, Any]]:
+        """
+        Retrieves all outgoing relations for a given source object.
+
+        Args:
+            source_id (str): The ID of the source object.
+
+        Returns:
+            List[Dict[str, Any]]: List of relation dictionaries.
+        """
+        sql = "SELECT * FROM relations WHERE source_id = ?"
+        if not self._connection:
+            self.connect()
+
+        cursor = self._connection.execute(sql, (source_id,))
+        relations = []
+        for row in cursor.fetchall():
+            data = dict(row)
+            if data.get("attributes"):
+                data["attributes"] = json.loads(data["attributes"])
+            relations.append(data)
+        return relations
+
+    def delete_relation(self, rel_id: str) -> None:
+        """
+        Deletes a relationship by its ID.
+
+        Args:
+            rel_id (str): The unique identifier of the relation.
+        """
+        with self.transaction() as conn:
+            conn.execute("DELETE FROM relations WHERE id = ?", (rel_id,))

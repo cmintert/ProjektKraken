@@ -11,6 +11,7 @@ from src.commands.event_commands import (
     DeleteEventCommand,
     UpdateEventCommand,
 )
+from src.commands.relation_commands import AddRelationCommand
 from src.core.events import Event
 
 # Initialize Logging
@@ -49,6 +50,7 @@ class MainWindow(QMainWindow):
         self.event_list.event_selected.connect(self.load_event_details)
 
         self.event_editor.save_requested.connect(self.update_event)
+        self.event_editor.add_relation_requested.connect(self.add_relation)
 
         # Seed some data if empty
         self.seed_data()
@@ -73,11 +75,13 @@ class MainWindow(QMainWindow):
         self.event_list.set_events(events)
 
     def load_event_details(self, event_id: str):
-        """Fetches full event details and pushes to editor."""
+        """Fetches full event details AND relations, pushing to editor."""
         logger.debug(f"Loading details for {event_id}")
         event = self.db_service.get_event(event_id)
         if event:
-            self.event_editor.load_event(event)
+            # Also fetch relations
+            relations = self.db_service.get_relations(event_id)
+            self.event_editor.load_event(event, relations)
 
     def delete_event(self, event_id):
         logger.info(f"Requesting delete for {event_id}")
@@ -94,6 +98,13 @@ class MainWindow(QMainWindow):
             self.load_events()  # Update list (e.g. name might have changed)
             # Re-load to confirm state or just stay as is
             # self.load_event_details(event.id)
+
+    def add_relation(self, source_id, target_id, rel_type):
+        logger.info(f"Adding relation {source_id} -> {target_id} [{rel_type}]")
+        cmd = AddRelationCommand(self.db_service, source_id, target_id, rel_type)
+        if cmd.execute():
+            # Refresh editor details to show new relation
+            self.load_event_details(source_id)
 
     def closeEvent(self, event):
         self.db_service.close()
