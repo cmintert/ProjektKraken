@@ -1,13 +1,3 @@
-# Timeline Visualization Implementation Plan
-
-## Goal
-Create a graphical timeline view to visualize events chronologically and their relationships.
-
-## Components
-
-### `src/gui/widgets/timeline.py`
-*   **`TimelineWidget`**: A `QWidget` containing a `QGraphicsView`.
-*   **`TimelineScene`**: A `QGraphicsScene` that manages the graphical items.
 *   **`EventItem`**: A `QGraphicsItem` (or `QGraphicsRectItem`) representing an Event.
     *   Displays name and date.
     *   Clickable (selects event in main window).
