@@ -66,3 +66,22 @@ def test_lane_layout_logic(qapp):
 
     assert y1 != y2  # Different lanes
     assert y1 == y9  # Wrapped around to same lane
+
+
+def test_focus_event(qapp):
+    """Test that focus_event finds items and selects them."""
+    widget = TimelineWidget()
+    event = Event(name="Target", lore_date=500.0)
+    widget.set_events([event])
+
+    # Pre-condition
+    items = [i for i in widget.scene.items() if isinstance(i, EventItem)]
+    assert not items[0].isSelected()
+
+    # Action
+    widget.focus_event(event.id)
+
+    # Assert
+    assert items[0].isSelected()
+    # Cannot easily test "centerOn" effect without mocking the view's geometry/viewport,
+    # but we can verify it ran without error and selected the item.

@@ -99,6 +99,9 @@ class MainWindow(QMainWindow):
             incoming_relations = self.db_service.get_incoming_relations(event_id)
             self.event_editor.load_event(event, relations, incoming_relations)
 
+            # Sync Timeline Focus
+            self.timeline.focus_event(event_id)
+
     def delete_event(self, event_id):
         logger.info(f"Requesting delete for {event_id}")
         cmd = DeleteEventCommand(self.db_service, event_id)

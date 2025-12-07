@@ -284,3 +284,11 @@ class TimelineWidget(QGraphicsView):
         # Traverse up if needed
         if isinstance(item, EventItem):
             self.event_selected.emit(item.event.id)
+
+    def focus_event(self, event_id: str):
+        """Centers the view on the specified event."""
+        for item in self.scene.items():
+            if isinstance(item, EventItem) and item.event.id == event_id:
+                self.centerOn(item)
+                item.setSelected(True)
+                return
