@@ -6,6 +6,7 @@ from src.core.logging_config import setup_logging, get_logger
 from src.services.db_service import DatabaseService
 from src.gui.widgets.event_list import EventListWidget
 from src.gui.widgets.event_editor import EventEditorWidget
+from src.gui.widgets.timeline import TimelineWidget
 from src.commands.event_commands import (
     CreateEventCommand,
     DeleteEventCommand,
@@ -58,6 +59,13 @@ class MainWindow(QMainWindow):
         self.event_editor.remove_relation_requested.connect(self.remove_relation)
         self.event_editor.update_relation_requested.connect(self.update_relation)
 
+        # Timeline
+        self.timeline_dock = QDockWidget("Timeline", self)
+        self.timeline = TimelineWidget()
+        self.timeline_dock.setWidget(self.timeline)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.timeline_dock)
+        self.timeline.event_selected.connect(self.load_event_details)
+
         # Seed some data if empty
         self.seed_data()
         self.load_events()
@@ -79,6 +87,7 @@ class MainWindow(QMainWindow):
         logger.debug("Loading events from DB...")
         events = self.db_service.get_all_events()
         self.event_list.set_events(events)
+        self.timeline.set_events(events)
 
     def load_event_details(self, event_id: str):
         """Fetches full event details AND relations, pushing to editor."""
