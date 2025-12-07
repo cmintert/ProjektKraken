@@ -29,7 +29,10 @@ class EventEditorWidget(QWidget):
 
     save_requested = Signal(Event)
     save_requested = Signal(Event)
-    add_relation_requested = Signal(str, str, str)  # source_id, target_id, type
+    save_requested = Signal(Event)
+    add_relation_requested = Signal(
+        str, str, str, bool
+    )  # source_id, target_id, type, bidirectional
     remove_relation_requested = Signal(str)  # rel_id
     update_relation_requested = Signal(str, str, str)  # rel_id, target_id, rel_type
 
@@ -110,13 +113,16 @@ class EventEditorWidget(QWidget):
         # Start disabled until specific event loaded
         self.setEnabled(False)
 
-    def load_event(self, event: Event, relations: list = None):
+    def load_event(
+        self, event: Event, relations: list = None, incoming_relations: list = None
+    ):
         """
-        Populates the form with event data.
+        Populates the form with event data and relationships.
 
         Args:
             event (Event): The event to edit.
-            relations (list): List of relation dicts [Optional].
+            relations (list): List of outgoing relation dicts.
+            incoming_relations (list): List of incoming relation dicts.
         """
         self._current_event_id = event.id
         self._current_created_at = event.created_at  # Preserve validation data
@@ -128,13 +134,26 @@ class EventEditorWidget(QWidget):
 
         # Load relations
         self.rel_list.clear()
+
+        # Outgoing
         if relations:
             for rel in relations:
                 # Format: -> TargetID [Type]
                 # In real app, we'd look up Target Name.
                 label = f"-> {rel['target_id']} [{rel['rel_type']}]"
                 item = QListWidgetItem(label)
-                item.setData(Qt.UserRole, rel)  # Store full relation dict
+                item.setData(Qt.UserRole, rel)
+                # Differentiate visually? Maybe standard color.
+                self.rel_list.addItem(item)
+
+        # Incoming
+        if incoming_relations:
+            for rel in incoming_relations:
+                # Format: <- SourceID [Type]
+                label = f"<- {rel['source_id']} [{rel['rel_type']}]"
+                item = QListWidgetItem(label)
+                item.setData(Qt.UserRole, rel)
+                item.setForeground(Qt.gray)  # Visually distinct
                 self.rel_list.addItem(item)
 
         self.setEnabled(True)
@@ -184,7 +203,15 @@ class EventEditorWidget(QWidget):
         if not ok:
             return
 
-        self.add_relation_requested.emit(self._current_event_id, target_id, rel_type)
+        # Prompt for Bidirectional
+        title = "Bidirectional?"
+        msg = "Is this relation mutual (creates reverse link)?"
+        reply = QMessageBox.question(self, title, msg, QMessageBox.Yes | QMessageBox.No)
+        is_bidirectional = reply == QMessageBox.Yes
+
+        self.add_relation_requested.emit(
+            self._current_event_id, target_id, rel_type, is_bidirectional
+        )
 
     def _show_rel_menu(self, pos):
         """Shows context menu for relation items."""

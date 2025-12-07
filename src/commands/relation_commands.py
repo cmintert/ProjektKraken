@@ -18,6 +18,7 @@ class AddRelationCommand(BaseCommand):
         target_id: str,
         rel_type: str,
         attributes: Dict[str, Any] = None,
+        bidirectional: bool = False,
     ):
         """
         Initializes the AddRelation command.
@@ -28,18 +29,20 @@ class AddRelationCommand(BaseCommand):
             target_id (str): The ID of the target object.
             rel_type (str): The type of relationship (e.g. "caused").
             attributes (Dict[str, Any]): Optional metadata for the relationship.
+            bidirectional (bool): If True, also creates target->source relation.
         """
         super().__init__(db_service)
         self.source_id = source_id
         self.target_id = target_id
         self.rel_type = rel_type
         self.attributes = attributes or {}
+        self.bidirectional = bidirectional
 
-        self._created_rel_id: str = None  # Store for Undo
+        self._created_rel_ids: list[str] = []  # Store for Undo (list of IDs)
 
     def execute(self) -> bool:
         """
-        Executes insertion of the relation.
+        Executes insertion of the relation(s).
 
         Returns:
             bool: True if successful.
@@ -48,10 +51,22 @@ class AddRelationCommand(BaseCommand):
             logger.info(
                 f"Adding relation: {self.source_id} -> {self.target_id} ({self.rel_type})"
             )
-            # Now insert_relation returns the ID string
-            self._created_rel_id = self.db.insert_relation(
+
+            # Forward
+            fwd_id = self.db.insert_relation(
                 self.source_id, self.target_id, self.rel_type, self.attributes
             )
+            self._created_rel_ids.append(fwd_id)
+
+            if self.bidirectional:
+                logger.info(
+                    f"Adding reverse relation: {self.target_id} -> {self.source_id}"
+                )
+                rev_id = self.db.insert_relation(
+                    self.target_id, self.source_id, self.rel_type, self.attributes
+                )
+                self._created_rel_ids.append(rev_id)
+
             self._is_executed = True
             return True
         except Exception as e:
@@ -60,11 +75,13 @@ class AddRelationCommand(BaseCommand):
 
     def undo(self) -> None:
         """
-        Reverts the action by deleting the created relation.
+        Reverts the action by deleting the created relation(s).
         """
-        if self._is_executed and self._created_rel_id:
-            logger.info(f"Undoing AddRelation: Deleting {self._created_rel_id}")
-            self.db.delete_relation(self._created_rel_id)
+        if self._is_executed and self._created_rel_ids:
+            for rel_id in self._created_rel_ids:
+                logger.info(f"Undoing AddRelation: Deleting {rel_id}")
+                self.db.delete_relation(rel_id)
+            self._created_rel_ids.clear()
             self._is_executed = False
 
 

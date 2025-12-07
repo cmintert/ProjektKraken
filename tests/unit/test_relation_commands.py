@@ -81,3 +81,32 @@ def test_update_relation_command(db_service):
     reverted = db_service.get_relation(rel_id)
     assert reverted["target_id"] == t.id
     assert reverted["rel_type"] == "initial"
+
+
+def test_add_relation_bidirectional(db_service):
+    """Test creating a bidirectional relation (A->B and B->A)."""
+    s = Event(name="S", lore_date=1)
+    t = Event(name="T", lore_date=2)
+    db_service.insert_event(s)
+    db_service.insert_event(t)
+
+    # Execute
+    cmd = AddRelationCommand(db_service, s.id, t.id, "mutual_link", bidirectional=True)
+    assert cmd.execute() is True
+
+    # Verify Forward
+    rels_s = db_service.get_relations(s.id)
+    assert len(rels_s) == 1
+    assert rels_s[0]["target_id"] == t.id
+    assert rels_s[0]["rel_type"] == "mutual_link"
+
+    # Verify Reverse
+    rels_t = db_service.get_relations(t.id)
+    assert len(rels_t) == 1
+    assert rels_t[0]["target_id"] == s.id
+    assert rels_t[0]["rel_type"] == "mutual_link"
+
+    # Undo
+    cmd.undo()
+    assert len(db_service.get_relations(s.id)) == 0
+    assert len(db_service.get_relations(t.id)) == 0

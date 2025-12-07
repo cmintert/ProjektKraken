@@ -350,6 +350,29 @@ class DatabaseService:
             relations.append(data)
         return relations
 
+    def get_incoming_relations(self, target_id: str) -> List[Dict[str, Any]]:
+        """
+        Retrieves all incoming relations for a given target object.
+
+        Args:
+            target_id (str): The ID of the target object.
+
+        Returns:
+            List[Dict[str, Any]]: List of relation dictionaries.
+        """
+        sql = "SELECT * FROM relations WHERE target_id = ?"
+        if not self._connection:
+            self.connect()
+
+        cursor = self._connection.execute(sql, (target_id,))
+        relations = []
+        for row in cursor.fetchall():
+            data = dict(row)
+            if data.get("attributes"):
+                data["attributes"] = json.loads(data["attributes"])
+            relations.append(data)
+        return relations
+
     def get_relation(self, rel_id: str) -> Optional[Dict[str, Any]]:
         """
         Retrieves a single relation by its ID.

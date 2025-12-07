@@ -87,7 +87,8 @@ class MainWindow(QMainWindow):
         if event:
             # Also fetch relations
             relations = self.db_service.get_relations(event_id)
-            self.event_editor.load_event(event, relations)
+            incoming_relations = self.db_service.get_incoming_relations(event_id)
+            self.event_editor.load_event(event, relations, incoming_relations)
 
     def delete_event(self, event_id):
         logger.info(f"Requesting delete for {event_id}")
@@ -105,9 +106,13 @@ class MainWindow(QMainWindow):
             # Re-load to confirm state or just stay as is
             # self.load_event_details(event.id)
 
-    def add_relation(self, source_id, target_id, rel_type):
-        logger.info(f"Adding relation {source_id} -> {target_id} [{rel_type}]")
-        cmd = AddRelationCommand(self.db_service, source_id, target_id, rel_type)
+    def add_relation(self, source_id, target_id, rel_type, bidirectional: bool = False):
+        logger.info(
+            f"Adding relation {source_id} -> {target_id} [{rel_type}] (bidirectional={bidirectional})"
+        )
+        cmd = AddRelationCommand(
+            self.db_service, source_id, target_id, rel_type, bidirectional=bidirectional
+        )
         if cmd.execute():
             # Refresh editor details to show new relation
             self.load_event_details(source_id)
