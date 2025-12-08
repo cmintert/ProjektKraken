@@ -1,0 +1,275 @@
+Projekt Kraken: UI/UX Design Specifications
+
+Project: Projekt Kraken
+Target: PySide6 (Qt for Python) Desktop Application
+Theme: Professional "Creative Tool" (Dynamic Dark/Light)
+Version: 1.4
+
+1. Design Philosophy
+
+The application follows a "Professional Creative Tool" aesthetic (similar to Houdini, Blender, or Unreal Engine).
+
+Information Density: High but organized.
+
+Visual Strain: Low (Dark mode default).
+
+Interaction: Optimized for power users (Keyboard shortcuts, minimal clicks).
+
+2. Global Layout System (The 8-Point Grid)
+
+All spatial measurements must be multiples of 8px (base unit) or 4px (half unit). Avoid arbitrary pixel values (e.g., 13px, 7px).
+
+2.1 Qt Layout Implementation
+
+Do not use absolute positioning (setGeometry). Use Layout Managers exclusively.
+
+Widget Spacing: 8px (Space between buttons/inputs).
+
+Container Margins: 16px (Padding inside a window or panel).
+
+Section Spacing: 24px or 32px (Space between major groups of controls).
+
+# Standard Layout Boilerplate
+layout = QVBoxLayout()
+layout.setSpacing(8)               # 8pt Grid
+layout.setContentsMargins(16, 16, 16, 16) 
+
+
+
+2.2 High DPI & Scaling (Crucial)
+
+To support 4K/Retina monitors used by creative professionals, the app must handle OS scaling correctly to avoid blurriness.
+
+Policy: Set Qt.HighDpiScaleFactorRoundingPolicy.PassThrough in main.py.
+
+Assets: Do not rely on pixel-based sizing for icons; rely on vector graphics.
+
+3. Dynamic Color Palette & Configuration
+
+Hardcoding hex values is strictly forbidden. The application must load colors from an external configuration file (e.g., themes.json) at runtime. This allows for user-defined themes and easy maintenance.
+
+3.1 Theme Configuration Schema (themes.json)
+
+The developer must implement a ThemeManager class that reads this file and injects values into the QSS.
+
+Required Keys:
+
+| JSON Key | Dark Mode Default | Light Mode Default | Role |
+| app_bg | #2B2B2B | #F5F5F5 | Main window background. |
+| surface | #323232 | #FFFFFF | Panels, cards, input backgrounds. |
+| border | #454545 | #E0E0E0 | Separators, input borders. |
+| primary | #FF9900 | #E68A00 | Main actions, active states, focus rings. |
+| accent_secondary | #0078D4 | #005A9E | Immersive Frames (e.g., Lore sections). |
+| text_main | #E0E0E0 | #212121 | Main labels and input text. |
+| text_dim | #9E9E9E | #757575 | Placeholders, secondary info. |
+| error | #CF6679 | #B00020 | Validation errors, destructive actions. |
+
+3.2 Implementation Strategy (Python)
+
+The developer should load the QSS as a template string and format it with the current config dictionary.
+
+# Example Python Implementation Logic
+theme = json.load(open("themes.json"))["dark_mode"]
+app.setStyleSheet(qss_template.format(**theme))
+
+
+
+4. Component Styles (Dynamic QSS)
+
+QSS must be written using placeholders {key_name} corresponding to the config file above.
+
+4.1 Buttons (QPushButton)
+
+Buttons must have clear interaction states.
+
+Height: 32px (Standard) or 40px (Hero).
+
+Radius: 4px.
+
+Behavior: Must visually depress or brighten on interaction.
+
+QPushButton {
+    background-color: {border};  /* dynamic value */
+    color: {text_main};
+    border: 1px solid {border};
+    border-radius: 4px;
+    padding: 6px 16px;
+}
+QPushButton:hover { 
+    background-color: {surface}; 
+    border-color: {text_dim};
+}
+QPushButton:pressed { 
+    background-color: {primary}; 
+    color: #121212; /* High contrast on primary */
+}
+QPushButton:disabled { 
+    background-color: {app_bg}; 
+    color: {text_dim}; 
+    border-style: dashed; 
+}
+
+
+
+4.2 Inputs (QLineEdit, QSpinBox)
+
+Inputs must look "flat" and clearly indicate focus.
+
+QLineEdit, QSpinBox {
+    background-color: {surface};
+    border: 1px solid {border};
+    border-radius: 4px;
+    padding: 4px 8px;
+    color: {text_main};
+    selection-background-color: {primary};
+}
+/* Focus State is CRITICAL for accessibility */
+QLineEdit:focus, QSpinBox:focus {
+    border: 1px solid {primary};
+}
+
+
+
+4.3 Scrollbars (QScrollBar)
+
+Native scrollbars look outdated and distract from the creative content. They must be styled to match the theme.
+
+Width: 10px max.
+
+Behavior: No top/bottom arrows. Track should be invisible or same color as app_bg.
+
+4.4 Themed Frames (Immersion)
+
+To enhance the worldbuilding feel without cluttering the UI, use Contextual Frames. These are QFrame containers that wrap specific content types (like Lore Text or Map Viewports).
+
+Implementation: Assign an Object Name in Python (frame.setObjectName("LoreFrame")).
+
+Style: Use a subtle left-border accent or a double-border to distinguish content.
+
+/* Example: A frame for Narrative/Lore text */
+QFrame#LoreFrame {
+    background-color: {surface};
+    border: 1px solid {border};
+    border-left: 4px solid {accent_secondary}; /* The "Immersion" touch */
+    border-radius: 4px;
+}
+
+/* Example: The Map Viewport (Technical look) */
+QFrame#MapViewport {
+    border: 2px solid {primary};
+    background-color: #000000;
+}
+
+
+
+5. Interaction & Feedback Standards
+
+5.1 The Response Time Rules
+
+Python can be blocking; the UI must manage user expectations.
+
+< 0.1s: Immediate update (no indicator needed).
+
+0.1s - 1.0s: Change cursor to Qt.WaitCursor.
+
+> 1.0s: Must use a Progress Bar or Spinner.
+
+Technical Note: Heavy calculations (e.g., World Gen) MUST run on a QThread or QRunnable. Never run heavy loops on the Main GUI Thread.
+
+5.2 Destructive Actions
+
+Any button that deletes data or overwrites files (e.g., "Reset World," "Delete Layer") must:
+
+Be styled cleanly (often separated from other buttons).
+
+Trigger a Confirmation Dialog.
+
+Set the default focus to "Cancel" to prevent accidental 'Enter' key presses.
+
+5.3 Tooltips & Discovery
+
+All Icon-Only Buttons must have a setToolTip("Description").
+
+Complex parameters should update the QStatusBar on hover to explain the function.
+
+6. Input & Validation Guidelines
+
+6.1 Validation
+
+Do not wait for the user to click "Save" to show errors.
+
+Use QValidator to prevent invalid characters during typing (e.g., preventing letters in a Seed field).
+
+If an error occurs, outline the specific field in Red ({error}) and show a message immediately below it.
+
+6.2 Defaults & Persistence
+
+Smart Defaults: Never leave fields empty. If the user needs to enter a map size, pre-fill 1024 rather than 0 or null.
+
+QSettings: The app must remember the window size, position, and last used directory upon closing and reopening.
+
+7. Assets & Empty States
+
+7.1 Iconography (Phosphor Icons)
+
+We utilize Phosphor Icons (https://phosphoricons.com) for their consistent, geometric, and technical aesthetic.
+
+Format: SVG (Scalable Vector Graphics).
+
+Weight: Use Regular (default) or Light (for dense toolbars). Avoid "Bold" or "Fill" unless representing a toggled state.
+
+Coloring: Icons must be recolored at runtime to match {text_main}. A black icon from Light Mode will be invisible in Dark Mode if not recolored.
+
+7.2 Empty State Patterns
+
+Never leave a data view (List/Table/Tree) completely blank.
+
+Pattern: If itemCount == 0, display a centered label in {text_dim} (e.g., "No World Loaded") and a call-to-action button (e.g., "Create New").
+
+8. Navigation & Workflow
+
+8.1 Dialog Standards
+
+Use QDialogButtonBox for all modal confirmations.
+
+Why: It automatically orders "OK" and "Cancel" buttons based on the user's Operating System (Windows vs. macOS standard), reducing friction.
+
+8.2 Keyboard Accessibility
+
+Tab Order: Ensure the Tab key moves focus logically from top-to-bottom, left-to-right.
+
+Accelerators: Map common functions to standard keys:
+
+Ctrl+S: Save
+
+Ctrl+Z: Undo
+
+Ctrl+O: Open
+
+9. Development Checklist (Definition of Done)
+
+Before marking a UI feature as complete, verify:
+
+$$$$
+
+ Are margins and padding consistent (multiples of 8px)?
+
+$$$$
+
+ Does the theme switch correctly without restarting the app?
+
+$$$$
+
+ Are Phosphor SVGs used and do they change color with the theme?
+
+$$$$
+
+ Is the app crisp on High DPI (4K) monitors?
+
+$$$$
+
+ Do empty lists show a helpful "Empty State" message?
+
+$$$$
+
+ Can I navigate the form using only the Keyboard?

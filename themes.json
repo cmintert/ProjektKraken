@@ -1,0 +1,22 @@
+{
+    "dark_mode": {
+        "app_bg": "#2B2B2B",
+        "surface": "#323232",
+        "border": "#454545",
+        "primary": "#FF9900",
+        "accent_secondary": "#0078D4",
+        "text_main": "#E0E0E0",
+        "text_dim": "#9E9E9E",
+        "error": "#CF6679"
+    },
+    "light_mode": {
+        "app_bg": "#F5F5F5",
+        "surface": "#FFFFFF",
+        "border": "#E0E0E0",
+        "primary": "#E68A00",
+        "accent_secondary": "#005A9E",
+        "text_main": "#212121",
+        "text_dim": "#757575",
+        "error": "#B00020"
+    }
+}

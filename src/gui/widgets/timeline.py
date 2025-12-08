@@ -1,13 +1,8 @@
-from PySide6.QtWidgets import (
-    QGraphicsView,
-    QGraphicsScene,
-    QGraphicsItem,
-    QGraphicsRectItem,
-    QGraphicsTextItem,
-)
+from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsItem
 from PySide6.QtCore import Qt, Signal, QRectF, QPointF
 from PySide6.QtGui import QBrush, QPen, QColor, QPainter, QPolygonF
 import math
+from src.core.theme_manager import ThemeManager
 
 
 class EventItem(QGraphicsItem):
@@ -100,7 +95,8 @@ class EventItem(QGraphicsItem):
 class TimelineScene(QGraphicsScene):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setBackgroundBrush(QBrush(QColor("#1E1E1E")))  # Dark Aeon-like BG
+        theme = ThemeManager().get_theme()
+        self.setBackgroundBrush(QBrush(QColor(theme["app_bg"])))
 
 
 class TimelineWidget(QGraphicsView):
@@ -134,13 +130,15 @@ class TimelineWidget(QGraphicsView):
         w = viewport_rect.width()
         h = 40  # Ruler Height
 
+        theme = ThemeManager().get_theme()
+
         # Background
-        painter.setBrush(QColor(40, 40, 40))
+        painter.setBrush(QColor(theme["surface"]))
         painter.setPen(Qt.NoPen)
         painter.drawRect(0, 0, w, h)
 
         # Bottom Line
-        painter.setPen(QPen(QColor(80, 80, 80), 1))
+        painter.setPen(QPen(QColor(theme["border"]), 1))
         painter.drawLine(0, h, w, h)
 
         # 2. Determine Time Range visible
@@ -180,7 +178,7 @@ class TimelineWidget(QGraphicsView):
         current_date = math.floor(start_date / step) * step
 
         # Font Settings
-        painter.setPen(QColor(200, 200, 200))
+        painter.setPen(QColor(theme["text_dim"]))
         font = painter.font()
         font.setPointSize(9)  # Fixed size
         painter.setFont(font)
@@ -219,7 +217,7 @@ class TimelineWidget(QGraphicsView):
                 painter.drawLine(
                     int(screen_x), h, int(screen_x), viewport_rect.height()
                 )
-                painter.setPen(QColor(200, 200, 200))
+                painter.setPen(QColor(theme["text_dim"]))
 
             current_date += step
 
