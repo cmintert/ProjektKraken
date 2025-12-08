@@ -1,4 +1,12 @@
-from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsItem
+from PySide6.QtWidgets import (
+    QGraphicsView,
+    QGraphicsScene,
+    QGraphicsItem,
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+)
 from PySide6.QtCore import Qt, Signal, QRectF, QPointF
 from PySide6.QtGui import QBrush, QPen, QColor, QPainter, QPolygonF
 import math
@@ -20,14 +28,14 @@ class EventItem(QGraphicsItem):
         "combat": QColor("#E74C3C"),  # Red
     }
 
+    MAX_WIDTH = 300
+    ICON_SIZE = 14
+    PADDING = 5
+
     def __init__(self, event, scale_factor=10.0):
         super().__init__()
         self.event = event
         self.scale_factor = scale_factor
-
-        # Fixed Visual Size (ItemIgnoresTransformations)
-        self.icon_size = 14
-        self.padding = 5
 
         # Determine Color
         self.base_color = self.COLORS.get(event.type, self.COLORS["generic"])
@@ -44,18 +52,21 @@ class EventItem(QGraphicsItem):
 
     def boundingRect(self) -> QRectF:
         # Bounding box includes Diamond + Text
-        return QRectF(-self.icon_size, -self.icon_size, 300, self.icon_size * 2)
+        return QRectF(
+            -self.ICON_SIZE, -self.ICON_SIZE, self.MAX_WIDTH, self.ICON_SIZE * 2
+        )
 
     def paint(self, painter, option, widget=None):
         painter.setRenderHint(QPainter.Antialiasing)
 
         # 1. Draw Diamond Icon
+        half = self.ICON_SIZE / 2
         diamond = QPolygonF(
             [
-                QPointF(0, -self.icon_size / 2),
-                QPointF(self.icon_size / 2, 0),
-                QPointF(0, self.icon_size / 2),
-                QPointF(-self.icon_size / 2, 0),
+                QPointF(0, -half),
+                QPointF(half, 0),
+                QPointF(0, half),
+                QPointF(-half, 0),
             ]
         )
 
@@ -74,7 +85,7 @@ class EventItem(QGraphicsItem):
         painter.drawPolygon(diamond)
 
         # 2. Draw Text Label (to the right)
-        text_x = self.icon_size / 2 + self.padding
+        text_x = self.ICON_SIZE / 2 + self.PADDING
 
         # Title
         painter.setPen(QPen(Qt.white))
@@ -99,8 +110,11 @@ class TimelineScene(QGraphicsScene):
         self.setBackgroundBrush(QBrush(QColor(theme["app_bg"])))
 
 
-class TimelineWidget(QGraphicsView):
+class TimelineView(QGraphicsView):
     event_selected = Signal(str)
+
+    LANE_HEIGHT = 40
+    RULER_HEIGHT = 40
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -128,7 +142,7 @@ class TimelineWidget(QGraphicsView):
 
         viewport_rect = self.viewport().rect()
         w = viewport_rect.width()
-        h = 40  # Ruler Height
+        h = self.RULER_HEIGHT
 
         theme = ThemeManager().get_theme()
 
@@ -241,8 +255,7 @@ class TimelineWidget(QGraphicsView):
 
             # Cyclic Lane assignment
             lane_index = i % 8
-            LANE_HEIGHT = 40
-            y = (lane_index * LANE_HEIGHT) + 60  # Start below ruler (40px) + Gap
+            y = (lane_index * self.LANE_HEIGHT) + 60  # Start below ruler (40px) + Gap
 
             item.setY(y)
 
@@ -256,9 +269,14 @@ class TimelineWidget(QGraphicsView):
 
         if sorted_events:
             self.scene.setSceneRect(self.scene.itemsBoundingRect())
-            # Don't autofit every refresh
-            if not self.transform().m11() > 0:
-                self.fitInView(self.scene.sceneRect(), Qt.KeepAspectRatio)
+            self.fit_all()
+
+    def fit_all(self):
+        """Fits all items in the view."""
+        if not self.scene.items():
+            return
+        self.scene.setSceneRect(self.scene.itemsBoundingRect())
+        self.fitInView(self.scene.sceneRect(), Qt.KeepAspectRatio)
 
     def wheelEvent(self, event):
         zoom_in = 1.25
@@ -290,3 +308,44 @@ class TimelineWidget(QGraphicsView):
                 self.centerOn(item)
                 item.setSelected(True)
                 return
+
+
+class TimelineWidget(QWidget):
+    """
+    Wrapper widget for TimelineView + Toolbar.
+    """
+
+    event_selected = Signal(str)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.layout = QVBoxLayout(self)
+        self.layout.setSpacing(0)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+
+        # Toolbar
+        self.toolbar_layout = QHBoxLayout()
+        self.toolbar_layout.setContentsMargins(4, 4, 4, 4)
+
+        self.btn_fit = QPushButton("Fit View")
+        self.btn_fit.clicked.connect(self.fit_view)
+        self.toolbar_layout.addWidget(self.btn_fit)
+
+        self.toolbar_layout.addStretch()
+
+        self.layout.addLayout(self.toolbar_layout)
+
+        # View
+        self.view = TimelineView()
+        self.view.event_selected.connect(self.event_selected.emit)
+        self.layout.addWidget(self.view)
+
+    def set_events(self, events):
+        self.view.set_events(events)
+
+    def focus_event(self, event_id: str):
+        self.view.focus_event(event_id)
+
+    def fit_view(self):
+        self.view.fit_all()

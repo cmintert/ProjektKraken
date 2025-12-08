@@ -1,6 +1,9 @@
 import json
+import logging
 import os
 from typing import Dict
+
+logger = logging.getLogger(__name__)
 
 
 class ThemeManager:
@@ -48,7 +51,7 @@ class ThemeManager:
             with open(self.theme_file, "r") as f:
                 self.themes = json.load(f)
         except Exception as e:
-            print(f"Error loading themes: {e}")
+            logger.error(f"Error loading themes: {e}")
 
     def get_theme(self) -> Dict[str, str]:
         """Returns the current theme dictionary."""
@@ -66,4 +69,4 @@ class ThemeManager:
             stylesheet = qss_template.format(**theme_data)
             app.setStyleSheet(stylesheet)
         except KeyError as e:
-            print(f"Theme Error: Missing key {e} in theme definition.")
+            logger.error(f"Theme Error: Missing key {e} in theme definition.")
