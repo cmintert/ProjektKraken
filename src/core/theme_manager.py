@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, Any
+from typing import Dict
 
 
 class ThemeManager:
@@ -56,7 +56,8 @@ class ThemeManager:
 
     def apply_theme(self, app, qss_template: str):
         """
-        Formats the QSS template with current theme values and applies it to the QApplication.
+        Formats the QSS template with current theme values
+        and applies it to the QApplication.
         """
         theme_data = self.get_theme()
         try:
