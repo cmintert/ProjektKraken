@@ -5,8 +5,8 @@ from src.core.events import Event
 def test_timeline_init(qapp):
     """Test that TimelineWidget initializes correctly."""
     widget = TimelineWidget()
-    assert widget.scene is not None
-    assert widget.scale_factor == 20.0
+    assert widget.view.scene is not None
+    assert widget.view.scale_factor == 20.0
 
 
 def test_set_events(qapp):
@@ -21,7 +21,7 @@ def test_set_events(qapp):
     widget.set_events(events)
 
     # Check items in scene. At least axis, events, lines
-    items = widget.scene.items()
+    items = widget.view.scene.items()
     assert len(items) >= 5
 
     # Verify EventItems
@@ -46,7 +46,9 @@ def test_lane_layout_logic(qapp):
 
     widget.set_events(events)
 
-    items = [i for i in widget.scene.items() if isinstance(i, EventItem)]
+    widget.set_events(events)
+
+    items = [i for i in widget.view.scene.items() if isinstance(i, EventItem)]
     items.sort(key=lambda i: i.event.lore_date)
 
     # Check Y coordinates
@@ -74,7 +76,7 @@ def test_focus_event(qapp):
     widget.set_events([event])
 
     # Pre-condition
-    items = [i for i in widget.scene.items() if isinstance(i, EventItem)]
+    items = [i for i in widget.view.scene.items() if isinstance(i, EventItem)]
     assert not items[0].isSelected()
 
     # Action

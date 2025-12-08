@@ -1,7 +1,7 @@
 Project Kraken: Comprehensive Design Specification
 
-Version: 1.0
-Status: Phase 1 (Architecture & MVP)
+Version: 0.2.0
+Status: Phase 4 (UI/UX Overhaul Complete)
 Target Audience: Software Developers, UX Designers
 
 1. Product Vision & Philosophy
@@ -145,6 +145,14 @@ Binder (Dynamic Hierarchy):
 A QTreeView that constructs folders dynamically based on queries (e.g., "Group by Faction", "Group by Location").
 
 It is not a static file system.
+
+5.2 Theming & Styling
+
+The UI uses a centralized `ThemeManager` (`src/core/theme_manager.py`) that loads color palettes from `themes.json`.
+
+*   **Dark Mode**: Default modern dark theme.
+*   **Tokens**: Semantic color tokens (e.g., `primary`, `surface`, `border`) are mapped to Qt stylesheets (QSS).
+*   **Scalability**: High DPI scaling is enabled via `Qt.HighDpiScaleFactorRoundingPolicy.PassThrough`.
 
 6. Development Standards
 
