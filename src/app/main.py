@@ -123,6 +123,11 @@ class MainWindow(QMainWindow):
         self.entity_list.entity_selected.connect(self.load_entity_details)
         self.entity_editor.save_requested.connect(self.update_entity)
 
+        # Entity Relations
+        self.entity_editor.add_relation_requested.connect(self.add_relation)
+        self.entity_editor.remove_relation_requested.connect(self.remove_relation)
+        self.entity_editor.update_relation_requested.connect(self.update_relation)
+
         # Timeline (Dockable)
         self.timeline_dock = QDockWidget("Timeline", self)
         self.timeline_dock.setObjectName("TimelineDock")
@@ -269,7 +274,9 @@ class MainWindow(QMainWindow):
 
         entity = self.db_service.get_entity(entity_id)
         if entity:
-            self.entity_editor.load_entity(entity)
+            relations = self.db_service.get_relations(entity_id)
+            incoming_relations = self.db_service.get_incoming_relations(entity_id)
+            self.entity_editor.load_entity(entity, relations, incoming_relations)
 
     def delete_event(self, event_id):
         logger.info(f"Requesting delete for {event_id}")
@@ -326,30 +333,30 @@ class MainWindow(QMainWindow):
         )
         if cmd.execute():
             # Refresh editor details to show new relation
-            self.load_event_details(source_id)
+            # Check both, one will work
+            if self.event_editor._current_event_id == source_id:
+                self.load_event_details(source_id)
+            if self.entity_editor._current_entity_id == source_id:
+                self.load_entity_details(source_id)
 
     def remove_relation(self, rel_id):
         logger.info(f"Removing relation {rel_id}")
         cmd = RemoveRelationCommand(self.db_service, rel_id)
         if cmd.execute():
-            # We need to refresh the display, but how do we know the source_id?
-            # MainWindow keeps no current state. event_editor does.
-            # We can re-load the currently loaded event from editor state?
-            # Or pass source_id in signal?
-            # Let's rely on Editor knowing its state? No, Editor is dumb-ish.
-            # Best way: Editor has `_current_event_id`.
-            # Let's just pull it.
-            current_id = self.event_editor._current_event_id
-            if current_id:
-                self.load_event_details(current_id)
+            # Refresh active editors
+            if self.event_editor._current_event_id:
+                self.load_event_details(self.event_editor._current_event_id)
+            if self.entity_editor._current_entity_id:
+                self.load_entity_details(self.entity_editor._current_entity_id)
 
     def update_relation(self, rel_id, target_id, rel_type):
         logger.info(f"Updating relation {rel_id}")
         cmd = UpdateRelationCommand(self.db_service, rel_id, target_id, rel_type)
         if cmd.execute():
-            current_id = self.event_editor._current_event_id
-            if current_id:
-                self.load_event_details(current_id)
+            if self.event_editor._current_event_id:
+                self.load_event_details(self.event_editor._current_event_id)
+            if self.entity_editor._current_entity_id:
+                self.load_entity_details(self.entity_editor._current_entity_id)
 
 
 def main():
