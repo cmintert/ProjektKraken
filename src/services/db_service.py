@@ -274,6 +274,39 @@ class DatabaseService:
             return Entity.from_dict(data)
         return None
 
+    def get_all_entities(self) -> List[Entity]:
+        """
+        Retrieves all entities from the database.
+
+        Returns:
+            List[Entity]: A list of all Entity objects.
+        """
+        sql = "SELECT * FROM entities"
+        if not self._connection:
+            self.connect()
+
+        cursor = self._connection.execute(sql)
+        entities = []
+        for row in cursor.fetchall():
+            data = dict(row)
+            if data.get("attributes"):
+                data["attributes"] = json.loads(data["attributes"])
+            entities.append(Entity.from_dict(data))
+        return entities
+
+    def delete_entity(self, entity_id: str) -> None:
+        """
+        Deletes an entity permanently.
+
+        Args:
+            entity_id (str): The unique identifier of the entity to delete.
+
+        Raises:
+            sqlite3.Error: If the database operation fails.
+        """
+        with self.transaction() as conn:
+            conn.execute("DELETE FROM entities WHERE id = ?", (entity_id,))
+
     # --------------------------------------------------------------------------
     # Relation CRUD
     # --------------------------------------------------------------------------
