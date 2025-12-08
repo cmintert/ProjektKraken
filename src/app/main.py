@@ -3,6 +3,7 @@ import sys
 from PySide6.QtWidgets import QApplication, QMainWindow, QDockWidget
 from PySide6.QtCore import Qt
 from src.core.logging_config import setup_logging, get_logger
+from src.core.theme_manager import ThemeManager
 from src.services.db_service import DatabaseService
 from src.gui.widgets.event_list import EventListWidget
 from src.gui.widgets.event_editor import EventEditorWidget
@@ -159,7 +160,21 @@ class MainWindow(QMainWindow):
 
 def main():
     logger.info("Starting Application...")
+    # 1. High DPI Scaling (Spec 2.2)
+    QApplication.setHighDpiScaleFactorRoundingPolicy(
+        Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+    )
+
     app = QApplication(sys.argv)
+
+    # 2. Apply Theme (Spec 3.2)
+    tm = ThemeManager()
+    try:
+        with open("src/resources/main.qss", "r") as f:
+            qss_template = f.read()
+            tm.apply_theme(app, qss_template)
+    except FileNotFoundError:
+        logger.warning("main.qss not found, skipping styling.")
 
     window = MainWindow()
     window.show()

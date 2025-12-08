@@ -1,0 +1,147 @@
+/* Main Window */
+QMainWindow {
+    background-color: {app_bg};
+}
+
+/* Widgets & Panels */
+QWidget {
+    color: {text_main};
+    font-family: "Segoe UI", "Roboto", "Helvetica", sans-serif;
+    font-size: 10pt;
+}
+
+/* Specific Panel Backgrounds (Fix for Light Mode fallback) */
+EventListWidget, EventEditorWidget {
+    background-color: {app_bg};
+}
+
+QGroupBox {
+    color: {text_main};
+    border: 1px solid {border};
+    border-radius: 6px;
+    margin-top: 20px;
+    background-color: {surface};
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px 0 5px;
+    color: {primary};
+}
+
+QMenu {
+    background-color: {surface};
+    border: 1px solid {border};
+}
+QMenu::item {
+    background-color: transparent;
+    padding: 5px 20px;
+}
+QMenu::item:selected {
+    background-color: {primary};
+    color: black;
+}
+
+QDockWidget {
+    titlebar-close-icon: url(close.png);
+    titlebar-normal-icon: url(float.png);
+}
+
+QDockWidget::title {
+    background: {surface};
+    text-align: left;
+    padding-left: 8px;
+    border-bottom: 1px solid {border};
+}
+
+/* Inputs */
+QLineEdit, QSpinBox, QTextEdit {
+    background-color: {surface};
+    border: 1px solid {border};
+    border-radius: 4px;
+    padding: 4px 8px;
+    color: {text_main};
+    selection-background-color: {primary};
+}
+QLineEdit:focus, QSpinBox:focus, QTextEdit:focus {
+    border: 1px solid {primary};
+}
+
+/* Buttons */
+QPushButton {
+    background-color: {border};
+    color: {text_main};
+    border: 1px solid {border};
+    border-radius: 4px;
+    padding: 6px 16px;
+    min-height: 20px;
+}
+QPushButton:hover { 
+    background-color: {surface}; 
+    border-color: {text_dim};
+}
+QPushButton:pressed { 
+    background-color: {primary}; 
+    color: #121212; /* High contrast on primary */
+}
+QPushButton:disabled { 
+    background-color: {app_bg}; 
+    color: {text_dim}; 
+    border-style: dashed; 
+}
+
+/* Lists and Tables */
+QListWidget, QTableWidget, QTreeWidget {
+    background-color: {surface};
+    border: 1px solid {border};
+    border-radius: 4px;
+    outline: none; /* remove dotted focus line */
+}
+QListWidget::item {
+    padding: 4px;
+    border-bottom: 1px solid {app_bg};
+}
+QListWidget::item:selected {
+    background-color: {primary};
+    color: #121212;
+}
+QListWidget::item:hover:!selected {
+    background-color: {border};
+}
+
+/* Scrollbars */
+QScrollBar:vertical {
+    background: {app_bg};
+    width: 10px;
+    margin: 0px 0px 0px 0px;
+}
+QScrollBar::handle:vertical {
+    background: {border};
+    min-height: 20px;
+    border-radius: 5px;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar:horizontal {
+    background: {app_bg};
+    height: 10px;
+    margin: 0px 0px 0px 0px;
+}
+QScrollBar::handle:horizontal {
+    background: {border};
+    min-width: 20px;
+    border-radius: 5px;
+}
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0px;
+}
+
+/* Frames */
+QFrame#LoreFrame {
+    background-color: {surface};
+    border: 1px solid {border};
+    border-left: 4px solid {accent_secondary};
+    border-radius: 4px;
+}

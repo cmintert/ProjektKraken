@@ -5,7 +5,9 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QPushButton,
     QHBoxLayout,
+    QLabel,
 )
+from PySide6.QtCore import Qt
 from PySide6.QtCore import Signal
 from typing import List
 from src.core.events import Event
@@ -31,7 +33,12 @@ class EventListWidget(QWidget):
             parent: The parent widget, if any.
         """
         super().__init__(parent)
+        if parent:
+            self.setParent(parent)
+        self.setAttribute(Qt.WA_StyledBackground, True)
         self.layout = QVBoxLayout(self)
+        self.layout.setSpacing(8)
+        self.layout.setContentsMargins(16, 16, 16, 16)
 
         # Controls
         self.btn_refresh = QPushButton("Refresh List")
@@ -51,6 +58,15 @@ class EventListWidget(QWidget):
         self.list_widget.itemSelectionChanged.connect(self._on_selection_changed)
         self.layout.addWidget(self.list_widget)
 
+        # Empty State (Spec 7.2)
+        self.empty_label = QLabel("No Events Loaded")
+        self.empty_label.setAlignment(Qt.AlignCenter)
+        self.empty_label.setStyleSheet(
+            "color: #757575; font-size: 14pt;"
+        )  # Hardcoded dim fallback
+        self.layout.addWidget(self.empty_label)
+        self.empty_label.hide()
+
     def set_events(self, events: List[Event]):
         """
         Populates the list widget with the provided events.
@@ -59,6 +75,15 @@ class EventListWidget(QWidget):
             events (List[Event]): A list of Event objects to display.
         """
         self.list_widget.clear()
+
+        if not events:
+            self.list_widget.hide()
+            self.empty_label.show()
+            return
+
+        self.list_widget.show()
+        self.empty_label.hide()
+
         for event in events:
             # Display: Date - Name (Type)
             label = f"[{event.lore_date}] {event.name} ({event.type})"

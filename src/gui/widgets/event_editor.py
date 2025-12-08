@@ -7,7 +7,6 @@ from PySide6.QtWidgets import (
     QDoubleSpinBox,
     QComboBox,
     QPushButton,
-    QLabel,
     QHBoxLayout,
     QGroupBox,
     QListWidget,
@@ -44,7 +43,10 @@ class EventEditorWidget(QWidget):
             parent: The parent widget, if any.
         """
         super().__init__(parent)
+        self.setAttribute(Qt.WA_StyledBackground, True)
         self.layout = QVBoxLayout(self)
+        self.layout.setSpacing(8)
+        self.layout.setContentsMargins(16, 16, 16, 16)
 
         # Form Layout
         self.form_layout = QFormLayout()
