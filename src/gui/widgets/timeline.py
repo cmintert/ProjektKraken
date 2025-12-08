@@ -335,17 +335,19 @@ class TimelineWidget(QWidget):
         self.layout.setSpacing(0)
         self.layout.setContentsMargins(0, 0, 0, 0)
 
-        # Toolbar
-        self.toolbar_layout = QHBoxLayout()
+        # Toolbar Container (Header)
+        self.header_frame = QWidget()
+        self.header_frame.setObjectName("TimelineHeader")
+        self.toolbar_layout = QHBoxLayout(self.header_frame)
         self.toolbar_layout.setContentsMargins(4, 4, 4, 4)
+
+        self.toolbar_layout.addStretch()
 
         self.btn_fit = QPushButton("Fit View")
         self.btn_fit.clicked.connect(self.fit_view)
         self.toolbar_layout.addWidget(self.btn_fit)
 
-        self.toolbar_layout.addStretch()
-
-        self.layout.addLayout(self.toolbar_layout)
+        self.layout.addWidget(self.header_frame)
 
         # View
         self.view = TimelineView()

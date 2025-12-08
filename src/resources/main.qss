@@ -3,6 +3,19 @@ QMainWindow {{
     background-color: {app_bg};
 }}
 
+/* Menus */
+QMenuBar {{
+    background-color: {surface};
+    border-bottom: 1px solid {border};
+}}
+QMenuBar::item {{
+    background-color: transparent;
+    padding: 4px 10px;
+}}
+QMenuBar::item:selected {{
+    background-color: {border};
+}}
+
 /* Widgets & Panels */
 QWidget {{
     color: {text_main};
@@ -10,9 +23,28 @@ QWidget {{
     font-size: 10pt;
 }}
 
+QMenu {{
+    background-color: {surface};
+    border: 1px solid {border};
+}}
+QMenu::item {{
+    background-color: transparent;
+    padding: 5px 20px;
+}}
+QMenu::item:selected {{
+    background-color: {primary};
+    color: black;
+}}
+
 /* Specific Panel Backgrounds (Fix for Light Mode fallback) */
-EventListWidget, EventEditorWidget {{
+EventListWidget, EventEditorWidget, TimelineWidget {{
     background-color: {app_bg};
+    border: 1px solid {border};
+    border-top: none; /* Merge with Dock Title */
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
 }}
 
 QGroupBox {{
@@ -29,22 +61,10 @@ QGroupBox::title {{
     color: {primary};
 }}
 
-QMenu {{
-    background-color: {surface};
-    border: 1px solid {border};
-}}
-QMenu::item {{
-    background-color: transparent;
-    padding: 5px 20px;
-}}
-QMenu::item:selected {{
-    background-color: {primary};
-    color: black;
-}}
-
 QDockWidget {{
     titlebar-close-icon: url(close.png);
     titlebar-normal-icon: url(float.png);
+    border: 1px solid {border};
 }}
 
 QDockWidget::title {{
@@ -52,10 +72,11 @@ QDockWidget::title {{
     text-align: left;
     padding-left: 8px;
     border-bottom: 1px solid {border};
+    margin: 0px; /* Remove gap */
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
 }}
-
-/* Inputs */
-QLineEdit, QSpinBox, QTextEdit {{
+QLineEdit, QAbstractSpinBox, QTextEdit, QComboBox {{
     background-color: {surface};
     border: 1px solid {border};
     border-radius: 4px;
@@ -63,8 +84,26 @@ QLineEdit, QSpinBox, QTextEdit {{
     color: {text_main};
     selection-background-color: {primary};
 }}
-QLineEdit:focus, QSpinBox:focus, QTextEdit:focus {{
+QLineEdit:focus, QAbstractSpinBox:focus, QTextEdit:focus, QComboBox:focus {{
     border: 1px solid {primary};
+}}
+
+/* Combo Box Specifics */
+QComboBox::drop-down {{
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 20px;
+    border-left-width: 1px;
+    border-left-color: {border};
+    border-left-style: solid;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+}}
+QComboBox::down-arrow {{
+    image: url(down_arrow.png); /* Or style clearly if no image */
+    width: 8px;
+    height: 8px;
+    background: {text_dim}; 
 }}
 
 /* Buttons */

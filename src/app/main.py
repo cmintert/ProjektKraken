@@ -1,7 +1,7 @@
 import sys
 
-from PySide6.QtWidgets import QApplication, QMainWindow, QDockWidget
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication, QMainWindow, QDockWidget, QWidget
+from PySide6.QtCore import Qt, QSettings
 from src.core.logging_config import setup_logging, get_logger
 from src.core.theme_manager import ThemeManager
 from src.services.db_service import DatabaseService
@@ -31,6 +31,13 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Project Kraken - v0.2.0 (Editor Phase)")
         self.resize(1280, 720)
 
+        # Enable advanced docking features
+        self.setDockOptions(
+            QMainWindow.AnimatedDocks
+            | QMainWindow.AllowNestedDocks
+            | QMainWindow.AllowTabbedDocks
+        )
+
         # 1. Init Services
         # Using a file DB now for persistence across runs
         self.db_service = DatabaseService("world.kraken")
@@ -41,35 +48,106 @@ class MainWindow(QMainWindow):
         self.event_editor = EventEditorWidget()
 
         # Dockable List
-        list_dock = QDockWidget("Events List", self)
-        list_dock.setWidget(self.event_list)
-        self.addDockWidget(Qt.LeftDockWidgetArea, list_dock)
+        self.list_dock = QDockWidget("Events List", self)
+        self.list_dock.setObjectName("EventsListDock")
+        self.list_dock.setWidget(self.event_list)
+        self.list_dock.setAllowedAreas(Qt.AllDockWidgetAreas)
+        self.list_dock.setFeatures(
+            QDockWidget.DockWidgetMovable
+            | QDockWidget.DockWidgetFloatable
+            | QDockWidget.DockWidgetClosable
+        )
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.list_dock)
 
-        # Dockable Editor (or separate window, but dock is fine)
-        editor_dock = QDockWidget("Event Inspector", self)
-        editor_dock.setWidget(self.event_editor)
-        self.addDockWidget(Qt.RightDockWidgetArea, editor_dock)
+        # Dockable Editor
+        self.editor_dock = QDockWidget("Event Inspector", self)
+        self.editor_dock.setObjectName("EventInspectorDock")
+        self.editor_dock.setWidget(self.event_editor)
+        self.editor_dock.setAllowedAreas(Qt.AllDockWidgetAreas)
+        self.editor_dock.setFeatures(
+            QDockWidget.DockWidgetMovable
+            | QDockWidget.DockWidgetFloatable
+            | QDockWidget.DockWidgetClosable
+        )
+        self.addDockWidget(Qt.RightDockWidgetArea, self.editor_dock)
 
-        # 3. Connect Signals (The Controller Logic)
+        # 3. Connect Signals
         self.event_list.refresh_requested.connect(self.load_events)
         self.event_list.delete_requested.connect(self.delete_event)
         self.event_list.event_selected.connect(self.load_event_details)
 
-        self.event_editor.save_requested.connect(self.update_event)
-        self.event_editor.add_relation_requested.connect(self.add_relation)
-        self.event_editor.remove_relation_requested.connect(self.remove_relation)
-        self.event_editor.update_relation_requested.connect(self.update_relation)
-
-        # Timeline
+        # Timeline (Dockable)
         self.timeline_dock = QDockWidget("Timeline", self)
+        self.timeline_dock.setObjectName("TimelineDock")
         self.timeline = TimelineWidget()
         self.timeline_dock.setWidget(self.timeline)
+        self.timeline_dock.setAllowedAreas(Qt.AllDockWidgetAreas)
+        self.timeline_dock.setFeatures(
+            QDockWidget.DockWidgetMovable
+            | QDockWidget.DockWidgetFloatable
+            | QDockWidget.DockWidgetClosable
+        )
         self.addDockWidget(Qt.BottomDockWidgetArea, self.timeline_dock)
+
         self.timeline.event_selected.connect(self.load_event_details)
 
-        # Seed some data if empty
+        # Central Widget
+        self.setCentralWidget(QWidget())
+        self.centralWidget().hide()
+
+        # View Menu
+        self.create_view_menu()
+
+        # Seed & Load
         self.seed_data()
         self.load_events()
+
+        # Restore State
+        settings = QSettings("Antigravity", "ProjectKraken_v0.3")
+        geometry = settings.value("geometry")
+        state = settings.value("windowState")
+
+        if geometry:
+            self.restoreGeometry(geometry)
+        if state:
+            self.restoreState(state)
+        else:
+            # First run or reset: ensure default layout is applied
+            self.reset_layout()
+
+    def create_view_menu(self):
+        menu_bar = self.menuBar()
+        view_menu = menu_bar.addMenu("View")
+
+        # Add actions to toggle docks
+        view_menu.addAction(self.list_dock.toggleViewAction())
+        view_menu.addAction(self.editor_dock.toggleViewAction())
+        view_menu.addAction(self.timeline_dock.toggleViewAction())
+
+        view_menu.addSeparator()
+
+        reset_action = view_menu.addAction("Reset Layout")
+        reset_action.triggered.connect(self.reset_layout)
+
+    def closeEvent(self, event):
+        # Save State
+        from PySide6.QtCore import QSettings
+
+        settings = QSettings("Antigravity", "ProjectKraken_v0.3")
+        settings.setValue("geometry", self.saveGeometry())
+        settings.setValue("windowState", self.saveState())
+
+        self.db_service.close()
+        event.accept()
+
+    def reset_layout(self):
+        # Restore default docking
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.list_dock)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.editor_dock)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.timeline_dock)
+        self.list_dock.show()
+        self.editor_dock.show()
+        self.timeline_dock.show()
 
     def seed_data(self):
         if not self.db_service.get_all_events():
@@ -152,10 +230,6 @@ class MainWindow(QMainWindow):
             current_id = self.event_editor._current_event_id
             if current_id:
                 self.load_event_details(current_id)
-
-    def closeEvent(self, event):
-        self.db_service.close()
-        event.accept()
 
 
 def main():
