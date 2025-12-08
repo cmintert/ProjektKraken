@@ -296,10 +296,21 @@ class TimelineView(QGraphicsView):
 
     def mousePressEvent(self, event):
         super().mousePressEvent(event)
-        item = self.scene.itemAt(self.mapToScene(event.pos()), self.transform())
+
+        try:
+            pos = event.position().toPoint()
+        except AttributeError:
+            pos = event.pos()
+
+        # Check for item at click position
+        item = self.scene.itemAt(self.mapToScene(pos), self.transform())
+
         # Traverse up if needed
         if isinstance(item, EventItem):
             self.event_selected.emit(item.event.id)
+            # If we clicked an item, we might want to stop the drag?
+            # But QGraphicsView handles selection + drag logic usually.
+            # For now, just emitting signal is safe.
 
     def focus_event(self, event_id: str):
         """Centers the view on the specified event."""
