@@ -16,7 +16,7 @@ class ThemeManager:
 
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
-            cls._instance = super(ThemeManager, cls).__new__(cls, *args, **kwargs)
+            cls._instance = super(ThemeManager, cls).__new__(cls)
         return cls._instance
 
     def __init__(self, theme_file: str = "themes.json"):
