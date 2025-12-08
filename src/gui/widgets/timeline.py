@@ -155,8 +155,8 @@ class TimelineWidget(QGraphicsView):
             return
 
         # 3. Calculate Step Size (Nice Ticks)
-        # We want a tick roughly every 100 pixels
-        target_ticks = max(1, w / 100)
+        # Prevent crowding for large numbers (Billions) -> 130px min spacing
+        target_ticks = max(1, w / 140)
         raw_step = date_range / target_ticks
 
         # Round to nice power of 10
@@ -170,7 +170,7 @@ class TimelineWidget(QGraphicsView):
                 step *= 5
             elif residual > 2:
                 step *= 2
-        except:
+        except Exception:
             step = 1
 
         # 4. Draw Ticks
@@ -267,7 +267,7 @@ class TimelineWidget(QGraphicsView):
 
         try:
             target = event.position().toPoint()
-        except:
+        except AttributeError:
             target = event.pos()
 
         old_pos = self.mapToScene(target)
