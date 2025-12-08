@@ -151,7 +151,7 @@ class MainWindow(QMainWindow):
         self.load_entities()
 
         # Restore State
-        settings = QSettings("Antigravity", "ProjectKraken_v0.3")
+        settings = QSettings("Antigravity", "ProjectKraken_v0.3.1")
         geometry = settings.value("geometry")
         state = settings.value("windowState")
 
@@ -183,7 +183,7 @@ class MainWindow(QMainWindow):
         # Save State
         from PySide6.QtCore import QSettings
 
-        settings = QSettings("Antigravity", "ProjectKraken_v0.3")
+        settings = QSettings("Antigravity", "ProjectKraken_v0.3.1")
         settings.setValue("geometry", self.saveGeometry())
         settings.setValue("windowState", self.saveState())
 

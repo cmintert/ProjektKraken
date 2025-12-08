@@ -37,7 +37,7 @@ QMenu::item:selected {{
 }}
 
 /* Specific Panel Backgrounds (Fix for Light Mode fallback) */
-EventListWidget, EventEditorWidget, TimelineWidget {{
+EventListWidget, EventEditorWidget, TimelineWidget, EntityListWidget, EntityEditorWidget {{
     background-color: {app_bg};
     border: 1px solid {border};
     border-top: none; /* Merge with Dock Title */
@@ -45,6 +45,27 @@ EventListWidget, EventEditorWidget, TimelineWidget {{
     border-bottom-right-radius: 4px;
     border-top-left-radius: 0px;
     border-top-right-radius: 0px;
+}}
+
+/* Tab Bar (for Dock Widgets) */
+QTabBar::tab {{
+    background: {surface};
+    color: {text_dim};
+    padding: 6px 14px;
+    border: 1px solid {border};
+    border-bottom: none; /* Merge with panel */
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    margin-right: 2px;
+}}
+QTabBar::tab:selected {{
+    background: {border};
+    color: {text_main};
+    border-color: {primary};
+}}
+QTabBar::tab:hover {{
+    background: {border};
+    color: {text_main};
 }}
 
 QGroupBox {{
@@ -89,6 +110,15 @@ QLineEdit:focus, QAbstractSpinBox:focus, QTextEdit:focus, QComboBox:focus {{
 }}
 
 /* Combo Box Specifics */
+QComboBox QAbstractItemView {{
+    background-color: {surface};
+    color: {text_main};
+    border: 1px solid {border};
+    selection-background-color: {primary};
+    selection-color: black;
+    outline: none;
+}}
+
 QComboBox::drop-down {{
     subcontrol-origin: padding;
     subcontrol-position: top right;
