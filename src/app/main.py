@@ -7,11 +7,18 @@ from src.core.theme_manager import ThemeManager
 from src.services.db_service import DatabaseService
 from src.gui.widgets.event_list import EventListWidget
 from src.gui.widgets.event_editor import EventEditorWidget
+from src.gui.widgets.entity_list import EntityListWidget
+from src.gui.widgets.entity_editor import EntityEditorWidget
 from src.gui.widgets.timeline import TimelineWidget
 from src.commands.event_commands import (
     CreateEventCommand,
     DeleteEventCommand,
     UpdateEventCommand,
+)
+from src.commands.entity_commands import (
+    CreateEntityCommand,
+    DeleteEntityCommand,
+    UpdateEntityCommand,
 )
 from src.commands.relation_commands import (
     AddRelationCommand,
@@ -19,6 +26,7 @@ from src.commands.relation_commands import (
     UpdateRelationCommand,
 )
 from src.core.events import Event
+from src.core.entities import Entity
 
 # Initialize Logging
 setup_logging(debug_mode=True)
@@ -47,7 +55,10 @@ class MainWindow(QMainWindow):
         self.event_list = EventListWidget()
         self.event_editor = EventEditorWidget()
 
-        # Dockable List
+        self.entity_list = EntityListWidget()
+        self.entity_editor = EntityEditorWidget()
+
+        # Dockable List (Events)
         self.list_dock = QDockWidget("Events List", self)
         self.list_dock.setObjectName("EventsListDock")
         self.list_dock.setWidget(self.event_list)
@@ -59,7 +70,22 @@ class MainWindow(QMainWindow):
         )
         self.addDockWidget(Qt.LeftDockWidgetArea, self.list_dock)
 
-        # Dockable Editor
+        # Dockable List (Entities)
+        self.entity_list_dock = QDockWidget("Entities List", self)
+        self.entity_list_dock.setObjectName("EntitiesListDock")
+        self.entity_list_dock.setWidget(self.entity_list)
+        self.entity_list_dock.setAllowedAreas(Qt.AllDockWidgetAreas)
+        self.entity_list_dock.setFeatures(
+            QDockWidget.DockWidgetMovable
+            | QDockWidget.DockWidgetFloatable
+            | QDockWidget.DockWidgetClosable
+        )
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.entity_list_dock)
+        self.tabifyDockWidget(
+            self.list_dock, self.entity_list_dock
+        )  # Tabify with events
+
+        # Dockable Editor (Events)
         self.editor_dock = QDockWidget("Event Inspector", self)
         self.editor_dock.setObjectName("EventInspectorDock")
         self.editor_dock.setWidget(self.event_editor)
@@ -71,10 +97,31 @@ class MainWindow(QMainWindow):
         )
         self.addDockWidget(Qt.RightDockWidgetArea, self.editor_dock)
 
-        # 3. Connect Signals
+        # Dockable Editor (Entities)
+        self.entity_editor_dock = QDockWidget("Entity Inspector", self)
+        self.entity_editor_dock.setObjectName("EntityInspectorDock")
+        self.entity_editor_dock.setWidget(self.entity_editor)
+        self.entity_editor_dock.setAllowedAreas(Qt.AllDockWidgetAreas)
+        self.entity_editor_dock.setFeatures(
+            QDockWidget.DockWidgetMovable
+            | QDockWidget.DockWidgetFloatable
+            | QDockWidget.DockWidgetClosable
+        )
+        self.addDockWidget(Qt.RightDockWidgetArea, self.entity_editor_dock)
+        self.tabifyDockWidget(self.editor_dock, self.entity_editor_dock)
+
+        # 3. Connect Signals (Events)
         self.event_list.refresh_requested.connect(self.load_events)
         self.event_list.delete_requested.connect(self.delete_event)
         self.event_list.event_selected.connect(self.load_event_details)
+        self.event_editor.save_requested.connect(self.update_event)
+
+        # 3b. Connect Signals (Entities)
+        self.entity_list.refresh_requested.connect(self.load_entities)
+        self.entity_list.delete_requested.connect(self.delete_entity)
+        self.entity_list.create_requested.connect(self.create_entity)
+        self.entity_list.entity_selected.connect(self.load_entity_details)
+        self.entity_editor.save_requested.connect(self.update_entity)
 
         # Timeline (Dockable)
         self.timeline_dock = QDockWidget("Timeline", self)
@@ -101,6 +148,7 @@ class MainWindow(QMainWindow):
         # Seed & Load
         self.seed_data()
         self.load_events()
+        self.load_entities()
 
         # Restore State
         settings = QSettings("Antigravity", "ProjectKraken_v0.3")
@@ -121,7 +169,9 @@ class MainWindow(QMainWindow):
 
         # Add actions to toggle docks
         view_menu.addAction(self.list_dock.toggleViewAction())
+        view_menu.addAction(self.entity_list_dock.toggleViewAction())
         view_menu.addAction(self.editor_dock.toggleViewAction())
+        view_menu.addAction(self.entity_editor_dock.toggleViewAction())
         view_menu.addAction(self.timeline_dock.toggleViewAction())
 
         view_menu.addSeparator()
@@ -143,10 +193,19 @@ class MainWindow(QMainWindow):
     def reset_layout(self):
         # Restore default docking
         self.addDockWidget(Qt.LeftDockWidgetArea, self.list_dock)
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.entity_list_dock)
+        self.tabifyDockWidget(self.list_dock, self.entity_list_dock)
+
         self.addDockWidget(Qt.RightDockWidgetArea, self.editor_dock)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.entity_editor_dock)
+        self.tabifyDockWidget(self.editor_dock, self.entity_editor_dock)
+
         self.addDockWidget(Qt.BottomDockWidgetArea, self.timeline_dock)
+
         self.list_dock.show()
+        self.entity_list_dock.show()
         self.editor_dock.show()
+        self.entity_editor_dock.show()
         self.timeline_dock.show()
 
     def seed_data(self):
@@ -162,15 +221,35 @@ class MainWindow(QMainWindow):
             cmd2.execute()
             self.db_service.insert_event(e3)  # Direct insert just to vary it
 
+        if not self.db_service.get_all_entities():
+            # Seed entities
+            ent1 = Entity(name="Gandalf", type="Character", description="A Wizard")
+            ent2 = Entity(
+                name="The Shire", type="Location", description="A peaceful place"
+            )
+
+            CreateEntityCommand(self.db_service, ent1).execute()
+            CreateEntityCommand(self.db_service, ent2).execute()
+
     def load_events(self):
         logger.debug("Loading events from DB...")
         events = self.db_service.get_all_events()
         self.event_list.set_events(events)
         self.timeline.set_events(events)
 
+    def load_entities(self):
+        logger.debug("Loading entities from DB...")
+        entities = self.db_service.get_all_entities()
+        self.entity_list.set_entities(entities)
+
     def load_event_details(self, event_id: str):
         """Fetches full event details AND relations, pushing to editor."""
         logger.debug(f"Loading details for {event_id}")
+
+        # Raise the docks
+        self.list_dock.raise_()
+        self.editor_dock.raise_()
+
         event = self.db_service.get_event(event_id)
         if event:
             # Also fetch relations
@@ -180,6 +259,17 @@ class MainWindow(QMainWindow):
 
             # Sync Timeline Focus
             self.timeline.focus_event(event_id)
+
+    def load_entity_details(self, entity_id: str):
+        logger.debug(f"Loading entity details for {entity_id}")
+
+        # Raise the docks
+        self.entity_list_dock.raise_()
+        self.entity_editor_dock.raise_()
+
+        entity = self.db_service.get_entity(entity_id)
+        if entity:
+            self.entity_editor.load_entity(entity)
 
     def delete_event(self, event_id):
         logger.info(f"Requesting delete for {event_id}")
@@ -196,6 +286,36 @@ class MainWindow(QMainWindow):
             self.load_events()  # Update list (e.g. name might have changed)
             # Re-load to confirm state or just stay as is
             # self.load_event_details(event.id)
+
+    # -----------------------------
+    # Entity Actions
+    # -----------------------------
+
+    def create_entity(self):
+        new_entity = Entity(name="New Entity", type="Concept")
+        cmd = CreateEntityCommand(self.db_service, new_entity)
+        if cmd.execute():
+            self.load_entities()
+            # Select and load it
+            self.entity_list.set_entities(self.db_service.get_all_entities())
+            # We could scroll to it, but for now just refresh
+
+    def delete_entity(self, entity_id):
+        logger.info(f"Requesting delete for entity {entity_id}")
+        cmd = DeleteEntityCommand(self.db_service, entity_id)
+        if cmd.execute():
+            self.load_entities()
+            self.entity_editor.clear()
+
+    def update_entity(self, entity: Entity):
+        logger.info(f"Requesting update for entity {entity.id}")
+        cmd = UpdateEntityCommand(self.db_service, entity)
+        if cmd.execute():
+            self.load_entities()
+
+    # -----------------------------
+    # Relations
+    # -----------------------------
 
     def add_relation(self, source_id, target_id, rel_type, bidirectional: bool = False):
         logger.info(
