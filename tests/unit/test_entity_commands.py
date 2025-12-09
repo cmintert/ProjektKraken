@@ -31,7 +31,7 @@ def test_create_entity_success(mock_db, sample_entity):
 
     result = cmd.execute(mock_db)
 
-    assert result is True
+    assert result.success is True
     # Verify entity was inserted. We can't check identity (new object), but equality
     mock_db.insert_entity.assert_called_once()
     inserted = mock_db.insert_entity.call_args[0][0]
@@ -63,7 +63,7 @@ def test_update_entity_success(mock_db):
 
     result = cmd.execute(mock_db)
 
-    assert result is True
+    assert result.success is True
     # Verify DB was called with a new entity containing updated values
     args, _ = mock_db.insert_entity.call_args
     updated_entity = args[0]
@@ -97,7 +97,7 @@ def test_delete_entity_success(mock_db, sample_entity):
 
     result = cmd.execute(mock_db)
 
-    assert result is True
+    assert result.success is True
     mock_db.delete_entity.assert_called_once_with(sample_entity.id)
     assert cmd._is_executed is True
     assert cmd._backup_entity == sample_entity

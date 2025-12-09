@@ -2,6 +2,22 @@ from abc import ABC, abstractmethod
 from src.services.db_service import DatabaseService
 
 
+from dataclasses import dataclass, field
+from typing import Dict, Union
+
+
+@dataclass
+class CommandResult:
+    """
+    Standardized result object for command execution.
+    """
+
+    success: bool
+    message: str = ""
+    errors: Dict[str, str] = field(default_factory=dict)
+    command_name: str = ""
+
+
 class BaseCommand(ABC):
     """
     Abstract base class for all user actions.
@@ -15,7 +31,7 @@ class BaseCommand(ABC):
         self._is_executed = False
 
     @abstractmethod
-    def execute(self, db_service: DatabaseService) -> bool:
+    def execute(self, db_service: DatabaseService) -> Union[bool, CommandResult]:
         """
         Performs the action.
 
@@ -23,7 +39,7 @@ class BaseCommand(ABC):
             db_service (DatabaseService): The database service to operate on.
 
         Returns:
-            bool: True if execution was successful, False otherwise.
+            Union[bool, CommandResult]: Result object or success boolean.
         """
         pass
 

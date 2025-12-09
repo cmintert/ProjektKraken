@@ -7,7 +7,7 @@ import logging
 import traceback
 from PySide6.QtCore import QObject, Signal, Slot
 from src.services.db_service import DatabaseService
-from src.commands.base_command import BaseCommand
+from src.commands.base_command import BaseCommand, CommandResult
 
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ class DatabaseWorker(QObject):
     event_details_loaded = Signal(object, list, list)  # Event, relations, incoming
     entity_details_loaded = Signal(object, list, list)  # Entity, relations, incoming
 
-    command_finished = Signal(str, bool)  # Command Name, Success
+    command_finished = Signal(object)  # CommandResult object
     error_occurred = Signal(str)
 
     # Status signals for UI feedback
@@ -147,17 +147,41 @@ class DatabaseWorker(QObject):
             self.operation_started.emit(f"Executing {command_name}...")
 
             # Execute with the local service
-            success = command.execute(self.db_service)
+            result = command.execute(self.db_service)
 
-            self.command_finished.emit(command_name, success)
+            # Normalize result to CommandResult
+            if isinstance(result, bool):
+                success = result
+                msg = f"{command_name} {'succeeded' if success else 'failed'}"
+                result_obj = CommandResult(
+                    success=success, message=msg, command_name=command_name
+                )
+            elif isinstance(result, CommandResult):
+                result_obj = result
+                # Ensure command_name is set if missing
+                if not result_obj.command_name:
+                    result_obj.command_name = command_name
+            else:
+                # Unexpected return type
+                logger.warning(
+                    f"Command {command_name} returned unexpected type: {type(result)}"
+                )
+                result_obj = CommandResult(
+                    success=False,
+                    message="Internal Error: Invalid command result",
+                    command_name=command_name,
+                )
+
+            self.command_finished.emit(result_obj)
             self.operation_finished.emit(f"Finished {command_name}.")
-
-            # Auto-reload logic?
-            # Ideally the Controller/MainWindow decides what to reload based on
-            # the command result. To keep complexity low, we rely on signals.
-            # Main Window should react to 'command_finished' and request reloads.
 
         except Exception:
             logger.error(f"Command {command_name} failed: {traceback.format_exc()}")
             self.error_occurred.emit(f"Command {command_name} failed.")
-            self.command_finished.emit(command_name, False)
+            # Emit failure result
+            fail_res = CommandResult(
+                success=False,
+                message="An unexpected error occurred during execution.",
+                command_name=command_name,
+            )
+            self.command_finished.emit(fail_res)

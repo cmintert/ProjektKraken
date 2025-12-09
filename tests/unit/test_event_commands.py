@@ -32,7 +32,7 @@ def test_create_event_success(mock_db, sample_event):
 
     result = cmd.execute(mock_db)
 
-    assert result is True
+    assert result.success is True
     # The command creates a NEW event object from data, so assertion must check equality of fields
     # or simple called.
     mock_db.insert_event.assert_called_once()
@@ -48,7 +48,7 @@ def test_create_event_failure(mock_db, sample_event):
 
     result = cmd.execute(mock_db)
 
-    assert result is False
+    assert result.success is False
     assert cmd._is_executed is False
 
 
@@ -85,7 +85,7 @@ def test_update_event_success(mock_db):
 
     result = cmd.execute(mock_db)
 
-    assert result is True
+    assert result.success is True
     # Verify DB was called with a new event object containing updated values
     args, _ = mock_db.insert_event.call_args
     updated_event = args[0]
@@ -97,6 +97,21 @@ def test_update_event_success(mock_db):
     assert cmd._previous_event == old_event
 
 
+def test_update_event_validation_error(mock_db):
+    """Test validation failure (empty name)."""
+    old_event = Event(id="test-id", name="Old", lore_date=1000.0)
+    mock_db.get_event.return_value = old_event
+
+    cmd = UpdateEventCommand("test-id", {"name": ""})  # Empty name
+
+    result = cmd.execute(mock_db)
+
+    assert result.success is False
+    assert "name cannot be empty" in result.message
+    assert cmd._is_executed is False
+    mock_db.insert_event.assert_not_called()
+
+
 def test_update_event_not_found(mock_db):
     """Test updating non-existent event."""
     mock_db.get_event.return_value = None
@@ -104,8 +119,8 @@ def test_update_event_not_found(mock_db):
 
     result = cmd.execute(mock_db)
 
-    assert result is False
-    mock_db.insert_event.assert_not_called()
+    assert result.success is False
+    assert cmd._is_executed is False
 
 
 def test_update_event_db_error(mock_db):
@@ -118,7 +133,8 @@ def test_update_event_db_error(mock_db):
 
     result = cmd.execute(mock_db)
 
-    assert result is False
+    assert result.success is False
+    assert "DB Error" in result.message
     assert cmd._is_executed is False
 
 
@@ -154,7 +170,7 @@ def test_delete_event_success(mock_db, sample_event):
 
     result = cmd.execute(mock_db)
 
-    assert result is True
+    assert result.success is True
     mock_db.delete_event.assert_called_once_with(sample_event.id)
     assert cmd._is_executed is True
     assert cmd._backup_event == sample_event
@@ -167,7 +183,7 @@ def test_delete_event_not_found(mock_db):
 
     result = cmd.execute(mock_db)
 
-    assert result is False
+    assert result.success is False
     mock_db.delete_event.assert_not_called()
 
 
@@ -179,7 +195,7 @@ def test_delete_event_db_error(mock_db, sample_event):
 
     result = cmd.execute(mock_db)
 
-    assert result is False
+    assert result.success is False
     assert cmd._is_executed is False
 
 

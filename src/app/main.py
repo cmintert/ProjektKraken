@@ -12,11 +12,13 @@ from PySide6.QtWidgets import (
     QWidget,
     QStatusBar,
     QTabWidget,
+    QMessageBox,
 )
 from PySide6.QtCore import Qt, QSettings, QThread, Slot, Signal
 from src.core.logging_config import setup_logging, get_logger
 from src.core.theme_manager import ThemeManager
 from src.services.worker import DatabaseWorker
+from src.commands.base_command import CommandResult
 
 # DatabaseService import removed as MainWindow uses Worker
 from src.gui.widgets.event_editor import EventEditorWidget
@@ -343,17 +345,26 @@ class MainWindow(QMainWindow):
         self.entity_editor_dock.raise_()
         self.entity_editor.load_entity(entity, relations, incoming)
 
-    @Slot(str, bool)
-    def on_command_finished(self, command_name, success):
+    @Slot(object)
+    def on_command_finished(self, result):
         """
         Handles completion of async commands, triggering necessary UI refreshes.
 
         Args:
-            command_name (str): Name of the executed command.
-            success (bool): Whether the command succeeded.
+            result (CommandResult): The result of the executed command.
         """
+        if not isinstance(result, CommandResult):
+            # Fallback or error
+            return
+
+        command_name = result.command_name
+        success = result.success
+        message = result.message
+
         # Determine what to reload based on command
         if not success:
+            if message:
+                QMessageBox.warning(self, "Command Failed", message)
             return
 
         if "Event" in command_name:

@@ -1,0 +1,13 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+PySide6 6.10.1 -- Qt runtime 6.10.1 -- Qt compiled 6.10.1
+rootdir: C:\Users\chris\Antigravity Projects\ProjektKraken
+configfile: pytest.ini
+plugins: cov-7.0.0, qt-4.5.0
+collecting ... collected 2 items
+
+tests/unit/test_event_commands.py::test_create_event_undo PASSED         [ 50%]
+tests/unit/test_entity_commands.py::test_create_entity_undo PASSED       [100%]
+
+============================== 2 passed in 0.07s ==============================

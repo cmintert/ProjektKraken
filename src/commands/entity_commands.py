@@ -4,7 +4,7 @@ Commands for manipulating Entity objects.
 
 import logging
 from typing import Optional
-from src.commands.base_command import BaseCommand
+from src.commands.base_command import BaseCommand, CommandResult
 from src.services.db_service import DatabaseService
 from src.core.entities import Entity
 
@@ -23,15 +23,23 @@ class CreateEntityCommand(BaseCommand):
         else:
             self._entity = Entity(name="New Entity", type="Concept")
 
-    def execute(self, db_service: DatabaseService) -> bool:
+    def execute(self, db_service: DatabaseService) -> CommandResult:
         try:
             db_service.insert_entity(self._entity)
             self._is_executed = True
             logger.info(f"Created entity: {self._entity.name} ({self._entity.id})")
-            return True
+            return CommandResult(
+                success=True,
+                message=f"Entity '{self._entity.name}' created.",
+                command_name="CreateEntityCommand",
+            )
         except Exception as e:
             logger.error(f"Failed to create entity: {e}")
-            return False
+            return CommandResult(
+                success=False,
+                message=f"Failed to create entity: {e}",
+                command_name="CreateEntityCommand",
+            )
 
     def undo(self, db_service: DatabaseService) -> None:
         if self._is_executed:
@@ -53,38 +61,45 @@ class UpdateEntityCommand(BaseCommand):
         self._previous_entity: Optional[Entity] = None
         self._new_entity: Optional[Entity] = None
 
-    def execute(self, db_service: DatabaseService) -> bool:
+    def execute(self, db_service: DatabaseService) -> CommandResult:
         try:
             # Fetch current state before update
             current = db_service.get_entity(self.entity_id)
             if not current:
                 logger.error(f"Entity not found for update: {self.entity_id}")
-                return False
+                return CommandResult(
+                    success=False,
+                    message=f"Entity not found: {self.entity_id}",
+                    command_name="UpdateEntityCommand",
+                )
 
             self._previous_entity = current
 
             # Apply updates
             import dataclasses
 
-            # Assuming Entity is a dataclass like Event
             valid_fields = {f.name for f in dataclasses.fields(Entity)}
             clean_data = {
                 k: v for k, v in self.update_data.items() if k in valid_fields
             }
 
             self._new_entity = dataclasses.replace(current, **clean_data)
-            # Entity might not have modified_at, checking usage in create command
-            # It seems Entity has created_at but not explicitly modified_at in usage I saw?
-            # Checking Entity definition would be safer but let's assume similarity or check file.
-            # I will skip modified_at unless I see it.
 
             db_service.insert_entity(self._new_entity)
             self._is_executed = True
             logger.info(f"Updated entity: {self._new_entity.id}")
-            return True
+            return CommandResult(
+                success=True,
+                message="Entity updated.",
+                command_name="UpdateEntityCommand",
+            )
         except Exception as e:
             logger.error(f"Failed to update entity: {e}")
-            return False
+            return CommandResult(
+                success=False,
+                message=f"Failed to update entity: {e}",
+                command_name="UpdateEntityCommand",
+            )
 
     def undo(self, db_service: DatabaseService) -> None:
         if self._is_executed and self._previous_entity:
@@ -103,21 +118,33 @@ class DeleteEntityCommand(BaseCommand):
         self._entity_id = entity_id
         self._backup_entity: Optional[Entity] = None
 
-    def execute(self, db_service: DatabaseService) -> bool:
+    def execute(self, db_service: DatabaseService) -> CommandResult:
         try:
             # Fetch before delete for undo
             self._backup_entity = db_service.get_entity(self._entity_id)
             if not self._backup_entity:
                 logger.error(f"Entity not found for deletion: {self._entity_id}")
-                return False
+                return CommandResult(
+                    success=False,
+                    message=f"Entity not found: {self._entity_id}",
+                    command_name="DeleteEntityCommand",
+                )
 
             db_service.delete_entity(self._entity_id)
             self._is_executed = True
             logger.info(f"Deleted entity: {self._entity_id}")
-            return True
+            return CommandResult(
+                success=True,
+                message="Entity deleted.",
+                command_name="DeleteEntityCommand",
+            )
         except Exception as e:
             logger.error(f"Failed to delete entity: {e}")
-            return False
+            return CommandResult(
+                success=False,
+                message=f"Failed to delete entity: {e}",
+                command_name="DeleteEntityCommand",
+            )
 
     def undo(self, db_service: DatabaseService) -> None:
         if self._is_executed and self._backup_entity:

@@ -1,0 +1,105 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+PySide6 6.10.1 -- Qt runtime 6.10.1 -- Qt compiled 6.10.1
+rootdir: C:\Users\chris\Antigravity Projects\ProjektKraken
+configfile: pytest.ini
+plugins: cov-7.0.0, qt-4.5.0
+collecting ... collected 28 items
+
+tests/unit/test_event_commands.py::test_create_event_success PASSED      [  3%]
+tests/unit/test_event_commands.py::test_create_event_failure PASSED      [  7%]
+tests/unit/test_event_commands.py::test_create_event_undo PASSED         [ 10%]
+tests/unit/test_event_commands.py::test_create_event_undo_not_executed PASSED [ 14%]
+tests/unit/test_event_commands.py::test_update_event_success FAILED      [ 17%]
+tests/unit/test_event_commands.py::test_update_event_not_found FAILED    [ 21%]
+tests/unit/test_event_commands.py::test_update_event_db_error FAILED     [ 25%]
+tests/unit/test_event_commands.py::test_update_event_undo PASSED         [ 28%]
+tests/unit/test_event_commands.py::test_update_event_undo_not_executed PASSED [ 32%]
+tests/unit/test_event_commands.py::test_delete_event_success PASSED      [ 35%]
+tests/unit/test_event_commands.py::test_delete_event_not_found PASSED    [ 39%]
+tests/unit/test_event_commands.py::test_delete_event_db_error PASSED     [ 42%]
+tests/unit/test_event_commands.py::test_delete_event_undo PASSED         [ 46%]
+tests/unit/test_event_commands.py::test_delete_event_undo_not_executed PASSED [ 50%]
+tests/unit/test_main_window_ext.py::test_delete_event_success PASSED     [ 53%]
+tests/unit/test_main_window_ext.py::test_delete_event_sends_command PASSED [ 57%]
+tests/unit/test_main_window_ext.py::test_update_event_success PASSED     [ 60%]
+tests/unit/test_main_window_ext.py::test_update_event_sends_command PASSED [ 64%]
+tests/unit/test_main_window_ext.py::test_add_relation_success PASSED     [ 67%]
+tests/unit/test_main_window_ext.py::test_add_relation_bidirectional PASSED [ 71%]
+tests/unit/test_main_window_ext.py::test_remove_relation_success PASSED  [ 75%]
+tests/unit/test_main_window_ext.py::test_remove_relation_no_current_event PASSED [ 78%]
+tests/unit/test_main_window_ext.py::test_update_relation_success PASSED  [ 82%]
+tests/unit/test_main_window_ext.py::test_update_relation_no_current_event PASSED [ 85%]
+tests/unit/test_main_window_ext.py::test_dock_options_set PASSED         [ 89%]
+tests/unit/test_main_window_ext.py::test_central_widget_is_hidden PASSED [ 92%]
+tests/unit/test_main_window_ext.py::test_all_docks_are_floatable PASSED  [ 96%]
+tests/unit/test_main_window_ext.py::test_load_event_details_no_event PASSED [100%]
+
+================================== FAILURES ===================================
+__________________________ test_update_event_success __________________________
+
+mock_db = <MagicMock id='2024109303392'>
+
+    def test_update_event_success(mock_db):
+        """Test successful event update."""
+        old_event = Event(id="test-id", name="Old Name", lore_date=1000.0, type="generic")
+        update_data = {"name": "New Name", "lore_date": 2000.0, "type": "combat"}
+    
+        mock_db.get_event.return_value = old_event
+        cmd = UpdateEventCommand("test-id", update_data)
+    
+        result = cmd.execute(mock_db)
+    
+>       assert result is True
+E       AssertionError: assert CommandResult(success=True, message='Event updated successfully.', errors={}, command_name='UpdateEventCommand') is True
+
+tests\unit\test_event_commands.py:88: AssertionError
+---------------------------- Captured stderr call -----------------------------
+2025-12-09 22:09:28 - src.commands.event_commands - INFO - Executing UpdateEvent: New Name
+------------------------------ Captured log call ------------------------------
+INFO     src.commands.event_commands:event_commands.py:111 Executing UpdateEvent: New Name
+_________________________ test_update_event_not_found _________________________
+
+mock_db = <MagicMock id='2024109308768'>
+
+    def test_update_event_not_found(mock_db):
+        """Test updating non-existent event."""
+        mock_db.get_event.return_value = None
+        cmd = UpdateEventCommand("test-id", {"name": "New"})
+    
+        result = cmd.execute(mock_db)
+    
+>       assert result is False
+E       AssertionError: assert CommandResult(success=False, message='Cannot update event test-id: Not found', errors={}, command_name='UpdateEventCommand') is False
+
+tests\unit\test_event_commands.py:107: AssertionError
+_________________________ test_update_event_db_error __________________________
+
+mock_db = <MagicMock id='2024110637136'>
+
+    def test_update_event_db_error(mock_db):
+        """Test update with database error."""
+        old_event = Event(id="test-id", name="Old", lore_date=1000.0, type="generic")
+    
+        mock_db.get_event.return_value = old_event
+        mock_db.insert_event.side_effect = Exception("DB Error")
+        cmd = UpdateEventCommand("test-id", {"name": "New"})
+    
+        result = cmd.execute(mock_db)
+    
+>       assert result is False
+E       AssertionError: assert CommandResult(success=False, message='Failed to update event: DB Error', errors={}, command_name='UpdateEventCommand') is False
+
+tests\unit\test_event_commands.py:121: AssertionError
+---------------------------- Captured stderr call -----------------------------
+2025-12-09 22:09:28 - src.commands.event_commands - INFO - Executing UpdateEvent: New
+2025-12-09 22:09:28 - src.commands.event_commands - ERROR - Failed to update event: DB Error
+------------------------------ Captured log call ------------------------------
+INFO     src.commands.event_commands:event_commands.py:111 Executing UpdateEvent: New
+ERROR    src.commands.event_commands:event_commands.py:121 Failed to update event: DB Error
+=========================== short test summary info ===========================
+FAILED tests/unit/test_event_commands.py::test_update_event_success - Asserti...
+FAILED tests/unit/test_event_commands.py::test_update_event_not_found - Asser...
+FAILED tests/unit/test_event_commands.py::test_update_event_db_error - Assert...
+======================== 3 failed, 25 passed in 0.33s =========================

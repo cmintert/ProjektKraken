@@ -1,4 +1,4 @@
-from src.commands.base_command import BaseCommand
+from src.commands.base_command import BaseCommand, CommandResult
 from src.core.events import Event
 from src.services.db_service import DatabaseService
 import logging
@@ -25,21 +25,26 @@ class CreateEventCommand(BaseCommand):
 
         self._previous_state = None
 
-    def execute(self, db_service: DatabaseService) -> bool:
+    def execute(self, db_service: DatabaseService) -> CommandResult:
         """
         Executes the command to insert the event into the database.
-
-        Returns:
-            bool: True if successful, False if an error occurred.
         """
         try:
             logger.info(f"Executing CreateEvent: {self.event.name}")
             db_service.insert_event(self.event)
             self._is_executed = True
-            return True
+            return CommandResult(
+                success=True,
+                message=f"Event '{self.event.name}' created.",
+                command_name="CreateEventCommand",
+            )
         except Exception as e:
             logger.error(f"Failed to create event: {e}")
-            return False
+            return CommandResult(
+                success=False,
+                message=f"Failed to create event: {e}",
+                command_name="CreateEventCommand",
+            )
 
     def undo(self, db_service: DatabaseService) -> None:
         if not self._is_executed:
@@ -71,39 +76,35 @@ class UpdateEventCommand(BaseCommand):
         self._previous_event: Optional[Event] = None
         self._new_event: Optional[Event] = None  # Store result for logs/UI
 
-    def execute(self, db_service: DatabaseService) -> bool:
+    def execute(self, db_service: DatabaseService) -> CommandResult:
         """
         Executes the update.
-        1. Fetches existing event.
-        2. Snapshots it.
-        3. Applies updates from dictionary.
-        4. Saves.
-
-        Returns:
-            bool: True if successful, False if event not found or error.
         """
         # 1. Snapshot current state from DB
         current = db_service.get_event(self.event_id)
         if not current:
-            logger.warning(f"Cannot update event {self.event_id}: Not found")
-            return False
+            return CommandResult(
+                success=False,
+                message=f"Cannot update event {self.event_id}: Not found",
+                command_name="UpdateEventCommand",
+            )
 
         self._previous_event = current
 
         # 2. Apply Updates
-        # We manually update fields available in the dict.
-        # This acts as validation/mapping layer too.
         try:
-            # Create a copy or modify the object?
-            # It's safer to rely on dataclass helper or manual set
-            # Since Event is a dataclass, we can't just obj.__dict__.update safely if we want strictness,
-            # but for now we iterate keys.
+            # Validation
+            if "name" in self.update_data:
+                new_name = self.update_data["name"]
+                if not new_name or not new_name.strip():
+                    return CommandResult(
+                        success=False,
+                        message="Event name cannot be empty.",
+                        command_name="UpdateEventCommand",
+                    )
+
             import dataclasses
 
-            # Create a mutable copy effectively by replacing fields
-            # Note: dataclasses.replace returns a NEW object
-            # Filter update_data to only known fields to avoid errors?
-            # Or assume UI sends correct keys. Let's filter for safety.
             valid_fields = {f.name for f in dataclasses.fields(Event)}
             clean_data = {
                 k: v for k, v in self.update_data.items() if k in valid_fields
@@ -115,10 +116,19 @@ class UpdateEventCommand(BaseCommand):
             logger.info(f"Executing UpdateEvent: {self._new_event.name}")
             db_service.insert_event(self._new_event)
             self._is_executed = True
-            return True
+
+            return CommandResult(
+                success=True,
+                message="Event updated successfully.",
+                command_name="UpdateEventCommand",
+            )
         except Exception as e:
             logger.error(f"Failed to update event: {e}")
-            return False
+            return CommandResult(
+                success=False,
+                message=f"Failed to update event: {e}",
+                command_name="UpdateEventCommand",
+            )
 
     def undo(self, db_service: DatabaseService) -> None:
         """
@@ -142,28 +152,35 @@ class DeleteEventCommand(BaseCommand):
         self.event_id = event_id
         self._backup_event: Optional[Event] = None
 
-    def execute(self, db_service: DatabaseService) -> bool:
+    def execute(self, db_service: DatabaseService) -> CommandResult:
         """
         Executes the command to delete the event.
-
-        Saves the current state of the event for undo purposes.
-
-        Returns:
-            bool: True if successful, False if event not found or error.
         """
         # Backup before delete
         self._backup_event = db_service.get_event(self.event_id)
         if not self._backup_event:
             logger.warning(f"Cannot delete event {self.event_id}: Not found")
-            return False
+            return CommandResult(
+                success=False,
+                message=f"Cannot delete event {self.event_id}: Not found",
+                command_name="DeleteEventCommand",
+            )
 
         try:
             db_service.delete_event(self.event_id)
             self._is_executed = True
-            return True
+            return CommandResult(
+                success=True,
+                message="Event deleted.",
+                command_name="DeleteEventCommand",
+            )
         except Exception as e:
             logger.error(f"Failed to delete event: {e}")
-            return False
+            return CommandResult(
+                success=False,
+                message=f"Failed to delete event: {e}",
+                command_name="DeleteEventCommand",
+            )
 
     def undo(self, db_service: DatabaseService) -> None:
         if self._is_executed and self._backup_event:
