@@ -24,3 +24,15 @@ def db_service():
     service.connect()
     yield service
     service.close()
+
+
+@pytest.fixture(autouse=True)
+def mock_invoke_method():
+    """
+    Mocks QMetaObject.invokeMethod to prevent TypeErrors when called with MagicMocks
+    and to allow verifying thread-safe calls.
+    """
+    from unittest.mock import patch
+
+    with patch("PySide6.QtCore.QMetaObject.invokeMethod") as mock:
+        yield mock

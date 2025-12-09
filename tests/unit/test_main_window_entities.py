@@ -12,8 +12,8 @@ from src.core.entities import Entity
 def main_window(qtbot):
     """Create MainWindow with mocked Worker."""
     with patch("src.app.main.DatabaseWorker"):
-        # Avoid thread start in test
-        with patch("src.app.main.QThread"):
+        # Avoid thread start in test and prevent deferred init crash
+        with patch("src.app.main.QThread"), patch("PySide6.QtCore.QTimer"):
             window = MainWindow()
             window.show()
             qtbot.addWidget(window)
@@ -22,9 +22,10 @@ def main_window(qtbot):
 
 def test_entity_docks_exist(main_window):
     """Test that entity docks are created."""
-    assert main_window.entity_list_dock is not None
+    assert main_window.list_dock is not None
     assert main_window.entity_editor_dock is not None
-    assert main_window.entity_list_dock.toggleViewAction().text() == "Entities List"
+    # "Project Explorer" is the name of the dock now
+    assert main_window.list_dock.toggleViewAction().text() == "Project Explorer"
 
 
 def test_create_entity(main_window):

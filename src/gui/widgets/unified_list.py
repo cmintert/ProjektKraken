@@ -89,6 +89,8 @@ class UnifiedListWidget(QWidget):
         self.color_event = QColor("#0078D4")  # accent_secondary
         self.color_entity = QColor("#FF9900")  # primary
 
+        self._render_list()
+
     def set_data(self, events: List[Event], entities: List[Entity]):
         self._events = events
         self._entities = entities

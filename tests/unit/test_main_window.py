@@ -7,7 +7,10 @@ from src.core.events import Event
 @pytest.fixture
 def main_window(qtbot):
     # Mock DB service to avoid real DB creation
-    with patch("src.app.main.DatabaseWorker") as MockWorker:
+    # Also Mock QTimer to prevent deferred initialization crash in tests
+    with patch("src.app.main.DatabaseWorker") as MockWorker, patch(
+        "PySide6.QtCore.QTimer"
+    ) as MockTimer:
         mock_worker = MockWorker.return_value
         mock_db = mock_worker.db_service
         mock_db.get_all_events.return_value = []
@@ -21,7 +24,7 @@ def test_init_window(main_window):
     assert main_window.timeline is not None
 
 
-def test_load_event_details(main_window):
+def test_load_event_details(main_window, mock_invoke_method):
     # Setup mock return
     ev = Event(id="1", name="Test", lore_date=100.0)
     main_window.worker.db_service.get_event.return_value = ev
@@ -31,8 +34,18 @@ def test_load_event_details(main_window):
     # Call
     main_window.load_event_details("1")
 
-    # Verify worker was called
-    main_window.worker.load_event_details.assert_called_with("1")
+    # Verify worker was called via invokeMethod
+    # invokeMethod(worker, "load_event_details", QueuedConnection, Q_ARG(str, "1"))
+    assert mock_invoke_method.called
+
+    # Check if any call matches the expected pattern
+    found_call = False
+    for call in mock_invoke_method.call_args_list:
+        args, _ = call
+        if args[0] == main_window.worker and args[1] == "load_event_details":
+            found_call = True
+            break
+    assert found_call, "load_event_details was not invoked via QMetaObject.invokeMethod"
 
     # Manually invoke the slot to verify UI update
     main_window.on_event_details_loaded(ev, [], [])

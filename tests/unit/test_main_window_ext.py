@@ -11,7 +11,9 @@ from src.core.events import Event
 @pytest.fixture
 def main_window(qtbot):
     """Create MainWindow with mocked DB."""
-    with patch("src.app.main.DatabaseWorker") as MockWorker:
+    with patch("src.app.main.DatabaseWorker") as MockWorker, patch(
+        "PySide6.QtCore.QTimer"
+    ) as MockTimer:
         mock_worker = MockWorker.return_value
         mock_db = mock_worker.db_service
         mock_db.get_all_events.return_value = []
