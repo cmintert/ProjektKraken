@@ -16,8 +16,6 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QSettings, QThread, Slot, Signal
 from src.core.logging_config import setup_logging, get_logger
 from src.core.theme_manager import ThemeManager
-from src.core.events import Event
-from src.core.entities import Entity
 from src.services.worker import DatabaseWorker
 
 # DatabaseService import removed as MainWindow uses Worker
@@ -480,13 +478,11 @@ class MainWindow(QMainWindow):
         self.command_requested.emit(cmd)
 
     def create_entity(self):
-        new_entity = Entity(name="New Entity", type="Concept")
-        cmd = CreateEntityCommand(new_entity)
+        cmd = CreateEntityCommand()
         self.command_requested.emit(cmd)
 
     def create_event(self):
-        new_event = Event(name="New Event", lore_date=0.0)
-        cmd = CreateEventCommand(new_event)
+        cmd = CreateEventCommand()
         self.command_requested.emit(cmd)
 
     def delete_entity(self, entity_id):

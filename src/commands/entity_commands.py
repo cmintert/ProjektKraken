@@ -16,9 +16,12 @@ class CreateEntityCommand(BaseCommand):
     Command to create a new entity.
     """
 
-    def __init__(self, entity: Entity):
+    def __init__(self, entity_data: dict = None):
         super().__init__()
-        self._entity = entity
+        if entity_data:
+            self._entity = Entity(**entity_data)
+        else:
+            self._entity = Entity(name="New Entity", type="Concept")
 
     def execute(self, db_service: DatabaseService) -> bool:
         try:

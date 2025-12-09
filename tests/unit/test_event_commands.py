@@ -26,19 +26,25 @@ def sample_event():
 
 def test_create_event_success(mock_db, sample_event):
     """Test successful event creation."""
-    cmd = CreateEventCommand(sample_event)
+    # Pass dict representation, or rely on sample_event if refactoring test logic
+    # The command now expects a dict or None
+    cmd = CreateEventCommand(sample_event.to_dict())
 
     result = cmd.execute(mock_db)
 
     assert result is True
-    mock_db.insert_event.assert_called_once_with(sample_event)
+    # The command creates a NEW event object from data, so assertion must check equality of fields
+    # or simple called.
+    mock_db.insert_event.assert_called_once()
+    inserted_event = mock_db.insert_event.call_args[0][0]
+    assert inserted_event.name == sample_event.name
     assert cmd._is_executed is True
 
 
 def test_create_event_failure(mock_db, sample_event):
     """Test event creation failure."""
     mock_db.insert_event.side_effect = Exception("DB Error")
-    cmd = CreateEventCommand(sample_event)
+    cmd = CreateEventCommand(sample_event.to_dict())
 
     result = cmd.execute(mock_db)
 
@@ -48,18 +54,21 @@ def test_create_event_failure(mock_db, sample_event):
 
 def test_create_event_undo(mock_db, sample_event):
     """Test undoing event creation."""
-    cmd = CreateEventCommand(sample_event)
+    cmd = CreateEventCommand(sample_event.to_dict())
     cmd.execute(mock_db)
+
+    # Capture the created event ID
+    created_event = cmd.event
 
     cmd.undo(mock_db)
 
-    mock_db.delete_event.assert_called_once_with(sample_event.id)
+    mock_db.delete_event.assert_called_once_with(created_event.id)
     assert cmd._is_executed is False
 
 
 def test_create_event_undo_not_executed(mock_db, sample_event):
     """Test undo does nothing if not executed."""
-    cmd = CreateEventCommand(sample_event)
+    cmd = CreateEventCommand(sample_event.to_dict())
 
     cmd.undo(mock_db)
 

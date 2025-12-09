@@ -26,23 +26,30 @@ def sample_entity():
 
 def test_create_entity_success(mock_db, sample_entity):
     """Test successful entity creation."""
-    cmd = CreateEntityCommand(sample_entity)
+    # Pass dict
+    cmd = CreateEntityCommand(sample_entity.to_dict())
 
     result = cmd.execute(mock_db)
 
     assert result is True
-    mock_db.insert_entity.assert_called_once_with(sample_entity)
+    # Verify entity was inserted. We can't check identity (new object), but equality
+    mock_db.insert_entity.assert_called_once()
+    inserted = mock_db.insert_entity.call_args[0][0]
+    assert inserted.name == sample_entity.name
     assert cmd._is_executed is True
 
 
 def test_create_entity_undo(mock_db, sample_entity):
     """Test undoing entity creation."""
-    cmd = CreateEntityCommand(sample_entity)
+    cmd = CreateEntityCommand(sample_entity.to_dict())
     cmd.execute(mock_db)
+
+    # Get created ID
+    created = cmd._entity
 
     cmd.undo(mock_db)
 
-    mock_db.delete_entity.assert_called_once_with(sample_entity.id)
+    mock_db.delete_entity.assert_called_once_with(created.id)
     assert cmd._is_executed is False
 
 

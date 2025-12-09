@@ -12,10 +12,18 @@ class CreateEventCommand(BaseCommand):
     Command to create a new event.
     """
 
-    def __init__(self, event: Event):
+    def __init__(self, event_data: dict = None):
         super().__init__()
-        self.event = event
-        self._previous_state = None  # Not needed for creation, but good practice
+        if event_data:
+            # We would need to ensure 'id' is generated if not provided,
+            # likely the helper factories or Event post_init handles it.
+            # Event dataclass auto-generates ID if missing.
+            self.event = Event(**event_data)
+        else:
+            # Default Event
+            self.event = Event(name="New Event", lore_date=0.0)
+
+        self._previous_state = None
 
     def execute(self, db_service: DatabaseService) -> bool:
         """
