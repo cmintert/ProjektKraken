@@ -28,7 +28,8 @@ class Event:
         Converts the Event instance to a dictionary for storage or serialization.
 
         Returns:
-            Dict[str, Any]: A dictionary containing all the event's data, strictly typed keys.
+            Dict[str, Any]: A dictionary containing all the event's data,
+                            strictly typed keys.
         """
         return {
             "id": self.id,

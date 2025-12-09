@@ -3,7 +3,7 @@ Tests for Entity integration in MainWindow.
 """
 
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from src.app.main import MainWindow
 from src.core.entities import Entity
 
@@ -11,7 +11,7 @@ from src.core.entities import Entity
 @pytest.fixture
 def main_window(qtbot):
     """Create MainWindow with mocked Worker."""
-    with patch("src.app.main.DatabaseWorker") as MockWorker:
+    with patch("src.app.main.DatabaseWorker"):
         # Avoid thread start in test
         with patch("src.app.main.QThread"):
             window = MainWindow()

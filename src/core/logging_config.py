@@ -2,7 +2,7 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 from datetime import datetime
-from typing import Optional
+
 
 # Configuration
 LOG_DIR = "logs"
@@ -15,13 +15,14 @@ DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 def setup_logging(debug_mode: bool = False, log_to_console: bool = True) -> None:
     """
-    Configures the root logger with a rotating file handler and optional console handler.
+    Configures the root logger with a rotating file handler
+    and optional console handler.
 
     This function should be called once at the application startup.
 
     Args:
-        debug_mode (bool): If True, sets the root logger level to DEBUG. Defaults to False (INFO).
-        log_to_console (bool): If True, adds a StreamHandler to log to stdout/stderr. Defaults to True.
+        debug_mode (bool): If True, sets level to DEBUG. Defaults to False (INFO).
+        log_to_console (bool): If True, adds a StreamHandler. Defaults to True.
     """
     # 1. Create Log Directory
     try:

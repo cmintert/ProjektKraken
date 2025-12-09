@@ -3,8 +3,7 @@ Additional tests for MainWindow to improve coverage.
 """
 
 import pytest
-from unittest.mock import patch, MagicMock
-from PySide6.QtCore import QSettings
+from unittest.mock import patch
 from src.app.main import MainWindow
 from src.core.events import Event
 
@@ -41,7 +40,7 @@ def test_delete_event_success(main_window):
 
 def test_delete_event_sends_command(main_window):
     """Test delete event sends command to worker."""
-    with patch("src.app.main.DeleteEventCommand") as MockCmd:
+    with patch("src.app.main.DeleteEventCommand"):
         main_window.delete_event("nonexistent")
         main_window.worker.run_command.assert_called_once()
 
@@ -62,7 +61,7 @@ def test_update_event_sends_command(main_window):
     """Test update event sends command to worker."""
     event = Event(id="up2", name="Failed", lore_date=300.0, type="generic")
 
-    with patch("src.app.main.UpdateEventCommand") as MockCmd:
+    with patch("src.app.main.UpdateEventCommand"):
         main_window.update_event(event)
 
         main_window.worker.run_command.assert_called_once()
@@ -104,7 +103,7 @@ def test_remove_relation_success(main_window):
     """Test removing a relation."""
     main_window.event_editor._current_event_id = "evt1"
 
-    with patch("src.app.main.RemoveRelationCommand") as MockCmd:
+    with patch("src.app.main.RemoveRelationCommand"):
         main_window.worker.db_service.get_event.return_value = Event(
             id="evt1", name="Event", lore_date=100.0, type="generic"
         )
@@ -121,7 +120,7 @@ def test_remove_relation_no_current_event(main_window):
     """Test removing relation when no current event."""
     main_window.event_editor._current_event_id = None
 
-    with patch("src.app.main.RemoveRelationCommand") as MockCmd:
+    with patch("src.app.main.RemoveRelationCommand"):
         main_window.remove_relation("rel1")
 
         # Should not try to reload details
@@ -152,7 +151,7 @@ def test_update_relation_no_current_event(main_window):
     """Test updating relation when no current event."""
     main_window.event_editor._current_event_id = None
 
-    with patch("src.app.main.UpdateRelationCommand") as MockCmd:
+    with patch("src.app.main.UpdateRelationCommand"):
         main_window.update_relation("rel1", "tgt", "type")
 
         # Command should still be sent

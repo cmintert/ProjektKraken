@@ -1,7 +1,7 @@
 import sqlite3
 import json
 import logging
-from typing import List, Optional, Dict, Any, Union
+from typing import List, Optional, Dict, Any
 from contextlib import contextmanager
 from src.core.events import Event
 from src.core.entities import Entity
@@ -18,7 +18,8 @@ class DatabaseService:
     def __init__(self, db_path: str = ":memory:"):
         """
         Args:
-            db_path: Path to the .kraken database file. Defaults to :memory: for testing.
+            db_path: Path to the .kraken database file.
+                     Defaults to :memory: for testing.
         """
         self.db_path = db_path
         self._connection: Optional[sqlite3.Connection] = None
@@ -127,7 +128,8 @@ class DatabaseService:
             sqlite3.Error: If the database operation fails.
         """
         sql = """
-            INSERT INTO events (id, type, name, lore_date, lore_duration, description, attributes, created_at, modified_at)
+            INSERT INTO events (id, type, name, lore_date, lore_duration,
+                                description, attributes, created_at, modified_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 type=excluded.type,
@@ -165,7 +167,8 @@ class DatabaseService:
             Optional[Event]: The Event object if found, else None.
         """
         sql = "SELECT * FROM events WHERE id = ?"
-        # We don't necessarily need a transaction for reading, but connection must be open
+        # We don't necessarily need a transaction for reading,
+        # but connection must be open
         if not self._connection:
             self.connect()
 
@@ -228,7 +231,8 @@ class DatabaseService:
             sqlite3.Error: If the database operation fails.
         """
         sql = """
-            INSERT INTO entities (id, type, name, description, attributes, created_at, modified_at)
+            INSERT INTO entities (id, type, name, description,
+                                  attributes, created_at, modified_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 type=excluded.type,
@@ -343,7 +347,8 @@ class DatabaseService:
         created_at = time.time()
 
         sql = """
-            INSERT INTO relations (id, source_id, target_id, rel_type, attributes, created_at)
+            INSERT INTO relations (id, source_id, target_id, rel_type,
+                                   attributes, created_at)
             VALUES (?, ?, ?, ?, ?, ?)
         """
         with self.transaction() as conn:

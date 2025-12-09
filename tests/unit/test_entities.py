@@ -3,7 +3,7 @@ Unit tests for Entity dataclass and DatabaseService entity operations.
 """
 
 import pytest
-import sqlite3
+
 from src.core.entities import Entity
 from src.services.db_service import DatabaseService
 

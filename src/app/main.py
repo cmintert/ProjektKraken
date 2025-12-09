@@ -19,7 +19,6 @@ from src.gui.widgets.entity_list import EntityListWidget
 from src.gui.widgets.entity_editor import EntityEditorWidget
 from src.gui.widgets.timeline import TimelineWidget
 from src.commands.event_commands import (
-    CreateEventCommand,
     DeleteEventCommand,
     UpdateEventCommand,
 )
@@ -160,8 +159,8 @@ class MainWindow(QMainWindow):
         # View Menu
         self.create_view_menu()
 
-        # Seed & Load is now triggered via worker signals or after init in showEvent/post-init
-        # We will trigger init_db in main() or after show.
+        # Seed & Load is now triggered via worker signals or after init
+        # in showEvent/post-init. We will trigger init_db in main() or after show.
         # Let's do it at the end of init
         self.worker.initialize_db()
 
@@ -314,8 +313,8 @@ class MainWindow(QMainWindow):
 
     def seed_data(self):
         # Checking if empty is hard without async check.
-        # For now, let's just skip automatic seeding in this refactor or make it a command.
-        # Ideally, we should have a 'CheckEmpty' command or similar.
+        # For now, let's just skip automatic seeding in this refactor or make it
+        # a command. Ideally, we should have a 'CheckEmpty' command or similar.
         pass
 
     def load_events(self):

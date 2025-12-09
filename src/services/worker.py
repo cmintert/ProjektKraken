@@ -3,8 +3,7 @@ import traceback
 from PySide6.QtCore import QObject, Signal, Slot
 from src.services.db_service import DatabaseService
 from src.commands.base_command import BaseCommand
-from src.core.events import Event
-from src.core.entities import Entity
+
 
 logger = logging.getLogger(__name__)
 
@@ -141,9 +140,9 @@ class DatabaseWorker(QObject):
             self.operation_finished.emit(f"Finished {command_name}.")
 
             # Auto-reload logic?
-            # Ideally the Controller/MainWindow decides what to reload based on the command result,
-            # but to keep it simple, we could emit signals here if needed.
-            # For now, let the Main Window react to 'command_finished' and request reloads.
+            # Ideally the Controller/MainWindow decides what to reload based on
+            # the command result. To keep complexity low, we rely on signals.
+            # Main Window should react to 'command_finished' and request reloads.
 
         except Exception:
             logger.error(f"Command {command_name} failed: {traceback.format_exc()}")

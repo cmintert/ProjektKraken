@@ -1,0 +1,14 @@
+src\core\events.py:31:89: E501 line too long (94 > 88 characters)
+src\services\db_service.py:21:89: E501 line too long (89 > 88 characters)
+src\services\db_service.py:130:74: W291 trailing whitespace
+src\services\db_service.py:169:89: E501 line too long (90 > 88 characters)
+src\services\db_service.py:232:63: W291 trailing whitespace
+src\services\db_service.py:348:71: W291 trailing whitespace
+src\services\worker.py:144:89: E501 line too long (94 > 88 characters)
+src\services\worker.py:145:89: E501 line too long (91 > 88 characters)
+tests\conftest.py:26:1: W391 blank line at end of file
+tests\unit\test_dock_layout.py:2:1: F401 'unittest.mock.MagicMock' imported but unused
+tests\unit\test_dock_layout.py:3:1: F401 'PySide6.QtWidgets.QWidget' imported but unused
+tests\unit\test_entities.py:6:1: F401 'sqlite3' imported but unused
+tests\unit\test_main_window_entities.py:6:1: F401 'unittest.mock.MagicMock' imported but unused
+tests\unit\test_main_window_entities.py:14:50: F841 local variable 'MockWorker' is assigned to but never used

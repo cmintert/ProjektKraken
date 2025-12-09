@@ -1,17 +1,5 @@
-import pytest
-import sqlite3
-import time
-from src.services.db_service import DatabaseService
 from src.core.events import Event
 from src.core.entities import Entity
-
-
-@pytest.fixture
-def db_service():
-    service = DatabaseService(":memory:")
-    service.connect()
-    yield service
-    service.close()
 
 
 def test_event_crud(db_service):
@@ -63,8 +51,6 @@ def test_get_all_events(db_service):
     db_service.insert_event(e1)
     db_service.insert_event(e2)
     db_service.insert_event(e3)
-
-    initial_list = [e1, e2, e3]
 
     events = db_service.get_all_events()
     assert len(events) == 3
