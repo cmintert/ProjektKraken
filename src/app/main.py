@@ -11,6 +11,8 @@ from PySide6.QtWidgets import (
     QDockWidget,
     QWidget,
     QStatusBar,
+    QTextEdit,
+    QTabWidget,
 )
 from PySide6.QtCore import Qt, QSettings, QThread, Slot
 from src.core.logging_config import setup_logging, get_logger
@@ -77,6 +79,8 @@ class MainWindow(QMainWindow):
             | QMainWindow.AllowNestedDocks
             | QMainWindow.AllowTabbedDocks
         )
+        # Set tabs to appear at the top
+        self.setTabPosition(Qt.AllDockWidgetAreas, QTabWidget.North)
 
         # 1. Init Services (Worker Thread)
         self.init_worker()
