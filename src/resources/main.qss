@@ -68,6 +68,16 @@ QTabBar::tab:hover {{
     color: {text_main};
 }}
 
+/* Fix for Tab Content Background */
+QTabWidget::pane {{
+    border: 1px solid {border};
+    background: {app_bg};
+}}
+QTabWidget > QWidget {{
+    background: {app_bg};
+}}
+
+
 QGroupBox {{
     color: {text_main};
     border: 1px solid {border};
@@ -165,6 +175,14 @@ QListWidget, QTableWidget, QTreeWidget {{
     border: 1px solid {border};
     border-radius: 4px;
     outline: none; /* remove dotted focus line */
+}}
+QHeaderView::section {{
+    background-color: {surface};
+    color: {text_main};
+    padding: 4px;
+    border: 1px solid {border};
+    border-top: none;
+    border-left: none; 
 }}
 QListWidget::item {{
     padding: 4px;
