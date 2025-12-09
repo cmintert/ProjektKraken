@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Signal, Qt
 from src.core.events import Event
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
+from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
 
 class EventEditorWidget(QWidget):
@@ -34,6 +35,7 @@ class EventEditorWidget(QWidget):
     )  # source_id, target_id, type, bidirectional
     remove_relation_requested = Signal(str)  # rel_id
     update_relation_requested = Signal(str, str, str)  # rel_id, target_id, rel_type
+    link_clicked = Signal(str)  # target_name
 
     def __init__(self, parent=None):
         """
@@ -69,7 +71,10 @@ class EventEditorWidget(QWidget):
         )
         self.type_edit.setEditable(True)
 
-        self.desc_edit = QTextEdit()
+        self.type_edit.setEditable(True)
+
+        self.desc_edit = WikiTextEdit()
+        self.desc_edit.link_clicked.connect(self.link_clicked.emit)
 
         self.form_layout.addRow("Name:", self.name_edit)
         self.form_layout.addRow("Lore Date:", self.date_edit)

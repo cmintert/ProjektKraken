@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Signal, Qt
 from src.core.entities import Entity
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
+from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
 
 class EntityEditorWidget(QWidget):
@@ -30,6 +31,7 @@ class EntityEditorWidget(QWidget):
     add_relation_requested = Signal(str, str, str, bool)  # src, tgt, type, bi
     remove_relation_requested = Signal(str)
     update_relation_requested = Signal(str, str, str)
+    link_clicked = Signal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -52,7 +54,8 @@ class EntityEditorWidget(QWidget):
         self.type_edit = QComboBox()
         self.type_edit.addItems(["Character", "Location", "Faction", "Item", "Concept"])
         self.type_edit.setEditable(True)
-        self.desc_edit = QTextEdit()
+        self.desc_edit = WikiTextEdit()
+        self.desc_edit.link_clicked.connect(self.link_clicked.emit)
 
         self.form_layout.addRow("Name:", self.name_edit)
         self.form_layout.addRow("Type:", self.type_edit)

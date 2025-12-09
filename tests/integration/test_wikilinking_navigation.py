@@ -1,0 +1,63 @@
+"""
+Integration test for WikiLink navigation in MainWindow.
+"""
+
+import pytest
+from unittest.mock import MagicMock
+from src.app.main import MainWindow
+from src.core.entities import Entity
+
+
+def test_navigate_to_entity_success(qtbot):
+    """Test navigation to an existing entity."""
+    window = MainWindow()
+    # Mock worker
+    window.worker = MagicMock()
+
+    # Setup cache
+    target_entity = Entity(id="ent-1", name="Gandalf", type="Character")
+    window._cached_entities = [target_entity]
+
+    # Mock load method
+    window.load_entity_details = MagicMock()
+
+    # Execute
+    window.navigate_to_entity("Gandalf")
+
+    # Verify
+    window.load_entity_details.assert_called_once_with("ent-1")
+
+    window.close()
+
+
+def test_navigate_to_entity_case_insensitive(qtbot):
+    """Test case-insensitive lookup."""
+    window = MainWindow()
+    window.worker = MagicMock()
+    window._cached_entities = [Entity(id="ent-1", name="Gandalf", type="Character")]
+    window.load_entity_details = MagicMock()
+
+    window.navigate_to_entity("gAnDaLf")
+
+    window.load_entity_details.assert_called_once_with("ent-1")
+    window.close()
+
+
+def test_navigate_to_entity_not_found(qtbot, monkeypatch):
+    """Test behavior when entity is not found."""
+    window = MainWindow()
+    window.worker = MagicMock()
+    window._cached_entities = []
+    window.load_entity_details = MagicMock()
+
+    # Mock MessageBox to prevent blocking
+    mock_msg = MagicMock()
+    monkeypatch.setattr("PySide6.QtWidgets.QMessageBox.information", mock_msg)
+
+    window.navigate_to_entity("Unknown")
+
+    window.load_entity_details.assert_not_called()
+    mock_msg.assert_called_once()
+    assert "not found" in mock_msg.call_args[0][2]
+
+    window.close()

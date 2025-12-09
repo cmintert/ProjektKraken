@@ -41,6 +41,8 @@ from src.commands.relation_commands import (
     UpdateRelationCommand,
 )
 
+from src.commands.wiki_commands import ProcessWikiLinksCommand
+
 # Initialize Logging
 setup_logging(debug_mode=True)
 logger = get_logger(__name__)
@@ -146,6 +148,13 @@ class MainWindow(QMainWindow):
         self.event_editor.add_relation_requested.connect(self.add_relation)
         self.event_editor.remove_relation_requested.connect(self.remove_relation)
         self.event_editor.update_relation_requested.connect(self.update_relation)
+        self.event_editor.link_clicked.connect(self.navigate_to_entity)
+
+        self.entity_editor.save_requested.connect(self.update_entity)
+        self.entity_editor.add_relation_requested.connect(self.add_relation)
+        self.entity_editor.remove_relation_requested.connect(self.remove_relation)
+        self.entity_editor.update_relation_requested.connect(self.update_relation)
+        self.entity_editor.link_clicked.connect(self.navigate_to_entity)
 
         self.entity_editor.save_requested.connect(self.update_entity)
         self.entity_editor.add_relation_requested.connect(self.add_relation)
@@ -492,6 +501,10 @@ class MainWindow(QMainWindow):
         cmd = UpdateEventCommand(event_id, event_data)
         self.command_requested.emit(cmd)
 
+        if "description" in event_data:
+            wiki_cmd = ProcessWikiLinksCommand(event_id, event_data["description"])
+            self.command_requested.emit(wiki_cmd)
+
     def create_entity(self):
         cmd = CreateEntityCommand()
         self.command_requested.emit(cmd)
@@ -513,6 +526,10 @@ class MainWindow(QMainWindow):
         cmd = UpdateEntityCommand(entity_id, entity_data)
         self.command_requested.emit(cmd)
 
+        if "description" in entity_data:
+            wiki_cmd = ProcessWikiLinksCommand(entity_id, entity_data["description"])
+            self.command_requested.emit(wiki_cmd)
+
     def add_relation(self, source_id, target_id, rel_type, bidirectional: bool = False):
         cmd = AddRelationCommand(
             source_id, target_id, rel_type, bidirectional=bidirectional
@@ -526,6 +543,24 @@ class MainWindow(QMainWindow):
     def update_relation(self, rel_id, target_id, rel_type):
         cmd = UpdateRelationCommand(rel_id, target_id, rel_type)
         self.command_requested.emit(cmd)
+
+    def navigate_to_entity(self, name: str):
+        """
+        Navigates to the entity with the given name.
+        Uses cached entities for quick lookup.
+        """
+        logger.info(f"Navigating to entity: {name}")
+        # Case-insensitive match
+        target = next(
+            (e for e in self._cached_entities if e.name.lower() == name.lower()), None
+        )
+
+        if target:
+            self.load_entity_details(target.id)
+        else:
+            QMessageBox.information(
+                self, "Link Not Found", f"Entity '{name}' not found."
+            )
 
 
 def main():
