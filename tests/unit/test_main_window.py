@@ -7,8 +7,9 @@ from src.core.events import Event
 @pytest.fixture
 def main_window(qtbot):
     # Mock DB service to avoid real DB creation
-    with patch("src.app.main.DatabaseService") as MockDB:
-        mock_db = MockDB.return_value
+    with patch("src.app.main.DatabaseWorker") as MockWorker:
+        mock_worker = MockWorker.return_value
+        mock_db = mock_worker.db_service
         mock_db.get_all_events.return_value = []
         window = MainWindow()
         qtbot.addWidget(window)
@@ -23,18 +24,21 @@ def test_init_window(main_window):
 def test_load_event_details(main_window):
     # Setup mock return
     ev = Event(id="1", name="Test", lore_date=100.0)
-    main_window.db_service.get_event.return_value = ev
-    main_window.db_service.get_relations.return_value = []
-    main_window.db_service.get_incoming_relations.return_value = []
+    main_window.worker.db_service.get_event.return_value = ev
+    main_window.worker.db_service.get_relations.return_value = []
+    main_window.worker.db_service.get_incoming_relations.return_value = []
 
     # Call
     main_window.load_event_details("1")
 
+    # Verify worker was called
+    main_window.worker.load_event_details.assert_called_with("1")
+
+    # Manually invoke the slot to verify UI update
+    main_window.on_event_details_loaded(ev, [], [])
+
     # Assert
     assert main_window.event_editor.name_edit.text() == "Test"
-    main_window.db_service.get_event.assert_called_with("1")
-    # Verify timeline sync
-    # We can check if timeline focus was called, but timeline is a real object here.
 
 
 def test_create_event_flow(main_window):
@@ -46,5 +50,6 @@ def test_create_event_flow(main_window):
     # It passes update_event to command.
 
     main_window.update_event(ev)
-    # This creates UpdateEventCommand. We should verify DB call via command?
-    # Command executes on db_service.
+
+    # Verify command was sent to worker
+    main_window.worker.run_command.assert_called_once()
