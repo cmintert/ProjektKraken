@@ -13,9 +13,11 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QListWidgetItem,
     QMenu,
+    QTabWidget,
 )
 from PySide6.QtCore import Signal, Qt
 from src.core.entities import Entity
+from src.gui.widgets.attribute_editor import AttributeEditorWidget
 
 
 class EntityEditorWidget(QWidget):
@@ -37,23 +39,32 @@ class EntityEditorWidget(QWidget):
         self.layout.setContentsMargins(16, 16, 16, 16)
 
         # Form Layout
+        # Tabs Layout
+        self.tabs = QTabWidget()
+        self.layout.addWidget(self.tabs)
+
+        # --- Tab 1: Details ---
+        self.tab_details = QWidget()
+        details_layout = QVBoxLayout(self.tab_details)
+
         self.form_layout = QFormLayout()
-
         self.name_edit = QLineEdit()
-
         self.type_edit = QComboBox()
         self.type_edit.addItems(["Character", "Location", "Faction", "Item", "Concept"])
         self.type_edit.setEditable(True)
-
         self.desc_edit = QTextEdit()
 
         self.form_layout.addRow("Name:", self.name_edit)
         self.form_layout.addRow("Type:", self.type_edit)
         self.form_layout.addRow("Description:", self.desc_edit)
 
-        self.layout.addLayout(self.form_layout)
+        details_layout.addLayout(self.form_layout)
+        self.tabs.addTab(self.tab_details, "Details")
 
-        # Relations Group
+        # --- Tab 2: Relations ---
+        self.tab_relations = QWidget()
+        rel_tab_layout = QVBoxLayout(self.tab_relations)
+
         self.rel_group = QGroupBox("Relationships")
         self.rel_layout = QVBoxLayout()
 
@@ -68,7 +79,6 @@ class EntityEditorWidget(QWidget):
         self.btn_add_rel.clicked.connect(self._on_add_relation)
         rel_btn_layout.addWidget(self.btn_add_rel)
 
-        # Edit/Remove buttons for convenience
         self.btn_edit_rel = QPushButton("Edit")
         self.btn_edit_rel.clicked.connect(self._on_edit_selected_relation)
         rel_btn_layout.addWidget(self.btn_edit_rel)
@@ -79,7 +89,16 @@ class EntityEditorWidget(QWidget):
 
         self.rel_layout.addLayout(rel_btn_layout)
         self.rel_group.setLayout(self.rel_layout)
-        self.layout.addWidget(self.rel_group)
+
+        rel_tab_layout.addWidget(self.rel_group)
+        self.tabs.addTab(self.tab_relations, "Relations")
+
+        # --- Tab 3: Attributes ---
+        self.tab_attributes = QWidget()
+        attr_layout = QVBoxLayout(self.tab_attributes)
+        self.attribute_editor = AttributeEditorWidget()
+        attr_layout.addWidget(self.attribute_editor)
+        self.tabs.addTab(self.tab_attributes, "Attributes")
 
         # Buttons
         btn_layout = QHBoxLayout()
@@ -109,6 +128,9 @@ class EntityEditorWidget(QWidget):
         self.name_edit.setText(entity.name)
         self.type_edit.setCurrentText(entity.type)
         self.desc_edit.setPlainText(entity.description)
+
+        # Load Attributes
+        self.attribute_editor.load_attributes(entity.attributes)
 
         self.rel_list.clear()
 
@@ -144,6 +166,7 @@ class EntityEditorWidget(QWidget):
             type=self.type_edit.currentText(),
             description=self.desc_edit.toPlainText(),
             created_at=self._current_created_at,
+            attributes=self.attribute_editor.get_attributes(),
         )
 
         self.save_requested.emit(updated_entity)
