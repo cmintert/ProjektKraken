@@ -28,8 +28,8 @@ core.logging\_config module
    :show-inheritance:
    :undoc-members:
 
-core.theme_manager module
--------------------------
+core.theme\_manager module
+--------------------------
 
 .. automodule:: core.theme_manager
    :members:
