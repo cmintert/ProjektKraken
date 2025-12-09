@@ -6,8 +6,9 @@ from src.app.main import MainWindow
 
 @pytest.fixture
 def main_window(qtbot):
-    with patch("src.app.main.DatabaseService") as MockDB:
-        mock_db = MockDB.return_value
+    with patch("src.app.main.DatabaseWorker") as MockWorker:
+        mock_worker = MockWorker.return_value
+        mock_db = mock_worker.db_service
         mock_db.get_all_events.return_value = []
         window = MainWindow()
         qtbot.addWidget(window)
