@@ -17,6 +17,13 @@ class CreateEntityCommand(BaseCommand):
     """
 
     def __init__(self, entity_data: dict = None):
+        """
+        Initializes the CreateEntityCommand.
+
+        Args:
+            entity_data (dict, optional): Dictionary containing entity data.
+                                          If None, default values are used.
+        """
         super().__init__()
         if entity_data:
             self._entity = Entity(**entity_data)
@@ -24,6 +31,15 @@ class CreateEntityCommand(BaseCommand):
             self._entity = Entity(name="New Entity", type="Concept")
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
+        """
+        Executes the command to create the entity.
+
+        Args:
+            db_service (DatabaseService): The database service to use.
+
+        Returns:
+            CommandResult: Result object indicating success or failure.
+        """
         try:
             db_service.insert_entity(self._entity)
             self._is_executed = True
@@ -55,6 +71,13 @@ class UpdateEntityCommand(BaseCommand):
     """
 
     def __init__(self, entity_id: str, update_data: dict):
+        """
+        Initializes the UpdateEntityCommand.
+
+        Args:
+            entity_id (str): The ID of the entity to update.
+            update_data (dict): Dictionary of fields to update.
+        """
         super().__init__()
         self.entity_id = entity_id
         self.update_data = update_data
@@ -62,6 +85,15 @@ class UpdateEntityCommand(BaseCommand):
         self._new_entity: Optional[Entity] = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
+        """
+        Executes the update.
+
+        Args:
+            db_service (DatabaseService): The database service to use.
+
+        Returns:
+            CommandResult: Result object containing success status and messages.
+        """
         try:
             # Fetch current state before update
             current = db_service.get_entity(self.entity_id)
@@ -114,11 +146,26 @@ class DeleteEntityCommand(BaseCommand):
     """
 
     def __init__(self, entity_id: str):
+        """
+        Initializes the DeleteEntityCommand.
+
+        Args:
+            entity_id (str): The ID of the entity to delete.
+        """
         super().__init__()
         self._entity_id = entity_id
         self._backup_entity: Optional[Entity] = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
+        """
+        Executes the command to delete the entity.
+
+        Args:
+            db_service (DatabaseService): The database service to use.
+
+        Returns:
+            CommandResult: Result object indicating success or fail (e.g. not found).
+        """
         try:
             # Fetch before delete for undo
             self._backup_entity = db_service.get_entity(self._entity_id)

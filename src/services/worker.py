@@ -135,6 +135,15 @@ class DatabaseWorker(QObject):
         Executes a command object.
         IMPORTANT: The command must NOT already have the db_service injected.
         We inject the worker's thread-local service here.
+
+        Args:
+            command (BaseCommand): The command object to execute.
+
+        Emits:
+            command_finished (CommandResult): The result of the command execution.
+            error_occurred (str): If a critical error prevents execution (though usually captured in result).
+            operation_started (str): Status update.
+            operation_finished (str): Status update.
         """
         if not self.db_service:
             cmd_name = command.__class__.__name__

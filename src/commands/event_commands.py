@@ -13,6 +13,13 @@ class CreateEventCommand(BaseCommand):
     """
 
     def __init__(self, event_data: dict = None):
+        """
+        Initializes the CreateEventCommand.
+
+        Args:
+            event_data (dict, optional): Dictionary containing event data.
+                                         If None, default values are used.
+        """
         super().__init__()
         if event_data:
             # We would need to ensure 'id' is generated if not provided,
@@ -28,6 +35,12 @@ class CreateEventCommand(BaseCommand):
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """
         Executes the command to insert the event into the database.
+
+        Args:
+            db_service (DatabaseService): The database service to use.
+
+        Returns:
+            CommandResult: Result object indicating success or failure.
         """
         try:
             logger.info(f"Executing CreateEvent: {self.event.name}")
@@ -79,6 +92,12 @@ class UpdateEventCommand(BaseCommand):
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """
         Executes the update.
+
+        Args:
+            db_service (DatabaseService): The database service to use.
+
+        Returns:
+            CommandResult: Result object containing success status and messages.
         """
         # 1. Snapshot current state from DB
         current = db_service.get_event(self.event_id)
@@ -148,6 +167,12 @@ class DeleteEventCommand(BaseCommand):
     """
 
     def __init__(self, event_id: str):
+        """
+        Initializes the DeleteEventCommand.
+
+        Args:
+            event_id (str): The ID of the event to delete.
+        """
         super().__init__()
         self.event_id = event_id
         self._backup_event: Optional[Event] = None
@@ -155,6 +180,12 @@ class DeleteEventCommand(BaseCommand):
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """
         Executes the command to delete the event.
+
+        Args:
+            db_service (DatabaseService): The database service to use.
+
+        Returns:
+            CommandResult: Result object indicating success or fail (e.g. not found).
         """
         # Backup before delete
         self._backup_event = db_service.get_event(self.event_id)

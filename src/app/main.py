@@ -434,6 +434,10 @@ class MainWindow(QMainWindow):
     # ----------------------------------------------------------------------
 
     def seed_data(self):
+        """
+        Populate the database with initial data (Deprecated).
+        Current implementation is a placeholder.
+        """
         # Checking if empty is hard without async check.
         # For now, let's just skip automatic seeding in this refactor or make it
         # a command. Ideally, we should have a 'CheckEmpty' command or similar.
