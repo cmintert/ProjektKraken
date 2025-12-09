@@ -137,7 +137,9 @@ class DatabaseWorker(QObject):
         We inject the worker's thread-local service here.
         """
         if not self.db_service:
-            self.error_occurred.emit("Database not ready.")
+            cmd_name = command.__class__.__name__
+            logger.error(f"Database not ready when executing {cmd_name}")
+            self.error_occurred.emit(f"Database not ready for {cmd_name}.")
             return
 
         command_name = command.__class__.__name__
