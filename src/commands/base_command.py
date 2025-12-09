@@ -8,20 +8,19 @@ class BaseCommand(ABC):
     Encapsulates logic to generic execution and undo/redo support.
     """
 
-    def __init__(self, db_service: DatabaseService):
+    def __init__(self):
         """
         Initializes the command.
-
-        Args:
-            db_service (DatabaseService): The database service to operate on.
         """
-        self.db = db_service
         self._is_executed = False
 
     @abstractmethod
-    def execute(self) -> bool:
+    def execute(self, db_service: DatabaseService) -> bool:
         """
         Performs the action.
+
+        Args:
+            db_service (DatabaseService): The database service to operate on.
 
         Returns:
             bool: True if execution was successful, False otherwise.
@@ -29,10 +28,12 @@ class BaseCommand(ABC):
         pass
 
     @abstractmethod
-    def undo(self) -> None:
+    def undo(self, db_service: DatabaseService) -> None:
         """
         Reverts the action.
-        MUST be implemented for every command to support Undo/Redo.
+
+        Args:
+            db_service (DatabaseService): The database service to operate on.
         """
         pass
 

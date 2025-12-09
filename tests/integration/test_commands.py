@@ -15,14 +15,14 @@ def db_service():
 def test_create_event_undo(db_service):
     """Test creating an event and then undoing it."""
     event = Event(name="Temporary Event", lore_date=100.0)
-    cmd = CreateEventCommand(db_service, event)
+    cmd = CreateEventCommand(event)
 
     # Execute
-    assert cmd.execute() is True
+    assert cmd.execute(db_service) is True
     assert db_service.get_event(event.id) is not None
 
     # Undo
-    cmd.undo()
+    cmd.undo(db_service)
     assert db_service.get_event(event.id) is None
 
 
@@ -36,12 +36,12 @@ def test_delete_event_undo(db_service):
     assert db_service.get_event(event.id) is not None
 
     # Execute Delete
-    cmd = DeleteEventCommand(db_service, event.id)
-    assert cmd.execute() is True
+    cmd = DeleteEventCommand(event.id)
+    assert cmd.execute(db_service) is True
     assert db_service.get_event(event.id) is None
 
     # Undo Delete
-    cmd.undo()
+    cmd.undo(db_service)
     restored = db_service.get_event(event.id)
     assert restored is not None
     assert restored.name == "To Be Deleted"

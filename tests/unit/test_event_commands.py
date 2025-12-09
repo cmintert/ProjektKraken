@@ -3,7 +3,7 @@ Unit tests for event commands.
 """
 
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from src.commands.event_commands import (
     CreateEventCommand,
     UpdateEventCommand,
@@ -26,9 +26,9 @@ def sample_event():
 
 def test_create_event_success(mock_db, sample_event):
     """Test successful event creation."""
-    cmd = CreateEventCommand(mock_db, sample_event)
+    cmd = CreateEventCommand(sample_event)
 
-    result = cmd.execute()
+    result = cmd.execute(mock_db)
 
     assert result is True
     mock_db.insert_event.assert_called_once_with(sample_event)
@@ -38,9 +38,9 @@ def test_create_event_success(mock_db, sample_event):
 def test_create_event_failure(mock_db, sample_event):
     """Test event creation failure."""
     mock_db.insert_event.side_effect = Exception("DB Error")
-    cmd = CreateEventCommand(mock_db, sample_event)
+    cmd = CreateEventCommand(sample_event)
 
-    result = cmd.execute()
+    result = cmd.execute(mock_db)
 
     assert result is False
     assert cmd._is_executed is False
@@ -48,10 +48,10 @@ def test_create_event_failure(mock_db, sample_event):
 
 def test_create_event_undo(mock_db, sample_event):
     """Test undoing event creation."""
-    cmd = CreateEventCommand(mock_db, sample_event)
-    cmd.execute()
+    cmd = CreateEventCommand(sample_event)
+    cmd.execute(mock_db)
 
-    cmd.undo()
+    cmd.undo(mock_db)
 
     mock_db.delete_event.assert_called_once_with(sample_event.id)
     assert cmd._is_executed is False
@@ -59,9 +59,9 @@ def test_create_event_undo(mock_db, sample_event):
 
 def test_create_event_undo_not_executed(mock_db, sample_event):
     """Test undo does nothing if not executed."""
-    cmd = CreateEventCommand(mock_db, sample_event)
+    cmd = CreateEventCommand(sample_event)
 
-    cmd.undo()
+    cmd.undo(mock_db)
 
     mock_db.delete_event.assert_not_called()
 
@@ -72,9 +72,9 @@ def test_update_event_success(mock_db):
     new_event = Event(id="test-id", name="New Name", lore_date=2000.0, type="combat")
 
     mock_db.get_event.return_value = old_event
-    cmd = UpdateEventCommand(mock_db, new_event)
+    cmd = UpdateEventCommand(new_event)
 
-    result = cmd.execute()
+    result = cmd.execute(mock_db)
 
     assert result is True
     mock_db.insert_event.assert_called_once_with(new_event)
@@ -85,9 +85,9 @@ def test_update_event_success(mock_db):
 def test_update_event_not_found(mock_db, sample_event):
     """Test updating non-existent event."""
     mock_db.get_event.return_value = None
-    cmd = UpdateEventCommand(mock_db, sample_event)
+    cmd = UpdateEventCommand(sample_event)
 
-    result = cmd.execute()
+    result = cmd.execute(mock_db)
 
     assert result is False
     mock_db.insert_event.assert_not_called()
@@ -100,9 +100,9 @@ def test_update_event_db_error(mock_db):
 
     mock_db.get_event.return_value = old_event
     mock_db.insert_event.side_effect = Exception("DB Error")
-    cmd = UpdateEventCommand(mock_db, new_event)
+    cmd = UpdateEventCommand(new_event)
 
-    result = cmd.execute()
+    result = cmd.execute(mock_db)
 
     assert result is False
     assert cmd._is_executed is False
@@ -114,11 +114,11 @@ def test_update_event_undo(mock_db):
     new_event = Event(id="test-id", name="New", lore_date=2000.0, type="generic")
 
     mock_db.get_event.return_value = old_event
-    cmd = UpdateEventCommand(mock_db, new_event)
-    cmd.execute()
+    cmd = UpdateEventCommand(new_event)
+    cmd.execute(mock_db)
     mock_db.insert_event.reset_mock()
 
-    cmd.undo()
+    cmd.undo(mock_db)
 
     mock_db.insert_event.assert_called_once_with(old_event)
     assert cmd._is_executed is False
@@ -126,9 +126,9 @@ def test_update_event_undo(mock_db):
 
 def test_update_event_undo_not_executed(mock_db, sample_event):
     """Test undo does nothing if update not executed."""
-    cmd = UpdateEventCommand(mock_db, sample_event)
+    cmd = UpdateEventCommand(sample_event)
 
-    cmd.undo()
+    cmd.undo(mock_db)
 
     mock_db.insert_event.assert_not_called()
 
@@ -136,9 +136,9 @@ def test_update_event_undo_not_executed(mock_db, sample_event):
 def test_delete_event_success(mock_db, sample_event):
     """Test successful event deletion."""
     mock_db.get_event.return_value = sample_event
-    cmd = DeleteEventCommand(mock_db, sample_event.id)
+    cmd = DeleteEventCommand(sample_event.id)
 
-    result = cmd.execute()
+    result = cmd.execute(mock_db)
 
     assert result is True
     mock_db.delete_event.assert_called_once_with(sample_event.id)
@@ -149,9 +149,9 @@ def test_delete_event_success(mock_db, sample_event):
 def test_delete_event_not_found(mock_db):
     """Test deleting non-existent event."""
     mock_db.get_event.return_value = None
-    cmd = DeleteEventCommand(mock_db, "nonexistent-id")
+    cmd = DeleteEventCommand("nonexistent-id")
 
-    result = cmd.execute()
+    result = cmd.execute(mock_db)
 
     assert result is False
     mock_db.delete_event.assert_not_called()
@@ -161,9 +161,9 @@ def test_delete_event_db_error(mock_db, sample_event):
     """Test deletion with database error."""
     mock_db.get_event.return_value = sample_event
     mock_db.delete_event.side_effect = Exception("DB Error")
-    cmd = DeleteEventCommand(mock_db, sample_event.id)
+    cmd = DeleteEventCommand(sample_event.id)
 
-    result = cmd.execute()
+    result = cmd.execute(mock_db)
 
     assert result is False
     assert cmd._is_executed is False
@@ -172,11 +172,11 @@ def test_delete_event_db_error(mock_db, sample_event):
 def test_delete_event_undo(mock_db, sample_event):
     """Test undoing event deletion."""
     mock_db.get_event.return_value = sample_event
-    cmd = DeleteEventCommand(mock_db, sample_event.id)
-    cmd.execute()
+    cmd = DeleteEventCommand(sample_event.id)
+    cmd.execute(mock_db)
     mock_db.insert_event.reset_mock()
 
-    cmd.undo()
+    cmd.undo(mock_db)
 
     mock_db.insert_event.assert_called_once_with(sample_event)
     assert cmd._is_executed is False
@@ -184,8 +184,8 @@ def test_delete_event_undo(mock_db, sample_event):
 
 def test_delete_event_undo_not_executed(mock_db):
     """Test undo does nothing if delete not executed."""
-    cmd = DeleteEventCommand(mock_db, "test-id")
+    cmd = DeleteEventCommand("test-id")
 
-    cmd.undo()
+    cmd.undo(mock_db)
 
     mock_db.insert_event.assert_not_called()

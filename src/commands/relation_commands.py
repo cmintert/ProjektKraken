@@ -13,7 +13,6 @@ class AddRelationCommand(BaseCommand):
 
     def __init__(
         self,
-        db_service: DatabaseService,
         source_id: str,
         target_id: str,
         rel_type: str,
@@ -24,14 +23,13 @@ class AddRelationCommand(BaseCommand):
         Initializes the AddRelation command.
 
         Args:
-            db_service (DatabaseService): The database service.
             source_id (str): The ID of the source object.
             target_id (str): The ID of the target object.
             rel_type (str): The type of relationship (e.g. "caused").
             attributes (Dict[str, Any]): Optional metadata for the relationship.
             bidirectional (bool): If True, also creates target->source relation.
         """
-        super().__init__(db_service)
+        super().__init__()
         self.source_id = source_id
         self.target_id = target_id
         self.rel_type = rel_type
@@ -40,7 +38,7 @@ class AddRelationCommand(BaseCommand):
 
         self._created_rel_ids: list[str] = []  # Store for Undo (list of IDs)
 
-    def execute(self) -> bool:
+    def execute(self, db_service: DatabaseService) -> bool:
         """
         Executes insertion of the relation(s).
 
@@ -53,7 +51,7 @@ class AddRelationCommand(BaseCommand):
             )
 
             # Forward
-            fwd_id = self.db.insert_relation(
+            fwd_id = db_service.insert_relation(
                 self.source_id, self.target_id, self.rel_type, self.attributes
             )
             self._created_rel_ids.append(fwd_id)
@@ -62,7 +60,7 @@ class AddRelationCommand(BaseCommand):
                 logger.info(
                     f"Adding reverse relation: {self.target_id} -> {self.source_id}"
                 )
-                rev_id = self.db.insert_relation(
+                rev_id = db_service.insert_relation(
                     self.target_id, self.source_id, self.rel_type, self.attributes
                 )
                 self._created_rel_ids.append(rev_id)
@@ -73,14 +71,14 @@ class AddRelationCommand(BaseCommand):
             logger.error(f"Failed to add relation: {e}")
             return False
 
-    def undo(self) -> None:
+    def undo(self, db_service: DatabaseService) -> None:
         """
         Reverts the action by deleting the created relation(s).
         """
         if self._is_executed and self._created_rel_ids:
             for rel_id in self._created_rel_ids:
                 logger.info(f"Undoing AddRelation: Deleting {rel_id}")
-                self.db.delete_relation(rel_id)
+                db_service.delete_relation(rel_id)
             self._created_rel_ids.clear()
             self._is_executed = False
 
@@ -90,19 +88,18 @@ class RemoveRelationCommand(BaseCommand):
     Command to remove a relationship.
     """
 
-    def __init__(self, db_service: DatabaseService, rel_id: str):
+    def __init__(self, rel_id: str):
         """
         Initializes the RemoveRelation command.
 
         Args:
-            db_service (DatabaseService): The database service.
             rel_id (str): The ID of the relationship to remove.
         """
-        super().__init__(db_service)
+        super().__init__()
         self.rel_id = rel_id
         self._backup_rel = None
 
-    def execute(self) -> bool:
+    def execute(self, db_service: DatabaseService) -> bool:
         """
         Executes the command to delete the relation.
 
@@ -111,14 +108,14 @@ class RemoveRelationCommand(BaseCommand):
         """
         # Backup logic would go here
         try:
-            self.db.delete_relation(self.rel_id)
+            db_service.delete_relation(self.rel_id)
             self._is_executed = True
             return True
         except Exception as e:
             logger.error(f"Failed to delete relation: {e}")
             return False
 
-    def undo(self) -> None:
+    def undo(self, db_service: DatabaseService) -> None:
         """
         Reverts the deletion (Not fully implemented yet, needs backup logic).
         """
@@ -132,7 +129,6 @@ class UpdateRelationCommand(BaseCommand):
 
     def __init__(
         self,
-        db_service: DatabaseService,
         rel_id: str,
         target_id: str,
         rel_type: str,
@@ -142,13 +138,12 @@ class UpdateRelationCommand(BaseCommand):
         Initializes the UpdateRelation command.
 
         Args:
-            db_service (DatabaseService): The database service.
             rel_id (str): The ID of the relationship.
             target_id (str): The new target ID.
             rel_type (str): The new relationship type.
             attributes (Dict[str, Any]): The new attributes.
         """
-        super().__init__(db_service)
+        super().__init__()
         self.rel_id = rel_id
         self.target_id = target_id
         self.rel_type = rel_type
@@ -156,7 +151,7 @@ class UpdateRelationCommand(BaseCommand):
 
         self._previous_state: Dict[str, Any] = None
 
-    def execute(self) -> bool:
+    def execute(self, db_service: DatabaseService) -> bool:
         """
         Executes the update, snapshotting the old state.
 
@@ -164,7 +159,7 @@ class UpdateRelationCommand(BaseCommand):
             bool: True if successful.
         """
         # Snapshot
-        current = self.db.get_relation(self.rel_id)
+        current = db_service.get_relation(self.rel_id)
         if not current:
             logger.warning(f"Cannot update relation {self.rel_id}: Not found")
             return False
@@ -173,7 +168,7 @@ class UpdateRelationCommand(BaseCommand):
 
         try:
             logger.info(f"Updating relation {self.rel_id}")
-            self.db.update_relation(
+            db_service.update_relation(
                 self.rel_id, self.target_id, self.rel_type, self.attributes
             )
             self._is_executed = True
@@ -182,13 +177,13 @@ class UpdateRelationCommand(BaseCommand):
             logger.error(f"Failed to update relation: {e}")
             return False
 
-    def undo(self) -> None:
+    def undo(self, db_service: DatabaseService) -> None:
         """
         Reverts the update.
         """
         if self._is_executed and self._previous_state:
             logger.info(f"Undoing UpdateRelation: {self.rel_id}")
-            self.db.update_relation(
+            db_service.update_relation(
                 self.rel_id,
                 self._previous_state["target_id"],
                 self._previous_state["rel_type"],

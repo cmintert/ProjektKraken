@@ -24,15 +24,15 @@ def test_add_relation_command(db_service):
     db_service.insert_event(t)
 
     # Execute
-    cmd = AddRelationCommand(db_service, s.id, t.id, "test_rel")
-    assert cmd.execute() is True
+    cmd = AddRelationCommand(s.id, t.id, "test_rel")
+    assert cmd.execute(db_service) is True
 
     rels = db_service.get_relations(s.id)
     assert len(rels) == 1
     rel_id = rels[0]["id"]
 
     # Undo
-    cmd.undo()
+    cmd.undo(db_service)
     assert len(db_service.get_relations(s.id)) == 0
     assert db_service.get_relation(rel_id) is None
 
@@ -46,13 +46,13 @@ def test_remove_relation_command(db_service):
     rel_id = db_service.insert_relation(s.id, t.id, "test_rel")
 
     # Execute
-    cmd = RemoveRelationCommand(db_service, rel_id)
-    assert cmd.execute() is True
+    cmd = RemoveRelationCommand(rel_id)
+    assert cmd.execute(db_service) is True
 
     assert db_service.get_relation(rel_id) is None
 
     # Undo (Placeholder check)
-    cmd.undo()
+    cmd.undo(db_service)
     # Currently Undo doesn't restore (Placeholder).
     # We just verify it doesn't crash.
 
@@ -69,15 +69,15 @@ def test_update_relation_command(db_service):
     rel_id = db_service.insert_relation(s.id, t.id, "initial")
 
     # Execute Update
-    cmd = UpdateRelationCommand(db_service, rel_id, t2.id, "updated")
-    assert cmd.execute() is True
+    cmd = UpdateRelationCommand(rel_id, t2.id, "updated")
+    assert cmd.execute(db_service) is True
 
     updated = db_service.get_relation(rel_id)
     assert updated["target_id"] == t2.id
     assert updated["rel_type"] == "updated"
 
     # Undo
-    cmd.undo()
+    cmd.undo(db_service)
     reverted = db_service.get_relation(rel_id)
     assert reverted["target_id"] == t.id
     assert reverted["rel_type"] == "initial"
@@ -91,8 +91,8 @@ def test_add_relation_bidirectional(db_service):
     db_service.insert_event(t)
 
     # Execute
-    cmd = AddRelationCommand(db_service, s.id, t.id, "mutual_link", bidirectional=True)
-    assert cmd.execute() is True
+    cmd = AddRelationCommand(s.id, t.id, "mutual_link", bidirectional=True)
+    assert cmd.execute(db_service) is True
 
     # Verify Forward
     rels_s = db_service.get_relations(s.id)
@@ -107,6 +107,6 @@ def test_add_relation_bidirectional(db_service):
     assert rels_t[0]["rel_type"] == "mutual_link"
 
     # Undo
-    cmd.undo()
+    cmd.undo(db_service)
     assert len(db_service.get_relations(s.id)) == 0
     assert len(db_service.get_relations(t.id)) == 0
