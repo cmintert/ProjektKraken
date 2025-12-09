@@ -1,0 +1,97 @@
+Checked 183 items in 'src'.
+Documented: 91 (49.7%)
+Missing: 92
+
+Missing Docstrings:
+[MODULE] app\main.py
+[CLASS] app\main.py:43 - MainWindow
+[FUNCTION] app\main.py:368 - main
+[FUNCTION] app\main.py:44 - __init__
+[FUNCTION] app\main.py:180 - init_worker
+[FUNCTION] app\main.py:200 - update_status_message
+[FUNCTION] app\main.py:206 - clear_status_message
+[FUNCTION] app\main.py:211 - show_error_message
+[FUNCTION] app\main.py:217 - on_db_initialized
+[FUNCTION] app\main.py:225 - on_events_loaded
+[FUNCTION] app\main.py:230 - on_entities_loaded
+[FUNCTION] app\main.py:234 - on_event_details_loaded
+[FUNCTION] app\main.py:240 - on_entity_details_loaded
+[FUNCTION] app\main.py:245 - on_command_finished
+[FUNCTION] app\main.py:263 - create_view_menu
+[FUNCTION] app\main.py:279 - closeEvent
+[FUNCTION] app\main.py:292 - reset_layout
+[FUNCTION] app\main.py:314 - seed_data
+[FUNCTION] app\main.py:320 - load_events
+[FUNCTION] app\main.py:323 - load_entities
+[FUNCTION] app\main.py:326 - load_event_details
+[FUNCTION] app\main.py:329 - load_entity_details
+[FUNCTION] app\main.py:332 - delete_event
+[FUNCTION] app\main.py:336 - update_event
+[FUNCTION] app\main.py:340 - create_entity
+[FUNCTION] app\main.py:345 - delete_entity
+[FUNCTION] app\main.py:349 - update_entity
+[FUNCTION] app\main.py:353 - add_relation
+[FUNCTION] app\main.py:359 - remove_relation
+[FUNCTION] app\main.py:363 - update_relation
+[MODULE] app\__init__.py
+[MODULE] commands\base_command.py
+[FUNCTION] commands\base_command.py:41 - is_executed
+[FUNCTION] commands\entity_commands.py:19 - __init__
+[FUNCTION] commands\entity_commands.py:23 - execute
+[FUNCTION] commands\entity_commands.py:33 - undo
+[FUNCTION] commands\entity_commands.py:45 - __init__
+[FUNCTION] commands\entity_commands.py:50 - execute
+[FUNCTION] commands\entity_commands.py:67 - undo
+[FUNCTION] commands\entity_commands.py:79 - __init__
+[FUNCTION] commands\entity_commands.py:84 - execute
+[FUNCTION] commands\entity_commands.py:100 - undo
+[MODULE] commands\event_commands.py
+[FUNCTION] commands\event_commands.py:15 - __init__
+[FUNCTION] commands\event_commands.py:36 - undo
+[FUNCTION] commands\event_commands.py:104 - __init__
+[FUNCTION] commands\event_commands.py:132 - undo
+[MODULE] commands\relation_commands.py
+[MODULE] commands\__init__.py
+[MODULE] core\entities.py
+[MODULE] core\events.py
+[MODULE] core\logging_config.py
+[MODULE] core\theme_manager.py
+[FUNCTION] core\theme_manager.py:17 - __new__
+[FUNCTION] core\theme_manager.py:22 - __init__
+[MODULE] core\__init__.py
+[MODULE] gui\__init__.py
+[MODULE] gui\widgets\entity_editor.py
+[FUNCTION] gui\widgets\entity_editor.py:32 - __init__
+[FUNCTION] gui\widgets\entity_editor.py:159 - _on_add_relation
+[FUNCTION] gui\widgets\entity_editor.py:187 - _show_rel_menu
+[FUNCTION] gui\widgets\entity_editor.py:200 - _on_remove_relation_item
+[FUNCTION] gui\widgets\entity_editor.py:211 - _on_edit_relation
+[FUNCTION] gui\widgets\entity_editor.py:229 - _on_edit_selected_relation
+[FUNCTION] gui\widgets\entity_editor.py:234 - _on_remove_selected_relation
+[MODULE] gui\widgets\entity_list.py
+[FUNCTION] gui\widgets\entity_list.py:27 - __init__
+[FUNCTION] gui\widgets\entity_list.py:86 - _on_selection_changed
+[FUNCTION] gui\widgets\entity_list.py:95 - _on_delete_clicked
+[MODULE] gui\widgets\event_editor.py
+[MODULE] gui\widgets\event_list.py
+[FUNCTION] gui\widgets\event_list.py:94 - _on_selection_changed
+[FUNCTION] gui\widgets\event_list.py:103 - _on_delete_clicked
+[MODULE] gui\widgets\timeline.py
+[CLASS] gui\widgets\timeline.py:106 - TimelineScene
+[CLASS] gui\widgets\timeline.py:113 - TimelineView
+[FUNCTION] gui\widgets\timeline.py:35 - __init__
+[FUNCTION] gui\widgets\timeline.py:53 - boundingRect
+[FUNCTION] gui\widgets\timeline.py:59 - paint
+[FUNCTION] gui\widgets\timeline.py:107 - __init__
+[FUNCTION] gui\widgets\timeline.py:119 - __init__
+[FUNCTION] gui\widgets\timeline.py:240 - set_events
+[FUNCTION] gui\widgets\timeline.py:281 - wheelEvent
+[FUNCTION] gui\widgets\timeline.py:297 - mousePressEvent
+[FUNCTION] gui\widgets\timeline.py:331 - __init__
+[FUNCTION] gui\widgets\timeline.py:357 - set_events
+[FUNCTION] gui\widgets\timeline.py:360 - focus_event
+[FUNCTION] gui\widgets\timeline.py:363 - fit_view
+[MODULE] services\db_service.py
+[MODULE] services\worker.py
+[FUNCTION] services\worker.py:33 - __init__
+[MODULE] services\__init__.py

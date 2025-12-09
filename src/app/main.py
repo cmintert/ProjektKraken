@@ -1,3 +1,8 @@
+"""
+Main Application Entry Point.
+Responsible for initializing the MainWindow, Workers, and UI components.
+"""
+
 import sys
 
 from PySide6.QtWidgets import (
@@ -41,7 +46,27 @@ logger = get_logger(__name__)
 
 
 class MainWindow(QMainWindow):
+    """
+    The main application window.
+
+    Acts as the central controller for the UI, managing:
+    - Dockable widgets (Lists, Editors, Timeline).
+    - DatabaseWorker thread for async operations.
+    - Signal/Slot connections between UI and persistent storage.
+
+    Adheres to "Dumb UI" philosophy: logic delegates to Worker/Commands.
+    """
+
     def __init__(self):
+        """
+        Initializes the MainWindow.
+
+        Sets up:
+        - Window Geometry & Title.
+        - Dock Widgets & Layouts.
+        - Worker Thread & Service connections.
+        - UI Signals & View Menu.
+        """
         super().__init__()
         self.setWindowTitle("Project Kraken - v0.2.0 (Editor Phase)")
         self.resize(1280, 720)
@@ -178,6 +203,10 @@ class MainWindow(QMainWindow):
             self.reset_layout()
 
     def init_worker(self):
+        """
+        Initializes the DatabaseWorker and moves it to a separate thread.
+        Connects all worker signals to MainWindow slots.
+        """
         self.worker_thread = QThread()
         self.worker = DatabaseWorker("world.kraken")
         self.worker.moveToThread(self.worker_thread)
@@ -198,23 +227,47 @@ class MainWindow(QMainWindow):
 
     @Slot(str)
     def update_status_message(self, message: str):
+        """
+        Updates the status bar message and sets cursor to Wait.
+
+        Args:
+            message (str): The message to display.
+        """
         self.status_bar.showMessage(message)
         # Busy cursor
         QApplication.setOverrideCursor(Qt.WaitCursor)
 
     @Slot(str)
     def clear_status_message(self, message: str):
+        """
+        Clears the status bar message after a delay and restores cursor.
+
+        Args:
+            message (str): The final completion message.
+        """
         self.status_bar.showMessage(message, 3000)
         QApplication.restoreOverrideCursor()
 
     @Slot(str)
     def show_error_message(self, message: str):
+        """
+        Displays an error message in the status bar and logs it.
+
+        Args:
+            message (str): The error description.
+        """
         self.status_bar.showMessage(f"Error: {message}", 5000)
         QApplication.restoreOverrideCursor()
         logger.error(message)
 
     @Slot(bool)
     def on_db_initialized(self, success):
+        """
+        Handler for database initialization result.
+
+        Args:
+            success (bool): True if connection succeeded, False otherwise.
+        """
         if success:
             self.load_events()
             self.load_entities()
@@ -223,26 +276,61 @@ class MainWindow(QMainWindow):
 
     @Slot(list)
     def on_events_loaded(self, events):
+        """
+        Updates the Event List and Timeline with loaded events.
+
+        Args:
+            events (list): List of Event domain objects.
+        """
         self.event_list.set_events(events)
         self.timeline.set_events(events)
 
     @Slot(list)
     def on_entities_loaded(self, entities):
+        """
+        Updates the Entity List with loaded entities.
+
+        Args:
+            entities (list): List of Entity domain objects.
+        """
         self.entity_list.set_entities(entities)
 
     @Slot(object, list, list)
     def on_event_details_loaded(self, event, relations, incoming):
+        """
+        Populates the Event Editor with detailed event data.
+
+        Args:
+            event (Event): The event object.
+            relations (list): Outgoing relations.
+            incoming (list): Incoming relations.
+        """
         self.editor_dock.raise_()
         self.event_editor.load_event(event, relations, incoming)
         self.timeline.focus_event(event.id)
 
     @Slot(object, list, list)
     def on_entity_details_loaded(self, entity, relations, incoming):
+        """
+        Populates the Entity Editor with detailed entity data.
+
+        Args:
+            entity (Entity): The entity object.
+            relations (list): Outgoing relations.
+            incoming (list): Incoming relations.
+        """
         self.entity_editor_dock.raise_()
         self.entity_editor.load_entity(entity, relations, incoming)
 
     @Slot(str, bool)
     def on_command_finished(self, command_name, success):
+        """
+        Handles completion of async commands, triggering necessary UI refreshes.
+
+        Args:
+            command_name (str): Name of the executed command.
+            success (bool): Whether the command succeeded.
+        """
         # Determine what to reload based on command
         if not success:
             return
@@ -261,6 +349,7 @@ class MainWindow(QMainWindow):
                 self.load_entity_details(self.entity_editor._current_entity_id)
 
     def create_view_menu(self):
+        """Creates the 'View' menu for toggling docks and resetting layout."""
         menu_bar = self.menuBar()
         view_menu = menu_bar.addMenu("View")
 
@@ -277,6 +366,10 @@ class MainWindow(QMainWindow):
         reset_action.triggered.connect(self.reset_layout)
 
     def closeEvent(self, event):
+        """
+        Handles application close event.
+        Saves window geometry/state and strictly cleans up worker thread.
+        """
         # Save State
         from PySide6.QtCore import QSettings
 
@@ -290,6 +383,7 @@ class MainWindow(QMainWindow):
         event.accept()
 
     def reset_layout(self):
+        """Restores the default docking layout configuration."""
         # Restore default docking
         self.addDockWidget(Qt.LeftDockWidgetArea, self.list_dock)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.entity_list_dock)
@@ -318,15 +412,19 @@ class MainWindow(QMainWindow):
         pass
 
     def load_events(self):
+        """Requests loading of all events."""
         self.worker.load_events()
 
     def load_entities(self):
+        """Requests loading of all entities."""
         self.worker.load_entities()
 
     def load_event_details(self, event_id: str):
+        """Requests loading details for a specific event."""
         self.worker.load_event_details(event_id)
 
     def load_entity_details(self, entity_id: str):
+        """Requests loading details for a specific entity."""
         self.worker.load_entity_details(entity_id)
 
     def delete_event(self, event_id):
@@ -366,6 +464,10 @@ class MainWindow(QMainWindow):
 
 
 def main():
+    """
+    Main entry point.
+    Configures High DPI scaling, Theme, and launches MainWindow.
+    """
     logger.info("Starting Application...")
     # 1. High DPI Scaling (Spec 2.2)
     QApplication.setHighDpiScaleFactorRoundingPolicy(

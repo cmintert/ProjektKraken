@@ -1,3 +1,8 @@
+"""
+Database Worker Module.
+Handles asynchronous database operations to keep the UI responsive.
+"""
+
 import logging
 import traceback
 from PySide6.QtCore import QObject, Signal, Slot
@@ -31,6 +36,12 @@ class DatabaseWorker(QObject):
     operation_finished = Signal(str)
 
     def __init__(self, db_path: str = "world.kraken"):
+        """
+        Initializes the worker.
+
+        Args:
+            db_path (str): Path to the database file.
+        """
         super().__init__()
         self.db_path = db_path
         self.db_service = None

@@ -1,3 +1,9 @@
+"""
+Database Service Module.
+Provides the low-level SQL interface to the SQLite database.
+Follows the Hybrid Schema (Strict Columns + JSON Attributes).
+"""
+
 import sqlite3
 import json
 import logging

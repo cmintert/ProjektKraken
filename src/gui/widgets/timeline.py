@@ -1,3 +1,9 @@
+"""
+Timeline Widget Module.
+Provides the graphical timeline visualization using QGraphicsView/Scene.
+Supports zooming, panning, and event visualization.
+"""
+
 from PySide6.QtWidgets import (
     QGraphicsView,
     QGraphicsScene,
@@ -51,12 +57,21 @@ class EventItem(QGraphicsItem):
         )
 
     def boundingRect(self) -> QRectF:
+        """
+        Defines the clickable and redrawable area of the item.
+        Includes the diamond icon and the text label.
+        Refreshed when selection changes (border width).
+        """
         # Bounding box includes Diamond + Text
         return QRectF(
             -self.ICON_SIZE, -self.ICON_SIZE, self.MAX_WIDTH, self.ICON_SIZE * 2
         )
 
     def paint(self, painter, option, widget=None):
+        """
+        Custom painting for the Event Marker.
+        Draws a diamond shape and a text label.
+        """
         painter.setRenderHint(QPainter.Antialiasing)
 
         # 1. Draw Diamond Icon
@@ -104,6 +119,11 @@ class EventItem(QGraphicsItem):
 
 
 class TimelineScene(QGraphicsScene):
+    """
+    Custom Graphics Scene for the Timeline.
+    Sets the background color consistent with the app theme.
+    """
+
     def __init__(self, parent=None):
         super().__init__(parent)
         theme = ThemeManager().get_theme()
@@ -111,12 +131,26 @@ class TimelineScene(QGraphicsScene):
 
 
 class TimelineView(QGraphicsView):
+    """
+    Custom Graphics View for displaying the TimelineScene.
+    Handles:
+    - Rendering the infinite ruler and grid (Foreground).
+    - Zoom/Pan interaction.
+    - Coordinate mapping between dates and pixels.
+    """
+
     event_selected = Signal(str)
 
     LANE_HEIGHT = 40
     RULER_HEIGHT = 40
 
+    LANE_HEIGHT = 40
+    RULER_HEIGHT = 40
+
     def __init__(self, parent=None):
+        """
+        Initializes the TimelineView.
+        """
         super().__init__(parent)
         self.scene = TimelineScene(self)
         self.setScene(self.scene)
@@ -238,6 +272,13 @@ class TimelineView(QGraphicsView):
         painter.restore()
 
     def set_events(self, events):
+        """
+        Clears the scene and repopulates it with event items.
+        Applies a modulo-based layout algorithm to prevent overlapping.
+
+        Args:
+            events (list): List of Event domain objects.
+        """
         self.scene.clear()
 
         # Sort by Date
@@ -279,6 +320,10 @@ class TimelineView(QGraphicsView):
         self.fitInView(self.scene.sceneRect(), Qt.KeepAspectRatio)
 
     def wheelEvent(self, event):
+        """
+        Handles mouse wheel events for zooming.
+        Zooms in/out centered on the mouse position.
+        """
         zoom_in = 1.25
         zoom_out = 1 / zoom_in
         factor = zoom_in if event.angleDelta().y() > 0 else zoom_out
@@ -295,6 +340,9 @@ class TimelineView(QGraphicsView):
         self.translate(delta.x(), delta.y())
 
     def mousePressEvent(self, event):
+        """
+        Handles mouse clicks. Emits 'event_selected' if an EventItem is clicked.
+        """
         super().mousePressEvent(event)
 
         try:
@@ -355,10 +403,13 @@ class TimelineWidget(QWidget):
         self.layout.addWidget(self.view)
 
     def set_events(self, events):
+        """Passes the event list to the view."""
         self.view.set_events(events)
 
     def focus_event(self, event_id: str):
+        """Centers the timeline on the given event."""
         self.view.focus_event(event_id)
 
     def fit_view(self):
+        """Fits all events within the view."""
         self.view.fit_all()
