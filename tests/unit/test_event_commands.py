@@ -69,23 +69,29 @@ def test_create_event_undo_not_executed(mock_db, sample_event):
 def test_update_event_success(mock_db):
     """Test successful event update."""
     old_event = Event(id="test-id", name="Old Name", lore_date=1000.0, type="generic")
-    new_event = Event(id="test-id", name="New Name", lore_date=2000.0, type="combat")
+    update_data = {"name": "New Name", "lore_date": 2000.0, "type": "combat"}
 
     mock_db.get_event.return_value = old_event
-    cmd = UpdateEventCommand(new_event)
+    cmd = UpdateEventCommand("test-id", update_data)
 
     result = cmd.execute(mock_db)
 
     assert result is True
-    mock_db.insert_event.assert_called_once_with(new_event)
+    # Verify DB was called with a new event object containing updated values
+    args, _ = mock_db.insert_event.call_args
+    updated_event = args[0]
+    assert updated_event.id == "test-id"
+    assert updated_event.name == "New Name"
+    assert updated_event.lore_date == 2000.0
+    assert updated_event.type == "combat"
     assert cmd._is_executed is True
     assert cmd._previous_event == old_event
 
 
-def test_update_event_not_found(mock_db, sample_event):
+def test_update_event_not_found(mock_db):
     """Test updating non-existent event."""
     mock_db.get_event.return_value = None
-    cmd = UpdateEventCommand(sample_event)
+    cmd = UpdateEventCommand("test-id", {"name": "New"})
 
     result = cmd.execute(mock_db)
 
@@ -96,11 +102,10 @@ def test_update_event_not_found(mock_db, sample_event):
 def test_update_event_db_error(mock_db):
     """Test update with database error."""
     old_event = Event(id="test-id", name="Old", lore_date=1000.0, type="generic")
-    new_event = Event(id="test-id", name="New", lore_date=2000.0, type="generic")
 
     mock_db.get_event.return_value = old_event
     mock_db.insert_event.side_effect = Exception("DB Error")
-    cmd = UpdateEventCommand(new_event)
+    cmd = UpdateEventCommand("test-id", {"name": "New"})
 
     result = cmd.execute(mock_db)
 
@@ -111,10 +116,10 @@ def test_update_event_db_error(mock_db):
 def test_update_event_undo(mock_db):
     """Test undoing event update."""
     old_event = Event(id="test-id", name="Old", lore_date=1000.0, type="generic")
-    new_event = Event(id="test-id", name="New", lore_date=2000.0, type="generic")
+    update_data = {"name": "New"}
 
     mock_db.get_event.return_value = old_event
-    cmd = UpdateEventCommand(new_event)
+    cmd = UpdateEventCommand("test-id", update_data)
     cmd.execute(mock_db)
     mock_db.insert_event.reset_mock()
 
@@ -124,9 +129,9 @@ def test_update_event_undo(mock_db):
     assert cmd._is_executed is False
 
 
-def test_update_event_undo_not_executed(mock_db, sample_event):
+def test_update_event_undo_not_executed(mock_db):
     """Test undo does nothing if update not executed."""
-    cmd = UpdateEventCommand(sample_event)
+    cmd = UpdateEventCommand("test-id", {"name": "New"})
 
     cmd.undo(mock_db)
 

@@ -45,39 +45,67 @@ class CreateEventCommand(BaseCommand):
 class UpdateEventCommand(BaseCommand):
     """
     Command to update an existing event.
+    Accepts a dictionary of changes to apply to the existing event.
     Snapshots the clean state before update for undo.
     """
 
-    def __init__(self, event: Event):
+    def __init__(self, event_id: str, update_data: dict):
         """
         Initializes the Update command.
 
         Args:
-            event (Event): The event object with updated values (but same ID).
+            event_id (str): The ID of the event to update.
+            update_data (dict): Dictionary of fields to update.
         """
         super().__init__()
-        self.new_event = event
+        self.event_id = event_id
+        self.update_data = update_data
         self._previous_event: Optional[Event] = None
+        self._new_event: Optional[Event] = None  # Store result for logs/UI
 
     def execute(self, db_service: DatabaseService) -> bool:
         """
-        Executes the update. Validates that the event exists first.
+        Executes the update.
+        1. Fetches existing event.
+        2. Snapshots it.
+        3. Applies updates from dictionary.
+        4. Saves.
 
         Returns:
             bool: True if successful, False if event not found or error.
         """
         # 1. Snapshot current state from DB
-        current = db_service.get_event(self.new_event.id)
+        current = db_service.get_event(self.event_id)
         if not current:
-            logger.warning(f"Cannot update event {self.new_event.id}: Not found")
+            logger.warning(f"Cannot update event {self.event_id}: Not found")
             return False
 
         self._previous_event = current
 
-        # 2. Apply Update
+        # 2. Apply Updates
+        # We manually update fields available in the dict.
+        # This acts as validation/mapping layer too.
         try:
-            logger.info(f"Executing UpdateEvent: {self.new_event.name}")
-            db_service.insert_event(self.new_event)  # insert_event is an upsert
+            # Create a copy or modify the object?
+            # It's safer to rely on dataclass helper or manual set
+            # Since Event is a dataclass, we can't just obj.__dict__.update safely if we want strictness,
+            # but for now we iterate keys.
+            import dataclasses
+
+            # Create a mutable copy effectively by replacing fields
+            # Note: dataclasses.replace returns a NEW object
+            # Filter update_data to only known fields to avoid errors?
+            # Or assume UI sends correct keys. Let's filter for safety.
+            valid_fields = {f.name for f in dataclasses.fields(Event)}
+            clean_data = {
+                k: v for k, v in self.update_data.items() if k in valid_fields
+            }
+
+            self._new_event = dataclasses.replace(current, **clean_data)
+            self._new_event.modified_at = __import__("time").time()
+
+            logger.info(f"Executing UpdateEvent: {self._new_event.name}")
+            db_service.insert_event(self._new_event)
             self._is_executed = True
             return True
         except Exception as e:

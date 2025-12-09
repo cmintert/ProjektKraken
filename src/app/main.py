@@ -11,7 +11,6 @@ from PySide6.QtWidgets import (
     QDockWidget,
     QWidget,
     QStatusBar,
-    QTextEdit,
     QTabWidget,
 )
 from PySide6.QtCore import Qt, QSettings, QThread, Slot, Signal
@@ -41,8 +40,6 @@ from src.commands.relation_commands import (
     RemoveRelationCommand,
     UpdateRelationCommand,
 )
-from src.core.events import Event
-from src.core.entities import Entity
 
 # Initialize Logging
 setup_logging(debug_mode=True)
@@ -473,8 +470,13 @@ class MainWindow(QMainWindow):
         cmd = DeleteEventCommand(event_id)
         self.command_requested.emit(cmd)
 
-    def update_event(self, event: Event):
-        cmd = UpdateEventCommand(event)
+    def update_event(self, event_data: dict):
+        event_id = event_data.get("id")
+        if not event_id:
+            logger.error("Attempted to update event without ID.")
+            return
+
+        cmd = UpdateEventCommand(event_id, event_data)
         self.command_requested.emit(cmd)
 
     def create_entity(self):
@@ -491,8 +493,13 @@ class MainWindow(QMainWindow):
         cmd = DeleteEntityCommand(entity_id)
         self.command_requested.emit(cmd)
 
-    def update_entity(self, entity: Entity):
-        cmd = UpdateEntityCommand(entity)
+    def update_entity(self, entity_data: dict):
+        entity_id = entity_data.get("id")
+        if not entity_id:
+            logger.error("Attempted to update entity without ID.")
+            return
+
+        cmd = UpdateEntityCommand(entity_id, entity_data)
         self.command_requested.emit(cmd)
 
     def add_relation(self, source_id, target_id, rel_type, bidirectional: bool = False):

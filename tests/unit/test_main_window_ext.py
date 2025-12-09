@@ -49,23 +49,34 @@ def test_delete_event_sends_command(main_window):
 
 def test_update_event_success(main_window):
     """Test successful event update."""
-    event = Event(id="up1", name="Updated", lore_date=200.0, type="combat")
-    main_window.worker.db_service.get_event.return_value = event
+    event_data = {"id": "up1", "name": "Updated", "lore_date": 200.0, "type": "combat"}
+    # We mock the DB get to return something valid if needed,
+    # but here we just check if command is emitted or created.
+    # Actually, in MainWindow test, we are checking if it calls emit.
 
     with patch("src.app.main.UpdateEventCommand") as MockCmd:
-        main_window.update_event(event)
+        main_window.update_event(event_data)
 
-        MockCmd.assert_called_once()
+        MockCmd.assert_called_once_with("up1", event_data)
+        # Verify command was sent to worker via signal
+        # Since usage of signals + mocks can be tricky without Qt loop processing,
+        # we check if the worker's slot was called.
+        # NOTE: Real signals connected to Mocks might not fire synchronously without an event loop spin.
+        # But previous tests (delete) suggest it works or we should use qtbot.
+        # Let's try direct check first as per other tests.
         main_window.worker.run_command.assert_called_once()
+        args = main_window.worker.run_command.call_args[0]
+        assert args[0] == MockCmd.return_value
 
 
 def test_update_event_sends_command(main_window):
     """Test update event sends command to worker."""
-    event = Event(id="up2", name="Failed", lore_date=300.0, type="generic")
+    event_data = {"id": "up2", "name": "Failed", "lore_date": 300.0, "type": "generic"}
 
-    with patch("src.app.main.UpdateEventCommand"):
-        main_window.update_event(event)
+    with patch("src.app.main.UpdateEventCommand") as MockCmd:
+        main_window.update_event(event_data)
 
+        MockCmd.assert_called_once_with("up2", event_data)
         main_window.worker.run_command.assert_called_once()
 
 

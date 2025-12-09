@@ -4,160 +4,167 @@ cachedir: .pytest_cache
 PySide6 6.10.1 -- Qt runtime 6.10.1 -- Qt compiled 6.10.1
 rootdir: C:\Users\chris\Antigravity Projects\ProjektKraken
 configfile: pytest.ini
-testpaths: tests
 plugins: cov-7.0.0, qt-4.5.0
-collecting ... collected 123 items
+collecting ... collected 130 items
 
 tests/integration/test_commands.py::test_create_event_undo PASSED        [  0%]
 tests/integration/test_commands.py::test_delete_event_undo PASSED        [  1%]
 tests/unit/test_db_service.py::test_event_crud PASSED                    [  2%]
 tests/unit/test_db_service.py::test_entity_crud PASSED                   [  3%]
-tests/unit/test_db_service.py::test_get_all_events PASSED                [  4%]
+tests/unit/test_db_service.py::test_get_all_events PASSED                [  3%]
 tests/unit/test_db_service.py::test_relation_crud PASSED                 [  4%]
 tests/unit/test_dock_layout.py::test_timeline_is_dockable PASSED         [  5%]
 tests/unit/test_dock_layout.py::test_view_menu_includes_timeline PASSED  [  6%]
-tests/unit/test_dock_layout.py::test_dock_features_enabled PASSED        [  7%]
-tests/unit/test_entities.py::test_entity_serialization PASSED            [  8%]
+tests/unit/test_dock_layout.py::test_dock_features_enabled PASSED        [  6%]
+tests/unit/test_entities.py::test_entity_serialization PASSED            [  7%]
 tests/unit/test_entities.py::test_insert_and_get_entity PASSED           [  8%]
 tests/unit/test_entities.py::test_get_all_entities PASSED                [  9%]
 tests/unit/test_entities.py::test_delete_entity PASSED                   [ 10%]
-tests/unit/test_entities.py::test_update_entity_via_insert PASSED        [ 11%]
-tests/unit/test_entity_commands.py::test_create_entity_success PASSED    [ 12%]
-tests/unit/test_entity_commands.py::test_create_entity_undo PASSED       [ 13%]
+tests/unit/test_entities.py::test_update_entity_via_insert PASSED        [ 10%]
+tests/unit/test_entity_commands.py::test_create_entity_success PASSED    [ 11%]
+tests/unit/test_entity_commands.py::test_create_entity_undo PASSED       [ 12%]
 tests/unit/test_entity_commands.py::test_update_entity_success PASSED    [ 13%]
-tests/unit/test_entity_commands.py::test_update_entity_undo PASSED       [ 14%]
-tests/unit/test_entity_commands.py::test_delete_entity_success PASSED    [ 15%]
-tests/unit/test_entity_commands.py::test_delete_entity_undo PASSED       [ 16%]
-tests/unit/test_entity_editor.py::test_editor_init PASSED                [ 17%]
-tests/unit/test_entity_editor.py::test_load_entity PASSED                [ 17%]
-tests/unit/test_entity_editor.py::test_save_clicked PASSED               [ 18%]
-tests/unit/test_entity_editor.py::test_add_relation_flow PASSED          [ 19%]
-tests/unit/test_entity_editor.py::test_remove_relation PASSED            [ 20%]
-tests/unit/test_entity_editor.py::test_edit_relation_flow PASSED         [ 21%]
-tests/unit/test_event_commands.py::test_create_event_success PASSED      [ 21%]
-tests/unit/test_event_commands.py::test_create_event_failure PASSED      [ 22%]
-tests/unit/test_event_commands.py::test_create_event_undo PASSED         [ 23%]
-tests/unit/test_event_commands.py::test_create_event_undo_not_executed PASSED [ 24%]
-tests/unit/test_event_commands.py::test_update_event_success PASSED      [ 25%]
-tests/unit/test_event_commands.py::test_update_event_not_found PASSED    [ 26%]
-tests/unit/test_event_commands.py::test_update_event_db_error PASSED     [ 26%]
-tests/unit/test_event_commands.py::test_update_event_undo PASSED         [ 27%]
-tests/unit/test_event_commands.py::test_update_event_undo_not_executed PASSED [ 28%]
-tests/unit/test_event_commands.py::test_delete_event_success PASSED      [ 29%]
-tests/unit/test_event_commands.py::test_delete_event_not_found PASSED    [ 30%]
-tests/unit/test_event_commands.py::test_delete_event_db_error PASSED     [ 30%]
-tests/unit/test_event_commands.py::test_delete_event_undo PASSED         [ 31%]
-tests/unit/test_event_commands.py::test_delete_event_undo_not_executed PASSED [ 32%]
-tests/unit/test_event_editor.py::test_editor_init PASSED                 [ 33%]
-tests/unit/test_event_editor.py::test_load_event PASSED                  [ 34%]
-tests/unit/test_event_editor.py::test_save_clicked PASSED                [ 34%]
-tests/unit/test_event_editor.py::test_add_relation_flow PASSED           [ 35%]
-tests/unit/test_event_editor.py::test_remove_relation PASSED             [ 36%]
-tests/unit/test_event_editor.py::test_context_menu_actions PASSED        [ 37%]
-tests/unit/test_event_list.py::test_init PASSED                          [ 38%]
-tests/unit/test_event_list.py::test_set_events_empty PASSED              [ 39%]
-tests/unit/test_event_list.py::test_set_events_with_data PASSED          [ 39%]
-tests/unit/test_event_list.py::test_selection_changed_signal PASSED      [ 40%]
-tests/unit/test_event_list.py::test_selection_cleared PASSED             [ 41%]
-tests/unit/test_event_list.py::test_delete_clicked_signal PASSED         [ 42%]
-tests/unit/test_event_list.py::test_delete_clicked_no_selection PASSED   [ 43%]
-tests/unit/test_event_list.py::test_refresh_clicked_signal PASSED        [ 43%]
-tests/unit/test_event_list.py::test_set_events_clears_previous PASSED    [ 44%]
-tests/unit/test_event_list.py::test_widget_styling PASSED                [ 45%]
-tests/unit/test_event_list.py::test_empty_to_populated_transition PASSED [ 46%]
-tests/unit/test_event_list.py::test_populated_to_empty_transition PASSED [ 47%]
-tests/unit/test_main_window.py::test_init_window PASSED                  [ 47%]
-tests/unit/test_main_window.py::test_load_event_details PASSED           [ 48%]
-tests/unit/test_main_window.py::test_create_event_flow PASSED            [ 49%]
-tests/unit/test_main_window_entities.py::test_entity_docks_exist PASSED  [ 50%]
-tests/unit/test_main_window_entities.py::test_create_entity PASSED       [ 51%]
-tests/unit/test_main_window_entities.py::test_delete_entity PASSED       [ 52%]
-tests/unit/test_main_window_entities.py::test_update_entity PASSED       [ 52%]
-tests/unit/test_main_window_entities.py::test_load_entity_details_signal PASSED [ 53%]
-tests/unit/test_main_window_entities.py::test_entity_add_relation PASSED [ 54%]
-tests/unit/test_main_window_entities.py::test_entity_remove_relation PASSED [ 55%]
-tests/unit/test_main_window_entities.py::test_entity_update_relation PASSED [ 56%]
-tests/unit/test_main_window_ext.py::test_delete_event_success PASSED     [ 56%]
-tests/unit/test_main_window_ext.py::test_delete_event_sends_command PASSED [ 57%]
-tests/unit/test_main_window_ext.py::test_update_event_success PASSED     [ 58%]
-tests/unit/test_main_window_ext.py::test_update_event_sends_command PASSED [ 59%]
-tests/unit/test_main_window_ext.py::test_add_relation_success PASSED     [ 60%]
-tests/unit/test_main_window_ext.py::test_add_relation_bidirectional PASSED [ 60%]
-tests/unit/test_main_window_ext.py::test_remove_relation_success PASSED  [ 61%]
-tests/unit/test_main_window_ext.py::test_remove_relation_no_current_event PASSED [ 62%]
-tests/unit/test_main_window_ext.py::test_update_relation_success PASSED  [ 63%]
-tests/unit/test_main_window_ext.py::test_update_relation_no_current_event PASSED [ 64%]
-tests/unit/test_main_window_ext.py::test_dock_options_set PASSED         [ 65%]
-tests/unit/test_main_window_ext.py::test_central_widget_is_hidden PASSED [ 65%]
-tests/unit/test_main_window_ext.py::test_all_docks_are_floatable PASSED  [ 66%]
-tests/unit/test_main_window_ext.py::test_load_event_details_no_event PASSED [ 67%]
-tests/unit/test_relation_commands.py::test_add_relation_command PASSED   [ 68%]
-tests/unit/test_relation_commands.py::test_remove_relation_command PASSED [ 69%]
-tests/unit/test_relation_commands.py::test_update_relation_command PASSED [ 69%]
-tests/unit/test_relation_commands.py::test_add_relation_bidirectional PASSED [ 70%]
-tests/unit/test_theme_manager.py::test_singleton PASSED                  [ 71%]
-tests/unit/test_theme_manager.py::test_default_theme_fallback PASSED     [ 72%]
-tests/unit/test_theme_manager.py::test_load_themes_success PASSED        [ 73%]
-tests/unit/test_theme_manager.py::test_apply_theme_success PASSED        [ 73%]
-tests/unit/test_theme_manager.py::test_apply_theme_error PASSED          [ 74%]
-tests/unit/test_timeline.py::test_timeline_init PASSED                   [ 75%]
-tests/unit/test_timeline.py::test_set_events PASSED                      [ 76%]
-tests/unit/test_timeline.py::test_lane_layout_logic PASSED               [ 77%]
-tests/unit/test_timeline.py::test_focus_event PASSED                     [ 78%]
-tests/unit/test_timeline_interaction.py::test_timeline_init PASSED       [ 78%]
-tests/unit/test_timeline_interaction.py::test_set_events_creates_items PASSED [ 79%]
-tests/unit/test_timeline_interaction.py::test_fit_view PASSED            [ 80%]
-tests/unit/test_timeline_interaction.py::test_selection_signal PASSED    [ 81%]
-tests/unit/test_timeline_interaction.py::test_focus_event PASSED         [ 82%]
-tests/unit/test_timeline_interaction.py::test_wheel_zoom PASSED          [ 82%]
-tests/unit/test_timeline_interaction.py::test_mouse_pan_init PASSED      [ 83%]
-tests/unit/test_timeline_interaction.py::test_draw_ruler PASSED          [ 84%]
-tests/unit/test_timeline_rendering.py::test_event_item_bounding_rect PASSED [ 85%]
-tests/unit/test_timeline_rendering.py::test_event_item_paint PASSED      [ 86%]
-tests/unit/test_timeline_rendering.py::test_event_item_paint_selected PASSED [ 86%]
-tests/unit/test_timeline_rendering.py::test_event_item_color_by_type PASSED [ 87%]
-tests/unit/test_timeline_rendering.py::test_event_item_position PASSED   [ 88%]
-tests/unit/test_timeline_rendering.py::test_timeline_scene_init PASSED   [ 89%]
-tests/unit/test_timeline_rendering.py::test_timeline_view_set_events_empty PASSED [ 90%]
-tests/unit/test_timeline_rendering.py::test_timeline_view_set_events_with_data PASSED [ 91%]
-tests/unit/test_timeline_rendering.py::test_timeline_view_drag_mode PASSED [ 91%]
-tests/unit/test_timeline_rendering.py::test_timeline_view_fit_all PASSED [ 92%]
-tests/unit/test_timeline_rendering.py::test_timeline_view_focus_event_found PASSED [ 93%]
-tests/unit/test_timeline_rendering.py::test_timeline_view_focus_event_not_found PASSED [ 94%]
-tests/unit/test_timeline_rendering.py::test_timeline_view_scale_factor PASSED [ 95%]
-tests/unit/test_timeline_rendering.py::test_timeline_widget_btn_fit PASSED [ 95%]
-tests/unit/test_timeline_rendering.py::test_timeline_widget_header_frame PASSED [ 96%]
-tests/unit/test_timeline_rendering.py::test_timeline_view_scene_rect_updates PASSED [ 97%]
-tests/unit/test_timeline_rendering.py::test_event_item_flags PASSED      [ 98%]
-tests/unit/test_timeline_rendering.py::test_timeline_view_lane_height_constant PASSED [ 99%]
-tests/unit/test_timeline_rendering.py::test_timeline_view_ruler_height_constant PASSED [100%]
+tests/unit/test_entity_commands.py::test_update_entity_undo PASSED       [ 13%]
+tests/unit/test_entity_commands.py::test_delete_entity_success PASSED    [ 14%]
+tests/unit/test_entity_commands.py::test_delete_entity_undo PASSED       [ 15%]
+tests/unit/test_entity_editor.py::test_editor_init PASSED                [ 16%]
+tests/unit/test_entity_editor.py::test_load_entity PASSED                [ 16%]
+tests/unit/test_entity_editor.py::test_save_clicked PASSED               [ 17%]
+tests/unit/test_entity_editor.py::test_add_relation_flow PASSED          [ 18%]
+tests/unit/test_entity_editor.py::test_remove_relation PASSED            [ 19%]
+tests/unit/test_entity_editor.py::test_edit_relation_flow PASSED         [ 20%]
+tests/unit/test_event_commands.py::test_create_event_success PASSED      [ 20%]
+tests/unit/test_event_commands.py::test_create_event_failure PASSED      [ 21%]
+tests/unit/test_event_commands.py::test_create_event_undo PASSED         [ 22%]
+tests/unit/test_event_commands.py::test_create_event_undo_not_executed PASSED [ 23%]
+tests/unit/test_event_commands.py::test_update_event_success PASSED      [ 23%]
+tests/unit/test_event_commands.py::test_update_event_not_found PASSED    [ 24%]
+tests/unit/test_event_commands.py::test_update_event_db_error PASSED     [ 25%]
+tests/unit/test_event_commands.py::test_update_event_undo PASSED         [ 26%]
+tests/unit/test_event_commands.py::test_update_event_undo_not_executed PASSED [ 26%]
+tests/unit/test_event_commands.py::test_delete_event_success PASSED      [ 27%]
+tests/unit/test_event_commands.py::test_delete_event_not_found PASSED    [ 28%]
+tests/unit/test_event_commands.py::test_delete_event_db_error PASSED     [ 29%]
+tests/unit/test_event_commands.py::test_delete_event_undo PASSED         [ 30%]
+tests/unit/test_event_commands.py::test_delete_event_undo_not_executed PASSED [ 30%]
+tests/unit/test_event_editor.py::test_editor_init PASSED                 [ 31%]
+tests/unit/test_event_editor.py::test_load_event PASSED                  [ 32%]
+tests/unit/test_event_editor.py::test_save_clicked PASSED                [ 33%]
+tests/unit/test_event_editor.py::test_add_relation_flow PASSED           [ 33%]
+tests/unit/test_event_editor.py::test_remove_relation PASSED             [ 34%]
+tests/unit/test_event_editor.py::test_context_menu_actions PASSED        [ 35%]
+tests/unit/test_event_list.py::test_init PASSED                          [ 36%]
+tests/unit/test_event_list.py::test_set_events_empty PASSED              [ 36%]
+tests/unit/test_event_list.py::test_set_events_with_data PASSED          [ 37%]
+tests/unit/test_event_list.py::test_selection_changed_signal PASSED      [ 38%]
+tests/unit/test_event_list.py::test_selection_cleared PASSED             [ 39%]
+tests/unit/test_event_list.py::test_delete_clicked_signal PASSED         [ 40%]
+tests/unit/test_event_list.py::test_delete_clicked_no_selection PASSED   [ 40%]
+tests/unit/test_event_list.py::test_refresh_clicked_signal PASSED        [ 41%]
+tests/unit/test_event_list.py::test_set_events_clears_previous PASSED    [ 42%]
+tests/unit/test_event_list.py::test_widget_styling PASSED                [ 43%]
+tests/unit/test_event_list.py::test_empty_to_populated_transition PASSED [ 43%]
+tests/unit/test_event_list.py::test_populated_to_empty_transition PASSED [ 44%]
+tests/unit/test_main_window.py::test_init_window PASSED                  [ 45%]
+tests/unit/test_main_window.py::test_load_event_details PASSED           [ 46%]
+tests/unit/test_main_window.py::test_create_event_flow PASSED            [ 46%]
+tests/unit/test_main_window_entities.py::test_entity_docks_exist PASSED  [ 47%]
+tests/unit/test_main_window_entities.py::test_create_entity PASSED       [ 48%]
+tests/unit/test_main_window_entities.py::test_delete_entity PASSED       [ 49%]
+tests/unit/test_main_window_entities.py::test_update_entity PASSED       [ 50%]
+tests/unit/test_main_window_entities.py::test_load_entity_details_signal PASSED [ 50%]
+tests/unit/test_main_window_entities.py::test_entity_add_relation PASSED [ 51%]
+tests/unit/test_main_window_entities.py::test_entity_remove_relation PASSED [ 52%]
+tests/unit/test_main_window_entities.py::test_entity_update_relation PASSED [ 53%]
+tests/unit/test_main_window_ext.py::test_delete_event_success PASSED     [ 53%]
+tests/unit/test_main_window_ext.py::test_delete_event_sends_command PASSED [ 54%]
+tests/unit/test_main_window_ext.py::test_update_event_success PASSED     [ 55%]
+tests/unit/test_main_window_ext.py::test_update_event_sends_command PASSED [ 56%]
+tests/unit/test_main_window_ext.py::test_add_relation_success PASSED     [ 56%]
+tests/unit/test_main_window_ext.py::test_add_relation_bidirectional PASSED [ 57%]
+tests/unit/test_main_window_ext.py::test_remove_relation_success PASSED  [ 58%]
+tests/unit/test_main_window_ext.py::test_remove_relation_no_current_event PASSED [ 59%]
+tests/unit/test_main_window_ext.py::test_update_relation_success PASSED  [ 60%]
+tests/unit/test_main_window_ext.py::test_update_relation_no_current_event PASSED [ 60%]
+tests/unit/test_main_window_ext.py::test_dock_options_set PASSED         [ 61%]
+tests/unit/test_main_window_ext.py::test_central_widget_is_hidden PASSED [ 62%]
+tests/unit/test_main_window_ext.py::test_all_docks_are_floatable PASSED  [ 63%]
+tests/unit/test_main_window_ext.py::test_load_event_details_no_event PASSED [ 63%]
+tests/unit/test_relation_commands.py::test_add_relation_command PASSED   [ 64%]
+tests/unit/test_relation_commands.py::test_remove_relation_command PASSED [ 65%]
+tests/unit/test_relation_commands.py::test_update_relation_command PASSED [ 66%]
+tests/unit/test_relation_commands.py::test_add_relation_bidirectional PASSED [ 66%]
+tests/unit/test_theme_manager.py::test_singleton PASSED                  [ 67%]
+tests/unit/test_theme_manager.py::test_default_theme_fallback PASSED     [ 68%]
+tests/unit/test_theme_manager.py::test_load_themes_success PASSED        [ 69%]
+tests/unit/test_theme_manager.py::test_apply_theme_success PASSED        [ 70%]
+tests/unit/test_theme_manager.py::test_apply_theme_error PASSED          [ 70%]
+tests/unit/test_timeline.py::test_timeline_init PASSED                   [ 71%]
+tests/unit/test_timeline.py::test_set_events PASSED                      [ 72%]
+tests/unit/test_timeline.py::test_lane_layout_logic PASSED               [ 73%]
+tests/unit/test_timeline.py::test_focus_event PASSED                     [ 73%]
+tests/unit/test_timeline_interaction.py::test_timeline_init PASSED       [ 74%]
+tests/unit/test_timeline_interaction.py::test_set_events_creates_items PASSED [ 75%]
+tests/unit/test_timeline_interaction.py::test_fit_view PASSED            [ 76%]
+tests/unit/test_timeline_interaction.py::test_selection_signal PASSED    [ 76%]
+tests/unit/test_timeline_interaction.py::test_focus_event PASSED         [ 77%]
+tests/unit/test_timeline_interaction.py::test_wheel_zoom PASSED          [ 78%]
+tests/unit/test_timeline_interaction.py::test_mouse_pan_init PASSED      [ 79%]
+tests/unit/test_timeline_interaction.py::test_draw_ruler PASSED          [ 80%]
+tests/unit/test_timeline_rendering.py::test_event_item_bounding_rect PASSED [ 80%]
+tests/unit/test_timeline_rendering.py::test_event_item_paint PASSED      [ 81%]
+tests/unit/test_timeline_rendering.py::test_event_item_paint_selected PASSED [ 82%]
+tests/unit/test_timeline_rendering.py::test_event_item_color_by_type PASSED [ 83%]
+tests/unit/test_timeline_rendering.py::test_event_item_position PASSED   [ 83%]
+tests/unit/test_timeline_rendering.py::test_timeline_scene_init PASSED   [ 84%]
+tests/unit/test_timeline_rendering.py::test_timeline_view_set_events_empty PASSED [ 85%]
+tests/unit/test_timeline_rendering.py::test_timeline_view_set_events_with_data PASSED [ 86%]
+tests/unit/test_timeline_rendering.py::test_timeline_view_drag_mode PASSED [ 86%]
+tests/unit/test_timeline_rendering.py::test_timeline_view_fit_all PASSED [ 87%]
+tests/unit/test_timeline_rendering.py::test_timeline_view_focus_event_found PASSED [ 88%]
+tests/unit/test_timeline_rendering.py::test_timeline_view_focus_event_not_found PASSED [ 89%]
+tests/unit/test_timeline_rendering.py::test_timeline_view_scale_factor PASSED [ 90%]
+tests/unit/test_timeline_rendering.py::test_timeline_widget_btn_fit PASSED [ 90%]
+tests/unit/test_timeline_rendering.py::test_timeline_widget_header_frame PASSED [ 91%]
+tests/unit/test_timeline_rendering.py::test_timeline_view_scene_rect_updates PASSED [ 92%]
+tests/unit/test_timeline_rendering.py::test_event_item_flags PASSED      [ 93%]
+tests/unit/test_timeline_rendering.py::test_timeline_view_lane_height_constant PASSED [ 93%]
+tests/unit/test_timeline_rendering.py::test_timeline_view_ruler_height_constant PASSED [ 94%]
+tests/unit/test_unified_list.py::test_init PASSED                        [ 95%]
+tests/unit/test_unified_list.py::test_set_data PASSED                    [ 96%]
+tests/unit/test_unified_list.py::test_filtering PASSED                   [ 96%]
+tests/unit/test_unified_list.py::test_selection_signal PASSED            [ 97%]
+tests/unit/test_unified_list.py::test_delete_signal PASSED               [ 98%]
+tests/unit/test_unified_list.py::test_create_signals PASSED              [ 99%]
+tests/unit/test_unified_list.py::test_refresh_signal PASSED              [100%]
 
 =============================== tests coverage ================================
 _______________ coverage: platform win32, python 3.13.9-final-0 _______________
 
-Name                                Stmts   Miss  Cover   Missing
------------------------------------------------------------------
-src\app\__init__.py                     0      0   100%
-src\app\main.py                       234     56    76%   179, 202-204, 208-209, 213-215, 219-223, 227-228, 232, 248-262, 295-309, 319, 322, 325, 331, 370-390, 394
-src\commands\__init__.py                0      0   100%
-src\commands\base_command.py           14      3    79%   28, 38, 42
-src\commands\entity_commands.py        71     13    82%   29-31, 55-56, 63-65, 89-90, 96-98
-src\commands\event_commands.py         72      0   100%
-src\commands\relation_commands.py      77     11    86%   70-72, 114-116, 164-165, 176-178
-src\core\__init__.py                    0      0   100%
-src\core\entities.py                   19      0   100%
-src\core\events.py                     21      1    95%   33
-src\core\logging_config.py             42      5    88%   29-32, 61-62
-src\core\theme_manager.py              37      2    95%   53-54
-src\gui\__init__.py                     0      0   100%
-src\gui\widgets\entity_editor.py      134     28    79%   125-130, 139, 153-157, 161, 165, 176, 188-198, 217, 225
-src\gui\widgets\entity_list.py         62     23    63%   30, 69-84, 87-93, 96-99
-src\gui\widgets\event_editor.py       140     24    83%   153-159, 170, 191, 195, 206, 220-232, 255, 267, 287
-src\gui\widgets\event_list.py          59      1    98%   37
-src\gui\widgets\timeline.py           197     19    90%   168-169, 185-188, 216, 218, 220, 288-289, 298-310
-src\services\__init__.py                0      0   100%
-src\services\db_service.py            166     29    83%   38-40, 53, 57-60, 111-113, 170, 192, 266, 286, 375, 396-407, 421, 462
-src\services\worker.py                104     73    30%   35-37, 42-52, 57-67, 72-82, 87-100, 105-118, 129-151
------------------------------------------------------------------
-TOTAL                                1449    288    80%
-============================= 123 passed in 2.67s =============================
+Name                                  Stmts   Miss  Cover
+---------------------------------------------------------
+src\app\__init__.py                       0      0   100%
+src\app\main.py                         257     74    71%
+src\commands\__init__.py                  0      0   100%
+src\commands\base_command.py             14      3    79%
+src\commands\entity_commands.py          71     13    82%
+src\commands\event_commands.py           72      0   100%
+src\commands\relation_commands.py        77     11    86%
+src\core\__init__.py                      0      0   100%
+src\core\entities.py                     19      0   100%
+src\core\events.py                       21      1    95%
+src\core\logging_config.py               41      5    88%
+src\core\theme_manager.py                37      2    95%
+src\gui\__init__.py                       0      0   100%
+src\gui\widgets\attribute_editor.py     100     58    42%
+src\gui\widgets\entity_editor.py        149     28    81%
+src\gui\widgets\event_editor.py         155     24    85%
+src\gui\widgets\event_list.py            59      1    98%
+src\gui\widgets\timeline.py             199     19    90%
+src\gui\widgets\unified_list.py         108      1    99%
+src\services\__init__.py                  0      0   100%
+src\services\db_service.py              166     29    83%
+src\services\worker.py                  104     75    28%
+---------------------------------------------------------
+TOTAL                                  1649    344    79%
+============================= 130 passed in 2.85s =============================

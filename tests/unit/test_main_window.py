@@ -56,13 +56,13 @@ def test_load_event_details(main_window, mock_invoke_method):
 
 def test_create_event_flow(main_window):
     # Simulate save from editor
-    ev = Event(id="1", name="New", lore_date=10.0)
+    ev_data = {"id": "1", "name": "New", "lore_date": 10.0}
 
     # Update implies existing event. Create is implicit in seeding?
     # MainWindow handles update_relation, remove_relation.
     # It passes update_event to command.
 
-    main_window.update_event(ev)
+    main_window.update_event(ev_data)
 
     # Verify command was sent to worker
     main_window.worker.run_command.assert_called_once()

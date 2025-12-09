@@ -34,9 +34,10 @@ def test_save_clicked(editor, qtbot):
     with qtbot.waitSignal(editor.save_requested) as blocker:
         editor.btn_save.click()
 
-    saved_event = blocker.args[0]
-    assert saved_event.name == "New Name"
-    assert saved_event.id == "1"
+    saved_data = blocker.args[0]
+    assert isinstance(saved_data, dict)
+    assert saved_data["name"] == "New Name"
+    assert saved_data["id"] == "1"
 
 
 def test_add_relation_flow(editor, qtbot, monkeypatch):

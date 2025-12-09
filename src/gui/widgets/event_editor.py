@@ -28,9 +28,7 @@ class EventEditorWidget(QWidget):
     Emits 'add_relation_requested' signal (source, target, type).
     """
 
-    save_requested = Signal(Event)
-    save_requested = Signal(Event)
-    save_requested = Signal(Event)
+    save_requested = Signal(dict)
     add_relation_requested = Signal(
         str, str, str, bool
     )  # source_id, target_id, type, bidirectional
@@ -187,23 +185,21 @@ class EventEditorWidget(QWidget):
     def _on_save(self):
         """
         Collects data from form fields and emits the `save_requested` signal.
-
-        Constructs a new Event object with the updated properties.
+        Emits a dictionary with the updated properties and the ID.
         """
         if not self._current_event_id:
             return
 
-        updated_event = Event(
-            id=self._current_event_id,
-            name=self.name_edit.text(),
-            lore_date=self.date_edit.value(),
-            type=self.type_edit.currentText(),
-            description=self.desc_edit.toPlainText(),
-            created_at=self._current_created_at,
-            attributes=self.attribute_editor.get_attributes(),
-        )
+        event_data = {
+            "id": self._current_event_id,
+            "name": self.name_edit.text(),
+            "lore_date": self.date_edit.value(),
+            "type": self.type_edit.currentText(),
+            "description": self.desc_edit.toPlainText(),
+            "attributes": self.attribute_editor.get_attributes(),
+        }
 
-        self.save_requested.emit(updated_event)
+        self.save_requested.emit(event_data)
 
     def _on_add_relation(self):
         """

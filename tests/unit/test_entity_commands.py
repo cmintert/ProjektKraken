@@ -49,15 +49,20 @@ def test_create_entity_undo(mock_db, sample_entity):
 def test_update_entity_success(mock_db):
     """Test successful entity update."""
     old_entity = Entity(id="test-id", name="Old Name", type="Character")
-    new_entity = Entity(id="test-id", name="New Name", type="NPC")
+    update_data = {"name": "New Name", "type": "NPC"}
 
     mock_db.get_entity.return_value = old_entity
-    cmd = UpdateEntityCommand(new_entity)
+    cmd = UpdateEntityCommand("test-id", update_data)
 
     result = cmd.execute(mock_db)
 
     assert result is True
-    mock_db.insert_entity.assert_called_once_with(new_entity)
+    # Verify DB was called with a new entity containing updated values
+    args, _ = mock_db.insert_entity.call_args
+    updated_entity = args[0]
+    assert updated_entity.id == "test-id"
+    assert updated_entity.name == "New Name"
+    assert updated_entity.type == "NPC"
     assert cmd._is_executed is True
     assert cmd._previous_entity == old_entity
 
@@ -65,10 +70,10 @@ def test_update_entity_success(mock_db):
 def test_update_entity_undo(mock_db):
     """Test undoing entity update."""
     old_entity = Entity(id="test-id", name="Old Name", type="Character")
-    new_entity = Entity(id="test-id", name="New Name", type="NPC")
+    update_data = {"name": "New Name", "type": "NPC"}
 
     mock_db.get_entity.return_value = old_entity
-    cmd = UpdateEntityCommand(new_entity)
+    cmd = UpdateEntityCommand("test-id", update_data)
     cmd.execute(mock_db)
     mock_db.insert_entity.reset_mock()
 

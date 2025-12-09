@@ -26,7 +26,7 @@ class EntityEditorWidget(QWidget):
     Emits 'save_requested' signal with the modified Entity object.
     """
 
-    save_requested = Signal(Entity)
+    save_requested = Signal(dict)
     add_relation_requested = Signal(str, str, str, bool)  # src, tgt, type, bi
     remove_relation_requested = Signal(str)
     update_relation_requested = Signal(str, str, str)
@@ -160,16 +160,15 @@ class EntityEditorWidget(QWidget):
         if not self._current_entity_id:
             return
 
-        updated_entity = Entity(
-            id=self._current_entity_id,
-            name=self.name_edit.text(),
-            type=self.type_edit.currentText(),
-            description=self.desc_edit.toPlainText(),
-            created_at=self._current_created_at,
-            attributes=self.attribute_editor.get_attributes(),
-        )
+        entity_data = {
+            "id": self._current_entity_id,
+            "name": self.name_edit.text(),
+            "type": self.type_edit.currentText(),
+            "description": self.desc_edit.toPlainText(),
+            "attributes": self.attribute_editor.get_attributes(),
+        }
 
-        self.save_requested.emit(updated_entity)
+        self.save_requested.emit(entity_data)
 
     def clear(self):
         """Clears the editor."""

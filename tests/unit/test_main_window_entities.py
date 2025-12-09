@@ -53,15 +53,17 @@ def test_delete_entity(main_window):
 
 def test_update_entity(main_window):
     """Test updating an entity."""
-    entity = Entity(id="ent1", name="Updated", type="Concept")
+    entity_data = {"id": "ent1", "name": "Updated", "type": "Concept"}
 
     with patch("src.app.main.UpdateEntityCommand") as MockCmd:
-        mock_cmd_instance = MockCmd.return_value
+        # main_window.update_entity now expects dict
+        main_window.update_entity(entity_data)
 
-        main_window.update_entity(entity)
-
-        MockCmd.assert_called_once()
-        main_window.worker.run_command.assert_called_once_with(mock_cmd_instance)
+        MockCmd.assert_called_once_with("ent1", entity_data)
+        # Check command sent
+        main_window.worker.run_command.assert_called_once()
+        args = main_window.worker.run_command.call_args[0]
+        assert args[0] == MockCmd.return_value
 
 
 def test_load_entity_details_signal(main_window):
