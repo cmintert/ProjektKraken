@@ -10,7 +10,7 @@ from collections import defaultdict
 
 from src.commands.base_command import BaseCommand, CommandResult
 from src.services.db_service import DatabaseService
-from src.services.text_parser import WikiLinkParser, LinkCandidate
+from src.services.text_parser import WikiLinkParser
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class ProcessWikiLinksCommand(BaseCommand):
     """
     Command to process text content, extract WikiLinks, and create 'mentions' relations.
-    
+
     This command:
     - Parses WikiLinks from text content
     - Resolves names to entities (case-insensitive, including aliases)
@@ -45,7 +45,7 @@ class ProcessWikiLinksCommand(BaseCommand):
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """
         Executes the link processing.
-        
+
         Extracts WikiLinks, resolves them to entities, and creates 'mentions' relations
         with metadata including field, snippet, and offsets.
 
@@ -70,12 +70,12 @@ class ProcessWikiLinksCommand(BaseCommand):
             # 2. Build name->Entity map including aliases
             all_entities = db_service.get_all_entities()
             name_to_entities: Dict[str, List] = defaultdict(list)
-            
+
             for entity in all_entities:
                 # Add primary name
                 name_key = entity.name.casefold()
                 name_to_entities[name_key].append(entity)
-                
+
                 # Add aliases if present
                 aliases = entity.attributes.get("aliases", [])
                 if isinstance(aliases, list):
@@ -108,7 +108,7 @@ class ProcessWikiLinksCommand(BaseCommand):
                     # No match found
                     skipped_missing.append(candidate.name)
                     logger.debug(f"No entity found for link: {candidate.name}")
-                    
+
                 elif len(matching_entities) > 1:
                     # Ambiguous match - multiple entities with same name/alias
                     skipped_ambiguous.append(candidate.name)
@@ -116,15 +116,15 @@ class ProcessWikiLinksCommand(BaseCommand):
                         f"Ambiguous link '{candidate.name}': "
                         f"matches {len(matching_entities)} entities"
                     )
-                    
+
                 else:
                     # Exactly one match - create relation
                     target_entity = matching_entities[0]
-                    
+
                     # Skip self-references
                     if target_entity.id == self.source_id:
                         continue
-                    
+
                     # Check for duplicate by (target_id, start_offset)
                     dedup_key = (target_entity.id, candidate.span[0])
                     if dedup_key in existing_keys:
@@ -133,14 +133,12 @@ class ProcessWikiLinksCommand(BaseCommand):
                             f"at offset {candidate.span[0]}"
                         )
                         continue
-                    
+
                     # Create snippet (40 chars of context around the link)
                     snippet = self._extract_snippet(
-                        self.text_content, 
-                        candidate.span[0], 
-                        candidate.span[1]
+                        self.text_content, candidate.span[0], candidate.span[1]
                     )
-                    
+
                     # Build relation attributes
                     attributes = {
                         "field": self.field,
@@ -150,7 +148,7 @@ class ProcessWikiLinksCommand(BaseCommand):
                         "created_by": "ProcessWikiLinksCommand",
                         "created_at": time.time(),
                     }
-                    
+
                     # Insert relation
                     rel_id = db_service.insert_relation(
                         source_id=self.source_id,
@@ -203,16 +201,19 @@ class ProcessWikiLinksCommand(BaseCommand):
             self._is_executed = False
 
     @staticmethod
-    def _extract_snippet(text: str, start: int, end: int, context_chars: int = 40) -> str:
+    def _extract_snippet(
+        text: str, start: int, end: int, context_chars: int = 40
+    ) -> str:
         """
         Extracts a snippet of text around the link for context.
-        
+
         Args:
             text: The full text content.
             start: Start offset of the link.
             end: End offset of the link.
-            context_chars: Number of context characters to include (total, not per side).
-        
+            context_chars: Number of context characters to include
+                (total, not per side).
+
         Returns:
             str: A snippet of text with context around the link.
         """
@@ -221,16 +222,16 @@ class ProcessWikiLinksCommand(BaseCommand):
         remaining = max(0, context_chars - link_len)
         left_context = remaining // 2
         right_context = remaining - left_context
-        
+
         # Extract snippet
         snippet_start = max(0, start - left_context)
         snippet_end = min(len(text), end + right_context)
         snippet = text[snippet_start:snippet_end]
-        
+
         # Add ellipsis if truncated
         if snippet_start > 0:
             snippet = "..." + snippet
         if snippet_end < len(text):
             snippet = snippet + "..."
-        
+
         return snippet

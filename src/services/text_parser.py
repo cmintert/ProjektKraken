@@ -12,13 +12,14 @@ from typing import List, Tuple
 class LinkCandidate:
     """
     Represents a parsed WikiLink with metadata.
-    
+
     Attributes:
         raw_text: The full [[...]] text including brackets.
         name: The target name (before pipe if present).
         modifier: The label/modifier (after pipe if present), or None.
         span: Tuple of (start_offset, end_offset) in the source text.
     """
+
     raw_text: str
     name: str
     modifier: str | None
@@ -39,7 +40,7 @@ class WikiLinkParser:
     def extract_links(text: str) -> List[LinkCandidate]:
         """
         Extracts WikiLinks from text as ordered LinkCandidate objects.
-        
+
         Each link includes the name, optional modifier, and position offsets.
         Duplicates are preserved in order of appearance.
 
@@ -58,12 +59,11 @@ class WikiLinkParser:
             name = match.group(1).strip()
             modifier = match.group(2).strip() if match.group(2) else None
             span = (match.start(), match.end())
-            
-            candidates.append(LinkCandidate(
-                raw_text=raw_text,
-                name=name,
-                modifier=modifier,
-                span=span
-            ))
+
+            candidates.append(
+                LinkCandidate(
+                    raw_text=raw_text, name=name, modifier=modifier, span=span
+                )
+            )
 
         return candidates
