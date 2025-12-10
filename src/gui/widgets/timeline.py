@@ -39,6 +39,13 @@ class EventItem(QGraphicsItem):
     PADDING = 5
 
     def __init__(self, event, scale_factor=10.0):
+        """
+        Initializes an EventBlock.
+
+        Args:
+            event (Event): The event to represent.
+            scale_factor (float, optional): Scale factor for positioning. Defaults to 10.0.
+        """
         super().__init__()
         self.event = event
         self.scale_factor = scale_factor
@@ -125,6 +132,12 @@ class TimelineScene(QGraphicsScene):
     """
 
     def __init__(self, parent=None):
+        """
+        Initializes the TimelineScene.
+
+        Args:
+            parent (QObject, optional): The parent object. Defaults to None.
+        """
         super().__init__(parent)
         theme = ThemeManager().get_theme()
         self.setBackgroundBrush(QBrush(QColor(theme["app_bg"])))
@@ -377,6 +390,12 @@ class TimelineWidget(QWidget):
     event_selected = Signal(str)
 
     def __init__(self, parent=None):
+        """
+        Initializes the TimelineWidget.
+
+        Args:
+            parent (QWidget, optional): The parent widget. Defaults to None.
+        """
         super().__init__(parent)
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.layout = QVBoxLayout(self)

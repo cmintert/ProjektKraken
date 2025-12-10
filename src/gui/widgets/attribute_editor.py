@@ -1,3 +1,9 @@
+"""
+Attribute Editor Widget Module.
+
+Provides a table-based interface for editing key-value attribute pairs
+with support for different data types.
+"""
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -22,6 +28,12 @@ class AttributeEditorWidget(QWidget):
     attributes_changed = Signal()
 
     def __init__(self, parent=None):
+        """
+        Initializes the AttributeEditorWidget.
+
+        Args:
+            parent (QWidget, optional): The parent widget. Defaults to None.
+        """
         super().__init__(parent)
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
@@ -88,6 +100,13 @@ class AttributeEditorWidget(QWidget):
         return attrs
 
     def _add_row(self, key="", value=None):
+        """
+        Adds a new row to the attribute table.
+
+        Args:
+            key (str, optional): The attribute key. Defaults to "".
+            value (Any, optional): The attribute value. Defaults to None.
+        """
         row = self.table.rowCount()
         self.table.insertRow(row)
 
@@ -116,6 +135,11 @@ class AttributeEditorWidget(QWidget):
         self.table.setCellWidget(row, 2, combo)
 
     def _on_add(self):
+        """
+        Handles adding a new attribute.
+
+        Prompts for the attribute key and adds a new row.
+        """
         key, ok = QInputDialog.getText(self, "New Attribute", "Attribute Key:")
         if ok and key:
             # Check for duplicates?
@@ -130,20 +154,45 @@ class AttributeEditorWidget(QWidget):
             self.attributes_changed.emit()
 
     def _on_remove(self):
+        """
+        Handles removing the selected attribute.
+        """
         current_row = self.table.currentRow()
         if current_row >= 0:
             self.table.removeRow(current_row)
             self.attributes_changed.emit()
 
     def _on_item_changed(self, item):
+        """
+        Handles table item changes.
+
+        Args:
+            item (QTableWidgetItem): The changed item.
+        """
         if not self._block_signals:
             self.attributes_changed.emit()
 
     def _on_type_changed(self, row):
+        """
+        Handles attribute type changes.
+
+        Args:
+            row (int): The row number of the changed type.
+        """
         if not self._block_signals:
             self.attributes_changed.emit()
 
     def _parse_value(self, raw_val, val_type):
+        """
+        Parses a raw string value to the specified type.
+
+        Args:
+            raw_val (str): The raw value as a string.
+            val_type (str): The target type ("String", "Number", or "Boolean").
+
+        Returns:
+            Any: The parsed value in the appropriate type.
+        """
         if val_type == "Number":
             try:
                 if "." in raw_val:

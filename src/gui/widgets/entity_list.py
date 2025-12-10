@@ -1,3 +1,8 @@
+"""
+Entity List Widget Module.
+
+Displays a list of entities with controls for creating, refreshing, and deleting.
+"""
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -25,6 +30,12 @@ class EntityListWidget(QWidget):
     create_requested = Signal()
 
     def __init__(self, parent=None):
+        """
+        Initializes the EntityListWidget.
+
+        Args:
+            parent (QWidget, optional): The parent widget. Defaults to None.
+        """
         super().__init__(parent)
         if parent:
             self.setParent(parent)
@@ -84,6 +95,11 @@ class EntityListWidget(QWidget):
             self.list_widget.addItem(item)
 
     def _on_selection_changed(self):
+        """
+        Handles entity selection changes.
+
+        Emits the entity_selected signal and enables/disables the delete button.
+        """
         items = self.list_widget.selectedItems()
         if items:
             entity_id = items[0].data(Qt.UserRole)
@@ -93,6 +109,11 @@ class EntityListWidget(QWidget):
             self.btn_delete.setEnabled(False)
 
     def _on_delete_clicked(self):
+        """
+        Handles delete button clicks.
+
+        Emits the delete_requested signal with the selected entity ID.
+        """
         items = self.list_widget.selectedItems()
         if items:
             entity_id = items[0].data(Qt.UserRole)

@@ -58,6 +58,12 @@ class CreateEntityCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
+        """
+        Reverts the entity creation by deleting it from the database.
+
+        Args:
+            db_service (DatabaseService): The database service to operate on.
+        """
         if self._is_executed:
             db_service.delete_entity(self._entity.id)
             self._is_executed = False
@@ -134,6 +140,12 @@ class UpdateEntityCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
+        """
+        Reverts the entity update by restoring the previous state.
+
+        Args:
+            db_service (DatabaseService): The database service to operate on.
+        """
         if self._is_executed and self._previous_entity:
             db_service.insert_entity(self._previous_entity)
             self._is_executed = False
@@ -194,6 +206,12 @@ class DeleteEntityCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
+        """
+        Reverts the entity deletion by restoring it to the database.
+
+        Args:
+            db_service (DatabaseService): The database service to operate on.
+        """
         if self._is_executed and self._backup_entity:
             db_service.insert_entity(self._backup_entity)
             self._is_executed = False

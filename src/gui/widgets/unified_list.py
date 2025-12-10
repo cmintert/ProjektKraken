@@ -1,3 +1,9 @@
+"""
+Unified List Widget Module.
+
+Provides a unified list view displaying both events and entities with
+filtering and color-coded differentiation.
+"""
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -30,6 +36,12 @@ class UnifiedListWidget(QWidget):
     create_entity_requested = Signal()
 
     def __init__(self, parent=None):
+        """
+        Initializes the UnifiedListWidget.
+
+        Args:
+            parent (QWidget, optional): The parent widget. Defaults to None.
+        """
         super().__init__(parent)
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.layout = QVBoxLayout(self)
@@ -92,11 +104,21 @@ class UnifiedListWidget(QWidget):
         self._render_list()
 
     def set_data(self, events: List[Event], entities: List[Entity]):
+        """
+        Sets the data to display in the list.
+
+        Args:
+            events (List[Event]): List of events to display.
+            entities (List[Entity]): List of entities to display.
+        """
         self._events = events
         self._entities = entities
         self._render_list()
 
     def _render_list(self):
+        """
+        Renders the list based on current filter and data.
+        """
         self.list_widget.clear()
 
         filter_mode = self.filter_combo.currentText()
@@ -163,9 +185,18 @@ class UnifiedListWidget(QWidget):
             self.empty_label.show()
 
     def _on_filter_changed(self, text):
+        """
+        Handles filter combo box changes.
+
+        Args:
+            text (str): The selected filter text.
+        """
         self._render_list()
 
     def _on_selection_changed(self):
+        """
+        Handles item selection changes in the list.
+        """
         items = self.list_widget.selectedItems()
         if items:
             item = items[0]
@@ -177,6 +208,9 @@ class UnifiedListWidget(QWidget):
             self.btn_delete.setEnabled(False)
 
     def _on_delete_clicked(self):
+        """
+        Handles delete button clicks.
+        """
         items = self.list_widget.selectedItems()
         if items:
             item = items[0]

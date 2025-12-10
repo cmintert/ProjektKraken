@@ -1,3 +1,8 @@
+"""
+Event List Widget Module.
+
+Displays a list of events with controls for refreshing and deleting.
+"""
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -92,6 +97,11 @@ class EventListWidget(QWidget):
             self.list_widget.addItem(item)
 
     def _on_selection_changed(self):
+        """
+        Handles event selection changes.
+
+        Emits the event_selected signal and enables/disables the delete button.
+        """
         items = self.list_widget.selectedItems()
         if items:
             event_id = items[0].data(100)
@@ -101,6 +111,11 @@ class EventListWidget(QWidget):
             self.btn_delete.setEnabled(False)
 
     def _on_delete_clicked(self):
+        """
+        Handles delete button clicks.
+
+        Emits the delete_requested signal with the selected event ID.
+        """
         items = self.list_widget.selectedItems()
         if items:
             event_id = items[0].data(100)

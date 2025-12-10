@@ -21,6 +21,12 @@ class WikiTextEdit(QTextEdit):
     link_clicked = Signal(str)  # Emits the target name (e.g. "Gandalf")
 
     def __init__(self, parent=None):
+        """
+        Initializes the WikiTextEdit.
+
+        Args:
+            parent (QWidget, optional): The parent widget. Defaults to None.
+        """
         super().__init__(parent)
         self.highlighter = WikiSyntaxHighlighter(self.document())
         self._hovered_link = None

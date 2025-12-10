@@ -13,6 +13,12 @@ class WikiSyntaxHighlighter(QSyntaxHighlighter):
     """
 
     def __init__(self, parent=None):
+        """
+        Initializes the WikiSyntaxHighlighter.
+
+        Args:
+            parent (QTextDocument, optional): The parent text document. Defaults to None.
+        """
         super().__init__(parent)
         self.highlight_format = QTextCharFormat()
         self.highlight_format.setForeground(QColor("#4da6ff"))  # Light blue

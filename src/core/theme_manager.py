@@ -1,3 +1,9 @@
+"""
+Theme Manager Module.
+
+Manages loading and applying UI themes (Dark/Light) for the application.
+Implements a singleton pattern to ensure consistent theming across the app.
+"""
 import json
 import logging
 import os
@@ -15,11 +21,23 @@ class ThemeManager:
     _instance = None
 
     def __new__(cls, *args, **kwargs):
+        """
+        Ensures only one instance of ThemeManager exists (Singleton pattern).
+
+        Returns:
+            ThemeManager: The singleton instance.
+        """
         if not cls._instance:
             cls._instance = super(ThemeManager, cls).__new__(cls)
         return cls._instance
 
     def __init__(self, theme_file: str = "themes.json"):
+        """
+        Initializes the ThemeManager.
+
+        Args:
+            theme_file (str, optional): Path to the themes JSON file. Defaults to "themes.json".
+        """
         if hasattr(self, "_initialized"):
             return
 

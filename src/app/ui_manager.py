@@ -17,6 +17,12 @@ class UIManager:
     Manages the UI components of the MainWindow, including Docks and Menus.
     """
     def __init__(self, main_window: QMainWindow):
+        """
+        Initializes the UIManager.
+
+        Args:
+            main_window (QMainWindow): The main window instance to manage.
+        """
         self.main_window = main_window
         self.docks = {}
 
