@@ -44,17 +44,17 @@ def test_process_creates_mention_relation(db_service, source_id):
 
     # Verify success
     assert result.success is True
-    assert "Created 1 new mentions" in result.message
+    assert "Created 1 new mention." in result.message
 
     # Verify relation created
     relations = db_service.get_relations(source_id)
     assert len(relations) == 1
-    
+
     rel = relations[0]
     assert rel["source_id"] == source_id
     assert rel["target_id"] == target_entity.id
     assert rel["rel_type"] == "mentions"
-    
+
     # Verify attributes
     attrs = rel["attributes"]
     assert attrs["field"] == "description"
@@ -86,7 +86,7 @@ def test_process_with_aliases(db_service, source_id):
     target_entity = Entity(
         name="Gandalf the Grey",
         type="Character",
-        attributes={"aliases": ["Gandalf", "Mithrandir"]}
+        attributes={"aliases": ["Gandalf", "Mithrandir"]},
     )
     db_service.insert_entity(target_entity)
 
@@ -114,7 +114,7 @@ def test_process_skips_ambiguous(db_service, source_id):
 
     assert result.success is True
     assert "Skipped 1 ambiguous" in result.message
-    
+
     # No relations should be created
     relations = db_service.get_relations(source_id)
     assert len(relations) == 0
@@ -128,7 +128,7 @@ def test_process_skips_missing(db_service, source_id):
 
     assert result.success is True
     assert "Skipped 1 unresolved" in result.message
-    
+
     relations = db_service.get_relations(source_id)
     assert len(relations) == 0
 
@@ -138,7 +138,7 @@ def test_process_multiple_links(db_service, source_id):
     entity1 = Entity(name="Alice", type="Character")
     entity2 = Entity(name="Bob", type="Character")
     entity3 = Entity(name="Charlie", type="Character")
-    
+
     db_service.insert_entity(entity1)
     db_service.insert_entity(entity2)
     db_service.insert_entity(entity3)
@@ -148,8 +148,8 @@ def test_process_multiple_links(db_service, source_id):
     result = cmd.execute(db_service)
 
     assert result.success is True
-    assert "Created 3 new mentions" in result.message
-    
+    assert "Created 3 new mentions." in result.message
+
     relations = db_service.get_relations(source_id)
     assert len(relations) == 3
 
@@ -164,14 +164,14 @@ def test_process_deduplication_by_offset(db_service, source_id):
     cmd1 = ProcessWikiLinksCommand(source_id, text)
     result1 = cmd1.execute(db_service)
     assert result1.success is True
-    assert "Created 1 new mentions" in result1.message
+    assert "Created 1 new mention." in result1.message
 
     # Second processing of same text - should detect duplicate
     cmd2 = ProcessWikiLinksCommand(source_id, text)
     result2 = cmd2.execute(db_service)
     assert result2.success is True
-    assert "Created 0 new mentions" in result2.message
-    
+    assert "Created 0 new mentions." in result2.message
+
     # Still only one relation
     relations = db_service.get_relations(source_id)
     assert len(relations) == 1
@@ -187,11 +187,11 @@ def test_process_same_entity_different_offsets(db_service, source_id):
     result = cmd.execute(db_service)
 
     assert result.success is True
-    assert "Created 2 new mentions" in result.message
-    
+    assert "Created 2 new mentions." in result.message
+
     relations = db_service.get_relations(source_id)
     assert len(relations) == 2
-    
+
     # Verify different offsets
     offsets = [rel["attributes"]["start_offset"] for rel in relations]
     assert 0 in offsets
@@ -209,7 +209,7 @@ def test_process_skips_self_reference(db_service):
     result = cmd.execute(db_service)
 
     assert result.success is True
-    
+
     # No relations should be created for self-reference
     relations = db_service.get_relations(entity_id)
     assert len(relations) == 0
@@ -222,10 +222,10 @@ def test_process_undo(db_service, source_id):
 
     cmd = ProcessWikiLinksCommand(source_id, "Meet [[Gandalf]].")
     result = cmd.execute(db_service)
-    
+
     assert result.success is True
     assert len(cmd._created_relations) == 1
-    
+
     # Verify relation exists
     relations_before = db_service.get_relations(source_id)
     assert len(relations_before) == 1
@@ -249,10 +249,10 @@ def test_snippet_generation(db_service, source_id):
     result = cmd.execute(db_service)
 
     assert result.success is True
-    
+
     relations = db_service.get_relations(source_id)
     snippet = relations[0]["attributes"]["snippet"]
-    
+
     # Snippet should contain the link and some context
     assert "[[X]]" in snippet
     assert len(snippet) <= 50  # Should be roughly 40 chars + ellipsis
@@ -268,10 +268,10 @@ def test_snippet_with_ellipsis(db_service, source_id):
     result = cmd.execute(db_service)
 
     assert result.success is True
-    
+
     relations = db_service.get_relations(source_id)
     snippet = relations[0]["attributes"]["snippet"]
-    
+
     # Should have ellipsis on both sides
     assert snippet.startswith("...")
     assert snippet.endswith("...")
@@ -287,7 +287,7 @@ def test_field_parameter(db_service, source_id):
     result = cmd.execute(db_service)
 
     assert result.success is True
-    
+
     relations = db_service.get_relations(source_id)
     assert relations[0]["attributes"]["field"] == "notes"
 
@@ -303,7 +303,7 @@ def test_pipe_modifier_ignored_for_matching(db_service, source_id):
     result = cmd.execute(db_service)
 
     assert result.success is True
-    
+
     relations = db_service.get_relations(source_id)
     assert len(relations) == 1
     assert relations[0]["target_id"] == target_entity.id

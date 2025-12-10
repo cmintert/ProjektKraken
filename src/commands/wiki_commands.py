@@ -164,7 +164,8 @@ class ProcessWikiLinksCommand(BaseCommand):
                     )
 
             # 5. Build result message
-            message_parts = [f"Created {created_count} new mentions."]
+            mention_word = "mention" if created_count == 1 else "mentions"
+            message_parts = [f"Created {created_count} new {mention_word}."]
             if skipped_ambiguous:
                 message_parts.append(
                     f"Skipped {len(skipped_ambiguous)} ambiguous link(s)."
