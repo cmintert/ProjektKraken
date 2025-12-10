@@ -5,7 +5,7 @@ Handles parsing of WikiLinks and other text processing tasks.
 
 import re
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 
 @dataclass
@@ -22,7 +22,7 @@ class LinkCandidate:
 
     raw_text: str
     name: str
-    modifier: str | None
+    modifier: Optional[str]
     span: Tuple[int, int]
 
 
