@@ -1,3 +1,12 @@
+"""
+Base Command Module.
+
+Defines the abstract base class and result type for all commands in the application.
+
+Classes:
+    CommandResult: Standardized result object for command execution.
+    BaseCommand: Abstract base class implementing command pattern with undo/redo.
+"""
 from abc import ABC, abstractmethod
 from src.services.db_service import DatabaseService
 
@@ -12,10 +21,13 @@ class CommandResult:
     Standardized result object for command execution.
 
     Attributes:
-        success (bool): True if the command executed successfully, False otherwise.
+        success (bool): True if the command executed successfully,
+                        False otherwise.
         message (str): A human-readable message describing the result.
-        errors (Dict[str, str]): A dictionary of validation errors (field -> error content).
-        command_name (str): The name of the command that generated this result.
+        errors (Dict[str, str]): A dictionary of validation errors
+                                 (field -> error content).
+        command_name (str): The name of the command that generated
+                            this result.
     """
 
     success: bool

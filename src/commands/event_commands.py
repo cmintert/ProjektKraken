@@ -1,3 +1,13 @@
+"""
+Event Commands Module.
+
+Provides command classes for managing events in the timeline:
+- CreateEventCommand: Create new events with default or custom data
+- UpdateEventCommand: Modify existing events with validation
+- DeleteEventCommand: Remove events with backup for undo
+
+All commands support undo/redo operations and return CommandResult objects.
+"""
 from src.commands.base_command import BaseCommand, CommandResult
 from src.core.events import Event
 from src.services.db_service import DatabaseService

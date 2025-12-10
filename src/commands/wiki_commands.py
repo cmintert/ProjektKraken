@@ -4,12 +4,11 @@ Commands for processing WikiLinks and updating relations.
 """
 
 import logging
-from typing import Optional, List, Set
+from typing import List
 
 from src.commands.base_command import BaseCommand, CommandResult
 from src.services.db_service import DatabaseService
 from src.services.text_parser import WikiLinkParser
-from src.core.entities import Entity
 
 logger = logging.getLogger(__name__)
 

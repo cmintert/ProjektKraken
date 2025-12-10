@@ -4,7 +4,7 @@ Handles parsing of WikiLinks and other text processing tasks.
 """
 
 import re
-from typing import List, Set
+from typing import Set
 
 
 class WikiLinkParser:

@@ -121,12 +121,16 @@ class UnifiedListWidget(QWidget):
                     {"type": "entity", "obj": entity, "sort_key": entity.name}
                 )
 
-        # Sort? For now, mixed sort might be weird. Let's just append blocks or simple sort.
-        # Simple approach: Entities first (alphabetical), then Events (chronological)?
+        # Sort? For now, mixed sort might be weird.
+        # Let's just append blocks or simple sort.
+        # Simple approach: Entities first (alphabetical),
+        # then Events (chronological)?
         # Or mixed list? "Unify" usually implies mixed.
-        # User request didn't specify sort. Let's stick to simple append for now to be safe,
-        # or separate blocks like the current UI but in one list.
-        # Actually, let's keep them somewhat grouped for clarity until a unified timeline sort is requested.
+        # User request didn't specify sort. Let's stick to simple append
+        # for now to be safe, or separate blocks like the current UI
+        # but in one list.
+        # Actually, let's keep them somewhat grouped for clarity until
+        # a unified timeline sort is requested.
 
         has_items = False
 

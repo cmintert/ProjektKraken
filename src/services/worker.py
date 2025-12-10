@@ -140,8 +140,10 @@ class DatabaseWorker(QObject):
             command (BaseCommand): The command object to execute.
 
         Emits:
-            command_finished (CommandResult): The result of the command execution.
-            error_occurred (str): If a critical error prevents execution (though usually captured in result).
+            command_finished (CommandResult): The result of the command
+                                               execution.
+            error_occurred (str): If a critical error prevents execution
+                                  (though usually captured in result).
             operation_started (str): Status update.
             operation_finished (str): Status update.
         """

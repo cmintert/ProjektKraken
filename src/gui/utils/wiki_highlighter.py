@@ -5,7 +5,6 @@ Highlights [[WikiLinks]] in a QTextDocument.
 
 import re
 from PySide6.QtGui import QSyntaxHighlighter, QTextCharFormat, QColor, QFont
-from PySide6.QtCore import Qt
 
 
 class WikiSyntaxHighlighter(QSyntaxHighlighter):

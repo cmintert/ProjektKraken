@@ -156,11 +156,6 @@ class MainWindow(QMainWindow):
         self.entity_editor.update_relation_requested.connect(self.update_relation)
         self.entity_editor.link_clicked.connect(self.navigate_to_entity)
 
-        self.entity_editor.save_requested.connect(self.update_entity)
-        self.entity_editor.add_relation_requested.connect(self.add_relation)
-        self.entity_editor.remove_relation_requested.connect(self.remove_relation)
-        self.entity_editor.update_relation_requested.connect(self.update_relation)
-
         # Timeline (Dockable)
         self.timeline_dock = QDockWidget("Timeline", self)
         self.timeline_dock.setObjectName("TimelineDock")
@@ -489,10 +484,23 @@ class MainWindow(QMainWindow):
         )
 
     def delete_event(self, event_id):
+        """
+        Deletes an event by ID.
+
+        Args:
+            event_id (str): The unique identifier of the event to delete.
+        """
         cmd = DeleteEventCommand(event_id)
         self.command_requested.emit(cmd)
 
     def update_event(self, event_data: dict):
+        """
+        Updates an existing event with new data.
+
+        Args:
+            event_data (dict): Dictionary containing event fields to update.
+                              Must include 'id' field.
+        """
         event_id = event_data.get("id")
         if not event_id:
             logger.error("Attempted to update event without ID.")
@@ -506,18 +514,33 @@ class MainWindow(QMainWindow):
             self.command_requested.emit(wiki_cmd)
 
     def create_entity(self):
+        """Creates a new entity with default values."""
         cmd = CreateEntityCommand()
         self.command_requested.emit(cmd)
 
     def create_event(self):
+        """Creates a new event with default values."""
         cmd = CreateEventCommand()
         self.command_requested.emit(cmd)
 
     def delete_entity(self, entity_id):
+        """
+        Deletes an entity by ID.
+
+        Args:
+            entity_id (str): The unique identifier of the entity to delete.
+        """
         cmd = DeleteEntityCommand(entity_id)
         self.command_requested.emit(cmd)
 
     def update_entity(self, entity_data: dict):
+        """
+        Updates an existing entity with new data.
+
+        Args:
+            entity_data (dict): Dictionary containing entity fields to update.
+                               Must include 'id' field.
+        """
         entity_id = entity_data.get("id")
         if not entity_id:
             logger.error("Attempted to update entity without ID.")
@@ -531,16 +554,39 @@ class MainWindow(QMainWindow):
             self.command_requested.emit(wiki_cmd)
 
     def add_relation(self, source_id, target_id, rel_type, bidirectional: bool = False):
+        """
+        Adds a relationship between two objects.
+
+        Args:
+            source_id (str): ID of the source object.
+            target_id (str): ID of the target object.
+            rel_type (str): Type of relationship (e.g., "caused", "located_at").
+            bidirectional (bool): If True, creates a reverse relationship as well.
+        """
         cmd = AddRelationCommand(
             source_id, target_id, rel_type, bidirectional=bidirectional
         )
         self.command_requested.emit(cmd)
 
     def remove_relation(self, rel_id):
+        """
+        Removes a relationship by ID.
+
+        Args:
+            rel_id (str): The unique identifier of the relation to remove.
+        """
         cmd = RemoveRelationCommand(rel_id)
         self.command_requested.emit(cmd)
 
     def update_relation(self, rel_id, target_id, rel_type):
+        """
+        Updates an existing relationship.
+
+        Args:
+            rel_id (str): The unique identifier of the relation to update.
+            target_id (str): New target object ID.
+            rel_type (str): New relationship type.
+        """
         cmd = UpdateRelationCommand(rel_id, target_id, rel_type)
         self.command_requested.emit(cmd)
 
