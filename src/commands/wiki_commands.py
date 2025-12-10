@@ -101,67 +101,103 @@ class ProcessWikiLinksCommand(BaseCommand):
             skipped_missing = []
 
             for candidate in candidates:
-                name_key = candidate.name.casefold()
-                matching_entities = name_to_entities.get(name_key, [])
+                target_entity = None
 
-                if len(matching_entities) == 0:
-                    # No match found
-                    skipped_missing.append(candidate.name)
-                    logger.debug(f"No entity found for link: {candidate.name}")
+                # Handle ID-based links
+                if candidate.is_id_based:
+                    # Direct lookup by ID
+                    target_entity = db_service.get_entity(candidate.target_id)
+                    if not target_entity:
+                        # Try as event
+                        target_event = db_service.get_event(candidate.target_id)
+                        if target_event:
+                            # For events, we can still create mentions
+                            # but we need to handle them differently
+                            # For now, skip events in mentions
+                            logger.debug(
+                                f"ID-based link targets event: {candidate.target_id}"
+                            )
+                            continue
+                        else:
+                            # Broken link - target doesn't exist
+                            skipped_missing.append(
+                                candidate.modifier or candidate.target_id
+                            )
+                            logger.warning(
+                                f"Broken ID-based link: {candidate.target_id}"
+                            )
+                            continue
 
-                elif len(matching_entities) > 1:
-                    # Ambiguous match - multiple entities with same name/alias
-                    skipped_ambiguous.append(candidate.name)
-                    logger.warning(
-                        f"Ambiguous link '{candidate.name}': "
-                        f"matches {len(matching_entities)} entities"
-                    )
-
+                # Handle name-based links (legacy)
                 else:
-                    # Exactly one match - create relation
-                    target_entity = matching_entities[0]
+                    name_key = candidate.name.casefold()
+                    matching_entities = name_to_entities.get(name_key, [])
 
-                    # Skip self-references
-                    if target_entity.id == self.source_id:
+                    if len(matching_entities) == 0:
+                        # No match found
+                        skipped_missing.append(candidate.name)
+                        logger.debug(f"No entity found for link: {candidate.name}")
                         continue
 
-                    # Check for duplicate by (target_id, start_offset)
-                    dedup_key = (target_entity.id, candidate.span[0])
-                    if dedup_key in existing_keys:
-                        logger.debug(
-                            f"Skipping duplicate mention: {candidate.name} "
-                            f"at offset {candidate.span[0]}"
+                    elif len(matching_entities) > 1:
+                        # Ambiguous match - multiple entities with same name/alias
+                        skipped_ambiguous.append(candidate.name)
+                        logger.warning(
+                            f"Ambiguous link '{candidate.name}': "
+                            f"matches {len(matching_entities)} entities"
                         )
                         continue
 
-                    # Create snippet (40 chars of context around the link)
-                    snippet = self._extract_snippet(
-                        self.text_content, candidate.span[0], candidate.span[1]
-                    )
+                    else:
+                        # Exactly one match
+                        target_entity = matching_entities[0]
 
-                    # Build relation attributes
-                    attributes = {
-                        "field": self.field,
-                        "snippet": snippet,
-                        "start_offset": candidate.span[0],
-                        "end_offset": candidate.span[1],
-                        "created_by": "ProcessWikiLinksCommand",
-                        "created_at": time.time(),
-                    }
+                # At this point we have a valid target_entity
+                if not target_entity:
+                    continue
 
-                    # Insert relation
-                    rel_id = db_service.insert_relation(
-                        source_id=self.source_id,
-                        target_id=target_entity.id,
-                        rel_type="mentions",
-                        attributes=attributes,
+                # Skip self-references
+                if target_entity.id == self.source_id:
+                    continue
+
+                # Check for duplicate by (target_id, start_offset)
+                dedup_key = (target_entity.id, candidate.span[0])
+                if dedup_key in existing_keys:
+                    logger.debug(
+                        f"Skipping duplicate mention at offset {candidate.span[0]}"
                     )
-                    self._created_relations.append(rel_id)
-                    created_count += 1
-                    logger.info(
-                        f"Created mention: {self.source_id} -> {target_entity.name} "
-                        f"at offset {candidate.span[0]}"
-                    )
+                    continue
+
+                # Create snippet (40 chars of context around the link)
+                snippet = self._extract_snippet(
+                    self.text_content, candidate.span[0], candidate.span[1]
+                )
+
+                # Build relation attributes
+                attributes = {
+                    "field": self.field,
+                    "snippet": snippet,
+                    "start_offset": candidate.span[0],
+                    "end_offset": candidate.span[1],
+                    "created_by": "ProcessWikiLinksCommand",
+                    "created_at": time.time(),
+                    "is_id_based": candidate.is_id_based,
+                }
+
+                # Insert relation
+                rel_id = db_service.insert_relation(
+                    source_id=self.source_id,
+                    target_id=target_entity.id,
+                    rel_type="mentions",
+                    attributes=attributes,
+                )
+                self._created_relations.append(rel_id)
+                created_count += 1
+                logger.info(
+                    f"Created mention: {self.source_id} -> {target_entity.name} "
+                    f"at offset {candidate.span[0]} "
+                    f"({'ID-based' if candidate.is_id_based else 'name-based'})"
+                )
 
             # 5. Build result message
             mention_word = "mention" if created_count == 1 else "mentions"

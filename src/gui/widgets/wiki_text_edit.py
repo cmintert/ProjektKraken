@@ -32,48 +32,72 @@ class WikiTextEdit(QTextEdit):
         self.highlighter = WikiSyntaxHighlighter(self.document())
         self._hovered_link = None
         self._completer = None
+        self._completion_map = {}  # Maps display names to IDs
 
         # Enable mouse tracking for hover effects if desired
         self.setMouseTracking(True)
 
-    def set_completer(self, names: list[str]):
+    def set_completer(
+        self, items: list[tuple[str, str, str]] = None, names: list[str] = None
+    ):
         """
-        Initializes or updates the completer with a list of names.
+        Initializes or updates the completer with items.
+
+        Can be called with either:
+        - items: List of (id, name, type) tuples for ID-based completion
+        - names: List of names for legacy name-based completion
 
         Args:
-            names (list[str]): List of potential targets (Event/Entity names).
+            items: List of (id, name, type) tuples for entities/events.
+            names: Legacy list of names (for backward compatibility).
         """
+        if items is not None:
+            # Build completion map: name -> (id, type)
+            self._completion_map = {name: (item_id, item_type) for item_id, name, item_type in items}
+            display_names = [name for _, name, _ in items]
+        elif names is not None:
+            # Legacy mode - no ID mapping
+            self._completion_map = {}
+            display_names = names
+        else:
+            return
+
         if self._completer is None:
-            self._completer = QCompleter(names, self)
+            self._completer = QCompleter(display_names, self)
             self._completer.setWidget(self)
             self._completer.setCompletionMode(QCompleter.PopupCompletion)
             self._completer.setCaseSensitivity(Qt.CaseInsensitive)
             self._completer.activated.connect(self.insert_completion)
         else:
-            model = QStringListModel(names, self._completer)
+            model = QStringListModel(display_names, self._completer)
             self._completer.setModel(model)
 
     def insert_completion(self, completion: str):
         """
-        Inserts the selected completion into the text.
+        Inserts the selected completion into the text as an ID-based link.
+
+        If ID mapping is available, inserts [[id:UUID|Name]], otherwise [[Name]].
         """
         tc = self.textCursor()
-        # We want to replace the text from "[[..." to current position
-        # Find the start of the token
+        
+        # Remove the partial text typed after "[["
         extra = len(completion) - len(self._completer.completionPrefix())
         tc.movePosition(QTextCursor.MoveOperation.Left)
         tc.movePosition(QTextCursor.MoveOperation.EndOfWord)
         tc.insertText(completion[-extra:])
 
+        # If we have ID mapping, insert ID-based link
+        if completion in self._completion_map:
+            item_id, item_type = self._completion_map[completion]
+            # Move cursor back to replace the name with ID-based format
+            # Select the just-inserted completion
+            tc.movePosition(QTextCursor.MoveOperation.Left, QTextCursor.MoveOperation.MoveAnchor, len(completion[-extra:]))
+            tc.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveOperation.KeepAnchor, len(completion[-extra:]))
+            # Replace with ID-based format
+            tc.insertText(f"id:{item_id}|{completion}")
+
         # Append "]]" to close the link
         tc.insertText("]]")
-
-        # Close the link bracket automatically? Maybe.
-        # Let's just complete the name for now.
-        # User might want to type "|Alias]]"
-
-        # If the user just typed "[[Nam", we want "[[Name"
-        # The completer prefix handles the "Nam" part.
 
         self.setTextCursor(tc)
 
@@ -161,7 +185,10 @@ class WikiTextEdit(QTextEdit):
 
     def get_link_at_pos(self, pos) -> str:
         """
-        Returns the link text at the given pixel position, or None.
+        Returns the link target (ID or name) at the given pixel position, or None.
+
+        For ID-based links, returns the UUID.
+        For name-based links, returns the name.
         """
         cursor = self.cursorForPosition(pos)
         block = cursor.block()
@@ -179,6 +206,17 @@ class WikiTextEdit(QTextEdit):
             if start <= pos_in_block <= end:
                 # Extracted content
                 full_match = match.group(1)
+
+                # Check if this is ID-based: id:UUID or id:UUID|Label
+                if full_match.startswith("id:"):
+                    # Extract the ID part
+                    if "|" in full_match:
+                        id_part = full_match.split("|", 1)[0]
+                        return id_part[3:]  # Remove "id:" prefix, return UUID
+                    else:
+                        return full_match[3:]  # Remove "id:" prefix, return UUID
+
+                # Legacy name-based link
                 # Handle [[Target|Label]] -> return Target
                 if "|" in full_match:
                     return full_match.split("|", 1)[0].strip()
