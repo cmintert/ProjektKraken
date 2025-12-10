@@ -258,3 +258,23 @@ QFrame#LoreFrame {{
     border-left: 4px solid {accent_secondary};
     border-radius: 4px;
 }}
+
+/* Autocomplete Popup (QCompleter uses QListView) */
+QListView {{
+    background-color: {surface};
+    color: {text_main};
+    border: 1px solid {border};
+    selection-background-color: {primary};
+    selection-color: black;
+    outline: none;
+}}
+QListView::item {{
+    padding: 4px;
+}}
+QListView::item:selected {{
+    background-color: {primary};
+    color: black;
+}}
+QListView::item:hover:!selected {{
+    background-color: {border};
+}}

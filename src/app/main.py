@@ -12,7 +12,17 @@ from PySide6.QtWidgets import (
     QStatusBar,
     QMessageBox,
 )
-from PySide6.QtCore import Qt, QSettings, QThread, Slot, Signal, QTimer, QMetaObject, Qt as QtCore_Qt, Q_ARG
+from PySide6.QtCore import (
+    Qt,
+    QSettings,
+    QThread,
+    Slot,
+    Signal,
+    QTimer,
+    QMetaObject,
+    Qt as QtCore_Qt,
+    Q_ARG,
+)
 
 from src.core.logging_config import setup_logging, get_logger
 from src.core.theme_manager import ThemeManager
@@ -45,8 +55,13 @@ from src.commands.wiki_commands import ProcessWikiLinksCommand
 
 # Refactor Imports
 from src.app.constants import (
-    WINDOW_TITLE, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT,
-    WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP, STATUS_DB_INIT_FAIL, STATUS_ERROR_PREFIX
+    WINDOW_TITLE,
+    DEFAULT_WINDOW_WIDTH,
+    DEFAULT_WINDOW_HEIGHT,
+    WINDOW_SETTINGS_KEY,
+    WINDOW_SETTINGS_APP,
+    STATUS_DB_INIT_FAIL,
+    STATUS_ERROR_PREFIX,
 )
 from src.app.ui_manager import UIManager
 
@@ -99,12 +114,14 @@ class MainWindow(QMainWindow):
 
         # 3. Setup UI Layout via UIManager
         self.ui_manager = UIManager(self)
-        self.ui_manager.setup_docks({
-            'unified_list': self.unified_list,
-            'event_editor': self.event_editor,
-            'entity_editor': self.entity_editor,
-            'timeline': self.timeline
-        })
+        self.ui_manager.setup_docks(
+            {
+                "unified_list": self.unified_list,
+                "event_editor": self.event_editor,
+                "entity_editor": self.entity_editor,
+                "timeline": self.timeline,
+            }
+        )
 
         # 4. Connect Signals
         self._connect_signals()
@@ -139,7 +156,7 @@ class MainWindow(QMainWindow):
         Returns:
             QDockWidget: The dock widget containing the unified list.
         """
-        return self.ui_manager.docks.get('list')
+        return self.ui_manager.docks.get("list")
 
     @property
     def editor_dock(self):
@@ -149,7 +166,7 @@ class MainWindow(QMainWindow):
         Returns:
             QDockWidget: The dock widget containing the event editor.
         """
-        return self.ui_manager.docks.get('event')
+        return self.ui_manager.docks.get("event")
 
     @property
     def entity_editor_dock(self):
@@ -159,7 +176,7 @@ class MainWindow(QMainWindow):
         Returns:
             QDockWidget: The dock widget containing the entity editor.
         """
-        return self.ui_manager.docks.get('entity')
+        return self.ui_manager.docks.get("entity")
 
     @property
     def timeline_dock(self):
@@ -169,7 +186,7 @@ class MainWindow(QMainWindow):
         Returns:
             QDockWidget: The dock widget containing the timeline.
         """
-        return self.ui_manager.docks.get('timeline')
+        return self.ui_manager.docks.get("timeline")
 
     def _connect_signals(self):
         """Connects all UI signals to their respective slots."""
@@ -186,11 +203,11 @@ class MainWindow(QMainWindow):
             editor.add_relation_requested.connect(self.add_relation)
             editor.remove_relation_requested.connect(self.remove_relation)
             editor.update_relation_requested.connect(self.update_relation)
-        
+
         # Specific connections if needed (generalized above, but keeping specific if logic differs)
         self.event_editor.save_requested.disconnect(self.update_item)
         self.entity_editor.save_requested.disconnect(self.update_item)
-        
+
         self.event_editor.save_requested.connect(self.update_event)
         self.entity_editor.save_requested.connect(self.update_entity)
 
@@ -226,10 +243,10 @@ class MainWindow(QMainWindow):
     def _on_item_selected(self, item_type: str, item_id: str):
         """Handles selection from unified list."""
         if item_type == "event":
-            self.ui_manager.docks['event'].raise_()
+            self.ui_manager.docks["event"].raise_()
             self.load_event_details(item_id)
         elif item_type == "entity":
-            self.ui_manager.docks['entity'].raise_()
+            self.ui_manager.docks["entity"].raise_()
             self.load_entity_details(item_id)
 
     @Slot(str, str)
@@ -323,6 +340,7 @@ class MainWindow(QMainWindow):
         self.unified_list.set_data(self._cached_events, self._cached_entities)
         self.timeline.set_events(events)
         self.status_bar.showMessage(f"Loaded {len(events)} events.")
+        self._update_editor_suggestions()
 
     @Slot(list)
     def on_entities_loaded(self, entities):
@@ -332,6 +350,22 @@ class MainWindow(QMainWindow):
         self._cached_entities = entities
         self.unified_list.set_data(self._cached_events, self._cached_entities)
         self.status_bar.showMessage(f"Loaded {len(entities)} entities.")
+        self._update_editor_suggestions()
+
+    def _update_editor_suggestions(self):
+        """
+        Aggregates all Event and Entity names and updates the editors' completers.
+        """
+        names = set()
+        if self._cached_events:
+            names.update(e.name for e in self._cached_events)
+        if self._cached_entities:
+            names.update(e.name for e in self._cached_entities)
+
+        sorted_names = sorted(list(names))
+
+        self.event_editor.update_suggestions(sorted_names)
+        self.entity_editor.update_suggestions(sorted_names)
 
     @Slot(object, list, list)
     def on_event_details_loaded(self, event, relations, incoming):
@@ -343,7 +377,7 @@ class MainWindow(QMainWindow):
             relations (list): Outgoing relations.
             incoming (list): Incoming relations.
         """
-        self.ui_manager.docks['event'].raise_()
+        self.ui_manager.docks["event"].raise_()
         self.event_editor.load_event(event, relations, incoming)
         self.timeline.focus_event(event.id)
 
@@ -357,7 +391,7 @@ class MainWindow(QMainWindow):
             relations (list): Outgoing relations.
             incoming (list): Incoming relations.
         """
-        self.ui_manager.docks['entity'].raise_()
+        self.ui_manager.docks["entity"].raise_()
         self.entity_editor.load_entity(entity, relations, incoming)
 
     @Slot(object)

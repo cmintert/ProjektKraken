@@ -4,6 +4,7 @@ Event Editor Widget Module.
 Provides a form interface for editing event details including name, date,
 description, attributes, and relations.
 """
+
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -141,6 +142,15 @@ class EventEditorWidget(QWidget):
 
         # Start disabled until specific event loaded
         self.setEnabled(False)
+
+    def update_suggestions(self, names: list[str]):
+        """
+        Updates the autocomplete suggestions for the description field.
+
+        Args:
+            names (list[str]): List of available Event/Entity names.
+        """
+        self.desc_edit.set_completer(names)
 
     def load_event(
         self, event: Event, relations: list = None, incoming_relations: list = None

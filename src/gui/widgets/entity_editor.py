@@ -4,6 +4,7 @@ Entity Editor Widget Module.
 Provides a form interface for editing entity details including name, type,
 description, attributes, and relations.
 """
+
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -129,6 +130,15 @@ class EntityEditorWidget(QWidget):
 
         # Start disabled
         self.setEnabled(False)
+
+    def update_suggestions(self, names: list[str]):
+        """
+        Updates the autocomplete suggestions for the description field.
+
+        Args:
+            names (list[str]): List of available Event/Entity names.
+        """
+        self.desc_edit.set_completer(names)
 
     def load_entity(
         self, entity: Entity, relations: list = None, incoming_relations: list = None
