@@ -4,7 +4,25 @@ Handles parsing of WikiLinks and other text processing tasks.
 """
 
 import re
-from typing import Set
+from dataclasses import dataclass
+from typing import List, Tuple
+
+
+@dataclass
+class LinkCandidate:
+    """
+    Represents a parsed WikiLink with metadata.
+    
+    Attributes:
+        raw_text: The full [[...]] text including brackets.
+        name: The target name (before pipe if present).
+        modifier: The label/modifier (after pipe if present), or None.
+        span: Tuple of (start_offset, end_offset) in the source text.
+    """
+    raw_text: str
+    name: str
+    modifier: str | None
+    span: Tuple[int, int]
 
 
 class WikiLinkParser:
@@ -13,34 +31,39 @@ class WikiLinkParser:
     Links are expected to be in the format [[Name]] or [[Name|Label]].
     """
 
-    # Regex to capture [[Target]] or [[Target|Label]]
-    # Capture group 1 is the full content inside brackets.
-    LINK_PATTERN = re.compile(r"\[\[(.*?)\]\]")
+    # Regex to capture [[Name]] or [[Name|Label]]
+    # Group 1: name (target), Group 2: modifier/label (optional)
+    WIKILINK_RE = re.compile(r"\[\[([^[\]|]+)(?:\|([^\]]+))?\]\]")
 
     @staticmethod
-    def extract_links(text: str) -> Set[str]:
+    def extract_links(text: str) -> List[LinkCandidate]:
         """
-        Extracts unique link targets from the given text.
-        Handles pipe naming (Target|Label) by returning 'Target'.
+        Extracts WikiLinks from text as ordered LinkCandidate objects.
+        
+        Each link includes the name, optional modifier, and position offsets.
+        Duplicates are preserved in order of appearance.
 
         Args:
-            text (str): The text to parse.
+            text: The text to parse for WikiLinks.
 
         Returns:
-            Set[str]: A set of unique target names found in the text.
+            List[LinkCandidate]: Ordered list of parsed links with metadata.
         """
         if not text:
-            return set()
+            return []
 
-        matches = WikiLinkParser.LINK_PATTERN.findall(text)
-        targets = set()
+        candidates = []
+        for match in WikiLinkParser.WIKILINK_RE.finditer(text):
+            raw_text = match.group(0)  # Full [[...]] text
+            name = match.group(1).strip()
+            modifier = match.group(2).strip() if match.group(2) else None
+            span = (match.start(), match.end())
+            
+            candidates.append(LinkCandidate(
+                raw_text=raw_text,
+                name=name,
+                modifier=modifier,
+                span=span
+            ))
 
-        for match in matches:
-            # Handle [[Target|Label]] format
-            if "|" in match:
-                target, _ = match.split("|", 1)
-                targets.add(target.strip())
-            else:
-                targets.add(match.strip())
-
-        return targets
+        return candidates
