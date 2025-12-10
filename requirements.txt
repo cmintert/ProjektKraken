@@ -4,3 +4,4 @@ Sphinx
 flake8
 mypy
 black
+pytest-qt

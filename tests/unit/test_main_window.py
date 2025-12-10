@@ -9,7 +9,7 @@ def main_window(qtbot):
     # Mock DB service to avoid real DB creation
     # Also Mock QTimer to prevent deferred initialization crash in tests
     with patch("src.app.main.DatabaseWorker") as MockWorker, patch(
-        "PySide6.QtCore.QTimer"
+        "src.app.main.QTimer"
     ) as MockTimer:
         mock_worker = MockWorker.return_value
         mock_db = mock_worker.db_service

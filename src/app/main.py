@@ -8,23 +8,24 @@ import sys
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
-    QDockWidget,
     QWidget,
     QStatusBar,
-    QTabWidget,
     QMessageBox,
 )
-from PySide6.QtCore import Qt, QSettings, QThread, Slot, Signal
+from PySide6.QtCore import Qt, QSettings, QThread, Slot, Signal, QTimer, QMetaObject, Qt as QtCore_Qt, Q_ARG
+
 from src.core.logging_config import setup_logging, get_logger
 from src.core.theme_manager import ThemeManager
 from src.services.worker import DatabaseWorker
 from src.commands.base_command import CommandResult
 
-# DatabaseService import removed as MainWindow uses Worker
+# UI Components
 from src.gui.widgets.event_editor import EventEditorWidget
 from src.gui.widgets.entity_editor import EntityEditorWidget
 from src.gui.widgets.unified_list import UnifiedListWidget
 from src.gui.widgets.timeline import TimelineWidget
+
+# Commands
 from src.commands.event_commands import (
     CreateEventCommand,
     DeleteEventCommand,
@@ -40,8 +41,14 @@ from src.commands.relation_commands import (
     RemoveRelationCommand,
     UpdateRelationCommand,
 )
-
 from src.commands.wiki_commands import ProcessWikiLinksCommand
+
+# Refactor Imports
+from src.app.constants import (
+    WINDOW_TITLE, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT,
+    WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP, STATUS_DB_INIT_FAIL, STATUS_ERROR_PREFIX
+)
+from src.app.ui_manager import UIManager
 
 # Initialize Logging
 setup_logging(debug_mode=True)
@@ -69,22 +76,13 @@ class MainWindow(QMainWindow):
 
         Sets up:
         - Window Geometry & Title.
-        - Dock Widgets & Layouts.
+        - UI Manager (Docks & Layouts).
         - Worker Thread & Service connections.
-        - UI Signals & View Menu.
+        - UI Signals.
         """
         super().__init__()
-        self.setWindowTitle("Project Kraken - v0.2.0 (Editor Phase)")
-        self.resize(1280, 720)
-
-        # Enable advanced docking features
-        self.setDockOptions(
-            QMainWindow.AnimatedDocks
-            | QMainWindow.AllowNestedDocks
-            | QMainWindow.AllowTabbedDocks
-        )
-        # Set tabs to appear at the top
-        self.setTabPosition(Qt.AllDockWidgetAreas, QTabWidget.North)
+        self.setWindowTitle(WINDOW_TITLE)
+        self.resize(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
 
         # 1. Init Services (Worker Thread)
         self.init_worker()
@@ -93,83 +91,23 @@ class MainWindow(QMainWindow):
         self.unified_list = UnifiedListWidget()
         self.event_editor = EventEditorWidget()
         self.entity_editor = EntityEditorWidget()
+        self.timeline = TimelineWidget()
 
         # Data Cache for Unified List
         self._cached_events = []
         self._cached_entities = []
 
-        # Dockable List (Project Explorer)
-        self.list_dock = QDockWidget("Project Explorer", self)
-        self.list_dock.setObjectName("ProjectExplorerDock")
-        self.list_dock.setWidget(self.unified_list)
-        self.list_dock.setAllowedAreas(Qt.AllDockWidgetAreas)
-        self.list_dock.setFeatures(
-            QDockWidget.DockWidgetMovable
-            | QDockWidget.DockWidgetFloatable
-            | QDockWidget.DockWidgetClosable
-        )
-        self.addDockWidget(Qt.LeftDockWidgetArea, self.list_dock)
+        # 3. Setup UI Layout via UIManager
+        self.ui_manager = UIManager(self)
+        self.ui_manager.setup_docks({
+            'unified_list': self.unified_list,
+            'event_editor': self.event_editor,
+            'entity_editor': self.entity_editor,
+            'timeline': self.timeline
+        })
 
-        # Dockable Editor (Events)
-        self.editor_dock = QDockWidget("Event Inspector", self)
-        self.editor_dock.setObjectName("EventInspectorDock")
-        self.editor_dock.setWidget(self.event_editor)
-        self.editor_dock.setAllowedAreas(Qt.AllDockWidgetAreas)
-        self.editor_dock.setFeatures(
-            QDockWidget.DockWidgetMovable
-            | QDockWidget.DockWidgetFloatable
-            | QDockWidget.DockWidgetClosable
-        )
-        self.addDockWidget(Qt.RightDockWidgetArea, self.editor_dock)
-
-        # Dockable Editor (Entities)
-        self.entity_editor_dock = QDockWidget("Entity Inspector", self)
-        self.entity_editor_dock.setObjectName("EntityInspectorDock")
-        self.entity_editor_dock.setWidget(self.entity_editor)
-        self.entity_editor_dock.setAllowedAreas(Qt.AllDockWidgetAreas)
-        self.entity_editor_dock.setFeatures(
-            QDockWidget.DockWidgetMovable
-            | QDockWidget.DockWidgetFloatable
-            | QDockWidget.DockWidgetClosable
-        )
-        self.addDockWidget(Qt.RightDockWidgetArea, self.entity_editor_dock)
-        self.tabifyDockWidget(self.editor_dock, self.entity_editor_dock)
-
-        # 3. Connect Signals
-        # Unified List
-        self.unified_list.refresh_requested.connect(self.load_data)
-        self.unified_list.create_event_requested.connect(self.create_event)
-        self.unified_list.create_entity_requested.connect(self.create_entity)
-        self.unified_list.delete_requested.connect(self._on_item_delete_requested)
-        self.unified_list.item_selected.connect(self._on_item_selected)
-
-        # Editors
-        self.event_editor.save_requested.connect(self.update_event)
-        self.event_editor.add_relation_requested.connect(self.add_relation)
-        self.event_editor.remove_relation_requested.connect(self.remove_relation)
-        self.event_editor.update_relation_requested.connect(self.update_relation)
-        self.event_editor.link_clicked.connect(self.navigate_to_entity)
-
-        self.entity_editor.save_requested.connect(self.update_entity)
-        self.entity_editor.add_relation_requested.connect(self.add_relation)
-        self.entity_editor.remove_relation_requested.connect(self.remove_relation)
-        self.entity_editor.update_relation_requested.connect(self.update_relation)
-        self.entity_editor.link_clicked.connect(self.navigate_to_entity)
-
-        # Timeline (Dockable)
-        self.timeline_dock = QDockWidget("Timeline", self)
-        self.timeline_dock.setObjectName("TimelineDock")
-        self.timeline = TimelineWidget()
-        self.timeline_dock.setWidget(self.timeline)
-        self.timeline_dock.setAllowedAreas(Qt.AllDockWidgetAreas)
-        self.timeline_dock.setFeatures(
-            QDockWidget.DockWidgetMovable
-            | QDockWidget.DockWidgetFloatable
-            | QDockWidget.DockWidgetClosable
-        )
-        self.addDockWidget(Qt.BottomDockWidgetArea, self.timeline_dock)
-
-        self.timeline.event_selected.connect(self.load_event_details)
+        # 4. Connect Signals
+        self._connect_signals()
 
         # Central Widget
         self.setCentralWidget(QWidget())
@@ -180,12 +118,9 @@ class MainWindow(QMainWindow):
         self.setStatusBar(self.status_bar)
 
         # View Menu
-        self.create_view_menu()
+        self.ui_manager.create_view_menu(self.menuBar())
 
-        # 4. Initialize Database (deferred to ensure event loop is running)
-        # Use QMetaObject.invokeMethod to call on worker thread
-        from PySide6.QtCore import QTimer, QMetaObject, Qt as QtCore_Qt
-
+        # 5. Initialize Database (deferred to ensure event loop is running)
         QTimer.singleShot(
             100,
             lambda: QMetaObject.invokeMethod(
@@ -193,8 +128,57 @@ class MainWindow(QMainWindow):
             ),
         )
 
-        # 5. Restore Window State
-        settings = QSettings("Antigravity", "ProjectKraken_v0.3.1")
+        # 6. Restore Window State
+        self._restore_window_state()
+
+    @property
+    def list_dock(self):
+        return self.ui_manager.docks.get('list')
+
+    @property
+    def editor_dock(self):
+        return self.ui_manager.docks.get('event')
+
+    @property
+    def entity_editor_dock(self):
+        return self.ui_manager.docks.get('entity')
+
+    @property
+    def timeline_dock(self):
+        return self.ui_manager.docks.get('timeline')
+
+    def _connect_signals(self):
+        """Connects all UI signals to their respective slots."""
+        # Unified List
+        self.unified_list.refresh_requested.connect(self.load_data)
+        self.unified_list.create_event_requested.connect(self.create_event)
+        self.unified_list.create_entity_requested.connect(self.create_entity)
+        self.unified_list.delete_requested.connect(self._on_item_delete_requested)
+        self.unified_list.item_selected.connect(self._on_item_selected)
+
+        # Editors
+        for editor in [self.event_editor, self.entity_editor]:
+            editor.save_requested.connect(self.update_item)  # Generalized update
+            editor.add_relation_requested.connect(self.add_relation)
+            editor.remove_relation_requested.connect(self.remove_relation)
+            editor.update_relation_requested.connect(self.update_relation)
+        
+        # Specific connections if needed (generalized above, but keeping specific if logic differs)
+        self.event_editor.save_requested.disconnect(self.update_item)
+        self.entity_editor.save_requested.disconnect(self.update_item)
+        
+        self.event_editor.save_requested.connect(self.update_event)
+        self.entity_editor.save_requested.connect(self.update_entity)
+
+        self.event_editor.link_clicked.connect(self.navigate_to_entity)
+        self.entity_editor.link_clicked.connect(self.navigate_to_entity)
+
+        # Timeline
+        self.timeline.event_selected.connect(self.load_event_details)
+
+    def _restore_window_state(self):
+        """Restores window geometry and state from settings."""
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         geometry = settings.value("geometry")
         state = settings.value("windowState")
 
@@ -203,8 +187,11 @@ class MainWindow(QMainWindow):
         if state:
             self.restoreState(state)
         else:
-            # First run or reset: ensure default layout is applied
-            self.reset_layout()
+            self.ui_manager.reset_layout()
+
+    def update_item(self, data):
+        """Placeholder for generalized update, currently unused as we split update_event/entity."""
+        pass
 
     def load_data(self):
         """Refreshes both events and entities."""
@@ -215,10 +202,10 @@ class MainWindow(QMainWindow):
     def _on_item_selected(self, item_type: str, item_id: str):
         """Handles selection from unified list."""
         if item_type == "event":
-            self.editor_dock.raise_()
+            self.ui_manager.docks['event'].raise_()
             self.load_event_details(item_id)
         elif item_type == "entity":
-            self.entity_editor_dock.raise_()
+            self.ui_manager.docks['entity'].raise_()
             self.load_entity_details(item_id)
 
     @Slot(str, str)
@@ -286,7 +273,7 @@ class MainWindow(QMainWindow):
         Args:
             message (str): The error description.
         """
-        self.status_bar.showMessage(f"Error: {message}", 5000)
+        self.status_bar.showMessage(f"{STATUS_ERROR_PREFIX}{message}", 5000)
         QApplication.restoreOverrideCursor()
         logger.error(message)
 
@@ -301,7 +288,7 @@ class MainWindow(QMainWindow):
         if success:
             self.load_data()
         else:
-            self.status_bar.showMessage("Database Initialization Failed!")
+            self.status_bar.showMessage(STATUS_DB_INIT_FAIL)
 
     @Slot(list)
     def on_events_loaded(self, events):
@@ -332,7 +319,7 @@ class MainWindow(QMainWindow):
             relations (list): Outgoing relations.
             incoming (list): Incoming relations.
         """
-        self.editor_dock.raise_()
+        self.ui_manager.docks['event'].raise_()
         self.event_editor.load_event(event, relations, incoming)
         self.timeline.focus_event(event.id)
 
@@ -346,7 +333,7 @@ class MainWindow(QMainWindow):
             relations (list): Outgoing relations.
             incoming (list): Incoming relations.
         """
-        self.entity_editor_dock.raise_()
+        self.ui_manager.docks['entity'].raise_()
         self.entity_editor.load_entity(entity, relations, incoming)
 
     @Slot(object)
@@ -379,23 +366,11 @@ class MainWindow(QMainWindow):
             self.load_entities()
         if "Relation" in command_name:
             # Reload both to be safe, or check active editor
+            # Accessing private props is a bit smelly, but acceptable for now
             if self.event_editor._current_event_id:
                 self.load_event_details(self.event_editor._current_event_id)
             if self.entity_editor._current_entity_id:
                 self.load_entity_details(self.entity_editor._current_entity_id)
-
-    def create_view_menu(self):
-        """Creates the View menu for toggling docks."""
-        view_menu = self.menuBar().addMenu("View")
-        view_menu.addAction(self.list_dock.toggleViewAction())
-        view_menu.addAction(self.editor_dock.toggleViewAction())
-        view_menu.addAction(self.entity_editor_dock.toggleViewAction())
-        view_menu.addAction(self.timeline_dock.toggleViewAction())
-
-        view_menu.addSeparator()
-
-        reset_action = view_menu.addAction("Reset Layout")
-        reset_action.triggered.connect(self.reset_layout)
 
     def closeEvent(self, event):
         """
@@ -403,35 +378,13 @@ class MainWindow(QMainWindow):
         Saves window geometry/state and strictly cleans up worker thread.
         """
         # Save State
-        from PySide6.QtCore import QSettings
-
-        settings = QSettings("Antigravity", "ProjectKraken_v0.3.1")
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         settings.setValue("geometry", self.saveGeometry())
         settings.setValue("windowState", self.saveState())
 
-        # self.db_service.close() # handled by thread cleanup ideally, or manual stop
         self.worker_thread.quit()
         self.worker_thread.wait()
         event.accept()
-
-    def reset_layout(self):
-        """Restores the default docking layout configuration."""
-        # Restore default docking
-        self.addDockWidget(Qt.LeftDockWidgetArea, self.list_dock)
-        # self.entity_list_dock removed in Unified List update
-        # self.tabifyDockWidget... removed
-
-        self.addDockWidget(Qt.RightDockWidgetArea, self.editor_dock)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.entity_editor_dock)
-        self.tabifyDockWidget(self.editor_dock, self.entity_editor_dock)
-
-        self.addDockWidget(Qt.BottomDockWidgetArea, self.timeline_dock)
-
-        self.list_dock.show()
-        # self.entity_list_dock.show()
-        self.editor_dock.show()
-        self.entity_editor_dock.show()
-        self.timeline_dock.show()
 
     # ----------------------------------------------------------------------
     # Methods that request data from Worker
@@ -449,22 +402,16 @@ class MainWindow(QMainWindow):
 
     def load_events(self):
         """Requests loading of all events."""
-        from PySide6.QtCore import QMetaObject, Qt as QtCore_Qt
-
         QMetaObject.invokeMethod(self.worker, "load_events", QtCore_Qt.QueuedConnection)
 
     def load_entities(self):
         """Requests loading of all entities."""
-        from PySide6.QtCore import QMetaObject, Qt as QtCore_Qt
-
         QMetaObject.invokeMethod(
             self.worker, "load_entities", QtCore_Qt.QueuedConnection
         )
 
     def load_event_details(self, event_id: str):
         """Requests loading details for a specific event."""
-        from PySide6.QtCore import QMetaObject, Qt as QtCore_Qt, Q_ARG
-
         QMetaObject.invokeMethod(
             self.worker,
             "load_event_details",
@@ -474,8 +421,6 @@ class MainWindow(QMainWindow):
 
     def load_entity_details(self, entity_id: str):
         """Requests loading details for a specific entity."""
-        from PySide6.QtCore import QMetaObject, Qt as QtCore_Qt, Q_ARG
-
         QMetaObject.invokeMethod(
             self.worker,
             "load_entity_details",
@@ -484,23 +429,10 @@ class MainWindow(QMainWindow):
         )
 
     def delete_event(self, event_id):
-        """
-        Deletes an event by ID.
-
-        Args:
-            event_id (str): The unique identifier of the event to delete.
-        """
         cmd = DeleteEventCommand(event_id)
         self.command_requested.emit(cmd)
 
     def update_event(self, event_data: dict):
-        """
-        Updates an existing event with new data.
-
-        Args:
-            event_data (dict): Dictionary containing event fields to update.
-                              Must include 'id' field.
-        """
         event_id = event_data.get("id")
         if not event_id:
             logger.error("Attempted to update event without ID.")
@@ -514,33 +446,18 @@ class MainWindow(QMainWindow):
             self.command_requested.emit(wiki_cmd)
 
     def create_entity(self):
-        """Creates a new entity with default values."""
         cmd = CreateEntityCommand()
         self.command_requested.emit(cmd)
 
     def create_event(self):
-        """Creates a new event with default values."""
         cmd = CreateEventCommand()
         self.command_requested.emit(cmd)
 
     def delete_entity(self, entity_id):
-        """
-        Deletes an entity by ID.
-
-        Args:
-            entity_id (str): The unique identifier of the entity to delete.
-        """
         cmd = DeleteEntityCommand(entity_id)
         self.command_requested.emit(cmd)
 
     def update_entity(self, entity_data: dict):
-        """
-        Updates an existing entity with new data.
-
-        Args:
-            entity_data (dict): Dictionary containing entity fields to update.
-                               Must include 'id' field.
-        """
         entity_id = entity_data.get("id")
         if not entity_id:
             logger.error("Attempted to update entity without ID.")
@@ -554,39 +471,16 @@ class MainWindow(QMainWindow):
             self.command_requested.emit(wiki_cmd)
 
     def add_relation(self, source_id, target_id, rel_type, bidirectional: bool = False):
-        """
-        Adds a relationship between two objects.
-
-        Args:
-            source_id (str): ID of the source object.
-            target_id (str): ID of the target object.
-            rel_type (str): Type of relationship (e.g., "caused", "located_at").
-            bidirectional (bool): If True, creates a reverse relationship as well.
-        """
         cmd = AddRelationCommand(
             source_id, target_id, rel_type, bidirectional=bidirectional
         )
         self.command_requested.emit(cmd)
 
     def remove_relation(self, rel_id):
-        """
-        Removes a relationship by ID.
-
-        Args:
-            rel_id (str): The unique identifier of the relation to remove.
-        """
         cmd = RemoveRelationCommand(rel_id)
         self.command_requested.emit(cmd)
 
     def update_relation(self, rel_id, target_id, rel_type):
-        """
-        Updates an existing relationship.
-
-        Args:
-            rel_id (str): The unique identifier of the relation to update.
-            target_id (str): New target object ID.
-            rel_type (str): New relationship type.
-        """
         cmd = UpdateRelationCommand(rel_id, target_id, rel_type)
         self.command_requested.emit(cmd)
 
@@ -615,14 +509,14 @@ def main():
     Configures High DPI scaling, Theme, and launches MainWindow.
     """
     logger.info("Starting Application...")
-    # 1. High DPI Scaling (Spec 2.2)
+    # 1. High DPI Scaling
     QApplication.setHighDpiScaleFactorRoundingPolicy(
         Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
     )
 
     app = QApplication(sys.argv)
 
-    # 2. Apply Theme (Spec 3.2)
+    # 2. Apply Theme
     tm = ThemeManager()
     try:
         with open("src/resources/main.qss", "r") as f:

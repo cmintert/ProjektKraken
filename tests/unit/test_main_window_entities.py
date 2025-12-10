@@ -13,7 +13,7 @@ def main_window(qtbot):
     """Create MainWindow with mocked Worker."""
     with patch("src.app.main.DatabaseWorker"):
         # Avoid thread start in test and prevent deferred init crash
-        with patch("src.app.main.QThread"), patch("PySide6.QtCore.QTimer"):
+        with patch("src.app.main.QThread"), patch("src.app.main.QTimer"):
             window = MainWindow()
             window.show()
             qtbot.addWidget(window)
