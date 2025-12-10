@@ -156,11 +156,6 @@ class MainWindow(QMainWindow):
         self.entity_editor.update_relation_requested.connect(self.update_relation)
         self.entity_editor.link_clicked.connect(self.navigate_to_entity)
 
-        self.entity_editor.save_requested.connect(self.update_entity)
-        self.entity_editor.add_relation_requested.connect(self.add_relation)
-        self.entity_editor.remove_relation_requested.connect(self.remove_relation)
-        self.entity_editor.update_relation_requested.connect(self.update_relation)
-
         # Timeline (Dockable)
         self.timeline_dock = QDockWidget("Timeline", self)
         self.timeline_dock.setObjectName("TimelineDock")

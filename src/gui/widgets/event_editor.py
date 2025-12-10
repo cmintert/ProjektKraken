@@ -3,7 +3,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QFormLayout,
     QLineEdit,
-    QTextEdit,
     QDoubleSpinBox,
     QComboBox,
     QPushButton,
@@ -69,8 +68,6 @@ class EventEditorWidget(QWidget):
         self.type_edit.addItems(
             ["generic", "cosmic", "historical", "personal", "session", "combat"]
         )
-        self.type_edit.setEditable(True)
-
         self.type_edit.setEditable(True)
 
         self.desc_edit = WikiTextEdit()

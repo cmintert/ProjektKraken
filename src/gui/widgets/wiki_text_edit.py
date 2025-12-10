@@ -6,7 +6,7 @@ A specialized QTextEdit that supports WikiLink navigation via Ctrl+Click.
 import re
 from PySide6.QtWidgets import QTextEdit
 from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QMouseEvent, QTextCursor
+from PySide6.QtGui import QMouseEvent
 
 from src.gui.utils.wiki_highlighter import WikiSyntaxHighlighter
 

@@ -12,10 +12,13 @@ class CommandResult:
     Standardized result object for command execution.
 
     Attributes:
-        success (bool): True if the command executed successfully, False otherwise.
+        success (bool): True if the command executed successfully,
+                        False otherwise.
         message (str): A human-readable message describing the result.
-        errors (Dict[str, str]): A dictionary of validation errors (field -> error content).
-        command_name (str): The name of the command that generated this result.
+        errors (Dict[str, str]): A dictionary of validation errors
+                                 (field -> error content).
+        command_name (str): The name of the command that generated
+                            this result.
     """
 
     success: bool
