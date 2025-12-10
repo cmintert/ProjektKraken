@@ -19,7 +19,8 @@ def test_parse_id_based_link():
     assert link.target_id == "550e8400-e29b-41d4-a716-446655440000"
     assert link.modifier == "Gandalf"
     assert link.name is None
-    assert link.span == (4, 55)  # Corrected end position
+    # Span should match the [[...]] part in the text (position 4 to 55)
+    assert link.span == (4, 55)
 
 
 def test_parse_legacy_name_link():

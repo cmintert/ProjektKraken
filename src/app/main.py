@@ -617,8 +617,13 @@ class MainWindow(QMainWindow):
         """
         logger.info(f"Navigating to target: {target}")
         
-        # Check if target looks like a UUID (contains hyphens and is 36 chars)
-        is_uuid = len(target) == 36 and target.count("-") == 4
+        # Check if target is a valid UUID format
+        import re
+        uuid_pattern = re.compile(
+            r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            re.IGNORECASE
+        )
+        is_uuid = uuid_pattern.match(target) is not None
         
         if is_uuid:
             # ID-based navigation - direct lookup

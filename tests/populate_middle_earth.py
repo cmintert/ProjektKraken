@@ -161,9 +161,10 @@ def populate_middle_earth_data(db_path=":memory:"):
     result = cmd.execute(db)
     print(f"Processed wiki links for Fall of Sauron: {result.message}")
     
-    # Add a description with ID-based link to Gandalf
+    # Add a description with links to demonstrate ID-based linking
+    # (Note: Avoiding self-reference as it's skipped by ProcessWikiLinksCommand)
     gandalf.description = (
-        f"[[id:{gandalf.id}|Gandalf]] arrived in Middle-earth around TA 1000. "
+        f"A powerful wizard who arrived in Middle-earth around TA 1000. "
         f"He played a crucial role in defeating [[id:{sauron.id}|Sauron]] during the War of the Ring. "
         f"He was close friends with [[id:{aragorn.id}|Aragorn]] and mentored [[id:{frodo.id}|Frodo]]."
     )

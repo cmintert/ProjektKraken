@@ -6,7 +6,7 @@ Provides caching and broken link detection.
 """
 
 import logging
-from typing import Optional, Dict, Tuple
+from typing import Optional, Dict, Tuple, List
 from src.services.db_service import DatabaseService
 
 logger = logging.getLogger(__name__)
@@ -96,7 +96,7 @@ class LinkResolver:
             return f"{fallback_name} [BROKEN]"
         return f"[BROKEN LINK: {target_id[:8]}...]"
 
-    def find_broken_links(self, text: str) -> list[str]:
+    def find_broken_links(self, text: str) -> List[str]:
         """
         Finds all broken links in the given text.
 

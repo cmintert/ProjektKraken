@@ -103,20 +103,29 @@ class WikiTextEdit(QTextEdit):
         tc = self.textCursor()
         
         # Remove the partial text typed after "[["
-        extra = len(completion) - len(self._completer.completionPrefix())
+        prefix_len = len(self._completer.completionPrefix())
+        extra = len(completion) - prefix_len
+        
+        # Move to end of current word and insert remaining text
         tc.movePosition(QTextCursor.MoveOperation.Left)
         tc.movePosition(QTextCursor.MoveOperation.EndOfWord)
         tc.insertText(completion[-extra:])
 
-        # If we have ID mapping, insert ID-based link
+        # If we have ID mapping, convert to ID-based link
         if completion in self._completion_map:
             item_id, item_type = self._completion_map[completion]
-            # Move cursor back to replace the name with ID-based format
-            # Select the just-inserted completion
-            tc.movePosition(QTextCursor.MoveOperation.Left, QTextCursor.MoveOperation.MoveAnchor, len(completion[-extra:]))
-            tc.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveOperation.KeepAnchor, len(completion[-extra:]))
+            
+            # Select the just-inserted text
+            for _ in range(len(completion[-extra:])):
+                tc.movePosition(QTextCursor.MoveOperation.Left, QTextCursor.MoveOperation.KeepAnchor)
+            
             # Replace with ID-based format
-            tc.insertText(f"id:{item_id}|{completion}")
+            # Guard against unexpected cursor state
+            if tc.hasSelection():
+                tc.insertText(f"id:{item_id}|{completion}")
+            else:
+                # Fallback: just append the closing bracket
+                tc.movePosition(QTextCursor.MoveOperation.EndOfWord)
 
         # Append "]]" to close the link
         tc.insertText("]]")
