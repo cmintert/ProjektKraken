@@ -157,12 +157,12 @@ class TimelineView(QGraphicsView):
     LANE_HEIGHT = 40
     RULER_HEIGHT = 40
 
-    LANE_HEIGHT = 40
-    RULER_HEIGHT = 40
-
     def __init__(self, parent=None):
         """
         Initializes the TimelineView.
+
+        Args:
+            parent (QWidget, optional): The parent widget. Defaults to None.
         """
         super().__init__(parent)
         self.scene = TimelineScene(self)
