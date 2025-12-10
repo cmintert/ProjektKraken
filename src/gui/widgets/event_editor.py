@@ -1,3 +1,9 @@
+"""
+Event Editor Widget Module.
+
+Provides a form interface for editing event details including name, date,
+description, attributes, and relations.
+"""
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,

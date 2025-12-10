@@ -133,18 +133,42 @@ class MainWindow(QMainWindow):
 
     @property
     def list_dock(self):
+        """
+        Gets the project list dock widget.
+
+        Returns:
+            QDockWidget: The dock widget containing the unified list.
+        """
         return self.ui_manager.docks.get('list')
 
     @property
     def editor_dock(self):
+        """
+        Gets the event editor dock widget.
+
+        Returns:
+            QDockWidget: The dock widget containing the event editor.
+        """
         return self.ui_manager.docks.get('event')
 
     @property
     def entity_editor_dock(self):
+        """
+        Gets the entity editor dock widget.
+
+        Returns:
+            QDockWidget: The dock widget containing the entity editor.
+        """
         return self.ui_manager.docks.get('entity')
 
     @property
     def timeline_dock(self):
+        """
+        Gets the timeline dock widget.
+
+        Returns:
+            QDockWidget: The dock widget containing the timeline.
+        """
         return self.ui_manager.docks.get('timeline')
 
     def _connect_signals(self):
@@ -429,10 +453,22 @@ class MainWindow(QMainWindow):
         )
 
     def delete_event(self, event_id):
+        """
+        Deletes an event by emitting a delete command.
+
+        Args:
+            event_id (str): The ID of the event to delete.
+        """
         cmd = DeleteEventCommand(event_id)
         self.command_requested.emit(cmd)
 
     def update_event(self, event_data: dict):
+        """
+        Updates an event with the provided data.
+
+        Args:
+            event_data (dict): Dictionary containing event data including the 'id' field.
+        """
         event_id = event_data.get("id")
         if not event_id:
             logger.error("Attempted to update event without ID.")
@@ -446,18 +482,36 @@ class MainWindow(QMainWindow):
             self.command_requested.emit(wiki_cmd)
 
     def create_entity(self):
+        """
+        Creates a new entity by emitting a create command.
+        """
         cmd = CreateEntityCommand()
         self.command_requested.emit(cmd)
 
     def create_event(self):
+        """
+        Creates a new event by emitting a create command.
+        """
         cmd = CreateEventCommand()
         self.command_requested.emit(cmd)
 
     def delete_entity(self, entity_id):
+        """
+        Deletes an entity by emitting a delete command.
+
+        Args:
+            entity_id (str): The ID of the entity to delete.
+        """
         cmd = DeleteEntityCommand(entity_id)
         self.command_requested.emit(cmd)
 
     def update_entity(self, entity_data: dict):
+        """
+        Updates an entity with the provided data.
+
+        Args:
+            entity_data (dict): Dictionary containing entity data including the 'id' field.
+        """
         entity_id = entity_data.get("id")
         if not entity_id:
             logger.error("Attempted to update entity without ID.")
@@ -471,16 +525,39 @@ class MainWindow(QMainWindow):
             self.command_requested.emit(wiki_cmd)
 
     def add_relation(self, source_id, target_id, rel_type, bidirectional: bool = False):
+        """
+        Adds a relation between entities.
+
+        Args:
+            source_id (str): The ID of the source entity.
+            target_id (str): The ID of the target entity.
+            rel_type (str): The type of relation.
+            bidirectional (bool, optional): Whether the relation is bidirectional. Defaults to False.
+        """
         cmd = AddRelationCommand(
             source_id, target_id, rel_type, bidirectional=bidirectional
         )
         self.command_requested.emit(cmd)
 
     def remove_relation(self, rel_id):
+        """
+        Removes a relation by its ID.
+
+        Args:
+            rel_id (str): The ID of the relation to remove.
+        """
         cmd = RemoveRelationCommand(rel_id)
         self.command_requested.emit(cmd)
 
     def update_relation(self, rel_id, target_id, rel_type):
+        """
+        Updates an existing relation.
+
+        Args:
+            rel_id (str): The ID of the relation to update.
+            target_id (str): The new target entity ID.
+            rel_type (str): The new relation type.
+        """
         cmd = UpdateRelationCommand(rel_id, target_id, rel_type)
         self.command_requested.emit(cmd)
 

@@ -70,6 +70,12 @@ class CreateEventCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
+        """
+        Reverts the event creation by deleting it from the database.
+
+        Args:
+            db_service (DatabaseService): The database service to operate on.
+        """
         if not self._is_executed:
             return
 
@@ -224,6 +230,12 @@ class DeleteEventCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
+        """
+        Reverts the event deletion by restoring it to the database.
+
+        Args:
+            db_service (DatabaseService): The database service to operate on.
+        """
         if self._is_executed and self._backup_event:
             logger.info(f"Undoing DeleteEvent: Restoring {self._backup_event.name}")
             db_service.insert_event(self._backup_event)

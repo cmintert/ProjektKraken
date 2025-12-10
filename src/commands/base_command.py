@@ -73,4 +73,10 @@ class BaseCommand(ABC):
 
     @property
     def is_executed(self) -> bool:
+        """
+        Checks if the command has been executed.
+
+        Returns:
+            bool: True if the command has been executed, False otherwise.
+        """
         return self._is_executed

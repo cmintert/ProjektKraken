@@ -1,3 +1,9 @@
+"""
+Logging Configuration Module.
+
+This module provides centralized logging configuration for the application,
+including rotating file handlers and console output.
+"""
 import logging
 import os
 from logging.handlers import RotatingFileHandler

@@ -1,3 +1,9 @@
+"""
+Entity Editor Widget Module.
+
+Provides a form interface for editing entity details including name, type,
+description, attributes, and relations.
+"""
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -33,6 +39,12 @@ class EntityEditorWidget(QWidget):
     link_clicked = Signal(str)
 
     def __init__(self, parent=None):
+        """
+        Initializes the EntityEditorWidget.
+
+        Args:
+            parent (QWidget, optional): The parent widget. Defaults to None.
+        """
         super().__init__(parent)
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.layout = QVBoxLayout(self)
@@ -181,6 +193,11 @@ class EntityEditorWidget(QWidget):
         self.setEnabled(False)
 
     def _on_add_relation(self):
+        """
+        Handles adding a new relation.
+
+        Opens dialogs to collect relation details and emits the add_relation_requested signal.
+        """
         if not self._current_entity_id:
             return
 
@@ -209,6 +226,12 @@ class EntityEditorWidget(QWidget):
         )
 
     def _show_rel_menu(self, pos):
+        """
+        Shows a context menu for relation items.
+
+        Args:
+            pos (QPoint): The position where the menu should appear.
+        """
         item = self.rel_list.itemAt(pos)
         if not item:
             return
@@ -222,6 +245,12 @@ class EntityEditorWidget(QWidget):
             self._on_edit_relation(item)
 
     def _on_remove_relation_item(self, item):
+        """
+        Handles removing a relation item.
+
+        Args:
+            item (QListWidgetItem): The relation item to remove.
+        """
         rel_data = item.data(Qt.UserRole)
         confirm = QMessageBox.question(
             self,
@@ -233,6 +262,12 @@ class EntityEditorWidget(QWidget):
             self.remove_relation_requested.emit(rel_data["id"])
 
     def _on_edit_relation(self, item):
+        """
+        Handles editing a relation item.
+
+        Args:
+            item (QListWidgetItem): The relation item to edit.
+        """
         rel_data = item.data(Qt.UserRole)
         target_id, ok = QInputDialog.getText(
             self, "Edit Relation", "Target ID:", text=rel_data["target_id"]
@@ -251,11 +286,17 @@ class EntityEditorWidget(QWidget):
         self.update_relation_requested.emit(rel_data["id"], target_id, rel_type)
 
     def _on_edit_selected_relation(self):
+        """
+        Handles editing the currently selected relation.
+        """
         item = self.rel_list.currentItem()
         if item:
             self._on_edit_relation(item)
 
     def _on_remove_selected_relation(self):
+        """
+        Handles removing the currently selected relation.
+        """
         item = self.rel_list.currentItem()
         if item:
             self._on_remove_relation_item(item)
