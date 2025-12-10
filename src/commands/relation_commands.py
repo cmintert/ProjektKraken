@@ -1,3 +1,13 @@
+"""
+Relation Commands Module.
+
+Provides command classes for managing relationships between events and entities:
+- AddRelationCommand: Create directed relationships
+- RemoveRelationCommand: Delete relationships
+- UpdateRelationCommand: Modify existing relationships
+
+All commands support undo/redo operations and return CommandResult objects.
+"""
 from src.commands.base_command import BaseCommand
 from src.services.db_service import DatabaseService
 import logging

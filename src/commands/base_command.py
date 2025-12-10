@@ -1,3 +1,12 @@
+"""
+Base Command Module.
+
+Defines the abstract base class and result type for all commands in the application.
+
+Classes:
+    CommandResult: Standardized result object for command execution.
+    BaseCommand: Abstract base class implementing command pattern with undo/redo.
+"""
 from abc import ABC, abstractmethod
 from src.services.db_service import DatabaseService
 

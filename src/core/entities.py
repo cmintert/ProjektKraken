@@ -1,3 +1,13 @@
+"""Core Entities Module.
+
+Defines the Entity dataclass representing timeless objects in the world.
+
+The Entity class represents characters, locations, artifacts, and other
+objects that exist across time with:
+- Flexible type system (character, location, faction, etc.)
+- JSON attributes for custom world-specific properties
+- Automatic ID generation and timestamp tracking
+"""
 from dataclasses import dataclass, field
 from typing import Dict, Any
 import uuid

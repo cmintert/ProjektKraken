@@ -1,3 +1,12 @@
+"""Core Events Module.
+
+Defines the Event dataclass representing points or spans in time.
+
+The Event class is the fundamental unit of the timeline, supporting:
+- Precise chronological data from cosmic to seconds scale
+- Flexible JSON attributes for world-specific data
+- Automatic ID generation and timestamp tracking
+"""
 from dataclasses import dataclass, field
 from typing import Dict, Any
 import uuid
