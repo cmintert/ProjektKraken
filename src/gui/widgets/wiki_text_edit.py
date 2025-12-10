@@ -33,24 +33,46 @@ class WikiTextEdit(QTextEdit):
         self._hovered_link = None
         self._completer = None
         self._completion_map = {}  # Maps display names to IDs
+        self._link_resolver = None  # Will be set later
 
         # Enable mouse tracking for hover effects if desired
         self.setMouseTracking(True)
 
+    def set_link_resolver(self, link_resolver):
+        """
+        Sets the link resolver for checking broken links.
+        
+        Args:
+            link_resolver: LinkResolver instance for ID resolution and broken link detection.
+        """
+        self._link_resolver = link_resolver
+        self.highlighter.set_link_resolver(link_resolver)
+
     def set_completer(
-        self, items: list[tuple[str, str, str]] = None, names: list[str] = None
+        self, items_or_names=None, *, items: list[tuple[str, str, str]] = None, names: list[str] = None
     ):
         """
         Initializes or updates the completer with items.
 
         Can be called with either:
-        - items: List of (id, name, type) tuples for ID-based completion
-        - names: List of names for legacy name-based completion
+        - Positional list of names for legacy compatibility: set_completer(["Name1", "Name2"])
+        - items keyword arg: List of (id, name, type) tuples for ID-based completion
+        - names keyword arg: List of names for legacy name-based completion
 
         Args:
+            items_or_names: Legacy positional parameter (list of names).
             items: List of (id, name, type) tuples for entities/events.
             names: Legacy list of names (for backward compatibility).
         """
+        # Handle legacy positional argument
+        if items_or_names is not None:
+            if isinstance(items_or_names, list) and items_or_names:
+                # Check if it's a list of tuples (new format) or strings (legacy)
+                if isinstance(items_or_names[0], tuple):
+                    items = items_or_names
+                else:
+                    names = items_or_names
+        
         if items is not None:
             # Build completion map: name -> (id, type)
             self._completion_map = {name: (item_id, item_type) for item_id, name, item_type in items}

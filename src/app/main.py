@@ -354,18 +354,28 @@ class MainWindow(QMainWindow):
 
     def _update_editor_suggestions(self):
         """
-        Aggregates all Event and Entity names and updates the editors' completers.
+        Aggregates all Event and Entity names with IDs and updates the editors' completers.
+        
+        Provides ID-based completion for robust wiki-linking.
         """
-        names = set()
-        if self._cached_events:
-            names.update(e.name for e in self._cached_events)
+        items = []
+        
+        # Add entities: (id, name, type)
         if self._cached_entities:
-            names.update(e.name for e in self._cached_entities)
+            for entity in self._cached_entities:
+                items.append((entity.id, entity.name, "entity"))
+        
+        # Add events: (id, name, type)
+        if self._cached_events:
+            for event in self._cached_events:
+                items.append((event.id, event.name, "event"))
+        
+        # Sort by name for better UX
+        items.sort(key=lambda x: x[1].lower())
 
-        sorted_names = sorted(list(names))
-
-        self.event_editor.update_suggestions(sorted_names)
-        self.entity_editor.update_suggestions(sorted_names)
+        # Update editors with ID-based completion
+        self.event_editor.update_suggestions(items=items)
+        self.entity_editor.update_suggestions(items=items)
 
     @Slot(object, list, list)
     def on_event_details_loaded(self, event, relations, incoming):
@@ -595,22 +605,67 @@ class MainWindow(QMainWindow):
         cmd = UpdateRelationCommand(rel_id, target_id, rel_type)
         self.command_requested.emit(cmd)
 
-    def navigate_to_entity(self, name: str):
+    def navigate_to_entity(self, target: str):
         """
-        Navigates to the entity with the given name.
-        Uses cached entities for quick lookup.
-        """
-        logger.info(f"Navigating to entity: {name}")
-        # Case-insensitive match
-        target = next(
-            (e for e in self._cached_entities if e.name.lower() == name.lower()), None
-        )
+        Navigates to the entity or event with the given name or ID.
+        
+        Handles both ID-based links (UUIDs) and legacy name-based links.
+        Uses cached entities and events for quick lookup.
 
-        if target:
-            self.load_entity_details(target.id)
+        Args:
+            target (str): Entity/event name or UUID.
+        """
+        logger.info(f"Navigating to target: {target}")
+        
+        # Check if target looks like a UUID (contains hyphens and is 36 chars)
+        is_uuid = len(target) == 36 and target.count("-") == 4
+        
+        if is_uuid:
+            # ID-based navigation - direct lookup
+            entity = next(
+                (e for e in self._cached_entities if e.id == target), None
+            )
+            if entity:
+                self.load_entity_details(entity.id)
+                return
+            
+            event = next(
+                (e for e in self._cached_events if e.id == target), None
+            )
+            if event:
+                self.load_event_details(event.id)
+                return
+            
+            # ID not found - broken link
+            QMessageBox.warning(
+                self,
+                "Broken Link",
+                f"The linked item (ID: {target[:8]}...) no longer exists.",
+            )
         else:
+            # Name-based navigation (legacy) - case-insensitive match
+            entity = next(
+                (e for e in self._cached_entities if e.name.lower() == target.lower()),
+                None,
+            )
+            
+            if entity:
+                self.load_entity_details(entity.id)
+                return
+            
+            # Also check events for name-based links
+            event = next(
+                (e for e in self._cached_events if e.name.lower() == target.lower()),
+                None,
+            )
+            
+            if event:
+                self.load_event_details(event.id)
+                return
+            
+            # Name not found
             QMessageBox.information(
-                self, "Link Not Found", f"Entity '{name}' not found."
+                self, "Link Not Found", f"No entity or event named '{target}' found."
             )
 
 

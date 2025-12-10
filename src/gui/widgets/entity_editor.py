@@ -131,14 +131,21 @@ class EntityEditorWidget(QWidget):
         # Start disabled
         self.setEnabled(False)
 
-    def update_suggestions(self, names: list[str]):
+    def update_suggestions(
+        self, items: list[tuple[str, str, str]] = None, names: list[str] = None
+    ):
         """
         Updates the autocomplete suggestions for the description field.
 
+        Can be called with either:
+        - items: List of (id, name, type) tuples for ID-based completion
+        - names: List of names for legacy name-based completion
+
         Args:
-            names (list[str]): List of available Event/Entity names.
+            items: List of (id, name, type) tuples for entities/events.
+            names: Legacy list of names (for backward compatibility).
         """
-        self.desc_edit.set_completer(names)
+        self.desc_edit.set_completer(items=items, names=names)
 
     def load_entity(
         self, entity: Entity, relations: list = None, incoming_relations: list = None
