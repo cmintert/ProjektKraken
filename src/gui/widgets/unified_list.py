@@ -4,6 +4,7 @@ Unified List Widget Module.
 Provides a unified list view displaying both events and entities with
 filtering and color-coded differentiation.
 """
+
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -118,7 +119,16 @@ class UnifiedListWidget(QWidget):
     def _render_list(self):
         """
         Renders the list based on current filter and data.
+        Preserves selection during refresh.
         """
+        # Capture current selection
+        current_id = None
+        current_type = None
+        selected_items = self.list_widget.selectedItems()
+        if selected_items:
+            current_id = selected_items[0].data(Qt.UserRole)
+            current_type = selected_items[0].data(Qt.UserRole + 1)
+
         self.list_widget.clear()
 
         filter_mode = self.filter_combo.currentText()
@@ -180,6 +190,17 @@ class UnifiedListWidget(QWidget):
         if has_items:
             self.list_widget.show()
             self.empty_label.hide()
+
+            # Restore selection if possible
+            if current_id and current_type:
+                for index in range(self.list_widget.count()):
+                    item = self.list_widget.item(index)
+                    if (
+                        item.data(Qt.UserRole) == current_id
+                        and item.data(Qt.UserRole + 1) == current_type
+                    ):
+                        self.list_widget.setCurrentItem(item)
+                        break
         else:
             self.list_widget.hide()
             self.empty_label.show()

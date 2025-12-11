@@ -239,7 +239,6 @@ class MainWindow(QMainWindow):
         self.load_events()
         self.load_entities()
 
-    @Slot(str, str)
     def _on_item_selected(self, item_type: str, item_id: str):
         """Handles selection from unified list."""
         if item_type == "event":
