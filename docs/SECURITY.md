@@ -45,12 +45,21 @@ cursor.execute("SELECT * FROM events WHERE id = '%s'" % event_id)
 
 ### Why This Matters
 
-An attacker could inject malicious SQL:
+An attacker could inject malicious SQL if queries are not parameterized:
+
 ```python
-# If using f-strings or concatenation:
-event_id = "1' OR '1'='1"  # Returns all events!
-event_id = "1'; DROP TABLE events; --"  # Deletes the table!
+# EXAMPLE OF VULNERABILITY (DO NOT USE - shown for education only)
+# With f-strings or concatenation, malicious input like this:
+event_id = "1' OR '1'='1"  # Would return all events!
+event_id = "1'; DROP TABLE events; --"  # Would delete the table!
+
+# These attacks are NEUTRALIZED by parameterized queries.
+# SQLite treats the entire input as data, not executable code.
 ```
+
+**Important:** The examples above demonstrate attack patterns that are 
+**prevented** by our use of parameterized queries. Never use f-strings 
+or string concatenation with SQL - always use parameterized statements.
 
 With parameterized queries, SQLite treats the entire input as data, not code.
 

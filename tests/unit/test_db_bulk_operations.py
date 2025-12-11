@@ -175,11 +175,13 @@ def test_transaction_rollback_on_error(db):
     # Verify it was inserted
     assert db.get_event(event1.id) is not None
 
-    # Try to execute invalid SQL within a transaction
+    # Create a second event for testing rollback
+    event2 = Event(name="Second Event", lore_date=2.0)
+    
+    # Try to execute operations within a single transaction that fails
     try:
         with db.transaction() as conn:
-            # Insert a second event
-            event2 = Event(name="Second Event", lore_date=2.0)
+            # Insert second event directly in this transaction
             conn.execute(
                 """
                 INSERT INTO events (id, type, name, lore_date, lore_duration,
@@ -198,7 +200,7 @@ def test_transaction_rollback_on_error(db):
                     event2.modified_at,
                 ),
             )
-            # Force an error
+            # Force an error to trigger rollback
             conn.execute("INSERT INTO nonexistent_table VALUES (1)")
     except sqlite3.OperationalError:
         pass  # Expected
