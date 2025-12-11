@@ -522,3 +522,97 @@ class DatabaseService:
             return row["name"]
 
         return None
+
+    def insert_events_bulk(self, events: List[Event]) -> None:
+        """
+        Inserts multiple events efficiently using executemany.
+
+        This method is optimized for bulk operations, reducing the overhead
+        of individual inserts by using SQLite's executemany.
+
+        Args:
+            events (List[Event]): List of Event objects to insert.
+
+        Raises:
+            sqlite3.Error: If the database operation fails.
+        """
+        if not events:
+            return
+
+        sql = """
+            INSERT INTO events (id, type, name, lore_date, lore_duration,
+                                description, attributes, created_at, modified_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                type=excluded.type,
+                name=excluded.name,
+                lore_date=excluded.lore_date,
+                lore_duration=excluded.lore_duration,
+                description=excluded.description,
+                attributes=excluded.attributes,
+                modified_at=excluded.modified_at;
+        """
+
+        data = [
+            (
+                event.id,
+                event.type,
+                event.name,
+                event.lore_date,
+                event.lore_duration,
+                event.description,
+                json.dumps(event.attributes),
+                event.created_at,
+                event.modified_at,
+            )
+            for event in events
+        ]
+
+        with self.transaction() as conn:
+            conn.executemany(sql, data)
+        logger.info(f"Bulk inserted {len(events)} events")
+
+    def insert_entities_bulk(self, entities: List[Entity]) -> None:
+        """
+        Inserts multiple entities efficiently using executemany.
+
+        This method is optimized for bulk operations, reducing the overhead
+        of individual inserts by using SQLite's executemany.
+
+        Args:
+            entities (List[Entity]): List of Entity objects to insert.
+
+        Raises:
+            sqlite3.Error: If the database operation fails.
+        """
+        if not entities:
+            return
+
+        sql = """
+            INSERT INTO entities (id, type, name, description,
+                                  attributes, created_at, modified_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                type=excluded.type,
+                name=excluded.name,
+                description=excluded.description,
+                attributes=excluded.attributes,
+                modified_at=excluded.modified_at;
+        """
+
+        data = [
+            (
+                entity.id,
+                entity.type,
+                entity.name,
+                entity.description,
+                json.dumps(entity.attributes),
+                entity.created_at,
+                entity.modified_at,
+            )
+            for entity in entities
+        ]
+
+        with self.transaction() as conn:
+            conn.executemany(sql, data)
+        logger.info(f"Bulk inserted {len(entities)} entities")

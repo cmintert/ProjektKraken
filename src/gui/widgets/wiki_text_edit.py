@@ -40,10 +40,12 @@ class WikiTextEdit(QTextEdit):
         Sets the link resolver for checking broken links.
 
         Args:
-            link_resolver: LinkResolver instance for ID resolution and broken link detection.
+            link_resolver: LinkResolver instance for ID resolution and
+                broken link detection.
         """
         self._link_resolver = link_resolver
-        # Highlight Logic could be added here later (iterating formats to color broken links)
+        # Highlight Logic could be added here later
+        # (iterating formats to color broken links)
 
     def set_completer(
         self,
@@ -56,9 +58,12 @@ class WikiTextEdit(QTextEdit):
         Initializes or updates the completer with items.
 
         Can be called with either:
-        - Positional list of names for legacy compatibility: set_completer(["Name1", "Name2"])
-        - items keyword arg: List of (id, name, type) tuples for ID-based completion
-        - names keyword arg: List of names for legacy name-based completion
+        - Positional list of names for legacy compatibility:
+          set_completer(["Name1", "Name2"])
+        - items keyword arg: List of (id, name, type) tuples for
+          ID-based completion
+        - names keyword arg: List of names for legacy name-based
+          completion
 
         Args:
             items_or_names: Legacy positional parameter (list of names).
@@ -107,6 +112,15 @@ class WikiTextEdit(QTextEdit):
         pattern = re.compile(r"\[\[([^]|]+)(?:\|([^]]+))?\]\]")
 
         def replace_link(match):
+            """
+            Converts a WikiLink match to an HTML anchor tag.
+
+            Args:
+                match: Regex match object containing target and optional label.
+
+            Returns:
+                str: HTML anchor tag string.
+            """
             target = match.group(1).strip()
             label = match.group(2).strip() if match.group(2) else target
             # Use data-target attribute safely if needed, but href is standard
@@ -186,6 +200,12 @@ class WikiTextEdit(QTextEdit):
         self.setTextCursor(tc)
 
     def keyPressEvent(self, event):
+        """
+        Handles key press events for wiki link completion.
+
+        Args:
+            event: QKeyEvent from PySide6.
+        """
         if self._completer and self._completer.popup().isVisible():
             if event.key() in (
                 Qt.Key_Enter,
@@ -203,6 +223,12 @@ class WikiTextEdit(QTextEdit):
         self._check_for_completion()
 
     def _check_for_completion(self):
+        """
+        Checks if wiki link completion should be triggered.
+
+        Looks backwards from cursor position for "[[" pattern and shows
+        completion popup if found without a closing "]]".
+        """
         cursor = self.textCursor()
         block_text = cursor.block().text()
         pos_in_block = cursor.positionInBlock()
@@ -226,6 +252,12 @@ class WikiTextEdit(QTextEdit):
             self._completer.popup().hide()
 
     def mouseMoveEvent(self, event):
+        """
+        Handles mouse move events to show pointer cursor over links.
+
+        Args:
+            event: QMouseEvent from PySide6.
+        """
         if event.modifiers() & Qt.ControlModifier:
             anchor = self.anchorAt(event.pos())
             if anchor:
@@ -235,6 +267,12 @@ class WikiTextEdit(QTextEdit):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
+        """
+        Handles mouse release events for Ctrl+Click navigation.
+
+        Args:
+            event: QMouseEvent from PySide6.
+        """
         if event.button() == Qt.LeftButton and (event.modifiers() & Qt.ControlModifier):
             anchor = self.anchorAt(event.pos())
             if anchor:
