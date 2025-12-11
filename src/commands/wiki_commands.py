@@ -46,7 +46,7 @@ class ProcessWikiLinksCommand(BaseCommand):
         """
         Executes the link processing.
 
-        Extracts WikiLinks, resolves them to entities, and creates 'mentions' relations
+        Extracts WikiLinks, resolves them to entities or events, and creates 'mentions' relations
         with metadata including field, snippet, and offsets.
 
         Args:
@@ -67,14 +67,17 @@ class ProcessWikiLinksCommand(BaseCommand):
                     command_name="ProcessWikiLinksCommand",
                 )
 
-            # 2. Build name->Entity map including aliases
+            # 2. Build name->Target map including aliases (Mixed Entities and Events)
+            # We map name -> list of objects (Entity or Event)
+
+            # 2a. Load Entities
             all_entities = db_service.get_all_entities()
-            name_to_entities: Dict[str, List] = defaultdict(list)
+            name_to_targets: Dict[str, List] = defaultdict(list)
 
             for entity in all_entities:
                 # Add primary name
                 name_key = entity.name.casefold()
-                name_to_entities[name_key].append(entity)
+                name_to_targets[name_key].append(entity)
 
                 # Add aliases if present
                 aliases = entity.attributes.get("aliases", [])
@@ -82,7 +85,13 @@ class ProcessWikiLinksCommand(BaseCommand):
                     for alias in aliases:
                         if isinstance(alias, str):
                             alias_key = alias.casefold()
-                            name_to_entities[alias_key].append(entity)
+                            name_to_targets[alias_key].append(entity)
+
+            # 2b. Load Events
+            all_events = db_service.get_all_events()
+            for event in all_events:
+                name_key = event.name.casefold()
+                name_to_targets[name_key].append(event)
 
             # 3. Get existing relations for deduplication
             existing_relations = db_service.get_relations(self.source_id)
@@ -101,70 +110,75 @@ class ProcessWikiLinksCommand(BaseCommand):
             skipped_missing = []
 
             for candidate in candidates:
-                target_entity = None
+                target_obj = None
+                target_type_str = "Entity"  # Default or detected
 
                 # Handle ID-based links
                 if candidate.is_id_based:
                     # Direct lookup by ID
-                    target_entity = db_service.get_entity(candidate.target_id)
-                    if not target_entity:
-                        # Try as event
-                        target_event = db_service.get_event(candidate.target_id)
-                        if target_event:
-                            # For events, we can still create mentions
-                            # but we need to handle them differently
-                            # For now, skip events in mentions
-                            logger.debug(
-                                f"ID-based link targets event: {candidate.target_id}"
-                            )
-                            continue
-                        else:
-                            # Broken link - target doesn't exist
-                            skipped_missing.append(
-                                candidate.modifier or candidate.target_id
-                            )
-                            logger.warning(
-                                f"Broken ID-based link: {candidate.target_id}"
-                            )
-                            continue
+                    # Try Entity first
+                    target_obj = db_service.get_entity(candidate.target_id)
+                    if target_obj:
+                        target_type_str = "Entity"
+                    else:
+                        # Try Event
+                        target_obj = db_service.get_event(candidate.target_id)
+                        if target_obj:
+                            target_type_str = "Event"
+
+                    if not target_obj:
+                        # Broken link - target doesn't exist
+                        skipped_missing.append(
+                            candidate.modifier or candidate.target_id
+                        )
+                        logger.warning(f"Broken ID-based link: {candidate.target_id}")
+                        continue
 
                 # Handle name-based links (legacy)
                 else:
                     name_key = candidate.name.casefold()
-                    matching_entities = name_to_entities.get(name_key, [])
+                    matching_targets = name_to_targets.get(name_key, [])
 
-                    if len(matching_entities) == 0:
+                    if len(matching_targets) == 0:
                         # No match found
                         skipped_missing.append(candidate.name)
-                        logger.debug(f"No entity found for link: {candidate.name}")
+                        logger.debug(f"No target found for link: {candidate.name}")
                         continue
 
-                    elif len(matching_entities) > 1:
-                        # Ambiguous match - multiple entities with same name/alias
+                    elif len(matching_targets) > 1:
+                        # Ambiguous match - multiple entities/events with same name
                         skipped_ambiguous.append(candidate.name)
                         logger.warning(
                             f"Ambiguous link '{candidate.name}': "
-                            f"matches {len(matching_entities)} entities"
+                            f"matches {len(matching_targets)} items"
                         )
                         continue
 
                     else:
                         # Exactly one match
-                        target_entity = matching_entities[0]
+                        target_obj = matching_targets[0]
+                        # Determine type
+                        if hasattr(target_obj, "type") and hasattr(
+                            target_obj, "lore_date"
+                        ):
+                            target_type_str = "Event"
+                        else:
+                            target_type_str = "Entity"
 
-                # At this point we have a valid target_entity
-                if not target_entity:
+                # At this point we have a valid target_obj
+                if not target_obj:
+                    # Should be covered above, but safety check
                     continue
 
                 # Skip self-references
-                if target_entity.id == self.source_id:
+                if target_obj.id == self.source_id:
                     continue
 
                 # Check for duplicate by (target_id, start_offset)
-                dedup_key = (target_entity.id, candidate.span[0])
+                dedup_key = (target_obj.id, candidate.span[0])
                 if dedup_key in existing_keys:
                     logger.debug(
-                        f"Skipping duplicate mention at offset {candidate.span[0]}"
+                        f"Skipping duplicate mention to {target_obj.name} ({target_type_str}) at offset {candidate.span[0]}"
                     )
                     continue
 
@@ -182,19 +196,20 @@ class ProcessWikiLinksCommand(BaseCommand):
                     "created_by": "ProcessWikiLinksCommand",
                     "created_at": time.time(),
                     "is_id_based": candidate.is_id_based,
+                    "target_type": target_type_str,
                 }
 
                 # Insert relation
                 rel_id = db_service.insert_relation(
                     source_id=self.source_id,
-                    target_id=target_entity.id,
+                    target_id=target_obj.id,
                     rel_type="mentions",
                     attributes=attributes,
                 )
                 self._created_relations.append(rel_id)
                 created_count += 1
                 logger.info(
-                    f"Created mention: {self.source_id} -> {target_entity.name} "
+                    f"Created mention: {self.source_id} -> {target_obj.name} ({target_type_str}) "
                     f"at offset {candidate.span[0]} "
                     f"({'ID-based' if candidate.is_id_based else 'name-based'})"
                 )

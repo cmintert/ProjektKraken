@@ -307,3 +307,46 @@ def test_pipe_modifier_ignored_for_matching(db_service, source_id):
     relations = db_service.get_relations(source_id)
     assert len(relations) == 1
     assert relations[0]["target_id"] == target_entity.id
+
+
+def test_process_wiki_links_to_events(db_service, source_id):
+    """Test links pointing to events."""
+    from src.core.events import Event
+
+    # If fixtures aren't passed (direct call), mock valid ones
+    # But pytest passes them. We need to manually set up db_service for this test
+    # since we need an Event in it.
+
+    # Create an event in the DB
+    event_id = "550e8400-e29b-41d4-a716-446655440000"
+    target_event = Event(id=event_id, name="Big Bang", type="event", lore_date=0.0)
+    db_service.insert_event(target_event)
+
+    cmd = ProcessWikiLinksCommand(
+        "src1", f"Link to [[Big Bang]] and [[id:{event_id}|ID Link]]"
+    )
+
+    # Execute
+    result = cmd.execute(db_service)
+
+    assert result.success is True
+    assert "Created 2 new mentions" in result.message
+
+    # Verify relations created
+    relations = db_service.get_relations("src1")
+    assert len(relations) == 2
+
+    # Sort relations by start_offset to distinguish
+    relations.sort(key=lambda r: r["attributes"]["start_offset"])
+
+    # Verify first call (Name based)
+    rel1 = relations[0]
+    assert rel1["target_id"] == event_id
+    assert rel1["attributes"]["target_type"] == "Event"
+    assert not rel1["attributes"]["is_id_based"]
+
+    # Verify second call (ID based)
+    rel2 = relations[1]
+    assert rel2["target_id"] == event_id
+    assert rel2["attributes"]["target_type"] == "Event"
+    assert rel2["attributes"]["is_id_based"]

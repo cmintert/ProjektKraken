@@ -369,6 +369,10 @@ class DatabaseService:
                     created_at,
                 ),
             )
+
+        logger.info(
+            f"DB: Inserted relation {rel_id}: {source_id} -> {target_id} ({rel_type})"
+        )
         return rel_id
 
     def get_relations(self, source_id: str) -> List[Dict[str, Any]]:

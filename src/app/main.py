@@ -355,21 +355,21 @@ class MainWindow(QMainWindow):
     def _update_editor_suggestions(self):
         """
         Aggregates all Event and Entity names with IDs and updates the editors' completers.
-        
+
         Provides ID-based completion for robust wiki-linking.
         """
         items = []
-        
+
         # Add entities: (id, name, type)
         if self._cached_entities:
             for entity in self._cached_entities:
                 items.append((entity.id, entity.name, "entity"))
-        
+
         # Add events: (id, name, type)
         if self._cached_events:
             for event in self._cached_events:
                 items.append((event.id, event.name, "event"))
-        
+
         # Sort by name for better UX
         items.sort(key=lambda x: x[1].lower())
 
@@ -435,6 +435,13 @@ class MainWindow(QMainWindow):
         if "Relation" in command_name:
             # Reload both to be safe, or check active editor
             # Accessing private props is a bit smelly, but acceptable for now
+            if self.event_editor._current_event_id:
+                self.load_event_details(self.event_editor._current_event_id)
+            if self.entity_editor._current_entity_id:
+                self.load_entity_details(self.entity_editor._current_entity_id)
+
+        if "WikiLinks" in command_name:
+            # WikiLink processing creates relations, so we need to refresh details
             if self.event_editor._current_event_id:
                 self.load_event_details(self.event_editor._current_event_id)
             if self.entity_editor._current_entity_id:
@@ -608,7 +615,7 @@ class MainWindow(QMainWindow):
     def navigate_to_entity(self, target: str):
         """
         Navigates to the entity or event with the given name or ID.
-        
+
         Handles both ID-based links (UUIDs) and legacy name-based links.
         Uses cached entities and events for quick lookup.
 
@@ -616,31 +623,28 @@ class MainWindow(QMainWindow):
             target (str): Entity/event name or UUID.
         """
         logger.info(f"Navigating to target: {target}")
-        
+
         # Check if target is a valid UUID format
         import re
+
         uuid_pattern = re.compile(
             r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
-            re.IGNORECASE
+            re.IGNORECASE,
         )
         is_uuid = uuid_pattern.match(target) is not None
-        
+
         if is_uuid:
             # ID-based navigation - direct lookup
-            entity = next(
-                (e for e in self._cached_entities if e.id == target), None
-            )
+            entity = next((e for e in self._cached_entities if e.id == target), None)
             if entity:
                 self.load_entity_details(entity.id)
                 return
-            
-            event = next(
-                (e for e in self._cached_events if e.id == target), None
-            )
+
+            event = next((e for e in self._cached_events if e.id == target), None)
             if event:
                 self.load_event_details(event.id)
                 return
-            
+
             # ID not found - broken link
             QMessageBox.warning(
                 self,
@@ -653,21 +657,21 @@ class MainWindow(QMainWindow):
                 (e for e in self._cached_entities if e.name.lower() == target.lower()),
                 None,
             )
-            
+
             if entity:
                 self.load_entity_details(entity.id)
                 return
-            
+
             # Also check events for name-based links
             event = next(
                 (e for e in self._cached_events if e.name.lower() == target.lower()),
                 None,
             )
-            
+
             if event:
                 self.load_event_details(event.id)
                 return
-            
+
             # Name not found
             QMessageBox.information(
                 self, "Link Not Found", f"No entity or event named '{target}' found."
