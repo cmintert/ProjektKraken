@@ -18,5 +18,15 @@
         "text_main": "#212121",
         "text_dim": "#757575",
         "error": "#B00020"
+    },
+    "fantasy_mode": {
+        "app_bg": "#24211C",
+        "surface": "#2E2A25",
+        "border": "#453F36",
+        "primary": "#E3B659",
+        "accent_secondary": "#63B0B0",
+        "text_main": "#E6DCC3",
+        "text_dim": "#948C7E",
+        "error": "#CF6679"
     }
 }

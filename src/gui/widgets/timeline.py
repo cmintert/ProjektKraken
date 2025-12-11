@@ -139,7 +139,12 @@ class TimelineScene(QGraphicsScene):
             parent (QObject, optional): The parent object. Defaults to None.
         """
         super().__init__(parent)
-        theme = ThemeManager().get_theme()
+        self.tm = ThemeManager()
+        self.tm.theme_changed.connect(self._update_theme)
+        self._update_theme(self.tm.get_theme())
+
+    def _update_theme(self, theme):
+        """Updates the scene background."""
         self.setBackgroundBrush(QBrush(QColor(theme["app_bg"])))
 
 
@@ -167,6 +172,9 @@ class TimelineView(QGraphicsView):
         super().__init__(parent)
         self.scene = TimelineScene(self)
         self.setScene(self.scene)
+
+        # Connect to theme manager to trigger redraw of foreground (ruler)
+        ThemeManager().theme_changed.connect(lambda t: self.viewport().update())
 
         self.setDragMode(QGraphicsView.ScrollHandDrag)
         self.setRenderHint(QPainter.Antialiasing)

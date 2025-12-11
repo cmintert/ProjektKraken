@@ -137,6 +137,9 @@ class MainWindow(QMainWindow):
         # View Menu
         self.ui_manager.create_view_menu(self.menuBar())
 
+        # Settings Menu (New)
+        self.ui_manager.create_settings_menu(self.menuBar())
+
         # 5. Initialize Database (deferred to ensure event loop is running)
         QTimer.singleShot(
             100,

@@ -111,6 +111,8 @@ class WikiTextEdit(QTextEdit):
         """
         # Apply theme-based link color
         tm = ThemeManager()
+        tm.theme_changed.connect(self._on_theme_changed)
+
         theme = tm.get_theme()
         # Default to blue if not found, but themes.json should have it
         link_color = theme.get("accent_secondary", "#2980b9")
@@ -297,3 +299,9 @@ class WikiTextEdit(QTextEdit):
                 self.link_clicked.emit(target)
                 return
         super().mouseReleaseEvent(event)
+
+    def _on_theme_changed(self, theme_data):
+        """Updates link color when theme changes."""
+        link_color = theme_data.get("accent_secondary", "#2980b9")
+        css = f"a {{ color: {link_color}; font-weight: bold; text-decoration: none; }}"
+        self.document().setDefaultStyleSheet(css)
