@@ -49,7 +49,9 @@ def _safe_json_loads(json_str: str) -> dict:
         return {}
 
 
-def _get_longform_meta(attributes: dict, doc_id: str = DOC_ID_DEFAULT) -> Optional[dict]:
+def _get_longform_meta(
+    attributes: dict, doc_id: str = DOC_ID_DEFAULT
+) -> Optional[dict]:
     """
     Extract longform metadata from attributes dict.
 
@@ -100,40 +102,40 @@ def read_all_longform_items(
     items = []
 
     # Read events
-    cursor = conn.execute(
-        "SELECT id, name, description, attributes FROM events"
-    )
+    cursor = conn.execute("SELECT id, name, description, attributes FROM events")
     for row in cursor.fetchall():
         row_dict = dict(row)
         attrs = _safe_json_loads(row_dict.get("attributes", "{}"))
         meta = _get_longform_meta(attrs, doc_id)
         if meta:
-            items.append({
-                "table": "events",
-                "id": row_dict["id"],
-                "name": row_dict["name"],
-                "content": row_dict.get("description", ""),
-                "attributes": attrs,
-                "meta": meta,
-            })
+            items.append(
+                {
+                    "table": "events",
+                    "id": row_dict["id"],
+                    "name": row_dict["name"],
+                    "content": row_dict.get("description", ""),
+                    "attributes": attrs,
+                    "meta": meta,
+                }
+            )
 
     # Read entities
-    cursor = conn.execute(
-        "SELECT id, name, description, attributes FROM entities"
-    )
+    cursor = conn.execute("SELECT id, name, description, attributes FROM entities")
     for row in cursor.fetchall():
         row_dict = dict(row)
         attrs = _safe_json_loads(row_dict.get("attributes", "{}"))
         meta = _get_longform_meta(attrs, doc_id)
         if meta:
-            items.append({
-                "table": "entities",
-                "id": row_dict["id"],
-                "name": row_dict["name"],
-                "content": row_dict.get("description", ""),
-                "attributes": attrs,
-                "meta": meta,
-            })
+            items.append(
+                {
+                    "table": "entities",
+                    "id": row_dict["id"],
+                    "name": row_dict["name"],
+                    "content": row_dict.get("description", ""),
+                    "attributes": attrs,
+                    "meta": meta,
+                }
+            )
 
     return items
 
@@ -205,10 +207,10 @@ def insert_or_update_longform_meta(
     table: str,
     row_id: str,
     *,
-    position: Optional[float] = None,
-    parent_id: Optional[str] = None,
-    depth: Optional[int] = None,
-    title_override: Optional[str] = None,
+    position: Optional[float] = ...,  # Use Ellipsis as sentinel
+    parent_id: Optional[str] = ...,
+    depth: Optional[int] = ...,
+    title_override: Optional[str] = ...,
     doc_id: str = DOC_ID_DEFAULT,
 ) -> None:
     """
@@ -220,10 +222,10 @@ def insert_or_update_longform_meta(
         conn: SQLite connection.
         table: Table name ("events" or "entities").
         row_id: Row ID to update.
-        position: Optional position value (float).
-        parent_id: Optional parent ID.
-        depth: Optional depth value (int).
-        title_override: Optional title override.
+        position: Optional position value (float). Use ... to skip updating.
+        parent_id: Optional parent ID. Use ... to skip updating, None to clear.
+        depth: Optional depth value (int). Use ... to skip updating.
+        title_override: Optional title override. Use ... to skip updating.
         doc_id: Document ID.
 
     Raises:
@@ -233,9 +235,7 @@ def insert_or_update_longform_meta(
         raise ValueError(f"Invalid table: {table}")
 
     # Read current attributes
-    cursor = conn.execute(
-        f"SELECT attributes FROM {table} WHERE id = ?", (row_id,)
-    )
+    cursor = conn.execute(f"SELECT attributes FROM {table} WHERE id = ?", (row_id,))
     row = cursor.fetchone()
     if not row:
         raise ValueError(f"Row {row_id} not found in {table}")
@@ -243,14 +243,14 @@ def insert_or_update_longform_meta(
     attrs = _safe_json_loads(row["attributes"])
     meta = _get_longform_meta(attrs, doc_id) or {}
 
-    # Update metadata fields (only if provided)
-    if position is not None:
+    # Update metadata fields (only if not sentinel)
+    if position is not ...:
         meta["position"] = position
-    if parent_id is not None:
+    if parent_id is not ...:
         meta["parent_id"] = parent_id
-    if depth is not None:
+    if depth is not ...:
         meta["depth"] = depth
-    if title_override is not None:
+    if title_override is not ...:
         meta["title_override"] = title_override
 
     # Set updated metadata
@@ -357,9 +357,7 @@ def place_between_siblings_and_set_parent(
     )
 
 
-def reindex_document_positions(
-    conn: Connection, doc_id: str = DOC_ID_DEFAULT
-) -> None:
+def reindex_document_positions(conn: Connection, doc_id: str = DOC_ID_DEFAULT) -> None:
     """
     Reindex all positions to 100, 200, 300... in document order.
 
@@ -481,7 +479,8 @@ def demote_item(
     # Find previous sibling (same parent, position < current)
     items = read_all_longform_items(conn, doc_id)
     siblings = [
-        item for item in items
+        item
+        for item in items
         if item["meta"].get("parent_id") == current_parent_id
         and item["meta"].get("position", 0.0) < current_position
     ]
@@ -545,9 +544,7 @@ def remove_from_longform(
     logger.debug(f"Removed longform metadata from {table}.{row_id}")
 
 
-def export_longform_to_markdown(
-    conn: Connection, doc_id: str = DOC_ID_DEFAULT
-) -> str:
+def export_longform_to_markdown(conn: Connection, doc_id: str = DOC_ID_DEFAULT) -> str:
     """
     Export the longform document to Markdown format.
 

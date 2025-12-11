@@ -14,7 +14,7 @@ from src.commands.base_command import BaseCommand, CommandResult
 from src.services.db_service import DatabaseService
 from src.services import longform_builder
 import logging
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 

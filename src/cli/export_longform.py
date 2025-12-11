@@ -19,10 +19,7 @@ from src.services.db_service import DatabaseService
 from src.services import longform_builder
 
 # Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(levelname)s: %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -41,26 +38,21 @@ Examples:
 
   # Export specific document ID
   python -m src.cli.export_longform world.kraken --doc-id custom
-        """
+        """,
     )
-    parser.add_argument(
-        "database",
-        help="Path to the .kraken database file"
-    )
+    parser.add_argument("database", help="Path to the .kraken database file")
     parser.add_argument(
         "output",
         nargs="?",
-        help="Output file path (defaults to stdout if not provided)"
+        help="Output file path (defaults to stdout if not provided)",
     )
     parser.add_argument(
         "--doc-id",
         default=longform_builder.DOC_ID_DEFAULT,
-        help=f"Document ID to export (default: {longform_builder.DOC_ID_DEFAULT})"
+        help=f"Document ID to export (default: {longform_builder.DOC_ID_DEFAULT})",
     )
     parser.add_argument(
-        "--verbose", "-v",
-        action="store_true",
-        help="Enable verbose logging"
+        "--verbose", "-v", action="store_true", help="Enable verbose logging"
     )
 
     args = parser.parse_args()
@@ -83,8 +75,7 @@ Examples:
 
         logger.info(f"Exporting document: {args.doc_id}")
         markdown = longform_builder.export_longform_to_markdown(
-            db_service._connection,
-            args.doc_id
+            db_service._connection, args.doc_id
         )
 
         db_service.close()
