@@ -29,6 +29,15 @@ venv/
 ENV/
 env/
 
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+secrets/
+credentials/
+
 # IDEs
 .vscode/
 .idea/
