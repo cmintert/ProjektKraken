@@ -41,7 +41,7 @@ class WikiTextEdit(QTextEdit):
     def set_link_resolver(self, link_resolver):
         """
         Sets the link resolver for checking broken links.
-        
+
         Args:
             link_resolver: LinkResolver instance for ID resolution and broken link detection.
         """
@@ -49,7 +49,11 @@ class WikiTextEdit(QTextEdit):
         self.highlighter.set_link_resolver(link_resolver)
 
     def set_completer(
-        self, items_or_names=None, *, items: list[tuple[str, str, str]] = None, names: list[str] = None
+        self,
+        items_or_names=None,
+        *,
+        items: list[tuple[str, str, str]] = None,
+        names: list[str] = None,
     ):
         """
         Initializes or updates the completer with items.
@@ -72,10 +76,12 @@ class WikiTextEdit(QTextEdit):
                     items = items_or_names
                 else:
                     names = items_or_names
-        
+
         if items is not None:
             # Build completion map: name -> (id, type)
-            self._completion_map = {name: (item_id, item_type) for item_id, name, item_type in items}
+            self._completion_map = {
+                name: (item_id, item_type) for item_id, name, item_type in items
+            }
             display_names = [name for _, name, _ in items]
         elif names is not None:
             # Legacy mode - no ID mapping
@@ -101,11 +107,11 @@ class WikiTextEdit(QTextEdit):
         If ID mapping is available, inserts [[id:UUID|Name]], otherwise [[Name]].
         """
         tc = self.textCursor()
-        
+
         # Remove the partial text typed after "[["
         prefix_len = len(self._completer.completionPrefix())
         extra = len(completion) - prefix_len
-        
+
         # Move to end of current word and insert remaining text
         tc.movePosition(QTextCursor.MoveOperation.Left)
         tc.movePosition(QTextCursor.MoveOperation.EndOfWord)
@@ -114,11 +120,13 @@ class WikiTextEdit(QTextEdit):
         # If we have ID mapping, convert to ID-based link
         if completion in self._completion_map:
             item_id, item_type = self._completion_map[completion]
-            
+
             # Select the just-inserted text
             for _ in range(len(completion[-extra:])):
-                tc.movePosition(QTextCursor.MoveOperation.Left, QTextCursor.MoveOperation.KeepAnchor)
-            
+                tc.movePosition(
+                    QTextCursor.MoveOperation.Left, QTextCursor.MoveMode.KeepAnchor
+                )
+
             # Replace with ID-based format
             # Guard against unexpected cursor state
             if tc.hasSelection():
