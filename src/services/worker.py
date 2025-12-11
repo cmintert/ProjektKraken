@@ -102,7 +102,14 @@ class DatabaseWorker(QObject):
             event = self.db_service.get_event(event_id)
             if event:
                 rels = self.db_service.get_relations(event_id)
+                # Enrich with names
+                for rel in rels:
+                    rel["target_name"] = self.db_service.get_name(rel["target_id"])
+
                 incoming = self.db_service.get_incoming_relations(event_id)
+                for rel in incoming:
+                    rel["source_name"] = self.db_service.get_name(rel["source_id"])
+
                 self.event_details_loaded.emit(event, rels, incoming)
             self.operation_finished.emit("Event Details Loaded.")
         except Exception:
@@ -120,7 +127,13 @@ class DatabaseWorker(QObject):
             entity = self.db_service.get_entity(entity_id)
             if entity:
                 rels = self.db_service.get_relations(entity_id)
+                for rel in rels:
+                    rel["target_name"] = self.db_service.get_name(rel["target_id"])
+
                 incoming = self.db_service.get_incoming_relations(entity_id)
+                for rel in incoming:
+                    rel["source_name"] = self.db_service.get_name(rel["source_id"])
+
                 self.entity_details_loaded.emit(entity, rels, incoming)
             self.operation_finished.emit("Entity Details Loaded.")
         except Exception:

@@ -491,3 +491,34 @@ class DatabaseService:
                     rel_id,
                 ),
             )
+
+    def get_name(self, object_id: str) -> Optional[str]:
+        """
+        Retrieves the name of an entity or event by its ID.
+
+        Args:
+            object_id (str): The ID to resolve.
+
+        Returns:
+            Optional[str]: The name if found, else None.
+        """
+        if not self._connection:
+            self.connect()
+
+        # Try Entity
+        cursor = self._connection.execute(
+            "SELECT name FROM entities WHERE id = ?", (object_id,)
+        )
+        row = cursor.fetchone()
+        if row:
+            return row["name"]
+
+        # Try Event
+        cursor = self._connection.execute(
+            "SELECT name FROM events WHERE id = ?", (object_id,)
+        )
+        row = cursor.fetchone()
+        if row:
+            return row["name"]
+
+        return None

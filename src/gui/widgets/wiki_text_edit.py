@@ -8,8 +8,6 @@ from PySide6.QtWidgets import QTextEdit, QCompleter
 from PySide6.QtCore import Signal, Qt, QStringListModel
 from PySide6.QtGui import QTextCursor
 
-from src.gui.utils.wiki_highlighter import WikiSyntaxHighlighter
-
 
 class WikiTextEdit(QTextEdit):
     """
@@ -29,7 +27,6 @@ class WikiTextEdit(QTextEdit):
             parent (QWidget, optional): The parent widget. Defaults to None.
         """
         super().__init__(parent)
-        self.highlighter = WikiSyntaxHighlighter(self.document())
         self._hovered_link = None
         self._completer = None
         self._completion_map = {}  # Maps display names to IDs
@@ -46,7 +43,7 @@ class WikiTextEdit(QTextEdit):
             link_resolver: LinkResolver instance for ID resolution and broken link detection.
         """
         self._link_resolver = link_resolver
-        self.highlighter.set_link_resolver(link_resolver)
+        # Highlight Logic could be added here later (iterating formats to color broken links)
 
     def set_completer(
         self,
@@ -100,58 +97,96 @@ class WikiTextEdit(QTextEdit):
             model = QStringListModel(display_names, self._completer)
             self._completer.setModel(model)
 
+    def set_wiki_text(self, text: str):
+        """
+        Sets the content using WikiLink syntax, converting it to HTML anchors.
+        """
+        # Regex to find [[target|label]] or [[target]]
+        import html
+
+        pattern = re.compile(r"\[\[([^]|]+)(?:\|([^]]+))?\]\]")
+
+        def replace_link(match):
+            target = match.group(1).strip()
+            label = match.group(2).strip() if match.group(2) else target
+            # Use data-target attribute safely if needed, but href is standard
+            return f'<a href="{target}">{label}</a>'
+
+        safe_text = html.escape(text)
+        html_content = pattern.sub(replace_link, safe_text)
+        html_content = html_content.replace("\n", "<br>")
+        self.setHtml(html_content)
+
+    def get_wiki_text(self) -> str:
+        """
+        Converts the editor content (HTML) back to WikiLink syntax.
+        """
+        result = []
+        block = self.document().begin()
+        while block.isValid():
+            iterator = block.begin()
+            while not iterator.atEnd():
+                fragment = iterator.fragment()
+                text = fragment.text()
+                fmt = fragment.charFormat()
+
+                if fmt.isAnchor():
+                    href = fmt.anchorHref()
+                    if href == text:
+                        result.append(f"[[{text}]]")
+                    elif href.startswith("id:") and text:
+                        result.append(f"[[{href}|{text}]]")
+                    else:
+                        # Fallback
+                        result.append(f"[[{href}|{text}]]")
+                else:
+                    result.append(text)
+
+                iterator += 1
+
+            if block.next().isValid():
+                result.append("\n")
+            block = block.next()
+
+        return "".join(result)
+
     def insert_completion(self, completion: str):
         """
-        Inserts the selected completion into the text as an ID-based link.
-
-        If ID mapping is available, inserts [[id:UUID|Name]], otherwise [[Name]].
+        Inserts the selected completion as an HTML anchor.
         """
         tc = self.textCursor()
-
-        # Remove the partial text typed after "[["
         prefix_len = len(self._completer.completionPrefix())
-        extra = len(completion) - prefix_len
 
-        # Move to end of current word and insert remaining text
-        tc.movePosition(QTextCursor.MoveOperation.Left)
-        tc.movePosition(QTextCursor.MoveOperation.EndOfWord)
-        tc.insertText(completion[-extra:])
+        # We need to remove the "[[" that triggered this + prefix
+        # We assume cursor is after "[[Prefix"
+        # Move left prefix_len
+        tc.movePosition(QTextCursor.Left, QTextCursor.KeepAnchor, prefix_len)
+        tc.removeSelectedText()
 
-        # If we have ID mapping, convert to ID-based link
+        # Check for "[[" to left
+        tc.movePosition(QTextCursor.Left, QTextCursor.KeepAnchor, 2)
+        if tc.selectedText() == "[[":
+            tc.removeSelectedText()
+        else:
+            # Logic fallback: maybe user didn't type [[ ?
+            # But our trigger logic ensures it.
+            # Restore position if check failed (unlikely)
+            tc.movePosition(QTextCursor.Right, QTextCursor.MoveAnchor, 2)
+
+        # Resolve ID
+        item_id = None
         if completion in self._completion_map:
             item_id, item_type = self._completion_map[completion]
 
-            # Select the just-inserted text
-            for _ in range(len(completion[-extra:])):
-                tc.movePosition(
-                    QTextCursor.MoveOperation.Left, QTextCursor.MoveMode.KeepAnchor
-                )
+        target = f"id:{item_id}" if item_id else completion
+        label = completion
 
-            # Replace with ID-based format
-            # Guard against unexpected cursor state
-            if tc.hasSelection():
-                tc.insertText(f"id:{item_id}|{completion}")
-            else:
-                # Fallback: just append the closing bracket
-                tc.movePosition(QTextCursor.MoveOperation.EndOfWord)
-
-        # Append "]]" to close the link
-        tc.insertText("]]")
-
+        # Insert Anchor
+        tc.insertHtml(f'<a href="{target}">{label}</a>&nbsp;')
         self.setTextCursor(tc)
 
-    def text_under_cursor(self):
-        """Returns the word under cursor (or partial word)."""
-        tc = self.textCursor()
-        tc.select(tc.WordUnderCursor)
-        return tc.selectedText()
-
     def keyPressEvent(self, event):
-        """
-        Handles key presses to trigger or navigate the completer.
-        """
         if self._completer and self._completer.popup().isVisible():
-            # Let the completer handle navigation keys
             if event.key() in (
                 Qt.Key_Enter,
                 Qt.Key_Return,
@@ -164,32 +199,23 @@ class WikiTextEdit(QTextEdit):
 
         super().keyPressEvent(event)
 
-        # Logic to trigger completer
-        # Check if we are inside a [[... sequence
-        # This is a bit complex. Simple heuristic:
-        # Check text to the left of cursor.
+        # Helper to trigger completer
+        self._check_for_completion()
+
+    def _check_for_completion(self):
         cursor = self.textCursor()
         block_text = cursor.block().text()
         pos_in_block = cursor.positionInBlock()
 
-        # Look backwards from pos_in_block for "[["
-        # And ensure no "]]" in between
+        # Look backwards for "[["
         text_before = block_text[:pos_in_block]
+        last_open = text_before.rfind("[[")
+        last_close = text_before.rfind("]]")
 
-        # Find last "[["
-        last_open_idx = text_before.rfind("[[")
-        last_close_idx = text_before.rfind("]]")
-
-        if last_open_idx != -1 and last_open_idx > last_close_idx:
-            # We are inside a link
-            # Get the text after "[["
-            prefix = text_before[last_open_idx + 2 :]
-
-            # If prefix contains "|", we might need to stop completing or handle alias?
-            # For now, simplistic: if no "|", complete the name.
+        if last_open != -1 and last_open > last_close:
+            prefix = text_before[last_open + 2 :]
             if "|" not in prefix and self._completer:
                 self._completer.setCompletionPrefix(prefix)
-
                 curr_rect = self.cursorRect()
                 curr_rect.setWidth(
                     self._completer.popup().sizeHintForColumn(0)
@@ -200,65 +226,23 @@ class WikiTextEdit(QTextEdit):
             self._completer.popup().hide()
 
     def mouseMoveEvent(self, event):
-        """updates cursor shape when hovering over a link with Ctrl pressed."""
+        if event.modifiers() & Qt.ControlModifier:
+            anchor = self.anchorAt(event.pos())
+            if anchor:
+                self.viewport().setCursor(Qt.PointingHandCursor)
+                return
+        self.viewport().setCursor(Qt.IBeamCursor)
         super().mouseMoveEvent(event)
 
-        if event.modifiers() & Qt.ControlModifier:
-            link = self.get_link_at_pos(event.pos())
-            if link:
-                self.viewport().setCursor(Qt.PointingHandCursor)
-            else:
-                self.viewport().setCursor(Qt.IBeamCursor)
-        else:
-            self.viewport().setCursor(Qt.IBeamCursor)
-
     def mouseReleaseEvent(self, event):
-        """Handles click events to trigger navigation."""
         if event.button() == Qt.LeftButton and (event.modifiers() & Qt.ControlModifier):
-            link = self.get_link_at_pos(event.pos())
-            if link:
-                self.link_clicked.emit(link)
+            anchor = self.anchorAt(event.pos())
+            if anchor:
+                # Handle ID checking
+                if anchor.startswith("id:"):
+                    target = anchor.split("|")[0][3:]
+                else:
+                    target = anchor.split("|")[0]
+                self.link_clicked.emit(target)
                 return
-
         super().mouseReleaseEvent(event)
-
-    def get_link_at_pos(self, pos) -> str:
-        """
-        Returns the link target (ID or name) at the given pixel position, or None.
-
-        For ID-based links, returns the UUID.
-        For name-based links, returns the name.
-        """
-        cursor = self.cursorForPosition(pos)
-        block = cursor.block()
-        text = block.text()
-        pos_in_block = cursor.positionInBlock()
-
-        # Iterate matches in this block to see if cursor is inside one
-        # Using the same regex as highlighter
-        pattern = re.compile(r"\[\[(.*?)\]\]")
-
-        for match in pattern.finditer(text):
-            start = match.start()
-            end = match.end()
-
-            if start <= pos_in_block <= end:
-                # Extracted content
-                full_match = match.group(1)
-
-                # Check if this is ID-based: id:UUID or id:UUID|Label
-                if full_match.startswith("id:"):
-                    # Extract the ID part
-                    if "|" in full_match:
-                        id_part = full_match.split("|", 1)[0]
-                        return id_part[3:]  # Remove "id:" prefix, return UUID
-                    else:
-                        return full_match[3:]  # Remove "id:" prefix, return UUID
-
-                # Legacy name-based link
-                # Handle [[Target|Label]] -> return Target
-                if "|" in full_match:
-                    return full_match.split("|", 1)[0].strip()
-                return full_match.strip()
-
-        return None

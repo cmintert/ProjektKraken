@@ -158,7 +158,7 @@ class EntityEditorWidget(QWidget):
 
         self.name_edit.setText(entity.name)
         self.type_edit.setCurrentText(entity.type)
-        self.desc_edit.setPlainText(entity.description)
+        self.desc_edit.set_wiki_text(entity.description)
 
         # Load Attributes
         self.attribute_editor.load_attributes(entity.attributes)
@@ -168,7 +168,8 @@ class EntityEditorWidget(QWidget):
         # Outgoing
         if relations:
             for rel in relations:
-                label = f"-> {rel['target_id']} [{rel['rel_type']}]"
+                target_display = rel.get("target_name") or rel["target_id"]
+                label = f"-> {target_display} [{rel['rel_type']}]"
                 item = QListWidgetItem(label)
                 item.setData(Qt.UserRole, rel)
                 self.rel_list.addItem(item)
@@ -176,7 +177,8 @@ class EntityEditorWidget(QWidget):
         # Incoming
         if incoming_relations:
             for rel in incoming_relations:
-                label = f"<- {rel['source_id']} [{rel['rel_type']}]"
+                source_display = rel.get("source_name") or rel["source_id"]
+                label = f"<- {source_display} [{rel['rel_type']}]"
                 item = QListWidgetItem(label)
                 item.setData(Qt.UserRole, rel)
                 item.setForeground(Qt.gray)
@@ -195,7 +197,7 @@ class EntityEditorWidget(QWidget):
             "id": self._current_entity_id,
             "name": self.name_edit.text(),
             "type": self.type_edit.currentText(),
-            "description": self.desc_edit.toPlainText(),
+            "description": self.desc_edit.get_wiki_text(),
             "attributes": self.attribute_editor.get_attributes(),
         }
 
@@ -269,10 +271,13 @@ class EntityEditorWidget(QWidget):
             item (QListWidgetItem): The relation item to remove.
         """
         rel_data = item.data(Qt.UserRole)
+        target_id = rel_data.get("target_id", "?")
+        target_name = rel_data.get("target_name", target_id)
+
         confirm = QMessageBox.question(
             self,
             "Confirm Remove",
-            f"Remove relation to {rel_data.get('target_id', '?')}?",
+            f"Remove relation to {target_name}?",
             QMessageBox.Yes | QMessageBox.No,
         )
         if confirm == QMessageBox.Yes:

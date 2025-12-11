@@ -58,6 +58,6 @@ def test_navigate_to_entity_not_found(qtbot, monkeypatch):
 
     window.load_entity_details.assert_not_called()
     mock_msg.assert_called_once()
-    assert "not found" in mock_msg.call_args[0][2]
+    assert "No entity or event" in mock_msg.call_args[0][2]
 
     window.close()

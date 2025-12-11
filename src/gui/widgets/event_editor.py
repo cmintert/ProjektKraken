@@ -176,7 +176,7 @@ class EventEditorWidget(QWidget):
         self.name_edit.setText(event.name)
         self.date_edit.setValue(event.lore_date)
         self.type_edit.setCurrentText(event.type)
-        self.desc_edit.setPlainText(event.description)
+        self.desc_edit.set_wiki_text(event.description)
 
         # Load Attributes
         self.attribute_editor.load_attributes(event.attributes)
@@ -188,8 +188,8 @@ class EventEditorWidget(QWidget):
         if relations:
             for rel in relations:
                 # Format: -> TargetID [Type]
-                # In real app, we'd look up Target Name.
-                label = f"-> {rel['target_id']} [{rel['rel_type']}]"
+                target_display = rel.get("target_name") or rel["target_id"]
+                label = f"-> {target_display} [{rel['rel_type']}]"
                 item = QListWidgetItem(label)
                 item.setData(Qt.UserRole, rel)
                 # Differentiate visually? Maybe standard color.
@@ -199,7 +199,8 @@ class EventEditorWidget(QWidget):
         if incoming_relations:
             for rel in incoming_relations:
                 # Format: <- SourceID [Type]
-                label = f"<- {rel['source_id']} [{rel['rel_type']}]"
+                source_display = rel.get("source_name") or rel["source_id"]
+                label = f"<- {source_display} [{rel['rel_type']}]"
                 item = QListWidgetItem(label)
                 item.setData(Qt.UserRole, rel)
                 item.setForeground(Qt.gray)  # Visually distinct
@@ -220,7 +221,7 @@ class EventEditorWidget(QWidget):
             "name": self.name_edit.text(),
             "lore_date": self.date_edit.value(),
             "type": self.type_edit.currentText(),
-            "description": self.desc_edit.toPlainText(),
+            "description": self.desc_edit.get_wiki_text(),
             "attributes": self.attribute_editor.get_attributes(),
         }
 
@@ -280,10 +281,13 @@ class EventEditorWidget(QWidget):
     def _on_remove_relation_item(self, item):
         """Emits remove signal."""
         rel_data = item.data(Qt.UserRole)
+        target_id = rel_data.get("target_id", "?")
+        target_name = rel_data.get("target_name", target_id)
+
         confirm = QMessageBox.question(
             self,
             "Confirm Remove",
-            f"Remove relation to {rel_data['target_id']}?",
+            f"Remove relation to {target_name}?",
             QMessageBox.Yes | QMessageBox.No,
         )
         if confirm == QMessageBox.Yes:

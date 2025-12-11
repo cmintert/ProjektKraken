@@ -13,13 +13,13 @@ import pytest
 def test_ctrl_click_emits_signal(qtbot):
     """Test that Ctrl+Click on a link emits the signal."""
     widget = WikiTextEdit()
-    widget.setPlainText("Jump to [[The Shire]].")
+    # We use HTML anchor for the test context
+    widget.setHtml('Jump to <a href="The Shire">The Shire</a>.')
     widget.show()
     qtbot.addWidget(widget)
 
-    # Monkey patch get_link_at_pos for robust testing of EVENT handling
-    # We avoid layout hit testing issues this way
-    widget.get_link_at_pos = lambda pos: "The Shire"
+    # Mock anchorAt to return a valid href
+    widget.anchorAt = lambda pos: "The Shire"
 
     with qtbot.waitSignal(widget.link_clicked) as blocker:
         # Simulate Ctrl+Click
@@ -31,7 +31,8 @@ def test_ctrl_click_emits_signal(qtbot):
 def test_normal_click_ignores_link(qtbot):
     """Test that click without Ctrl does NOT emit signal."""
     widget = WikiTextEdit()
-    widget.get_link_at_pos = lambda pos: "The Shire"
+    # Mock anchorAt to return a valid href (simulate hovering a link)
+    widget.anchorAt = lambda pos: "The Shire"
     qtbot.addWidget(widget)
 
     # No signal expected
