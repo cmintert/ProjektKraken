@@ -23,6 +23,14 @@ QWidget {{
     font-size: 10pt;
 }}
 
+/* Links */
+a {{
+    color: {accent_secondary};
+    font-weight: bold;
+    text-decoration: none;
+}}
+
+
 QMenu {{
     background-color: {surface};
     border: 1px solid {border};

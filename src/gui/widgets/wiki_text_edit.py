@@ -9,6 +9,9 @@ from PySide6.QtCore import Signal, Qt, QStringListModel
 from PySide6.QtGui import QTextCursor
 
 
+from src.core.theme_manager import ThemeManager
+
+
 class WikiTextEdit(QTextEdit):
     """
     Text Editor with WikiLink support.
@@ -106,6 +109,16 @@ class WikiTextEdit(QTextEdit):
         """
         Sets the content using WikiLink syntax, converting it to HTML anchors.
         """
+        # Apply theme-based link color
+        tm = ThemeManager()
+        theme = tm.get_theme()
+        # Default to blue if not found, but themes.json should have it
+        link_color = theme.get("accent_secondary", "#2980b9")
+
+        # We set default stylesheet for the document to control anchor styling
+        css = f"a {{ color: {link_color}; font-weight: bold; text-decoration: none; }}"
+        self.document().setDefaultStyleSheet(css)
+
         # Regex to find [[target|label]] or [[target]]
         import html
 
