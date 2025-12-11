@@ -178,6 +178,16 @@ class TimelineView(QGraphicsView):
 
         self.events = []
         self.scale_factor = 20.0
+        self._initial_fit_pending = False
+
+    def resizeEvent(self, event):
+        """
+        Handles resize events to ensure initial fit works correctly.
+        """
+        super().resizeEvent(event)
+        if self._initial_fit_pending and self.width() > 0 and self.height() > 0:
+            self.fit_all()
+            self._initial_fit_pending = False
 
     def drawForeground(self, painter, rect):
         """
@@ -323,14 +333,50 @@ class TimelineView(QGraphicsView):
 
         if sorted_events:
             self.scene.setSceneRect(self.scene.itemsBoundingRect())
-            self.fit_all()
+
+            # Check if we can fit immediately
+            if self.isVisible() and self.width() > 0 and self.height() > 0:
+                self.fit_all()
+                self._initial_fit_pending = False
+            else:
+                self._initial_fit_pending = True
 
     def fit_all(self):
-        """Fits all items in the view."""
-        if not self.scene.items():
+        """
+        Fits the view to encompass all event items, ignoring the infinite axis.
+        Adds a 10% margin on the sides.
+        """
+        if not self.events:
             return
-        self.scene.setSceneRect(self.scene.itemsBoundingRect())
-        self.fitInView(self.scene.sceneRect(), Qt.KeepAspectRatio)
+
+        # 1. Calculate X bounds based on events
+        min_date = self.events[0].lore_date
+        max_date = self.events[-1].lore_date
+
+        # Handle single event case with a default range
+        if min_date == max_date:
+            min_date -= 10
+            max_date += 10
+
+        margin = (max_date - min_date) * 0.1
+        if margin == 0:
+            margin = 10
+
+        start_x = (min_date - margin) * self.scale_factor
+        end_x = (max_date + margin) * self.scale_factor
+        width = end_x - start_x
+
+        # 2. Calculate Y bounds based on lanes
+        # Each item is at y = (lane_index * LANE_HEIGHT) + 60
+        # Max 8 lanes (0-7), so max y is roughly (7 * 40) + 60 + height
+        # But let's just use a fixed reasonable height or scan items if needed.
+        # Fixed height covering all 8 lanes is safe + room for labels.
+        # 8 lanes * 40 = 320. Start at 60. So bottom is ~380.
+        height = 400
+
+        # 3. Fit
+        target_rect = QRectF(start_x, 0, width, height)
+        self.fitInView(target_rect, Qt.KeepAspectRatio)
 
     def wheelEvent(self, event):
         """
