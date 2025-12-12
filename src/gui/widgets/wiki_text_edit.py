@@ -46,6 +46,7 @@ class WikiTextEdit(QTextEdit):
         tm = ThemeManager()
         tm.theme_changed.connect(self._on_theme_changed)
         self._apply_theme_stylesheet()
+        self._apply_scrollbar_style()
 
     def set_link_resolver(self, link_resolver):
         """
@@ -172,6 +173,66 @@ class WikiTextEdit(QTextEdit):
         """
         css = self._get_theme_css()
         self.document().setDefaultStyleSheet(css)
+
+    def _apply_scrollbar_style(self):
+        """
+        Apply theme-based scrollbar styling to the widget.
+
+        Sets QSS stylesheet on the widget itself for scrollbar colors.
+        """
+        tm = ThemeManager()
+        theme = tm.get_theme()
+
+        scrollbar_bg = theme.get("scrollbar_bg", theme.get("app_bg", "#2B2B2B"))
+        scrollbar_handle = theme.get("scrollbar_handle", theme.get("border", "#454545"))
+        primary = theme.get("primary", "#FF9900")
+
+        scrollbar_qss = f"""
+            QTextEdit {{
+                background-color: {theme.get("surface", "#323232")};
+            }}
+            QScrollBar:vertical {{
+                background: {scrollbar_bg};
+                width: 10px;
+                border: none;
+            }}
+            QScrollBar::handle:vertical {{
+                background: {scrollbar_handle};
+                min-height: 20px;
+                border-radius: 5px;
+            }}
+            QScrollBar::handle:vertical:hover {{
+                background: {primary};
+            }}
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                height: 0px;
+                background: none;
+            }}
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
+                background: {scrollbar_bg};
+            }}
+            QScrollBar:horizontal {{
+                background: {scrollbar_bg};
+                height: 10px;
+                border: none;
+            }}
+            QScrollBar::handle:horizontal {{
+                background: {scrollbar_handle};
+                min-width: 20px;
+                border-radius: 5px;
+            }}
+            QScrollBar::handle:horizontal:hover {{
+                background: {primary};
+            }}
+            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
+                width: 0px;
+                background: none;
+            }}
+            QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{
+                background: {scrollbar_bg};
+            }}
+        """
+        self.setStyleSheet(scrollbar_qss)
 
     def set_wiki_text(self, text: str):
         """
@@ -385,6 +446,8 @@ class WikiTextEdit(QTextEdit):
                         as we fetch fresh from ThemeManager).
         """
         logger.debug("Theme changed, re-rendering content")
+        # Update scrollbar styling
+        self._apply_scrollbar_style()
         # Re-render with stored text to apply new stylesheet
         if self._current_wiki_text:
             self.set_wiki_text(self._current_wiki_text)

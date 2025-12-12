@@ -232,31 +232,47 @@ QListWidget::item:hover:!selected {{
 
 /* Scrollbars */
 QScrollBar:vertical {{
-    background: {app_bg};
+    background: {scrollbar_bg};
     width: 10px;
     margin: 0px 0px 0px 0px;
+    border: none;
 }}
 QScrollBar::handle:vertical {{
-    background: {border};
+    background: {scrollbar_handle};
     min-height: 20px;
     border-radius: 5px;
 }}
+QScrollBar::handle:vertical:hover {{
+    background: {primary};
+}}
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
     height: 0px;
+    background: none;
+}}
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
+    background: {scrollbar_bg};
 }}
 
 QScrollBar:horizontal {{
-    background: {app_bg};
+    background: {scrollbar_bg};
     height: 10px;
     margin: 0px 0px 0px 0px;
+    border: none;
 }}
 QScrollBar::handle:horizontal {{
-    background: {border};
+    background: {scrollbar_handle};
     min-width: 20px;
     border-radius: 5px;
 }}
+QScrollBar::handle:horizontal:hover {{
+    background: {primary};
+}}
 QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
     width: 0px;
+    background: none;
+}}
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{
+    background: {scrollbar_bg};
 }}
 
 /* Frames */
@@ -265,6 +281,23 @@ QFrame#LoreFrame {{
     border: 1px solid {border};
     border-left: 4px solid {accent_secondary};
     border-radius: 4px;
+}}
+
+/* Splitters */
+QSplitter {{
+    background-color: {app_bg};
+}}
+QSplitter::handle {{
+    background-color: {border};
+}}
+QSplitter::handle:horizontal {{
+    width: 4px;
+}}
+QSplitter::handle:vertical {{
+    height: 4px;
+}}
+QSplitter::handle:hover {{
+    background-color: {primary};
 }}
 
 /* Autocomplete Popup (QCompleter uses QListView) */
