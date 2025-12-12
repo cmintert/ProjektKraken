@@ -176,6 +176,7 @@ class TimelineView(QGraphicsView):
 
         # Connect to theme manager to trigger redraw of foreground (ruler)
         ThemeManager().theme_changed.connect(lambda t: self.viewport().update())
+        ThemeManager().theme_changed.connect(self._update_corner_widget)
 
         self.setDragMode(QGraphicsView.ScrollHandDrag)
         self.setRenderHint(QPainter.Antialiasing)
@@ -188,6 +189,21 @@ class TimelineView(QGraphicsView):
         self.events = []
         self.scale_factor = 20.0
         self._initial_fit_pending = False
+
+        # Set corner widget for themed scrollbar corner
+        self._update_corner_widget(ThemeManager().get_theme())
+
+    def _update_corner_widget(self, theme):
+        """
+        Updates the corner widget background to match the theme.
+
+        Args:
+            theme: The theme dictionary.
+        """
+        scrollbar_bg = theme.get("scrollbar_bg", theme.get("app_bg", "#2B2B2B"))
+        corner = QWidget()
+        corner.setStyleSheet(f"background-color: {scrollbar_bg};")
+        self.setCornerWidget(corner)
 
     def resizeEvent(self, event):
         """

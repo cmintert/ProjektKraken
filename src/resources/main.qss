@@ -275,6 +275,14 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{
     background: {scrollbar_bg};
 }}
 
+/* Corner widget where scrollbars meet */
+QAbstractScrollArea::corner {{
+    background: {scrollbar_bg};
+}}
+QGraphicsView::corner {{
+    background: {scrollbar_bg};
+}}
+
 /* Frames */
 QFrame#LoreFrame {{
     background-color: {surface};
