@@ -7,6 +7,7 @@ import logging
 import traceback
 from PySide6.QtCore import QObject, Signal, Slot
 from src.services.db_service import DatabaseService
+from src.services import longform_builder
 from src.commands.base_command import BaseCommand, CommandResult
 
 
@@ -23,6 +24,7 @@ class DatabaseWorker(QObject):
     initialized = Signal(bool)  # Success/Fail
     events_loaded = Signal(list)  # List[Event]
     entities_loaded = Signal(list)  # List[Entity]
+    longform_sequence_loaded = Signal(list)  # List[dict]
 
     # Details signals
     event_details_loaded = Signal(object, list, list)  # Event, relations, incoming
@@ -139,6 +141,28 @@ class DatabaseWorker(QObject):
         except Exception:
             logger.error(f"Failed to load entity details: {traceback.format_exc()}")
             self.error_occurred.emit(f"Failed to load entity {entity_id}")
+
+    @Slot(str)
+    def load_longform_sequence(self, doc_id: str):
+        """
+        Loads the longform document sequence.
+
+        Args:
+            doc_id (str): Document ID to load.
+        """
+        if not self.db_service:
+            return
+
+        try:
+            self.operation_started.emit("Loading longform document...")
+            sequence = longform_builder.build_longform_sequence(
+                self.db_service._connection, doc_id=doc_id
+            )
+            self.longform_sequence_loaded.emit(sequence)
+            self.operation_finished.emit(f"Loaded {len(sequence)} longform items")
+        except Exception as e:
+            logger.error(f"Failed to load longform sequence: {e}")
+            self.error_occurred.emit(str(e))
 
     @Slot(
         object, object

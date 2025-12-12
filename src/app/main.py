@@ -34,6 +34,7 @@ from src.gui.widgets.event_editor import EventEditorWidget
 from src.gui.widgets.entity_editor import EntityEditorWidget
 from src.gui.widgets.unified_list import UnifiedListWidget
 from src.gui.widgets.timeline import TimelineWidget
+from src.gui.widgets.longform_editor import LongformEditorWidget
 
 # Commands
 from src.commands.event_commands import (
@@ -52,6 +53,11 @@ from src.commands.relation_commands import (
     UpdateRelationCommand,
 )
 from src.commands.wiki_commands import ProcessWikiLinksCommand
+from src.commands.longform_commands import (
+    PromoteLongformEntryCommand,
+    DemoteLongformEntryCommand,
+    RemoveLongformEntryCommand,
+)
 
 # Refactor Imports
 from src.app.constants import (
@@ -64,6 +70,7 @@ from src.app.constants import (
     STATUS_ERROR_PREFIX,
 )
 from src.app.ui_manager import UIManager
+from src.services import longform_builder
 
 # Initialize Logging
 setup_logging(debug_mode=True)
@@ -111,6 +118,9 @@ class MainWindow(QMainWindow):
         # Data Cache for Unified List
         self._cached_events = []
         self._cached_entities = []
+        self._cached_longform_sequence = []
+
+        self.longform_editor = LongformEditorWidget()
 
         # 3. Setup UI Layout via UIManager
         self.ui_manager = UIManager(self)
@@ -120,6 +130,7 @@ class MainWindow(QMainWindow):
                 "event_editor": self.event_editor,
                 "entity_editor": self.entity_editor,
                 "timeline": self.timeline,
+                "longform_editor": self.longform_editor,
             }
         )
 
@@ -191,6 +202,16 @@ class MainWindow(QMainWindow):
         """
         return self.ui_manager.docks.get("timeline")
 
+    @property
+    def longform_dock(self):
+        """
+        Gets the longform editor dock widget.
+
+        Returns:
+            QDockWidget: The dock widget containing the longform editor.
+        """
+        return self.ui_manager.docks.get("longform")
+
     def _connect_signals(self):
         """Connects all UI signals to their respective slots."""
         # Unified List
@@ -220,6 +241,12 @@ class MainWindow(QMainWindow):
         # Timeline
         self.timeline.event_selected.connect(self.load_event_details)
 
+        # Longform Editor
+        self.longform_editor.promote_requested.connect(self.promote_longform_entry)
+        self.longform_editor.demote_requested.connect(self.demote_longform_entry)
+        self.longform_editor.refresh_requested.connect(self.load_longform_sequence)
+        self.longform_editor.export_requested.connect(self.export_longform_document)
+
     def _restore_window_state(self):
         """Restores window geometry and state from settings."""
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
@@ -241,6 +268,7 @@ class MainWindow(QMainWindow):
         """Refreshes both events and entities."""
         self.load_events()
         self.load_entities()
+        self.load_longform_sequence()
 
     def _on_item_selected(self, item_type: str, item_id: str):
         """Handles selection from unified list."""
@@ -278,6 +306,7 @@ class MainWindow(QMainWindow):
         self.worker.operation_started.connect(self.update_status_message)
         self.worker.operation_finished.connect(self.clear_status_message)
         self.worker.error_occurred.connect(self.show_error_message)
+        self.worker.longform_sequence_loaded.connect(self.on_longform_sequence_loaded)
 
         # Connect MainWindow signal for sending commands to worker thread
         self.command_requested.connect(self.worker.run_command)
@@ -406,6 +435,18 @@ class MainWindow(QMainWindow):
         self.ui_manager.docks["entity"].raise_()
         self.entity_editor.load_entity(entity, relations, incoming)
 
+    @Slot(list)
+    def on_longform_sequence_loaded(self, sequence):
+        """
+        Updates the longform editor with the loaded sequence.
+
+        Args:
+            sequence (list): List of longform items from build_longform_sequence.
+        """
+        self._cached_longform_sequence = sequence
+        self.longform_editor.load_sequence(sequence)
+        self.status_bar.showMessage(f"Loaded {len(sequence)} longform items.")
+
     @Slot(object)
     def on_command_finished(self, result):
         """
@@ -448,6 +489,10 @@ class MainWindow(QMainWindow):
                 self.load_event_details(self.event_editor._current_event_id)
             if self.entity_editor._current_entity_id:
                 self.load_entity_details(self.entity_editor._current_entity_id)
+
+        if "Longform" in command_name:
+            # Reload longform sequence after any longform command
+            self.load_longform_sequence()
 
     def closeEvent(self, event):
         """
@@ -678,6 +723,77 @@ class MainWindow(QMainWindow):
             QMessageBox.information(
                 self, "Link Not Found", f"No entity or event named '{target}' found."
             )
+
+    def load_longform_sequence(self, doc_id: str = longform_builder.DOC_ID_DEFAULT):
+        """Requests loading of the longform document sequence."""
+        QMetaObject.invokeMethod(
+            self.worker,
+            "load_longform_sequence",
+            QtCore_Qt.QueuedConnection,
+            Q_ARG(str, doc_id),
+        )
+
+    def promote_longform_entry(self, table: str, row_id: str, old_meta: dict):
+        """
+        Promotes a longform entry by reducing its depth.
+
+        Args:
+            table (str): Table name ("events" or "entities").
+            row_id (str): ID of the item to promote.
+            old_meta (dict): Previous longform metadata for undo.
+        """
+        cmd = PromoteLongformEntryCommand(table, row_id, old_meta)
+        self.command_requested.emit(cmd)
+
+    def demote_longform_entry(self, table: str, row_id: str, old_meta: dict):
+        """
+        Demotes a longform entry by increasing its depth.
+
+        Args:
+            table (str): Table name ("events" or "entities").
+            row_id (str): ID of the item to demote.
+            old_meta (dict): Previous longform metadata for undo.
+        """
+        cmd = DemoteLongformEntryCommand(table, row_id, old_meta)
+        self.command_requested.emit(cmd)
+
+    def export_longform_document(self):
+        """
+        Exports the current longform document to Markdown.
+        Opens a file dialog for the user to choose save location.
+        """
+        from PySide6.QtWidgets import QFileDialog
+
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export Longform Document",
+            "longform_document.md",
+            "Markdown Files (*.md);;All Files (*)",
+        )
+
+        if file_path:
+            try:
+                lines = []
+                for item in self._cached_longform_sequence:
+                    heading_level = item["heading_level"]
+                    title = item["meta"].get("title_override") or item["name"]
+                    heading = "#" * heading_level + " " + title
+                    lines.append(heading)
+                    lines.append("")
+
+                    content = item.get("content", "").strip()
+                    if content:
+                        lines.append(content)
+                        lines.append("")
+                    lines.append("")
+
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write("\n".join(lines))
+
+                self.status_bar.showMessage(f"Exported to {file_path}", 3000)
+            except Exception as e:
+                logger.error(f"Failed to export longform document: {e}")
+                self.status_bar.showMessage(f"Export failed: {e}", 5000)
 
 
 def main():

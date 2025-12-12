@@ -139,6 +139,78 @@ def read_all_longform_items(
 
     return items
 
+    items = read_all_longform_items(conn, doc_id)
+    return items
+
+
+def ensure_all_items_indexed(conn: Connection, doc_id: str = DOC_ID_DEFAULT) -> None:
+    """
+    Ensure all events and entities in the database are present in the longform document.
+    Missing items are added to the end of the document, sorted alphabetically.
+
+    Args:
+        conn: SQLite connection.
+        doc_id: Document ID.
+    """
+    # 1. Identify existing items and find max position
+    existing_ids = set()
+    max_position = 0.0
+
+    # We can reuse read_all_longform_items to get current state
+    current_items = read_all_longform_items(conn, doc_id)
+    for item in current_items:
+        existing_ids.add(item["id"])
+        pos = item["meta"].get("position", 0.0)
+        if pos > max_position:
+            max_position = pos
+
+    # 2. Find missing items
+    missing_items = []
+
+    # Check Events
+    cursor = conn.execute("SELECT id, name FROM events")
+    for row in cursor.fetchall():
+        if row["id"] not in existing_ids:
+            missing_items.append(
+                {"table": "events", "id": row["id"], "name": row["name"]}
+            )
+
+    # Check Entities
+    cursor = conn.execute("SELECT id, name FROM entities")
+    for row in cursor.fetchall():
+        if row["id"] not in existing_ids:
+            missing_items.append(
+                {"table": "entities", "id": row["id"], "name": row["name"]}
+            )
+
+    if not missing_items:
+        return
+
+    # 3. Sort missing items alphabetically
+    missing_items.sort(key=lambda x: x["name"].lower())
+
+    # 4. Append to document
+    # Start gap from max_position. If max_position is 0 (empty doc), start at 100.
+    start_position = max_position if max_position > 0 else 0.0
+
+    logger.info(
+        f"Auto-populating {len(missing_items)} items to longform doc '{doc_id}'"
+    )
+
+    for idx, item in enumerate(missing_items):
+        new_pos = start_position + ((idx + 1) * DEFAULT_POSITION_GAP)
+
+        insert_or_update_longform_meta(
+            conn,
+            item["table"],
+            item["id"],
+            position=new_pos,
+            doc_id=doc_id,
+            # Default to top-level
+            parent_id=None,
+            depth=0,
+        )
+
 
 def build_longform_sequence(
     conn: Connection, doc_id: str = DOC_ID_DEFAULT
@@ -149,6 +221,8 @@ def build_longform_sequence(
     Computes heading_level based on parent-child relationships and depth.
     Returns items in reading order.
 
+    Automatically adds missing DB items to the end of the document.
+
     Args:
         conn: SQLite connection.
         doc_id: Document ID to build sequence for.
@@ -157,6 +231,9 @@ def build_longform_sequence(
         List[Dict]: Ordered list of items with heading_level computed.
                     Each item includes: table, id, name, content, meta, heading_level.
     """
+    # 0. Sync check: ensure everything is in the doc
+    ensure_all_items_indexed(conn, doc_id)
+
     items = read_all_longform_items(conn, doc_id)
 
     # Build parent-child map

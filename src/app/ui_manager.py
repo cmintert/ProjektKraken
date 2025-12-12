@@ -14,6 +14,8 @@ from src.app.constants import (
     DOCK_OBJ_EVENT_INSPECTOR,
     DOCK_OBJ_ENTITY_INSPECTOR,
     DOCK_OBJ_TIMELINE,
+    DOCK_TITLE_LONGFORM,
+    DOCK_OBJ_LONGFORM,
 )
 
 
@@ -42,6 +44,7 @@ class UIManager:
                 - 'event_editor': EventEditorWidget
                 - 'entity_editor': EntityEditorWidget
                 - 'timeline': TimelineWidget
+                - 'longform_editor': LongformEditorWidget
         """
         # Enable advanced docking
         self.main_window.setDockOptions(
@@ -81,6 +84,17 @@ class UIManager:
             DOCK_TITLE_TIMELINE, DOCK_OBJ_TIMELINE, widgets["timeline"]
         )
         self.main_window.addDockWidget(Qt.BottomDockWidgetArea, self.docks["timeline"])
+
+        # 5. Longform Editor (Right)
+        if "longform_editor" in widgets:
+            self.docks["longform"] = self._create_dock(
+                DOCK_TITLE_LONGFORM, DOCK_OBJ_LONGFORM, widgets["longform_editor"]
+            )
+            self.main_window.addDockWidget(
+                Qt.RightDockWidgetArea, self.docks["longform"]
+            )
+            # Tabify with inspectors if desired, or keep separate.
+            # Instructions say: addDockWidget(Qt.RightDockWidgetArea, ...)
 
     def _create_dock(self, title: str, obj_name: str, widget) -> QDockWidget:
         """Helper to create a configured dock widget."""
