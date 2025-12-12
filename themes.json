@@ -7,7 +7,11 @@
         "accent_secondary": "#4DA6FF",
         "text_main": "#E0E0E0",
         "text_dim": "#9E9E9E",
-        "error": "#CF6679"
+        "error": "#CF6679",
+        "font_size_h1": "14pt",
+        "font_size_h2": "12pt",
+        "font_size_h3": "12pt",
+        "font_size_body": "10pt"
     },
     "light_mode": {
         "app_bg": "#F5F5F5",
@@ -17,7 +21,11 @@
         "accent_secondary": "#005A9E",
         "text_main": "#212121",
         "text_dim": "#757575",
-        "error": "#B00020"
+        "error": "#B00020",
+        "font_size_h1": "14pt",
+        "font_size_h2": "12pt",
+        "font_size_h3": "12pt",
+        "font_size_body": "10pt"
     },
     "fantasy_mode": {
         "app_bg": "#24211C",
@@ -27,6 +35,10 @@
         "accent_secondary": "#63B0B0",
         "text_main": "#E6DCC3",
         "text_dim": "#948C7E",
-        "error": "#CF6679"
+        "error": "#CF6679",
+        "font_size_h1": "30pt",
+        "font_size_h2": "14pt",
+        "font_size_h3": "12pt",
+        "font_size_body": "10pt"
     }
 }

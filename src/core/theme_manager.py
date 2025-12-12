@@ -42,7 +42,13 @@ class ThemeManager(QObject):
 
         self.theme_file = theme_file
         self.themes: Dict[str, Dict[str, str]] = {}
-        self.current_theme_name: str = "dark_mode"
+
+        # Restore saved theme preference
+        from PySide6.QtCore import QSettings
+
+        settings = QSettings("ProjektKraken", "ThemeSettings")
+        self.current_theme_name: str = settings.value("current_theme", "dark_mode")
+
         self._qss_template: str = ""
 
         self._load_themes()
@@ -62,6 +68,10 @@ class ThemeManager(QObject):
                     "text_main": "#E0E0E0",
                     "text_dim": "#9E9E9E",
                     "error": "#CF6679",
+                    "font_size_h1": "18pt",
+                    "font_size_h2": "16pt",
+                    "font_size_h3": "14pt",
+                    "font_size_body": "10pt",
                 },
                 "light_mode": {
                     "app_bg": "#F5F5F5",
@@ -72,6 +82,10 @@ class ThemeManager(QObject):
                     "text_main": "#212121",
                     "text_dim": "#757575",
                     "error": "#B00020",
+                    "font_size_h1": "18pt",
+                    "font_size_h2": "16pt",
+                    "font_size_h3": "14pt",
+                    "font_size_body": "10pt",
                 },
             }
             return
@@ -126,6 +140,13 @@ class ThemeManager(QObject):
 
         # Emit signal for custom widgets
         self.theme_changed.emit(theme_data)
+
+        # Persist selection
+        from PySide6.QtCore import QSettings
+
+        settings = QSettings("ProjektKraken", "ThemeSettings")
+        settings.setValue("current_theme", theme_name)
+
         logger.info(f"Theme switched to: {theme_name}")
 
     def apply_theme(self, app, qss_template: str = None):
