@@ -108,42 +108,46 @@ class WikiTextEdit(QTextEdit):
     def set_wiki_text(self, text: str):
         """
         Sets the content using WikiLink syntax, converting it to HTML anchors.
+        Uses the 'markdown' library for rich text rendering.
         """
+        import markdown
+
+        # import html  <-- Removed
+
         # Apply theme-based link color
         tm = ThemeManager()
         tm.theme_changed.connect(self._on_theme_changed)
 
         theme = tm.get_theme()
-        # Default to blue if not found, but themes.json should have it
         link_color = theme.get("accent_secondary", "#2980b9")
+        text_color = theme.get("text_main", "#E0E0E0")  # Correct key from ThemeManager
 
-        # We set default stylesheet for the document to control anchor styling
-        css = f"a {{ color: {link_color}; font-weight: bold; text-decoration: none; }}"
+        # We set default stylesheet for the document to control anchor and header styling
+        # Reduced sizes: h1 24->18, h2 18->14, h3 14->12
+        css = f"""
+            a {{ color: {link_color}; font-weight: bold; text-decoration: none; }}
+            h1 {{ font-size: 18pt; font-weight: 600; color: {text_color}; margin-top: 10px; margin-bottom: 5px; }}
+            h2 {{ font-size: 16pt; font-weight: 600; color: {text_color}; margin-top: 8px; margin-bottom: 4px; }}
+            h3 {{ font-size: 14pt; font-weight: 600; color: {text_color}; margin-top: 6px; margin-bottom: 3px; }}
+            p {{ margin-bottom: 2px; color: {text_color}; }} 
+        """
         self.document().setDefaultStyleSheet(css)
 
-        # Regex to find [[target|label]] or [[target]]
-        import html
-
+        # 1. Pre-process WikiLinks [[Target|Label]] -> Markdown [Label](Target)
+        # Markdown library processes standard links [Label](URL) naturally.
         pattern = re.compile(r"\[\[([^]|]+)(?:\|([^]]+))?\]\]")
 
-        def replace_link(match):
-            """
-            Converts a WikiLink match to an HTML anchor tag.
-
-            Args:
-                match: Regex match object containing target and optional label.
-
-            Returns:
-                str: HTML anchor tag string.
-            """
+        def replace_link_md(match):
             target = match.group(1).strip()
             label = match.group(2).strip() if match.group(2) else target
-            # Use data-target attribute safely if needed, but href is standard
-            return f'<a href="{target}">{label}</a>'
+            return f"[{label}]({target})"
 
-        safe_text = html.escape(text)
-        html_content = pattern.sub(replace_link, safe_text)
-        html_content = html_content.replace("\n", "<br>")
+        md_text = pattern.sub(replace_link_md, text)
+
+        # 2. Convert Markdown to HTML
+        # extensions=['extra'] enables tables, attr_list, def_list, etc.
+        html_content = markdown.markdown(md_text, extensions=["extra", "nl2br"])
+
         self.setHtml(html_content)
 
     def get_wiki_text(self) -> str:
@@ -301,7 +305,15 @@ class WikiTextEdit(QTextEdit):
         super().mouseReleaseEvent(event)
 
     def _on_theme_changed(self, theme_data):
-        """Updates link color when theme changes."""
+        """Updates link color and text style when theme changes."""
         link_color = theme_data.get("accent_secondary", "#2980b9")
-        css = f"a {{ color: {link_color}; font-weight: bold; text-decoration: none; }}"
+        text_color = theme_data.get("text_main", "#E0E0E0")
+
+        css = f"""
+            a {{ color: {link_color}; font-weight: bold; text-decoration: none; }}
+            h1 {{ font-size: 18pt; font-weight: 600; color: {text_color}; margin-top: 10px; margin-bottom: 5px; }}
+            h2 {{ font-size: 16pt; font-weight: 600; color: {text_color}; margin-top: 8px; margin-bottom: 4px; }}
+            h3 {{ font-size: 14pt; font-weight: 600; color: {text_color}; margin-top: 6px; margin-bottom: 3px; }}
+            p {{ margin-bottom: 2px; color: {text_color}; }}
+        """
         self.document().setDefaultStyleSheet(css)
