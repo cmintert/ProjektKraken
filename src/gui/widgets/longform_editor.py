@@ -223,14 +223,25 @@ class LongformOutlineWidget(QTreeWidget):
         pass
 
     def keyPressEvent(self, event):
-        """Handle keyboard shortcuts."""
-        if event.key() == Qt.Key_Tab:
-            # Demote (Tab)
-            if event.modifiers() == Qt.ShiftModifier:
-                # Promote (Shift+Tab)
-                self._promote_selected()
-            else:
-                self._demote_selected()
+        """
+        Handle keyboard shortcuts for promote/demote operations.
+
+        Ctrl+[ : Promote (decrease indent)
+        Ctrl+] : Demote (increase indent)
+        """
+        # Check for Ctrl+[ (promote)
+        if (
+            event.key() == Qt.Key_BracketLeft
+            and event.modifiers() == Qt.ControlModifier
+        ):
+            self._promote_selected()
+            event.accept()
+        # Check for Ctrl+] (demote)
+        elif (
+            event.key() == Qt.Key_BracketRight
+            and event.modifiers() == Qt.ControlModifier
+        ):
+            self._demote_selected()
             event.accept()
         else:
             super().keyPressEvent(event)
@@ -364,7 +375,7 @@ class LongformEditorWidget(QWidget):
 
         toolbar.addSeparator()
 
-        help_label = QLabel("  Tab: Demote | Shift+Tab: Promote")
+        help_label = QLabel("  Ctrl+[: Promote | Ctrl+]: Demote")
         toolbar.addWidget(help_label)
 
         layout.addWidget(toolbar)
