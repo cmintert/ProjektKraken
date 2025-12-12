@@ -15,14 +15,15 @@ from PySide6.QtWidgets import (
     QSplitter,
     QTreeWidget,
     QTreeWidgetItem,
-    QTextEdit,
     QToolBar,
     QLabel,
 )
 from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QAction, QFont, QTextCursor
+from PySide6.QtGui import QAction, QBrush, QColor, QTextCursor
 import logging
 from typing import List, Dict, Any, Optional
+
+from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,9 @@ class LongformOutlineWidget(QTreeWidget):
     item_demoted = Signal(str, str, dict)  # table, id, old_meta
     item_removed = Signal(str, str, dict)  # table, id, old_meta
 
+    COLOR_EVENT = QColor("#0078D4")
+    COLOR_ENTITY = QColor("#FF9900")
+
     def __init__(self, parent=None):
         """Initialize the outline widget."""
         super().__init__(parent)
@@ -55,6 +59,106 @@ class LongformOutlineWidget(QTreeWidget):
         # Connect signals
         self.itemSelectionChanged.connect(self._on_selection_changed)
         self.customContextMenuRequested.connect(self._show_context_menu)
+
+    def dropEvent(self, event):
+        """
+        Handle drop event to reorder items.
+        Calculates new parent, depth, and position.
+        """
+        # 1. capture selection before drop (the item being moved)
+        # In QTreeWidget with InternalMove, selection is preserved
+        selected = self.selectedItems()
+        if not selected:
+            super().dropEvent(event)
+            return
+
+        item = selected[0]
+
+        # 2. Perform the move visually
+        super().dropEvent(event)
+
+        # 3. Analyze new state
+        parent = item.parent()
+
+        # Calculate new parent ID and depth
+        new_parent_id = None
+        new_depth = 0
+
+        if parent:
+            # We need to find meta for the parent
+            # But wait, parent is a QTreeWidgetItem, we need its data
+            # We stored _item_meta key as id(tree_item)
+            p_val = self._item_meta.get(id(parent))
+            if p_val:
+                # p_val is (table, row_id, meta)
+                new_parent_id = p_val[1]
+                new_depth = p_val[2].get("depth", 0) + 1
+
+        # Calculate new position based on siblings
+        # item is now at its new location in the tree
+        # We need its index and siblings
+
+        # Re-get siblings properly
+        sibling_count = parent.childCount() if parent else self.topLevelItemCount()
+        idx = parent.indexOfChild(item) if parent else self.indexOfTopLevelItem(item)
+
+        # Get prev and next siblings
+        prev_sibling = None
+        next_sibling = None
+
+        if idx > 0:
+            prev_sibling = (
+                parent.child(idx - 1) if parent else self.topLevelItem(idx - 1)
+            )
+
+        if idx < sibling_count - 1:
+            next_sibling = (
+                parent.child(idx + 1) if parent else self.topLevelItem(idx + 1)
+            )
+
+        # Get positions
+        prev_pos = 0.0
+        next_pos = 0.0
+
+        if prev_sibling:
+            if id(prev_sibling) in self._item_meta:
+                prev_pos = self._item_meta[id(prev_sibling)][2].get("position", 0.0)
+
+        if next_sibling:
+            if id(next_sibling) in self._item_meta:
+                next_pos = self._item_meta[id(next_sibling)][2].get("position", 0.0)
+
+        # Logic for new position
+        new_pos = 100.0  # default
+
+        if prev_sibling and next_sibling:
+            # Between two items
+            new_pos = (prev_pos + next_pos) / 2.0
+        elif prev_sibling:
+            # End of list (or after only sibling)
+            # Add 100
+            new_pos = prev_pos + 100.0
+        elif next_sibling:
+            # Start of list
+            # Half of next, or next - 100?
+            if next_pos > 0:
+                new_pos = next_pos / 2.0
+            else:
+                # Should not happen typically if gap is 100
+                new_pos = -50.0  # Something smaller
+
+        # 4. Emit signal
+        # Get old meta
+        if id(item) in self._item_meta:
+            table, row_id, old_meta = self._item_meta[id(item)]
+
+            new_meta = old_meta.copy()
+            new_meta["position"] = new_pos
+            new_meta["parent_id"] = new_parent_id
+            new_meta["depth"] = new_depth
+
+            # Emit
+            self.item_moved.emit(table, row_id, old_meta, new_meta)
 
     def load_sequence(self, sequence: List[Dict[str, Any]]) -> None:
         """
@@ -75,7 +179,15 @@ class LongformOutlineWidget(QTreeWidget):
             title = item["meta"].get("title_override") or item["name"]
             tree_item.setText(0, title)
 
+            # Color code
+            if item["table"] == "events":
+                tree_item.setForeground(0, QBrush(self.COLOR_EVENT))
+            elif item["table"] == "entities":
+                tree_item.setForeground(0, QBrush(self.COLOR_ENTITY))
+
             # Store metadata
+            # IMPORTANT: We must store the updated meta so we can calculate positions correctly!
+            # The sequence should be up to date from DB.
             self._item_meta[id(tree_item)] = (
                 item["table"],
                 item["id"],
@@ -147,22 +259,18 @@ class LongformOutlineWidget(QTreeWidget):
             self.item_demoted.emit(table, row_id, old_meta.copy())
 
 
-class LongformContentWidget(QTextEdit):
+class LongformContentWidget(WikiTextEdit):
     """
     Read-only text view for displaying the continuous longform document.
 
     Shows the assembled document with headings and content from all items.
+    inherits from WikiTextEdit to support WikiLink rendering and navigation.
     """
 
     def __init__(self, parent=None):
         """Initialize the content widget."""
         super().__init__(parent)
         self.setReadOnly(True)
-        self.setAcceptRichText(False)
-
-        # Set monospace font for better readability
-        font = QFont("Courier New", 10)
-        self.setFont(font)
 
     def load_content(self, sequence: List[Dict[str, Any]]) -> None:
         """
@@ -189,7 +297,7 @@ class LongformContentWidget(QTextEdit):
 
             lines.append("")  # Extra spacing between sections
 
-        self.setPlainText("\n".join(lines))
+        self.set_wiki_text("\n".join(lines))
 
     def scroll_to_item(self, item_index: int) -> None:
         """
@@ -219,6 +327,9 @@ class LongformEditorWidget(QWidget):
     demote_requested = Signal(str, str, dict)  # table, id, old_meta
     refresh_requested = Signal()
     export_requested = Signal()
+    item_selected = Signal(str, str)  # table, id
+    item_moved = Signal(str, str, dict, dict)  # table, id, old_meta, new_meta
+    link_clicked = Signal(str)
 
     def __init__(self, parent=None):
         """Initialize the longform editor."""
@@ -263,9 +374,11 @@ class LongformEditorWidget(QWidget):
         self.outline.item_selected.connect(self._on_item_selected)
         self.outline.item_promoted.connect(self.promote_requested.emit)
         self.outline.item_demoted.connect(self.demote_requested.emit)
+        self.outline.item_moved.connect(self.item_moved.emit)
 
         # Right: Content view
         self.content = LongformContentWidget()
+        self.content.link_clicked.connect(self.link_clicked.emit)
 
         splitter.addWidget(self.outline)
         splitter.addWidget(self.content)
@@ -273,11 +386,11 @@ class LongformEditorWidget(QWidget):
         # Set initial sizes (30% outline, 70% content)
         splitter.setSizes([300, 700])
 
-        layout.addWidget(splitter)
+        layout.addWidget(splitter, 1)  # Stretch factor 1
 
         # Status bar
         self.status_label = QLabel("No items loaded")
-        layout.addWidget(self.status_label)
+        layout.addWidget(self.status_label, 0)  # Stretch factor 0
 
     def load_sequence(self, sequence: List[Dict[str, Any]]) -> None:
         """
@@ -307,6 +420,9 @@ class LongformEditorWidget(QWidget):
             if item["table"] == table and item["id"] == row_id:
                 self.content.scroll_to_item(idx)
                 break
+
+        # Emit signal to notify parent (MainWindow)
+        self.item_selected.emit(table, row_id)
 
     def get_current_selection(self) -> Optional[tuple]:
         """

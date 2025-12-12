@@ -62,7 +62,10 @@ def _get_longform_meta(
     Returns:
         Optional[dict]: Longform metadata dict or None if not present.
     """
-    return attributes.get("longform", {}).get(doc_id)
+    lf_data = attributes.get("longform")
+    if not isinstance(lf_data, dict):
+        return None
+    return lf_data.get(doc_id)
 
 
 def _set_longform_meta(
@@ -79,7 +82,7 @@ def _set_longform_meta(
     Returns:
         dict: Updated attributes dictionary.
     """
-    if "longform" not in attributes:
+    if "longform" not in attributes or not isinstance(attributes["longform"], dict):
         attributes["longform"] = {}
     attributes["longform"][doc_id] = meta
     return attributes

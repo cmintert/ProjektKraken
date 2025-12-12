@@ -56,7 +56,7 @@ from src.commands.wiki_commands import ProcessWikiLinksCommand
 from src.commands.longform_commands import (
     PromoteLongformEntryCommand,
     DemoteLongformEntryCommand,
-    RemoveLongformEntryCommand,
+    MoveLongformEntryCommand,
 )
 
 # Refactor Imports
@@ -246,6 +246,9 @@ class MainWindow(QMainWindow):
         self.longform_editor.demote_requested.connect(self.demote_longform_entry)
         self.longform_editor.refresh_requested.connect(self.load_longform_sequence)
         self.longform_editor.export_requested.connect(self.export_longform_document)
+        self.longform_editor.item_selected.connect(self._on_item_selected)
+        self.longform_editor.item_moved.connect(self.move_longform_entry)
+        self.longform_editor.link_clicked.connect(self.navigate_to_entity)
 
     def _restore_window_state(self):
         """Restores window geometry and state from settings."""
@@ -271,7 +274,13 @@ class MainWindow(QMainWindow):
         self.load_longform_sequence()
 
     def _on_item_selected(self, item_type: str, item_id: str):
-        """Handles selection from unified list."""
+        """Handles selection from unified list or longform editor."""
+        # Handle plural table names from longform editor
+        if item_type == "events":
+            item_type = "event"
+        elif item_type == "entities":
+            item_type = "entity"
+
         if item_type == "event":
             self.ui_manager.docks["event"].raise_()
             self.load_event_details(item_id)
@@ -755,6 +764,21 @@ class MainWindow(QMainWindow):
             old_meta (dict): Previous longform metadata for undo.
         """
         cmd = DemoteLongformEntryCommand(table, row_id, old_meta)
+        self.command_requested.emit(cmd)
+
+    def move_longform_entry(
+        self, table: str, row_id: str, old_meta: dict, new_meta: dict
+    ):
+        """
+        Moves a longform entry to a new position.
+
+        Args:
+            table (str): Table name.
+            row_id (str): ID.
+            old_meta (dict): Old metadata.
+            new_meta (dict): New metadata with position/parent/depth.
+        """
+        cmd = MoveLongformEntryCommand(table, row_id, old_meta, new_meta)
         self.command_requested.emit(cmd)
 
     def export_longform_document(self):
