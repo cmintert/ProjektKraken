@@ -69,7 +69,14 @@ class ThemeManager(QObject):
 
     def _load_themes(self):
         """Loads the JSON theme definition."""
+        logger.debug(f"Attempting to load themes from: {self.theme_file}")
+        logger.debug(f"File exists: {os.path.exists(self.theme_file)}")
+        logger.debug(f"Current working directory: {os.getcwd()}")
+
         if not os.path.exists(self.theme_file):
+            logger.warning(
+                f"Theme file not found at '{self.theme_file}', using fallback themes"
+            )
             # Fallback hardcoded if missing
             self.themes = {
                 "dark_mode": {
@@ -106,6 +113,11 @@ class ThemeManager(QObject):
         try:
             with open(self.theme_file, "r") as f:
                 self.themes = json.load(f)
+            logger.debug(f"Successfully loaded themes: {list(self.themes.keys())}")
+            # Log font size keys for verification
+            for theme_name, theme_data in self.themes.items():
+                font_keys = [k for k in theme_data.keys() if "font" in k]
+                logger.debug(f"Theme '{theme_name}' font settings: {font_keys}")
         except Exception as e:
             logger.error(f"Error loading themes: {e}")
 

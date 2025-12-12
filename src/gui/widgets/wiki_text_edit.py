@@ -3,6 +3,7 @@ Wiki Text Edit Widget.
 A specialized QTextEdit that supports WikiLink navigation via Ctrl+Click.
 """
 
+import logging
 import re
 from PySide6.QtWidgets import QTextEdit, QCompleter
 from PySide6.QtCore import Signal, Qt, QStringListModel
@@ -10,6 +11,8 @@ from PySide6.QtGui import QTextCursor
 
 
 from src.core.theme_manager import ThemeManager
+
+logger = logging.getLogger(__name__)
 
 
 class WikiTextEdit(QTextEdit):
@@ -34,6 +37,7 @@ class WikiTextEdit(QTextEdit):
         self._completer = None
         self._completion_map = {}  # Maps display names to IDs
         self._link_resolver = None  # Will be set later
+        self._current_wiki_text = ""  # Store for re-rendering on theme change
 
         # Enable mouse tracking for hover effects if desired
         self.setMouseTracking(True)
@@ -110,15 +114,22 @@ class WikiTextEdit(QTextEdit):
             model = QStringListModel(display_names, self._completer)
             self._completer.setModel(model)
 
-    def _apply_theme_stylesheet(self):
+    def _get_theme_css(self) -> str:
         """
-        Apply theme-based stylesheet to the document.
+        Build CSS stylesheet based on current theme settings.
 
-        Retrieves current theme settings and applies font sizes and colors
-        to headings, paragraphs, and links.
+        Retrieves current theme settings and builds CSS for headings,
+        paragraphs, and links.
+
+        Returns:
+            str: CSS stylesheet as a string.
         """
         tm = ThemeManager()
         theme = tm.get_theme()
+
+        logger.debug(f"Building theme CSS. Current theme: {tm.current_theme_name}")
+        logger.debug(f"Theme data keys: {list(theme.keys())}")
+
         link_color = theme.get("accent_secondary", "#2980b9")
         text_color = theme.get("text_main", "#E0E0E0")
 
@@ -128,22 +139,38 @@ class WikiTextEdit(QTextEdit):
         fs_h3 = theme.get("font_size_h3", "14pt")
         fs_body = theme.get("font_size_body", "10pt")
 
+        logger.debug(
+            f"Font sizes from theme: h1={fs_h1}, h2={fs_h2}, h3={fs_h3}, body={fs_body}"
+        )
+
         # Build CSS stylesheet for the document
         css = (
             f"a {{ color: {link_color}; font-weight: bold; "
-            "text-decoration: none; }} "
+            "text-decoration: none; } "
             f"h1 {{ font-size: {fs_h1}; font-weight: 600; "
             f"color: {text_color}; "
-            "margin-top: 10px; margin-bottom: 5px; }} "
+            "margin-top: 10px; margin-bottom: 5px; } "
             f"h2 {{ font-size: {fs_h2}; font-weight: 600; "
             f"color: {text_color}; "
-            "margin-top: 8px; margin-bottom: 4px; }} "
+            "margin-top: 8px; margin-bottom: 4px; } "
             f"h3 {{ font-size: {fs_h3}; font-weight: 600; "
             f"color: {text_color}; "
-            "margin-top: 6px; margin-bottom: 3px; }} "
+            "margin-top: 6px; margin-bottom: 3px; } "
             f"p {{ margin-bottom: 2px; color: {text_color}; "
-            f"font-size: {fs_body}; }}"
+            f"font-size: {fs_body}; }} "
+            f"body {{ color: {text_color}; font-size: {fs_body}; }}"
         )
+        logger.debug(f"Generated CSS: {css}")
+        return css
+
+    def _apply_theme_stylesheet(self):
+        """
+        Apply theme-based stylesheet to the document.
+
+        Retrieves current theme settings and applies font sizes and colors
+        to headings, paragraphs, and links.
+        """
+        css = self._get_theme_css()
         self.document().setDefaultStyleSheet(css)
 
     def set_wiki_text(self, text: str):
@@ -153,8 +180,8 @@ class WikiTextEdit(QTextEdit):
         """
         import markdown
 
-        # Apply theme stylesheet before setting content
-        self._apply_theme_stylesheet()
+        # Store text for re-rendering on theme change
+        self._current_wiki_text = text
 
         # 1. Pre-process WikiLinks [[Target|Label]] -> Markdown [Label](Target)
         # Markdown library processes standard links [Label](URL) naturally.
@@ -181,8 +208,16 @@ class WikiTextEdit(QTextEdit):
 
         # 2. Convert Markdown to HTML
         # extensions=['extra'] enables tables, attr_list, def_list, etc.
-        html_content = markdown.markdown(md_text, extensions=["extra", "nl2br"])
+        html_body = markdown.markdown(md_text, extensions=["extra", "nl2br"])
 
+        # 3. Get theme CSS and wrap content with embedded stylesheet
+        # Embedding CSS directly in HTML ensures Qt applies it correctly
+        css = self._get_theme_css()
+        html_content = (
+            f"<html><head><style>{css}</style></head><body>{html_body}</body></html>"
+        )
+
+        logger.debug(f"Setting HTML with embedded CSS (body length: {len(html_body)})")
         self.setHtml(html_content)
 
     def get_wiki_text(self) -> str:
@@ -343,8 +378,16 @@ class WikiTextEdit(QTextEdit):
         """
         Updates link color and text style when theme changes.
 
+        Re-renders the current content to apply new font sizes and colors.
+
         Args:
             theme_data: Dictionary containing theme settings (unused,
                         as we fetch fresh from ThemeManager).
         """
-        self._apply_theme_stylesheet()
+        logger.debug("Theme changed, re-rendering content")
+        # Re-render with stored text to apply new stylesheet
+        if self._current_wiki_text:
+            self.set_wiki_text(self._current_wiki_text)
+        else:
+            # Just update stylesheet for empty or non-wiki content
+            self._apply_theme_stylesheet()
