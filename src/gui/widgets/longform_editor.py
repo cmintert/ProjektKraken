@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QLabel,
 )
 from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QAction, QBrush, QColor, QTextCursor
+from PySide6.QtGui import QAction, QBrush, QColor
 import logging
 from typing import List, Dict, Any, Optional
 
@@ -293,7 +293,10 @@ class LongformContentWidget(WikiTextEdit):
         """
         lines = []
 
-        for item in sequence:
+        for idx, item in enumerate(sequence):
+            # Add anchor for navigation
+            lines.append(f'<a name="item-{idx}"></a>')
+
             # Add heading
             heading_level = item["heading_level"]
             title = item["meta"].get("title_override") or item["name"]
@@ -320,12 +323,7 @@ class LongformContentWidget(WikiTextEdit):
         Args:
             item_index: Index of the item in the sequence.
         """
-        # Simple implementation: scroll to top for first item
-        # More sophisticated implementations would calculate line positions
-        if item_index == 0:
-            cursor = self.textCursor()
-            cursor.movePosition(QTextCursor.Start)
-            self.setTextCursor(cursor)
+        self.scrollToAnchor(f"item-{item_index}")
 
 
 class LongformEditorWidget(QWidget):
