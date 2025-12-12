@@ -38,6 +38,11 @@ class WikiTextEdit(QTextEdit):
         # Enable mouse tracking for hover effects if desired
         self.setMouseTracking(True)
 
+        # Connect to theme changes and apply initial theme
+        tm = ThemeManager()
+        tm.theme_changed.connect(self._on_theme_changed)
+        self._apply_theme_stylesheet()
+
     def set_link_resolver(self, link_resolver):
         """
         Sets the link resolver for checking broken links.
@@ -105,22 +110,17 @@ class WikiTextEdit(QTextEdit):
             model = QStringListModel(display_names, self._completer)
             self._completer.setModel(model)
 
-    def set_wiki_text(self, text: str):
+    def _apply_theme_stylesheet(self):
         """
-        Sets the content using WikiLink syntax, converting it to HTML anchors.
-        Uses the 'markdown' library for rich text rendering.
+        Apply theme-based stylesheet to the document.
+
+        Retrieves current theme settings and applies font sizes and colors
+        to headings, paragraphs, and links.
         """
-        import markdown
-
-        # import html  <-- Removed
-
-        # Apply theme-based link color
         tm = ThemeManager()
-        tm.theme_changed.connect(self._on_theme_changed)
-
         theme = tm.get_theme()
         link_color = theme.get("accent_secondary", "#2980b9")
-        text_color = theme.get("text_main", "#E0E0E0")  # Correct key from ThemeManager
+        text_color = theme.get("text_main", "#E0E0E0")
 
         # Font Sizes (fallback to hardcoded if missing in old theme files)
         fs_h1 = theme.get("font_size_h1", "18pt")
@@ -128,24 +128,33 @@ class WikiTextEdit(QTextEdit):
         fs_h3 = theme.get("font_size_h3", "14pt")
         fs_body = theme.get("font_size_body", "10pt")
 
-        # We set default stylesheet for the document to control anchor
-        # and header styling
+        # Build CSS stylesheet for the document
         css = (
             f"a {{ color: {link_color}; font-weight: bold; "
             "text-decoration: none; }} "
             f"h1 {{ font-size: {fs_h1}; font-weight: 600; "
             f"color: {text_color}; "
-            "margin-top: 10px; margin-bottom: 5px; } "
+            "margin-top: 10px; margin-bottom: 5px; }} "
             f"h2 {{ font-size: {fs_h2}; font-weight: 600; "
             f"color: {text_color}; "
-            "margin-top: 8px; margin-bottom: 4px; } "
+            "margin-top: 8px; margin-bottom: 4px; }} "
             f"h3 {{ font-size: {fs_h3}; font-weight: 600; "
             f"color: {text_color}; "
-            "margin-top: 6px; margin-bottom: 3px; } "
+            "margin-top: 6px; margin-bottom: 3px; }} "
             f"p {{ margin-bottom: 2px; color: {text_color}; "
             f"font-size: {fs_body}; }}"
         )
         self.document().setDefaultStyleSheet(css)
+
+    def set_wiki_text(self, text: str):
+        """
+        Sets the content using WikiLink syntax, converting it to HTML anchors.
+        Uses the 'markdown' library for rich text rendering.
+        """
+        import markdown
+
+        # Apply theme stylesheet before setting content
+        self._apply_theme_stylesheet()
 
         # 1. Pre-process WikiLinks [[Target|Label]] -> Markdown [Label](Target)
         # Markdown library processes standard links [Label](URL) naturally.
@@ -331,23 +340,11 @@ class WikiTextEdit(QTextEdit):
         super().mouseReleaseEvent(event)
 
     def _on_theme_changed(self, theme_data):
-        """Updates link color and text style when theme changes."""
-        link_color = theme_data.get("accent_secondary", "#2980b9")
-        text_color = theme_data.get("text_main", "#E0E0E0")
+        """
+        Updates link color and text style when theme changes.
 
-        fs_h1 = theme_data.get("font_size_h1", "18pt")
-        fs_h2 = theme_data.get("font_size_h2", "16pt")
-        fs_h3 = theme_data.get("font_size_h3", "14pt")
-        fs_body = theme_data.get("font_size_body", "10pt")
-
-        css = (
-            f"a {{ color: {link_color}; font-weight: bold; text-decoration: none; }} "
-            f"h1 {{ font-size: {fs_h1}; font-weight: 600; color: {text_color}; "
-            "margin-top: 10px; margin-bottom: 5px; } "
-            f"h2 {{ font-size: {fs_h2}; font-weight: 600; color: {text_color}; "
-            "margin-top: 8px; margin-bottom: 4px; } "
-            f"h3 {{ font-size: {fs_h3}; font-weight: 600; color: {text_color}; "
-            "margin-top: 6px; margin-bottom: 3px; } "
-            f"p {{ margin-bottom: 2px; color: {text_color}; font-size: {fs_body}; }}"
-        )
-        self.document().setDefaultStyleSheet(css)
+        Args:
+            theme_data: Dictionary containing theme settings (unused,
+                        as we fetch fresh from ThemeManager).
+        """
+        self._apply_theme_stylesheet()

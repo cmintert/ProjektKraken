@@ -56,6 +56,21 @@ Longform metadata is stored in the `attributes` JSON column of both `events` and
 
 ## Usage
 
+### GUI Longform Editor
+
+The longform editor provides a split-view interface:
+
+- **Left Panel**: Outline tree view with drag-and-drop reordering
+- **Right Panel**: Continuous document view with synchronized scrolling
+
+**Keyboard Shortcuts:**
+- **Ctrl+[**: Promote selected item (decrease indent, make it a sibling of its parent)
+- **Ctrl+]**: Demote selected item (increase indent, make it a child of the previous sibling)
+
+**Drag and Drop:**
+- Drag items in the outline tree to reorder them or change their parent
+- The document view updates automatically to reflect the new structure
+
 ### Adding Items to Longform
 
 To add an Event or Entity to the longform document, you need to add the longform metadata to its `attributes` JSON:
