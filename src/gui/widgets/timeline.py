@@ -44,7 +44,8 @@ class EventItem(QGraphicsItem):
 
         Args:
             event (Event): The event to represent.
-            scale_factor (float, optional): Scale factor for positioning. Defaults to 10.0.
+            scale_factor (float, optional): Scale factor for positioning.
+                Defaults to 10.0.
         """
         super().__init__()
         self.event = event

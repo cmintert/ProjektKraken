@@ -215,7 +215,8 @@ class EntityEditorWidget(QWidget):
         """
         Handles adding a new relation.
 
-        Opens dialogs to collect relation details and emits the add_relation_requested signal.
+        Opens dialogs to collect relation details and emits the
+        add_relation_requested signal.
         """
         if not self._current_entity_id:
             return

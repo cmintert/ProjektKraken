@@ -228,7 +228,8 @@ class MainWindow(QMainWindow):
             editor.remove_relation_requested.connect(self.remove_relation)
             editor.update_relation_requested.connect(self.update_relation)
 
-        # Specific connections if needed (generalized above, but keeping specific if logic differs)
+        # Specific connections if needed
+        # (generalized above, but keeping specific if logic differs)
         self.event_editor.save_requested.disconnect(self.update_item)
         self.entity_editor.save_requested.disconnect(self.update_item)
 
@@ -264,7 +265,11 @@ class MainWindow(QMainWindow):
             self.ui_manager.reset_layout()
 
     def update_item(self, data):
-        """Placeholder for generalized update, currently unused as we split update_event/entity."""
+        """
+        Placeholder for generalized update.
+
+        Currently unused as we split update_event/entity.
+        """
         pass
 
     def load_data(self):
@@ -394,9 +399,11 @@ class MainWindow(QMainWindow):
 
     def _update_editor_suggestions(self):
         """
-        Aggregates all Event and Entity names with IDs and updates the editors' completers.
+        Update editor completers with Event and Entity names.
 
-        Provides ID-based completion for robust wiki-linking.
+        Aggregates all Event and Entity names with IDs and updates
+        the editors' completers. Provides ID-based completion for
+        robust wiki-linking.
         """
         items = []
 
@@ -574,7 +581,8 @@ class MainWindow(QMainWindow):
         Updates an event with the provided data.
 
         Args:
-            event_data (dict): Dictionary containing event data including the 'id' field.
+            event_data (dict): Dictionary containing event data
+                including the 'id' field.
         """
         event_id = event_data.get("id")
         if not event_id:
@@ -617,7 +625,8 @@ class MainWindow(QMainWindow):
         Updates an entity with the provided data.
 
         Args:
-            entity_data (dict): Dictionary containing entity data including the 'id' field.
+            entity_data (dict): Dictionary containing entity data
+                including the 'id' field.
         """
         entity_id = entity_data.get("id")
         if not entity_id:
@@ -631,7 +640,9 @@ class MainWindow(QMainWindow):
             wiki_cmd = ProcessWikiLinksCommand(entity_id, entity_data["description"])
             self.command_requested.emit(wiki_cmd)
 
-    def add_relation(self, source_id, target_id, rel_type, bidirectional: bool = False):
+    def add_relation(
+        self, source_id, target_id, rel_type, bidirectional: bool = False
+    ):
         """
         Adds a relation between entities.
 
@@ -639,7 +650,8 @@ class MainWindow(QMainWindow):
             source_id (str): The ID of the source entity.
             target_id (str): The ID of the target entity.
             rel_type (str): The type of relation.
-            bidirectional (bool, optional): Whether the relation is bidirectional. Defaults to False.
+            bidirectional (bool, optional): Whether the relation is
+                bidirectional. Defaults to False.
         """
         cmd = AddRelationCommand(
             source_id, target_id, rel_type, bidirectional=bidirectional

@@ -128,16 +128,22 @@ class WikiTextEdit(QTextEdit):
         fs_h3 = theme.get("font_size_h3", "14pt")
         fs_body = theme.get("font_size_body", "10pt")
 
-        # We set default stylesheet for the document to control anchor and header styling
+        # We set default stylesheet for the document to control anchor
+        # and header styling
         css = (
-            f"a {{ color: {link_color}; font-weight: bold; text-decoration: none; }} "
-            f"h1 {{ font-size: {fs_h1}; font-weight: 600; color: {text_color}; "
+            f"a {{ color: {link_color}; font-weight: bold; "
+            "text-decoration: none; }} "
+            f"h1 {{ font-size: {fs_h1}; font-weight: 600; "
+            f"color: {text_color}; "
             "margin-top: 10px; margin-bottom: 5px; } "
-            f"h2 {{ font-size: {fs_h2}; font-weight: 600; color: {text_color}; "
+            f"h2 {{ font-size: {fs_h2}; font-weight: 600; "
+            f"color: {text_color}; "
             "margin-top: 8px; margin-bottom: 4px; } "
-            f"h3 {{ font-size: {fs_h3}; font-weight: 600; color: {text_color}; "
+            f"h3 {{ font-size: {fs_h3}; font-weight: 600; "
+            f"color: {text_color}; "
             "margin-top: 6px; margin-bottom: 3px; } "
-            f"p {{ margin-bottom: 2px; color: {text_color}; font-size: {fs_body}; }}"
+            f"p {{ margin-bottom: 2px; color: {text_color}; "
+            f"font-size: {fs_body}; }}"
         )
         self.document().setDefaultStyleSheet(css)
 
@@ -146,6 +152,18 @@ class WikiTextEdit(QTextEdit):
         pattern = re.compile(r"\[\[([^]|]+)(?:\|([^]]+))?\]\]")
 
         def replace_link_md(match):
+            """
+            Convert WikiLink syntax to Markdown link syntax.
+
+            Transforms [[Target|Label]] or [[Target]] into Markdown format
+            [Label](Target). Used as a callback for regex substitution.
+
+            Args:
+                match: Regex match object with groups for target and optional label.
+
+            Returns:
+                str: Markdown-formatted link string.
+            """
             target = match.group(1).strip()
             label = match.group(2).strip() if match.group(2) else target
             return f"[{label}]({target})"
