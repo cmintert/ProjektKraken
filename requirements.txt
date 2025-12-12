@@ -5,3 +5,4 @@ flake8
 mypy
 black
 pytest-qt
+markdown

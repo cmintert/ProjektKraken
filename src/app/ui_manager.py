@@ -3,7 +3,7 @@ UIManager Module.
 Handles the creation and layout of dock widgets and menus for the MainWindow.
 """
 
-from PySide6.QtWidgets import QMainWindow, QDockWidget, QTabWidget, QMenu, QMenuBar
+from PySide6.QtWidgets import QMainWindow, QDockWidget, QTabWidget, QMenuBar
 from PySide6.QtCore import Qt
 from src.app.constants import (
     DOCK_TITLE_PROJECT,

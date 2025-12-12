@@ -68,6 +68,7 @@ Examples:
         sys.exit(1)
 
     # Connect to database and export
+    db_service = None
     try:
         logger.info(f"Opening database: {db_path}")
         db_service = DatabaseService(str(db_path))
@@ -77,8 +78,6 @@ Examples:
         markdown = longform_builder.export_longform_to_markdown(
             db_service._connection, args.doc_id
         )
-
-        db_service.close()
 
         # Output to file or stdout
         if args.output:
@@ -95,6 +94,10 @@ Examples:
         if args.verbose:
             raise
         sys.exit(1)
+    finally:
+        # Ensure database connection is always closed
+        if db_service:
+            db_service.close()
 
 
 if __name__ == "__main__":

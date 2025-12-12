@@ -28,6 +28,30 @@ logger = logging.getLogger(__name__)
 DOC_ID_DEFAULT = "default"
 DEFAULT_POSITION_GAP = 100.0
 
+# Security: Whitelist of valid table names to prevent SQL injection
+VALID_TABLES = ("events", "entities")
+
+
+def _validate_table_name(table: str) -> None:
+    """
+    Validate table name against whitelist to prevent SQL injection.
+
+    This function ensures that table names used in f-string SQL queries
+    are safe. While parameterized queries (?) protect against injection
+    in data values, table names cannot be parameterized in standard SQL.
+    Therefore, we validate them against a strict whitelist.
+
+    Args:
+        table: Table name to validate.
+
+    Raises:
+        ValueError: If table name is not in the whitelist.
+    """
+    if table not in VALID_TABLES:
+        raise ValueError(
+            f"Invalid table name: {table}. Must be one of {VALID_TABLES}"
+        )
+
 
 def _safe_json_loads(json_str: str) -> dict:
     """
@@ -311,10 +335,10 @@ def insert_or_update_longform_meta(
     Raises:
         ValueError: If table is invalid or row not found.
     """
-    if table not in ("events", "entities"):
-        raise ValueError(f"Invalid table: {table}")
+    _validate_table_name(table)
 
     # Read current attributes
+    # Security: table name validated above, row_id is parameterized
     cursor = conn.execute(f"SELECT attributes FROM {table} WHERE id = ?", (row_id,))
     row = cursor.fetchone()
     if not row:
@@ -337,6 +361,7 @@ def insert_or_update_longform_meta(
     attrs = _set_longform_meta(attrs, meta, doc_id)
 
     # Write back
+    # Security: table name validated above, values are parameterized
     conn.execute(
         f"UPDATE {table} SET attributes = ? WHERE id = ?",
         (json.dumps(attrs), row_id),
@@ -369,12 +394,16 @@ def place_between_siblings_and_set_parent(
         parent_id: Parent ID to set.
         doc_id: Document ID.
     """
+    _validate_table_name(target_table)
+
     prev_pos = None
     next_pos = None
 
     # Get previous sibling position
     if prev_sibling:
         prev_table, prev_id = prev_sibling
+        _validate_table_name(prev_table)
+        # Security: table names validated above, IDs are parameterized
         cursor = conn.execute(
             f"SELECT attributes FROM {prev_table} WHERE id = ?", (prev_id,)
         )
@@ -388,6 +417,8 @@ def place_between_siblings_and_set_parent(
     # Get next sibling position
     if next_sibling:
         next_table, next_id = next_sibling
+        _validate_table_name(next_table)
+        # Security: table name validated above, ID is parameterized
         cursor = conn.execute(
             f"SELECT attributes FROM {next_table} WHERE id = ?", (next_id,)
         )
@@ -413,7 +444,8 @@ def place_between_siblings_and_set_parent(
     depth = 0
     if parent_id:
         # Find parent in either table
-        for parent_table in ["events", "entities"]:
+        # Security: Iterating over hardcoded table list, IDs are parameterized
+        for parent_table in VALID_TABLES:
             cursor = conn.execute(
                 f"SELECT attributes FROM {parent_table} WHERE id = ?", (parent_id,)
             )
@@ -477,7 +509,10 @@ def promote_item(
         row_id: Row ID to promote.
         doc_id: Document ID.
     """
+    _validate_table_name(table)
+
     # Read current metadata
+    # Security: table name validated above, row_id is parameterized
     cursor = conn.execute(f"SELECT attributes FROM {table} WHERE id = ?", (row_id,))
     row = cursor.fetchone()
     if not row:
@@ -500,7 +535,8 @@ def promote_item(
     # Find parent's parent
     new_parent_id = None
     if current_parent_id:
-        for parent_table in ["events", "entities"]:
+        # Security: Iterating over hardcoded table list, IDs are parameterized
+        for parent_table in VALID_TABLES:
             cursor = conn.execute(
                 f"SELECT attributes FROM {parent_table} WHERE id = ?",
                 (current_parent_id,),
@@ -540,7 +576,10 @@ def demote_item(
         row_id: Row ID to demote.
         doc_id: Document ID.
     """
+    _validate_table_name(table)
+
     # Read current metadata
+    # Security: table name validated above, row_id is parameterized
     cursor = conn.execute(f"SELECT attributes FROM {table} WHERE id = ?", (row_id,))
     row = cursor.fetchone()
     if not row:
@@ -600,9 +639,9 @@ def remove_from_longform(
         row_id: Row ID.
         doc_id: Document ID.
     """
-    if table not in ("events", "entities"):
-        raise ValueError(f"Invalid table: {table}")
+    _validate_table_name(table)
 
+    # Security: table name validated above, row_id is parameterized
     cursor = conn.execute(f"SELECT attributes FROM {table} WHERE id = ?", (row_id,))
     row = cursor.fetchone()
     if not row:
@@ -616,6 +655,7 @@ def remove_from_longform(
         if not attrs["longform"]:
             del attrs["longform"]
 
+    # Security: table name validated above, values are parameterized
     conn.execute(
         f"UPDATE {table} SET attributes = ? WHERE id = ?",
         (json.dumps(attrs), row_id),

@@ -186,7 +186,8 @@ class LongformOutlineWidget(QTreeWidget):
                 tree_item.setForeground(0, QBrush(self.COLOR_ENTITY))
 
             # Store metadata
-            # IMPORTANT: We must store the updated meta so we can calculate positions correctly!
+            # IMPORTANT: We must store the updated meta so we can
+            # calculate positions correctly!
             # The sequence should be up to date from DB.
             self._item_meta[id(tree_item)] = (
                 item["table"],

@@ -10,10 +10,9 @@ import logging
 import os
 from typing import Dict
 
-logger = logging.getLogger(__name__)
-
-
 from PySide6.QtCore import QObject, Signal
+
+logger = logging.getLogger(__name__)
 
 
 class ThemeManager(QObject):
@@ -27,6 +26,20 @@ class ThemeManager(QObject):
     theme_changed = Signal(dict)  # Emits new theme data
 
     def __new__(cls, *args, **kwargs):
+        """
+        Create or return the singleton instance of ThemeManager.
+
+        Implements the singleton pattern to ensure only one ThemeManager
+        instance exists throughout the application lifecycle. This is
+        critical for maintaining consistent theming across all UI components.
+
+        Args:
+            *args: Variable length argument list (unused).
+            **kwargs: Arbitrary keyword arguments (unused).
+
+        Returns:
+            ThemeManager: The singleton instance.
+        """
         if not cls._instance:
             cls._instance = super(ThemeManager, cls).__new__(cls)
             # Initialize QObject only once

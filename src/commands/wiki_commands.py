@@ -46,8 +46,9 @@ class ProcessWikiLinksCommand(BaseCommand):
         """
         Executes the link processing.
 
-        Extracts WikiLinks, resolves them to entities or events, and creates 'mentions' relations
-        with metadata including field, snippet, and offsets.
+        Extracts WikiLinks, resolves them to entities or events, and
+        creates 'mentions' relations with metadata including field,
+        snippet, and offsets.
 
         Args:
             db_service: Database service instance.
@@ -178,7 +179,8 @@ class ProcessWikiLinksCommand(BaseCommand):
                 dedup_key = (target_obj.id, candidate.span[0])
                 if dedup_key in existing_keys:
                     logger.debug(
-                        f"Skipping duplicate mention to {target_obj.name} ({target_type_str}) at offset {candidate.span[0]}"
+                        f"Skipping duplicate mention to {target_obj.name} "
+                        f"({target_type_str}) at offset {candidate.span[0]}"
                     )
                     continue
 
@@ -209,7 +211,8 @@ class ProcessWikiLinksCommand(BaseCommand):
                 self._created_relations.append(rel_id)
                 created_count += 1
                 logger.info(
-                    f"Created mention: {self.source_id} -> {target_obj.name} ({target_type_str}) "
+                    f"Created mention: {self.source_id} -> "
+                    f"{target_obj.name} ({target_type_str}) "
                     f"at offset {candidate.span[0]} "
                     f"({'ID-based' if candidate.is_id_based else 'name-based'})"
                 )
