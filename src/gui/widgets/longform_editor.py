@@ -295,7 +295,9 @@ class LongformContentWidget(WikiTextEdit):
                 lines.append(content)
                 lines.append("")
 
-            lines.append("")  # Extra spacing between sections
+            lines.append("")
+            lines.append("---")  # Horizontal rule for separation
+            lines.append("")
 
         self.set_wiki_text("\n".join(lines))
 

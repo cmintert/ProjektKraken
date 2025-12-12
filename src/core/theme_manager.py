@@ -62,6 +62,10 @@ class ThemeManager(QObject):
                     "text_main": "#E0E0E0",
                     "text_dim": "#9E9E9E",
                     "error": "#CF6679",
+                    "font_size_h1": "18pt",
+                    "font_size_h2": "16pt",
+                    "font_size_h3": "14pt",
+                    "font_size_body": "10pt",
                 },
                 "light_mode": {
                     "app_bg": "#F5F5F5",
@@ -72,6 +76,10 @@ class ThemeManager(QObject):
                     "text_main": "#212121",
                     "text_dim": "#757575",
                     "error": "#B00020",
+                    "font_size_h1": "18pt",
+                    "font_size_h2": "16pt",
+                    "font_size_h3": "14pt",
+                    "font_size_body": "10pt",
                 },
             }
             return
