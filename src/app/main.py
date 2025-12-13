@@ -326,6 +326,7 @@ class MainWindow(QMainWindow):
         self.worker.operation_finished.connect(self.clear_status_message)
         self.worker.error_occurred.connect(self.show_error_message)
         self.worker.longform_sequence_loaded.connect(self.on_longform_sequence_loaded)
+        self.worker.calendar_config_loaded.connect(self.on_calendar_config_loaded)
 
         # Connect MainWindow signal for sending commands to worker thread
         self.command_requested.connect(self.worker.run_command)
@@ -378,8 +379,41 @@ class MainWindow(QMainWindow):
         """
         if success:
             self.load_data()
+            self._request_calendar_config()
         else:
             self.status_bar.showMessage(STATUS_DB_INIT_FAIL)
+
+    def _request_calendar_config(self):
+        """Requests loading of the active calendar config from the worker."""
+        QMetaObject.invokeMethod(
+            self.worker, "load_calendar_config", QtCore_Qt.QueuedConnection
+        )
+
+    @Slot(object)
+    def on_calendar_config_loaded(self, config):
+        """
+        Handler for calendar config loaded from worker.
+
+        Args:
+            config: CalendarConfig or None.
+        """
+        try:
+            from src.core.calendar import CalendarConverter, CalendarConfig
+
+            if config:
+                converter = CalendarConverter(config)
+            else:
+                # Use default if no active config
+                default_config = CalendarConfig.create_default()
+                converter = CalendarConverter(default_config)
+
+            self.event_editor.set_calendar_converter(converter)
+            self.timeline.set_calendar_converter(converter)
+
+            # Check if UIManager has a pending calendar dialog
+            self.ui_manager.show_calendar_dialog(config)
+        except Exception as e:
+            logger.warning(f"Failed to initialize calendar converter: {e}")
 
     @Slot(list)
     def on_events_loaded(self, events):

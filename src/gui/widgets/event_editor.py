@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QMenu,
     QTabWidget,
+    QLabel,
 )
 from PySide6.QtCore import Signal, Qt
 from src.core.events import Event
@@ -66,9 +67,19 @@ class EventEditorWidget(QWidget):
 
         self.form_layout = QFormLayout()
         self.name_edit = QLineEdit()
+
+        # Date editor with formatted calendar preview
+        date_layout = QHBoxLayout()
         self.date_edit = QDoubleSpinBox()
         self.date_edit.setRange(-1e12, 1e12)  # Cosmic scale
         self.date_edit.setDecimals(2)
+        self.date_edit.valueChanged.connect(self._update_formatted_date)
+        date_layout.addWidget(self.date_edit)
+
+        self.date_label = QLabel()
+        self.date_label.setStyleSheet("color: #888; font-style: italic;")
+        date_layout.addWidget(self.date_label)
+        date_layout.addStretch()
 
         self.type_edit = QComboBox()
         self.type_edit.addItems(
@@ -80,7 +91,7 @@ class EventEditorWidget(QWidget):
         self.desc_edit.link_clicked.connect(self.link_clicked.emit)
 
         self.form_layout.addRow("Name:", self.name_edit)
-        self.form_layout.addRow("Lore Date:", self.date_edit)
+        self.form_layout.addRow("Lore Date:", date_layout)
         self.form_layout.addRow("Type:", self.type_edit)
         self.form_layout.addRow("Description:", self.desc_edit)
 
@@ -138,9 +149,33 @@ class EventEditorWidget(QWidget):
         # Internal State
         self._current_event_id = None
         self._current_created_at = 0.0
+        self._calendar_converter = None  # Will be set when calendar loaded
 
         # Start disabled until specific event loaded
         self.setEnabled(False)
+
+    def set_calendar_converter(self, converter):
+        """
+        Sets the calendar converter for date formatting.
+
+        Args:
+            converter: CalendarConverter instance or None.
+        """
+        self._calendar_converter = converter
+        self._update_formatted_date()
+
+    def _update_formatted_date(self):
+        """
+        Updates the formatted date label based on the current float value.
+        """
+        if self._calendar_converter:
+            try:
+                formatted = self._calendar_converter.format_date(self.date_edit.value())
+                self.date_label.setText(f"({formatted})")
+            except Exception:
+                self.date_label.setText("")
+        else:
+            self.date_label.setText("")
 
     def update_suggestions(
         self, items: list[tuple[str, str, str]] = None, names: list[str] = None

@@ -11,6 +11,7 @@ from typing import List, Optional, Dict, Any
 from contextlib import contextmanager
 from src.core.events import Event
 from src.core.entities import Entity
+from src.core.calendar import CalendarConfig
 
 logger = logging.getLogger(__name__)
 
@@ -109,6 +110,16 @@ class DatabaseService:
         CREATE INDEX IF NOT EXISTS idx_events_date ON events(lore_date);
         CREATE INDEX IF NOT EXISTS idx_relations_source ON relations(source_id);
         CREATE INDEX IF NOT EXISTS idx_relations_target ON relations(target_id);
+
+        -- Calendar Configuration Table
+        CREATE TABLE IF NOT EXISTS calendar_config (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            config_json TEXT NOT NULL,
+            is_active INTEGER DEFAULT 0,
+            created_at REAL,
+            modified_at REAL
+        );
         """
 
         try:
@@ -620,3 +631,134 @@ class DatabaseService:
         with self.transaction() as conn:
             conn.executemany(sql, data)
         logger.info(f"Bulk inserted {len(entities)} entities")
+
+    # --------------------------------------------------------------------------
+    # Calendar Config CRUD
+    # --------------------------------------------------------------------------
+
+    def insert_calendar_config(self, config: CalendarConfig) -> None:
+        """
+        Inserts a new calendar config or updates an existing one (Upsert).
+
+        Args:
+            config (CalendarConfig): The calendar configuration to persist.
+
+        Raises:
+            sqlite3.Error: If the database operation fails.
+        """
+        sql = """
+            INSERT INTO calendar_config (id, name, config_json, is_active,
+                                         created_at, modified_at)
+            VALUES (?, ?, ?, 0, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                name=excluded.name,
+                config_json=excluded.config_json,
+                modified_at=excluded.modified_at;
+        """
+        with self.transaction() as conn:
+            conn.execute(
+                sql,
+                (
+                    config.id,
+                    config.name,
+                    json.dumps(config.to_dict()),
+                    config.created_at,
+                    config.modified_at,
+                ),
+            )
+        logger.debug(f"Inserted/updated calendar config: {config.id}")
+
+    def get_calendar_config(self, config_id: str) -> Optional[CalendarConfig]:
+        """
+        Retrieves a single calendar config by its ID.
+
+        Args:
+            config_id (str): The unique identifier of the calendar config.
+
+        Returns:
+            Optional[CalendarConfig]: The config if found, else None.
+        """
+        sql = "SELECT config_json FROM calendar_config WHERE id = ?"
+        if not self._connection:
+            self.connect()
+
+        cursor = self._connection.execute(sql, (config_id,))
+        row = cursor.fetchone()
+
+        if row:
+            data = json.loads(row["config_json"])
+            return CalendarConfig.from_dict(data)
+        return None
+
+    def get_all_calendar_configs(self) -> List[CalendarConfig]:
+        """
+        Retrieves all calendar configurations.
+
+        Returns:
+            List[CalendarConfig]: A list of all calendar configs.
+        """
+        sql = "SELECT config_json FROM calendar_config ORDER BY name"
+        if not self._connection:
+            self.connect()
+
+        cursor = self._connection.execute(sql)
+        configs = []
+        for row in cursor.fetchall():
+            data = json.loads(row["config_json"])
+            configs.append(CalendarConfig.from_dict(data))
+        return configs
+
+    def delete_calendar_config(self, config_id: str) -> None:
+        """
+        Deletes a calendar config by its ID.
+
+        Args:
+            config_id (str): The unique identifier of the config to delete.
+
+        Raises:
+            sqlite3.Error: If the database operation fails.
+        """
+        with self.transaction() as conn:
+            conn.execute("DELETE FROM calendar_config WHERE id = ?", (config_id,))
+        logger.debug(f"Deleted calendar config: {config_id}")
+
+    def get_active_calendar_config(self) -> Optional[CalendarConfig]:
+        """
+        Retrieves the currently active calendar configuration.
+
+        Returns:
+            Optional[CalendarConfig]: The active config if one is set, else None.
+        """
+        sql = "SELECT config_json FROM calendar_config WHERE is_active = 1"
+        if not self._connection:
+            self.connect()
+
+        cursor = self._connection.execute(sql)
+        row = cursor.fetchone()
+
+        if row:
+            data = json.loads(row["config_json"])
+            return CalendarConfig.from_dict(data)
+        return None
+
+    def set_active_calendar_config(self, config_id: str) -> None:
+        """
+        Sets a calendar config as the active one.
+
+        Deactivates any currently active config and activates the specified one.
+
+        Args:
+            config_id (str): The ID of the config to activate.
+
+        Raises:
+            sqlite3.Error: If the database operation fails.
+        """
+        with self.transaction() as conn:
+            # Deactivate all
+            conn.execute("UPDATE calendar_config SET is_active = 0")
+            # Activate the specified one
+            conn.execute(
+                "UPDATE calendar_config SET is_active = 1 WHERE id = ?",
+                (config_id,),
+            )
+        logger.debug(f"Set active calendar config: {config_id}")

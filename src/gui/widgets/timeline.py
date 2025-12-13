@@ -34,9 +34,17 @@ class EventItem(QGraphicsItem):
         "combat": QColor("#E74C3C"),  # Red
     }
 
-    MAX_WIDTH = 300
+    MAX_WIDTH = 400  # Increased to fit longer calendar-formatted dates
     ICON_SIZE = 14
     PADDING = 5
+
+    # Class-level calendar converter (shared across all event items)
+    _calendar_converter = None
+
+    @classmethod
+    def set_calendar_converter(cls, converter):
+        """Sets the calendar converter for date formatting."""
+        cls._calendar_converter = converter
 
     def __init__(self, event, scale_factor=10.0):
         """
@@ -70,9 +78,9 @@ class EventItem(QGraphicsItem):
         Includes the diamond icon and the text label.
         Refreshed when selection changes (border width).
         """
-        # Bounding box includes Diamond + Text
+        # Bounding box includes Diamond + Text (extra height for date line)
         return QRectF(
-            -self.ICON_SIZE, -self.ICON_SIZE, self.MAX_WIDTH, self.ICON_SIZE * 2
+            -self.ICON_SIZE, -self.ICON_SIZE, self.MAX_WIDTH, self.ICON_SIZE * 2 + 8
         )
 
     def paint(self, painter, option, widget=None):
@@ -117,11 +125,19 @@ class EventItem(QGraphicsItem):
         painter.setFont(font)
         painter.drawText(QPointF(text_x, -2), self.event.name)
 
-        # Date
+        # Date - use calendar converter if available
         font.setBold(False)
         font.setPointSize(8)
         painter.setFont(font)
-        date_str = f"{self.event.lore_date:,.1f}"
+        if EventItem._calendar_converter:
+            try:
+                date_str = EventItem._calendar_converter.format_date(
+                    self.event.lore_date
+                )
+            except Exception:
+                date_str = f"{self.event.lore_date:,.1f}"
+        else:
+            date_str = f"{self.event.lore_date:,.1f}"
         painter.setPen(QPen(QColor(180, 180, 180)))
         painter.drawText(QPointF(text_x, 10), date_str)
 
@@ -182,6 +198,9 @@ class TimelineView(QGraphicsView):
         self.setRenderHint(QPainter.Antialiasing)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+
+        # Force full viewport updates to prevent ruler distortion during panning
+        self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
 
         # Viewport alignment
         self.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
@@ -503,3 +522,14 @@ class TimelineWidget(QWidget):
     def fit_view(self):
         """Fits all events within the view."""
         self.view.fit_all()
+
+    def set_calendar_converter(self, converter):
+        """
+        Sets the calendar converter for formatted date display.
+
+        Args:
+            converter: CalendarConverter instance or None.
+        """
+        EventItem.set_calendar_converter(converter)
+        # Trigger repaint to update existing items
+        self.view.viewport().update()

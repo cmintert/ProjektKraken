@@ -25,6 +25,7 @@ class DatabaseWorker(QObject):
     events_loaded = Signal(list)  # List[Event]
     entities_loaded = Signal(list)  # List[Entity]
     longform_sequence_loaded = Signal(list)  # List[dict]
+    calendar_config_loaded = Signal(object)  # CalendarConfig or None
 
     # Details signals
     event_details_loaded = Signal(object, list, list)  # Event, relations, incoming
@@ -163,6 +164,24 @@ class DatabaseWorker(QObject):
         except Exception as e:
             logger.error(f"Failed to load longform sequence: {e}")
             self.error_occurred.emit(str(e))
+
+    @Slot()
+    def load_calendar_config(self):
+        """
+        Loads the active calendar configuration.
+
+        Emits calendar_config_loaded with the CalendarConfig or None.
+        """
+        if not self.db_service:
+            self.calendar_config_loaded.emit(None)
+            return
+
+        try:
+            config = self.db_service.get_active_calendar_config()
+            self.calendar_config_loaded.emit(config)
+        except Exception as e:
+            logger.error(f"Failed to load calendar config: {e}")
+            self.calendar_config_loaded.emit(None)
 
     @Slot(
         object, object

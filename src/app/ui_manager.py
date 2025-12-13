@@ -160,3 +160,59 @@ class UIManager:
                 lambda checked=False, name=theme_name: tm.set_theme(name)
             )
             action_group.addAction(action)
+
+        # Calendar Configuration
+        settings_menu.addSeparator()
+        calendar_action = settings_menu.addAction("Calendar Configuration...")
+        calendar_action.triggered.connect(self._open_calendar_config)
+
+        # Track pending dialog state
+        self._calendar_dialog_pending = False
+
+    def _open_calendar_config(self):
+        """Requests loading of calendar config to open dialog."""
+        from PySide6.QtCore import QMetaObject, Qt as QtCore_Qt
+
+        # Request config from worker (will be handled by on_calendar_config_loaded)
+        self._calendar_dialog_pending = True
+        QMetaObject.invokeMethod(
+            self.main_window.worker, "load_calendar_config", QtCore_Qt.QueuedConnection
+        )
+
+    def show_calendar_dialog(self, current_config):
+        """
+        Shows the calendar configuration dialog.
+
+        Args:
+            current_config: CalendarConfig or None.
+        """
+        if not self._calendar_dialog_pending:
+            return
+        self._calendar_dialog_pending = False
+
+        from src.gui.dialogs.calendar_config_dialog import CalendarConfigDialog
+        from src.commands.calendar_commands import (
+            CreateCalendarConfigCommand,
+            UpdateCalendarConfigCommand,
+            SetActiveCalendarCommand,
+        )
+
+        dialog = CalendarConfigDialog(self.main_window, config=current_config)
+
+        def on_config_saved(config):
+            # Save the config
+            if current_config and current_config.id == config.id:
+                cmd = UpdateCalendarConfigCommand(config)
+            else:
+                cmd = CreateCalendarConfigCommand(config)
+            self.main_window.command_requested.emit(cmd)
+
+            # Set as active
+            active_cmd = SetActiveCalendarCommand(config.id)
+            self.main_window.command_requested.emit(active_cmd)
+
+            # Refresh the calendar converter
+            self.main_window._request_calendar_config()
+
+        dialog.config_saved.connect(on_config_saved)
+        dialog.exec()
