@@ -15,7 +15,6 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QGroupBox,
     QListWidget,
-    QInputDialog,
     QMessageBox,
     QListWidgetItem,
     QMenu,
@@ -147,6 +146,12 @@ class EntityEditorWidget(QWidget):
         """
         self.desc_edit.set_completer(items=items, names=names)
 
+        # Store for RelationEditDialog
+        if items:
+            self._suggestion_items = items
+        else:
+            self._suggestion_items = []
+
     def load_entity(
         self, entity: Entity, relations: list = None, incoming_relations: list = None
     ):
@@ -214,36 +219,23 @@ class EntityEditorWidget(QWidget):
     def _on_add_relation(self):
         """
         Handles adding a new relation.
-
-        Opens dialogs to collect relation details and emits the
-        add_relation_requested signal.
+        Uses RelationEditDialog with autocompletion.
         """
         if not self._current_entity_id:
             return
 
-        target_id, ok = QInputDialog.getText(self, "Add Relation", "Target ID:")
-        if not ok or not target_id:
-            return
+        from src.gui.dialogs.relation_dialog import RelationEditDialog
 
-        rel_type, ok = QInputDialog.getItem(
-            self,
-            "Relation Type",
-            "Type:",
-            ["caused", "involved", "located_at", "parent_of", "member_of", "owns"],
-            0,
-            True,
+        dlg = RelationEditDialog(
+            parent=self, suggestion_items=getattr(self, "_suggestion_items", [])
         )
-        if not ok:
-            return
 
-        title = "Bidirectional?"
-        msg = "Is this relation mutual?"
-        reply = QMessageBox.question(self, title, msg, QMessageBox.Yes | QMessageBox.No)
-        is_bidirectional = reply == QMessageBox.Yes
-
-        self.add_relation_requested.emit(
-            self._current_entity_id, target_id, rel_type, is_bidirectional
-        )
+        if dlg.exec():
+            target_id, rel_type, is_bidirectional = dlg.get_data()
+            if target_id:
+                self.add_relation_requested.emit(
+                    self._current_entity_id, target_id, rel_type, is_bidirectional
+                )
 
     def _show_rel_menu(self, pos):
         """
@@ -292,21 +284,25 @@ class EntityEditorWidget(QWidget):
             item (QListWidgetItem): The relation item to edit.
         """
         rel_data = item.data(Qt.UserRole)
-        target_id, ok = QInputDialog.getText(
-            self, "Edit Relation", "Target ID:", text=rel_data["target_id"]
-        )
-        if not ok or not target_id:
-            return
 
-        # Simple text for now, could be improved
-        current_type = rel_data["rel_type"]
-        rel_type, ok = QInputDialog.getText(
-            self, "Edit Type", "Type:", text=current_type
-        )
-        if not ok:
-            return
+        from src.gui.dialogs.relation_dialog import RelationEditDialog
 
-        self.update_relation_requested.emit(rel_data["id"], target_id, rel_type)
+        dlg = RelationEditDialog(
+            parent=self,
+            target_id=rel_data["target_id"],
+            rel_type=rel_data["rel_type"],
+            is_bidirectional=False,  # Editing existing relation implies directional update typically
+            suggestion_items=getattr(self, "_suggestion_items", []),
+        )
+
+        # Hide bidirectional check for editing as logic might be complex
+        # handling existing reverse links
+        dlg.bi_check.setVisible(False)
+
+        if dlg.exec():
+            target_id, rel_type, _ = dlg.get_data()
+            if target_id:
+                self.update_relation_requested.emit(rel_data["id"], target_id, rel_type)
 
     def _on_edit_selected_relation(self):
         """
