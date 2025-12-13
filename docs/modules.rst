@@ -5,6 +5,7 @@ src
    :maxdepth: 4
 
    app
+   cli
    commands
    core
    gui

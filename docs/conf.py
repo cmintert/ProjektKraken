@@ -16,7 +16,14 @@ extensions = [
     "sphinx.ext.napoleon",  # Support for Google Style Docstrings
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
+    "myst_parser",  # Support for Markdown files
 ]
+
+# Markdown support
+source_suffix = {
+    ".rst": "restructuredtext",
+    ".md": "markdown",
+}
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
@@ -38,5 +45,19 @@ napoleon_type_aliases = None
 napoleon_attr_annotations = True
 
 # -- Options for HTML output -------------------------------------------------
-html_theme = "alabaster"
+html_theme = "furo"
 html_static_path = ["_static"]
+
+# Furo theme options
+html_theme_options = {
+    "light_css_variables": {
+        "color-brand-primary": "#7C3AED",
+        "color-brand-content": "#7C3AED",
+    },
+    "dark_css_variables": {
+        "color-brand-primary": "#A78BFA",
+        "color-brand-content": "#A78BFA",
+    },
+    "sidebar_hide_name": False,
+    "navigation_with_keys": True,
+}

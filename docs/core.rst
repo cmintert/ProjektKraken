@@ -4,6 +4,14 @@ core package
 Submodules
 ----------
 
+core.calendar module
+--------------------
+
+.. automodule:: core.calendar
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 core.entities module
 --------------------
 
