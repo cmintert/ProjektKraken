@@ -15,6 +15,13 @@ Key Features:
 
 All operations work with the attributes JSON column, loading and dumping
 in Python layer to maintain SQLite compatibility.
+
+Transaction Management:
+- Write operations (insert_or_update_longform_meta, remove_from_longform)
+  commit changes automatically for backward compatibility
+- Callers should use DatabaseService.transaction() context manager when
+  multiple operations need to be atomic
+- Read operations do not modify the database
 """
 
 import json
@@ -321,6 +328,12 @@ def insert_or_update_longform_meta(
     Insert or update longform metadata for a specific row.
 
     Loads current attributes, updates longform metadata, and writes back.
+    Commits the transaction automatically.
+
+    Note:
+        This function commits changes immediately. For atomic multi-operation
+        transactions, callers should manage the connection's transaction
+        context themselves.
 
     Args:
         conn: SQLite connection.
@@ -631,7 +644,13 @@ def remove_from_longform(
     """
     Remove longform metadata from a row.
 
-    The row remains in the database but is no longer part of the longform document.
+    The row remains in the database but is no longer part of the longform
+    document. Commits the transaction automatically.
+
+    Note:
+        This function commits changes immediately. For atomic multi-operation
+        transactions, callers should manage the connection's transaction
+        context themselves.
 
     Args:
         conn: SQLite connection.

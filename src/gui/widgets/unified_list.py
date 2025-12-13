@@ -250,6 +250,12 @@ class UnifiedListWidget(QWidget):
         """
 
         def find_and_select():
+            """
+            Search for and select the item in the current list.
+
+            Returns:
+                bool: True if item was found and selected, False otherwise.
+            """
             for index in range(self.list_widget.count()):
                 item = self.list_widget.item(index)
                 if (
