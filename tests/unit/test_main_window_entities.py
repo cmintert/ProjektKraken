@@ -30,14 +30,21 @@ def test_entity_docks_exist(main_window):
 
 def test_create_entity(main_window):
     """Test creating an entity."""
-    with patch("src.app.main.CreateEntityCommand") as MockCmd:
-        mock_cmd_instance = MockCmd.return_value
+    with patch("src.app.main.QInputDialog.getText") as mock_input:
+        mock_input.return_value = ("Test Entity", True)
 
-        main_window.create_entity()
+        with patch("src.app.main.CreateEntityCommand") as MockCmd:
+            mock_cmd_instance = MockCmd.return_value
 
-        MockCmd.assert_called_once()
-        # Should delegate to worker
-        main_window.worker.run_command.assert_called_once_with(mock_cmd_instance)
+            main_window.create_entity()
+
+            MockCmd.assert_called_once()
+            # Check initialization args
+            args, _ = MockCmd.call_args
+            assert args[0] == {"name": "Test Entity", "type": "Concept"}
+
+            # Should delegate to worker
+            main_window.worker.run_command.assert_called_once_with(mock_cmd_instance)
 
 
 def test_delete_entity(main_window):

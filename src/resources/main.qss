@@ -1,6 +1,12 @@
 /* Main Window */
-QMainWindow {{
+QMainWindow, QDialog, QMessageBox {{
     background-color: {app_bg};
+    color: {text_main};
+}}
+
+/* Modals Text */
+QDialog QLabel, QMessageBox QLabel {{
+    color: {text_main};
 }}
 
 /* Menus */

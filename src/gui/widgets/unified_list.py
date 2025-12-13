@@ -238,3 +238,44 @@ class UnifiedListWidget(QWidget):
             item_id = item.data(Qt.UserRole)
             item_type = item.data(Qt.UserRole + 1)
             self.delete_requested.emit(item_type, item_id)
+
+    def select_item(self, item_type: str, item_id: str):
+        """
+        Programmatically selects an item in the list.
+        Auto-switches filter if item not visible.
+
+        Args:
+            item_type (str): "event" or "entity".
+            item_id (str): The ID of the item to select.
+        """
+
+        def find_and_select():
+            for index in range(self.list_widget.count()):
+                item = self.list_widget.item(index)
+                if (
+                    item.data(Qt.UserRole) == item_id
+                    and item.data(Qt.UserRole + 1) == item_type
+                ):
+                    self.list_widget.setCurrentItem(item)
+                    self.list_widget.scrollToItem(item)
+                    return True
+            return False
+
+        if find_and_select():
+            return
+
+        # If not found, check if filter is blocking it
+        current_filter = self.filter_combo.currentText()
+
+        # If filter is restrictive, might need to switch
+        should_switch = False
+        if item_type == "event" and current_filter == "Entities Only":
+            should_switch = True
+        elif item_type == "entity" and current_filter == "Events Only":
+            should_switch = True
+
+        if should_switch:
+            # Switch to All Items is safest
+            self.filter_combo.setCurrentText("All Items")
+            # Signal should trigger _render_list synchronously
+            find_and_select()

@@ -7,6 +7,7 @@ Classes:
     CommandResult: Standardized result object for command execution.
     BaseCommand: Abstract base class implementing command pattern with undo/redo.
 """
+
 from abc import ABC, abstractmethod
 from src.services.db_service import DatabaseService
 
@@ -33,6 +34,7 @@ class CommandResult:
     success: bool
     message: str = ""
     errors: Dict[str, str] = field(default_factory=dict)
+    data: Dict = field(default_factory=dict)
     command_name: str = ""
 
 

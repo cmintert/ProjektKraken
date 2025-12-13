@@ -8,6 +8,7 @@ Provides command classes for managing events in the timeline:
 
 All commands support undo/redo operations and return CommandResult objects.
 """
+
 from src.commands.base_command import BaseCommand, CommandResult
 from src.core.events import Event
 from src.services.db_service import DatabaseService
@@ -60,6 +61,7 @@ class CreateEventCommand(BaseCommand):
                 success=True,
                 message=f"Event '{self.event.name}' created.",
                 command_name="CreateEventCommand",
+                data={"id": self.event.id},
             )
         except Exception as e:
             logger.error(f"Failed to create event: {e}")

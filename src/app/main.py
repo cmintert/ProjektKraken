@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QWidget,
     QStatusBar,
     QMessageBox,
+    QInputDialog,
 )
 from PySide6.QtCore import (
     Qt,
@@ -119,6 +120,10 @@ class MainWindow(QMainWindow):
         self._cached_events = []
         self._cached_entities = []
         self._cached_longform_sequence = []
+
+        # Pending Selection (for creation flow)
+        self._pending_select_id = None
+        self._pending_select_type = None
 
         self.longform_editor = LongformEditorWidget()
 
@@ -387,6 +392,11 @@ class MainWindow(QMainWindow):
         self.status_bar.showMessage(f"Loaded {len(events)} events.")
         self._update_editor_suggestions()
 
+        if self._pending_select_type == "event" and self._pending_select_id:
+            self.unified_list.select_item("event", self._pending_select_id)
+            self._pending_select_type = None
+            self._pending_select_id = None
+
     @Slot(list)
     def on_entities_loaded(self, entities):
         """
@@ -396,6 +406,11 @@ class MainWindow(QMainWindow):
         self.unified_list.set_data(self._cached_events, self._cached_entities)
         self.status_bar.showMessage(f"Loaded {len(entities)} entities.")
         self._update_editor_suggestions()
+
+        if self._pending_select_type == "entity" and self._pending_select_id:
+            self.unified_list.select_item("entity", self._pending_select_id)
+            self._pending_select_type = None
+            self._pending_select_id = None
 
     def _update_editor_suggestions(self):
         """
@@ -484,6 +499,13 @@ class MainWindow(QMainWindow):
             if message:
                 QMessageBox.warning(self, "Command Failed", message)
             return
+
+        if command_name == "CreateEventCommand" and result.data.get("id"):
+            self._pending_select_type = "event"
+            self._pending_select_id = result.data["id"]
+        elif command_name == "CreateEntityCommand" and result.data.get("id"):
+            self._pending_select_type = "entity"
+            self._pending_select_id = result.data["id"]
 
         if "Event" in command_name:
             self.load_events()
@@ -600,14 +622,22 @@ class MainWindow(QMainWindow):
         """
         Creates a new entity by emitting a create command.
         """
-        cmd = CreateEntityCommand()
+        name, ok = QInputDialog.getText(self, "New Entity", "Entity Name:")
+        if not ok or not name.strip():
+            return
+
+        cmd = CreateEntityCommand({"name": name.strip(), "type": "Concept"})
         self.command_requested.emit(cmd)
 
     def create_event(self):
         """
         Creates a new event by emitting a create command.
         """
-        cmd = CreateEventCommand()
+        name, ok = QInputDialog.getText(self, "New Event", "Event Name:")
+        if not ok or not name.strip():
+            return
+
+        cmd = CreateEventCommand({"name": name.strip(), "lore_date": 0.0})
         self.command_requested.emit(cmd)
 
     def delete_entity(self, entity_id):
@@ -640,9 +670,7 @@ class MainWindow(QMainWindow):
             wiki_cmd = ProcessWikiLinksCommand(entity_id, entity_data["description"])
             self.command_requested.emit(wiki_cmd)
 
-    def add_relation(
-        self, source_id, target_id, rel_type, bidirectional: bool = False
-    ):
+    def add_relation(self, source_id, target_id, rel_type, bidirectional: bool = False):
         """
         Adds a relation between entities.
 

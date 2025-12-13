@@ -48,6 +48,7 @@ class CreateEntityCommand(BaseCommand):
                 success=True,
                 message=f"Entity '{self._entity.name}' created.",
                 command_name="CreateEntityCommand",
+                data={"id": self._entity.id},
             )
         except Exception as e:
             logger.error(f"Failed to create entity: {e}")
