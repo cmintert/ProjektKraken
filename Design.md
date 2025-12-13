@@ -100,7 +100,7 @@ status (Draft, Idea, Canon).
 
 gm_only (Boolean for spoiler protection).
 
-4. The Time Engine
+4. Time
 
 Kraken decouples Storage from Presentation.
 
