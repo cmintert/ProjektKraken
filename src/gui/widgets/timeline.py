@@ -14,9 +14,9 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 from PySide6.QtCore import Qt, Signal, QRectF, QPointF
-from PySide6.QtGui import QBrush, QPen, QColor, QPainter, QPolygonF
-import math
+from PySide6.QtGui import QBrush, QPen, QColor, QPainter, QPolygonF, QFont
 from src.core.theme_manager import ThemeManager
+from src.gui.widgets.timeline_ruler import TimelineRuler
 
 
 class EventItem(QGraphicsItem):
@@ -177,7 +177,7 @@ class TimelineView(QGraphicsView):
     event_selected = Signal(str)
 
     LANE_HEIGHT = 40
-    RULER_HEIGHT = 40
+    RULER_HEIGHT = 50  # Increased for semantic ruler with context tier
 
     def __init__(self, parent=None):
         """
@@ -189,6 +189,9 @@ class TimelineView(QGraphicsView):
         super().__init__(parent)
         self.scene = TimelineScene(self)
         self.setScene(self.scene)
+
+        # Initialize semantic ruler engine
+        self._ruler = TimelineRuler()
 
         # Connect to theme manager to trigger redraw of foreground (ruler)
         ThemeManager().theme_changed.connect(lambda t: self.viewport().update())
@@ -233,31 +236,44 @@ class TimelineView(QGraphicsView):
             self.fit_all()
             self._initial_fit_pending = False
 
+    # Height allocated for sticky parent context tier
+    CONTEXT_TIER_HEIGHT = 14
+
     def drawForeground(self, painter, rect):
         """
-        Draws a sticky ruler at the top of the viewport using Screen Coordinates.
+        Draws a semantic zoom ruler at the top of the viewport.
+
+        Features:
+        - Semantic Level of Detail (LOD) with smooth transitions
+        - Opacity interpolation for emerging minor ticks
+        - Label collision avoidance
+        - Sticky parent context label
         """
         # 1. Switch to Screen Coordinates
         painter.save()
-        painter.resetTransform()  # Now we draw in pixels (0,0 is top-left of view)
+        painter.resetTransform()
 
         viewport_rect = self.viewport().rect()
         w = viewport_rect.width()
         h = self.RULER_HEIGHT
+        context_h = self.CONTEXT_TIER_HEIGHT
 
         theme = ThemeManager().get_theme()
 
-        # Background
-        painter.setBrush(QColor(theme["surface"]))
+        # 2. Draw context tier background (top band)
+        painter.setBrush(QColor(theme["surface"]).darker(110))
         painter.setPen(Qt.NoPen)
-        painter.drawRect(0, 0, w, h)
+        painter.drawRect(0, 0, w, context_h)
 
-        # Bottom Line
+        # 3. Draw main ruler background
+        painter.setBrush(QColor(theme["surface"]))
+        painter.drawRect(0, context_h, w, h - context_h)
+
+        # Bottom line separating ruler from content
         painter.setPen(QPen(QColor(theme["border"]), 1))
         painter.drawLine(0, h, w, h)
 
-        # 2. Determine Time Range visible
-        # Map 0 and w to scene coordinates to find "Lore Date" bounds
+        # 4. Determine visible time range
         left_scene_x = self.mapToScene(0, 0).x()
         right_scene_x = self.mapToScene(w, 0).x()
 
@@ -269,74 +285,97 @@ class TimelineView(QGraphicsView):
             painter.restore()
             return
 
-        # 3. Calculate Step Size (Nice Ticks)
-        # Prevent crowding for large numbers (Billions) -> 130px min spacing
-        target_ticks = max(1, w / 140)
-        raw_step = date_range / target_ticks
+        # 5. Calculate ticks using semantic ruler engine
+        ticks = self._ruler.calculate_ticks(
+            start_date=start_date,
+            end_date=end_date,
+            viewport_width=w,
+            scale_factor=self.scale_factor,
+        )
 
-        # Round to nice power of 10
-        try:
-            exponent = math.floor(math.log10(raw_step))
-            step = 10**exponent
+        # 6. Apply collision avoidance
+        ticks = self._ruler.avoid_collisions(ticks, label_width=60)
 
-            # Refine
-            residual = raw_step / step
-            if residual > 5:
-                step *= 5
-            elif residual > 2:
-                step *= 2
-        except Exception:
-            step = 1
+        # 7. Setup fonts
+        major_font = QFont(painter.font())
+        major_font.setPointSize(9)
+        major_font.setBold(True)
 
-        # 4. Draw Ticks
-        # Align start to step
-        current_date = math.floor(start_date / step) * step
+        minor_font = QFont(painter.font())
+        minor_font.setPointSize(8)
+        minor_font.setBold(False)
 
-        # Font Settings
-        painter.setPen(QColor(theme["text_dim"]))
-        font = painter.font()
-        font.setPointSize(9)  # Fixed size
-        painter.setFont(font)
-
-        while current_date <= end_date:
-            # Map date -> scene x -> screen x
-            scene_x = current_date * self.scale_factor
-            screen_pos = self.mapFromScene(
-                QPointF(scene_x, 0)
-            )  # QPointF required for precision?
+        # 8. Draw ticks with opacity
+        for tick in ticks:
+            # Calculate screen position using mapFromScene for accuracy
+            scene_x = tick.position * self.scale_factor
+            screen_pos = self.mapFromScene(QPointF(scene_x, 0))
             screen_x = screen_pos.x()
 
-            # Draw if within bounds (add buffer for text)
-            if -50 <= screen_x <= w + 50:
-                # Tick Line
-                painter.drawLine(int(screen_x), h - 10, int(screen_x), h)
+            # Skip if outside viewport (with buffer)
+            if screen_x < -50 or screen_x > w + 50:
+                continue
 
-                # Label
-                label = f"{current_date:,.0f}"
-                if abs(current_date) >= 1e9:
-                    label = f"{current_date/1e9:g}B"
-                elif abs(current_date) >= 1e6:
-                    label = f"{current_date/1e6:g}M"
-                elif abs(current_date) >= 1e3:
-                    label = f"{current_date/1e3:g}k"
+            # Determine tick styling
+            if tick.is_major:
+                tick_height = 12
+                painter.setFont(major_font)
+                text_color = QColor(theme["text_main"])
+            else:
+                tick_height = 8
+                painter.setFont(minor_font)
+                text_color = QColor(theme["text_dim"])
 
-                # Draw Text
+            # Apply opacity for fade-in effect
+            text_color.setAlphaF(tick.opacity)
+            tick_color = QColor(theme["text_dim"])
+            tick_color.setAlphaF(tick.opacity)
+
+            # Draw tick line
+            painter.setPen(QPen(tick_color, 1))
+            painter.drawLine(int(screen_x), h - tick_height, int(screen_x), h)
+
+            # Draw label if present
+            if tick.label:
+                painter.setPen(text_color)
+                # Position labels in the main ruler area (below context tier)
+                label_rect = QRectF(screen_x + 4, context_h + 2, 70, h - context_h - 14)
                 painter.drawText(
-                    QRectF(screen_x + 4, 0, 80, h - 2),
-                    Qt.AlignBottom | Qt.AlignLeft,
-                    label,
+                    label_rect,
+                    Qt.AlignVCenter | Qt.AlignLeft,
+                    tick.label,
                 )
 
-                # Vertical Grid (Optional)
-                painter.setPen(QColor(255, 255, 255, 10))
+            # Draw vertical grid line (subtle)
+            if tick.is_major:
+                grid_color = QColor(255, 255, 255, int(15 * tick.opacity))
+                painter.setPen(QPen(grid_color, 1))
                 painter.drawLine(
                     int(screen_x), h, int(screen_x), viewport_rect.height()
                 )
-                painter.setPen(QColor(theme["text_dim"]))
 
-            current_date += step
+        # 9. Draw sticky parent context label
+        context_label = self._ruler.get_parent_context(start_date)
+        if context_label:
+            painter.setFont(minor_font)
+            painter.setPen(QColor(theme["primary"]))
+            painter.drawText(
+                QRectF(8, 2, w - 16, context_h - 4),
+                Qt.AlignVCenter | Qt.AlignLeft,
+                context_label,
+            )
 
         painter.restore()
+
+    def set_ruler_calendar(self, converter):
+        """
+        Configures the ruler with calendar-aware date divisions.
+
+        Args:
+            converter: CalendarConverter instance or None.
+        """
+        self._ruler.set_calendar_converter(converter)
+        self.viewport().update()
 
     def set_events(self, events):
         """
@@ -531,5 +570,7 @@ class TimelineWidget(QWidget):
             converter: CalendarConverter instance or None.
         """
         EventItem.set_calendar_converter(converter)
+        # Also configure the ruler for calendar-aware date divisions
+        self.view.set_ruler_calendar(converter)
         # Trigger repaint to update existing items
         self.view.viewport().update()
