@@ -13,7 +13,8 @@ from PySide6.QtWidgets import (
     QComboBox,
     QPushButton,
     QHBoxLayout,
-    QDoubleSpinBox,
+    QTabWidget,
+    QSizePolicy,
     QGroupBox,
     QListWidget,
     QMessageBox,
@@ -25,6 +26,7 @@ from src.core.events import Event
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
 from src.gui.widgets.lore_date_widget import LoreDateWidget
+from src.gui.widgets.lore_duration_widget import LoreDurationWidget
 from src.gui.widgets.tag_editor import TagEditorWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
 
@@ -57,6 +59,8 @@ class EventEditorWidget(QWidget):
         self.layout.setSpacing(8)
         self.layout.setContentsMargins(16, 16, 16, 16)
 
+        self._calendar_converter = None
+
         # Splitter-based tab inspector for vertical stacking
         self.inspector = SplitterTabInspector()
         self.layout.addWidget(self.inspector)
@@ -83,16 +87,32 @@ class EventEditorWidget(QWidget):
         self.form_layout.addRow("Name:", self.name_edit)
         self.form_layout.addRow("Lore Date:", self.date_edit)
 
-        self.duration_edit = QDoubleSpinBox()
-        self.duration_edit.setRange(0.0, 1e9)  # Large range, non-negative
-        self.duration_edit.setDecimals(4)
-        self.duration_edit.setSuffix(" days")
-        self.form_layout.addRow("Duration:", self.duration_edit)
+        # Duration / End Date Tabs
+        self.dur_tabs = QTabWidget()
+        self.dur_tabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        # Tab 1: Granular Duration
+        self.duration_widget = LoreDurationWidget()
+        self.duration_widget.set_calendar_converter(self._calendar_converter)
+        self.duration_widget.value_changed.connect(self._on_duration_changed)
+        self.dur_tabs.addTab(self.duration_widget, "Duration")
+
+        # Tab 2: End Date
+        self.end_date_edit = LoreDateWidget()
+        self.end_date_edit.set_calendar_converter(self._calendar_converter)
+        self.end_date_edit.value_changed.connect(self._on_end_date_changed)
+        self.dur_tabs.addTab(self.end_date_edit, "End Date")
+
+        self.form_layout.addRow("Duration:", self.dur_tabs)
+
         self.form_layout.addRow("Type:", self.type_edit)
         self.form_layout.addRow("Description:", self.desc_edit)
 
         details_layout.addLayout(self.form_layout)
         self.inspector.add_tab(self.tab_details, "Details")
+
+        # Connect Start Date change to Duration Context
+        self.date_edit.value_changed.connect(self._on_start_date_changed)
 
         # --- Tab 2: Tags ---
         self.tab_tags = QWidget()
@@ -151,10 +171,33 @@ class EventEditorWidget(QWidget):
         # Internal State
         self._current_event_id = None
         self._current_created_at = 0.0
-        self._calendar_converter = None  # Will be set when calendar loaded
+        self._current_event_id = None
+        self._current_created_at = 0.0
 
         # Start disabled until specific event loaded
         self.setEnabled(False)
+
+    def _on_start_date_changed(self, new_start: float):
+        """Updates duration widget context and recalculates end date."""
+        self.duration_widget.set_start_date(new_start)
+        # Re-calc End Date based on current duration (preserved)
+        current_duration = self.duration_widget.get_value()
+        self.end_date_edit.set_value(new_start + current_duration)
+
+    def _on_duration_changed(self, duration: float):
+        """Syncs End Date when Duration changes."""
+        start = self.date_edit.get_value()
+        self.end_date_edit.blockSignals(True)
+        self.end_date_edit.set_value(start + duration)
+        self.end_date_edit.blockSignals(False)
+
+    def _on_end_date_changed(self, end_date: float):
+        """Syncs Duration when End Date changes."""
+        start = self.date_edit.get_value()
+        duration = max(0.0, end_date - start)
+        self.duration_widget.blockSignals(True)
+        self.duration_widget.set_value(duration)
+        self.duration_widget.blockSignals(False)
 
     def set_calendar_converter(self, converter):
         """
@@ -165,6 +208,9 @@ class EventEditorWidget(QWidget):
         """
         self._calendar_converter = converter
         self.date_edit.set_calendar_converter(converter)
+        if hasattr(self, "duration_widget"):
+            self.duration_widget.set_calendar_converter(converter)
+            self.end_date_edit.set_calendar_converter(converter)
 
     def update_suggestions(
         self, items: list[tuple[str, str, str]] = None, names: list[str] = None
@@ -204,7 +250,12 @@ class EventEditorWidget(QWidget):
 
         self.name_edit.setText(event.name)
         self.date_edit.set_value(event.lore_date)
-        self.duration_edit.setValue(event.lore_duration)
+
+        # Initialize duration widgets
+        self.duration_widget.set_start_date(event.lore_date)
+        self.duration_widget.set_value(event.lore_duration)
+        self.end_date_edit.set_value(event.lore_date + event.lore_duration)
+
         self.type_edit.setCurrentText(event.type)
         self.desc_edit.set_wiki_text(event.description)
 
@@ -258,7 +309,7 @@ class EventEditorWidget(QWidget):
             "id": self._current_event_id,
             "name": self.name_edit.text(),
             "lore_date": self.date_edit.get_value(),
-            "lore_duration": self.duration_edit.value(),
+            "lore_duration": self.duration_widget.get_value(),
             "type": self.type_edit.currentText(),
             "description": self.desc_edit.get_wiki_text(),
             "attributes": base_attrs,
