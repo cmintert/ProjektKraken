@@ -3,21 +3,24 @@ Theme Manager Module.
 
 Manages loading and applying UI themes (Dark/Light) for the application.
 Implements a singleton pattern to ensure consistent theming across the app.
+
+This is the Qt-specific implementation that extends BaseThemeManager.
 """
 
-import json
 import logging
-import os
 from typing import Dict
 
 from PySide6.QtCore import QObject, Signal
+from src.core.base_theme_manager import BaseThemeManager
 
 logger = logging.getLogger(__name__)
 
 
-class ThemeManager(QObject):
+class ThemeManager(QObject, BaseThemeManager):
     """
-    Manages loading and applying UI themes (Dark/Light).
+    Qt-specific theme manager that extends BaseThemeManager.
+    
+    Manages loading and applying UI themes (Dark/Light) with Qt signal support.
     Reads 'themes.json' and applies values to a QSS template.
     Implements Singleton pattern.
     """
@@ -41,115 +44,52 @@ class ThemeManager(QObject):
             ThemeManager: The singleton instance.
         """
         if not cls._instance:
-            cls._instance = super(ThemeManager, cls).__new__(cls)
+            cls._instance = object.__new__(cls)
             # Initialize QObject only once
-            super(ThemeManager, cls._instance).__init__()
+            QObject.__init__(cls._instance)
         return cls._instance
 
     def __init__(self, theme_file: str = "themes.json"):
         """
         Initializes the ThemeManager.
+        
+        Args:
+            theme_file: Path to the themes JSON file.
         """
         if hasattr(self, "_initialized"):
             return
 
-        self.theme_file = theme_file
-        self.themes: Dict[str, Dict[str, str]] = {}
+        # Initialize BaseThemeManager (will set _initialized)
+        BaseThemeManager.__init__(self, theme_file)
 
-        # Restore saved theme preference
+        # Restore saved theme preference from Qt settings
         from PySide6.QtCore import QSettings
 
         settings = QSettings("ProjektKraken", "ThemeSettings")
-        self.current_theme_name: str = settings.value("current_theme", "dark_mode")
+        saved_theme = settings.value("current_theme", "dark_mode")
+        if saved_theme in self.themes:
+            self.current_theme_name = saved_theme
 
-        self._qss_template: str = ""
-
-        self._load_themes()
-        self._initialized = True
-
-    def _load_themes(self):
-        """Loads the JSON theme definition."""
-        logger.debug(f"Attempting to load themes from: {self.theme_file}")
-        logger.debug(f"File exists: {os.path.exists(self.theme_file)}")
-        logger.debug(f"Current working directory: {os.getcwd()}")
-
-        if not os.path.exists(self.theme_file):
-            logger.warning(
-                f"Theme file not found at '{self.theme_file}', using fallback themes"
-            )
-            # Fallback hardcoded if missing
-            self.themes = {
-                "dark_mode": {
-                    "app_bg": "#2B2B2B",
-                    "surface": "#323232",
-                    "border": "#454545",
-                    "primary": "#FF9900",
-                    "accent_secondary": "#4DA6FF",
-                    "text_main": "#E0E0E0",
-                    "text_dim": "#9E9E9E",
-                    "error": "#CF6679",
-                    "scrollbar_bg": "#2B2B2B",
-                    "scrollbar_handle": "#555555",
-                    "font_size_h1": "18pt",
-                    "font_size_h2": "16pt",
-                    "font_size_h3": "14pt",
-                    "font_size_body": "10pt",
-                },
-                "light_mode": {
-                    "app_bg": "#F5F5F5",
-                    "surface": "#FFFFFF",
-                    "border": "#E0E0E0",
-                    "primary": "#E68A00",
-                    "accent_secondary": "#005A9E",
-                    "text_main": "#212121",
-                    "text_dim": "#757575",
-                    "error": "#B00020",
-                    "scrollbar_bg": "#F0F0F0",
-                    "scrollbar_handle": "#C0C0C0",
-                    "font_size_h1": "18pt",
-                    "font_size_h2": "16pt",
-                    "font_size_h3": "14pt",
-                    "font_size_body": "10pt",
-                },
-            }
-            return
-
-        try:
-            with open(self.theme_file, "r") as f:
-                self.themes = json.load(f)
-            logger.debug(f"Successfully loaded themes: {list(self.themes.keys())}")
-            # Log font size keys for verification
-            for theme_name, theme_data in self.themes.items():
-                font_keys = [k for k in theme_data.keys() if "font" in k]
-                logger.debug(f"Theme '{theme_name}' font settings: {font_keys}")
-        except Exception as e:
-            logger.error(f"Error loading themes: {e}")
-
-    def load_stylesheet(self, path: str):
-        """Loads and caches the QSS template."""
-        try:
-            with open(path, "r") as f:
-                self._qss_template = f.read()
-        except FileNotFoundError:
-            logger.error(f"Style template not found: {path}")
-
-    def get_available_themes(self) -> list[str]:
-        """Returns a list of available theme names."""
-        return list(self.themes.keys())
-
-    def get_theme(self) -> Dict[str, str]:
-        """Returns the current theme dictionary."""
-        return self.themes.get(
-            self.current_theme_name, self.themes.get("dark_mode", {})
-        )
+    def _notify_theme_changed(self, theme_data: Dict):
+        """
+        Override to emit Qt signal in addition to calling callbacks.
+        
+        Args:
+            theme_data: The new theme data dictionary.
+        """
+        # Call base class method for callbacks
+        super()._notify_theme_changed(theme_data)
+        
+        # Emit Qt signal
+        self.theme_changed.emit(theme_data)
 
     def set_theme(self, theme_name: str, app=None):
         """
         Switches the current theme and updates the application.
 
         Args:
-            theme_name (str): The key of the theme to switch to.
-            app (QApplication, optional): The app instance to apply the stylesheet to.
+            theme_name: The key of the theme to switch to.
+            app: The QApplication instance to apply the stylesheet to (optional).
         """
         if theme_name not in self.themes:
             logger.warning(f"Theme '{theme_name}' not found.")
@@ -158,7 +98,7 @@ class ThemeManager(QObject):
         self.current_theme_name = theme_name
         theme_data = self.get_theme()
 
-        # apply to app if provided (re-applies stylesheet)
+        # Apply to app if provided (re-applies stylesheet)
         if not app:
             from PySide6.QtWidgets import QApplication
 
@@ -167,8 +107,8 @@ class ThemeManager(QObject):
         if app and self._qss_template:
             self.apply_theme(app, self._qss_template)
 
-        # Emit signal for custom widgets
-        self.theme_changed.emit(theme_data)
+        # Notify callbacks and emit signal
+        self._notify_theme_changed(theme_data)
 
         # Persist selection
         from PySide6.QtCore import QSettings
@@ -182,6 +122,10 @@ class ThemeManager(QObject):
         """
         Formats the QSS template with current theme values
         and applies it to the QApplication.
+        
+        Args:
+            app: QApplication instance.
+            qss_template: Optional QSS template string.
         """
         if qss_template:
             self._qss_template = qss_template
@@ -189,11 +133,7 @@ class ThemeManager(QObject):
         if not self._qss_template:
             return
 
-        theme_data = self.get_theme()
-        try:
-            stylesheet = self._qss_template.format(**theme_data)
+        stylesheet = self.format_stylesheet()
+        if stylesheet:
             app.setStyleSheet(stylesheet)
-        except KeyError as e:
-            logger.error(f"Theme Error: Missing key {e} in theme definition.")
-        except ValueError as e:
-            logger.error(f"Theme Error: Format string error (check braces): {e}")
+

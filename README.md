@@ -10,6 +10,7 @@
 *   **Configurable Workspace**: Dockable panels with state persistence and "View" menu control.
 *   **Hybrid Data Model**: Strict SQL schema for relationships mixed with flexible JSON attributes for world data.
 *   **Modern UI**: Dark mode support via `ThemeManager`, responsive layouts, and clean typography.
+*   **CLI Tools**: Full-featured command-line interface for headless operations, automation, and scripting.
 
 ## Installation
 
@@ -26,11 +27,35 @@
 
 ## Usage
 
+### GUI Application
+
 Run the main application:
 
 ```bash
 python -m src.app.main
 ```
+
+### CLI Tools
+
+ProjektKraken includes comprehensive command-line tools for headless operations:
+
+```bash
+# Manage events
+python -m src.cli.event create --database world.kraken --name "Event" --date 100.0
+python -m src.cli.event list --database world.kraken
+
+# Manage entities
+python -m src.cli.entity create --database world.kraken --name "Entity" --type character
+python -m src.cli.entity list --database world.kraken
+
+# Manage relations
+python -m src.cli.relation add --database world.kraken --source <id> --target <id> --type "caused"
+
+# Export longform documents
+python -m src.cli.export_longform world.kraken output.md
+```
+
+See **[CLI Documentation](src/cli/README.md)** for complete reference.
 
 ## Testing
 
@@ -53,17 +78,20 @@ See [CODE_REVIEW_SUMMARY.md](CODE_REVIEW_SUMMARY.md) for detailed assessment.
 
 ## Documentation
 
+- **[CLI Tools](src/cli/README.md)**: Command-line interface reference
 - **[DATABASE.md](docs/DATABASE.md)**: Database architecture and best practices
 - **[SECURITY.md](docs/SECURITY.md)**: Security guidelines and best practices
 - **[Design.md](Design.md)**: Architecture and design decisions
 - **[CODE_REVIEW_SUMMARY.md](CODE_REVIEW_SUMMARY.md)**: Production readiness assessment
+- **[ARCHITECTURAL_REVIEW_REPORT.md](ARCHITECTURAL_REVIEW_REPORT.md)**: Comprehensive architectural analysis
 
 ## Architecture
 
-*   **Core**: `src/core` - Business logic, Event models, ThemeManager.
+*   **Core**: `src/core` - Business logic, Event models, BaseThemeManager (headless) and ThemeManager (Qt).
 *   **GUI**: `src/gui` - PySide6 widgets (Timeline, EventEditor, EventList).
+*   **CLI**: `src/cli` - Command-line tools for headless operations.
 *   **Services**: `src/services` - SQLite database interactions.
-*   **Commands**: `src/commands` - Undo/Redo command pattern implementation.
+*   **Commands**: `src/commands` - Undo/Redo command pattern implementation (shared by GUI and CLI).
 
 ## Status
 
