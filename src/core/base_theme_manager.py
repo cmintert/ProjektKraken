@@ -132,7 +132,7 @@ class BaseThemeManager:
         except FileNotFoundError:
             logger.error(f"Style template not found: {path}")
 
-    def get_available_themes(self) -> List[str]:
+    def get_available_themes(self) -> list[str]:
         """
         Returns a list of available theme names.
         

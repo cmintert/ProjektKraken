@@ -44,7 +44,8 @@ class ThemeManager(QObject, BaseThemeManager):
             ThemeManager: The singleton instance.
         """
         if not cls._instance:
-            cls._instance = object.__new__(cls)
+            # Use super() for proper MRO with multiple inheritance
+            cls._instance = super(ThemeManager, cls).__new__(cls)
             # Initialize QObject only once
             QObject.__init__(cls._instance)
         return cls._instance

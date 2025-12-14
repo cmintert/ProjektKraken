@@ -23,6 +23,7 @@ from src.commands.event_commands import (
     UpdateEventCommand,
     DeleteEventCommand,
 )
+from src.cli.utils import validate_database_path
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -342,10 +343,11 @@ def main():
         logging.getLogger().setLevel(logging.DEBUG)
 
     # Validate database path
+    # Note: Create operations can work with non-existent databases as
+    # DatabaseService will create them automatically
     if hasattr(args, "database"):
-        db_path = Path(args.database)
-        if not db_path.exists() and args.command != "create":
-            logger.error(f"Database file not found: {db_path}")
+        allow_create = args.command == "create"
+        if not validate_database_path(args.database, allow_create=allow_create):
             sys.exit(1)
 
     # Execute command

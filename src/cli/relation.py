@@ -20,6 +20,7 @@ from src.commands.relation_commands import (
     AddRelationCommand,
     RemoveRelationCommand,
 )
+from src.cli.utils import validate_database_path
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -244,11 +245,9 @@ def main():
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
 
-    # Validate database path
+    # Validate database path (relations always require existing database)
     if hasattr(args, "database"):
-        db_path = Path(args.database)
-        if not db_path.exists():
-            logger.error(f"Database file not found: {db_path}")
+        if not validate_database_path(args.database, allow_create=False):
             sys.exit(1)
 
     # Execute command
