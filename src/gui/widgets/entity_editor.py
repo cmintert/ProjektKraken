@@ -1,10 +1,3 @@
-"""
-Entity Editor Widget Module.
-
-Provides a form interface for editing entity details including name, type,
-description, attributes, and relations.
-"""
-
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -18,13 +11,13 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QListWidgetItem,
     QMenu,
-    QTabWidget,
 )
 from PySide6.QtCore import Signal, Qt
 from src.core.entities import Entity
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
 from src.gui.widgets.tag_editor import TagEditorWidget
+from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
 
 
 class EntityEditorWidget(QWidget):
@@ -52,10 +45,9 @@ class EntityEditorWidget(QWidget):
         self.layout.setSpacing(8)
         self.layout.setContentsMargins(16, 16, 16, 16)
 
-        # Form Layout
-        # Tabs Layout
-        self.tabs = QTabWidget()
-        self.layout.addWidget(self.tabs)
+        # Splitter-based tab inspector for vertical stacking
+        self.inspector = SplitterTabInspector()
+        self.layout.addWidget(self.inspector)
 
         # --- Tab 1: Details ---
         self.tab_details = QWidget()
@@ -74,14 +66,14 @@ class EntityEditorWidget(QWidget):
         self.form_layout.addRow("Description:", self.desc_edit)
 
         details_layout.addLayout(self.form_layout)
-        self.tabs.addTab(self.tab_details, "Details")
+        self.inspector.add_tab(self.tab_details, "Details")
 
         # --- Tab 2: Tags ---
         self.tab_tags = QWidget()
         tags_layout = QVBoxLayout(self.tab_tags)
         self.tag_editor = TagEditorWidget()
         tags_layout.addWidget(self.tag_editor)
-        self.tabs.addTab(self.tab_tags, "Tags")
+        self.inspector.add_tab(self.tab_tags, "Tags")
 
         # --- Tab 3: Relations ---
         self.tab_relations = QWidget()
@@ -113,14 +105,14 @@ class EntityEditorWidget(QWidget):
         self.rel_group.setLayout(self.rel_layout)
 
         rel_tab_layout.addWidget(self.rel_group)
-        self.tabs.addTab(self.tab_relations, "Relations")
+        self.inspector.add_tab(self.tab_relations, "Relations")
 
         # --- Tab 4: Attributes ---
         self.tab_attributes = QWidget()
         attr_layout = QVBoxLayout(self.tab_attributes)
         self.attribute_editor = AttributeEditorWidget()
         attr_layout.addWidget(self.attribute_editor)
-        self.tabs.addTab(self.tab_attributes, "Attributes")
+        self.inspector.add_tab(self.tab_attributes, "Attributes")
 
         # Buttons
         btn_layout = QHBoxLayout()
@@ -308,7 +300,8 @@ class EntityEditorWidget(QWidget):
             parent=self,
             target_id=rel_data["target_id"],
             rel_type=rel_data["rel_type"],
-            is_bidirectional=False,  # Editing existing relation implies directional update typically
+            is_bidirectional=False,
+            # Editing existing relation implies directional update typically
             suggestion_items=getattr(self, "_suggestion_items", []),
         )
 

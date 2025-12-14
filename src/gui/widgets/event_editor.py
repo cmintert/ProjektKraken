@@ -18,7 +18,6 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QListWidgetItem,
     QMenu,
-    QTabWidget,
 )
 from PySide6.QtCore import Signal, Qt
 from src.core.events import Event
@@ -26,6 +25,7 @@ from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
 from src.gui.widgets.lore_date_widget import LoreDateWidget
 from src.gui.widgets.tag_editor import TagEditorWidget
+from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
 
 
 class EventEditorWidget(QWidget):
@@ -56,10 +56,9 @@ class EventEditorWidget(QWidget):
         self.layout.setSpacing(8)
         self.layout.setContentsMargins(16, 16, 16, 16)
 
-        # Form Layout
-        # Main Layout -> Tabs
-        self.tabs = QTabWidget()
-        self.layout.addWidget(self.tabs)
+        # Splitter-based tab inspector for vertical stacking
+        self.inspector = SplitterTabInspector()
+        self.layout.addWidget(self.inspector)
 
         # --- Tab 1: Details ---
         self.tab_details = QWidget()
@@ -86,14 +85,14 @@ class EventEditorWidget(QWidget):
         self.form_layout.addRow("Description:", self.desc_edit)
 
         details_layout.addLayout(self.form_layout)
-        self.tabs.addTab(self.tab_details, "Details")
+        self.inspector.add_tab(self.tab_details, "Details")
 
         # --- Tab 2: Tags ---
         self.tab_tags = QWidget()
         tags_layout = QVBoxLayout(self.tab_tags)
         self.tag_editor = TagEditorWidget()
         tags_layout.addWidget(self.tag_editor)
-        self.tabs.addTab(self.tab_tags, "Tags")
+        self.inspector.add_tab(self.tab_tags, "Tags")
 
         # --- Tab 3: Relations ---
         self.tab_relations = QWidget()
@@ -101,7 +100,6 @@ class EventEditorWidget(QWidget):
 
         self.rel_group = QGroupBox("Relationships")
         self.rel_layout = QVBoxLayout()
-        # ... logic continues for relations list ...
         self.rel_list = QListWidget()
         self.rel_list.setContextMenuPolicy(Qt.CustomContextMenu)
         self.rel_list.customContextMenuRequested.connect(self._show_rel_menu)
@@ -125,14 +123,14 @@ class EventEditorWidget(QWidget):
         self.rel_group.setLayout(self.rel_layout)
 
         rel_tab_layout.addWidget(self.rel_group)
-        self.tabs.addTab(self.tab_relations, "Relations")
+        self.inspector.add_tab(self.tab_relations, "Relations")
 
         # --- Tab 4: Attributes ---
         self.tab_attributes = QWidget()
         attr_layout = QVBoxLayout(self.tab_attributes)
         self.attribute_editor = AttributeEditorWidget()
         attr_layout.addWidget(self.attribute_editor)
-        self.tabs.addTab(self.tab_attributes, "Attributes")
+        self.inspector.add_tab(self.tab_attributes, "Attributes")
 
         # Buttons
         btn_layout = QHBoxLayout()
