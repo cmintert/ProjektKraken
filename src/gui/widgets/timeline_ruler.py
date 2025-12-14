@@ -339,7 +339,9 @@ class TimelineRuler:
             Formatted label string.
         """
         if self._calendar:
+            logger.debug(f"Using calendar formatter for level {level.name}")
             return self._format_calendar_label(position, level)
+        logger.debug(f"Using numeric formatter for level {level.name}")
         return self._format_numeric_label(position, level)
 
     def _format_calendar_label(self, position: float, level: TickLevel) -> str:
@@ -366,9 +368,16 @@ class TimelineRuler:
                 q = (date.month - 1) // 3 + 1
                 return f"Q{q}"
             elif level == TickLevel.MONTH:
-                # Show month abbreviation
-                if date.month_name:
-                    return date.month_name[:3]
+                # Show month abbreviation from calendar config
+                months = self._calendar._config.get_months_for_year(date.year)
+                logger.debug(
+                    f"MONTH label: year={date.year}, month={date.month}, "
+                    f"months_count={len(months)}"
+                )
+                if date.month <= len(months):
+                    abbrev = months[date.month - 1].abbreviation
+                    logger.debug(f"Using abbreviation: '{abbrev}'")
+                    return abbrev
                 return f"M{date.month}"
             elif level == TickLevel.WEEK:
                 return f"D{date.day}"
