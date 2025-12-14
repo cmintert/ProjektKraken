@@ -45,7 +45,7 @@ class ThemeManager(QObject, BaseThemeManager):
         """
         if not cls._instance:
             # Use super() for proper MRO with multiple inheritance
-            cls._instance = super(ThemeManager, cls).__new__(cls)
+            cls._instance = super().__new__(cls)
             # Initialize QObject only once
             QObject.__init__(cls._instance)
         return cls._instance

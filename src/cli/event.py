@@ -343,9 +343,9 @@ def main():
         logging.getLogger().setLevel(logging.DEBUG)
 
     # Validate database path
-    # Note: Create operations can work with non-existent databases as
-    # DatabaseService will create them automatically
     if hasattr(args, "database"):
+        # Note: Create operations can work with non-existent databases
+        # as DatabaseService will create them automatically
         allow_create = args.command == "create"
         if not validate_database_path(args.database, allow_create=allow_create):
             sys.exit(1)

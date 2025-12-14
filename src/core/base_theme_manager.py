@@ -39,7 +39,7 @@ class BaseThemeManager:
             BaseThemeManager: The singleton instance.
         """
         if not cls._instance:
-            cls._instance = super(BaseThemeManager, cls).__new__(cls)
+            cls._instance = super().__new__(cls)
         return cls._instance
 
     def __init__(self, theme_file: str = "themes.json"):
