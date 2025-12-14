@@ -46,16 +46,20 @@ def test_add_relation_flow(editor, qtbot, monkeypatch):
     ent = Entity(id="1", name="Source", type="Generic")
     editor.load_entity(ent)
 
-    # Mock Dialogs
-    from PySide6.QtWidgets import QInputDialog, QMessageBox
+    # Mock RelationEditDialog
+    from unittest.mock import MagicMock
+    import src.gui.dialogs.relation_dialog
 
+    mock_dialog = MagicMock()
+    mock_dialog.exec.return_value = True
+    mock_dialog.get_data.return_value = ("target_id", "caused", True)
+
+    # Patch the class where it is defined
     monkeypatch.setattr(
-        QInputDialog, "getText", lambda *args, **kwargs: ("target_id", True)
+        src.gui.dialogs.relation_dialog,
+        "RelationEditDialog",
+        lambda *args, **kwargs: mock_dialog,
     )
-    monkeypatch.setattr(
-        QInputDialog, "getItem", lambda *args, **kwargs: ("caused", True)
-    )
-    monkeypatch.setattr(QMessageBox, "question", lambda *args: QMessageBox.Yes)
 
     with qtbot.waitSignal(editor.add_relation_requested) as blocker:
         editor.btn_add_rel.click()
@@ -95,12 +99,22 @@ def test_edit_relation_flow(editor, qtbot, monkeypatch):
     item = editor.rel_list.item(0)
     editor.rel_list.setCurrentItem(item)
 
-    from PySide6.QtWidgets import QInputDialog
+    # Mock RelationEditDialog
+    from unittest.mock import MagicMock
+    import src.gui.dialogs.relation_dialog
 
-    # Mock QInputDialog.getText with side_effect
-    responses = iter([("new_target", True), ("related_to", True)])
+    mock_dialog = MagicMock()
+    mock_dialog.exec.return_value = True
+    mock_dialog.get_data.return_value = ("new_target", "related_to", True)
+
+    # Mock bi_check for setVisible call
+    mock_dialog.bi_check = MagicMock()
+
+    # Patch the class
     monkeypatch.setattr(
-        QInputDialog, "getText", lambda *args, **kwargs: next(responses)
+        src.gui.dialogs.relation_dialog,
+        "RelationEditDialog",
+        lambda *args, **kwargs: mock_dialog,
     )
 
     with qtbot.waitSignal(editor.update_relation_requested) as blocker:

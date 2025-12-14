@@ -44,16 +44,20 @@ def test_add_relation_flow(editor, qtbot, monkeypatch):
     ev = Event(id="1", name="Source", lore_date=0.0, type="generic")
     editor.load_event(ev)
 
-    # Mock Dialogs
-    from PySide6.QtWidgets import QInputDialog, QMessageBox
+    # Mock RelationEditDialog
+    from unittest.mock import MagicMock
+    import src.gui.dialogs.relation_dialog
 
+    mock_dialog = MagicMock()
+    mock_dialog.exec.return_value = True
+    mock_dialog.get_data.return_value = ("target_id", "caused", True)
+
+    # Patch the class where it is defined
     monkeypatch.setattr(
-        QInputDialog, "getText", lambda *args, **kwargs: ("target_id", True)
+        src.gui.dialogs.relation_dialog,
+        "RelationEditDialog",
+        lambda *args, **kwargs: mock_dialog,
     )
-    monkeypatch.setattr(
-        QInputDialog, "getItem", lambda *args, **kwargs: ("caused", True)
-    )
-    monkeypatch.setattr(QMessageBox, "question", lambda *args: QMessageBox.Yes)
 
     with qtbot.waitSignal(editor.add_relation_requested) as blocker:
         editor.btn_add_rel.click()
@@ -89,25 +93,24 @@ def test_context_menu_actions(editor, qtbot, monkeypatch):
         ev, relations=[{"id": "r1", "target_id": "t1", "rel_type": "caused"}]
     )
 
-    # Mock QMenu.exec to return a dummy action?
-    # Hard to mock QMenu.exec result without extensive patching.
-    # But we can call the slots directly.
-
-    editor._on_edit_selected_relation()
-    # Should show dialog?
-    # We didn't select anything, likely returns early.
-    # Select first
+    # Select item
     item = editor.rel_list.item(0)
     editor.rel_list.setCurrentItem(item)
 
-    # Mock InputDialog
-    from PySide6.QtWidgets import QInputDialog
+    # Mock RelationEditDialog
+    from unittest.mock import MagicMock
+    import src.gui.dialogs.relation_dialog
 
+    mock_dialog = MagicMock()
+    mock_dialog.exec.return_value = True
+    mock_dialog.get_data.return_value = ("new_target", "related_to", True)
+    mock_dialog.bi_check = MagicMock()  # For setVisible(False)
+
+    # Patch the class where it is defined
     monkeypatch.setattr(
-        QInputDialog, "getText", lambda *args, **kwargs: ("new_target", True)
-    )
-    monkeypatch.setattr(
-        QInputDialog, "getItem", lambda *args, **kwargs: ("related_to", True)
+        src.gui.dialogs.relation_dialog,
+        "RelationEditDialog",
+        lambda *args, **kwargs: mock_dialog,
     )
 
     with qtbot.waitSignal(editor.update_relation_requested) as blocker:

@@ -41,7 +41,7 @@ def test_event_item_bounding_rect():
     rect = item.boundingRect()
     assert isinstance(rect, QRectF)
     assert rect.width() == EventItem.MAX_WIDTH
-    assert rect.height() == EventItem.ICON_SIZE * 2
+    assert rect.height() == EventItem.ICON_SIZE * 2 + 8
 
 
 def test_event_item_paint(qtbot):
