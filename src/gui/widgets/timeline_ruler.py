@@ -379,10 +379,20 @@ class TimelineRuler:
                     logger.debug(f"Using abbreviation: '{abbrev}'")
                     return abbrev
                 return f"M{date.month}"
-            elif level == TickLevel.WEEK:
-                return f"D{date.day}"
-            elif level == TickLevel.DAY:
-                return str(date.day)
+            elif level == TickLevel.WEEK or level == TickLevel.DAY:
+                day_str = str(date.day)
+                try:
+                    week_config = self._calendar._config.week
+                    if week_config.day_abbreviations:
+                        # Use floor to handle negative positions correctly
+                        day_idx = math.floor(position) % len(
+                            week_config.day_abbreviations
+                        )
+                        abbrev = week_config.day_abbreviations[day_idx]
+                        return f"{day_str} {abbrev}"
+                except Exception:
+                    pass
+                return day_str
             elif level == TickLevel.HOUR:
                 hours = int(date.time_fraction * 24)
                 return f"{hours:02d}:00"

@@ -57,6 +57,8 @@ def mock_calendar():
         MagicMock(name="Month12", days=30, abbreviation="M12"),
     ]
     mock._config.get_year_length.return_value = 360
+    mock._config.week = MagicMock()
+    mock._config.week.day_abbreviations = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
     return mock
 
 
@@ -312,6 +314,33 @@ class TestCalendarAwareDivisions:
         )
         # Should have at least some ticks
         assert len(ticks) > 0
+
+    def test_day_ticks_have_abbreviations(self, ruler, mock_calendar):
+        """Day ticks should include day abbreviations."""
+        ruler.set_calendar_converter(mock_calendar)
+        # Mock from_float to return consistent days
+        mock_calendar.from_float.side_effect = lambda pos: MagicMock(
+            year=2025, month=3, day=int(pos) % 30 + 1, time_fraction=0
+        )
+
+        # Generate ticks for DAY level
+        ticks = ruler._generate_ticks_for_level(
+            start_date=0,
+            end_date=5,
+            step=1,
+            level=TickLevel.DAY,
+            opacity=1.0,
+            is_major=True,
+            effective_scale=100,
+        )
+
+        assert len(ticks) > 0
+        for tick in ticks:
+            # Check for format "1 Mo", "2 Tu", etc.
+            parts = tick.label.split()
+            # If label is empty (collision avoidance?) No avoidance in _generate_ticks
+            assert len(parts) == 2, f"Label '{tick.label}' format invalid"
+            assert parts[1] in ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
 
 
 class TestNumericFallback:
