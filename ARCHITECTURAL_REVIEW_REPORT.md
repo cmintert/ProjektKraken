@@ -24,7 +24,7 @@ ProjektKraken demonstrates **excellent architectural discipline** with a well-im
 **Key Findings:**
 - ⚠️ Minor PySide6 dependency in `src/core/theme_manager.py` (acceptable for UI framework)
 - ⚠️ Worker service has Qt dependency (required for threading model)
-- ❌ CLI coverage is minimal (~1% of GUI features)
+- ❌ CLI coverage is minimal (~3% of GUI features)
 - ⚠️ Some DRY violations in command patterns (CreateEvent/CreateEntity similarity)
 
 ---
@@ -287,7 +287,7 @@ def clear_status_message(self, message: str):
 QTimer.singleShot(
     100,
     lambda: QMetaObject.invokeMethod(
-        self.worker, "initialize_db", QtCore_Qt.QueuedConnection
+        self.worker, "initialize_db", Qt.QueuedConnection
     ),
 )
 ```
@@ -489,7 +489,7 @@ self.worker_thread.quit()
 
 **Current CLI Implementation:**
 - **Total CLI Files:** 2 (`__init__.py`, `export_longform.py`)
-- **Total CLI Code:** 105 lines
+- **Total CLI Code:** 105 lines (1 line in `__init__.py`, 104 lines in `export_longform.py`)
 - **Functional Scripts:** 1 (`export_longform.py`)
 
 **CLI Feature: Longform Export** (`src/cli/export_longform.py`)
@@ -1014,8 +1014,14 @@ Current SQLite setup is single-threaded (via Worker). For API:
 
 **Option A: WAL Mode + Connection Pooling**
 ```python
-# Enable Write-Ahead Logging for concurrent reads
-db_service._connection.execute("PRAGMA journal_mode=WAL;")
+# Add public method to DatabaseService
+def enable_wal_mode(self):
+    """Enable Write-Ahead Logging for concurrent reads."""
+    if self._connection:
+        self._connection.execute("PRAGMA journal_mode=WAL;")
+
+# Usage in API setup
+db_service.enable_wal_mode()
 ```
 
 **Benefit:** Multiple readers, single writer
