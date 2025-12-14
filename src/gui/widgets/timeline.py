@@ -78,6 +78,12 @@ class EventItem(QGraphicsItem):
         Includes the diamond icon and the text label.
         Refreshed when selection changes (border width).
         """
+        if self.event.lore_duration > 0:
+            width = self.event.lore_duration * self.scale_factor
+            # Ensure minimum width for visibility and clicking
+            width = max(width, 10)
+            return QRectF(0, -10, width, 30)
+
         # Bounding box includes Diamond + Text (extra height for date line)
         return QRectF(
             -self.ICON_SIZE, -self.ICON_SIZE, self.MAX_WIDTH, self.ICON_SIZE * 2 + 8
@@ -90,6 +96,52 @@ class EventItem(QGraphicsItem):
         """
         painter.setRenderHint(QPainter.Antialiasing)
 
+        if self.event.lore_duration > 0:
+            self._paint_duration_bar(painter)
+        else:
+            self._paint_point_event(painter)
+
+    def _paint_duration_bar(self, painter):
+        """Draws the event as a horizontal bar spanning its duration."""
+        width = self.event.lore_duration * self.scale_factor
+        width = max(width, 10)  # Minimum width visual
+
+        rect = QRectF(0, -6, width, 12)
+
+        brush = QBrush(self.base_color)
+        if self.isSelected():
+            brush.setColor(self.base_color.lighter(130))
+
+        painter.setBrush(brush)
+
+        pen = QPen(Qt.white if self.isSelected() else Qt.black)
+        pen.setCosmetic(True)
+        pen.setWidth(2 if self.isSelected() else 1)
+        painter.setPen(pen)
+
+        # Draw rounded rect for the bar
+        painter.drawRoundedRect(rect, 4, 4)
+
+        # Draw Text Label (inside if fits, otherwise right)
+        painter.setPen(QPen(Qt.white))
+
+        font = painter.font()
+        font.setBold(True)
+        painter.setFont(font)
+
+        # Check if text fits inside
+        fm = painter.fontMetrics()
+        text_width = fm.horizontalAdvance(self.event.name)
+
+        if text_width < width - 10:
+            # Draw inside
+            painter.drawText(rect, Qt.AlignCenter, self.event.name)
+        else:
+            # Draw to the right
+            painter.drawText(QPointF(width + 5, 4), self.event.name)
+
+    def _paint_point_event(self, painter):
+        """Draws the standard diamond marker for point events."""
         # 1. Draw Diamond Icon
         half = self.ICON_SIZE / 2
         diamond = QPolygonF(

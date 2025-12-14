@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QPushButton,
     QHBoxLayout,
+    QDoubleSpinBox,
     QGroupBox,
     QListWidget,
     QMessageBox,
@@ -81,6 +82,12 @@ class EventEditorWidget(QWidget):
 
         self.form_layout.addRow("Name:", self.name_edit)
         self.form_layout.addRow("Lore Date:", self.date_edit)
+
+        self.duration_edit = QDoubleSpinBox()
+        self.duration_edit.setRange(0.0, 1e9)  # Large range, non-negative
+        self.duration_edit.setDecimals(4)
+        self.duration_edit.setSuffix(" days")
+        self.form_layout.addRow("Duration:", self.duration_edit)
         self.form_layout.addRow("Type:", self.type_edit)
         self.form_layout.addRow("Description:", self.desc_edit)
 
@@ -197,6 +204,7 @@ class EventEditorWidget(QWidget):
 
         self.name_edit.setText(event.name)
         self.date_edit.set_value(event.lore_date)
+        self.duration_edit.setValue(event.lore_duration)
         self.type_edit.setCurrentText(event.type)
         self.desc_edit.set_wiki_text(event.description)
 
@@ -250,6 +258,7 @@ class EventEditorWidget(QWidget):
             "id": self._current_event_id,
             "name": self.name_edit.text(),
             "lore_date": self.date_edit.get_value(),
+            "lore_duration": self.duration_edit.value(),
             "type": self.type_edit.currentText(),
             "description": self.desc_edit.get_wiki_text(),
             "attributes": base_attrs,
