@@ -8,6 +8,7 @@ objects that exist across time with:
 - JSON attributes for custom world-specific properties
 - Automatic ID generation and timestamp tracking
 """
+
 from dataclasses import dataclass, field
 from typing import Dict, Any
 import uuid
@@ -60,3 +61,25 @@ class Entity:
         """
         d = data.copy()
         return cls(**d)
+
+    @property
+    def tags(self) -> list:
+        """
+        Returns the list of tags for this entity.
+
+        Tags are stored in the attributes dict under the "_tags" key.
+
+        Returns:
+            list: List of tag strings.
+        """
+        return self.attributes.get("_tags", [])
+
+    @tags.setter
+    def tags(self, value: list) -> None:
+        """
+        Sets the tags for this entity.
+
+        Args:
+            value (list): List of tag strings.
+        """
+        self.attributes["_tags"] = value

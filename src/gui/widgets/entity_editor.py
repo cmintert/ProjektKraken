@@ -24,6 +24,7 @@ from PySide6.QtCore import Signal, Qt
 from src.core.entities import Entity
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
+from src.gui.widgets.tag_editor import TagEditorWidget
 
 
 class EntityEditorWidget(QWidget):
@@ -75,7 +76,14 @@ class EntityEditorWidget(QWidget):
         details_layout.addLayout(self.form_layout)
         self.tabs.addTab(self.tab_details, "Details")
 
-        # --- Tab 2: Relations ---
+        # --- Tab 2: Tags ---
+        self.tab_tags = QWidget()
+        tags_layout = QVBoxLayout(self.tab_tags)
+        self.tag_editor = TagEditorWidget()
+        tags_layout.addWidget(self.tag_editor)
+        self.tabs.addTab(self.tab_tags, "Tags")
+
+        # --- Tab 3: Relations ---
         self.tab_relations = QWidget()
         rel_tab_layout = QVBoxLayout(self.tab_relations)
 
@@ -107,7 +115,7 @@ class EntityEditorWidget(QWidget):
         rel_tab_layout.addWidget(self.rel_group)
         self.tabs.addTab(self.tab_relations, "Relations")
 
-        # --- Tab 3: Attributes ---
+        # --- Tab 4: Attributes ---
         self.tab_attributes = QWidget()
         attr_layout = QVBoxLayout(self.tab_attributes)
         self.attribute_editor = AttributeEditorWidget()
@@ -165,8 +173,12 @@ class EntityEditorWidget(QWidget):
         self.type_edit.setCurrentText(entity.type)
         self.desc_edit.set_wiki_text(entity.description)
 
-        # Load Attributes
-        self.attribute_editor.load_attributes(entity.attributes)
+        # Load Attributes (filter out _tags for display)
+        display_attrs = {k: v for k, v in entity.attributes.items() if k != "_tags"}
+        self.attribute_editor.load_attributes(display_attrs)
+
+        # Load Tags
+        self.tag_editor.load_tags(entity.tags)
 
         self.rel_list.clear()
 
@@ -198,12 +210,17 @@ class EntityEditorWidget(QWidget):
         if not self._current_entity_id:
             return
 
+        # Merge tags into attributes
+        base_attrs = self.attribute_editor.get_attributes()
+        base_attrs["_tags"] = self.tag_editor.get_tags()
+
         entity_data = {
             "id": self._current_entity_id,
             "name": self.name_edit.text(),
             "type": self.type_edit.currentText(),
             "description": self.desc_edit.get_wiki_text(),
-            "attributes": self.attribute_editor.get_attributes(),
+            "attributes": base_attrs,
+            "tags": self.tag_editor.get_tags(),
         }
 
         self.save_requested.emit(entity_data)

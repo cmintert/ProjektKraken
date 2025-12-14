@@ -87,3 +87,52 @@ def test_update_entity_via_insert(db):
 
     retrieved = db.get_entity(entity.id)
     assert retrieved.name == "Updated"
+
+
+def test_entity_tags_property():
+    """Test Entity tags getter/setter property."""
+    entity = Entity(name="Test", type="Character")
+
+    # Initial state - no tags
+    assert entity.tags == []
+
+    # Set tags
+    entity.tags = ["important", "main-character"]
+    assert entity.tags == ["important", "main-character"]
+
+    # Tags stored in attributes
+    assert entity.attributes.get("_tags") == ["important", "main-character"]
+
+
+def test_entity_tags_serialization():
+    """Test Entity tags persist through to_dict/from_dict."""
+    entity = Entity(name="Gandalf", type="Character")
+    entity.tags = ["wizard", "istari", "mentor"]
+
+    # Serialize
+    data = entity.to_dict()
+    assert data["attributes"]["_tags"] == ["wizard", "istari", "mentor"]
+
+    # Deserialize
+    recreated = Entity.from_dict(data)
+    assert recreated.tags == ["wizard", "istari", "mentor"]
+
+
+def test_entity_tags_with_other_attributes():
+    """Test tags coexist with other attributes."""
+    entity = Entity(
+        name="Frodo",
+        type="Character",
+        attributes={"level": 5, "race": "hobbit"},
+    )
+    entity.tags = ["hero", "ringbearer"]
+
+    assert entity.attributes["level"] == 5
+    assert entity.attributes["race"] == "hobbit"
+    assert entity.tags == ["hero", "ringbearer"]
+
+    # All should survive serialization
+    data = entity.to_dict()
+    recreated = Entity.from_dict(data)
+    assert recreated.attributes["level"] == 5
+    assert recreated.tags == ["hero", "ringbearer"]

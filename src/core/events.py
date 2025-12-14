@@ -7,6 +7,7 @@ The Event class is the fundamental unit of the timeline, supporting:
 - Flexible JSON attributes for world-specific data
 - Automatic ID generation and timestamp tracking
 """
+
 from dataclasses import dataclass, field
 from typing import Dict, Any
 import uuid
@@ -68,3 +69,25 @@ class Event:
         # Extract fields that might be in 'attributes' if using a flat structure,
         # but here we expect the DB Service to provide them structured.
         return cls(**d)
+
+    @property
+    def tags(self) -> list:
+        """
+        Returns the list of tags for this event.
+
+        Tags are stored in the attributes dict under the "_tags" key.
+
+        Returns:
+            list: List of tag strings.
+        """
+        return self.attributes.get("_tags", [])
+
+    @tags.setter
+    def tags(self, value: list) -> None:
+        """
+        Sets the tags for this event.
+
+        Args:
+            value (list): List of tag strings.
+        """
+        self.attributes["_tags"] = value

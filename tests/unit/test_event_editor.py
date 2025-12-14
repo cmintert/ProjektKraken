@@ -20,7 +20,7 @@ def test_load_event(editor):
     editor.load_event(ev)
 
     assert editor.name_edit.text() == "Test Event"
-    assert editor.date_edit.value() == 500.0
+    assert editor.date_edit.get_value() == 500.0
     assert editor.isEnabled() is True
 
 
