@@ -294,7 +294,7 @@ class TimelineView(QGraphicsView):
         )
 
         # 6. Apply collision avoidance
-        ticks = self._ruler.avoid_collisions(ticks, label_width=60)
+        ticks = self._ruler.avoid_collisions(ticks, label_width=45)
 
         # 7. Setup fonts
         major_font = QFont(painter.font())

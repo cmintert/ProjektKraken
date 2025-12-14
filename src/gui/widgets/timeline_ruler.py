@@ -13,6 +13,9 @@ from dataclasses import dataclass
 from enum import IntEnum
 from typing import List, Tuple, Optional, TYPE_CHECKING
 import math
+import logging
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from src.core.calendar import CalendarConverter
@@ -70,11 +73,11 @@ class TimelineRuler:
     """
 
     # Spacing thresholds for LOD transitions (in pixels)
-    THRESHOLD_SHOW = 60  # Minor ticks start appearing
-    THRESHOLD_FULL = 140  # Minor ticks fully opaque
+    THRESHOLD_SHOW = 40  # Minor ticks start appearing
+    THRESHOLD_FULL = 100  # Minor ticks fully opaque
 
     # Target spacing between major ticks (pixels)
-    TARGET_MAJOR_SPACING = 120
+    TARGET_MAJOR_SPACING = 100
 
     # Level step sizes (in days) for numeric mode
     NUMERIC_LEVEL_STEPS = {
@@ -147,28 +150,24 @@ class TimelineRuler:
         if date_range <= 0 or viewport_width <= 0:
             return TickLevel.YEAR, TickLevel.MONTH, 0.0
 
-        # Find the best major level based on spacing
+        # Find the finest level that has acceptable spacing
+        # Start from finest (MINUTE) and work backwards to find acceptable level
         best_level = TickLevel.ERA
-        best_spacing = 0.0
 
-        for level in TickLevel:
+        for level in reversed(list(TickLevel)):
             step = self.NUMERIC_LEVEL_STEPS[level]
             num_ticks = date_range / step
             if num_ticks > 0:
                 spacing = viewport_width / num_ticks
+                # Accept this level if spacing is at least half the target
                 if spacing >= self.TARGET_MAJOR_SPACING / 2:
-                    if spacing > best_spacing or level.value > best_level.value:
-                        best_level = level
-                        best_spacing = spacing
+                    best_level = level
+                    break  # Found finest acceptable level
 
-        # If spacing is too tight, go coarser
-        while best_spacing < self.TARGET_MAJOR_SPACING / 2:
-            best_level = self.get_coarser_level(best_level)
-            if best_level == TickLevel.ERA:
-                break
-            step = self.NUMERIC_LEVEL_STEPS[best_level]
-            num_ticks = max(1, date_range / step)
-            best_spacing = viewport_width / num_ticks
+        # Calculate spacing for best level
+        step = self.NUMERIC_LEVEL_STEPS[best_level]
+        num_ticks = max(1, date_range / step)
+        best_spacing = viewport_width / num_ticks
 
         # Minor level is one step finer
         minor_level = self.get_finer_level(best_level)
@@ -186,6 +185,12 @@ class TimelineRuler:
             minor_opacity = (minor_spacing - self.THRESHOLD_SHOW) / (
                 self.THRESHOLD_FULL - self.THRESHOLD_SHOW
             )
+
+        logger.debug(
+            f"Active levels: date_range={date_range:.4f}, "
+            f"major={best_level.name}, minor={minor_level.name}, "
+            f"major_spacing={best_spacing:.1f}px, minor_spacing={minor_spacing:.1f}px"
+        )
 
         return best_level, minor_level, minor_opacity
 
@@ -216,13 +221,22 @@ class TimelineRuler:
             date_range, viewport_width
         )
 
+        # Calculate effective scale for screen_x (pixels per day in viewport)
+        effective_scale = viewport_width / date_range
+
         ticks: List[TickInfo] = []
 
         # Generate major ticks
         major_step = self.NUMERIC_LEVEL_STEPS[major_level]
         ticks.extend(
             self._generate_ticks_for_level(
-                start_date, end_date, major_step, major_level, 1.0, True, scale_factor
+                start_date,
+                end_date,
+                major_step,
+                major_level,
+                1.0,
+                True,
+                effective_scale,
             )
         )
 
@@ -237,7 +251,7 @@ class TimelineRuler:
                     minor_level,
                     minor_opacity,
                     False,
-                    scale_factor,
+                    effective_scale,
                 )
             )
 
@@ -254,7 +268,7 @@ class TimelineRuler:
         level: TickLevel,
         opacity: float,
         is_major: bool,
-        scale_factor: float,
+        effective_scale: float,
     ) -> List[TickInfo]:
         """
         Generates ticks for a specific level.
@@ -266,7 +280,7 @@ class TimelineRuler:
             level: TickLevel for these ticks.
             opacity: Opacity value for these ticks.
             is_major: Whether these are major ticks.
-            scale_factor: Pixels per day.
+            effective_scale: Effective pixels per day (viewport_width / date_range).
 
         Returns:
             List of TickInfo objects.
@@ -285,7 +299,7 @@ class TimelineRuler:
         while current <= end_date and count < max_ticks:
             # Skip ticks outside the visible range (with buffer)
             if current >= start_date - step:
-                screen_x = (current - start_date) * scale_factor
+                screen_x = (current - start_date) * effective_scale
                 label = self._format_label(current, level)
 
                 ticks.append(
@@ -301,6 +315,15 @@ class TimelineRuler:
 
             current += step
             count += 1
+
+        logger.debug(
+            f"Generated {len(ticks)} ticks for {level.name}: "
+            f"range=[{start_date:.4f}, {end_date:.4f}], step={step:.6f}"
+        )
+        if ticks:
+            logger.debug(
+                f"First tick: pos={ticks[0].position:.6f}, label='{ticks[0].label}'"
+            )
 
         return ticks
 
@@ -368,7 +391,7 @@ class TimelineRuler:
         Formats a numeric (non-calendar) label.
 
         Args:
-            position: Date position.
+            position: Date position (in days, where 1.0 = 1 day).
             level: Tick level.
 
         Returns:
@@ -376,19 +399,39 @@ class TimelineRuler:
         """
         # Handle sub-day levels with time formatting
         if level == TickLevel.HOUR:
-            # Extract the fractional part of the day and convert to hours
-            day_fraction = position - int(position)
-            hours = int(day_fraction * 24) % 24
+            # Position is in days, so multiply by 24 to get hours
+            # The fractional part of (position * 24) gives us the hour
+            total_hours = position * 24
+            hours = int(total_hours) % 24
             return f"{hours:02d}:00"
         elif level == TickLevel.MINUTE:
-            # Extract fractional part and convert to hours:minutes
-            day_fraction = position - int(position)
-            total_minutes = int(day_fraction * 24 * 60)
-            hours = (total_minutes // 60) % 24
-            minutes = total_minutes % 60
+            # Position is in days, so multiply by 24*60 to get minutes
+            total_minutes = position * 24 * 60
+            hours = int(total_minutes / 60) % 24
+            minutes = int(total_minutes) % 60
             return f"{hours:02d}:{minutes:02d}"
+        elif level == TickLevel.DAY:
+            # Show day number
+            day_num = int(position) % 30 + 1
+            return f"D{day_num}"
+        elif level == TickLevel.WEEK:
+            # Show week number
+            week_num = int(position / 7) % 52 + 1
+            return f"W{week_num}"
+        elif level == TickLevel.MONTH:
+            # Show month number
+            month_num = int(position / 30) % 12 + 1
+            return f"M{month_num}"
+        elif level == TickLevel.QUARTER:
+            # Show quarter
+            quarter = int(position / 91) % 4 + 1
+            return f"Q{quarter}"
+        elif level == TickLevel.YEAR:
+            # Show year
+            year = int(position / 365) + 1
+            return f"Y{year}"
 
-        # Handle standard numeric formatting for day+ levels
+        # Handle standard numeric formatting for decade+ levels
         abs_pos = abs(position)
         if abs_pos >= 1e9:
             return f"{position/1e9:.1f}B"
@@ -422,49 +465,51 @@ class TimelineRuler:
         # Sort by screen position
         sorted_ticks = sorted(ticks, key=lambda t: t.screen_x)
 
-        # Track occupied regions
+        # Track occupied label regions
+        occupied_regions: List[Tuple[float, float]] = []  # (start_x, end_x)
+
+        def is_overlapping(x: float, width: float) -> bool:
+            """Check if a label would overlap with existing labels."""
+            for start, end in occupied_regions:
+                if x < end and x + width > start:
+                    return True
+            return False
+
         result: List[TickInfo] = []
-        last_label_end = float("-inf")
 
-        # Process major ticks first
+        # Process all ticks in position order
         for tick in sorted_ticks:
-            if tick.is_major:
-                if tick.screen_x >= last_label_end + 5:  # 5px padding
-                    result.append(tick)
-                    if tick.label:
-                        last_label_end = tick.screen_x + label_width
-                else:
-                    # Keep tick but clear label
-                    result.append(
-                        TickInfo(
-                            position=tick.position,
-                            screen_x=tick.screen_x,
-                            level=tick.level,
-                            label="",
-                            opacity=tick.opacity,
-                            is_major=tick.is_major,
-                        )
+            # Calculate label width based on tick type
+            effective_width = label_width if tick.is_major else label_width * 0.8
+
+            if tick.label and is_overlapping(tick.screen_x, effective_width):
+                # Keep tick but clear label
+                result.append(
+                    TickInfo(
+                        position=tick.position,
+                        screen_x=tick.screen_x,
+                        level=tick.level,
+                        label="",
+                        opacity=tick.opacity,
+                        is_major=tick.is_major,
+                    )
+                )
+            else:
+                result.append(tick)
+                if tick.label:
+                    occupied_regions.append(
+                        (tick.screen_x, tick.screen_x + effective_width)
                     )
 
-        # Then process minor ticks
-        for tick in sorted_ticks:
-            if not tick.is_major:
-                if tick.screen_x >= last_label_end + 5:
-                    result.append(tick)
-                    if tick.label:
-                        last_label_end = tick.screen_x + label_width * 0.7
-                else:
-                    # Keep tick but clear label
-                    result.append(
-                        TickInfo(
-                            position=tick.position,
-                            screen_x=tick.screen_x,
-                            level=tick.level,
-                            label="",
-                            opacity=tick.opacity,
-                            is_major=tick.is_major,
-                        )
-                    )
+        labels_kept = sum(1 for t in result if t.label)
+        labels_total = sum(1 for t in ticks if t.label)
+        if sorted_ticks:
+            screen_xs = [f"{t.screen_x:.1f}" for t in sorted_ticks[:5]]
+            logger.debug(f"First 5 screen_x values: {screen_xs}")
+        logger.debug(
+            f"Collision avoidance: {labels_kept}/{labels_total} labels kept, "
+            f"label_width={label_width}"
+        )
 
         return result
 
