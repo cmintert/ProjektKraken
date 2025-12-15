@@ -8,12 +8,13 @@ from PySide6.QtWidgets import (
     QGraphicsView,
     QGraphicsScene,
     QGraphicsItem,
+    QGraphicsLineItem,
     QWidget,
     QVBoxLayout,
     QHBoxLayout,
     QPushButton,
 )
-from PySide6.QtCore import Qt, Signal, QRectF, QPointF
+from PySide6.QtCore import Qt, Signal, QRectF, QPointF, QTimer
 from PySide6.QtGui import QBrush, QPen, QColor, QPainter, QPolygonF, QFont
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.timeline_ruler import TimelineRuler
@@ -234,6 +235,79 @@ class TimelineScene(QGraphicsScene):
         self.setBackgroundBrush(QBrush(QColor(theme["app_bg"])))
 
 
+class PlayheadItem(QGraphicsLineItem):
+    """
+    Draggable vertical line representing the current playback position.
+    """
+    
+    def __init__(self, parent=None):
+        """
+        Initializes the PlayheadItem.
+        
+        Args:
+            parent: Parent graphics item.
+        """
+        super().__init__(-1e12, -1e12, 1e12, 1e12, parent)
+        
+        # Style
+        pen = QPen(QColor(255, 100, 100), 2)  # Red playhead
+        pen.setCosmetic(True)
+        self.setPen(pen)
+        
+        # Make draggable
+        self.setFlag(QGraphicsItem.ItemIsMovable, True)
+        self.setFlag(QGraphicsItem.ItemIsSelectable, False)
+        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges, True)
+        
+        # Set high Z value to appear on top
+        self.setZValue(100)
+        
+        # Track current time position
+        self._time = 0.0
+    
+    def itemChange(self, change, value):
+        """
+        Handles item changes to constrain dragging to horizontal only.
+        
+        Args:
+            change: The type of change.
+            value: The new value.
+            
+        Returns:
+            The constrained value.
+        """
+        if change == QGraphicsItem.ItemPositionChange:
+            # Constrain to horizontal movement only
+            new_pos = value
+            new_pos.setY(0)
+            return new_pos
+        return super().itemChange(change, value)
+    
+    def set_time(self, time: float, scale_factor: float):
+        """
+        Sets the playhead position to the given time.
+        
+        Args:
+            time: The time position in lore_date units.
+            scale_factor: Pixels per day conversion factor.
+        """
+        self._time = time
+        x = time * scale_factor
+        self.setPos(x, 0)
+    
+    def get_time(self, scale_factor: float) -> float:
+        """
+        Gets the current time position of the playhead.
+        
+        Args:
+            scale_factor: Pixels per day conversion factor.
+            
+        Returns:
+            The current time in lore_date units.
+        """
+        return self.x() / scale_factor
+
+
 class TimelineView(QGraphicsView):
     """
     Custom Graphics View for displaying the TimelineScene.
@@ -241,9 +315,11 @@ class TimelineView(QGraphicsView):
     - Rendering the infinite ruler and grid (Foreground).
     - Zoom/Pan interaction.
     - Coordinate mapping between dates and pixels.
+    - Playhead/scrubber for timeline playback.
     """
 
     event_selected = Signal(str)
+    playhead_time_changed = Signal(float)  # Emitted when playhead position changes
 
     LANE_HEIGHT = 40
     RULER_HEIGHT = 50  # Increased for semantic ruler with context tier
@@ -287,6 +363,17 @@ class TimelineView(QGraphicsView):
         
         # Track current zoom level
         self._current_zoom = 1.0
+        
+        # Playhead/scrubber setup
+        self._playhead = PlayheadItem()
+        self.scene.addItem(self._playhead)
+        self._playhead.set_time(0.0, self.scale_factor)
+        
+        # Playback state
+        self._playback_timer = QTimer()
+        self._playback_timer.timeout.connect(self._advance_playhead)
+        self._playback_step = 1.0  # Default step: 1 day per tick
+        self._playback_interval = 100  # Default: 100ms between ticks
 
         # Set corner widget for themed scrollbar corner
         self._update_corner_widget(ThemeManager().get_theme())
@@ -651,6 +738,7 @@ class TimelineView(QGraphicsView):
     def mousePressEvent(self, event):
         """
         Handles mouse clicks. Emits 'event_selected' if an EventItem is clicked.
+        Tracks playhead dragging.
         """
         super().mousePressEvent(event)
 
@@ -665,9 +753,21 @@ class TimelineView(QGraphicsView):
         # Traverse up if needed
         if isinstance(item, EventItem):
             self.event_selected.emit(item.event.id)
-            # If we clicked an item, we might want to stop the drag?
-            # But QGraphicsView handles selection + drag logic usually.
-            # For now, just emitting signal is safe.
+        elif isinstance(item, PlayheadItem):
+            # Track that we're dragging the playhead
+            self._dragging_playhead = True
+    
+    def mouseReleaseEvent(self, event):
+        """
+        Handles mouse release. Emits playhead_time_changed if playhead was dragged.
+        """
+        super().mouseReleaseEvent(event)
+        
+        if hasattr(self, '_dragging_playhead') and self._dragging_playhead:
+            # Emit signal with new playhead time
+            new_time = self._playhead.get_time(self.scale_factor)
+            self.playhead_time_changed.emit(new_time)
+            self._dragging_playhead = False
 
     def focus_event(self, event_id: str):
         """Centers the view on the specified event."""
@@ -676,6 +776,69 @@ class TimelineView(QGraphicsView):
                 self.centerOn(item)
                 item.setSelected(True)
                 return
+    
+    def start_playback(self):
+        """
+        Starts automatic playhead advancement.
+        """
+        if not self._playback_timer.isActive():
+            self._playback_timer.start(self._playback_interval)
+    
+    def stop_playback(self):
+        """
+        Stops automatic playhead advancement.
+        """
+        self._playback_timer.stop()
+    
+    def is_playing(self) -> bool:
+        """
+        Returns whether playback is currently active.
+        
+        Returns:
+            bool: True if playing, False otherwise.
+        """
+        return self._playback_timer.isActive()
+    
+    def set_playhead_time(self, time: float):
+        """
+        Sets the playhead to a specific time position.
+        
+        Args:
+            time: The time in lore_date units.
+        """
+        self._playhead.set_time(time, self.scale_factor)
+        self.playhead_time_changed.emit(time)
+    
+    def get_playhead_time(self) -> float:
+        """
+        Gets the current playhead time position.
+        
+        Returns:
+            float: The current time in lore_date units.
+        """
+        return self._playhead.get_time(self.scale_factor)
+    
+    def step_forward(self):
+        """
+        Steps the playhead forward by the playback step amount.
+        """
+        current_time = self.get_playhead_time()
+        new_time = current_time + self._playback_step
+        self.set_playhead_time(new_time)
+    
+    def step_backward(self):
+        """
+        Steps the playhead backward by the playback step amount.
+        """
+        current_time = self.get_playhead_time()
+        new_time = current_time - self._playback_step
+        self.set_playhead_time(new_time)
+    
+    def _advance_playhead(self):
+        """
+        Internal method called by timer to advance playhead during playback.
+        """
+        self.step_forward()
 
 
 class TimelineWidget(QWidget):
@@ -684,6 +847,7 @@ class TimelineWidget(QWidget):
     """
 
     event_selected = Signal(str)
+    playhead_time_changed = Signal(float)  # Expose playhead signal from view
 
     def __init__(self, parent=None):
         """
@@ -704,6 +868,26 @@ class TimelineWidget(QWidget):
         self.toolbar_layout = QHBoxLayout(self.header_frame)
         self.toolbar_layout.setContentsMargins(4, 4, 4, 4)
 
+        # Playback controls
+        self.btn_step_back = QPushButton("◄")
+        self.btn_step_back.setToolTip("Step Backward")
+        self.btn_step_back.setMaximumWidth(40)
+        self.btn_step_back.clicked.connect(self.step_backward)
+        self.toolbar_layout.addWidget(self.btn_step_back)
+        
+        self.btn_play_pause = QPushButton("▶")
+        self.btn_play_pause.setToolTip("Play/Pause")
+        self.btn_play_pause.setCheckable(True)
+        self.btn_play_pause.setMaximumWidth(40)
+        self.btn_play_pause.clicked.connect(self.toggle_playback)
+        self.toolbar_layout.addWidget(self.btn_play_pause)
+        
+        self.btn_step_forward = QPushButton("►")
+        self.btn_step_forward.setToolTip("Step Forward")
+        self.btn_step_forward.setMaximumWidth(40)
+        self.btn_step_forward.clicked.connect(self.step_forward)
+        self.toolbar_layout.addWidget(self.btn_step_forward)
+
         self.toolbar_layout.addStretch()
 
         self.btn_fit = QPushButton("Fit View")
@@ -715,6 +899,7 @@ class TimelineWidget(QWidget):
         # View
         self.view = TimelineView()
         self.view.event_selected.connect(self.event_selected.emit)
+        self.view.playhead_time_changed.connect(self.playhead_time_changed.emit)
         self.layout.addWidget(self.view)
 
     def set_events(self, events):
@@ -728,6 +913,45 @@ class TimelineWidget(QWidget):
     def fit_view(self):
         """Fits all events within the view."""
         self.view.fit_all()
+    
+    def toggle_playback(self):
+        """
+        Toggles playback on/off and updates button state.
+        """
+        if self.view.is_playing():
+            self.view.stop_playback()
+            self.btn_play_pause.setText("▶")
+            self.btn_play_pause.setChecked(False)
+        else:
+            self.view.start_playback()
+            self.btn_play_pause.setText("■")
+            self.btn_play_pause.setChecked(True)
+    
+    def step_forward(self):
+        """Steps the playhead forward."""
+        self.view.step_forward()
+    
+    def step_backward(self):
+        """Steps the playhead backward."""
+        self.view.step_backward()
+    
+    def set_playhead_time(self, time: float):
+        """
+        Sets the playhead to a specific time.
+        
+        Args:
+            time: Time in lore_date units.
+        """
+        self.view.set_playhead_time(time)
+    
+    def get_playhead_time(self) -> float:
+        """
+        Gets the current playhead time.
+        
+        Returns:
+            float: Current time in lore_date units.
+        """
+        return self.view.get_playhead_time()
 
     def set_calendar_converter(self, converter):
         """
