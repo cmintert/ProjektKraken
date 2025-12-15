@@ -17,6 +17,7 @@ from PySide6.QtCore import Qt, Signal, QRectF, QPointF
 from PySide6.QtGui import QBrush, QPen, QColor, QPainter, QPolygonF, QFont
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.timeline_ruler import TimelineRuler
+import heapq
 
 
 class EventItem(QGraphicsItem):
@@ -71,6 +72,22 @@ class EventItem(QGraphicsItem):
             | QGraphicsItem.ItemIsFocusable
             | QGraphicsItem.ItemIgnoresTransformations
         )
+        
+        # Enable caching for improved rendering performance
+        self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
+
+    def update_event(self, event):
+        """
+        Updates the event data for this item and refreshes the display.
+        
+        Args:
+            event (Event): The updated event object.
+        """
+        self.prepareGeometryChange()
+        self.event = event
+        self.base_color = self.COLORS.get(event.type, self.COLORS["generic"])
+        self.setPos(event.lore_date * self.scale_factor, self.y())
+        self.update()
 
     def boundingRect(self) -> QRectF:
         """
@@ -230,6 +247,10 @@ class TimelineView(QGraphicsView):
 
     LANE_HEIGHT = 40
     RULER_HEIGHT = 50  # Increased for semantic ruler with context tier
+    
+    # Zoom limits
+    MIN_ZOOM = 0.01  # Maximum zoom out (1% of normal)
+    MAX_ZOOM = 100.0  # Maximum zoom in (100x normal)
 
     def __init__(self, parent=None):
         """
@@ -263,6 +284,9 @@ class TimelineView(QGraphicsView):
         self.events = []
         self.scale_factor = 20.0
         self._initial_fit_pending = False
+        
+        # Track current zoom level
+        self._current_zoom = 1.0
 
         # Set corner widget for themed scrollbar corner
         self._update_corner_widget(ThemeManager().get_theme())
@@ -431,40 +455,107 @@ class TimelineView(QGraphicsView):
 
     def set_events(self, events):
         """
-        Clears the scene and repopulates it with event items.
-        Applies a modulo-based layout algorithm to prevent overlapping.
+        Updates the scene with event items using smart lane packing.
+        Reuses existing EventItem instances where possible for performance.
+        
+        Smart lane packing algorithm:
+        - Greedy interval packing using min-heap
+        - Sort events by start time (lore_date)
+        - Maintain heap of lanes with their current end time
+        - For each event, choose first lane whose end <= event.start
+        - If no lane available, allocate new lane
+        - O(n log k) complexity where n=events, k=lanes
 
         Args:
             events (list): List of Event domain objects.
         """
-        self.scene.clear()
-
         # Sort by Date
         sorted_events = sorted(events, key=lambda e: e.lore_date)
         self.events = sorted_events
 
-        # Draw Infinite Axis Line
-        axis_pen = QPen(QColor(100, 100, 100))
-        axis_pen.setCosmetic(True)
-        self.scene.addLine(-1e12, 0, 1e12, 0, axis_pen)
+        # Build a map of existing items by event ID
+        existing_items = {}
+        drop_lines = {}
+        for item in self.scene.items():
+            if isinstance(item, EventItem):
+                existing_items[item.event.id] = item
+            elif hasattr(item, 'event_id'):  # Drop lines marked with event_id
+                drop_lines[item.event_id] = item
 
-        # Layout Logic: Modulo Stacking
-        for i, event in enumerate(sorted_events):
-            item = EventItem(event, self.scale_factor)
+        # Track which items we've reused
+        reused_ids = set()
 
-            # Cyclic Lane assignment
-            lane_index = i % 8
-            y = (lane_index * self.LANE_HEIGHT) + 60  # Start below ruler (40px) + Gap
+        # Draw Infinite Axis Line if not present
+        axis_exists = any(
+            not isinstance(item, EventItem) and not hasattr(item, 'event_id')
+            for item in self.scene.items()
+        )
+        if not axis_exists:
+            axis_pen = QPen(QColor(100, 100, 100))
+            axis_pen.setCosmetic(True)
+            self.scene.addLine(-1e12, 0, 1e12, 0, axis_pen)
 
-            item.setY(y)
+        # Smart lane packing using greedy algorithm with min-heap
+        # Heap stores (end_time, lane_index)
+        lanes_heap = []
+        event_lane_assignments = {}  # event -> lane_index
+        
+        for event in sorted_events:
+            # Determine event's end time
+            end_time = event.lore_date + (event.lore_duration if event.lore_duration > 0 else 0.1)
+            
+            # Try to find an available lane (one whose end_time <= event.lore_date)
+            assigned_lane = None
+            if lanes_heap and lanes_heap[0][0] <= event.lore_date:
+                # Pop the earliest ending lane and reuse it
+                _, assigned_lane = heapq.heappop(lanes_heap)
+            else:
+                # Allocate a new lane
+                assigned_lane = len(lanes_heap)
+            
+            # Record assignment and push back to heap with new end time
+            event_lane_assignments[event.id] = assigned_lane
+            heapq.heappush(lanes_heap, (end_time, assigned_lane))
 
-            # Draw Drop Line
-            line = self.scene.addLine(
-                item.x(), 0, item.x(), y, QPen(QColor(80, 80, 80), 1, Qt.DashLine)
-            )
-            line.setZValue(-1)
+        # Now place items in scene
+        for event in sorted_events:
+            lane_index = event_lane_assignments[event.id]
+            y = (lane_index * self.LANE_HEIGHT) + 60  # Start below ruler + Gap
 
-            self.scene.addItem(item)
+            # Reuse or create item
+            if event.id in existing_items:
+                item = existing_items[event.id]
+                item.update_event(event)
+                item.setY(y)
+                reused_ids.add(event.id)
+            else:
+                item = EventItem(event, self.scale_factor)
+                item.setY(y)
+                self.scene.addItem(item)
+
+            # Reuse or create drop line
+            line_id = f"drop_{event.id}"
+            if event.id in drop_lines:
+                line = drop_lines[event.id]
+                # Update line position
+                line.setLine(item.x(), 0, item.x(), y)
+            else:
+                line = self.scene.addLine(
+                    item.x(), 0, item.x(), y, QPen(QColor(80, 80, 80), 1, Qt.DashLine)
+                )
+                line.setZValue(-1)
+                line.event_id = event.id  # Mark for tracking
+
+        # Remove items for events that no longer exist
+        for event_id, item in existing_items.items():
+            if event_id not in reused_ids:
+                self.scene.removeItem(item)
+        
+        # Remove orphaned drop lines
+        current_event_ids = {e.id for e in sorted_events}
+        for event_id, line in drop_lines.items():
+            if event_id not in current_event_ids:
+                self.scene.removeItem(line)
 
         if sorted_events:
             self.scene.setSceneRect(self.scene.itemsBoundingRect())
@@ -515,23 +606,47 @@ class TimelineView(QGraphicsView):
 
     def wheelEvent(self, event):
         """
-        Handles mouse wheel events for zooming.
-        Zooms in/out centered on the mouse position.
+        Handles mouse wheel events for zooming with zoom-to-cursor behavior.
+        Zooms in/out centered on the mouse position with min/max limits.
+        
+        Args:
+            event: QWheelEvent containing wheel delta and position.
         """
         zoom_in = 1.25
         zoom_out = 1 / zoom_in
         factor = zoom_in if event.angleDelta().y() > 0 else zoom_out
+        
+        # Calculate new zoom level
+        new_zoom = self._current_zoom * factor
+        
+        # Enforce zoom limits
+        if new_zoom < self.MIN_ZOOM:
+            factor = self.MIN_ZOOM / self._current_zoom
+            new_zoom = self.MIN_ZOOM
+        elif new_zoom > self.MAX_ZOOM:
+            factor = self.MAX_ZOOM / self._current_zoom
+            new_zoom = self.MAX_ZOOM
+        
+        # Only zoom if within limits
+        if factor != 1.0:
+            try:
+                target = event.position().toPoint()
+            except AttributeError:
+                target = event.pos()
 
-        try:
-            target = event.position().toPoint()
-        except AttributeError:
-            target = event.pos()
-
-        old_pos = self.mapToScene(target)
-        self.scale(factor, factor)
-        new_pos = self.mapToScene(target)
-        delta = new_pos - old_pos
-        self.translate(delta.x(), delta.y())
+            # Get scene position before zoom
+            old_pos = self.mapToScene(target)
+            
+            # Apply zoom
+            self.scale(factor, factor)
+            self._current_zoom = new_zoom
+            
+            # Get scene position after zoom
+            new_pos = self.mapToScene(target)
+            
+            # Translate to keep the same scene point under cursor
+            delta = new_pos - old_pos
+            self.translate(delta.x(), delta.y())
 
     def mousePressEvent(self, event):
         """

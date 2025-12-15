@@ -229,4 +229,4 @@ def test_timeline_view_lane_height_constant(timeline_view):
 
 def test_timeline_view_ruler_height_constant(timeline_view):
     """Test RULER_HEIGHT constant."""
-    assert timeline_view.RULER_HEIGHT == 40
+    assert timeline_view.RULER_HEIGHT == 50

@@ -39,34 +39,34 @@ def test_set_events(qapp):
 
 
 def test_lane_layout_logic(qapp):
-    """Test that events are assigned to different Y levels (Lanes)."""
+    """Test that smart lane packing works correctly."""
     widget = TimelineWidget()
-    # Generate 9 events to ensure wrapping (Module 8)
-    events = [Event(name=f"E{i}", lore_date=i * 10) for i in range(1, 10)]
-
-    widget.set_events(events)
+    # Create events with overlapping durations to test smart packing
+    events = [
+        Event(name="E1", lore_date=10, lore_duration=30),  # 10-40
+        Event(name="E2", lore_date=20, lore_duration=30),  # 20-50 (overlaps E1)
+        Event(name="E3", lore_date=45, lore_duration=20),  # 45-65 (can reuse lane 0)
+    ]
 
     widget.set_events(events)
 
     items = [i for i in widget.view.scene.items() if isinstance(i, EventItem)]
     items.sort(key=lambda i: i.event.lore_date)
 
-    # Check Y coordinates
-    # E1 -> Lane 0 (Index 0 in items, i=0 loop index in set_events)
-    # Wait, loop index in set_events matches `events` order (sorted by date).
-    # items[0] corresponds to E1.
+    # With smart packing:
+    # E1 (10-40) -> Lane 0
+    # E2 (20-50) -> Lane 1 (overlaps E1)
+    # E3 (45-65) -> Lane 0 (can reuse since 45 > 40)
 
-    # Lane logic: i % 8
-    # Item 0 (E1): 0%8 = 0
-    # Item 1 (E2): 1%8 = 1
-    # Item 8 (E9): 8%8 = 0 -> Same as E1
+    y1 = items[0].y()  # E1
+    y2 = items[1].y()  # E2
+    y3 = items[2].y()  # E3
 
-    y1 = items[0].y()
-    y2 = items[1].y()
-    y9 = items[8].y()
-
-    assert y1 != y2  # Different lanes
-    assert y1 == y9  # Wrapped around to same lane
+    # E1 and E2 should be on different lanes (overlapping)
+    assert y1 != y2, "Overlapping events should use different lanes"
+    
+    # E3 should reuse E1's lane (non-overlapping)
+    assert y1 == y3, "Non-overlapping events should reuse lanes"
 
 
 def test_focus_event(qapp):
