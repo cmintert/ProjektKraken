@@ -26,6 +26,7 @@ class DatabaseWorker(QObject):
     entities_loaded = Signal(list)  # List[Entity]
     longform_sequence_loaded = Signal(list)  # List[dict]
     calendar_config_loaded = Signal(object)  # CalendarConfig or None
+    current_time_loaded = Signal(float)  # Current time in lore_date units
 
     # Details signals
     event_details_loaded = Signal(object, list, list)  # Event, relations, incoming
@@ -252,3 +253,42 @@ class DatabaseWorker(QObject):
                 command_name=command_name,
             )
             self.command_finished.emit(fail_res)
+
+    @Slot()
+    def load_current_time(self):
+        """
+        Loads the current time from the database.
+
+        Emits:
+            current_time_loaded (float or None): The current time value.
+        """
+        if not self.db_service:
+            return
+
+        try:
+            current_time = self.db_service.get_current_time()
+            self.current_time_loaded.emit(
+                current_time if current_time is not None else 0.0
+            )
+        except Exception:
+            logger.error(f"Failed to load current_time: {traceback.format_exc()}")
+            # Emit default value on error
+            self.current_time_loaded.emit(0.0)
+
+    @Slot(float)
+    def save_current_time(self, time: float):
+        """
+        Saves the current time to the database.
+
+        Args:
+            time (float): The current time in lore_date units.
+        """
+        if not self.db_service:
+            return
+
+        try:
+            self.db_service.set_current_time(time)
+            logger.debug(f"Saved current_time: {time}")
+        except Exception:
+            logger.error(f"Failed to save current_time: {traceback.format_exc()}")
+            self.error_occurred.emit("Failed to save current time.")

@@ -308,6 +308,62 @@ class PlayheadItem(QGraphicsLineItem):
         return self.x() / scale_factor
 
 
+class CurrentTimeLineItem(QGraphicsLineItem):
+    """
+    Non-draggable vertical line representing the current time in the world.
+    This is distinct from the playhead and represents the "now" of the world.
+    """
+
+    def __init__(self, parent=None):
+        """
+        Initializes the CurrentTimeLineItem.
+
+        Args:
+            parent: Parent graphics item.
+        """
+        super().__init__(-1e12, -1e12, 1e12, 1e12, parent)
+
+        # Style - distinct from playhead (blue instead of red)
+        pen = QPen(QColor(100, 150, 255), 3)  # Blue current time line, thicker
+        pen.setCosmetic(True)
+        pen.setStyle(Qt.DashLine)  # Dashed to distinguish from playhead
+        self.setPen(pen)
+
+        # Not draggable - set programmatically only
+        self.setFlag(QGraphicsItem.ItemIsMovable, False)
+        self.setFlag(QGraphicsItem.ItemIsSelectable, False)
+
+        # Set high Z value but below playhead
+        self.setZValue(99)
+
+        # Track current time position
+        self._time = 0.0
+
+    def set_time(self, time: float, scale_factor: float):
+        """
+        Sets the current time line position to the given time.
+
+        Args:
+            time: The time position in lore_date units.
+            scale_factor: Pixels per day conversion factor.
+        """
+        self._time = time
+        x = time * scale_factor
+        self.setPos(x, 0)
+
+    def get_time(self, scale_factor: float) -> float:
+        """
+        Gets the current time position.
+
+        Args:
+            scale_factor: Pixels per day conversion factor.
+
+        Returns:
+            The current time in lore_date units.
+        """
+        return self.x() / scale_factor
+
+
 class TimelineView(QGraphicsView):
     """
     Custom Graphics View for displaying the TimelineScene.
@@ -320,6 +376,7 @@ class TimelineView(QGraphicsView):
 
     event_selected = Signal(str)
     playhead_time_changed = Signal(float)  # Emitted when playhead position changes
+    current_time_changed = Signal(float)  # Emitted when current time is changed
 
     LANE_HEIGHT = 40
     RULER_HEIGHT = 50  # Increased for semantic ruler with context tier
@@ -368,6 +425,11 @@ class TimelineView(QGraphicsView):
         self._playhead = PlayheadItem()
         self.scene.addItem(self._playhead)
         self._playhead.set_time(0.0, self.scale_factor)
+
+        # Current time line setup (distinct from playhead)
+        self._current_time_line = CurrentTimeLineItem()
+        self.scene.addItem(self._current_time_line)
+        self._current_time_line.set_time(0.0, self.scale_factor)
 
         # Playback state
         self._playback_timer = QTimer()
@@ -841,6 +903,26 @@ class TimelineView(QGraphicsView):
         """
         self.step_forward()
 
+    def set_current_time(self, time: float):
+        """
+        Sets the current time line to a specific time position.
+        This represents the "now" of the world, distinct from the playhead.
+
+        Args:
+            time: The time in lore_date units.
+        """
+        self._current_time_line.set_time(time, self.scale_factor)
+        self.current_time_changed.emit(time)
+
+    def get_current_time(self) -> float:
+        """
+        Gets the current time position.
+
+        Returns:
+            float: The current time in lore_date units.
+        """
+        return self._current_time_line.get_time(self.scale_factor)
+
 
 class TimelineWidget(QWidget):
     """
@@ -849,6 +931,7 @@ class TimelineWidget(QWidget):
 
     event_selected = Signal(str)
     playhead_time_changed = Signal(float)  # Expose playhead signal from view
+    current_time_changed = Signal(float)  # Expose current time signal from view
 
     def __init__(self, parent=None):
         """
@@ -889,6 +972,17 @@ class TimelineWidget(QWidget):
         self.btn_step_forward.clicked.connect(self.step_forward)
         self.toolbar_layout.addWidget(self.btn_step_forward)
 
+        # Separator
+        self.toolbar_layout.addSpacing(20)
+
+        # Current time control
+        self.btn_set_current_time = QPushButton("Set Current Time")
+        self.btn_set_current_time.setToolTip(
+            "Set the current time in the world to the playhead position"
+        )
+        self.btn_set_current_time.clicked.connect(self.set_current_time_to_playhead)
+        self.toolbar_layout.addWidget(self.btn_set_current_time)
+
         self.toolbar_layout.addStretch()
 
         self.btn_fit = QPushButton("Fit View")
@@ -901,6 +995,7 @@ class TimelineWidget(QWidget):
         self.view = TimelineView()
         self.view.event_selected.connect(self.event_selected.emit)
         self.view.playhead_time_changed.connect(self.playhead_time_changed.emit)
+        self.view.current_time_changed.connect(self.current_time_changed.emit)
         self.layout.addWidget(self.view)
 
     def set_events(self, events):
@@ -953,6 +1048,32 @@ class TimelineWidget(QWidget):
             float: Current time in lore_date units.
         """
         return self.view.get_playhead_time()
+
+    def set_current_time(self, time: float):
+        """
+        Sets the current time in the world.
+
+        Args:
+            time: Time in lore_date units.
+        """
+        self.view.set_current_time(time)
+
+    def get_current_time(self) -> float:
+        """
+        Gets the current time in the world.
+
+        Returns:
+            float: Current time in lore_date units.
+        """
+        return self.view.get_current_time()
+
+    def set_current_time_to_playhead(self):
+        """
+        Sets the current time to match the playhead position.
+        This is the typical workflow: move playhead, then set as current time.
+        """
+        playhead_time = self.get_playhead_time()
+        self.set_current_time(playhead_time)
 
     def set_calendar_converter(self, converter):
         """

@@ -762,3 +762,48 @@ class DatabaseService:
                 (config_id,),
             )
         logger.debug(f"Set active calendar config: {config_id}")
+
+    # --------------------------------------------------------------------------
+    # System Meta (for current_time and other world settings)
+    # --------------------------------------------------------------------------
+
+    def get_current_time(self) -> Optional[float]:
+        """
+        Retrieves the current time in the world from system_meta.
+
+        Returns:
+            Optional[float]: The current time in lore_date units, or None if not set.
+        """
+        sql = "SELECT value FROM system_meta WHERE key = 'current_time'"
+        if not self._connection:
+            self.connect()
+
+        cursor = self._connection.execute(sql)
+        row = cursor.fetchone()
+
+        if row and row["value"]:
+            try:
+                return float(row["value"])
+            except (ValueError, TypeError):
+                logger.warning(f"Invalid current_time value: {row['value']}")
+                return None
+        return None
+
+    def set_current_time(self, current_time: float) -> None:
+        """
+        Sets the current time in the world and persists it to system_meta.
+
+        Args:
+            current_time (float): The current time in lore_date units.
+
+        Raises:
+            sqlite3.Error: If the database operation fails.
+        """
+        sql = """
+            INSERT INTO system_meta (key, value)
+            VALUES ('current_time', ?)
+            ON CONFLICT(key) DO UPDATE SET value=excluded.value
+        """
+        with self.transaction() as conn:
+            conn.execute(sql, (str(current_time),))
+        logger.debug(f"Set current_time to {current_time}")

@@ -7,6 +7,7 @@ Tests zoom-to-cursor, smart lane packing, EventItem reuse, and scrubber/playhead
 import pytest
 from PySide6.QtCore import Qt, QPoint, QPointF
 from PySide6.QtGui import QWheelEvent
+from PySide6.QtWidgets import QGraphicsItem
 from src.gui.widgets.timeline import (
     TimelineWidget,
     TimelineView,
@@ -457,3 +458,76 @@ class TestEventItemCaching:
         from PySide6.QtWidgets import QGraphicsItem
 
         assert item.cacheMode() == QGraphicsItem.DeviceCoordinateCache
+
+
+class TestCurrentTimeLine:
+    """Tests for current time line feature."""
+
+    def test_current_time_line_exists_in_scene(self, timeline_view):
+        """Current time line should be present in the scene."""
+        from src.gui.widgets.timeline import CurrentTimeLineItem
+
+        current_time_items = [
+            i for i in timeline_view.scene.items() if isinstance(i, CurrentTimeLineItem)
+        ]
+        assert len(current_time_items) == 1
+
+    def test_set_current_time(self, timeline_view):
+        """set_current_time should position the line correctly."""
+        timeline_view.set_current_time(100.0)
+
+        current_time = timeline_view.get_current_time()
+        assert abs(current_time - 100.0) < 0.1
+
+    def test_current_time_changed_signal(self, timeline_view, qtbot):
+        """Current time line should emit signal when time changes."""
+        with qtbot.waitSignal(
+            timeline_view.current_time_changed, timeout=1000
+        ) as blocker:
+            timeline_view.set_current_time(50.0)
+
+        assert blocker.args[0] == 50.0
+
+    def test_current_time_line_not_draggable(self, timeline_view):
+        """Current time line should not be draggable."""
+        from src.gui.widgets.timeline import CurrentTimeLineItem
+
+        current_time_items = [
+            i for i in timeline_view.scene.items() if isinstance(i, CurrentTimeLineItem)
+        ]
+        assert len(current_time_items) == 1
+        assert not current_time_items[0].flags() & QGraphicsItem.ItemIsMovable
+
+    def test_current_time_distinct_from_playhead(self, timeline_view):
+        """Current time and playhead should be distinct."""
+        timeline_view.set_current_time(100.0)
+        timeline_view.set_playhead_time(200.0)
+
+        current_time = timeline_view.get_current_time()
+        playhead_time = timeline_view.get_playhead_time()
+
+        assert abs(current_time - 100.0) < 0.1
+        assert abs(playhead_time - 200.0) < 0.1
+
+    def test_widget_exposes_current_time_signal(self, timeline_widget, qtbot):
+        """TimelineWidget should expose current_time_changed signal."""
+        with qtbot.waitSignal(
+            timeline_widget.current_time_changed, timeout=1000
+        ) as blocker:
+            timeline_widget.set_current_time(42.0)
+
+        assert blocker.args[0] == 42.0
+
+    def test_set_current_time_to_playhead_button(self, timeline_widget):
+        """Set Current Time button should exist and work."""
+        assert timeline_widget.btn_set_current_time is not None
+
+        # Set playhead to a specific time
+        timeline_widget.set_playhead_time(150.0)
+
+        # Click the button to set current time to playhead
+        timeline_widget.btn_set_current_time.click()
+
+        # Current time should now match playhead
+        current_time = timeline_widget.get_current_time()
+        assert abs(current_time - 150.0) < 0.1

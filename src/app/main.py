@@ -246,6 +246,7 @@ class MainWindow(QMainWindow):
 
         # Timeline
         self.timeline.event_selected.connect(self.load_event_details)
+        self.timeline.current_time_changed.connect(self.on_current_time_changed)
 
         # Longform Editor
         self.longform_editor.promote_requested.connect(self.promote_longform_entry)
@@ -327,6 +328,7 @@ class MainWindow(QMainWindow):
         self.worker.error_occurred.connect(self.show_error_message)
         self.worker.longform_sequence_loaded.connect(self.on_longform_sequence_loaded)
         self.worker.calendar_config_loaded.connect(self.on_calendar_config_loaded)
+        self.worker.current_time_loaded.connect(self.on_current_time_loaded)
 
         # Connect MainWindow signal for sending commands to worker thread
         self.command_requested.connect(self.worker.run_command)
@@ -380,6 +382,7 @@ class MainWindow(QMainWindow):
         if success:
             self.load_data()
             self._request_calendar_config()
+            self._request_current_time()
         else:
             self.status_bar.showMessage(STATUS_DB_INIT_FAIL)
 
@@ -414,6 +417,40 @@ class MainWindow(QMainWindow):
             self.ui_manager.show_calendar_dialog(config)
         except Exception as e:
             logger.warning(f"Failed to initialize calendar converter: {e}")
+
+    def _request_current_time(self):
+        """Requests loading of the current time from the worker."""
+        QMetaObject.invokeMethod(
+            self.worker, "load_current_time", QtCore_Qt.QueuedConnection
+        )
+
+    @Slot(float)
+    def on_current_time_loaded(self, time: float):
+        """
+        Handler for current time loaded from worker.
+
+        Args:
+            time (float): The current time in lore_date units.
+        """
+        self.timeline.set_current_time(time)
+        logger.debug(f"Current time loaded: {time}")
+
+    @Slot(float)
+    def on_current_time_changed(self, time: float):
+        """
+        Handler for when current time is changed in the timeline.
+        Saves the new value to the database.
+
+        Args:
+            time (float): The new current time in lore_date units.
+        """
+        QMetaObject.invokeMethod(
+            self.worker,
+            "save_current_time",
+            QtCore_Qt.QueuedConnection,
+            Q_ARG(float, time),
+        )
+        logger.debug(f"Current time changed to: {time}")
 
     @Slot(list)
     def on_events_loaded(self, events):
