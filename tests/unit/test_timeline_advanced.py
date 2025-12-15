@@ -7,7 +7,12 @@ Tests zoom-to-cursor, smart lane packing, EventItem reuse, and scrubber/playhead
 import pytest
 from PySide6.QtCore import Qt, QPoint, QPointF
 from PySide6.QtGui import QWheelEvent
-from src.gui.widgets.timeline import TimelineWidget, TimelineView, EventItem, PlayheadItem
+from src.gui.widgets.timeline import (
+    TimelineWidget,
+    TimelineView,
+    EventItem,
+    PlayheadItem,
+)
 from src.core.events import Event
 
 
@@ -39,7 +44,9 @@ class TestSmartLanePacking:
         ]
         timeline_widget.set_events(events)
 
-        items = [i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)]
+        items = [
+            i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)
+        ]
         items.sort(key=lambda i: i.event.lore_date)
 
         # All should be on the same lane (same y coordinate)
@@ -54,12 +61,16 @@ class TestSmartLanePacking:
         ]
         timeline_widget.set_events(events)
 
-        items = [i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)]
+        items = [
+            i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)
+        ]
         items.sort(key=lambda i: i.event.lore_date)
 
         # All three should be on different lanes
         y_coords = [items[0].y(), items[1].y(), items[2].y()]
-        assert len(set(y_coords)) == 3, "All overlapping events should use different lanes"
+        assert (
+            len(set(y_coords)) == 3
+        ), "All overlapping events should use different lanes"
 
     def test_lane_reuse_after_gap(self, timeline_widget):
         """Events after a gap should reuse lanes."""
@@ -70,7 +81,9 @@ class TestSmartLanePacking:
         ]
         timeline_widget.set_events(events)
 
-        items = [i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)]
+        items = [
+            i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)
+        ]
         items.sort(key=lambda i: i.event.lore_date)
 
         # E1 and E2 should use different lanes
@@ -87,7 +100,9 @@ class TestSmartLanePacking:
         ]
         timeline_widget.set_events(events)
 
-        items = [i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)]
+        items = [
+            i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)
+        ]
         items.sort(key=lambda i: i.event.lore_date)
 
         # All point events should be on the same lane
@@ -96,14 +111,16 @@ class TestSmartLanePacking:
     def test_complex_overlapping_pattern(self, timeline_widget):
         """Test complex overlapping pattern uses minimal lanes."""
         events = [
-            Event(name="E1", lore_date=0, lore_duration=10),   # 0-10 -> Lane 0
-            Event(name="E2", lore_date=5, lore_duration=10),   # 5-15 -> Lane 1
+            Event(name="E1", lore_date=0, lore_duration=10),  # 0-10 -> Lane 0
+            Event(name="E2", lore_date=5, lore_duration=10),  # 5-15 -> Lane 1
             Event(name="E3", lore_date=12, lore_duration=10),  # 12-22 -> Lane 0 (reuse)
             Event(name="E4", lore_date=16, lore_duration=10),  # 16-26 -> Lane 1 (reuse)
         ]
         timeline_widget.set_events(events)
 
-        items = [i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)]
+        items = [
+            i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)
+        ]
         items.sort(key=lambda i: i.event.lore_date)
 
         # Should only use 2 lanes
@@ -122,10 +139,10 @@ class TestZoomToCursor:
         timeline_view.show()
         qtbot.waitExposed(timeline_view)
         timeline_view.resize(800, 600)
-        
+
         # Record initial transform
         initial_zoom = timeline_view._current_zoom
-        
+
         # Simulate zoom in
         cursor_pos = QPointF(400, 300)  # Center of view
         event = QWheelEvent(
@@ -138,9 +155,9 @@ class TestZoomToCursor:
             Qt.ScrollPhase.NoScrollPhase,
             False,
         )
-        
+
         timeline_view.wheelEvent(event)
-        
+
         # Check zoom increased
         assert timeline_view._current_zoom > initial_zoom
 
@@ -150,10 +167,10 @@ class TestZoomToCursor:
         timeline_view.show()
         qtbot.waitExposed(timeline_view)
         timeline_view.resize(800, 600)
-        
+
         initial_zoom = timeline_view._current_zoom
         cursor_pos = QPointF(400, 300)
-        
+
         # Simulate zoom out
         event = QWheelEvent(
             cursor_pos,
@@ -165,16 +182,16 @@ class TestZoomToCursor:
             Qt.ScrollPhase.NoScrollPhase,
             False,
         )
-        
+
         timeline_view.wheelEvent(event)
-        
+
         # Check zoom decreased
         assert timeline_view._current_zoom < initial_zoom
 
     def test_zoom_min_limit(self, timeline_view):
         """Zooming out should respect minimum zoom limit."""
         timeline_view.set_events([Event(name="E1", lore_date=100, lore_duration=0)])
-        
+
         # Zoom out many times
         cursor_pos = QPointF(100, 100)
         for _ in range(50):
@@ -189,14 +206,14 @@ class TestZoomToCursor:
                 False,
             )
             timeline_view.wheelEvent(event)
-        
+
         # Should not go below MIN_ZOOM
         assert timeline_view._current_zoom >= timeline_view.MIN_ZOOM
 
     def test_zoom_max_limit(self, timeline_view):
         """Zooming in should respect maximum zoom limit."""
         timeline_view.set_events([Event(name="E1", lore_date=100, lore_duration=0)])
-        
+
         # Zoom in many times
         cursor_pos = QPointF(100, 100)
         for _ in range(50):
@@ -211,7 +228,7 @@ class TestZoomToCursor:
                 False,
             )
             timeline_view.wheelEvent(event)
-        
+
         # Should not exceed MAX_ZOOM
         assert timeline_view._current_zoom <= timeline_view.MAX_ZOOM
 
@@ -223,21 +240,23 @@ class TestEventItemUpdate:
         """EventItem should have update_event method."""
         event = Event(name="Test", lore_date=100, lore_duration=0)
         item = EventItem(event, 10.0)
-        
-        assert hasattr(item, 'update_event')
+
+        assert hasattr(item, "update_event")
         assert callable(item.update_event)
 
     def test_event_item_update_changes_data(self):
         """update_event should update the event data."""
         event1 = Event(name="Original", lore_date=100, type="cosmic", lore_duration=0)
         item = EventItem(event1, 10.0)
-        
+
         assert item.event.name == "Original"
         assert item.event.type == "cosmic"
-        
-        event2 = Event(id=event1.id, name="Updated", lore_date=150, type="combat", lore_duration=10)
+
+        event2 = Event(
+            id=event1.id, name="Updated", lore_date=150, type="combat", lore_duration=10
+        )
         item.update_event(event2)
-        
+
         assert item.event.name == "Updated"
         assert item.event.type == "combat"
         assert item.event.lore_date == 150
@@ -247,23 +266,31 @@ class TestEventItemUpdate:
         """set_events should reuse existing items where possible."""
         event1 = Event(id="test-id-1", name="Event1", lore_date=100, lore_duration=0)
         event2 = Event(id="test-id-2", name="Event2", lore_date=200, lore_duration=0)
-        
+
         timeline_widget.set_events([event1, event2])
-        
+
         # Get initial items
-        items_before = [i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)]
+        items_before = [
+            i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)
+        ]
         item_ids_before = {id(item) for item in items_before}
-        
+
         # Update events with same IDs but different data
-        event1_updated = Event(id="test-id-1", name="Updated1", lore_date=110, lore_duration=5)
-        event2_updated = Event(id="test-id-2", name="Updated2", lore_date=210, lore_duration=5)
-        
+        event1_updated = Event(
+            id="test-id-1", name="Updated1", lore_date=110, lore_duration=5
+        )
+        event2_updated = Event(
+            id="test-id-2", name="Updated2", lore_date=210, lore_duration=5
+        )
+
         timeline_widget.set_events([event1_updated, event2_updated])
-        
+
         # Get items after update
-        items_after = [i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)]
+        items_after = [
+            i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)
+        ]
         item_ids_after = {id(item) for item in items_after}
-        
+
         # Should have reused the same item objects
         assert item_ids_before == item_ids_after
 
@@ -271,18 +298,22 @@ class TestEventItemUpdate:
         """Items should be removed when their events are deleted."""
         event1 = Event(id="keep", name="Keep", lore_date=100, lore_duration=0)
         event2 = Event(id="delete", name="Delete", lore_date=200, lore_duration=0)
-        
+
         timeline_widget.set_events([event1, event2])
-        
+
         # Should have 2 event items
-        items = [i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)]
+        items = [
+            i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)
+        ]
         assert len(items) == 2
-        
+
         # Remove one event
         timeline_widget.set_events([event1])
-        
+
         # Should only have 1 event item now
-        items = [i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)]
+        items = [
+            i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)
+        ]
         assert len(items) == 1
         assert items[0].event.id == "keep"
 
@@ -292,30 +323,34 @@ class TestScrubberPlayhead:
 
     def test_playhead_exists_in_scene(self, timeline_view):
         """Playhead should be present in the scene."""
-        playhead_items = [i for i in timeline_view.scene.items() if isinstance(i, PlayheadItem)]
+        playhead_items = [
+            i for i in timeline_view.scene.items() if isinstance(i, PlayheadItem)
+        ]
         assert len(playhead_items) == 1
 
     def test_set_playhead_time(self, timeline_view):
         """set_playhead_time should position the playhead correctly."""
         timeline_view.set_playhead_time(100.0)
-        
+
         playhead_time = timeline_view.get_playhead_time()
         assert abs(playhead_time - 100.0) < 0.1
 
     def test_playhead_time_changed_signal(self, timeline_view, qtbot):
         """Playhead should emit signal when time changes."""
-        with qtbot.waitSignal(timeline_view.playhead_time_changed, timeout=1000) as blocker:
+        with qtbot.waitSignal(
+            timeline_view.playhead_time_changed, timeout=1000
+        ) as blocker:
             timeline_view.set_playhead_time(50.0)
-        
+
         assert blocker.args[0] == 50.0
 
     def test_start_stop_playback(self, timeline_view):
         """Playback should start and stop correctly."""
         assert not timeline_view.is_playing()
-        
+
         timeline_view.start_playback()
         assert timeline_view.is_playing()
-        
+
         timeline_view.stop_playback()
         assert not timeline_view.is_playing()
 
@@ -323,9 +358,9 @@ class TestScrubberPlayhead:
         """step_forward should advance playhead."""
         timeline_view.set_playhead_time(10.0)
         initial_time = timeline_view.get_playhead_time()
-        
+
         timeline_view.step_forward()
-        
+
         new_time = timeline_view.get_playhead_time()
         assert new_time > initial_time
 
@@ -333,9 +368,9 @@ class TestScrubberPlayhead:
         """step_backward should move playhead back."""
         timeline_view.set_playhead_time(10.0)
         initial_time = timeline_view.get_playhead_time()
-        
+
         timeline_view.step_backward()
-        
+
         new_time = timeline_view.get_playhead_time()
         assert new_time < initial_time
 
@@ -343,14 +378,14 @@ class TestScrubberPlayhead:
         """Playback should automatically advance playhead over time."""
         timeline_view.set_playhead_time(0.0)
         initial_time = timeline_view.get_playhead_time()
-        
+
         timeline_view.start_playback()
-        
+
         # Wait for playback to advance (default interval is 100ms)
         qtbot.wait(300)
-        
+
         timeline_view.stop_playback()
-        
+
         final_time = timeline_view.get_playhead_time()
         assert final_time > initial_time
 
@@ -372,11 +407,11 @@ class TestPlaybackControls:
         """toggle_playback should start/stop playback and update button."""
         initial_text = timeline_widget.btn_play_pause.text()
         assert initial_text == "▶"
-        
+
         timeline_widget.toggle_playback()
         assert timeline_widget.view.is_playing()
         assert timeline_widget.btn_play_pause.text() == "■"
-        
+
         timeline_widget.toggle_playback()
         assert not timeline_widget.view.is_playing()
         assert timeline_widget.btn_play_pause.text() == "▶"
@@ -385,9 +420,9 @@ class TestPlaybackControls:
         """Step forward button should advance playhead."""
         timeline_widget.set_playhead_time(10.0)
         initial_time = timeline_widget.get_playhead_time()
-        
+
         timeline_widget.btn_step_forward.click()
-        
+
         new_time = timeline_widget.get_playhead_time()
         assert new_time > initial_time
 
@@ -395,17 +430,19 @@ class TestPlaybackControls:
         """Step backward button should move playhead back."""
         timeline_widget.set_playhead_time(10.0)
         initial_time = timeline_widget.get_playhead_time()
-        
+
         timeline_widget.btn_step_back.click()
-        
+
         new_time = timeline_widget.get_playhead_time()
         assert new_time < initial_time
 
     def test_widget_exposes_playhead_signal(self, timeline_widget, qtbot):
         """TimelineWidget should expose playhead_time_changed signal."""
-        with qtbot.waitSignal(timeline_widget.playhead_time_changed, timeout=1000) as blocker:
+        with qtbot.waitSignal(
+            timeline_widget.playhead_time_changed, timeout=1000
+        ) as blocker:
             timeline_widget.set_playhead_time(42.0)
-        
+
         assert blocker.args[0] == 42.0
 
 
@@ -416,6 +453,7 @@ class TestEventItemCaching:
         """EventItem should have caching enabled."""
         event = Event(name="Test", lore_date=100, lore_duration=0)
         item = EventItem(event, 10.0)
-        
+
         from PySide6.QtWidgets import QGraphicsItem
+
         assert item.cacheMode() == QGraphicsItem.DeviceCoordinateCache

@@ -73,14 +73,14 @@ class EventItem(QGraphicsItem):
             | QGraphicsItem.ItemIsFocusable
             | QGraphicsItem.ItemIgnoresTransformations
         )
-        
+
         # Enable caching for improved rendering performance
         self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
 
     def update_event(self, event):
         """
         Updates the event data for this item and refreshes the display.
-        
+
         Args:
             event (Event): The updated event object.
         """
@@ -239,40 +239,40 @@ class PlayheadItem(QGraphicsLineItem):
     """
     Draggable vertical line representing the current playback position.
     """
-    
+
     def __init__(self, parent=None):
         """
         Initializes the PlayheadItem.
-        
+
         Args:
             parent: Parent graphics item.
         """
         super().__init__(-1e12, -1e12, 1e12, 1e12, parent)
-        
+
         # Style
         pen = QPen(QColor(255, 100, 100), 2)  # Red playhead
         pen.setCosmetic(True)
         self.setPen(pen)
-        
+
         # Make draggable
         self.setFlag(QGraphicsItem.ItemIsMovable, True)
         self.setFlag(QGraphicsItem.ItemIsSelectable, False)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges, True)
-        
+
         # Set high Z value to appear on top
         self.setZValue(100)
-        
+
         # Track current time position
         self._time = 0.0
-    
+
     def itemChange(self, change, value):
         """
         Handles item changes to constrain dragging to horizontal only.
-        
+
         Args:
             change: The type of change.
             value: The new value.
-            
+
         Returns:
             The constrained value.
         """
@@ -282,11 +282,11 @@ class PlayheadItem(QGraphicsLineItem):
             new_pos.setY(0)
             return new_pos
         return super().itemChange(change, value)
-    
+
     def set_time(self, time: float, scale_factor: float):
         """
         Sets the playhead position to the given time.
-        
+
         Args:
             time: The time position in lore_date units.
             scale_factor: Pixels per day conversion factor.
@@ -294,14 +294,14 @@ class PlayheadItem(QGraphicsLineItem):
         self._time = time
         x = time * scale_factor
         self.setPos(x, 0)
-    
+
     def get_time(self, scale_factor: float) -> float:
         """
         Gets the current time position of the playhead.
-        
+
         Args:
             scale_factor: Pixels per day conversion factor.
-            
+
         Returns:
             The current time in lore_date units.
         """
@@ -323,7 +323,7 @@ class TimelineView(QGraphicsView):
 
     LANE_HEIGHT = 40
     RULER_HEIGHT = 50  # Increased for semantic ruler with context tier
-    
+
     # Zoom limits
     MIN_ZOOM = 0.01  # Maximum zoom out (1% of normal)
     MAX_ZOOM = 100.0  # Maximum zoom in (100x normal)
@@ -360,15 +360,15 @@ class TimelineView(QGraphicsView):
         self.events = []
         self.scale_factor = 20.0
         self._initial_fit_pending = False
-        
+
         # Track current zoom level
         self._current_zoom = 1.0
-        
+
         # Playhead/scrubber setup
         self._playhead = PlayheadItem()
         self.scene.addItem(self._playhead)
         self._playhead.set_time(0.0, self.scale_factor)
-        
+
         # Playback state
         self._playback_timer = QTimer()
         self._playback_timer.timeout.connect(self._advance_playhead)
@@ -544,7 +544,7 @@ class TimelineView(QGraphicsView):
         """
         Updates the scene with event items using smart lane packing.
         Reuses existing EventItem instances where possible for performance.
-        
+
         Smart lane packing algorithm:
         - Greedy interval packing using min-heap
         - Sort events by start time (lore_date)
@@ -566,7 +566,7 @@ class TimelineView(QGraphicsView):
         for item in self.scene.items():
             if isinstance(item, EventItem):
                 existing_items[item.event.id] = item
-            elif hasattr(item, 'event_id'):  # Drop lines marked with event_id
+            elif hasattr(item, "event_id"):  # Drop lines marked with event_id
                 drop_lines[item.event_id] = item
 
         # Track which items we've reused
@@ -574,7 +574,7 @@ class TimelineView(QGraphicsView):
 
         # Draw Infinite Axis Line if not present
         axis_exists = any(
-            not isinstance(item, EventItem) and not hasattr(item, 'event_id')
+            not isinstance(item, EventItem) and not hasattr(item, "event_id")
             for item in self.scene.items()
         )
         if not axis_exists:
@@ -586,11 +586,13 @@ class TimelineView(QGraphicsView):
         # Heap stores (end_time, lane_index)
         lanes_heap = []
         event_lane_assignments = {}  # event -> lane_index
-        
+
         for event in sorted_events:
             # Determine event's end time
-            end_time = event.lore_date + (event.lore_duration if event.lore_duration > 0 else 0.1)
-            
+            end_time = event.lore_date + (
+                event.lore_duration if event.lore_duration > 0 else 0.1
+            )
+
             # Try to find an available lane (one whose end_time <= event.lore_date)
             assigned_lane = None
             if lanes_heap and lanes_heap[0][0] <= event.lore_date:
@@ -599,7 +601,7 @@ class TimelineView(QGraphicsView):
             else:
                 # Allocate a new lane
                 assigned_lane = len(lanes_heap)
-            
+
             # Record assignment and push back to heap with new end time
             event_lane_assignments[event.id] = assigned_lane
             heapq.heappush(lanes_heap, (end_time, assigned_lane))
@@ -621,7 +623,6 @@ class TimelineView(QGraphicsView):
                 self.scene.addItem(item)
 
             # Reuse or create drop line
-            line_id = f"drop_{event.id}"
             if event.id in drop_lines:
                 line = drop_lines[event.id]
                 # Update line position
@@ -637,7 +638,7 @@ class TimelineView(QGraphicsView):
         for event_id, item in existing_items.items():
             if event_id not in reused_ids:
                 self.scene.removeItem(item)
-        
+
         # Remove orphaned drop lines
         current_event_ids = {e.id for e in sorted_events}
         for event_id, line in drop_lines.items():
@@ -695,17 +696,17 @@ class TimelineView(QGraphicsView):
         """
         Handles mouse wheel events for zooming with zoom-to-cursor behavior.
         Zooms in/out centered on the mouse position with min/max limits.
-        
+
         Args:
             event: QWheelEvent containing wheel delta and position.
         """
         zoom_in = 1.25
         zoom_out = 1 / zoom_in
         factor = zoom_in if event.angleDelta().y() > 0 else zoom_out
-        
+
         # Calculate new zoom level
         new_zoom = self._current_zoom * factor
-        
+
         # Enforce zoom limits
         if new_zoom < self.MIN_ZOOM:
             factor = self.MIN_ZOOM / self._current_zoom
@@ -713,7 +714,7 @@ class TimelineView(QGraphicsView):
         elif new_zoom > self.MAX_ZOOM:
             factor = self.MAX_ZOOM / self._current_zoom
             new_zoom = self.MAX_ZOOM
-        
+
         # Only zoom if within limits
         if factor != 1.0:
             try:
@@ -723,14 +724,14 @@ class TimelineView(QGraphicsView):
 
             # Get scene position before zoom
             old_pos = self.mapToScene(target)
-            
+
             # Apply zoom
             self.scale(factor, factor)
             self._current_zoom = new_zoom
-            
+
             # Get scene position after zoom
             new_pos = self.mapToScene(target)
-            
+
             # Translate to keep the same scene point under cursor
             delta = new_pos - old_pos
             self.translate(delta.x(), delta.y())
@@ -756,14 +757,14 @@ class TimelineView(QGraphicsView):
         elif isinstance(item, PlayheadItem):
             # Track that we're dragging the playhead
             self._dragging_playhead = True
-    
+
     def mouseReleaseEvent(self, event):
         """
         Handles mouse release. Emits playhead_time_changed if playhead was dragged.
         """
         super().mouseReleaseEvent(event)
-        
-        if hasattr(self, '_dragging_playhead') and self._dragging_playhead:
+
+        if hasattr(self, "_dragging_playhead") and self._dragging_playhead:
             # Emit signal with new playhead time
             new_time = self._playhead.get_time(self.scale_factor)
             self.playhead_time_changed.emit(new_time)
@@ -776,48 +777,48 @@ class TimelineView(QGraphicsView):
                 self.centerOn(item)
                 item.setSelected(True)
                 return
-    
+
     def start_playback(self):
         """
         Starts automatic playhead advancement.
         """
         if not self._playback_timer.isActive():
             self._playback_timer.start(self._playback_interval)
-    
+
     def stop_playback(self):
         """
         Stops automatic playhead advancement.
         """
         self._playback_timer.stop()
-    
+
     def is_playing(self) -> bool:
         """
         Returns whether playback is currently active.
-        
+
         Returns:
             bool: True if playing, False otherwise.
         """
         return self._playback_timer.isActive()
-    
+
     def set_playhead_time(self, time: float):
         """
         Sets the playhead to a specific time position.
-        
+
         Args:
             time: The time in lore_date units.
         """
         self._playhead.set_time(time, self.scale_factor)
         self.playhead_time_changed.emit(time)
-    
+
     def get_playhead_time(self) -> float:
         """
         Gets the current playhead time position.
-        
+
         Returns:
             float: The current time in lore_date units.
         """
         return self._playhead.get_time(self.scale_factor)
-    
+
     def step_forward(self):
         """
         Steps the playhead forward by the playback step amount.
@@ -825,7 +826,7 @@ class TimelineView(QGraphicsView):
         current_time = self.get_playhead_time()
         new_time = current_time + self._playback_step
         self.set_playhead_time(new_time)
-    
+
     def step_backward(self):
         """
         Steps the playhead backward by the playback step amount.
@@ -833,7 +834,7 @@ class TimelineView(QGraphicsView):
         current_time = self.get_playhead_time()
         new_time = current_time - self._playback_step
         self.set_playhead_time(new_time)
-    
+
     def _advance_playhead(self):
         """
         Internal method called by timer to advance playhead during playback.
@@ -874,14 +875,14 @@ class TimelineWidget(QWidget):
         self.btn_step_back.setMaximumWidth(40)
         self.btn_step_back.clicked.connect(self.step_backward)
         self.toolbar_layout.addWidget(self.btn_step_back)
-        
+
         self.btn_play_pause = QPushButton("▶")
         self.btn_play_pause.setToolTip("Play/Pause")
         self.btn_play_pause.setCheckable(True)
         self.btn_play_pause.setMaximumWidth(40)
         self.btn_play_pause.clicked.connect(self.toggle_playback)
         self.toolbar_layout.addWidget(self.btn_play_pause)
-        
+
         self.btn_step_forward = QPushButton("►")
         self.btn_step_forward.setToolTip("Step Forward")
         self.btn_step_forward.setMaximumWidth(40)
@@ -913,7 +914,7 @@ class TimelineWidget(QWidget):
     def fit_view(self):
         """Fits all events within the view."""
         self.view.fit_all()
-    
+
     def toggle_playback(self):
         """
         Toggles playback on/off and updates button state.
@@ -926,28 +927,28 @@ class TimelineWidget(QWidget):
             self.view.start_playback()
             self.btn_play_pause.setText("■")
             self.btn_play_pause.setChecked(True)
-    
+
     def step_forward(self):
         """Steps the playhead forward."""
         self.view.step_forward()
-    
+
     def step_backward(self):
         """Steps the playhead backward."""
         self.view.step_backward()
-    
+
     def set_playhead_time(self, time: float):
         """
         Sets the playhead to a specific time.
-        
+
         Args:
             time: Time in lore_date units.
         """
         self.view.set_playhead_time(time)
-    
+
     def get_playhead_time(self) -> float:
         """
         Gets the current playhead time.
-        
+
         Returns:
             float: Current time in lore_date units.
         """
