@@ -659,6 +659,18 @@ class MainWindow(QMainWindow):
             # If map was deleted, MapWidget handles selection logic if needed,
             # but reloading maps will update the list.
 
+        if "Marker" in command_name and "Update" not in command_name:
+            # Refresh markers for the current map (but NOT for UpdateMarkerCommand
+            # since the UI already reflects the new position)
+            current_map_id = self.map_widget.map_selector.currentData()
+            if current_map_id:
+                QMetaObject.invokeMethod(
+                    self.worker,
+                    "load_markers",
+                    QtCore_Qt.QueuedConnection,
+                    Q_ARG(str, current_map_id),
+                )
+
         if "Event" in command_name:
             self.load_events()
             # If we just updated/created, maybe refresh details if active?
@@ -1002,8 +1014,10 @@ class MainWindow(QMainWindow):
 
         self.map_widget.clear_markers()
         for marker in markers:
+            # Determine label (fallback to 'Unknown' if missing)
+            label = getattr(marker, "label", None) or "Unknown Marker"
             self.map_widget.add_marker(
-                marker.id, marker.object_type, marker.x, marker.y
+                marker.id, marker.object_type, label, marker.x, marker.y
             )
 
     @Slot(str, float, float)

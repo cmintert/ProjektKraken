@@ -42,7 +42,7 @@ class MarkerItem(QGraphicsEllipseItem):
     Emits signals through the parent MapGraphicsView when dragged.
     """
 
-    MARKER_RADIUS = 8
+    MARKER_RADIUS = 10
     COLORS = {
         "entity": QColor("#3498DB"),  # Blue
         "event": QColor("#F39C12"),  # Orange
@@ -50,7 +50,11 @@ class MarkerItem(QGraphicsEllipseItem):
     }
 
     def __init__(
-        self, marker_id: str, object_type: str, pixmap_item: QGraphicsPixmapItem
+        self,
+        marker_id: str,
+        object_type: str,
+        label: str,
+        pixmap_item: QGraphicsPixmapItem,
     ):
         """
         Initializes a MarkerItem.
@@ -58,6 +62,7 @@ class MarkerItem(QGraphicsEllipseItem):
         Args:
             marker_id: Unique identifier for the marker.
             object_type: Type of object ('entity' or 'event').
+            label: Label text for the marker (tooltip).
             pixmap_item: Reference to the map pixmap item for coordinate conversion.
         """
         super().__init__(
@@ -69,7 +74,12 @@ class MarkerItem(QGraphicsEllipseItem):
 
         self.marker_id = marker_id
         self.object_type = object_type
+        self.label = label
         self.pixmap_item = pixmap_item
+        logger.debug(f"Created MarkerItem {marker_id} with label: {label}")
+
+        # Tooltip
+        self.setToolTip(label)
 
         # Styling
         color = self.COLORS.get(object_type, self.COLORS["default"])
@@ -87,11 +97,57 @@ class MarkerItem(QGraphicsEllipseItem):
         # Z-value to appear on top of the map
         self.setZValue(10)
 
+        # Drag tracking
+        self._is_dragging = False
+        self._drag_start_pos = None
+
+    def mousePressEvent(self, event):
+        """Track drag start."""
+        if event.button() == Qt.LeftButton:
+            self._is_dragging = True
+            self._drag_start_pos = self.pos()
+            logger.debug(
+                f"Marker {self.marker_id} drag started at {self._drag_start_pos}"
+            )
+        super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        """Emit position change on drag end."""
+        if event.button() == Qt.LeftButton and self._is_dragging:
+            self._is_dragging = False
+            # Calculate final normalized position
+            if self.pixmap_item and self.pixmap_item.pixmap():
+                scene_pos = self.pos()
+                pixmap_rect = self.pixmap_item.sceneBoundingRect()
+
+                rel_x = scene_pos.x() - pixmap_rect.left()
+                rel_y = scene_pos.y() - pixmap_rect.top()
+
+                norm_x = rel_x / pixmap_rect.width() if pixmap_rect.width() > 0 else 0.0
+                norm_y = (
+                    rel_y / pixmap_rect.height() if pixmap_rect.height() > 0 else 0.0
+                )
+
+                norm_x = max(0.0, min(1.0, norm_x))
+                norm_y = max(0.0, min(1.0, norm_y))
+
+                # Emit only on release
+                if self.scene() and self.scene().views():
+                    view = self.scene().views()[0]
+                    if isinstance(view, MapGraphicsView):
+                        view.marker_moved.emit(self.marker_id, norm_x, norm_y)
+                        logger.debug(
+                            f"Marker {self.marker_id} drag ended at normalized "
+                            f"({norm_x:.3f}, {norm_y:.3f})"
+                        )
+        super().mouseReleaseEvent(event)
+
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value):
         """
         Called when the item's state changes.
 
-        Detects position changes and emits a signal with normalized coordinates.
+        Note: We no longer emit marker_moved here. Position updates
+        are only emitted on mouseReleaseEvent to avoid flooding.
 
         Args:
             change: The type of change.
@@ -100,38 +156,6 @@ class MarkerItem(QGraphicsEllipseItem):
         Returns:
             The processed value.
         """
-        if change == QGraphicsItem.ItemPositionHasChanged:
-            # Get the marker's current position in scene coordinates
-            scene_pos = self.pos()
-
-            # Convert to normalized coordinates [0.0, 1.0] relative to pixmap
-            if self.pixmap_item and self.pixmap_item.pixmap():
-                pixmap_rect = self.pixmap_item.sceneBoundingRect()
-
-                # Calculate position relative to pixmap top-left
-                rel_x = scene_pos.x() - pixmap_rect.left()
-                rel_y = scene_pos.y() - pixmap_rect.top()
-
-                # Normalize to [0.0, 1.0]
-                norm_x = rel_x / pixmap_rect.width() if pixmap_rect.width() > 0 else 0.0
-                norm_y = (
-                    rel_y / pixmap_rect.height() if pixmap_rect.height() > 0 else 0.0
-                )
-
-                # Clamp to [0.0, 1.0]
-                norm_x = max(0.0, min(1.0, norm_x))
-                norm_y = max(0.0, min(1.0, norm_y))
-
-                # Emit signal through the graphics view
-                if self.scene() and self.scene().views():
-                    view = self.scene().views()[0]
-                    if isinstance(view, MapGraphicsView):
-                        view.marker_moved.emit(self.marker_id, norm_x, norm_y)
-                        logger.debug(
-                            f"Marker {self.marker_id} moved to normalized "
-                            f"({norm_x:.3f}, {norm_y:.3f})"
-                        )
-
         return super().itemChange(change, value)
 
 
@@ -218,19 +242,50 @@ class MapGraphicsView(QGraphicsView):
 
     def resizeEvent(self, event):
         """
-        Handle resize events to keep the map fitted in the view.
+        Handle resize events.
+        Note: We no longer auto-fit here to allow the user to maintain zoom level.
         """
         super().resizeEvent(event)
+
+    def fit_to_view(self):
+        """Fits the map to the current view size."""
         if self.pixmap_item:
             self.fitInView(self.pixmap_item, Qt.KeepAspectRatio)
+            logger.debug("Fit map to view.")
 
-    def add_marker(self, marker_id: str, object_type: str, x: float, y: float) -> None:
+    def mousePressEvent(self, event):
+        """
+        Handle mouse press to implement Smart Drag.
+        If clicking a marker, disable view panning.
+        If clicking background, enable view panning.
+        """
+        item = self.itemAt(event.pos())
+        logger.debug(f"Mouse Press at {event.pos()}. Item found: {item}")
+
+        if isinstance(item, MarkerItem):
+            logger.debug(f"Click on Marker {item.marker_id}. Setting NoDrag.")
+            self.setDragMode(QGraphicsView.NoDrag)
+        else:
+            logger.debug("Click on background. Setting ScrollHandDrag.")
+            self.setDragMode(QGraphicsView.ScrollHandDrag)
+        super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        """Reset drag mode on release."""
+        logger.debug("Mouse Release. Resetting to ScrollHandDrag.")
+        super().mouseReleaseEvent(event)
+        self.setDragMode(QGraphicsView.ScrollHandDrag)
+
+    def add_marker(
+        self, marker_id: str, object_type: str, label: str, x: float, y: float
+    ) -> None:
         """
         Adds a marker to the map at normalized coordinates.
 
         Args:
             marker_id: Unique identifier for the marker.
             object_type: Type of object ('entity' or 'event').
+            label: Marker label text.
             x: Normalized X coordinate [0.0, 1.0].
             y: Normalized Y coordinate [0.0, 1.0].
         """
@@ -244,7 +299,7 @@ class MapGraphicsView(QGraphicsView):
             del self.markers[marker_id]
 
         # Create new marker
-        marker = MarkerItem(marker_id, object_type, self.pixmap_item)
+        marker = MarkerItem(marker_id, object_type, label, self.pixmap_item)
 
         # Convert normalized to scene coordinates
         scene_pos = self._normalized_to_scene(x, y)
@@ -254,7 +309,9 @@ class MapGraphicsView(QGraphicsView):
         self.scene.addItem(marker)
         self.markers[marker_id] = marker
 
-        logger.debug(f"Added marker {marker_id} at normalized ({x:.3f}, {y:.3f})")
+        logger.debug(
+            f"Added marker {marker_id} ({label}) at normalized ({x:.3f}, {y:.3f})"
+        )
 
     def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
         """
@@ -316,8 +373,19 @@ class MapGraphicsView(QGraphicsView):
 
     def wheelEvent(self, event):
         """Handle mouse wheel for zooming."""
-        # Zoom factor
-        factor = 1.15 if event.angleDelta().y() > 0 else 1 / 1.15
+        # Sensitivity
+        zoom_in_factor = 1.25
+        zoom_out_factor = 1 / zoom_in_factor
+
+        # Check zoom direction
+        if event.angleDelta().y() > 0:
+            factor = zoom_in_factor
+        else:
+            factor = zoom_out_factor
+
+        logger.debug(
+            f"Wheel Event. Delta: {event.angleDelta().y()}, Scale Factor: {factor}"
+        )
         self.scale(factor, factor)
 
     def contextMenuEvent(self, event):
@@ -417,6 +485,12 @@ class MapWidget(QWidget):
         self.action_delete_map.triggered.connect(self.delete_map_requested.emit)
         self.toolbar.addAction(self.action_delete_map)
 
+        self.toolbar.addSeparator()
+
+        self.action_fit_view = QAction("Fit to View", self)
+        self.action_fit_view.triggered.connect(self.view.fit_to_view)
+        self.toolbar.addAction(self.action_fit_view)
+
         # Add View (after toolbar)
         layout.addWidget(self.view)
 
@@ -490,17 +564,20 @@ class MapWidget(QWidget):
         """
         return self.view.load_map(image_path)
 
-    def add_marker(self, marker_id: str, object_type: str, x: float, y: float) -> None:
+    def add_marker(
+        self, marker_id: str, object_type: str, label: str, x: float, y: float
+    ) -> None:
         """
         Adds a marker to the map.
 
         Args:
             marker_id: Unique identifier for the marker.
             object_type: Type of object ('entity' or 'event').
+            label: Marker label.
             x: Normalized X coordinate [0.0, 1.0].
             y: Normalized Y coordinate [0.0, 1.0].
         """
-        self.view.add_marker(marker_id, object_type, x, y)
+        self.view.add_marker(marker_id, object_type, label, x, y)
 
     def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
         """
