@@ -15,7 +15,17 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 from PySide6.QtCore import Qt, Signal, QRectF, QPointF, QTimer
-from PySide6.QtGui import QBrush, QPen, QColor, QPainter, QPolygonF, QFont, QFontMetrics
+from PySide6.QtGui import (
+    QBrush,
+    QPen,
+    QColor,
+    QPainter,
+    QPolygonF,
+    QFont,
+    QFontMetrics,
+    QPainterPath,
+    QCursor,
+)
 from src.core.theme_manager import ThemeManager
 
 from src.gui.widgets.timeline_ruler import TimelineRuler
@@ -262,12 +272,30 @@ class PlayheadItem(QGraphicsLineItem):
         self.setFlag(QGraphicsItem.ItemIsSelectable, False)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges, True)
 
+        # Cursor hint
+        self.setCursor(QCursor(Qt.SizeHorCursor))
+
         # Set high Z value to appear on top
         self.setZValue(100)
+
+        # Callback for movement
+        self.on_moved = None
 
         # Track vertical extent
         self._top = -100000.0
         self._bottom = 100000.0  # Vertically infinite-ish
+
+    def shape(self):
+        """
+        Define a wider hit area for easier grabbing.
+        Returns a path roughly 10px wide centered on the line.
+        """
+        path = QPainterPath()
+        # Create a rectangle 10px wide centered on x=0
+        # Spanning the vertical extent (or just a large range if infinite)
+        # Using a finite but large range ensures it works within reasonable view limits
+        path.addRect(-5, -100000, 10, 200000)
+        return path
 
     def itemChange(self, change, value):
         """
@@ -284,6 +312,13 @@ class PlayheadItem(QGraphicsLineItem):
             # Constrain to horizontal movement only
             new_pos = value
             new_pos.setY(0)
+
+            # Notify listener if set (interactive drag)
+            if self.scene() and self.on_moved:
+                # Check if this change is likely from mouse interaction
+                # (simplest is just to emit always)
+                self.on_moved(new_pos.x())
+
             return new_pos
         return super().itemChange(change, value)
 
@@ -430,6 +465,9 @@ class TimelineView(QGraphicsView):
         self.scene.addItem(self._playhead)
         self._playhead.set_time(0.0, self.scale_factor)
 
+        # Connect playhead drag
+        self._playhead.on_moved = self._on_playhead_moved
+
         # Current time line setup (distinct from playhead)
         self._current_time_line = CurrentTimeLineItem()
         self.scene.addItem(self._current_time_line)
@@ -443,6 +481,15 @@ class TimelineView(QGraphicsView):
 
         # Set corner widget for themed scrollbar corner
         self._update_corner_widget(ThemeManager().get_theme())
+
+    def _on_playhead_moved(self, x_pos):
+        """
+        Called when playhead is dragged manually.
+        Updates the internal time and emits signal.
+        """
+        new_time = x_pos / self.scale_factor
+        self._playhead._time = new_time  # Directly update internal state
+        self.playhead_time_changed.emit(new_time)
 
     def _update_corner_widget(self, theme):
         """
@@ -600,8 +647,10 @@ class TimelineView(QGraphicsView):
         """
         Configures the ruler with calendar-aware date divisions.
 
+        Configures the ruler with calendar-aware date divisions.
+
         Args:
-            converter: CalendarConverter instance or None.
+            converter (CalendarConverter): Converter instance or None.
         """
         self._ruler.set_calendar_converter(converter)
         self.viewport().update()
@@ -612,15 +661,9 @@ class TimelineView(QGraphicsView):
         Reuses existing EventItem instances where possible for performance.
 
         Smart lane packing algorithm:
-        - Greedy interval packing using min-heap
-        - Sort events by start time (lore_date)
-        - Maintain heap of lanes with their current end time
-        - For each event, choose first lane whose end <= event.start
-        - If no lane available, allocate new lane
-        - O(n log k) complexity where n=events, k=lanes
-
-        Args:
-            events (list): List of Event domain objects.
+        - Greedy interval packing (First Fit)
+        - Sort events by start time.
+        - Packs into first available lane.
         """
         # Sort by Date
         sorted_events = sorted(events, key=lambda e: e.lore_date)
@@ -710,7 +753,10 @@ class TimelineView(QGraphicsView):
                 assigned_lane = len(lanes_end_times) - 1
 
             event_lane_assignments[event.id] = assigned_lane
-            # logger.debug(f"Event '{event.name}': Lane {assigned_lane} (Visual Width: {total_width_px:.1f}px)")
+            # logger.debug(
+            #    f"Event '{event.name}': Lane {assigned_lane} "
+            #    f"(Visual Width: {total_width_px:.1f}px)"
+            # )
 
         # Now place items in scene
         for event in sorted_events:
@@ -777,13 +823,13 @@ class TimelineView(QGraphicsView):
             # Center Playhead and Current Time Line if they are at 0 (initial state)
             center_date = (min_date + max_date) / 2
 
-            # Simple check if they are at default 0 position or we want to force center on load
+            # Check if they are at default 0 position or we want to force center on load
             # Let's force center them on the events for better UX if they are far off
             if self._playhead._time == 0:
-                self._playhead.set_time(center_date, self.scale_factor)
+                self.set_playhead_time(center_date)
 
             if self._current_time_line._time == 0:
-                self._current_time_line.set_time(center_date, self.scale_factor)
+                self.set_current_time(center_date)
 
             # Check if we can fit immediately
             if self.isVisible() and self.width() > 0 and self.height() > 0:

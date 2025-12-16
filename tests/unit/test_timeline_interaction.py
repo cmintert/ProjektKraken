@@ -103,6 +103,29 @@ def test_draw_ruler(timeline):
     # This is complex to mock.
     # But we can check if scene coordinates map correctly.
 
-    # Check mapping logic used in drawForeground
     val = timeline.view.mapToScene(0, 0)
     assert val is not None
+
+
+def test_playhead_drag(timeline, qtbot):
+    """Test that dragging the playhead updates time."""
+    # 1. Verify cursor
+    assert timeline.view._playhead.cursor().shape() == Qt.SizeHorCursor
+
+    # 2. Setup stats
+    timeline.view.scale_factor = 10.0
+    timeline.view._playhead.set_time(0.0, 10.0)  # at x=0
+
+    # 3. Watch for signal
+    with qtbot.waitSignal(timeline.view.playhead_time_changed) as blocker:
+        # Simulate drag by manually calling itemChange/moved logic
+        # (simulating the QGraphicsItem movement logic is hard without full event stack)
+
+        # We can bypass the event stack and call the handler directly or modify pos
+        # Modifying pos triggers itemChange -> triggers on_moved -> triggers signal
+
+        timeline.view._playhead.setPos(100.0, 0.0)
+
+    # 4. Verify new time
+    # moved 100px / 10.0 scale = 10.0 time units
+    assert blocker.args[0] == 10.0

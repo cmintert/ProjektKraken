@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QStatusBar,
     QMessageBox,
     QInputDialog,
+    QLabel,
 )
 from PySide6.QtCore import (
     Qt,
@@ -120,6 +121,7 @@ class MainWindow(QMainWindow):
         self._cached_events = []
         self._cached_entities = []
         self._cached_longform_sequence = []
+        self.calendar_converter = None
 
         # Pending Selection (for creation flow)
         self._pending_select_id = None
@@ -149,6 +151,19 @@ class MainWindow(QMainWindow):
         # Status Bar
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
+
+        # Status Bar Time Labels
+        self.lbl_world_time = QLabel("World: --")
+        self.lbl_world_time.setMinimumWidth(250)
+        self.lbl_world_time.setStyleSheet("color: #3498db; font-weight: bold;")  # Blue
+        self.status_bar.addPermanentWidget(self.lbl_world_time)
+
+        self.lbl_playhead_time = QLabel("Playhead: --")
+        self.lbl_playhead_time.setMinimumWidth(250)
+        self.lbl_playhead_time.setStyleSheet(
+            "color: #e74c3c; font-weight: bold;"
+        )  # Red
+        self.status_bar.addPermanentWidget(self.lbl_playhead_time)
 
         # View Menu
         self.ui_manager.create_view_menu(self.menuBar())
@@ -247,6 +262,7 @@ class MainWindow(QMainWindow):
         # Timeline
         self.timeline.event_selected.connect(self.load_event_details)
         self.timeline.current_time_changed.connect(self.on_current_time_changed)
+        self.timeline.playhead_time_changed.connect(self.update_playhead_time_label)
 
         # Longform Editor
         self.longform_editor.promote_requested.connect(self.promote_longform_entry)
@@ -415,6 +431,15 @@ class MainWindow(QMainWindow):
 
             # Check if UIManager has a pending calendar dialog
             self.ui_manager.show_calendar_dialog(config)
+
+            # Save converter for status bar formatting
+            self.calendar_converter = converter
+
+            # Refresh status bar labels now that we have a converter
+            if hasattr(self, "timeline"):
+                self.update_world_time_label(self.timeline.get_current_time())
+                self.update_playhead_time_label(self.timeline.get_playhead_time())
+
         except Exception as e:
             logger.warning(f"Failed to initialize calendar converter: {e}")
 
@@ -451,6 +476,23 @@ class MainWindow(QMainWindow):
             Q_ARG(float, time),
         )
         logger.debug(f"Current time changed to: {time}")
+        self.update_world_time_label(time)
+
+    def update_world_time_label(self, time_val: float):
+        """Updates the blue world time label."""
+        text = self._format_time_string(time_val)
+        self.lbl_world_time.setText(f"World: {text}")
+
+    def update_playhead_time_label(self, time_val: float):
+        """Updates the red playhead time label."""
+        text = self._format_time_string(time_val)
+        self.lbl_playhead_time.setText(f"Playhead: {text}")
+
+    def _format_time_string(self, time_val: float) -> str:
+        """Formats time using calendar converter if available."""
+        if self.calendar_converter:
+            return self.calendar_converter.format_date(time_val)
+        return f"{time_val:.2f}"
 
     @Slot(list)
     def on_events_loaded(self, events):
