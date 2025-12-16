@@ -32,7 +32,6 @@ from PySide6.QtGui import QColor
 from src.core.calendar import (
     MonthDefinition,
     WeekDefinition,
-    YearVariant,
     CalendarConfig,
     CalendarConverter,
 )
