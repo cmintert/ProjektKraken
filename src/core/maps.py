@@ -50,6 +50,13 @@ class GameMap:
     created_at: float = field(default_factory=time.time)
     modified_at: float = field(default_factory=time.time)
 
+    def __post_init__(self):
+        """Validates map dimensions."""
+        if self.reference_width <= 0 or self.reference_height <= 0:
+            raise ValueError("Reference dimensions must be positive integers")
+        if self.real_width <= 0:
+            raise ValueError("Real width must be positive")
+
     def to_dict(self) -> Dict[str, Any]:
         """
         Converts the GameMap instance to a dictionary for storage or serialization.

@@ -140,6 +140,42 @@ class TestGameMap:
         assert restored.created_at == original.created_at
         assert restored.modified_at == original.modified_at
 
+    def test_game_map_validation_reference_width(self):
+        """Test that invalid reference_width raises error."""
+        with pytest.raises(ValueError, match="Reference dimensions must be positive"):
+            GameMap(
+                name="Invalid",
+                image_filename="test.png",
+                real_width=100.0,
+                distance_unit="m",
+                reference_width=0,
+                reference_height=1000,
+            )
+
+    def test_game_map_validation_reference_height(self):
+        """Test that invalid reference_height raises error."""
+        with pytest.raises(ValueError, match="Reference dimensions must be positive"):
+            GameMap(
+                name="Invalid",
+                image_filename="test.png",
+                real_width=100.0,
+                distance_unit="m",
+                reference_width=1000,
+                reference_height=-1,
+            )
+
+    def test_game_map_validation_real_width(self):
+        """Test that invalid real_width raises error."""
+        with pytest.raises(ValueError, match="Real width must be positive"):
+            GameMap(
+                name="Invalid",
+                image_filename="test.png",
+                real_width=0.0,
+                distance_unit="m",
+                reference_width=1000,
+                reference_height=1000,
+            )
+
 
 class TestMapMarker:
     """Tests for the MapMarker dataclass."""

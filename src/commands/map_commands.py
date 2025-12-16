@@ -18,7 +18,7 @@ from src.services.db_service import DatabaseService
 import logging
 import dataclasses
 import time
-from typing import Optional
+from typing import Optional, List
 
 logger = logging.getLogger(__name__)
 
@@ -198,7 +198,7 @@ class DeleteMapCommand(BaseCommand):
         super().__init__()
         self.map_id = map_id
         self._backup_map: Optional[GameMap] = None
-        self._backup_markers: list[MapMarker] = []
+        self._backup_markers: List[MapMarker] = []
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """
