@@ -247,7 +247,7 @@ class PlayheadItem(QGraphicsLineItem):
         Args:
             parent: Parent graphics item.
         """
-        super().__init__(-1e12, -1e12, 1e12, 1e12, parent)
+        super().__init__(0, -100000, 0, 100000, parent)
 
         # Style
         pen = QPen(QColor(255, 100, 100), 2)  # Red playhead
@@ -262,8 +262,9 @@ class PlayheadItem(QGraphicsLineItem):
         # Set high Z value to appear on top
         self.setZValue(100)
 
-        # Track current time position
-        self._time = 0.0
+        # Track vertical extent
+        self._top = -100000.0
+        self._bottom = 100000.0  # Vertically infinite-ish
 
     def itemChange(self, change, value):
         """
@@ -321,7 +322,7 @@ class CurrentTimeLineItem(QGraphicsLineItem):
         Args:
             parent: Parent graphics item.
         """
-        super().__init__(-1e12, -1e12, 1e12, 1e12, parent)
+        super().__init__(0, -100000, 0, 100000, parent)
 
         # Style - distinct from playhead (blue instead of red)
         pen = QPen(QColor(100, 150, 255), 3)  # Blue current time line, thicker
@@ -708,7 +709,38 @@ class TimelineView(QGraphicsView):
                 self.scene.removeItem(line)
 
         if sorted_events:
-            self.scene.setSceneRect(self.scene.itemsBoundingRect())
+            # Calculate bounds from events for the scene rect
+            # We want the scene rect to be defined by events + margin, ignoring infinite lines
+
+            # X bounds
+            min_date = sorted_events[0].lore_date
+            max_date = sorted_events[-1].lore_date
+            if min_date == max_date:
+                min_date -= 10
+                max_date += 10
+
+            margin_x = (max_date - min_date) * 0.1 or 100
+            start_x = (min_date - margin_x) * self.scale_factor
+            end_x = (max_date + margin_x) * self.scale_factor
+
+            # Y bounds
+            # Events start at 60. Max y is approx (num_lanes * 40) + 60
+            max_y = 60 + (len(lanes_heap) * self.LANE_HEIGHT) + 40
+            min_y = 0  # Ruler area
+
+            # Set Scene Rect explicitly to avoid infinite lines expanding it
+            self.scene.setSceneRect(start_x, min_y, end_x - start_x, max_y - min_y)
+
+            # Center Playhead and Current Time Line if they are at 0 (initial state)
+            center_date = (min_date + max_date) / 2
+
+            # Simple check if they are at default 0 position or we want to force center on load
+            # Let's force center them on the events for better UX if they are far off
+            if self._playhead._time == 0:
+                self._playhead.set_time(center_date, self.scale_factor)
+
+            if self._current_time_line._time == 0:
+                self._current_time_line.set_time(center_date, self.scale_factor)
 
             # Check if we can fit immediately
             if self.isVisible() and self.width() > 0 and self.height() > 0:
