@@ -16,6 +16,8 @@ from src.app.constants import (
     DOCK_OBJ_TIMELINE,
     DOCK_TITLE_LONGFORM,
     DOCK_OBJ_LONGFORM,
+    DOCK_TITLE_MAP,
+    DOCK_OBJ_MAP,
 )
 
 
@@ -45,6 +47,7 @@ class UIManager:
                 - 'entity_editor': EntityEditorWidget
                 - 'timeline': TimelineWidget
                 - 'longform_editor': LongformEditorWidget
+                - 'map_widget': MapWidget
         """
         # Enable advanced docking
         self.main_window.setDockOptions(
@@ -96,6 +99,14 @@ class UIManager:
             # Tabify with inspectors if desired, or keep separate.
             # Instructions say: addDockWidget(Qt.RightDockWidgetArea, ...)
 
+        # 6. Map Widget (Bottom, tabbed with Timeline by default)
+        if "map_widget" in widgets:
+            self.docks["map"] = self._create_dock(
+                DOCK_TITLE_MAP, DOCK_OBJ_MAP, widgets["map_widget"]
+            )
+            self.main_window.addDockWidget(Qt.BottomDockWidgetArea, self.docks["map"])
+            self.main_window.tabifyDockWidget(self.docks["timeline"], self.docks["map"])
+
     def _create_dock(self, title: str, obj_name: str, widget) -> QDockWidget:
         """Helper to create a configured dock widget."""
         dock = QDockWidget(title, self.main_window)
@@ -132,7 +143,14 @@ class UIManager:
             self.docks["event"].show()
             self.docks["entity"].show()
 
+            self.docks["entity"].show()
+
             self.docks["timeline"].show()
+            if "map" in self.docks:
+                self.main_window.tabifyDockWidget(
+                    self.docks["timeline"], self.docks["map"]
+                )
+                self.docks["map"].show()
 
     def create_settings_menu(self, menu_bar: QMenuBar):
         """Creates the Settings menu."""

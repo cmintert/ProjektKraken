@@ -17,6 +17,7 @@ DOCK_OBJ_EVENT_INSPECTOR = "EventInspectorDock"
 DOCK_OBJ_ENTITY_INSPECTOR = "EntityInspectorDock"
 DOCK_OBJ_TIMELINE = "TimelineDock"
 DOCK_OBJ_LONGFORM = "LongformDock"
+DOCK_OBJ_MAP = "MapDock"
 
 # Dock Titles
 DOCK_TITLE_PROJECT = "Project Explorer"
@@ -24,6 +25,7 @@ DOCK_TITLE_EVENT_INSPECTOR = "Event Inspector"
 DOCK_TITLE_ENTITY_INSPECTOR = "Entity Inspector"
 DOCK_TITLE_TIMELINE = "Timeline"
 DOCK_TITLE_LONGFORM = "Longform Document"
+DOCK_TITLE_MAP = "Map"
 
 # Status Messages
 STATUS_DB_INIT_FAIL = "Database Initialization Failed!"

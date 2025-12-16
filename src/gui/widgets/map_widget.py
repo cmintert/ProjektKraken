@@ -13,6 +13,9 @@ from PySide6.QtWidgets import (
     QGraphicsEllipseItem,
     QWidget,
     QVBoxLayout,
+    QToolBar,
+    QComboBox,
+    QMenu,
 )
 from PySide6.QtCore import Qt, Signal, QPointF
 from PySide6.QtGui import (
@@ -22,6 +25,7 @@ from PySide6.QtGui import (
     QPainter,
     QPixmap,
     QCursor,
+    QAction,
 )
 from src.core.theme_manager import ThemeManager
 from typing import Optional, Dict
@@ -142,6 +146,8 @@ class MapGraphicsView(QGraphicsView):
     """
 
     marker_moved = Signal(str, float, float)
+    add_marker_requested = Signal(float, float)  # x, y (normalized)
+    delete_marker_requested = Signal(str)  # marker_id
 
     def __init__(self, parent=None):
         """
@@ -201,6 +207,7 @@ class MapGraphicsView(QGraphicsView):
 
             # Fit view to map
             self.fitInView(self.pixmap_item, Qt.KeepAspectRatio)
+            self.scene.setSceneRect(self.pixmap_item.boundingRect())
 
             logger.info(f"Loaded map: {image_path}")
             return True
@@ -208,6 +215,14 @@ class MapGraphicsView(QGraphicsView):
         except Exception as e:
             logger.error(f"Error loading map: {e}")
             return False
+
+    def resizeEvent(self, event):
+        """
+        Handle resize events to keep the map fitted in the view.
+        """
+        super().resizeEvent(event)
+        if self.pixmap_item:
+            self.fitInView(self.pixmap_item, Qt.KeepAspectRatio)
 
     def add_marker(self, marker_id: str, object_type: str, x: float, y: float) -> None:
         """
@@ -305,6 +320,49 @@ class MapGraphicsView(QGraphicsView):
         factor = 1.15 if event.angleDelta().y() > 0 else 1 / 1.15
         self.scale(factor, factor)
 
+    def contextMenuEvent(self, event):
+        """
+        Handles context menu events for adding/removing markers.
+        """
+        if not self.pixmap_item:
+            return
+
+        # Check if we clicked on a marker
+        item = self.itemAt(event.pos())
+        if isinstance(item, MarkerItem):
+            menu = QMenu(self)
+            delete_action = QAction("Delete Marker", self)
+            delete_action.triggered.connect(
+                lambda: self.delete_marker_requested.emit(item.marker_id)
+            )
+            menu.addAction(delete_action)
+            menu.exec(event.globalPos())
+        else:
+            # Clicked on map (or empty space)
+            # Convert screen pos to scene pos
+            scene_pos = self.mapToScene(event.pos())
+
+            # Check if within map bounds
+            if self.pixmap_item.contains(scene_pos):
+                pixmap_rect = self.pixmap_item.sceneBoundingRect()
+                rel_x = scene_pos.x() - pixmap_rect.left()
+                rel_y = scene_pos.y() - pixmap_rect.top()
+
+                width = pixmap_rect.width()
+                height = pixmap_rect.height()
+
+                if width > 0 and height > 0:
+                    norm_x = rel_x / width
+                    norm_y = rel_y / height
+
+                    menu = QMenu(self)
+                    add_action = QAction("Add Marker", self)
+                    add_action.triggered.connect(
+                        lambda: self.add_marker_requested.emit(norm_x, norm_y)
+                    )
+                    menu.addAction(add_action)
+                    menu.exec(event.globalPos())
+
 
 class MapWidget(QWidget):
     """
@@ -319,6 +377,11 @@ class MapWidget(QWidget):
     """
 
     marker_position_changed = Signal(str, float, float)
+    create_map_requested = Signal()
+    delete_map_requested = Signal()
+    map_selected = Signal(str)  # map_id
+    create_marker_requested = Signal(float, float)  # x, y normalized
+    delete_marker_requested = Signal(str)  # marker_id
 
     def __init__(self, parent=None):
         """
@@ -335,10 +398,66 @@ class MapWidget(QWidget):
         # Layout
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+        # Toolbar
+        self.toolbar = QToolBar(self)
+        layout.addWidget(self.toolbar)
+
+        # Map Selector
+        self.map_selector = QComboBox()
+        self.map_selector.setMinimumWidth(200)
+        self.map_selector.currentIndexChanged.connect(self._on_map_selected)
+        self.toolbar.addWidget(self.map_selector)
+
+        # Actions
+        self.action_new_map = QAction("New Map", self)
+        self.action_new_map.triggered.connect(self.create_map_requested.emit)
+        self.toolbar.addAction(self.action_new_map)
+
+        self.action_delete_map = QAction("Delete Map", self)
+        self.action_delete_map.triggered.connect(self.delete_map_requested.emit)
+        self.toolbar.addAction(self.action_delete_map)
+
+        # Add View (after toolbar)
         layout.addWidget(self.view)
 
         # Connect signals
         self.view.marker_moved.connect(self._on_marker_moved)
+        self.view.add_marker_requested.connect(self.create_marker_requested.emit)
+        self.view.delete_marker_requested.connect(self.delete_marker_requested.emit)
+
+        self._maps_data = []  # List of maps for selector
+
+    def set_maps(self, maps: list):
+        """
+        Populates the map selector with available maps.
+
+        Args:
+            maps: List of Map objects.
+        """
+        self.map_selector.blockSignals(True)
+        self.map_selector.clear()
+        self._maps_data = maps
+
+        for m in maps:
+            self.map_selector.addItem(m.name, m.id)
+
+        self.map_selector.setCurrentIndex(-1)
+        self.map_selector.blockSignals(False)
+
+    def select_map(self, map_id: str):
+        """Selects the map with the given ID in the dropdown."""
+        index = self.map_selector.findData(map_id)
+        if index >= 0:
+            logger.debug(f"Selecting map index {index} for id {map_id}")
+            self.map_selector.setCurrentIndex(index)
+        else:
+            logger.warning(f"Map ID {map_id} not found in selector")
+
+    def _on_map_selected(self, index):
+        """Handle map selection change."""
+        if index >= 0:
+            map_id = self.map_selector.itemData(index)
+            self.map_selected.emit(map_id)
 
     def _on_marker_moved(self, marker_id: str, x: float, y: float) -> None:
         """

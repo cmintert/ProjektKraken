@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QInputDialog,
     QLabel,
+    QFileDialog,
 )
 from PySide6.QtCore import (
     Qt,
@@ -37,6 +38,7 @@ from src.gui.widgets.entity_editor import EntityEditorWidget
 from src.gui.widgets.unified_list import UnifiedListWidget
 from src.gui.widgets.timeline import TimelineWidget
 from src.gui.widgets.longform_editor import LongformEditorWidget
+from src.gui.widgets.map_widget import MapWidget
 
 # Commands
 from src.commands.event_commands import (
@@ -59,6 +61,13 @@ from src.commands.longform_commands import (
     PromoteLongformEntryCommand,
     DemoteLongformEntryCommand,
     MoveLongformEntryCommand,
+)
+from src.commands.map_commands import (
+    UpdateMarkerCommand,
+    CreateMapCommand,
+    DeleteMapCommand,
+    CreateMarkerCommand,
+    DeleteMarkerCommand,
 )
 
 # Refactor Imports
@@ -116,6 +125,7 @@ class MainWindow(QMainWindow):
         self.event_editor = EventEditorWidget()
         self.entity_editor = EntityEditorWidget()
         self.timeline = TimelineWidget()
+        self.map_widget = MapWidget()
 
         # Data Cache for Unified List
         self._cached_events = []
@@ -138,6 +148,7 @@ class MainWindow(QMainWindow):
                 "entity_editor": self.entity_editor,
                 "timeline": self.timeline,
                 "longform_editor": self.longform_editor,
+                "map_widget": self.map_widget,
             }
         )
 
@@ -232,6 +243,16 @@ class MainWindow(QMainWindow):
         """
         return self.ui_manager.docks.get("longform")
 
+    @property
+    def map_dock(self):
+        """
+        Gets the map dock widget.
+
+        Returns:
+            QDockWidget: The dock widget containing the map.
+        """
+        return self.ui_manager.docks.get("map")
+
     def _connect_signals(self):
         """Connects all UI signals to their respective slots."""
         # Unified List
@@ -272,6 +293,16 @@ class MainWindow(QMainWindow):
         self.longform_editor.item_selected.connect(self._on_item_selected)
         self.longform_editor.item_moved.connect(self.move_longform_entry)
         self.longform_editor.link_clicked.connect(self.navigate_to_entity)
+
+        # Map Widget
+        self.map_widget.marker_position_changed.connect(
+            self._on_marker_position_changed
+        )
+        self.map_widget.create_map_requested.connect(self.create_map)
+        self.map_widget.delete_map_requested.connect(self.delete_map)
+        self.map_widget.map_selected.connect(self.on_map_selected)
+        self.map_widget.create_marker_requested.connect(self.create_marker)
+        self.map_widget.delete_marker_requested.connect(self.delete_marker)
 
     def _restore_window_state(self):
         """Restores window geometry and state from settings."""
@@ -345,6 +376,8 @@ class MainWindow(QMainWindow):
         self.worker.longform_sequence_loaded.connect(self.on_longform_sequence_loaded)
         self.worker.calendar_config_loaded.connect(self.on_calendar_config_loaded)
         self.worker.current_time_loaded.connect(self.on_current_time_loaded)
+        self.worker.maps_loaded.connect(self.on_maps_loaded)
+        self.worker.markers_loaded.connect(self.on_markers_loaded)
 
         # Connect MainWindow signal for sending commands to worker thread
         self.command_requested.connect(self.worker.run_command)
@@ -399,6 +432,7 @@ class MainWindow(QMainWindow):
             self.load_data()
             self._request_calendar_config()
             self._request_current_time()
+            self.load_maps()
         else:
             self.status_bar.showMessage(STATUS_DB_INIT_FAIL)
 
@@ -620,6 +654,11 @@ class MainWindow(QMainWindow):
             self._pending_select_type = "entity"
             self._pending_select_id = result.data["id"]
 
+        if "Map" in command_name:
+            self.load_maps()
+            # If map was deleted, MapWidget handles selection logic if needed,
+            # but reloading maps will update the list.
+
         if "Event" in command_name:
             self.load_events()
             # If we just updated/created, maybe refresh details if active?
@@ -797,6 +836,187 @@ class MainWindow(QMainWindow):
         cmd = AddRelationCommand(
             source_id, target_id, rel_type, bidirectional=bidirectional
         )
+        self.command_requested.emit(cmd)
+
+    def load_maps(self):
+        """Requests loading of all maps."""
+        QMetaObject.invokeMethod(self.worker, "load_maps", QtCore_Qt.QueuedConnection)
+
+    @Slot(list)
+    def on_maps_loaded(self, maps):
+        """
+        Handler for maps loaded from worker.
+
+        Args:
+            maps (list): List of Map objects.
+        """
+        self.map_widget.set_maps(maps)
+        if maps:
+            # If nothing selected (or default), select the first one
+            # self.map_widget.select_map(maps[0].id)
+            # Actually, `set_maps` might clear selection depending on widget logic.
+            # Best to let user select, or default to first if none active.
+
+            # For simplicity, pick first if none active or if just loaded
+            current_id = self.map_widget.map_selector.currentData()
+            if not current_id:
+                self.map_widget.select_map(maps[0].id)
+
+    @Slot(str)
+    def on_map_selected(self, map_id):
+        """
+        Handler for when a map is selected in the widget.
+        Loads the map image and requests markers.
+        """
+        # Find map object
+        maps = self.map_widget._maps_data
+        selected_map = next((m for m in maps if m.id == map_id), None)
+        if selected_map and selected_map.image_path:
+            self.map_widget.load_map(selected_map.image_path)
+
+            # Request markers
+            QMetaObject.invokeMethod(
+                self.worker,
+                "load_markers",
+                QtCore_Qt.QueuedConnection,
+                Q_ARG(str, map_id),
+            )
+
+    def create_map(self):
+        """Creates a new map via dialogs."""
+        # 1. Select Image
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Select Map Image", "", "Images (*.png *.jpg *.jpeg *.bmp)"
+        )
+        if not file_path:
+            return
+
+        # 2. Enter Name
+        name, ok = QInputDialog.getText(self, "New Map", "Map Name:")
+        if not ok or not name.strip():
+            return
+
+        cmd = CreateMapCommand({"name": name.strip(), "image_path": file_path})
+        self.command_requested.emit(cmd)
+
+    def delete_map(self):
+        """Deletes the currently selected map."""
+        map_id = self.map_widget.map_selector.currentData()
+        if not map_id:
+            return
+
+        confirm = QMessageBox.question(
+            self,
+            "Delete Map",
+            "Are you sure you want to delete this map and all its markers?",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+        if confirm == QMessageBox.Yes:
+            cmd = DeleteMapCommand(map_id)
+            self.command_requested.emit(cmd)
+
+    def create_marker(self, x, y):
+        """
+        Creates a new marker at the given normalized coordinates.
+        Prompts user to select an Entity or Event.
+        """
+        map_id = self.map_widget.map_selector.currentData()
+        if not map_id:
+            QMessageBox.warning(self, "No Map", "Please create or select a map first.")
+            return
+
+        # Simple choice: Entity or Event?
+        # For a better UX, we could use a custom dialog with a search box.
+        # For now, let's just ask for ID/Name via InputDialog is tricky because we need UUIDs.
+        # Better: Use a simple list selection from cached items.
+
+        items = []
+        # Format: "Name (Type)" -> (id, type)
+        for e in self._cached_entities:
+            items.append(f"{e.name} (Entity)")
+        for e in self._cached_events:
+            items.append(f"{e.name} (Event)")
+
+        items.sort()
+
+        item_text, ok = QInputDialog.getItem(
+            self, "Add Marker", "Select Object:", items, 0, False
+        )
+        if not ok or not item_text:
+            return
+
+        # Parse result
+        # This is a bit brittle if names contain " (Entity)", assuming endmatch
+        if item_text.endswith(" (Entity)"):
+            name = item_text[:-9]
+            obj_type = "entity"
+            # Find ID
+            obj = next((e for e in self._cached_entities if e.name == name), None)
+        elif item_text.endswith(" (Event)"):
+            name = item_text[:-8]
+            obj_type = "event"
+            obj = next((e for e in self._cached_events if e.name == name), None)
+        else:
+            return
+
+        if not obj:
+            return
+
+        cmd = CreateMarkerCommand(
+            {
+                "map_id": map_id,
+                "object_id": obj.id,
+                "object_type": obj_type,
+                "x": x,
+                "y": y,
+                "label": obj.name,
+            }
+        )
+        self.command_requested.emit(cmd)
+
+    def delete_marker(self, marker_id):
+        """Deletes a marker."""
+        confirm = QMessageBox.question(
+            self,
+            "Delete Marker",
+            "Remove this marker?",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+        if confirm == QMessageBox.Yes:
+            cmd = DeleteMarkerCommand(marker_id)
+            self.command_requested.emit(cmd)
+
+    @Slot(str, list)
+    def on_markers_loaded(self, map_id, markers):
+        """
+        Handler for markers loaded from worker.
+
+        Args:
+            map_id (str): The map ID.
+            markers (list): List of Marker objects.
+        """
+        # Verify we are still looking at this map
+        current_map_id = self.map_widget.map_selector.currentData()
+        if current_map_id != map_id:
+            return
+
+        self.map_widget.clear_markers()
+        for marker in markers:
+            self.map_widget.add_marker(
+                marker.id, marker.object_type, marker.x, marker.y
+            )
+
+    @Slot(str, float, float)
+    def _on_marker_position_changed(self, marker_id, x, y):
+        """
+        Handle marker movement from MapWidget.
+
+        Args:
+            marker_id: ID of the moved marker
+            x: New normalized X
+            y: New normalized Y
+        """
+        cmd = UpdateMarkerCommand(marker_id=marker_id, update_data={"x": x, "y": y})
         self.command_requested.emit(cmd)
 
     def remove_relation(self, rel_id):
@@ -978,27 +1198,32 @@ def main():
     Main entry point.
     Configures High DPI scaling, Theme, and launches MainWindow.
     """
-    logger.info("Starting Application...")
-    # 1. High DPI Scaling
-    QApplication.setHighDpiScaleFactorRoundingPolicy(
-        Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
-    )
-
-    app = QApplication(sys.argv)
-
-    # 2. Apply Theme
-    tm = ThemeManager()
     try:
-        with open("src/resources/main.qss", "r") as f:
-            qss_template = f.read()
-            tm.apply_theme(app, qss_template)
-    except FileNotFoundError:
-        logger.warning("main.qss not found, skipping styling.")
+        logger.info("Starting Application...")
+        # 1. High DPI Scaling
+        QApplication.setHighDpiScaleFactorRoundingPolicy(
+            Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+        )
 
-    window = MainWindow()
-    window.show()
+        app = QApplication(sys.argv)
 
-    sys.exit(app.exec())
+        # 2. Apply Theme
+        tm = ThemeManager()
+        try:
+            with open("src/resources/main.qss", "r") as f:
+                qss_template = f.read()
+                tm.apply_theme(app, qss_template)
+        except FileNotFoundError:
+            logger.warning("main.qss not found, skipping styling.")
+
+        window = MainWindow()
+        window.show()
+
+        logger.info("Entering Event Loop...")
+        sys.exit(app.exec())
+    except Exception:
+        logger.exception("CRITICAL: Unhandled exception in main application loop")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
