@@ -884,7 +884,15 @@ class MainWindow(QMainWindow):
         maps = self.map_widget._maps_data
         selected_map = next((m for m in maps if m.id == map_id), None)
         if selected_map and selected_map.image_path:
-            self.map_widget.load_map(selected_map.image_path)
+            # Resolve relative path against project directory
+            from pathlib import Path
+
+            image_path = selected_map.image_path
+            if not Path(image_path).is_absolute():
+                project_dir = Path(self.worker.db_service.db_path).parent
+                image_path = str(project_dir / image_path)
+
+            self.map_widget.load_map(image_path)
 
             # Request markers
             QMetaObject.invokeMethod(
@@ -896,6 +904,10 @@ class MainWindow(QMainWindow):
 
     def create_map(self):
         """Creates a new map via dialogs."""
+        import shutil
+        import uuid
+        from pathlib import Path
+
         # 1. Select Image
         file_path, _ = QFileDialog.getOpenFileName(
             self, "Select Map Image", "", "Images (*.png *.jpg *.jpeg *.bmp)"
@@ -908,7 +920,28 @@ class MainWindow(QMainWindow):
         if not ok or not name.strip():
             return
 
-        cmd = CreateMapCommand({"name": name.strip(), "image_path": file_path})
+        # 3. Copy image to project assets folder
+        source_path = Path(file_path)
+        project_dir = Path(self.worker.db_service.db_path).parent
+        assets_dir = project_dir / "assets" / "maps"
+        assets_dir.mkdir(parents=True, exist_ok=True)
+
+        # Generate unique filename to avoid conflicts
+        unique_suffix = uuid.uuid4().hex[:8]
+        dest_filename = f"{source_path.stem}_{unique_suffix}{source_path.suffix}"
+        dest_path = assets_dir / dest_filename
+
+        try:
+            shutil.copy2(source_path, dest_path)
+            logger.info(f"Copied map image to: {dest_path}")
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Failed to copy image: {e}")
+            return
+
+        # Store relative path
+        relative_path = str(dest_path.relative_to(project_dir))
+
+        cmd = CreateMapCommand({"name": name.strip(), "image_path": relative_path})
         self.command_requested.emit(cmd)
 
     def delete_map(self):
