@@ -17,8 +17,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QRectF, QPointF, QTimer
 from PySide6.QtGui import QBrush, QPen, QColor, QPainter, QPolygonF, QFont, QFontMetrics
 from src.core.theme_manager import ThemeManager
+
 from src.gui.widgets.timeline_ruler import TimelineRuler
-import math
 import logging
 
 logger = logging.getLogger(__name__)
@@ -854,24 +854,17 @@ class TimelineView(QGraphicsView):
 
         # Only zoom if within limits
         if factor != 1.0:
+            # Set anchor to mouse position to zoom towards/away from it
+            old_anchor = self.transformationAnchor()
+            self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+
             try:
-                target = event.position().toPoint()
-            except AttributeError:
-                target = event.pos()
-
-            # Get scene position before zoom
-            old_pos = self.mapToScene(target)
-
-            # Apply zoom
-            self.scale(factor, factor)
-            self._current_zoom = new_zoom
-
-            # Get scene position after zoom
-            new_pos = self.mapToScene(target)
-
-            # Translate to keep the same scene point under cursor
-            delta = new_pos - old_pos
-            self.translate(delta.x(), delta.y())
+                # Apply zoom
+                self.scale(factor, factor)
+                self._current_zoom = new_zoom
+            finally:
+                # Restore original anchor
+                self.setTransformationAnchor(old_anchor)
 
     def mousePressEvent(self, event):
         """
