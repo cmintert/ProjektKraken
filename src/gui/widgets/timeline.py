@@ -534,7 +534,16 @@ class TimelineView(QGraphicsView):
         h = self.RULER_HEIGHT
         context_h = self.CONTEXT_TIER_HEIGHT
 
-        theme = ThemeManager().get_theme()
+        # Get theme with error handling for test environments
+        try:
+            theme = ThemeManager().get_theme()
+        except (KeyError, AttributeError) as e:
+            logger.warning(f"Theme not available, using defaults: {e}")
+            # Fallback theme for when ThemeManager isn't initialized
+            theme = {
+                "surface": "#2B2B2B",
+                "border": "#555555",
+            }
 
         # 2. Draw context tier background (top band)
         painter.setBrush(QColor(theme["surface"]).darker(110))

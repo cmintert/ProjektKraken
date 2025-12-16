@@ -271,8 +271,19 @@ class LoreDurationWidget(QWidget):
         self._updating = True
         try:
             if not self._converter:
-                self.spin_days.setValue(int(days_float))
-                # hours/mins...
+                # No calendar converter - decompose to days, hours, minutes
+                total_days = days_float
+                d = int(total_days)
+                rem = (total_days - d) * 24
+                h = int(rem)
+                rem = (rem - h) * 60
+                m = int(round(rem))
+
+                self.spin_years.setValue(0)
+                self.spin_months.setValue(0)
+                self.spin_days.setValue(d)
+                self.spin_hours.setValue(h)
+                self.spin_minutes.setValue(m)
                 return
 
             # start_float = self._start_date_float
