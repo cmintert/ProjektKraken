@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
 )
-from PySide6.QtCore import Qt, Signal, QRectF, QPointF
+from PySide6.QtCore import Qt, Signal, QPointF
 from PySide6.QtGui import (
     QBrush,
     QPen,
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 class MarkerItem(QGraphicsEllipseItem):
     """
     Draggable circular marker on a map.
-    
+
     Represents an entity or event at a specific location on the map.
     Emits signals through the parent MapGraphicsView when dragged.
     """
@@ -45,7 +45,9 @@ class MarkerItem(QGraphicsEllipseItem):
         "default": QColor("#888888"),  # Gray
     }
 
-    def __init__(self, marker_id: str, object_type: str, pixmap_item: QGraphicsPixmapItem):
+    def __init__(
+        self, marker_id: str, object_type: str, pixmap_item: QGraphicsPixmapItem
+    ):
         """
         Initializes a MarkerItem.
 
@@ -58,33 +60,33 @@ class MarkerItem(QGraphicsEllipseItem):
             -self.MARKER_RADIUS,
             -self.MARKER_RADIUS,
             self.MARKER_RADIUS * 2,
-            self.MARKER_RADIUS * 2
+            self.MARKER_RADIUS * 2,
         )
-        
+
         self.marker_id = marker_id
         self.object_type = object_type
         self.pixmap_item = pixmap_item
-        
+
         # Styling
         color = self.COLORS.get(object_type, self.COLORS["default"])
         self.setBrush(QBrush(color))
         self.setPen(QPen(QColor(255, 255, 255), 2))
-        
+
         # Make draggable
         self.setFlag(QGraphicsItem.ItemIsMovable, True)
         self.setFlag(QGraphicsItem.ItemIsSelectable, True)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges, True)
-        
+
         # Cursor hint
         self.setCursor(QCursor(Qt.PointingHandCursor))
-        
+
         # Z-value to appear on top of the map
         self.setZValue(10)
 
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value):
         """
         Called when the item's state changes.
-        
+
         Detects position changes and emits a signal with normalized coordinates.
 
         Args:
@@ -97,24 +99,25 @@ class MarkerItem(QGraphicsEllipseItem):
         if change == QGraphicsItem.ItemPositionHasChanged:
             # Get the marker's current position in scene coordinates
             scene_pos = self.pos()
-            
+
             # Convert to normalized coordinates [0.0, 1.0] relative to pixmap
             if self.pixmap_item and self.pixmap_item.pixmap():
-                pixmap = self.pixmap_item.pixmap()
                 pixmap_rect = self.pixmap_item.sceneBoundingRect()
-                
+
                 # Calculate position relative to pixmap top-left
                 rel_x = scene_pos.x() - pixmap_rect.left()
                 rel_y = scene_pos.y() - pixmap_rect.top()
-                
+
                 # Normalize to [0.0, 1.0]
                 norm_x = rel_x / pixmap_rect.width() if pixmap_rect.width() > 0 else 0.0
-                norm_y = rel_y / pixmap_rect.height() if pixmap_rect.height() > 0 else 0.0
-                
+                norm_y = (
+                    rel_y / pixmap_rect.height() if pixmap_rect.height() > 0 else 0.0
+                )
+
                 # Clamp to [0.0, 1.0]
                 norm_x = max(0.0, min(1.0, norm_x))
                 norm_y = max(0.0, min(1.0, norm_y))
-                
+
                 # Emit signal through the graphics view
                 if self.scene() and self.scene().views():
                     view = self.scene().views()[0]
@@ -124,20 +127,20 @@ class MarkerItem(QGraphicsEllipseItem):
                             f"Marker {self.marker_id} moved to normalized "
                             f"({norm_x:.3f}, {norm_y:.3f})"
                         )
-        
+
         return super().itemChange(change, value)
 
 
 class MapGraphicsView(QGraphicsView):
     """
     Graphics view for displaying a map image with draggable markers.
-    
+
     Signals:
         marker_moved: Emitted when a marker is dragged to a new position.
                      Args: (marker_id: str, x: float, y: float)
                      Coordinates are normalized [0.0, 1.0] relative to map image.
     """
-    
+
     marker_moved = Signal(str, float, float)
 
     def __init__(self, parent=None):
@@ -148,20 +151,20 @@ class MapGraphicsView(QGraphicsView):
             parent: Parent widget.
         """
         super().__init__(parent)
-        
+
         self.scene = QGraphicsScene(self)
         self.setScene(self.scene)
-        
+
         # View settings
         self.setRenderHint(QPainter.Antialiasing)
         self.setRenderHint(QPainter.SmoothPixmapTransform)
         self.setDragMode(QGraphicsView.ScrollHandDrag)
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
-        
+
         # Map and markers
         self.pixmap_item: Optional[QGraphicsPixmapItem] = None
         self.markers: Dict[str, MarkerItem] = {}
-        
+
         # Theme
         self.tm = ThemeManager()
         self.tm.theme_changed.connect(self._update_theme)
@@ -186,29 +189,27 @@ class MapGraphicsView(QGraphicsView):
             if pixmap.isNull():
                 logger.error(f"Failed to load map image: {image_path}")
                 return False
-            
+
             # Clear existing map
             if self.pixmap_item:
                 self.scene.removeItem(self.pixmap_item)
-            
+
             # Add new map
             self.pixmap_item = QGraphicsPixmapItem(pixmap)
             self.pixmap_item.setZValue(0)  # Behind markers
             self.scene.addItem(self.pixmap_item)
-            
+
             # Fit view to map
             self.fitInView(self.pixmap_item, Qt.KeepAspectRatio)
-            
+
             logger.info(f"Loaded map: {image_path}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Error loading map: {e}")
             return False
 
-    def add_marker(
-        self, marker_id: str, object_type: str, x: float, y: float
-    ) -> None:
+    def add_marker(self, marker_id: str, object_type: str, x: float, y: float) -> None:
         """
         Adds a marker to the map at normalized coordinates.
 
@@ -221,26 +222,24 @@ class MapGraphicsView(QGraphicsView):
         if not self.pixmap_item:
             logger.warning("Cannot add marker: no map loaded")
             return
-        
+
         # Remove existing marker if present
         if marker_id in self.markers:
             self.scene.removeItem(self.markers[marker_id])
             del self.markers[marker_id]
-        
+
         # Create new marker
         marker = MarkerItem(marker_id, object_type, self.pixmap_item)
-        
+
         # Convert normalized to scene coordinates
         scene_pos = self._normalized_to_scene(x, y)
         marker.setPos(scene_pos)
-        
+
         # Add to scene and track
         self.scene.addItem(marker)
         self.markers[marker_id] = marker
-        
-        logger.debug(
-            f"Added marker {marker_id} at normalized ({x:.3f}, {y:.3f})"
-        )
+
+        logger.debug(f"Added marker {marker_id} at normalized ({x:.3f}, {y:.3f})")
 
     def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
         """
@@ -254,14 +253,12 @@ class MapGraphicsView(QGraphicsView):
         if marker_id not in self.markers:
             logger.warning(f"Cannot update: marker {marker_id} not found")
             return
-        
+
         marker = self.markers[marker_id]
         scene_pos = self._normalized_to_scene(x, y)
         marker.setPos(scene_pos)
-        
-        logger.debug(
-            f"Updated marker {marker_id} to normalized ({x:.3f}, {y:.3f})"
-        )
+
+        logger.debug(f"Updated marker {marker_id} to normalized ({x:.3f}, {y:.3f})")
 
     def remove_marker(self, marker_id: str) -> None:
         """
@@ -295,11 +292,11 @@ class MapGraphicsView(QGraphicsView):
         """
         if not self.pixmap_item:
             return QPointF(0, 0)
-        
+
         pixmap_rect = self.pixmap_item.sceneBoundingRect()
         scene_x = pixmap_rect.left() + (x * pixmap_rect.width())
         scene_y = pixmap_rect.top() + (y * pixmap_rect.height())
-        
+
         return QPointF(scene_x, scene_y)
 
     def wheelEvent(self, event):
@@ -312,15 +309,15 @@ class MapGraphicsView(QGraphicsView):
 class MapWidget(QWidget):
     """
     Container widget for the map view.
-    
+
     Provides a clean interface to the map system with signal routing.
-    
+
     Signals:
         marker_position_changed: Emitted when a marker is moved by the user.
                                 Args: (marker_id: str, x: float, y: float)
                                 Coordinates are normalized [0.0, 1.0].
     """
-    
+
     marker_position_changed = Signal(str, float, float)
 
     def __init__(self, parent=None):
@@ -331,22 +328,22 @@ class MapWidget(QWidget):
             parent: Parent widget.
         """
         super().__init__(parent)
-        
+
         # Create view
         self.view = MapGraphicsView(self)
-        
+
         # Layout
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.view)
-        
+
         # Connect signals
         self.view.marker_moved.connect(self._on_marker_moved)
 
     def _on_marker_moved(self, marker_id: str, x: float, y: float) -> None:
         """
         Handles marker movement from the view.
-        
+
         Updates the widget's marker position and emits signal for persistence.
 
         Args:
@@ -356,13 +353,11 @@ class MapWidget(QWidget):
         """
         # Update marker position in widget
         self.update_marker_position(marker_id, x, y)
-        
+
         # Emit signal so app layer can persist the change
         self.marker_position_changed.emit(marker_id, x, y)
-        
-        logger.debug(
-            f"MapWidget: marker {marker_id} moved to ({x:.3f}, {y:.3f})"
-        )
+
+        logger.debug(f"MapWidget: marker {marker_id} moved to ({x:.3f}, {y:.3f})")
 
     def load_map(self, image_path: str) -> bool:
         """
@@ -376,9 +371,7 @@ class MapWidget(QWidget):
         """
         return self.view.load_map(image_path)
 
-    def add_marker(
-        self, marker_id: str, object_type: str, x: float, y: float
-    ) -> None:
+    def add_marker(self, marker_id: str, object_type: str, x: float, y: float) -> None:
         """
         Adds a marker to the map.
 
