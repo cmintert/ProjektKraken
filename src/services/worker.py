@@ -24,6 +24,8 @@ class DatabaseWorker(QObject):
     initialized = Signal(bool)  # Success/Fail
     events_loaded = Signal(list)  # List[Event]
     entities_loaded = Signal(list)  # List[Entity]
+    maps_loaded = Signal(list)  # List[Map]
+    markers_loaded = Signal(str, list)  # map_id, List[Marker]
     longform_sequence_loaded = Signal(list)  # List[dict]
     calendar_config_loaded = Signal(object)  # CalendarConfig or None
     current_time_loaded = Signal(float)  # Current time in lore_date units
@@ -94,6 +96,36 @@ class DatabaseWorker(QObject):
         except Exception:
             logger.error(f"Failed to load entities: {traceback.format_exc()}")
             self.error_occurred.emit("Failed to load entities.")
+
+    @Slot()
+    def load_maps(self):
+        """Loads all maps."""
+        if not self.db_service:
+            return
+
+        try:
+            self.operation_started.emit("Loading Maps...")
+            maps = self.db_service.get_all_maps()
+            self.maps_loaded.emit(maps)
+            self.operation_finished.emit("Maps Loaded.")
+        except Exception:
+            logger.error(f"Failed to load maps: {traceback.format_exc()}")
+            self.error_occurred.emit("Failed to load maps.")
+
+    @Slot(str)
+    def load_markers(self, map_id: str):
+        """Loads markers for a specific map."""
+        if not self.db_service:
+            return
+
+        try:
+            self.operation_started.emit(f"Loading Markers for Map {map_id}...")
+            markers = self.db_service.get_markers_for_map(map_id)
+            self.markers_loaded.emit(map_id, markers)
+            self.operation_finished.emit("Markers Loaded.")
+        except Exception:
+            logger.error(f"Failed to load markers: {traceback.format_exc()}")
+            self.error_occurred.emit(f"Failed to load markers for map {map_id}.")
 
     @Slot(str)
     def load_event_details(self, event_id: str):
