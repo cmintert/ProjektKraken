@@ -11,8 +11,7 @@ class TestEventDuration:
         widget = EventEditorWidget()
         qtbot.addWidget(widget)
 
-        assert hasattr(widget, "duration_edit")
-        assert widget.duration_edit.suffix() == " days"
+        assert hasattr(widget, "duration_widget")
 
     def test_event_editor_loads_saves_duration(self, qtbot):
         widget = EventEditorWidget()
@@ -21,10 +20,10 @@ class TestEventDuration:
         event = Event(name="Test Event", lore_date=100.0, lore_duration=5.5)
         widget.load_event(event)
 
-        assert widget.duration_edit.value() == 5.5
+        assert widget.duration_widget.get_value() == 5.5
 
         # Change value
-        widget.duration_edit.setValue(10.0)
+        widget.duration_widget.set_value(10.0)
 
         # Check save signal
         with qtbot.waitSignal(widget.save_requested) as blocker:

@@ -27,6 +27,12 @@ class LoreDurationWidget(QWidget):
     value_changed = Signal(float)  # Emits duration in days
 
     def __init__(self, parent=None):
+        """
+        Initializes the LoreDurationWidget.
+
+        Args:
+            parent: Optional parent widget.
+        """
         super().__init__(parent)
         self._converter: CalendarConverter = None
         self._start_date_float: float = 1.0  # Default to Year 1 Day 1
@@ -35,6 +41,7 @@ class LoreDurationWidget(QWidget):
         self._setup_ui()
 
     def _setup_ui(self):
+        """Creates and layouts the duration input spinboxes."""
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
@@ -68,6 +75,15 @@ class LoreDurationWidget(QWidget):
         layout.addStretch()
 
     def _create_spinbox(self, tooltip):
+        """
+        Creates a configured QSpinBox for duration input.
+
+        Args:
+            tooltip: Tooltip text for the spinbox.
+
+        Returns:
+            QSpinBox: Configured spinbox widget.
+        """
         spin = QSpinBox()
         spin.setRange(0, 999999)
         spin.setValue(0)
@@ -76,6 +92,12 @@ class LoreDurationWidget(QWidget):
         return spin
 
     def set_calendar_converter(self, converter: CalendarConverter):
+        """
+        Sets the calendar converter for accurate duration calculations.
+
+        Args:
+            converter: CalendarConverter instance for date/time calculations.
+        """
         self._converter = converter
         self._on_input_changed()
 
@@ -88,6 +110,12 @@ class LoreDurationWidget(QWidget):
             self._on_input_changed()
 
     def _on_input_changed(self):
+        """
+        Handles changes to duration inputs and emits the calculated duration.
+
+        Recalculates total duration in days based on current spinbox values
+        and the configured calendar converter.
+        """
         if self._updating:
             return
 

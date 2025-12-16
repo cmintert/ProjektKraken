@@ -218,6 +218,12 @@ class UIManager:
         dialog = CalendarConfigDialog(self.main_window, config=current_config)
 
         def on_config_saved(config):
+            """
+            Handles calendar config save by creating appropriate commands.
+
+            Args:
+                config: The calendar configuration to save.
+            """
             # Save the config
             if current_config and current_config.id == config.id:
                 cmd = UpdateCalendarConfigCommand(config)

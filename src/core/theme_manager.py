@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class ThemeManager(QObject, BaseThemeManager):
     """
     Qt-specific theme manager that extends BaseThemeManager.
-    
+
     Manages loading and applying UI themes (Dark/Light) with Qt signal support.
     Reads 'themes.json' and applies values to a QSS template.
     Implements Singleton pattern.
@@ -53,7 +53,7 @@ class ThemeManager(QObject, BaseThemeManager):
     def __init__(self, theme_file: str = "themes.json"):
         """
         Initializes the ThemeManager.
-        
+
         Args:
             theme_file: Path to the themes JSON file.
         """
@@ -74,13 +74,13 @@ class ThemeManager(QObject, BaseThemeManager):
     def _notify_theme_changed(self, theme_data: Dict):
         """
         Override to emit Qt signal in addition to calling callbacks.
-        
+
         Args:
             theme_data: The new theme data dictionary.
         """
         # Call base class method for callbacks
         super()._notify_theme_changed(theme_data)
-        
+
         # Emit Qt signal
         self.theme_changed.emit(theme_data)
 
@@ -123,7 +123,7 @@ class ThemeManager(QObject, BaseThemeManager):
         """
         Formats the QSS template with current theme values
         and applies it to the QApplication.
-        
+
         Args:
             app: QApplication instance.
             qss_template: Optional QSS template string.
@@ -137,4 +137,3 @@ class ThemeManager(QObject, BaseThemeManager):
         stylesheet = self.format_stylesheet()
         if stylesheet:
             app.setStyleSheet(stylesheet)
-

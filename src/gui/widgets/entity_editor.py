@@ -1,3 +1,10 @@
+"""
+Entity Editor Widget Module.
+
+Provides a GUI form for creating and editing Entity objects with support
+for wiki-style text editing, custom attributes, tags, and relationship management.
+"""
+
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,

@@ -35,7 +35,6 @@ from src.core.calendar import (
     YearVariant,
     CalendarConfig,
     CalendarConverter,
-    CalendarDate,
 )
 
 logger = logging.getLogger(__name__)

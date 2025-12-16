@@ -39,8 +39,15 @@ class TestMapImageStorage:
 
     def test_relative_path_detection(self):
         """Test that we can detect relative vs absolute paths."""
+        import sys
+
         relative_path = "assets/maps/map.png"
-        absolute_path = "C:/Users/test/project/assets/maps/map.png"
+
+        # Use a platform-appropriate absolute path
+        if sys.platform == "win32":
+            absolute_path = "C:/Users/test/project/assets/maps/map.png"
+        else:
+            absolute_path = "/home/test/project/assets/maps/map.png"
 
         assert not Path(relative_path).is_absolute()
         assert Path(absolute_path).is_absolute()

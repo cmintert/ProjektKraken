@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class BaseThemeManager:
     """
     Base theme manager without Qt dependencies.
-    
+
     Manages loading and applying UI themes (Dark/Light) in a framework-agnostic way.
     Implements a singleton pattern to ensure consistent theming across the app.
     """
@@ -45,7 +45,7 @@ class BaseThemeManager:
     def __init__(self, theme_file: str = "themes.json"):
         """
         Initializes the BaseThemeManager.
-        
+
         Args:
             theme_file: Path to the themes JSON file.
         """
@@ -122,7 +122,7 @@ class BaseThemeManager:
     def load_stylesheet(self, path: str):
         """
         Loads and caches the stylesheet template.
-        
+
         Args:
             path: Path to the stylesheet file.
         """
@@ -135,7 +135,7 @@ class BaseThemeManager:
     def get_available_themes(self) -> list[str]:
         """
         Returns a list of available theme names.
-        
+
         Returns:
             List of theme names.
         """
@@ -144,7 +144,7 @@ class BaseThemeManager:
     def get_theme(self) -> Dict[str, str]:
         """
         Returns the current theme dictionary.
-        
+
         Returns:
             Dictionary containing theme colors and settings.
         """
@@ -174,7 +174,7 @@ class BaseThemeManager:
     def on_theme_changed(self, callback: Callable[[Dict], None]):
         """
         Register a callback to be called when the theme changes.
-        
+
         Args:
             callback: Function to call with theme data when theme changes.
         """
@@ -183,7 +183,7 @@ class BaseThemeManager:
     def _notify_theme_changed(self, theme_data: Dict):
         """
         Notify all registered callbacks of theme change.
-        
+
         Args:
             theme_data: The new theme data dictionary.
         """
@@ -196,10 +196,10 @@ class BaseThemeManager:
     def format_stylesheet(self, template: str = None) -> str:
         """
         Formats a stylesheet template with current theme values.
-        
+
         Args:
             template: Optional stylesheet template. If None, uses cached template.
-            
+
         Returns:
             Formatted stylesheet string.
         """

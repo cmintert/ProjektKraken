@@ -2,19 +2,21 @@
 """
 Relation Management CLI.
 
-Provides command-line tools for creating, listing, and deleting relations between
-events and entities.
+Provides command-line tools for creating, listing, and deleting relations
+between events and entities.
 
 Usage:
-    python -m src.cli.relation add --database world.kraken --source <id> --target <id> --type "caused"
-    python -m src.cli.relation list --database world.kraken --source <id>
-    python -m src.cli.relation delete --database world.kraken --id <relation-id>
+    python -m src.cli.relation add --database world.kraken
+        --source <id> --target <id> --type "caused"
+    python -m src.cli.relation list --database world.kraken
+        --source <id>
+    python -m src.cli.relation delete --database world.kraken
+        --id <relation-id>
 """
 
 import sys
 import argparse
 import logging
-from pathlib import Path
 from src.services.db_service import DatabaseService
 from src.commands.relation_commands import (
     AddRelationCommand,
@@ -52,15 +54,17 @@ def add_relation(args) -> int:
         result = cmd.execute(db_service)
 
         if result:
-            print(f"✓ Added relation:")
-            print(f"  Source: {source_name} ({args.source[:8]}...)")
-            print(f"  Target: {target_name} ({args.target[:8]}...)")
+            source_short = args.source[:8]
+            target_short = args.target[:8]
+            print("✓ Added relation:")
+            print(f"  Source: {source_name} ({source_short}...)")
+            print(f"  Target: {target_name} ({target_short}...)")
             print(f"  Type: {args.type}")
             if args.bidirectional:
-                print(f"  (bidirectional)")
+                print("  (bidirectional)")
             return 0
         else:
-            print(f"✗ Failed to add relation")
+            print("✗ Failed to add relation")
             return 1
 
     except Exception as e:
@@ -153,8 +157,10 @@ def delete_relation(args) -> int:
         if not args.force:
             source_name = db_service.get_name(relation["source_id"])
             target_name = db_service.get_name(relation["target_id"])
+            rel_type = relation['rel_type']
             print(
-                f"About to delete relation: {source_name} → {target_name} ({relation['rel_type']})"
+                f"About to delete relation: {source_name} → {target_name} "
+                f"({rel_type})"
             )
             response = input("Are you sure? (yes/no): ")
             if response.lower() not in ["yes", "y"]:
@@ -168,7 +174,7 @@ def delete_relation(args) -> int:
             print(f"✓ Deleted relation: {args.id}")
             return 0
         else:
-            print(f"✗ Failed to delete relation")
+            print("✗ Failed to delete relation")
             return 1
 
     except Exception as e:
