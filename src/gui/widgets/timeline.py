@@ -15,10 +15,13 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 from PySide6.QtCore import Qt, Signal, QRectF, QPointF, QTimer
-from PySide6.QtGui import QBrush, QPen, QColor, QPainter, QPolygonF, QFont
+from PySide6.QtGui import QBrush, QPen, QColor, QPainter, QPolygonF, QFont, QFontMetrics
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.timeline_ruler import TimelineRuler
-import heapq
+import math
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class EventItem(QGraphicsItem):
@@ -645,29 +648,69 @@ class TimelineView(QGraphicsView):
             axis_pen.setCosmetic(True)
             self.scene.addLine(-1e12, 0, 1e12, 0, axis_pen)
 
-        # Smart lane packing using greedy algorithm with min-heap
-        # Heap stores (end_time, lane_index)
-        lanes_heap = []
+        # Smart lane packing using "First Fit" (Gravity) algorithm
+        # This packs events into the top-most available lane to create a "Tetris-like" layout.
+        # We also account for the VISUAL width of the event (text labels, min widths)
+        # to strictly prevent overlaps.
+
+        lanes_end_times = []  # Stores the end time (in lore date units) for each lane
         event_lane_assignments = {}  # event -> lane_index
 
+        # Setup font metrics for text width estimation
+        # We assume standard font (approx) since we don't have the printer's exact font here
+        font = QFont()
+        font.setBold(True)
+        fm = QFontMetrics(font)
+
+        GAP_PIXELS = 15  # Gap between events
+
+        logger.debug(f"Packing {len(sorted_events)} events. Scale: {self.scale_factor}")
+
         for event in sorted_events:
-            # Determine event's end time
-            end_time = event.lore_date + (
-                event.lore_duration if event.lore_duration > 0 else 0.1
-            )
+            start_time = event.lore_date
 
-            # Try to find an available lane (one whose end_time <= event.lore_date)
-            assigned_lane = None
-            if lanes_heap and lanes_heap[0][0] <= event.lore_date:
-                # Pop the earliest ending lane and reuse it
-                _, assigned_lane = heapq.heappop(lanes_heap)
+            # --- Calculate Visual Duration (in time units) ---
+            text_width = fm.horizontalAdvance(event.name)
+
+            if event.lore_duration > 0:
+                # Duration Event
+                # Bar width + minimal check
+                bar_width_px = max(event.lore_duration * self.scale_factor, 10.0)
+
+                # Check if text fits inside
+                if text_width < bar_width_px - 10:
+                    # Fits inside
+                    total_width_px = bar_width_px
+                else:
+                    # Text flows to right: Bar + Pad + Text
+                    total_width_px = bar_width_px + 5 + text_width
             else:
-                # Allocate a new lane
-                assigned_lane = len(lanes_heap)
+                # Point Event
+                # Diamond (half width 7) + Pad (5) + Text
+                total_width_px = 7 + 5 + text_width + 5  # Extra 5 safety
 
-            # Record assignment and push back to heap with new end time
+            # Convert pixels to time duration
+            visual_duration = total_width_px / self.scale_factor
+            gap_duration = GAP_PIXELS / self.scale_factor
+
+            end_time = start_time + visual_duration + gap_duration
+
+            # --- First Fit (Gravity) ---
+            assigned_lane = -1
+
+            for i, lane_end in enumerate(lanes_end_times):
+                if lane_end <= start_time:
+                    assigned_lane = i
+                    lanes_end_times[i] = end_time
+                    break
+
+            if assigned_lane == -1:
+                # Create new lane
+                lanes_end_times.append(end_time)
+                assigned_lane = len(lanes_end_times) - 1
+
             event_lane_assignments[event.id] = assigned_lane
-            heapq.heappush(lanes_heap, (end_time, assigned_lane))
+            # logger.debug(f"Event '{event.name}': Lane {assigned_lane} (Visual Width: {total_width_px:.1f}px)")
 
         # Now place items in scene
         for event in sorted_events:
@@ -725,7 +768,7 @@ class TimelineView(QGraphicsView):
 
             # Y bounds
             # Events start at 60. Max y is approx (num_lanes * 40) + 60
-            max_y = 60 + (len(lanes_heap) * self.LANE_HEIGHT) + 40
+            max_y = 60 + (len(lanes_end_times) * self.LANE_HEIGHT) + 40
             min_y = 0  # Ruler area
 
             # Set Scene Rect explicitly to avoid infinite lines expanding it

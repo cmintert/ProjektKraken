@@ -64,7 +64,7 @@ def test_lane_layout_logic(qapp):
 
     # E1 and E2 should be on different lanes (overlapping)
     assert y1 != y2, "Overlapping events should use different lanes"
-    
+
     # E3 should reuse E1's lane (non-overlapping)
     assert y1 == y3, "Non-overlapping events should reuse lanes"
 
@@ -86,3 +86,49 @@ def test_focus_event(qapp):
     assert items[0].isSelected()
     # Cannot easily test "centerOn" effect without mocking the view's geometry/viewport,
     # but we can verify it ran without error and selected the item.
+
+
+def test_gravity_packing(qapp):
+    """
+    Test that 'First Fit' strategy is used (Gravity), not 'Min-Heap'.
+
+    Scenario:
+    E1: 0-100 (Lane 0)
+    E2: 0-10 (Lane 1)
+
+    E3: 110-120
+
+    Min-Heap (Earliest End Time) would pick Lane 1 (ends at 10) because 10 < 100.
+    First Fit (Gravity) should pick Lane 0 because 100 <= 110.
+    """
+    widget = TimelineWidget()
+    events = [
+        Event(name="E1", lore_date=0, lore_duration=100),  # Ends 100
+        Event(name="E2", lore_date=0, lore_duration=10),  # Ends 10
+        Event(name="E3", lore_date=110, lore_duration=10),  # Starts 110
+    ]
+
+    # Needs to match widget's scale factor for accurate visual calculation
+    # Default is 20.0
+    # Visual duration = duration * 20. E1=2000px, E2=200px.
+    # E1 visual end = 100 + epsilon.
+    # E3 start = 110.
+    # Gap is small (15px / 20 = 0.75).
+    # So E1 ends (time) around 100.75. E3 starts 110. Fits!
+
+    widget.set_events(events)
+
+    items = [i for i in widget.view.scene.items() if isinstance(i, EventItem)]
+    items.sort(key=lambda i: i.event.name)  # E1, E2, E3
+
+    e1_y = items[0].y()
+    e2_y = items[1].y()
+    e3_y = items[2].y()
+
+    assert e1_y != e2_y, "E1 and E2 overlap, must be different lanes"
+
+    # E1 is first, should be Lane 0 (usually top)
+    # E2 is second, Lane 1 (below E1)
+    # E3 should reuse E1's lane (Lane 0) because of Gravity
+
+    assert e3_y == e1_y, "E3 should fall to Lane 0 (Gravity), not Lane 1"
