@@ -12,6 +12,7 @@ from contextlib import contextmanager
 from src.core.events import Event
 from src.core.entities import Entity
 from src.core.calendar import CalendarConfig
+from src.core.maps import GameMap, MapMarker
 
 logger = logging.getLogger(__name__)
 
@@ -106,10 +107,6 @@ class DatabaseService:
             attributes JSON DEFAULT '{}',
             created_at REAL
         );
-        -- Indexes for performance
-        CREATE INDEX IF NOT EXISTS idx_events_date ON events(lore_date);
-        CREATE INDEX IF NOT EXISTS idx_relations_source ON relations(source_id);
-        CREATE INDEX IF NOT EXISTS idx_relations_target ON relations(target_id);
 
         -- Calendar Configuration Table
         CREATE TABLE IF NOT EXISTS calendar_config (
@@ -120,6 +117,38 @@ class DatabaseService:
             created_at REAL,
             modified_at REAL
         );
+
+        -- Map Tables
+        CREATE TABLE IF NOT EXISTS maps (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            image_filename TEXT NOT NULL,
+            real_width REAL NOT NULL,
+            distance_unit TEXT NOT NULL,
+            reference_width INTEGER NOT NULL,
+            reference_height INTEGER NOT NULL,
+            attributes JSON DEFAULT '{}',
+            created_at REAL,
+            modified_at REAL
+        );
+
+        CREATE TABLE IF NOT EXISTS map_markers (
+            id TEXT PRIMARY KEY,
+            map_id TEXT NOT NULL REFERENCES maps(id) ON DELETE CASCADE,
+            object_id TEXT NOT NULL,
+            object_type TEXT NOT NULL CHECK(object_type IN ('entity', 'event')),
+            x REAL NOT NULL,
+            y REAL NOT NULL,
+            attributes JSON DEFAULT '{}',
+            UNIQUE(map_id, object_id, object_type)
+        );
+
+        -- Indexes for performance
+        CREATE INDEX IF NOT EXISTS idx_events_date ON events(lore_date);
+        CREATE INDEX IF NOT EXISTS idx_relations_source ON relations(source_id);
+        CREATE INDEX IF NOT EXISTS idx_relations_target ON relations(target_id);
+        CREATE INDEX IF NOT EXISTS idx_map_markers_map ON map_markers(map_id);
+        CREATE INDEX IF NOT EXISTS idx_map_markers_object ON map_markers(object_id, object_type);
         """
 
         try:
@@ -807,3 +836,247 @@ class DatabaseService:
         with self.transaction() as conn:
             conn.execute(sql, (str(current_time),))
         logger.debug(f"Set current_time to {current_time}")
+
+    # --------------------------------------------------------------------------
+    # Map CRUD
+    # --------------------------------------------------------------------------
+
+    def insert_map(self, game_map: GameMap) -> None:
+        """
+        Inserts a new map or updates an existing one (Upsert).
+
+        Args:
+            game_map (GameMap): The map domain object to persist.
+
+        Raises:
+            sqlite3.Error: If the database operation fails.
+        """
+        sql = """
+            INSERT INTO maps (id, name, image_filename, real_width, distance_unit,
+                             reference_width, reference_height, attributes,
+                             created_at, modified_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                name=excluded.name,
+                image_filename=excluded.image_filename,
+                real_width=excluded.real_width,
+                distance_unit=excluded.distance_unit,
+                reference_width=excluded.reference_width,
+                reference_height=excluded.reference_height,
+                attributes=excluded.attributes,
+                modified_at=excluded.modified_at;
+        """
+        with self.transaction() as conn:
+            conn.execute(
+                sql,
+                (
+                    game_map.id,
+                    game_map.name,
+                    game_map.image_filename,
+                    game_map.real_width,
+                    game_map.distance_unit,
+                    game_map.reference_width,
+                    game_map.reference_height,
+                    json.dumps(game_map.attributes),
+                    game_map.created_at,
+                    game_map.modified_at,
+                ),
+            )
+
+    def get_map(self, map_id: str) -> Optional[GameMap]:
+        """
+        Retrieves a single map by its UUID.
+
+        Args:
+            map_id (str): The unique identifier of the map.
+
+        Returns:
+            Optional[GameMap]: The GameMap object if found, else None.
+        """
+        sql = "SELECT * FROM maps WHERE id = ?"
+        if not self._connection:
+            self.connect()
+
+        cursor = self._connection.execute(sql, (map_id,))
+        row = cursor.fetchone()
+
+        if row:
+            data = dict(row)
+            if data.get("attributes"):
+                data["attributes"] = json.loads(data["attributes"])
+            return GameMap.from_dict(data)
+        return None
+
+    def get_all_maps(self) -> List[GameMap]:
+        """
+        Retrieves all maps from the database, sorted by name.
+
+        Returns:
+            List[GameMap]: A list of all GameMap objects in the database.
+        """
+        sql = "SELECT * FROM maps ORDER BY name ASC"
+        if not self._connection:
+            self.connect()
+
+        cursor = self._connection.execute(sql)
+        maps = []
+        for row in cursor.fetchall():
+            data = dict(row)
+            if data.get("attributes"):
+                data["attributes"] = json.loads(data["attributes"])
+            maps.append(GameMap.from_dict(data))
+        return maps
+
+    def delete_map(self, map_id: str) -> None:
+        """
+        Deletes a map permanently. CASCADE will delete all markers on this map.
+
+        Args:
+            map_id (str): The unique identifier of the map to delete.
+
+        Raises:
+            sqlite3.Error: If the database operation fails.
+        """
+        with self.transaction() as conn:
+            conn.execute("DELETE FROM maps WHERE id = ?", (map_id,))
+
+    # --------------------------------------------------------------------------
+    # MapMarker CRUD
+    # --------------------------------------------------------------------------
+
+    def insert_marker(self, marker: MapMarker) -> None:
+        """
+        Inserts a new marker or updates an existing one (Upsert).
+
+        Args:
+            marker (MapMarker): The marker domain object to persist.
+
+        Raises:
+            sqlite3.Error: If the database operation fails.
+        """
+        sql = """
+            INSERT INTO map_markers (id, map_id, object_id, object_type, x, y, attributes)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(map_id, object_id, object_type) DO UPDATE SET
+                x=excluded.x,
+                y=excluded.y,
+                attributes=excluded.attributes;
+        """
+        with self.transaction() as conn:
+            conn.execute(
+                sql,
+                (
+                    marker.id,
+                    marker.map_id,
+                    marker.object_id,
+                    marker.object_type,
+                    marker.x,
+                    marker.y,
+                    json.dumps(marker.attributes),
+                ),
+            )
+
+    def get_marker(self, marker_id: str) -> Optional[MapMarker]:
+        """
+        Retrieves a single marker by its UUID.
+
+        Args:
+            marker_id (str): The unique identifier of the marker.
+
+        Returns:
+            Optional[MapMarker]: The MapMarker object if found, else None.
+        """
+        sql = "SELECT * FROM map_markers WHERE id = ?"
+        if not self._connection:
+            self.connect()
+
+        cursor = self._connection.execute(sql, (marker_id,))
+        row = cursor.fetchone()
+
+        if row:
+            data = dict(row)
+            if data.get("attributes"):
+                data["attributes"] = json.loads(data["attributes"])
+            return MapMarker.from_dict(data)
+        return None
+
+    def get_markers_for_map(self, map_id: str) -> List[MapMarker]:
+        """
+        Retrieves all markers on a specific map.
+
+        Args:
+            map_id (str): The unique identifier of the map.
+
+        Returns:
+            List[MapMarker]: A list of all markers on the map.
+        """
+        sql = "SELECT * FROM map_markers WHERE map_id = ?"
+        if not self._connection:
+            self.connect()
+
+        cursor = self._connection.execute(sql, (map_id,))
+        markers = []
+        for row in cursor.fetchall():
+            data = dict(row)
+            if data.get("attributes"):
+                data["attributes"] = json.loads(data["attributes"])
+            markers.append(MapMarker.from_dict(data))
+        return markers
+
+    def get_markers_for_object(
+        self, object_id: str, object_type: str
+    ) -> List[MapMarker]:
+        """
+        Retrieves all markers for a specific object (entity or event).
+
+        Args:
+            object_id (str): The unique identifier of the object.
+            object_type (str): The type of object ('entity' or 'event').
+
+        Returns:
+            List[MapMarker]: A list of all markers for the object.
+        """
+        sql = "SELECT * FROM map_markers WHERE object_id = ? AND object_type = ?"
+        if not self._connection:
+            self.connect()
+
+        cursor = self._connection.execute(sql, (object_id, object_type))
+        markers = []
+        for row in cursor.fetchall():
+            data = dict(row)
+            if data.get("attributes"):
+                data["attributes"] = json.loads(data["attributes"])
+            markers.append(MapMarker.from_dict(data))
+        return markers
+
+    def delete_marker(self, marker_id: str) -> None:
+        """
+        Deletes a marker permanently.
+
+        Args:
+            marker_id (str): The unique identifier of the marker to delete.
+
+        Raises:
+            sqlite3.Error: If the database operation fails.
+        """
+        with self.transaction() as conn:
+            conn.execute("DELETE FROM map_markers WHERE id = ?", (marker_id,))
+
+    def delete_markers_for_object(self, object_id: str, object_type: str) -> None:
+        """
+        Deletes all markers for a specific object.
+
+        Useful for cleanup when an entity or event is deleted.
+
+        Args:
+            object_id (str): The unique identifier of the object.
+            object_type (str): The type of object ('entity' or 'event').
+
+        Raises:
+            sqlite3.Error: If the database operation fails.
+        """
+        with self.transaction() as conn:
+            conn.execute(
+                "DELETE FROM map_markers WHERE object_id = ? AND object_type = ?",
+                (object_id, object_type),
+            )
