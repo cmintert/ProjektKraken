@@ -100,6 +100,72 @@ status (Draft, Idea, Canon).
 
 gm_only (Boolean for spoiler protection).
 
+3.4 Map System
+
+Kraken provides a complete map management system for spatial worldbuilding with resolution-independent coordinate storage.
+
+3.4.1 Map Data Model
+
+GameMap (Maps Table):
+- id (UUID), name (Text), image_filename (Relative path)
+- real_width (Float), distance_unit (Text: m, km, mi, etc.)
+- reference_width, reference_height (Integer: pixels at calibration)
+- attributes (JSON: checksum, metadata, notes)
+- created_at, modified_at (Real-world timestamps)
+
+MapMarker (Map Markers Table):
+- id (UUID), map_id (Foreign key to maps)
+- object_id (References Entity.id or Event.id)
+- object_type (Text: 'entity' or 'event')
+- x, y (Float: normalized coordinates in [0.0, 1.0])
+- attributes (JSON: icon overrides, labels, visibility flags)
+- UNIQUE constraint on (map_id, object_id, object_type)
+
+3.4.2 Resolution Independence
+
+Coordinates are stored as normalized floats (0.0-1.0), not pixels:
+- Swapping a 1000×1000 image for a 4000×4000 version (same aspect ratio) requires no data changes
+- Markers render correctly by multiplying normalized x,y by current display width/height
+- UI zoom/pan are purely visual; data remains stable
+
+3.4.3 Scale and Calibration
+
+Each map has calibration data for real-world measurements:
+- real_width: The map's width in chosen distance_unit
+- real_height: Computed from real_width × (reference_height/reference_width)
+- Distance between markers: Euclidean distance in real-world units
+- Polygon area: Computed using shoelace formula in (distance_unit)²
+
+3.4.4 Asset Management
+
+Map images are copied into project-relative assets/maps/:
+- Prevents broken links when moving/sharing projects
+- SHA256 checksums detect content changes
+- Duplicate detection: same content uses same file
+- Unique filenames: different content with same name gets numbered suffix
+
+3.4.5 Multiple Maps Per Object
+
+An entity or event can appear on multiple maps:
+- World map shows continent-scale location
+- Region map shows precise city placement
+- Local map shows building details
+- Achieved via separate MapMarker records for each (map, object) pair
+
+3.4.6 Aspect Ratio Changes
+
+reference_width and reference_height enable detection of image changes:
+- Simple resize (same aspect): no marker migration needed
+- Crop/extend (aspect change): coordinate migration wizard guides user
+- Tolerance threshold (default 1%) distinguishes resize from crop
+
+3.4.7 Database Integrity
+
+Foreign key constraints maintain data consistency:
+- CASCADE delete: removing a map deletes all its markers
+- Application-level cleanup: deleting an entity/event should clean up its markers
+- Indexes on (map_id) and (object_id, object_type) for efficient queries
+
 4. Time
 
 Kraken decouples Storage from Presentation.
