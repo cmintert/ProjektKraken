@@ -540,3 +540,94 @@ class UpdateMarkerIconCommand(BaseCommand):
             db_service.insert_marker(restored_marker)
             self._is_executed = False
             logger.info(f"Undid icon update of marker: {self.marker_id}")
+
+
+class UpdateMarkerColorCommand(BaseCommand):
+    """
+    Command to update a marker's color.
+
+    Stores the color hex code in the marker's attributes dict.
+    """
+
+    def __init__(self, marker_id: str, color: str):
+        """
+        Initializes the UpdateMarkerColorCommand.
+
+        Args:
+            marker_id (str): The ID of the marker to update.
+            color (str): The new color hex code (e.g., '#FF5733').
+        """
+        super().__init__()
+        self.marker_id = marker_id
+        self.color = color
+        self._previous_color: Optional[str] = None
+        self._marker: Optional[Marker] = None
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """
+        Executes the color update.
+
+        Args:
+            db_service (DatabaseService): The database service to use.
+
+        Returns:
+            CommandResult: Result object containing success status and messages.
+        """
+        try:
+            # Fetch current marker
+            current = db_service.get_marker(self.marker_id)
+            if not current:
+                logger.error(f"Marker not found for color update: {self.marker_id}")
+                return CommandResult(
+                    success=False,
+                    message=f"Marker not found: {self.marker_id}",
+                    command_name="UpdateMarkerColorCommand",
+                )
+
+            self._marker = current
+            self._previous_color = current.attributes.get("color")
+
+            # Update the color in attributes
+            new_attributes = dict(current.attributes)
+            new_attributes["color"] = self.color
+
+            # Create updated marker
+            updated_marker = dataclasses.replace(current, attributes=new_attributes)
+
+            db_service.insert_marker(updated_marker)
+            self._is_executed = True
+            logger.info(f"Updated marker {self.marker_id} color to: {self.color}")
+            return CommandResult(
+                success=True,
+                message=f"Marker color updated to {self.color}.",
+                command_name="UpdateMarkerColorCommand",
+            )
+        except Exception as e:
+            logger.error(f"Failed to update marker color: {e}")
+            return CommandResult(
+                success=False,
+                message=f"Failed to update marker color: {e}",
+                command_name="UpdateMarkerColorCommand",
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """
+        Reverts the color update by restoring the previous color.
+
+        Args:
+            db_service (DatabaseService): The database service to operate on.
+        """
+        if self._is_executed and self._marker:
+            # Restore previous color
+            new_attributes = dict(self._marker.attributes)
+            if self._previous_color:
+                new_attributes["color"] = self._previous_color
+            else:
+                new_attributes.pop("color", None)
+
+            restored_marker = dataclasses.replace(
+                self._marker, attributes=new_attributes
+            )
+            db_service.insert_marker(restored_marker)
+            self._is_executed = False
+            logger.info(f"Undid color update of marker: {self.marker_id}")

@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QMenu,
     QDialog,
+    QColorDialog,
     QGridLayout,
     QPushButton,
     QLabel,
@@ -82,6 +83,7 @@ class MarkerItem(QGraphicsItem):
         label: str,
         pixmap_item: QGraphicsPixmapItem,
         icon: Optional[str] = None,
+        color: Optional[str] = None,
     ):
         """
         Initializes a MarkerItem.
@@ -101,7 +103,12 @@ class MarkerItem(QGraphicsItem):
         self.pixmap_item = pixmap_item
         self._icon_name = icon
         self._svg_renderer: Optional[QSvgRenderer] = None
-        self._color = self.COLORS.get(object_type, self.COLORS["default"])
+        self._custom_color = color
+        self._color = (
+            QColor(color)
+            if color
+            else self.COLORS.get(object_type, self.COLORS["default"])
+        )
 
         # Load icon if specified
         self._load_icon(icon)
@@ -170,6 +177,26 @@ class MarkerItem(QGraphicsItem):
         """
         return self._icon_name
 
+    def set_color(self, color: str) -> None:
+        """
+        Sets the custom color for the marker.
+
+        Args:
+            color: The hex color string (e.g., '#FF5733').
+        """
+        self._custom_color = color
+        self._color = QColor(color)
+        self.update()
+
+    def get_color(self) -> Optional[str]:
+        """
+        Returns the current custom color.
+
+        Returns:
+            Optional[str]: The hex color string or None.
+        """
+        return self._custom_color
+
     def boundingRect(self) -> QRectF:
         """
         Returns the bounding rectangle for the marker.
@@ -194,13 +221,38 @@ class MarkerItem(QGraphicsItem):
 
         if self._svg_renderer and self._svg_renderer.isValid():
             # Render SVG with color tinting
-            # First draw a shadow/background
-            painter.setPen(Qt.NoPen)
-            painter.setBrush(QBrush(QColor(0, 0, 0, 50)))
-            painter.drawEllipse(rect.adjusted(2, 2, 2, 2))
 
-            # Render the SVG
-            self._svg_renderer.render(painter, rect)
+            # If we have a custom color, we want to tint the SVG
+            if self._custom_color:
+                # Create a pixmap of the marker size
+                pixmap = QPixmap(int(self.MARKER_SIZE), int(self.MARKER_SIZE))
+                pixmap.fill(Qt.transparent)
+
+                # Render SVG into pixmap
+                p = QPainter(pixmap)
+                self._svg_renderer.render(p)
+
+                # Tint using CompositionMode_SourceIn
+                p.setCompositionMode(QPainter.CompositionMode_SourceIn)
+                p.fillRect(pixmap.rect(), self._color)
+                p.end()
+
+                # Draw the tinted pixmap
+                # First draw a shadow/background to ensure visibility
+                painter.setPen(Qt.NoPen)
+                painter.setBrush(QBrush(QColor(0, 0, 0, 50)))
+                painter.drawEllipse(rect.adjusted(2, 2, 2, 2))
+
+                painter.drawPixmap(rect.toRect(), pixmap)
+            else:
+                # Standard SVG rendering (no tint)
+                # First draw a shadow/background
+                painter.setPen(Qt.NoPen)
+                painter.setBrush(QBrush(QColor(0, 0, 0, 50)))
+                painter.drawEllipse(rect.adjusted(2, 2, 2, 2))
+
+                # Render the SVG
+                self._svg_renderer.render(painter, rect)
 
             # Draw selection highlight
             if self.isSelected():
@@ -285,6 +337,7 @@ class MapGraphicsView(QGraphicsView):
     add_marker_requested = Signal(float, float)  # x, y (normalized)
     delete_marker_requested = Signal(str)  # marker_id
     change_marker_icon_requested = Signal(str, str)  # marker_id, new_icon
+    change_marker_color_requested = Signal(str, str)  # marker_id, new_color_hex
 
     def __init__(self, parent=None):
         """
@@ -397,6 +450,7 @@ class MapGraphicsView(QGraphicsView):
         x: float,
         y: float,
         icon: Optional[str] = None,
+        color: Optional[str] = None,
     ) -> None:
         """
         Adds a marker to the map at normalized coordinates.
@@ -418,8 +472,10 @@ class MapGraphicsView(QGraphicsView):
             self.scene.removeItem(self.markers[marker_id])
             del self.markers[marker_id]
 
-        # Create new marker with optional icon
-        marker = MarkerItem(marker_id, object_type, label, self.pixmap_item, icon)
+        # Create new marker with optional icon and color
+        marker = MarkerItem(
+            marker_id, object_type, label, self.pixmap_item, icon, color
+        )
 
         # Convert normalized to scene coordinates
         scene_pos = self._normalized_to_scene(x, y)
@@ -523,6 +579,11 @@ class MapGraphicsView(QGraphicsView):
             change_icon_action.triggered.connect(lambda: self._show_icon_picker(item))
             menu.addAction(change_icon_action)
 
+            # Change Color action
+            change_color_action = QAction("Change Color...", self)
+            change_color_action.triggered.connect(lambda: self._show_color_picker(item))
+            menu.addAction(change_color_action)
+
             menu.addSeparator()
 
             # Delete action
@@ -573,6 +634,23 @@ class MapGraphicsView(QGraphicsView):
                 self.change_marker_icon_requested.emit(
                     marker_item.marker_id, selected_icon
                 )
+
+    def _show_color_picker(self, marker_item: MarkerItem) -> None:
+        """
+        Shows the color picker dialog for a marker.
+
+        Args:
+            marker_item: The marker to change the color for.
+        """
+        initial_color = marker_item.get_color() or "#FFFFFF"
+        color = QColorDialog.getColor(
+            QColor(initial_color), self, "Select Marker Color"
+        )
+
+        if color.isValid():
+            color_hex = color.name().upper()
+            marker_item.set_color(color_hex)
+            self.change_marker_color_requested.emit(marker_item.marker_id, color_hex)
 
 
 class IconPickerDialog(QDialog):
@@ -673,6 +751,7 @@ class MapWidget(QWidget):
     create_marker_requested = Signal(float, float)  # x, y normalized
     delete_marker_requested = Signal(str)  # marker_id
     change_marker_icon_requested = Signal(str, str)  # marker_id, new_icon
+    change_marker_color_requested = Signal(str, str)  # marker_id, new_color_hex
 
     def __init__(self, parent=None):
         """
@@ -723,6 +802,9 @@ class MapWidget(QWidget):
         self.view.delete_marker_requested.connect(self.delete_marker_requested.emit)
         self.view.change_marker_icon_requested.connect(
             self.change_marker_icon_requested.emit
+        )
+        self.view.change_marker_color_requested.connect(
+            self.change_marker_color_requested.emit
         )
 
         self._maps_data = []  # List of maps for selector
@@ -798,6 +880,7 @@ class MapWidget(QWidget):
         x: float,
         y: float,
         icon: Optional[str] = None,
+        color: Optional[str] = None,
     ) -> None:
         """
         Adds a marker to the map.
@@ -805,12 +888,13 @@ class MapWidget(QWidget):
         Args:
             marker_id: Unique identifier for the marker.
             object_type: Type of object ('entity' or 'event').
-            label: Marker label.
+            label: Marker label text.
             x: Normalized X coordinate [0.0, 1.0].
             y: Normalized Y coordinate [0.0, 1.0].
             icon: Optional icon filename.
+            color: Optional color hex string.
         """
-        self.view.add_marker(marker_id, object_type, label, x, y, icon)
+        self.view.add_marker(marker_id, object_type, label, x, y, icon, color)
 
     def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
         """
@@ -818,8 +902,8 @@ class MapWidget(QWidget):
 
         Args:
             marker_id: Unique identifier for the marker.
-            x: Normalized X coordinate [0.0, 1.0].
-            y: Normalized Y coordinate [0.0, 1.0].
+            x: Normalized X coordinate.
+            y: Normalized Y coordinate.
         """
         self.view.update_marker_position(marker_id, x, y)
 
@@ -828,10 +912,9 @@ class MapWidget(QWidget):
         Removes a marker from the map.
 
         Args:
-            marker_id: Unique identifier for the marker.
+            marker_id: ID of the marker to remove.
         """
         self.view.remove_marker(marker_id)
 
     def clear_markers(self) -> None:
         """Removes all markers from the map."""
-        self.view.clear_markers()

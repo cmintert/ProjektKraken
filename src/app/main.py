@@ -69,6 +69,7 @@ from src.commands.map_commands import (
     CreateMarkerCommand,
     DeleteMarkerCommand,
     UpdateMarkerIconCommand,
+    UpdateMarkerColorCommand,
 )
 
 # Refactor Imports
@@ -306,6 +307,9 @@ class MainWindow(QMainWindow):
         self.map_widget.delete_marker_requested.connect(self.delete_marker)
         self.map_widget.change_marker_icon_requested.connect(
             self._on_marker_icon_changed
+        )
+        self.map_widget.change_marker_color_requested.connect(
+            self._on_marker_color_changed
         )
 
     def _restore_window_state(self):
@@ -1055,8 +1059,16 @@ class MainWindow(QMainWindow):
             label = getattr(marker, "label", None) or "Unknown Marker"
             # Get icon from attributes if present
             icon = marker.attributes.get("icon") if marker.attributes else None
+            # Get color from attributes if present
+            color = marker.attributes.get("color") if marker.attributes else None
             self.map_widget.add_marker(
-                marker.id, marker.object_type, label, marker.x, marker.y, icon
+                marker.id,
+                marker.object_type,
+                label,
+                marker.x,
+                marker.y,
+                icon,
+                color,
             )
 
     @Slot(str, float, float)
@@ -1082,6 +1094,18 @@ class MainWindow(QMainWindow):
             icon: New icon filename
         """
         cmd = UpdateMarkerIconCommand(marker_id=marker_id, icon=icon)
+        self.command_requested.emit(cmd)
+
+    @Slot(str, str)
+    def _on_marker_color_changed(self, marker_id: str, color: str):
+        """
+        Handle marker color change from MapWidget.
+
+        Args:
+            marker_id: ID of the marker
+            color: New color hex code
+        """
+        cmd = UpdateMarkerColorCommand(marker_id=marker_id, color=color)
         self.command_requested.emit(cmd)
 
     def remove_relation(self, rel_id):
