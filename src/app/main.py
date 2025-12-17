@@ -68,6 +68,7 @@ from src.commands.map_commands import (
     DeleteMapCommand,
     CreateMarkerCommand,
     DeleteMarkerCommand,
+    UpdateMarkerIconCommand,
 )
 
 # Refactor Imports
@@ -303,6 +304,9 @@ class MainWindow(QMainWindow):
         self.map_widget.map_selected.connect(self.on_map_selected)
         self.map_widget.create_marker_requested.connect(self.create_marker)
         self.map_widget.delete_marker_requested.connect(self.delete_marker)
+        self.map_widget.change_marker_icon_requested.connect(
+            self._on_marker_icon_changed
+        )
 
     def _restore_window_state(self):
         """Restores window geometry and state from settings."""
@@ -1049,8 +1053,10 @@ class MainWindow(QMainWindow):
         for marker in markers:
             # Determine label (fallback to 'Unknown' if missing)
             label = getattr(marker, "label", None) or "Unknown Marker"
+            # Get icon from attributes if present
+            icon = marker.attributes.get("icon") if marker.attributes else None
             self.map_widget.add_marker(
-                marker.id, marker.object_type, label, marker.x, marker.y
+                marker.id, marker.object_type, label, marker.x, marker.y, icon
             )
 
     @Slot(str, float, float)
@@ -1064,6 +1070,18 @@ class MainWindow(QMainWindow):
             y: New normalized Y
         """
         cmd = UpdateMarkerCommand(marker_id=marker_id, update_data={"x": x, "y": y})
+        self.command_requested.emit(cmd)
+
+    @Slot(str, str)
+    def _on_marker_icon_changed(self, marker_id: str, icon: str):
+        """
+        Handle marker icon change from MapWidget.
+
+        Args:
+            marker_id: ID of the marker
+            icon: New icon filename
+        """
+        cmd = UpdateMarkerIconCommand(marker_id=marker_id, icon=icon)
         self.command_requested.emit(cmd)
 
     def remove_relation(self, rel_id):

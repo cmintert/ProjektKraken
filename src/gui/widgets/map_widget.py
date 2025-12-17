@@ -5,19 +5,25 @@ Provides an interactive map view with draggable markers using QGraphicsView/Scen
 Supports normalized coordinates [0.0, 1.0] for markers independent of image size.
 """
 
+import os
 from PySide6.QtWidgets import (
     QGraphicsView,
     QGraphicsScene,
     QGraphicsItem,
     QGraphicsPixmapItem,
-    QGraphicsEllipseItem,
     QWidget,
     QVBoxLayout,
     QToolBar,
     QComboBox,
     QMenu,
+    QDialog,
+    QGridLayout,
+    QPushButton,
+    QLabel,
+    QScrollArea,
+    QFrame,
 )
-from PySide6.QtCore import Qt, Signal, QPointF
+from PySide6.QtCore import Qt, Signal, QPointF, QRectF
 from PySide6.QtGui import (
     QBrush,
     QPen,
@@ -27,27 +33,47 @@ from PySide6.QtGui import (
     QCursor,
     QAction,
 )
+from PySide6.QtSvg import QSvgRenderer
 from src.core.theme_manager import ThemeManager
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 import logging
 
 logger = logging.getLogger(__name__)
 
+# Path to marker icons
+MARKER_ICONS_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "..", "..", "assets", "icons", "markers"
+)
 
-class MarkerItem(QGraphicsEllipseItem):
+
+def get_available_icons() -> List[str]:
     """
-    Draggable circular marker on a map.
+    Returns a list of available marker icon filenames.
+
+    Returns:
+        List[str]: List of .svg filenames in the markers folder.
+    """
+    if not os.path.exists(MARKER_ICONS_PATH):
+        return []
+    return [f for f in os.listdir(MARKER_ICONS_PATH) if f.endswith(".svg")]
+
+
+class MarkerItem(QGraphicsItem):
+    """
+    Draggable marker on a map with customizable SVG icon.
 
     Represents an entity or event at a specific location on the map.
     Emits signals through the parent MapGraphicsView when dragged.
+    Supports custom SVG icons with fallback to colored circles.
     """
 
-    MARKER_RADIUS = 10
+    MARKER_SIZE = 24  # Size of the marker icon
     COLORS = {
         "entity": QColor("#3498DB"),  # Blue
         "event": QColor("#F39C12"),  # Orange
         "default": QColor("#888888"),  # Gray
     }
+    DEFAULT_ICON = "map-pin.svg"
 
     def __init__(
         self,
@@ -55,6 +81,7 @@ class MarkerItem(QGraphicsEllipseItem):
         object_type: str,
         label: str,
         pixmap_item: QGraphicsPixmapItem,
+        icon: Optional[str] = None,
     ):
         """
         Initializes a MarkerItem.
@@ -64,27 +91,27 @@ class MarkerItem(QGraphicsEllipseItem):
             object_type: Type of object ('entity' or 'event').
             label: Label text for the marker (tooltip).
             pixmap_item: Reference to the map pixmap item for coordinate conversion.
+            icon: Optional icon filename (e.g., 'castle.svg'). Falls back to circle.
         """
-        super().__init__(
-            -self.MARKER_RADIUS,
-            -self.MARKER_RADIUS,
-            self.MARKER_RADIUS * 2,
-            self.MARKER_RADIUS * 2,
-        )
+        super().__init__()
 
         self.marker_id = marker_id
         self.object_type = object_type
         self.label = label
         self.pixmap_item = pixmap_item
-        logger.debug(f"Created MarkerItem {marker_id} with label: {label}")
+        self._icon_name = icon
+        self._svg_renderer: Optional[QSvgRenderer] = None
+        self._color = self.COLORS.get(object_type, self.COLORS["default"])
+
+        # Load icon if specified
+        self._load_icon(icon)
+
+        logger.debug(
+            f"Created MarkerItem {marker_id} with label: {label}, icon: {icon}"
+        )
 
         # Tooltip
         self.setToolTip(label)
-
-        # Styling
-        color = self.COLORS.get(object_type, self.COLORS["default"])
-        self.setBrush(QBrush(color))
-        self.setPen(QPen(QColor(255, 255, 255), 2))
 
         # Make draggable
         self.setFlag(QGraphicsItem.ItemIsMovable, True)
@@ -101,6 +128,90 @@ class MarkerItem(QGraphicsEllipseItem):
         # Drag tracking
         self._is_dragging = False
         self._drag_start_pos = None
+
+    def _load_icon(self, icon_name: Optional[str]) -> None:
+        """
+        Loads an SVG icon for the marker.
+
+        Args:
+            icon_name: Filename of the icon (e.g., 'castle.svg').
+        """
+        if not icon_name:
+            icon_name = self.DEFAULT_ICON
+
+        icon_path = os.path.join(MARKER_ICONS_PATH, icon_name)
+        if os.path.exists(icon_path):
+            self._svg_renderer = QSvgRenderer(icon_path)
+            if not self._svg_renderer.isValid():
+                logger.warning(f"Invalid SVG file: {icon_path}")
+                self._svg_renderer = None
+            else:
+                self._icon_name = icon_name
+        else:
+            logger.debug(f"Icon not found: {icon_path}, using fallback circle")
+            self._svg_renderer = None
+
+    def set_icon(self, icon_name: str) -> None:
+        """
+        Changes the marker's icon.
+
+        Args:
+            icon_name: Filename of the new icon.
+        """
+        self._load_icon(icon_name)
+        self.update()
+
+    def get_icon(self) -> Optional[str]:
+        """
+        Returns the current icon filename.
+
+        Returns:
+            Optional[str]: The icon filename or None if using fallback.
+        """
+        return self._icon_name
+
+    def boundingRect(self) -> QRectF:
+        """
+        Returns the bounding rectangle for the marker.
+
+        Returns:
+            QRectF: The bounding rect centered on (0, 0).
+        """
+        half = self.MARKER_SIZE / 2
+        return QRectF(-half, -half, self.MARKER_SIZE, self.MARKER_SIZE)
+
+    def paint(self, painter: QPainter, option, widget=None) -> None:
+        """
+        Paints the marker, either as an SVG icon or fallback circle.
+
+        Args:
+            painter: The QPainter to use.
+            option: Style options.
+            widget: The widget being painted on.
+        """
+        painter.setRenderHint(QPainter.Antialiasing)
+        rect = self.boundingRect()
+
+        if self._svg_renderer and self._svg_renderer.isValid():
+            # Render SVG with color tinting
+            # First draw a shadow/background
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QBrush(QColor(0, 0, 0, 50)))
+            painter.drawEllipse(rect.adjusted(2, 2, 2, 2))
+
+            # Render the SVG
+            self._svg_renderer.render(painter, rect)
+
+            # Draw selection highlight
+            if self.isSelected():
+                painter.setPen(QPen(QColor(255, 255, 255), 2))
+                painter.setBrush(Qt.NoBrush)
+                painter.drawRect(rect)
+        else:
+            # Fallback to colored circle
+            painter.setPen(QPen(QColor(255, 255, 255), 2))
+            painter.setBrush(QBrush(self._color))
+            painter.drawEllipse(rect)
 
     def mousePressEvent(self, event):
         """Track drag start."""
@@ -173,6 +284,7 @@ class MapGraphicsView(QGraphicsView):
     marker_moved = Signal(str, float, float)
     add_marker_requested = Signal(float, float)  # x, y (normalized)
     delete_marker_requested = Signal(str)  # marker_id
+    change_marker_icon_requested = Signal(str, str)  # marker_id, new_icon
 
     def __init__(self, parent=None):
         """
@@ -278,7 +390,13 @@ class MapGraphicsView(QGraphicsView):
         self.setDragMode(QGraphicsView.ScrollHandDrag)
 
     def add_marker(
-        self, marker_id: str, object_type: str, label: str, x: float, y: float
+        self,
+        marker_id: str,
+        object_type: str,
+        label: str,
+        x: float,
+        y: float,
+        icon: Optional[str] = None,
     ) -> None:
         """
         Adds a marker to the map at normalized coordinates.
@@ -289,6 +407,7 @@ class MapGraphicsView(QGraphicsView):
             label: Marker label text.
             x: Normalized X coordinate [0.0, 1.0].
             y: Normalized Y coordinate [0.0, 1.0].
+            icon: Optional icon filename (e.g., 'castle.svg').
         """
         if not self.pixmap_item:
             logger.warning("Cannot add marker: no map loaded")
@@ -299,8 +418,8 @@ class MapGraphicsView(QGraphicsView):
             self.scene.removeItem(self.markers[marker_id])
             del self.markers[marker_id]
 
-        # Create new marker
-        marker = MarkerItem(marker_id, object_type, label, self.pixmap_item)
+        # Create new marker with optional icon
+        marker = MarkerItem(marker_id, object_type, label, self.pixmap_item, icon)
 
         # Convert normalized to scene coordinates
         scene_pos = self._normalized_to_scene(x, y)
@@ -311,7 +430,8 @@ class MapGraphicsView(QGraphicsView):
         self.markers[marker_id] = marker
 
         logger.debug(
-            f"Added marker {marker_id} ({label}) at normalized ({x:.3f}, {y:.3f})"
+            f"Added marker {marker_id} ({label}) at normalized ({x:.3f}, {y:.3f}), "
+            f"icon={icon}"
         )
 
     def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
@@ -397,6 +517,15 @@ class MapGraphicsView(QGraphicsView):
         item = self.itemAt(event.pos())
         if isinstance(item, MarkerItem):
             menu = QMenu(self)
+
+            # Change Icon action
+            change_icon_action = QAction("Change Icon...", self)
+            change_icon_action.triggered.connect(lambda: self._show_icon_picker(item))
+            menu.addAction(change_icon_action)
+
+            menu.addSeparator()
+
+            # Delete action
             delete_action = QAction("Delete Marker", self)
             delete_action.triggered.connect(
                 lambda: self.delete_marker_requested.emit(item.marker_id)
@@ -429,6 +558,101 @@ class MapGraphicsView(QGraphicsView):
                     menu.addAction(add_action)
                     menu.exec(event.globalPos())
 
+    def _show_icon_picker(self, marker_item: MarkerItem) -> None:
+        """
+        Shows the icon picker dialog for a marker.
+
+        Args:
+            marker_item: The marker to change the icon for.
+        """
+        dialog = IconPickerDialog(self)
+        if dialog.exec() == QDialog.Accepted:
+            selected_icon = dialog.selected_icon
+            if selected_icon:
+                marker_item.set_icon(selected_icon)
+                self.change_marker_icon_requested.emit(
+                    marker_item.marker_id, selected_icon
+                )
+
+
+class IconPickerDialog(QDialog):
+    """
+    Dialog for selecting a marker icon from available SVG icons.
+
+    Displays a grid of icon buttons that the user can click to select.
+    """
+
+    def __init__(self, parent=None):
+        """
+        Initializes the IconPickerDialog.
+
+        Args:
+            parent: Parent widget.
+        """
+        super().__init__(parent)
+        self.setWindowTitle("Select Marker Icon")
+        self.setMinimumSize(300, 200)
+        self.selected_icon: Optional[str] = None
+
+        self._setup_ui()
+
+    def _setup_ui(self) -> None:
+        """Sets up the dialog UI."""
+        layout = QVBoxLayout(self)
+
+        # Scroll area for icons
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+
+        # Container for icon grid
+        container = QWidget()
+        grid = QGridLayout(container)
+        grid.setSpacing(8)
+
+        # Load available icons
+        icons = get_available_icons()
+        if not icons:
+            label = QLabel("No icons found in assets/icons/markers/")
+            layout.addWidget(label)
+            return
+
+        # Create icon buttons in a grid
+        cols = 4
+        for i, icon_name in enumerate(sorted(icons)):
+            row = i // cols
+            col = i % cols
+
+            btn = QPushButton()
+            btn.setFixedSize(48, 48)
+            btn.setToolTip(icon_name.replace(".svg", ""))
+
+            # Load icon preview
+            icon_path = os.path.join(MARKER_ICONS_PATH, icon_name)
+            pixmap = QPixmap(icon_path)
+            if not pixmap.isNull():
+                btn.setIcon(pixmap.scaled(32, 32, Qt.KeepAspectRatio))
+                btn.setIconSize(pixmap.size())
+
+            # Connect click
+            btn.clicked.connect(
+                lambda checked, name=icon_name: self._on_icon_selected(name)
+            )
+            grid.addWidget(btn, row, col)
+
+        scroll.setWidget(container)
+        layout.addWidget(scroll)
+
+    def _on_icon_selected(self, icon_name: str) -> None:
+        """
+        Handles icon selection.
+
+        Args:
+            icon_name: The selected icon filename.
+        """
+        self.selected_icon = icon_name
+        self.accept()
+
 
 class MapWidget(QWidget):
     """
@@ -448,6 +672,7 @@ class MapWidget(QWidget):
     map_selected = Signal(str)  # map_id
     create_marker_requested = Signal(float, float)  # x, y normalized
     delete_marker_requested = Signal(str)  # marker_id
+    change_marker_icon_requested = Signal(str, str)  # marker_id, new_icon
 
     def __init__(self, parent=None):
         """
@@ -496,6 +721,9 @@ class MapWidget(QWidget):
         self.view.marker_moved.connect(self._on_marker_moved)
         self.view.add_marker_requested.connect(self.create_marker_requested.emit)
         self.view.delete_marker_requested.connect(self.delete_marker_requested.emit)
+        self.view.change_marker_icon_requested.connect(
+            self.change_marker_icon_requested.emit
+        )
 
         self._maps_data = []  # List of maps for selector
 
@@ -563,7 +791,13 @@ class MapWidget(QWidget):
         return self.view.load_map(image_path)
 
     def add_marker(
-        self, marker_id: str, object_type: str, label: str, x: float, y: float
+        self,
+        marker_id: str,
+        object_type: str,
+        label: str,
+        x: float,
+        y: float,
+        icon: Optional[str] = None,
     ) -> None:
         """
         Adds a marker to the map.
@@ -574,8 +808,9 @@ class MapWidget(QWidget):
             label: Marker label.
             x: Normalized X coordinate [0.0, 1.0].
             y: Normalized Y coordinate [0.0, 1.0].
+            icon: Optional icon filename.
         """
-        self.view.add_marker(marker_id, object_type, label, x, y)
+        self.view.add_marker(marker_id, object_type, label, x, y, icon)
 
     def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
         """

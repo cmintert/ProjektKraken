@@ -172,11 +172,11 @@ def test_marker_item_colors():
     event_marker = MarkerItem("m2", "event", "Event Label", mock_pixmap_item)
     default_marker = MarkerItem("m3", "unknown", "Unknown", mock_pixmap_item)
 
-    # Colors should be different
-    assert entity_marker.brush().color() != event_marker.brush().color()
-    assert entity_marker.brush().color() == MarkerItem.COLORS["entity"]
-    assert event_marker.brush().color() == MarkerItem.COLORS["event"]
-    assert default_marker.brush().color() == MarkerItem.COLORS["default"]
+    # Colors should be different (now using internal _color attribute)
+    assert entity_marker._color != event_marker._color
+    assert entity_marker._color == MarkerItem.COLORS["entity"]
+    assert event_marker._color == MarkerItem.COLORS["event"]
+    assert default_marker._color == MarkerItem.COLORS["default"]
 
 
 def test_marker_item_tooltip():

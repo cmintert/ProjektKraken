@@ -449,3 +449,94 @@ class DeleteMarkerCommand(BaseCommand):
             db_service.insert_marker(self._deleted_marker)
             self._is_executed = False
             logger.info(f"Undid deletion of marker: {self.marker_id}")
+
+
+class UpdateMarkerIconCommand(BaseCommand):
+    """
+    Command to update a marker's icon.
+
+    Stores the icon filename in the marker's attributes dict.
+    """
+
+    def __init__(self, marker_id: str, icon: str):
+        """
+        Initializes the UpdateMarkerIconCommand.
+
+        Args:
+            marker_id (str): The ID of the marker to update.
+            icon (str): The new icon filename (e.g., 'castle.svg').
+        """
+        super().__init__()
+        self.marker_id = marker_id
+        self.icon = icon
+        self._previous_icon: Optional[str] = None
+        self._marker: Optional[Marker] = None
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """
+        Executes the icon update.
+
+        Args:
+            db_service (DatabaseService): The database service to use.
+
+        Returns:
+            CommandResult: Result object containing success status and messages.
+        """
+        try:
+            # Fetch current marker
+            current = db_service.get_marker(self.marker_id)
+            if not current:
+                logger.error(f"Marker not found for icon update: {self.marker_id}")
+                return CommandResult(
+                    success=False,
+                    message=f"Marker not found: {self.marker_id}",
+                    command_name="UpdateMarkerIconCommand",
+                )
+
+            self._marker = current
+            self._previous_icon = current.attributes.get("icon")
+
+            # Update the icon in attributes
+            new_attributes = dict(current.attributes)
+            new_attributes["icon"] = self.icon
+
+            # Create updated marker
+            updated_marker = dataclasses.replace(current, attributes=new_attributes)
+
+            db_service.insert_marker(updated_marker)
+            self._is_executed = True
+            logger.info(f"Updated marker {self.marker_id} icon to: {self.icon}")
+            return CommandResult(
+                success=True,
+                message=f"Marker icon updated to {self.icon}.",
+                command_name="UpdateMarkerIconCommand",
+            )
+        except Exception as e:
+            logger.error(f"Failed to update marker icon: {e}")
+            return CommandResult(
+                success=False,
+                message=f"Failed to update marker icon: {e}",
+                command_name="UpdateMarkerIconCommand",
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """
+        Reverts the icon update by restoring the previous icon.
+
+        Args:
+            db_service (DatabaseService): The database service to operate on.
+        """
+        if self._is_executed and self._marker:
+            # Restore previous icon
+            new_attributes = dict(self._marker.attributes)
+            if self._previous_icon:
+                new_attributes["icon"] = self._previous_icon
+            else:
+                new_attributes.pop("icon", None)
+
+            restored_marker = dataclasses.replace(
+                self._marker, attributes=new_attributes
+            )
+            db_service.insert_marker(restored_marker)
+            self._is_executed = False
+            logger.info(f"Undid icon update of marker: {self.marker_id}")
