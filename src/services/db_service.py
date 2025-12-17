@@ -1116,4 +1116,3 @@ class DatabaseService:
         sql = "DELETE FROM markers WHERE id = ?"
         with self.transaction() as conn:
             conn.execute(sql, (marker_id,))
-

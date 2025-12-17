@@ -11,7 +11,7 @@ Classes:
     SetActiveCalendarCommand: Sets a calendar as the active one.
 """
 
-from typing import Optional, Union
+from typing import Optional
 import logging
 
 from src.commands.base_command import BaseCommand, CommandResult

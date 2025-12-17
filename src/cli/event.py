@@ -2,21 +2,24 @@
 """
 Event Management CLI.
 
-Provides command-line tools for creating, listing, updating, and deleting events.
+Provides command-line tools for creating, listing, updating, and deleting
+events.
 
 Usage:
-    python -m src.cli.event create --database world.kraken --name "Event Name" --date 100.5
+    python -m src.cli.event create --database world.kraken
+        --name "Event Name" --date 100.5
     python -m src.cli.event list --database world.kraken
-    python -m src.cli.event show --database world.kraken --id <event-id>
-    python -m src.cli.event update --database world.kraken --id <event-id> --name "New Name"
-    python -m src.cli.event delete --database world.kraken --id <event-id>
+    python -m src.cli.event show --database world.kraken
+        --id <event-id>
+    python -m src.cli.event update --database world.kraken
+        --id <event-id> --name "New Name"
+    python -m src.cli.event delete --database world.kraken
+        --id <event-id>
 """
 
 import sys
 import argparse
 import logging
-from pathlib import Path
-from typing import Optional
 from src.services.db_service import DatabaseService
 from src.commands.event_commands import (
     CreateEventCommand,
@@ -143,15 +146,15 @@ def show_event(args) -> int:
 
             print(json.dumps(event.to_dict(), indent=2))
         else:
-            print(f"\nEvent Details:\n")
+            print("\nEvent Details:\n")
             print(f"ID: {event.id}")
             print(f"Name: {event.name}")
             print(f"Type: {event.type}")
             print(f"Date: {event.lore_date}")
             print(f"Duration: {event.lore_duration}")
-            print(f"\nDescription:")
+            print("\nDescription:")
             print(event.description if event.description else "(none)")
-            print(f"\nAttributes:")
+            print("\nAttributes:")
             if event.attributes:
                 import json
 

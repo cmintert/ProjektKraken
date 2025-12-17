@@ -2,20 +2,24 @@
 """
 Entity Management CLI.
 
-Provides command-line tools for creating, listing, updating, and deleting entities.
+Provides command-line tools for creating, listing, updating, and deleting
+entities.
 
 Usage:
-    python -m src.cli.entity create --database world.kraken --name "Entity Name" --type character
+    python -m src.cli.entity create --database world.kraken
+        --name "Entity Name" --type character
     python -m src.cli.entity list --database world.kraken
-    python -m src.cli.entity show --database world.kraken --id <entity-id>
-    python -m src.cli.entity update --database world.kraken --id <entity-id> --name "New Name"
-    python -m src.cli.entity delete --database world.kraken --id <entity-id>
+    python -m src.cli.entity show --database world.kraken
+        --id <entity-id>
+    python -m src.cli.entity update --database world.kraken
+        --id <entity-id> --name "New Name"
+    python -m src.cli.entity delete --database world.kraken
+        --id <entity-id>
 """
 
 import sys
 import argparse
 import logging
-from pathlib import Path
 from src.services.db_service import DatabaseService
 from src.commands.entity_commands import (
     CreateEntityCommand,
@@ -137,13 +141,13 @@ def show_entity(args) -> int:
 
             print(json.dumps(entity.to_dict(), indent=2))
         else:
-            print(f"\nEntity Details:\n")
+            print("\nEntity Details:\n")
             print(f"ID: {entity.id}")
             print(f"Name: {entity.name}")
             print(f"Type: {entity.type}")
-            print(f"\nDescription:")
+            print("\nDescription:")
             print(entity.description if entity.description else "(none)")
-            print(f"\nAttributes:")
+            print("\nAttributes:")
             if entity.attributes:
                 import json
 
@@ -155,7 +159,7 @@ def show_entity(args) -> int:
 
             # Show relations if requested
             if args.relations:
-                print(f"\n--- Relations ---")
+                print("\n--- Relations ---")
                 outgoing = db_service.get_relations(args.id)
                 incoming = db_service.get_incoming_relations(args.id)
 
@@ -163,16 +167,20 @@ def show_entity(args) -> int:
                     print(f"\nOutgoing ({len(outgoing)}):")
                     for rel in outgoing:
                         target_name = db_service.get_name(rel["target_id"])
+                        target_id_short = rel['target_id'][:8]
                         print(
-                            f"  → {target_name} ({rel['rel_type']}) [{rel['target_id'][:8]}...]"
+                            f"  → {target_name} ({rel['rel_type']}) "
+                            f"[{target_id_short}...]"
                         )
 
                 if incoming:
                     print(f"\nIncoming ({len(incoming)}):")
                     for rel in incoming:
                         source_name = db_service.get_name(rel["source_id"])
+                        source_id_short = rel['source_id'][:8]
                         print(
-                            f"  ← {source_name} ({rel['rel_type']}) [{rel['source_id'][:8]}...]"
+                            f"  ← {source_name} ({rel['rel_type']}) "
+                            f"[{source_id_short}...]"
                         )
 
                 if not outgoing and not incoming:

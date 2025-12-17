@@ -250,6 +250,12 @@ class UnifiedListWidget(QWidget):
         """
 
         def find_and_select():
+            """
+            Inner function to search list and select matching item.
+
+            Searches all items in the list widget for one matching the given
+            type and ID, then selects and scrolls to it.
+            """
             for index in range(self.list_widget.count()):
                 item = self.list_widget.item(index)
                 if (

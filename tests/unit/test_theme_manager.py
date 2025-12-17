@@ -6,9 +6,23 @@ from src.core.theme_manager import ThemeManager
 
 @pytest.fixture
 def clean_theme_manager():
-    # Reset singleton
+    """
+    Provides a clean ThemeManager instance for testing.
+
+    Note: After tests using this fixture, the singleton is restored
+    to ensure other tests have a properly initialized ThemeManager.
+    """
+    # Save the current instance
+    original_instance = ThemeManager._instance
+
+    # Reset singleton for test
     ThemeManager._instance = None
-    return ThemeManager(theme_file="dummy_themes.json")
+    tm = ThemeManager(theme_file="dummy_themes.json")
+
+    yield tm
+
+    # Restore the original instance
+    ThemeManager._instance = original_instance
 
 
 def test_singleton(clean_theme_manager):

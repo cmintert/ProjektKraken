@@ -352,9 +352,16 @@ def test_mixed_events_and_entities(db_service, sample_events, sample_entities):
 
     sequence = longform_builder.build_longform_sequence(conn)
 
-    assert len(sequence) == 3
+    # Note: ensure_all_items_indexed() adds all DB items to longform
+    # automatically, so we expect all 3 events + 2 entities = 5 total
+    assert len(sequence) == 5
+
+    # Verify that the items we explicitly added are in the right order
+    assert sequence[0]["id"] == "event-1"
     assert sequence[0]["table"] == "events"
+    assert sequence[1]["id"] == "entity-1"
     assert sequence[1]["table"] == "entities"
+    assert sequence[2]["id"] == "event-2"
     assert sequence[2]["table"] == "events"
 
 
