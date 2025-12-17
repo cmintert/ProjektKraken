@@ -90,6 +90,7 @@ class MarkerItem(QGraphicsEllipseItem):
         self.setFlag(QGraphicsItem.ItemIsMovable, True)
         self.setFlag(QGraphicsItem.ItemIsSelectable, True)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges, True)
+        self.setFlag(QGraphicsItem.ItemIgnoresTransformations, True)
 
         # Cursor hint
         self.setCursor(QCursor(Qt.PointingHandCursor))
@@ -383,9 +384,6 @@ class MapGraphicsView(QGraphicsView):
         else:
             factor = zoom_out_factor
 
-        logger.debug(
-            f"Wheel Event. Delta: {event.angleDelta().y()}, Scale Factor: {factor}"
-        )
         self.scale(factor, factor)
 
     def contextMenuEvent(self, event):
