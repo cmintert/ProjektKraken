@@ -29,6 +29,7 @@ from PySide6.QtGui import (
 from src.core.theme_manager import ThemeManager
 
 from src.gui.widgets.timeline_ruler import TimelineRuler
+from src.gui.widgets.timeline_lane_packer import TimelineLanePacker
 import logging
 
 logger = logging.getLogger(__name__)
@@ -438,6 +439,9 @@ class TimelineView(QGraphicsView):
         # Initialize semantic ruler engine
         self._ruler = TimelineRuler()
 
+        # Initialize lane packer for event organization
+        self._lane_packer = TimelineLanePacker()
+
         # Connect to theme manager to trigger redraw of foreground (ruler)
         ThemeManager().theme_changed.connect(lambda t: self.viewport().update())
         ThemeManager().theme_changed.connect(self._update_corner_widget)
@@ -700,72 +704,9 @@ class TimelineView(QGraphicsView):
             axis_pen.setCosmetic(True)
             self.scene.addLine(-1e12, 0, 1e12, 0, axis_pen)
 
-        # Smart lane packing using "First Fit" (Gravity) algorithm
-        # This packs events into the top-most available lane to create a "Tetris-like" layout.
-        # We also account for the VISUAL width of the event (text labels, min widths)
-        # to strictly prevent overlaps.
-
-        lanes_end_times = []  # Stores the end time (in lore date units) for each lane
-        event_lane_assignments = {}  # event -> lane_index
-
-        # Setup font metrics for text width estimation
-        # We assume standard font (approx) since we don't have the printer's exact font here
-        font = QFont()
-        font.setBold(True)
-        fm = QFontMetrics(font)
-
-        GAP_PIXELS = 15  # Gap between events
-
-        logger.debug(f"Packing {len(sorted_events)} events. Scale: {self.scale_factor}")
-
-        for event in sorted_events:
-            start_time = event.lore_date
-
-            # --- Calculate Visual Duration (in time units) ---
-            text_width = fm.horizontalAdvance(event.name)
-
-            if event.lore_duration > 0:
-                # Duration Event
-                # Bar width + minimal check
-                bar_width_px = max(event.lore_duration * self.scale_factor, 10.0)
-
-                # Check if text fits inside
-                if text_width < bar_width_px - 10:
-                    # Fits inside
-                    total_width_px = bar_width_px
-                else:
-                    # Text flows to right: Bar + Pad + Text
-                    total_width_px = bar_width_px + 5 + text_width
-            else:
-                # Point Event
-                # Diamond (half width 7) + Pad (5) + Text
-                total_width_px = 7 + 5 + text_width + 5  # Extra 5 safety
-
-            # Convert pixels to time duration
-            visual_duration = total_width_px / self.scale_factor
-            gap_duration = GAP_PIXELS / self.scale_factor
-
-            end_time = start_time + visual_duration + gap_duration
-
-            # --- First Fit (Gravity) ---
-            assigned_lane = -1
-
-            for i, lane_end in enumerate(lanes_end_times):
-                if lane_end <= start_time:
-                    assigned_lane = i
-                    lanes_end_times[i] = end_time
-                    break
-
-            if assigned_lane == -1:
-                # Create new lane
-                lanes_end_times.append(end_time)
-                assigned_lane = len(lanes_end_times) - 1
-
-            event_lane_assignments[event.id] = assigned_lane
-            # logger.debug(
-            #    f"Event '{event.name}': Lane {assigned_lane} "
-            #    f"(Visual Width: {total_width_px:.1f}px)"
-            # )
+        # Use lane packer to assign lanes
+        self._lane_packer.update_scale_factor(self.scale_factor)
+        event_lane_assignments = self._lane_packer.pack_events(sorted_events)
 
         # Now place items in scene
         for event in sorted_events:
@@ -823,7 +764,9 @@ class TimelineView(QGraphicsView):
 
             # Y bounds
             # Events start at 60. Max y is approx (num_lanes * 40) + 60
-            max_y = 60 + (len(lanes_end_times) * self.LANE_HEIGHT) + 40
+            # Calculate max lane from assignments
+            max_lane = max(event_lane_assignments.values()) if event_lane_assignments else 0
+            max_y = 60 + (max_lane + 1) * self.LANE_HEIGHT + 40
             min_y = 0  # Ruler area
 
             # Set Scene Rect explicitly to avoid infinite lines expanding it
