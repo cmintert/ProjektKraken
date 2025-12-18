@@ -98,10 +98,19 @@ class WikiTextEdit(QTextEdit):
                 name: (item_id, item_type) for item_id, name, item_type in items
             }
             display_names = [name for _, name, _ in items]
+
+            # Create set of lower-case names and IDs for validation
+            self._valid_targets_lower = set(
+                name.lower() for name in self._completion_map
+            )
+            self._valid_ids = set(item_id for item_id, _, _ in items)
+
         elif names is not None:
             # Legacy mode - no ID mapping
             self._completion_map = {}
             display_names = names
+            self._valid_targets_lower = set(name.lower() for name in names)
+            self._valid_ids = set()
         else:
             return
 
@@ -251,19 +260,55 @@ class WikiTextEdit(QTextEdit):
         def replace_link_md(match):
             """
             Convert WikiLink syntax to Markdown link syntax.
-
-            Transforms [[Target|Label]] or [[Target]] into Markdown format
-            [Label](Target). Used as a callback for regex substitution.
-
-            Args:
-                match: Regex match object with groups for target and optional label.
-
-            Returns:
-                str: Markdown-formatted link string.
+            Checks validity of target against known items.
             """
             target = match.group(1).strip()
             label = match.group(2).strip() if match.group(2) else target
-            return f"[{label}]({target})"
+
+            # Check existence
+            is_valid = False
+
+            # Handle id: prefix for ID-based links
+            # Links can be:
+            #   [[Name]] -> target = "Name"
+            #   [[id:UUID|Label]] -> target = "id:UUID"
+            check_target = target
+            if target.startswith("id:"):
+                check_target = target[3:]  # Strip "id:" prefix for ID lookup
+
+            # Check names (case insensitive)
+            if (
+                hasattr(self, "_valid_targets_lower")
+                and check_target.lower() in self._valid_targets_lower
+            ):
+                is_valid = True
+            # Check IDs (exact match with stripped prefix)
+            elif hasattr(self, "_valid_ids") and check_target in self._valid_ids:
+                is_valid = True
+
+            # Fallback for when completer hasn't been set yet (don't mark red)
+            elif not hasattr(self, "_valid_targets_lower"):
+                is_valid = True
+                logger.debug(f"Validation skipped for '{target}': No completer set")
+
+            if not is_valid:
+                logger.debug(
+                    f"Link validation FAILED for '{target}' (check: {check_target}). "
+                    f"Completer set? {hasattr(self, '_valid_targets_lower')}"
+                )
+                if hasattr(self, "_valid_targets_lower"):
+                    # Log a few valid targets to see if we possess data
+                    sample = list(self._valid_targets_lower)[:10]
+                    logger.debug(
+                        f"Sample valid targets (total {len(self._valid_targets_lower)}): {sample}"
+                    )
+
+            if is_valid:
+                return f"[{label}]({target})"
+            else:
+                # Render as raw HTML anchor with style for red color
+                # Markdown extension 'extra' supports raw HTML
+                return f'<a href="{target}" style="color: red;">{label}</a>'
 
         md_text = pattern.sub(replace_link_md, text)
 
@@ -369,8 +414,105 @@ class WikiTextEdit(QTextEdit):
 
         super().keyPressEvent(event)
 
+        # Check if user just closed a wiki link with ]]
+        if event.text() == "]":
+            self._check_for_link_closure()
+
         # Helper to trigger completer
         self._check_for_completion()
+
+    def _check_for_link_closure(self):
+        """
+        Check if user just completed a wiki link with ]].
+        If so, validate and style the link immediately.
+        """
+        cursor = self.textCursor()
+        block_text = cursor.block().text()
+        pos_in_block = cursor.positionInBlock()
+
+        # Check if previous char was also ]
+        if pos_in_block < 2:
+            return
+
+        text_before = block_text[:pos_in_block]
+        if not text_before.endswith("]]"):
+            return
+
+        # Find matching [[
+        # Look backwards from the ]] we just typed
+        link_end = len(text_before)
+        bracket_start = text_before.rfind("[[")
+
+        if bracket_start == -1:
+            return
+
+        # Extract the link content between [[ and ]]
+        link_content = text_before[bracket_start + 2 : link_end - 2]
+
+        # Parse target (handle [[target|label]] format)
+        if "|" in link_content:
+            target = link_content.split("|")[0].strip()
+            label = link_content.split("|")[1].strip()
+        else:
+            target = link_content.strip()
+            label = target
+
+        if not target:
+            return
+
+        # Validate the target
+        is_valid = self._validate_link_target(target)
+
+        # Replace the [[...]] with a styled anchor
+        # Calculate absolute positions
+        block_start = cursor.block().position()
+        abs_start = block_start + bracket_start
+        abs_end = block_start + link_end
+
+        # Select the [[...]] text
+        cursor.setPosition(abs_start)
+        cursor.setPosition(abs_end, QTextCursor.KeepAnchor)
+
+        # Build the anchor HTML
+        if is_valid:
+            html = f'<a href="{target}">{label}</a>'
+        else:
+            html = f'<a href="{target}" style="color: red;">{label}</a>'
+
+        cursor.insertHtml(html)
+        self.setTextCursor(cursor)
+
+    def _validate_link_target(self, target: str) -> bool:
+        """
+        Validate a link target against known items.
+
+        Args:
+            target: The link target (name or id:UUID format).
+
+        Returns:
+            bool: True if valid, False if broken/non-existent.
+        """
+        # Handle id: prefix
+        check_target = target
+        if target.startswith("id:"):
+            check_target = target[3:]
+
+        # Check names (case insensitive)
+        if (
+            hasattr(self, "_valid_targets_lower")
+            and check_target.lower() in self._valid_targets_lower
+        ):
+            return True
+
+        # Check IDs
+        if hasattr(self, "_valid_ids") and check_target in self._valid_ids:
+            return True
+
+        # Fallback if completer not set
+        if not hasattr(self, "_valid_targets_lower"):
+            return True
+
+        return False
 
     def _check_for_completion(self):
         """

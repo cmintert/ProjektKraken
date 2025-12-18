@@ -201,7 +201,7 @@ class EventEditorWidget(QWidget):
             dirty (bool): True if changes are unsaved, False otherwise.
         """
         if self._current_event_id is None and dirty:
-             return
+            return
 
         if self._is_dirty != dirty:
             self._is_dirty = dirty
@@ -268,6 +268,10 @@ class EventEditorWidget(QWidget):
         """
         self.desc_edit.set_completer(items=items, names=names)
 
+        # Re-render wiki text if already loaded to apply new validation
+        if self.desc_edit._current_wiki_text:
+            self.desc_edit.set_wiki_text(self.desc_edit._current_wiki_text)
+
         # Store for RelationEditDialog
         if items:
             self._suggestion_items = items
@@ -295,13 +299,13 @@ class EventEditorWidget(QWidget):
         self.end_date_edit.blockSignals(True)
         self.type_edit.blockSignals(True)
         self.desc_edit.blockSignals(True)
-        # Custom widgets might not need blocking if we don't connect to them directly 
+        # Custom widgets might not need blocking if we don't connect to them directly
         # or if they don't emit on programmatic set.
-        # TagEditor and AttributeEditor emit on programmatic load usually? 
+        # TagEditor and AttributeEditor emit on programmatic load usually?
         # Let's check their code.. load_tags calls clear() -> might trigger?
         # TagEditor.load_tags clears and adds items. It does NOT emit tags_changed.
         # AttributeEditor.load_attributes sets _block_signals=True internally.
-        
+
         self.name_edit.setText(event.name)
         self.date_edit.set_value(event.lore_date)
 
@@ -379,8 +383,6 @@ class EventEditorWidget(QWidget):
             "attributes": base_attrs,
             "tags": self.tag_editor.get_tags(),
         }
-
-
 
         self.save_requested.emit(event_data)
         self.set_dirty(False)

@@ -370,7 +370,7 @@ class MainWindow(QMainWindow):
                 # Attempt to revert - simplified for now, strictly just return
                 # Visually the list might differ from detailed view if we just return
                 return
-            
+
             self.ui_manager.docks["event"].raise_()
             self.load_event_details(item_id)
             self._last_selected_id = item_id
@@ -379,7 +379,7 @@ class MainWindow(QMainWindow):
         elif item_type == "entity":
             if not self.check_unsaved_changes(self.entity_editor):
                 return
-            
+
             self.ui_manager.docks["entity"].raise_()
             self.load_entity_details(item_id)
             self._last_selected_id = item_id
@@ -396,7 +396,10 @@ class MainWindow(QMainWindow):
             bool: True if safe to proceed (Saved, Discarded, or Clean).
                   False if User Cancelled.
         """
-        if not hasattr(editor, "has_unsaved_changes") or not editor.has_unsaved_changes():
+        if (
+            not hasattr(editor, "has_unsaved_changes")
+            or not editor.has_unsaved_changes()
+        ):
             return True
 
         # Determine readable name
@@ -428,8 +431,7 @@ class MainWindow(QMainWindow):
     def _on_editor_dirty_changed(self, editor, dirty):
         """Updates the dock title with an asterisk if dirty."""
         dock_key = None
-        current_title = ""
-        
+
         # Determine which dock
         if editor == self.event_editor:
             dock_key = "event"
@@ -439,7 +441,7 @@ class MainWindow(QMainWindow):
         elif editor == self.entity_editor:
             dock_key = "entity"
             base_title = "Entity Inspector"
-        
+
         if dock_key:
             dock = self.ui_manager.docks.get(dock_key)
             if dock:
@@ -843,14 +845,14 @@ class MainWindow(QMainWindow):
 
     def load_event_details(self, event_id: str):
         """Requests loading details for a specific event."""
-        # Note: If called from selection, we already checked. 
+        # Note: If called from selection, we already checked.
         # But if called programmatically, we might want to check here too?
         # Actually _on_item_selected calls this.
         # But for robust safety, checking here is good, unless it causes double prompts.
         # Let's rely on the caller (selection/navigation) to guard, as this is a "request"
         # and checking UI state inside a low-level request might be mixing concerns slightly.
         # However, to start simple, we guard at user-interaction points.
-        
+
         QMetaObject.invokeMethod(
             self.worker,
             "load_event_details",
@@ -1203,19 +1205,23 @@ class MainWindow(QMainWindow):
         if not actual_marker_id:
             logger.warning(f"No marker mapping found for object_id: {marker_id}")
             return
-        cmd = UpdateMarkerCommand(marker_id=actual_marker_id, update_data={"x": x, "y": y})
+        cmd = UpdateMarkerCommand(
+            marker_id=actual_marker_id, update_data={"x": x, "y": y}
+        )
         self.command_requested.emit(cmd)
 
     @Slot(str, str)
     def _on_marker_clicked(self, marker_id: str, object_type: str):
         """
         Navigates to the clicked marker's item.
-        
+
         Args:
             marker_id: The ID of the item.
             object_type: 'event' or 'entity'.
         """
-        logger.info(f"_on_marker_clicked called: marker_id={marker_id}, object_type={object_type}")
+        logger.info(
+            f"_on_marker_clicked called: marker_id={marker_id}, object_type={object_type}"
+        )
         if object_type == "event":
             if not self.check_unsaved_changes(self.event_editor):
                 return
@@ -1223,7 +1229,7 @@ class MainWindow(QMainWindow):
             self._last_selected_id = marker_id
             self._last_selected_type = "event"
             self.ui_manager.docks["event"].raise_()
-            
+
         elif object_type == "entity":
             if not self.check_unsaved_changes(self.entity_editor):
                 return
@@ -1311,7 +1317,6 @@ class MainWindow(QMainWindow):
 
         if is_uuid:
             # ID-based navigation - direct lookup
-            # ID-based navigation - direct lookup
             entity = next((e for e in self._cached_entities if e.id == target), None)
             if entity:
                 if not self.check_unsaved_changes(self.entity_editor):
@@ -1357,10 +1362,49 @@ class MainWindow(QMainWindow):
                 self.load_event_details(event.id)
                 return
 
-            # Name not found
-            QMessageBox.information(
-                self, "Link Not Found", f"No entity or event named '{target}' found."
-            )
+            # Name not found - Prompt for Creation
+            self._prompt_create_missing_target(target)
+
+    def _prompt_create_missing_target(self, target_name: str):
+        """
+        Prompts the user to create a missing entity or event from a broken link.
+
+        Args:
+            target_name (str): The name of the missing item.
+        """
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Target Not Found")
+        msg.setText(f"Item '{target_name}' does not exist.")
+        msg.setInformativeText("Would you like to create it?")
+
+        btn_entity = msg.addButton("Create Entity", QMessageBox.AcceptRole)
+        btn_event = msg.addButton("Create Event", QMessageBox.AcceptRole)
+        msg.addButton(QMessageBox.Cancel)
+
+        msg.exec()
+
+        clicked = msg.clickedButton()
+
+        if clicked == btn_entity:
+            # Create Entity
+            if not self.check_unsaved_changes(self.entity_editor):
+                return
+
+            # Use target name as default
+            cmd = CreateEntityCommand({"name": target_name, "type": "Concept"})
+            self.command_requested.emit(cmd)
+            # We rely on on_command_finished to handle selection/loading
+            # But we need to ensure the new item is selected.
+            # CreateEntityCommand result handling in on_command_finished
+            # sets _pending_select_id, which should handle it.
+
+        elif clicked == btn_event:
+            # Create Event
+            if not self.check_unsaved_changes(self.event_editor):
+                return
+
+            cmd = CreateEventCommand({"name": target_name, "lore_date": 0.0})
+            self.command_requested.emit(cmd)
 
     def load_longform_sequence(self, doc_id: str = longform_builder.DOC_ID_DEFAULT):
         """Requests loading of the longform document sequence."""

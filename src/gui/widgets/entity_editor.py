@@ -153,7 +153,7 @@ class EntityEditorWidget(QWidget):
     def set_dirty(self, dirty: bool):
         """Sets dirty state and updates UI."""
         if self._current_entity_id is None and dirty:
-             return
+            return
 
         if self._is_dirty != dirty:
             self._is_dirty = dirty
@@ -183,6 +183,10 @@ class EntityEditorWidget(QWidget):
             names: Legacy list of names (for backward compatibility).
         """
         self.desc_edit.set_completer(items=items, names=names)
+
+        # Re-render wiki text if already loaded to apply new validation
+        if self.desc_edit._current_wiki_text:
+            self.desc_edit.set_wiki_text(self.desc_edit._current_wiki_text)
 
         # Store for RelationEditDialog
         if items:
@@ -237,7 +241,7 @@ class EntityEditorWidget(QWidget):
                 self.rel_list.addItem(item)
 
         self.setEnabled(True)
-        
+
         # Unblock & Reset
         self.name_edit.blockSignals(False)
         self.type_edit.blockSignals(False)
