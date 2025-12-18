@@ -57,6 +57,12 @@ class UIManager:
         )
         self.main_window.setTabPosition(Qt.AllDockWidgetAreas, QTabWidget.North)
 
+        # Configure Corners to prioritize Side Panels (Full Height)
+        self.main_window.setCorner(Qt.TopLeftCorner, Qt.LeftDockWidgetArea)
+        self.main_window.setCorner(Qt.TopRightCorner, Qt.RightDockWidgetArea)
+        self.main_window.setCorner(Qt.BottomLeftCorner, Qt.LeftDockWidgetArea)
+        self.main_window.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea)
+
         # 1. Project Explorer (Left)
         self.docks["list"] = self._create_dock(
             DOCK_TITLE_PROJECT, DOCK_OBJ_PROJECT, widgets["unified_list"]
