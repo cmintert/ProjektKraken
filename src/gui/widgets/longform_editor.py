@@ -167,6 +167,15 @@ class LongformOutlineWidget(QTreeWidget):
         Args:
             sequence: Ordered list of items from build_longform_sequence.
         """
+        # Preserve current selection
+        selected_item_id = None
+        selected_table = None
+        items = self.selectedItems()
+        if items:
+            meta_data = self._item_meta.get(id(items[0]))
+            if meta_data:
+                selected_table, selected_item_id, _ = meta_data
+        
         self.clear()
         self._item_meta.clear()
 
@@ -206,6 +215,11 @@ class LongformOutlineWidget(QTreeWidget):
         # Add root items
         self.addTopLevelItems(root_items)
         self.expandAll()
+        
+        # Restore selection if it existed
+        if selected_item_id and selected_item_id in item_map:
+            item_to_select = item_map[selected_item_id]
+            self.setCurrentItem(item_to_select)
 
     def _on_selection_changed(self):
         """Handle selection change."""

@@ -1238,10 +1238,15 @@ class MainWindow(QMainWindow):
         Handle marker icon change from MapWidget.
 
         Args:
-            marker_id: ID of the marker
+            marker_id: ID of the marker (actually object_id from view)
             icon: New icon filename
         """
-        cmd = UpdateMarkerIconCommand(marker_id=marker_id, icon=icon)
+        # Translate object_id to actual marker ID
+        actual_marker_id = self._marker_object_to_id.get(marker_id)
+        if not actual_marker_id:
+            logger.warning(f"No marker mapping found for object_id: {marker_id}")
+            return
+        cmd = UpdateMarkerIconCommand(marker_id=actual_marker_id, icon=icon)
         self.command_requested.emit(cmd)
 
     @Slot(str, str)
@@ -1250,10 +1255,15 @@ class MainWindow(QMainWindow):
         Handle marker color change from MapWidget.
 
         Args:
-            marker_id: ID of the marker
+            marker_id: ID of the marker (actually object_id from view)
             color: New color hex code
         """
-        cmd = UpdateMarkerColorCommand(marker_id=marker_id, color=color)
+        # Translate object_id to actual marker ID
+        actual_marker_id = self._marker_object_to_id.get(marker_id)
+        if not actual_marker_id:
+            logger.warning(f"No marker mapping found for object_id: {marker_id}")
+            return
+        cmd = UpdateMarkerColorCommand(marker_id=actual_marker_id, color=color)
         self.command_requested.emit(cmd)
 
     def remove_relation(self, rel_id):
