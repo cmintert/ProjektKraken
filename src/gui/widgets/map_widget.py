@@ -383,6 +383,20 @@ class MapGraphicsView(QGraphicsView):
         self.tm.theme_changed.connect(self._update_theme)
         self._update_theme(self.tm.get_theme())
 
+    def minimumSizeHint(self):
+        """
+        Override minimum size hint to allow resizing below map image size.
+        
+        By default, QGraphicsView uses the scene rect to determine
+        its minimum size, which prevents the dock from being resized
+        smaller than the map image. We override this to allow free resizing.
+        
+        Returns:
+            QSize: A small minimum size (200x150) to allow shrinking.
+        """
+        from PySide6.QtCore import QSize
+        return QSize(200, 150)
+
     def _update_theme(self, theme):
         """Updates the scene background."""
         self.scene.setBackgroundBrush(QBrush(QColor(theme["app_bg"])))

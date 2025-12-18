@@ -492,6 +492,20 @@ class TimelineView(QGraphicsView):
         # Set corner widget for themed scrollbar corner
         self._update_corner_widget(ThemeManager().get_theme())
 
+    def minimumSizeHint(self):
+        """
+        Override minimum size hint to allow vertical shrinking.
+        
+        By default, QGraphicsView uses the scene rect to determine
+        its minimum size, which prevents the dock from being resized
+        smaller than the content. We override this to allow free resizing.
+        
+        Returns:
+            QSize: A small minimum size (200x100) to allow shrinking.
+        """
+        from PySide6.QtCore import QSize
+        return QSize(200, 100)
+
     def _on_playhead_moved(self, x_pos):
         """
         Called when playhead is dragged manually.
