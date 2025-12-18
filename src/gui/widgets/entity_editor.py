@@ -152,6 +152,9 @@ class EntityEditorWidget(QWidget):
 
     def set_dirty(self, dirty: bool):
         """Sets dirty state and updates UI."""
+        if self._current_entity_id is None and dirty:
+             return
+
         if self._is_dirty != dirty:
             self._is_dirty = dirty
             self.dirty_changed.emit(dirty)

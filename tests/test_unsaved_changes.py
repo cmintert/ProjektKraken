@@ -125,3 +125,27 @@ def test_mainwindow_check_unsaved_changes(qtbot):
              with patch.object(mock_event_editor, "_on_save") as mock_on_save:
                 assert not window.check_unsaved_changes(window.event_editor)
                 mock_on_save.assert_not_called()
+
+def test_editor_init_not_dirty(qtbot):
+    """Regression test: Editor should not be dirty on init or when no item loaded."""
+    from src.gui.widgets.event_editor import EventEditorWidget
+    from src.gui.widgets.entity_editor import EntityEditorWidget
+    
+    # Check Event Editor
+    event_editor = EventEditorWidget()
+    qtbot.addWidget(event_editor)
+    assert not event_editor.has_unsaved_changes()
+    
+    # Simulate a signal that would normally cause dirty (e.g. text changed)
+    # But without an event loaded, it should be ignored
+    event_editor.name_edit.setText("Changed")
+    assert not event_editor.has_unsaved_changes()
+    
+    # Check Entity Editor
+    entity_editor = EntityEditorWidget()
+    qtbot.addWidget(entity_editor)
+    assert not entity_editor.has_unsaved_changes()
+    
+    # Simulate signal
+    entity_editor.name_edit.setText("Changed")
+    assert not entity_editor.has_unsaved_changes()

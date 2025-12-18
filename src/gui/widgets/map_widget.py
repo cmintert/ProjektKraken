@@ -127,9 +127,8 @@ class MarkerItem(QGraphicsObject):
         # Tooltip
         self.setToolTip(label)
 
-        # Make draggable
+        # Make draggable (but not selectable to avoid white frame)
         self.setFlag(QGraphicsItem.ItemIsMovable, True)
-        self.setFlag(QGraphicsItem.ItemIsSelectable, True)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges, True)
         self.setFlag(QGraphicsItem.ItemIgnoresTransformations, True)
 

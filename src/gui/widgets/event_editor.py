@@ -200,6 +200,9 @@ class EventEditorWidget(QWidget):
         Args:
             dirty (bool): True if changes are unsaved, False otherwise.
         """
+        if self._current_event_id is None and dirty:
+             return
+
         if self._is_dirty != dirty:
             self._is_dirty = dirty
             self.dirty_changed.emit(dirty)
