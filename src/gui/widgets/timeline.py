@@ -482,6 +482,8 @@ class TimelineView(QGraphicsView):
         self._current_time_line = CurrentTimeLineItem()
         self.scene.addItem(self._current_time_line)
         self._current_time_line.set_time(0.0, self.scale_factor)
+        # Hide initially - only show when explicitly set by user
+        self._current_time_line.hide()
 
         # Playback state
         self._playback_timer = QTimer()
@@ -800,8 +802,8 @@ class TimelineView(QGraphicsView):
             if self._playhead._time == 0:
                 self.set_playhead_time(center_date)
 
-            if self._current_time_line._time == 0:
-                self.set_current_time(center_date)
+            # Don't auto-center current time line - only show when explicitly set by user
+
 
             # Check if we can fit immediately
             if self.isVisible() and self.width() > 0 and self.height() > 0:
@@ -998,6 +1000,7 @@ class TimelineView(QGraphicsView):
             time: The time in lore_date units.
         """
         self._current_time_line.set_time(time, self.scale_factor)
+        self._current_time_line.show()  # Make visible when explicitly set
         self.current_time_changed.emit(time)
 
     def get_current_time(self) -> float:
