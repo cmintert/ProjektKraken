@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QGraphicsView,
     QGraphicsScene,
     QGraphicsItem,
+    QGraphicsObject,
     QGraphicsPixmapItem,
     QWidget,
     QVBoxLayout,
@@ -59,14 +60,20 @@ def get_available_icons() -> List[str]:
     return [f for f in os.listdir(MARKER_ICONS_PATH) if f.endswith(".svg")]
 
 
-class MarkerItem(QGraphicsItem):
+class MarkerItem(QGraphicsObject):
     """
     Draggable marker on a map with customizable SVG icon.
 
     Represents an entity or event at a specific location on the map.
     Emits signals through the parent MapGraphicsView when dragged.
     Supports custom SVG icons with fallback to colored circles.
+    
+    Signals:
+        clicked: Emitted when the marker is clicked (released within threshold distance).
+                 Args: (marker_id: str, object_type: str)
     """
+    
+    clicked = Signal(str, str)
 
     MARKER_SIZE = 24  # Size of the marker icon
     COLORS = {
@@ -276,34 +283,44 @@ class MarkerItem(QGraphicsItem):
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event):
-        """Emit position change on drag end."""
-        if event.button() == Qt.LeftButton and self._is_dragging:
-            self._is_dragging = False
-            # Calculate final normalized position
-            if self.pixmap_item and self.pixmap_item.pixmap():
-                scene_pos = self.pos()
-                pixmap_rect = self.pixmap_item.sceneBoundingRect()
+        """Emit position change on drag end, or clicked signal if distance small."""
+        if event.button() == Qt.LeftButton:
+            
+            # Check for click vs drag
+            if self._drag_start_pos:
+                dist = (self.pos() - self._drag_start_pos).manhattanLength()
+                if dist < 3:
+                     # It's a click!
+                     self.clicked.emit(self.marker_id, self.object_type)
+                     logger.debug(f"Marker {self.marker_id} clicked.")
 
-                rel_x = scene_pos.x() - pixmap_rect.left()
-                rel_y = scene_pos.y() - pixmap_rect.top()
+            if self._is_dragging:
+                self._is_dragging = False
+                # Calculate final normalized position
+                if self.pixmap_item and self.pixmap_item.pixmap():
+                    scene_pos = self.pos()
+                    pixmap_rect = self.pixmap_item.sceneBoundingRect()
 
-                norm_x = rel_x / pixmap_rect.width() if pixmap_rect.width() > 0 else 0.0
-                norm_y = (
-                    rel_y / pixmap_rect.height() if pixmap_rect.height() > 0 else 0.0
-                )
+                    rel_x = scene_pos.x() - pixmap_rect.left()
+                    rel_y = scene_pos.y() - pixmap_rect.top()
 
-                norm_x = max(0.0, min(1.0, norm_x))
-                norm_y = max(0.0, min(1.0, norm_y))
+                    norm_x = rel_x / pixmap_rect.width() if pixmap_rect.width() > 0 else 0.0
+                    norm_y = (
+                        rel_y / pixmap_rect.height() if pixmap_rect.height() > 0 else 0.0
+                    )
 
-                # Emit only on release
-                if self.scene() and self.scene().views():
-                    view = self.scene().views()[0]
-                    if isinstance(view, MapGraphicsView):
-                        view.marker_moved.emit(self.marker_id, norm_x, norm_y)
-                        logger.debug(
-                            f"Marker {self.marker_id} drag ended at normalized "
-                            f"({norm_x:.3f}, {norm_y:.3f})"
-                        )
+                    norm_x = max(0.0, min(1.0, norm_x))
+                    norm_y = max(0.0, min(1.0, norm_y))
+
+                    # Emit only on release
+                    if self.scene() and self.scene().views():
+                        view = self.scene().views()[0]
+                        if isinstance(view, MapGraphicsView):
+                            view.marker_moved.emit(self.marker_id, norm_x, norm_y)
+                            logger.debug(
+                                f"Marker {self.marker_id} drag ended at normalized "
+                                f"({norm_x:.3f}, {norm_y:.3f})"
+                            )
         super().mouseReleaseEvent(event)
 
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value):
@@ -334,6 +351,7 @@ class MapGraphicsView(QGraphicsView):
     """
 
     marker_moved = Signal(str, float, float)
+    marker_clicked = Signal(str, str) # marker_id, object_type
     add_marker_requested = Signal(float, float)  # x, y (normalized)
     delete_marker_requested = Signal(str)  # marker_id
     change_marker_icon_requested = Signal(str, str)  # marker_id, new_icon
@@ -484,6 +502,9 @@ class MapGraphicsView(QGraphicsView):
         # Add to scene and track
         self.scene.addItem(marker)
         self.markers[marker_id] = marker
+        
+        # Connect click signal
+        marker.clicked.connect(self.marker_clicked.emit)
 
         logger.debug(
             f"Added marker {marker_id} ({label}) at normalized ({x:.3f}, {y:.3f}), "
@@ -745,6 +766,7 @@ class MapWidget(QWidget):
     """
 
     marker_position_changed = Signal(str, float, float)
+    marker_clicked = Signal(str, str)
     create_map_requested = Signal()
     delete_map_requested = Signal()
     map_selected = Signal(str)  # map_id
@@ -798,6 +820,7 @@ class MapWidget(QWidget):
 
         # Connect signals
         self.view.marker_moved.connect(self._on_marker_moved)
+        self.view.marker_clicked.connect(self.marker_clicked.emit)
         self.view.add_marker_requested.connect(self.create_marker_requested.emit)
         self.view.delete_marker_requested.connect(self.delete_marker_requested.emit)
         self.view.change_marker_icon_requested.connect(

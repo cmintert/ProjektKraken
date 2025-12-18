@@ -153,6 +153,9 @@ class MainWindow(QMainWindow):
         self._last_selected_id = None
         self._last_selected_type = None
 
+        # Mapping from object_id to marker.id for position updates
+        self._marker_object_to_id = {}
+
         self.longform_editor = LongformEditorWidget()
 
         # 3. Setup UI Layout via UIManager
@@ -314,6 +317,7 @@ class MainWindow(QMainWindow):
         self.map_widget.marker_position_changed.connect(
             self._on_marker_position_changed
         )
+        self.map_widget.marker_clicked.connect(self._on_marker_clicked)
         self.map_widget.create_map_requested.connect(self.create_map)
         self.map_widget.delete_map_requested.connect(self.delete_map)
         self.map_widget.map_selected.connect(self.on_map_selected)
@@ -1163,6 +1167,7 @@ class MainWindow(QMainWindow):
             return
 
         self.map_widget.clear_markers()
+        self._marker_object_to_id.clear()  # Reset mapping
         for marker in markers:
             # Determine label (fallback to 'Unknown' if missing)
             label = getattr(marker, "label", None) or "Unknown Marker"
@@ -1170,8 +1175,9 @@ class MainWindow(QMainWindow):
             icon = marker.attributes.get("icon") if marker.attributes else None
             # Get color from attributes if present
             color = marker.attributes.get("color") if marker.attributes else None
+            # Use object_id as the marker_id so clicks return the entity/event ID
             self.map_widget.add_marker(
-                marker.id,
+                marker.object_id,
                 marker.object_type,
                 label,
                 marker.x,
@@ -1179,6 +1185,8 @@ class MainWindow(QMainWindow):
                 icon,
                 color,
             )
+            # Track mapping for position updates
+            self._marker_object_to_id[marker.object_id] = marker.id
 
     @Slot(str, float, float)
     def _on_marker_position_changed(self, marker_id, x, y):
@@ -1186,12 +1194,43 @@ class MainWindow(QMainWindow):
         Handle marker movement from MapWidget.
 
         Args:
-            marker_id: ID of the moved marker
+            marker_id: ID of the moved marker (actually object_id from view)
             x: New normalized X
             y: New normalized Y
         """
-        cmd = UpdateMarkerCommand(marker_id=marker_id, update_data={"x": x, "y": y})
+        # Translate object_id to actual marker ID
+        actual_marker_id = self._marker_object_to_id.get(marker_id)
+        if not actual_marker_id:
+            logger.warning(f"No marker mapping found for object_id: {marker_id}")
+            return
+        cmd = UpdateMarkerCommand(marker_id=actual_marker_id, update_data={"x": x, "y": y})
         self.command_requested.emit(cmd)
+
+    @Slot(str, str)
+    def _on_marker_clicked(self, marker_id: str, object_type: str):
+        """
+        Navigates to the clicked marker's item.
+        
+        Args:
+            marker_id: The ID of the item.
+            object_type: 'event' or 'entity'.
+        """
+        logger.info(f"_on_marker_clicked called: marker_id={marker_id}, object_type={object_type}")
+        if object_type == "event":
+            if not self.check_unsaved_changes(self.event_editor):
+                return
+            self.load_event_details(marker_id)
+            self._last_selected_id = marker_id
+            self._last_selected_type = "event"
+            self.ui_manager.docks["event"].raise_()
+            
+        elif object_type == "entity":
+            if not self.check_unsaved_changes(self.entity_editor):
+                return
+            self.load_entity_details(marker_id)
+            self._last_selected_id = marker_id
+            self._last_selected_type = "entity"
+            self.ui_manager.docks["entity"].raise_()
 
     @Slot(str, str)
     def _on_marker_icon_changed(self, marker_id: str, icon: str):
