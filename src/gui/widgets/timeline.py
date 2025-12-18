@@ -443,8 +443,14 @@ class TimelineView(QGraphicsView):
         self._lane_packer = TimelineLanePacker()
 
         # Connect to theme manager to trigger redraw of foreground (ruler)
-        ThemeManager().theme_changed.connect(lambda t: self.viewport().update())
-        ThemeManager().theme_changed.connect(self._update_corner_widget)
+        # Use shiboken6 to check if the C++ object is still valid
+        from shiboken6 import isValid
+        ThemeManager().theme_changed.connect(
+            lambda t: self.viewport().update() if isValid(self) else None
+        )
+        ThemeManager().theme_changed.connect(
+            lambda t: self._update_corner_widget(t) if isValid(self) else None
+        )
 
         self.setDragMode(QGraphicsView.ScrollHandDrag)
         self.setRenderHint(QPainter.Antialiasing)

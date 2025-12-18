@@ -409,7 +409,7 @@ class WikiTextEdit(QTextEdit):
             event: QMouseEvent from PySide6.
         """
         if event.modifiers() & Qt.ControlModifier:
-            anchor = self.anchorAt(event.pos())
+            anchor = self.anchorAt(event.position().toPoint())
             if anchor:
                 self.viewport().setCursor(Qt.PointingHandCursor)
                 return
@@ -424,7 +424,7 @@ class WikiTextEdit(QTextEdit):
             event: QMouseEvent from PySide6.
         """
         if event.button() == Qt.LeftButton and (event.modifiers() & Qt.ControlModifier):
-            anchor = self.anchorAt(event.pos())
+            anchor = self.anchorAt(event.position().toPoint())
             if anchor:
                 # Handle ID checking
                 if anchor.startswith("id:"):
