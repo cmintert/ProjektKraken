@@ -18,8 +18,9 @@ from PySide6.QtWidgets import (
     QToolBar,
     QLabel,
 )
-from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QAction, QBrush, QColor
+from PySide6.QtCore import Signal, Qt, QMimeData
+from PySide6.QtGui import QAction, QBrush, QColor, QDrag
+import json
 import logging
 from typing import List, Dict, Any, Optional
 
@@ -59,6 +60,46 @@ class LongformOutlineWidget(QTreeWidget):
         # Connect signals
         self.itemSelectionChanged.connect(self._on_selection_changed)
         self.customContextMenuRequested.connect(self._show_context_menu)
+
+    def startDrag(self, supportedActions):
+        """
+        Override to provide custom MIME data for external drags.
+
+        Supports both internal reordering and external drag to map.
+        Uses the same MIME type as Project Explorer for DRY compatibility.
+        """
+        from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
+
+        item = self.currentItem()
+        if not item:
+            return
+
+        # Get item metadata
+        meta_data = self._item_meta.get(id(item))
+        if not meta_data:
+            super().startDrag(supportedActions)
+            return
+
+        table, row_id, meta = meta_data
+
+        # Map table names to item types
+        item_type = "event" if table == "events" else "entity"
+        item_name = meta.get("title_override") or item.text(0)
+
+        # Build MIME data
+        data = {"id": row_id, "type": item_type, "name": item_name}
+
+        mime_data = QMimeData()
+        mime_data.setData(KRAKEN_ITEM_MIME_TYPE, json.dumps(data).encode("utf-8"))
+        # Also set plain text for debugging
+        mime_data.setText(f"{item_type}:{row_id}")
+
+        # Create drag
+        drag = QDrag(self)
+        drag.setMimeData(mime_data)
+
+        # Execute drag - CopyAction for external, MoveAction for internal
+        drag.exec(Qt.CopyAction | Qt.MoveAction)
 
     def dropEvent(self, event):
         """
@@ -175,7 +216,7 @@ class LongformOutlineWidget(QTreeWidget):
             meta_data = self._item_meta.get(id(items[0]))
             if meta_data:
                 selected_table, selected_item_id, _ = meta_data
-        
+
         self.clear()
         self._item_meta.clear()
 
@@ -215,7 +256,7 @@ class LongformOutlineWidget(QTreeWidget):
         # Add root items
         self.addTopLevelItems(root_items)
         self.expandAll()
-        
+
         # Restore selection if it existed
         if selected_item_id and selected_item_id in item_map:
             item_to_select = item_map[selected_item_id]
