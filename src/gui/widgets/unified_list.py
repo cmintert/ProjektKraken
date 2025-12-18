@@ -5,6 +5,7 @@ Provides a unified list view displaying both events and entities with
 filtering and color-coded differentiation.
 """
 
+import json
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -17,12 +18,63 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMenu,
 )
-from PySide6.QtGui import QAction
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QAction, QDrag
+from PySide6.QtCore import Qt, Signal, QMimeData
 from PySide6.QtGui import QColor, QBrush
 from typing import List
 from src.core.events import Event
 from src.core.entities import Entity
+
+# Custom MIME type for Kraken items (DRY: reusable across drop targets)
+KRAKEN_ITEM_MIME_TYPE = "application/x-kraken-item"
+
+
+class DraggableListWidget(QListWidget):
+    """
+    A QListWidget that supports dragging items with custom MIME data.
+
+    Drag data format (JSON):
+        {"id": "uuid", "type": "event|entity", "name": "Display Name"}
+    """
+
+    def __init__(self, parent=None):
+        """Initialize with drag enabled."""
+        super().__init__(parent)
+        self.setDragEnabled(True)
+        self.setDragDropMode(QListWidget.DragOnly)
+
+    def startDrag(self, supportedActions):
+        """
+        Override to provide custom MIME data for dragged items.
+
+        Args:
+            supportedActions: The drag actions supported.
+        """
+        item = self.currentItem()
+        if not item:
+            return
+
+        # Extract item data (stored via setData in _render_list)
+        item_id = item.data(Qt.UserRole)
+        item_type = item.data(Qt.UserRole + 1)
+        item_name = item.data(Qt.UserRole + 2)  # We'll add this
+
+        if not item_id or not item_type:
+            return
+
+        # Build MIME data
+        data = {"id": item_id, "type": item_type, "name": item_name or item.text()}
+
+        mime_data = QMimeData()
+        mime_data.setData(KRAKEN_ITEM_MIME_TYPE, json.dumps(data).encode("utf-8"))
+
+        # Also set plain text for debugging/compatibility
+        mime_data.setText(f"{item_type}:{item_id}")
+
+        # Create and execute drag
+        drag = QDrag(self)
+        drag.setMimeData(mime_data)
+        drag.exec(Qt.CopyAction)
 
 
 class UnifiedListWidget(QWidget):
@@ -112,8 +164,8 @@ class UnifiedListWidget(QWidget):
 
         self.layout.addLayout(filter_row)
 
-        # List
-        self.list_widget = QListWidget()
+        # List (with drag support)
+        self.list_widget = DraggableListWidget()
         self.list_widget.itemSelectionChanged.connect(self._on_selection_changed)
         self.layout.addWidget(self.list_widget)
 
@@ -328,6 +380,7 @@ class UnifiedListWidget(QWidget):
                 item = QListWidgetItem(label)
                 item.setData(Qt.UserRole, entity.id)
                 item.setData(Qt.UserRole + 1, "entity")
+                item.setData(Qt.UserRole + 2, entity.name)  # For drag
                 item.setForeground(QBrush(self.color_entity))
                 self.list_widget.addItem(item)
                 has_items = True
@@ -341,6 +394,7 @@ class UnifiedListWidget(QWidget):
                 item = QListWidgetItem(label)
                 item.setData(Qt.UserRole, event.id)
                 item.setData(Qt.UserRole + 1, "event")
+                item.setData(Qt.UserRole + 2, event.name)  # For drag
                 item.setForeground(QBrush(self.color_event))
                 self.list_widget.addItem(item)
                 has_items = True

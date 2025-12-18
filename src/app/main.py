@@ -333,6 +333,7 @@ class MainWindow(QMainWindow):
         self.map_widget.change_marker_color_requested.connect(
             self._on_marker_color_changed
         )
+        self.map_widget.marker_drop_requested.connect(self._on_marker_dropped)
 
     def _restore_window_state(self):
         """Restores window geometry and state from settings."""
@@ -1145,6 +1146,37 @@ class MainWindow(QMainWindow):
             }
         )
         self.command_requested.emit(cmd)
+
+    def _on_marker_dropped(
+        self, item_id: str, item_type: str, item_name: str, x: float, y: float
+    ):
+        """
+        Handle marker creation from drag-drop.
+
+        Args:
+            item_id: ID of the dropped entity/event.
+            item_type: 'entity' or 'event'.
+            item_name: Display name of the item.
+            x: Normalized X coordinate [0.0, 1.0].
+            y: Normalized Y coordinate [0.0, 1.0].
+        """
+        map_id = self.map_widget.get_selected_map_id()
+        if not map_id:
+            QMessageBox.warning(self, "No Map", "Please select a map first.")
+            return
+
+        cmd = CreateMarkerCommand(
+            {
+                "map_id": map_id,
+                "object_id": item_id,
+                "object_type": item_type,
+                "x": x,
+                "y": y,
+                "label": item_name,
+            }
+        )
+        self.command_requested.emit(cmd)
+        logger.info(f"Creating marker for {item_type} '{item_name}' via drag-drop")
 
     def delete_marker(self, marker_id):
         """Deletes a marker."""

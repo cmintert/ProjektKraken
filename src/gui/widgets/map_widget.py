@@ -6,6 +6,7 @@ Supports normalized coordinates [0.0, 1.0] for markers independent of image size
 """
 
 import os
+import json
 from PySide6.QtWidgets import (
     QGraphicsView,
     QGraphicsScene,
@@ -67,12 +68,12 @@ class MarkerItem(QGraphicsObject):
     Represents an entity or event at a specific location on the map.
     Emits signals through the parent MapGraphicsView when dragged.
     Supports custom SVG icons with fallback to colored circles.
-    
+
     Signals:
         clicked: Emitted when the marker is clicked (released within threshold distance).
                  Args: (marker_id: str, object_type: str)
     """
-    
+
     clicked = Signal(str, str)
 
     MARKER_SIZE = 24  # Size of the marker icon
@@ -284,14 +285,14 @@ class MarkerItem(QGraphicsObject):
     def mouseReleaseEvent(self, event):
         """Emit position change on drag end, or clicked signal if distance small."""
         if event.button() == Qt.LeftButton:
-            
+
             # Check for click vs drag
             if self._drag_start_pos:
                 dist = (self.pos() - self._drag_start_pos).manhattanLength()
                 if dist < 3:
-                     # It's a click!
-                     self.clicked.emit(self.marker_id, self.object_type)
-                     logger.debug(f"Marker {self.marker_id} clicked.")
+                    # It's a click!
+                    self.clicked.emit(self.marker_id, self.object_type)
+                    logger.debug(f"Marker {self.marker_id} clicked.")
 
             if self._is_dragging:
                 self._is_dragging = False
@@ -303,9 +304,13 @@ class MarkerItem(QGraphicsObject):
                     rel_x = scene_pos.x() - pixmap_rect.left()
                     rel_y = scene_pos.y() - pixmap_rect.top()
 
-                    norm_x = rel_x / pixmap_rect.width() if pixmap_rect.width() > 0 else 0.0
+                    norm_x = (
+                        rel_x / pixmap_rect.width() if pixmap_rect.width() > 0 else 0.0
+                    )
                     norm_y = (
-                        rel_y / pixmap_rect.height() if pixmap_rect.height() > 0 else 0.0
+                        rel_y / pixmap_rect.height()
+                        if pixmap_rect.height() > 0
+                        else 0.0
                     )
 
                     norm_x = max(0.0, min(1.0, norm_x))
@@ -350,11 +355,12 @@ class MapGraphicsView(QGraphicsView):
     """
 
     marker_moved = Signal(str, float, float)
-    marker_clicked = Signal(str, str) # marker_id, object_type
+    marker_clicked = Signal(str, str)  # marker_id, object_type
     add_marker_requested = Signal(float, float)  # x, y (normalized)
     delete_marker_requested = Signal(str)  # marker_id
     change_marker_icon_requested = Signal(str, str)  # marker_id, new_icon
     change_marker_color_requested = Signal(str, str)  # marker_id, new_color_hex
+    marker_drop_requested = Signal(str, str, str, float, float)  # id, type, name, x, y
 
     def __init__(self, parent=None):
         """
@@ -383,18 +389,22 @@ class MapGraphicsView(QGraphicsView):
         self.tm.theme_changed.connect(self._update_theme)
         self._update_theme(self.tm.get_theme())
 
+        # Enable drop support for drag-from-explorer
+        self.setAcceptDrops(True)
+
     def minimumSizeHint(self):
         """
         Override minimum size hint to allow resizing below map image size.
-        
+
         By default, QGraphicsView uses the scene rect to determine
         its minimum size, which prevents the dock from being resized
         smaller than the map image. We override this to allow free resizing.
-        
+
         Returns:
             QSize: A small minimum size (200x150) to allow shrinking.
         """
         from PySide6.QtCore import QSize
+
         return QSize(200, 150)
 
     def _update_theme(self, theme):
@@ -515,7 +525,7 @@ class MapGraphicsView(QGraphicsView):
         # Add to scene and track
         self.scene.addItem(marker)
         self.markers[marker_id] = marker
-        
+
         # Connect click signal
         marker.clicked.connect(self.marker_clicked.emit)
 
@@ -595,6 +605,95 @@ class MapGraphicsView(QGraphicsView):
             factor = zoom_out_factor
 
         self.scale(factor, factor)
+
+    def dragEnterEvent(self, event):
+        """
+        Accept drag events with our custom MIME type.
+        """
+        from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
+
+        if event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE):
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event):
+        """
+        Allow drop only over the map pixmap.
+        """
+        from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
+
+        if not event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE):
+            event.ignore()
+            return
+
+        if not self.pixmap_item:
+            event.ignore()
+            return
+
+        # Check if over map
+        scene_pos = self.mapToScene(event.position().toPoint())
+        if self.pixmap_item.contains(scene_pos):
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        """
+        Handle drop of item from Project Explorer to create a marker.
+        """
+        from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
+
+        if not event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE):
+            event.ignore()
+            return
+
+        if not self.pixmap_item:
+            event.ignore()
+            return
+
+        # Get drop position
+        scene_pos = self.mapToScene(event.position().toPoint())
+
+        # Check if within map bounds
+        if not self.pixmap_item.contains(scene_pos):
+            event.ignore()
+            return
+
+        # Calculate normalized coordinates
+        pixmap_rect = self.pixmap_item.sceneBoundingRect()
+        rel_x = scene_pos.x() - pixmap_rect.left()
+        rel_y = scene_pos.y() - pixmap_rect.top()
+
+        norm_x = rel_x / pixmap_rect.width() if pixmap_rect.width() > 0 else 0.0
+        norm_y = rel_y / pixmap_rect.height() if pixmap_rect.height() > 0 else 0.0
+
+        # Clamp to [0, 1]
+        norm_x = max(0.0, min(1.0, norm_x))
+        norm_y = max(0.0, min(1.0, norm_y))
+
+        # Parse MIME data
+        try:
+            data_bytes = event.mimeData().data(KRAKEN_ITEM_MIME_TYPE).data()
+            data = json.loads(data_bytes.decode("utf-8"))
+
+            item_id = data.get("id")
+            item_type = data.get("type")
+            item_name = data.get("name", "Unknown")
+
+            if item_id and item_type:
+                self.marker_drop_requested.emit(
+                    item_id, item_type, item_name, norm_x, norm_y
+                )
+                event.acceptProposedAction()
+                logger.info(
+                    f"Dropped {item_type} '{item_name}' at ({norm_x:.3f}, {norm_y:.3f})"
+                )
+            else:
+                event.ignore()
+        except Exception as e:
+            logger.error(f"Failed to parse drop data: {e}")
+            event.ignore()
 
     def contextMenuEvent(self, event):
         """
@@ -787,6 +886,7 @@ class MapWidget(QWidget):
     delete_marker_requested = Signal(str)  # marker_id
     change_marker_icon_requested = Signal(str, str)  # marker_id, new_icon
     change_marker_color_requested = Signal(str, str)  # marker_id, new_color_hex
+    marker_drop_requested = Signal(str, str, str, float, float)  # id, type, name, x, y
 
     def __init__(self, parent=None):
         """
@@ -842,6 +942,7 @@ class MapWidget(QWidget):
         self.view.change_marker_color_requested.connect(
             self.change_marker_color_requested.emit
         )
+        self.view.marker_drop_requested.connect(self.marker_drop_requested.emit)
 
         self._maps_data = []  # List of maps for selector
 
@@ -876,6 +977,18 @@ class MapWidget(QWidget):
         if index >= 0:
             map_id = self.map_selector.itemData(index)
             self.map_selected.emit(map_id)
+
+    def get_selected_map_id(self) -> Optional[str]:
+        """
+        Returns the currently selected map ID.
+
+        Returns:
+            Optional[str]: The map ID, or None if no map is selected.
+        """
+        index = self.map_selector.currentIndex()
+        if index >= 0:
+            return self.map_selector.itemData(index)
+        return None
 
     def _on_marker_moved(self, marker_id: str, x: float, y: float) -> None:
         """
