@@ -170,18 +170,80 @@ python -m src.cli.relation delete --database world.kraken --id <relation-id>
 python -m src.cli.relation delete --database world.kraken --id <relation-id> --force
 ```
 
-## Longform Export
+## Map Management
+
+### Create a Map
+
+```bash
+python -m src.cli.map create \
+  --database world.kraken \
+  --name "Middle Earth" \
+  --image "path/to/map.png"
+```
+
+### List Maps
+
+```bash
+python -m src.cli.map list --database world.kraken
+```
+
+### Manage Markers
+
+```bash
+# Add a marker
+python -m src.cli.map marker-add \
+  --database world.kraken \
+  --map-id <map-id> \
+  --object-id <entity-or-event-id> \
+  --object-type entity \
+  --x 100.0 --y 200.0 \
+  --label "Rivendell"
+```
+
+## Wiki Management
+
+### Scan for Wiki Links
+
+Automatically detect `[[WikiLinks]]` in descriptions and create "mentions" relations.
+
+```bash
+python -m src.cli.wiki scan \
+  --database world.kraken \
+  --source <entity-id> \
+  --field description
+```
+
+## Longform Management
+
+### Export to Markdown
 
 ```bash
 # Export to stdout
-python -m src.cli.export_longform world.kraken
+python -m src.cli.longform export --database world.kraken
 
 # Export to file
-python -m src.cli.export_longform world.kraken output.md
-
-# Export specific document
-python -m src.cli.export_longform world.kraken --doc-id custom
+python -m src.cli.longform export --database world.kraken --output output.md
 ```
+
+### Manage Document Structure
+
+```bash
+# Move an entry
+python -m src.cli.longform move \
+  --database world.kraken \
+  --table events \
+  --id <event-id> \
+  --parent <new-parent-id> \
+  --position 0
+
+# Remove an entry (from document only)
+python -m src.cli.longform remove \
+  --database world.kraken \
+  --table entities \
+  --id <entity-id>
+```
+
+
 
 ## Common Options
 
