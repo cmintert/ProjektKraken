@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QComboBox,
+    QLineEdit,
     QMenu,
 )
 from PySide6.QtCore import Qt, Signal
@@ -75,6 +76,13 @@ class UnifiedListWidget(QWidget):
 
         self.layout.addLayout(top_bar)
 
+        # Search Bar (Live filtering)
+        self.search_bar = QLineEdit()
+        self.search_bar.setPlaceholderText("Search events and entities...")
+        self.search_bar.setClearButtonEnabled(True)
+        self.search_bar.textChanged.connect(self._on_search_text_changed)
+        self.layout.addWidget(self.search_bar)
+
         # Filter (Optional, good for unified lists)
         self.filter_combo = QComboBox()
         self.filter_combo.addItems(["All Items", "Events Only", "Entities Only"])
@@ -96,6 +104,7 @@ class UnifiedListWidget(QWidget):
         # Data Cache
         self._events: List[Event] = []
         self._entities: List[Entity] = []
+        self._search_term = ""  # Track current search term
 
         # Colors (Hardcoded fallback, ideally from ThemeManager)
         # dark_mode values from themes.json
@@ -169,6 +178,9 @@ class UnifiedListWidget(QWidget):
         if show_entities and self._entities:
             # Header item? No, user said differentiated by color.
             for entity in self._entities:
+                # Apply search filter
+                if not self._matches_search(entity):
+                    continue
                 label = f"{entity.name} ({entity.type})"
                 item = QListWidgetItem(label)
                 item.setData(Qt.UserRole, entity.id)
@@ -179,6 +191,9 @@ class UnifiedListWidget(QWidget):
 
         if show_events and self._events:
             for event in self._events:
+                # Apply search filter
+                if not self._matches_search(event):
+                    continue
                 label = f"[{event.lore_date}] {event.name}"
                 item = QListWidgetItem(label)
                 item.setData(Qt.UserRole, event.id)
@@ -204,6 +219,43 @@ class UnifiedListWidget(QWidget):
         else:
             self.list_widget.hide()
             self.empty_label.show()
+
+    def _on_search_text_changed(self, text: str):
+        """
+        Handles search bar text changes for live filtering.
+
+        Args:
+            text (str): The search text.
+        """
+        self._search_term = text.lower().strip()
+        self._render_list()
+
+    def _matches_search(self, obj) -> bool:
+        """
+        Checks if an object matches the current search term.
+
+        Args:
+            obj: Event or Entity object.
+
+        Returns:
+            bool: True if matches search (or no search active).
+        """
+        if not self._search_term:
+            return True
+        
+        # Search in name
+        if self._search_term in obj.name.lower():
+            return True
+        
+        # Search in type (for entities)
+        if hasattr(obj, 'type') and self._search_term in obj.type.lower():
+            return True
+        
+        # Search in event type
+        if hasattr(obj, 'event_type') and self._search_term in obj.event_type.lower():
+            return True
+        
+        return False
 
     def _on_filter_changed(self, text):
         """
