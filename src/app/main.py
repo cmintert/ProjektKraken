@@ -81,6 +81,7 @@ from src.app.constants import (
     WINDOW_SETTINGS_APP,
     STATUS_DB_INIT_FAIL,
     STATUS_ERROR_PREFIX,
+    IMAGE_FILE_FILTER,
 )
 from src.app.ui_manager import UIManager
 from src.services import longform_builder
@@ -918,7 +919,7 @@ class MainWindow(QMainWindow):
 
         # 1. Select Image
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "Select Map Image", "", "Images (*.png *.jpg *.jpeg *.bmp)"
+            self, "Select Map Image", "", IMAGE_FILE_FILTER
         )
         if not file_path:
             return

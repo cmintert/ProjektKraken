@@ -30,3 +30,7 @@ DOCK_TITLE_MAP = "Map"
 # Status Messages
 STATUS_DB_INIT_FAIL = "Database Initialization Failed!"
 STATUS_ERROR_PREFIX = "Error: "
+
+# File Dialog Filters
+SUPPORTED_IMAGE_FORMATS = ["png", "jpg", "jpeg", "bmp", "webp"]
+IMAGE_FILE_FILTER = f"Images ({' '.join(['*.' + ext for ext in SUPPORTED_IMAGE_FORMATS])})"
