@@ -79,7 +79,7 @@ class UnifiedListWidget(QWidget):
 
         # Search Bar (Live filtering)
         self.search_bar = QLineEdit()
-        self.search_bar.setPlaceholderText("Search events and entities...")
+        self.search_bar.setPlaceholderText("Search names, descriptions, tags...")
         self.search_bar.setClearButtonEnabled(True)
         self.search_bar.textChanged.connect(self._on_search_text_changed)
         self.layout.addWidget(self.search_bar)
@@ -376,6 +376,7 @@ class UnifiedListWidget(QWidget):
     def _matches_search(self, obj) -> bool:
         """
         Checks if an object matches the current search term.
+        Performs full text search on name, type, description, tags, and attributes.
 
         Args:
             obj: Event or Entity object.
@@ -386,17 +387,31 @@ class UnifiedListWidget(QWidget):
         if not self._search_term:
             return True
 
-        # Search in name
-        if self._search_term in obj.name.lower():
+        term = self._search_term
+
+        # 1. Name
+        if term in obj.name.lower():
             return True
 
-        # Search in type (for entities)
-        if hasattr(obj, "type") and self._search_term in obj.type.lower():
+        # 2. Type
+        if hasattr(obj, "type") and term in obj.type.lower():
             return True
 
-        # Search in event type
-        if hasattr(obj, "event_type") and self._search_term in obj.event_type.lower():
+        # 3. Description
+        if hasattr(obj, "description") and term in obj.description.lower():
             return True
+
+        # 4. Tags
+        if hasattr(obj, "tags"):
+            for tag in obj.tags:
+                if term in tag.lower():
+                    return True
+
+        # 5. String Attributes
+        if hasattr(obj, "attributes"):
+            for value in obj.attributes.values():
+                if isinstance(value, str) and term in value.lower():
+                    return True
 
         return False
 
