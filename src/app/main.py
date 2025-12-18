@@ -127,6 +127,14 @@ class MainWindow(QMainWindow):
         self.unified_list = UnifiedListWidget()
         self.event_editor = EventEditorWidget()
         self.entity_editor = EntityEditorWidget()
+
+        # Connect dirty signals to update dock titles
+        self.event_editor.dirty_changed.connect(
+            lambda dirty: self._on_editor_dirty_changed(self.event_editor, dirty)
+        )
+        self.entity_editor.dirty_changed.connect(
+            lambda dirty: self._on_editor_dirty_changed(self.entity_editor, dirty)
+        )
         self.timeline = TimelineWidget()
         self.map_widget = MapWidget()
 
@@ -137,8 +145,13 @@ class MainWindow(QMainWindow):
         self.calendar_converter = None
 
         # Pending Selection (for creation flow)
+        # Pending Selection (for creation flow)
         self._pending_select_id = None
         self._pending_select_type = None
+
+        # Track last selection for undoing on cancel
+        self._last_selected_id = None
+        self._last_selected_type = None
 
         self.longform_editor = LongformEditorWidget()
 
@@ -349,11 +362,85 @@ class MainWindow(QMainWindow):
             item_type = "entity"
 
         if item_type == "event":
+            if not self.check_unsaved_changes(self.event_editor):
+                # Attempt to revert - simplified for now, strictly just return
+                # Visually the list might differ from detailed view if we just return
+                return
+            
             self.ui_manager.docks["event"].raise_()
             self.load_event_details(item_id)
+            self._last_selected_id = item_id
+            self._last_selected_type = "event"
+
         elif item_type == "entity":
+            if not self.check_unsaved_changes(self.entity_editor):
+                return
+            
             self.ui_manager.docks["entity"].raise_()
             self.load_entity_details(item_id)
+            self._last_selected_id = item_id
+            self._last_selected_type = "entity"
+
+    def check_unsaved_changes(self, editor) -> bool:
+        """
+        Checks if the editor has unsaved changes and prompts the user.
+
+        Args:
+            editor: The editor widget to check.
+
+        Returns:
+            bool: True if safe to proceed (Saved, Discarded, or Clean).
+                  False if User Cancelled.
+        """
+        if not hasattr(editor, "has_unsaved_changes") or not editor.has_unsaved_changes():
+            return True
+
+        # Determine readable name
+        editor_name = "Item"
+        if editor == self.event_editor:
+            editor_name = "Event"
+        elif editor == self.entity_editor:
+            editor_name = "Entity"
+
+        reply = QMessageBox.warning(
+            self,
+            "Unsaved Changes",
+            f"You have unsaved changes in the {editor_name} Editor.\n"
+            "Do you want to save them before proceeding?",
+            QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
+        )
+
+        if reply == QMessageBox.Save:
+            # Trigger save
+            # We assume _on_save calls standard save mechanism
+            if hasattr(editor, "_on_save"):
+                editor._on_save()
+            return True
+        elif reply == QMessageBox.Discard:
+            return True
+        else:  # Cancel
+            return False
+
+    def _on_editor_dirty_changed(self, editor, dirty):
+        """Updates the dock title with an asterisk if dirty."""
+        dock_key = None
+        current_title = ""
+        
+        # Determine which dock
+        if editor == self.event_editor:
+            dock_key = "event"
+            # Get base title from constants (need to import or hardcode fallback)
+            # Assuming UIManager set it initially. We can read current and strip *.
+            base_title = "Event Inspector"
+        elif editor == self.entity_editor:
+            dock_key = "entity"
+            base_title = "Entity Inspector"
+        
+        if dock_key:
+            dock = self.ui_manager.docks.get(dock_key)
+            if dock:
+                new_title = base_title + (" *" if dirty else "")
+                dock.setWindowTitle(new_title)
 
     @Slot(str, str)
     def _on_item_delete_requested(self, item_type: str, item_id: str):
@@ -709,7 +796,14 @@ class MainWindow(QMainWindow):
         """
         Handles application close event.
         Saves window geometry/state and strictly cleans up worker thread.
+        Also checks for unsaved changes.
         """
+        # Check unsaved changes
+        for editor in [self.event_editor, self.entity_editor]:
+            if not self.check_unsaved_changes(editor):
+                event.ignore()
+                return
+
         # Save State
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         settings.setValue("geometry", self.saveGeometry())
@@ -745,6 +839,14 @@ class MainWindow(QMainWindow):
 
     def load_event_details(self, event_id: str):
         """Requests loading details for a specific event."""
+        # Note: If called from selection, we already checked. 
+        # But if called programmatically, we might want to check here too?
+        # Actually _on_item_selected calls this.
+        # But for robust safety, checking here is good, unless it causes double prompts.
+        # Let's rely on the caller (selection/navigation) to guard, as this is a "request"
+        # and checking UI state inside a low-level request might be mixing concerns slightly.
+        # However, to start simple, we guard at user-interaction points.
+        
         QMetaObject.invokeMethod(
             self.worker,
             "load_event_details",
@@ -795,6 +897,9 @@ class MainWindow(QMainWindow):
         """
         Creates a new entity by emitting a create command.
         """
+        if not self.check_unsaved_changes(self.entity_editor):
+            return
+
         name, ok = QInputDialog.getText(self, "New Entity", "Entity Name:")
         if not ok or not name.strip():
             return
@@ -806,6 +911,9 @@ class MainWindow(QMainWindow):
         """
         Creates a new event by emitting a create command.
         """
+        if not self.check_unsaved_changes(self.event_editor):
+            return
+
         name, ok = QInputDialog.getText(self, "New Event", "Event Name:")
         if not ok or not name.strip():
             return
@@ -1154,13 +1262,18 @@ class MainWindow(QMainWindow):
 
         if is_uuid:
             # ID-based navigation - direct lookup
+            # ID-based navigation - direct lookup
             entity = next((e for e in self._cached_entities if e.id == target), None)
             if entity:
+                if not self.check_unsaved_changes(self.entity_editor):
+                    return
                 self.load_entity_details(entity.id)
                 return
 
             event = next((e for e in self._cached_events if e.id == target), None)
             if event:
+                if not self.check_unsaved_changes(self.event_editor):
+                    return
                 self.load_event_details(event.id)
                 return
 
@@ -1178,6 +1291,8 @@ class MainWindow(QMainWindow):
             )
 
             if entity:
+                if not self.check_unsaved_changes(self.entity_editor):
+                    return
                 self.load_entity_details(entity.id)
                 return
 
@@ -1188,6 +1303,8 @@ class MainWindow(QMainWindow):
             )
 
             if event:
+                if not self.check_unsaved_changes(self.event_editor):
+                    return
                 self.load_event_details(event.id)
                 return
 

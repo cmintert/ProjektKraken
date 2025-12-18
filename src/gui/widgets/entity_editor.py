@@ -37,7 +37,9 @@ class EntityEditorWidget(QWidget):
     add_relation_requested = Signal(str, str, str, bool)  # src, tgt, type, bi
     remove_relation_requested = Signal(str)
     update_relation_requested = Signal(str, str, str)
+    update_relation_requested = Signal(str, str, str)
     link_clicked = Signal(str)
+    dirty_changed = Signal(bool)
 
     def __init__(self, parent=None):
         """
@@ -133,9 +135,35 @@ class EntityEditorWidget(QWidget):
         # Internal State
         self._current_entity_id = None
         self._current_created_at = 0.0
+        self._is_dirty = False
+
+        self._connect_dirty_signals()
 
         # Start disabled
         self.setEnabled(False)
+
+    def _connect_dirty_signals(self):
+        """Connects inputs to dirty state."""
+        self.name_edit.textChanged.connect(lambda: self.set_dirty(True))
+        self.type_edit.currentTextChanged.connect(lambda: self.set_dirty(True))
+        self.desc_edit.textChanged.connect(lambda: self.set_dirty(True))
+        self.tag_editor.tags_changed.connect(lambda: self.set_dirty(True))
+        self.attribute_editor.attributes_changed.connect(lambda: self.set_dirty(True))
+
+    def set_dirty(self, dirty: bool):
+        """Sets dirty state and updates UI."""
+        if self._is_dirty != dirty:
+            self._is_dirty = dirty
+            self.dirty_changed.emit(dirty)
+            self.btn_save.setEnabled(dirty)
+            if dirty:
+                self.btn_save.setText("Save Changes *")
+            else:
+                self.btn_save.setText("Save Changes")
+
+    def has_unsaved_changes(self) -> bool:
+        """Returns True if dirty."""
+        return self._is_dirty
 
     def update_suggestions(
         self, items: list[tuple[str, str, str]] = None, names: list[str] = None
@@ -167,6 +195,11 @@ class EntityEditorWidget(QWidget):
         """
         self._current_entity_id = entity.id
         self._current_created_at = entity.created_at
+
+        # Block signals
+        self.name_edit.blockSignals(True)
+        self.type_edit.blockSignals(True)
+        self.desc_edit.blockSignals(True)
 
         self.name_edit.setText(entity.name)
         self.type_edit.setCurrentText(entity.type)
@@ -201,6 +234,12 @@ class EntityEditorWidget(QWidget):
                 self.rel_list.addItem(item)
 
         self.setEnabled(True)
+        
+        # Unblock & Reset
+        self.name_edit.blockSignals(False)
+        self.type_edit.blockSignals(False)
+        self.desc_edit.blockSignals(False)
+        self.set_dirty(False)
 
     def _on_save(self):
         """
@@ -223,6 +262,7 @@ class EntityEditorWidget(QWidget):
         }
 
         self.save_requested.emit(entity_data)
+        self.set_dirty(False)
 
     def clear(self):
         """Clears the editor."""

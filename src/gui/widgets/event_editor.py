@@ -45,6 +45,7 @@ class EventEditorWidget(QWidget):
     remove_relation_requested = Signal(str)  # rel_id
     update_relation_requested = Signal(str, str, str)  # rel_id, target_id, rel_type
     link_clicked = Signal(str)  # target_name
+    dirty_changed = Signal(bool)
 
     def __init__(self, parent=None):
         """
@@ -162,6 +163,7 @@ class EventEditorWidget(QWidget):
         # Buttons
         btn_layout = QHBoxLayout()
         self.btn_save = QPushButton("Save Changes")
+        self.btn_save.setEnabled(False)
         self.btn_save.clicked.connect(self._on_save)
         btn_layout.addStretch()
         btn_layout.addWidget(self.btn_save)
@@ -171,11 +173,46 @@ class EventEditorWidget(QWidget):
         # Internal State
         self._current_event_id = None
         self._current_created_at = 0.0
-        self._current_event_id = None
-        self._current_created_at = 0.0
+        self._is_dirty = False
+
+        # Connect signals for dirty tracking
+        self._connect_dirty_signals()
 
         # Start disabled until specific event loaded
         self.setEnabled(False)
+
+    def _connect_dirty_signals(self):
+        """Connects input widget signals to set_dirty(True)."""
+        self.name_edit.textChanged.connect(lambda: self.set_dirty(True))
+        self.date_edit.value_changed.connect(lambda: self.set_dirty(True))
+        # Duration/End Date logic triggers each other, but ultimately user interaction
+        # should trigger dirty. Value changed is fine.
+        self.duration_widget.value_changed.connect(lambda: self.set_dirty(True))
+        self.type_edit.currentTextChanged.connect(lambda: self.set_dirty(True))
+        self.desc_edit.textChanged.connect(lambda: self.set_dirty(True))
+        self.tag_editor.tags_changed.connect(lambda: self.set_dirty(True))
+        self.attribute_editor.attributes_changed.connect(lambda: self.set_dirty(True))
+
+    def set_dirty(self, dirty: bool):
+        """
+        Sets the dirty state of the editor.
+
+        Args:
+            dirty (bool): True if changes are unsaved, False otherwise.
+        """
+        if self._is_dirty != dirty:
+            self._is_dirty = dirty
+            self.dirty_changed.emit(dirty)
+            self.btn_save.setEnabled(dirty)
+            # Maybe change button text or style?
+            if dirty:
+                self.btn_save.setText("Save Changes *")
+            else:
+                self.btn_save.setText("Save Changes")
+
+    def has_unsaved_changes(self) -> bool:
+        """Returns True if the editor has unsaved changes."""
+        return self._is_dirty
 
     def _on_start_date_changed(self, new_start: float):
         """Updates duration widget context and recalculates end date."""
@@ -248,6 +285,20 @@ class EventEditorWidget(QWidget):
         self._current_event_id = event.id
         self._current_created_at = event.created_at  # Preserve validation data
 
+        # Block signals to prevent dirty trigger during load
+        self.name_edit.blockSignals(True)
+        self.date_edit.blockSignals(True)
+        self.duration_widget.blockSignals(True)
+        self.end_date_edit.blockSignals(True)
+        self.type_edit.blockSignals(True)
+        self.desc_edit.blockSignals(True)
+        # Custom widgets might not need blocking if we don't connect to them directly 
+        # or if they don't emit on programmatic set.
+        # TagEditor and AttributeEditor emit on programmatic load usually? 
+        # Let's check their code.. load_tags calls clear() -> might trigger?
+        # TagEditor.load_tags clears and adds items. It does NOT emit tags_changed.
+        # AttributeEditor.load_attributes sets _block_signals=True internally.
+        
         self.name_edit.setText(event.name)
         self.date_edit.set_value(event.lore_date)
 
@@ -288,9 +339,19 @@ class EventEditorWidget(QWidget):
                 label = f"<- {source_display} [{rel['rel_type']}]"
                 item = QListWidgetItem(label)
                 item.setData(Qt.UserRole, rel)
+                item.setData(Qt.UserRole, rel)
                 item.setForeground(Qt.gray)  # Visually distinct
                 self.rel_list.addItem(item)
 
+        # Unblock signals
+        self.name_edit.blockSignals(False)
+        self.date_edit.blockSignals(False)
+        self.duration_widget.blockSignals(False)
+        self.end_date_edit.blockSignals(False)
+        self.type_edit.blockSignals(False)
+        self.desc_edit.blockSignals(False)
+
+        self.set_dirty(False)
         self.setEnabled(True)
 
     def _on_save(self):
@@ -316,7 +377,10 @@ class EventEditorWidget(QWidget):
             "tags": self.tag_editor.get_tags(),
         }
 
+
+
         self.save_requested.emit(event_data)
+        self.set_dirty(False)
 
     def _on_add_relation(self):
         """
