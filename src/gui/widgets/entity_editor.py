@@ -34,9 +34,9 @@ class EntityEditorWidget(QWidget):
     """
 
     save_requested = Signal(dict)
+    discard_requested = Signal(str)  # item_id to reload
     add_relation_requested = Signal(str, str, str, bool)  # src, tgt, type, bi
     remove_relation_requested = Signal(str)
-    update_relation_requested = Signal(str, str, str)
     update_relation_requested = Signal(str, str, str)
     link_clicked = Signal(str)
     dirty_changed = Signal(bool)
@@ -127,7 +127,13 @@ class EntityEditorWidget(QWidget):
         btn_layout = QHBoxLayout()
         self.btn_save = QPushButton("Save Changes")
         self.btn_save.clicked.connect(self._on_save)
+
+        self.btn_discard = QPushButton("Discard")
+        self.btn_discard.setEnabled(False)
+        self.btn_discard.clicked.connect(self._on_discard)
+
         btn_layout.addStretch()
+        btn_layout.addWidget(self.btn_discard)
         btn_layout.addWidget(self.btn_save)
 
         self.layout.addLayout(btn_layout)
@@ -159,6 +165,7 @@ class EntityEditorWidget(QWidget):
             self._is_dirty = dirty
             self.dirty_changed.emit(dirty)
             self.btn_save.setEnabled(dirty)
+            self.btn_discard.setEnabled(dirty)
             if dirty:
                 self.btn_save.setText("Save Changes *")
             else:
@@ -270,6 +277,15 @@ class EntityEditorWidget(QWidget):
 
         self.save_requested.emit(entity_data)
         self.set_dirty(False)
+
+    def _on_discard(self):
+        """
+        Discards changes by emitting signal to reload the current entity.
+        """
+        if not self._current_entity_id:
+            return
+
+        self.discard_requested.emit(self._current_entity_id)
 
     def clear(self):
         """Clears the editor."""

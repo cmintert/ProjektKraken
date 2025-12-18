@@ -299,6 +299,10 @@ class MainWindow(QMainWindow):
         self.event_editor.link_clicked.connect(self.navigate_to_entity)
         self.entity_editor.link_clicked.connect(self.navigate_to_entity)
 
+        # Discard signals - reload from database
+        self.event_editor.discard_requested.connect(self.load_event_details)
+        self.entity_editor.discard_requested.connect(self.load_entity_details)
+
         # Timeline
         self.timeline.event_selected.connect(self.load_event_details)
         self.timeline.current_time_changed.connect(self.on_current_time_changed)

@@ -39,6 +39,7 @@ class EventEditorWidget(QWidget):
     """
 
     save_requested = Signal(dict)
+    discard_requested = Signal(str)  # item_id to reload
     add_relation_requested = Signal(
         str, str, str, bool
     )  # source_id, target_id, type, bidirectional
@@ -165,7 +166,13 @@ class EventEditorWidget(QWidget):
         self.btn_save = QPushButton("Save Changes")
         self.btn_save.setEnabled(False)
         self.btn_save.clicked.connect(self._on_save)
+
+        self.btn_discard = QPushButton("Discard")
+        self.btn_discard.setEnabled(False)
+        self.btn_discard.clicked.connect(self._on_discard)
+
         btn_layout.addStretch()
+        btn_layout.addWidget(self.btn_discard)
         btn_layout.addWidget(self.btn_save)
 
         self.layout.addLayout(btn_layout)
@@ -207,6 +214,7 @@ class EventEditorWidget(QWidget):
             self._is_dirty = dirty
             self.dirty_changed.emit(dirty)
             self.btn_save.setEnabled(dirty)
+            self.btn_discard.setEnabled(dirty)
             # Maybe change button text or style?
             if dirty:
                 self.btn_save.setText("Save Changes *")
@@ -386,6 +394,15 @@ class EventEditorWidget(QWidget):
 
         self.save_requested.emit(event_data)
         self.set_dirty(False)
+
+    def _on_discard(self):
+        """
+        Discards changes by emitting signal to reload the current event.
+        """
+        if not self._current_event_id:
+            return
+
+        self.discard_requested.emit(self._current_event_id)
 
     def _on_add_relation(self):
         """
