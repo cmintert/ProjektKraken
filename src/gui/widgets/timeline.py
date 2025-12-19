@@ -81,11 +81,13 @@ class EventItem(QGraphicsItem):
         # Position is handled by parent/layout, but X is strictly date-based
         self.setPos(event.lore_date * scale_factor, 0)
 
-        # Flags: Fixed size on screen
+        # Flags: Movable and fixed size on screen
         self.setFlags(
             QGraphicsItem.ItemIsSelectable
             | QGraphicsItem.ItemIsFocusable
             | QGraphicsItem.ItemIgnoresTransformations
+            | QGraphicsItem.ItemIsMovable
+            | QGraphicsItem.ItemSendsGeometryChanges
         )
 
         # Enable caching for improved rendering performance
@@ -93,6 +95,15 @@ class EventItem(QGraphicsItem):
 
         # Set pointing hand cursor to indicate clickability
         self.setCursor(QCursor(Qt.PointingHandCursor))
+
+        # Store initial Y position for constraining vertical movement
+        self._initial_y = 0.0
+
+        # Callback for when drag completes: fn(event_id, new_lore_date)
+        self.on_drag_complete = None
+
+        # Track if we're currently dragging
+        self._is_dragging = False
 
     def update_event(self, event):
         """
@@ -153,6 +164,66 @@ class EventItem(QGraphicsItem):
             path.addPolygon(diamond)
 
         return path
+
+    def mousePressEvent(self, event):
+        """
+        Handles mouse press to track drag state.
+
+        Args:
+            event: The mouse event.
+        """
+        super().mousePressEvent(event)
+        # Mark that user initiated a drag - used by itemChange to know
+        # when to apply constraints vs allowing programmatic moves
+        self._is_dragging = True
+        # Capture current Y as the constraint value at drag start
+        self._initial_y = self.y()
+
+    def itemChange(self, change, value):
+        """
+        Handles item changes to constrain dragging to horizontal only
+        and update the lore_date during drag.
+
+        Args:
+            change: The type of change.
+            value: The new value.
+
+        Returns:
+            The constrained value.
+        """
+        if change == QGraphicsItem.ItemPositionChange:
+            new_pos = value
+
+            # Only constrain Y during user-initiated drags
+            if self._is_dragging:
+                new_pos.setY(self._initial_y)
+
+                # Update the event's lore_date based on new X position
+                new_lore_date = new_pos.x() / self.scale_factor
+                self.event.lore_date = new_lore_date
+
+                # Trigger repaint to update the displayed date
+                self.update()
+
+            return new_pos
+        return super().itemChange(change, value)
+
+    def mouseReleaseEvent(self, event):
+        """
+        Handles mouse release to emit drag completion callback.
+
+        Args:
+            event: The mouse event.
+        """
+        super().mouseReleaseEvent(event)
+
+        if self._is_dragging:
+            self._is_dragging = False
+
+            # Emit callback with final position
+            if self.on_drag_complete:
+                new_lore_date = self.x() / self.scale_factor
+                self.on_drag_complete(self.event.id, new_lore_date)
 
     def paint(self, painter, option, widget=None):
         """
@@ -450,6 +521,7 @@ class TimelineView(QGraphicsView):
     event_selected = Signal(str)
     playhead_time_changed = Signal(float)  # Emitted when playhead position changes
     current_time_changed = Signal(float)  # Emitted when current time is changed
+    event_date_changed = Signal(str, float)  # (event_id, new_lore_date)
 
     LANE_HEIGHT = 40
     RULER_HEIGHT = 50  # Increased for semantic ruler with context tier
@@ -500,6 +572,7 @@ class TimelineView(QGraphicsView):
         self.events = []
         self.scale_factor = 20.0
         self._initial_fit_pending = False
+        self._has_done_initial_fit = False  # Only fit_all on first load
 
         # Track current zoom level
         self._current_zoom = 1.0
@@ -552,6 +625,18 @@ class TimelineView(QGraphicsView):
         self._playhead._time = new_time  # Directly update internal state
         self.playhead_time_changed.emit(new_time)
 
+    def _on_event_drag_complete(self, event_id: str, new_lore_date: float):
+        """
+        Called when an event item is dragged to a new position.
+        Emits the event_date_changed signal for persistence.
+
+        Args:
+            event_id: The ID of the event that was moved.
+            new_lore_date: The new lore_date value.
+        """
+        logger.debug(f"Event {event_id} dragged to lore_date {new_lore_date}")
+        self.event_date_changed.emit(event_id, new_lore_date)
+
     def _update_corner_widget(self, theme):
         """
         Updates the corner widget background to match the theme.
@@ -572,6 +657,7 @@ class TimelineView(QGraphicsView):
         if self._initial_fit_pending and self.width() > 0 and self.height() > 0:
             self.fit_all()
             self._initial_fit_pending = False
+            self._has_done_initial_fit = True
 
     # Height allocated for sticky parent context tier
     CONTEXT_TIER_HEIGHT = 14
@@ -775,20 +861,28 @@ class TimelineView(QGraphicsView):
                 item = existing_items[event.id]
                 item.update_event(event)
                 item.setY(y)
+                item._initial_y = y  # Update for drag constraint
                 reused_ids.add(event.id)
             else:
                 item = EventItem(event, self.scale_factor)
                 item.setY(y)
+                item._initial_y = y  # Set for drag constraint
+                item.on_drag_complete = self._on_event_drag_complete
                 self.scene.addItem(item)
 
-            # Reuse or create drop line
+            # Reuse or create drop line (extend to ruler area)
+            drop_line_top = -self.RULER_HEIGHT  # Extend into ruler area
             if event.id in drop_lines:
                 line = drop_lines[event.id]
                 # Update line position
-                line.setLine(item.x(), 0, item.x(), y)
+                line.setLine(item.x(), drop_line_top, item.x(), y)
             else:
                 line = self.scene.addLine(
-                    item.x(), 0, item.x(), y, QPen(QColor(80, 80, 80), 1, Qt.DashLine)
+                    item.x(),
+                    drop_line_top,
+                    item.x(),
+                    y,
+                    QPen(QColor(80, 80, 80), 1, Qt.DashLine),
                 )
                 line.setZValue(-1)
                 line.event_id = event.id  # Mark for tracking
@@ -841,12 +935,14 @@ class TimelineView(QGraphicsView):
 
             # Don't auto-center current time line - only show when explicitly set by user
 
-            # Check if we can fit immediately
-            if self.isVisible() and self.width() > 0 and self.height() > 0:
-                self.fit_all()
-                self._initial_fit_pending = False
-            else:
-                self._initial_fit_pending = True
+            # Only fit_all on initial load, not on refreshes/updates
+            if not self._has_done_initial_fit:
+                if self.isVisible() and self.width() > 0 and self.height() > 0:
+                    self.fit_all()
+                    self._initial_fit_pending = False
+                    self._has_done_initial_fit = True
+                else:
+                    self._initial_fit_pending = True
 
     def fit_all(self):
         """
@@ -1057,6 +1153,7 @@ class TimelineWidget(QWidget):
     event_selected = Signal(str)
     playhead_time_changed = Signal(float)  # Expose playhead signal from view
     current_time_changed = Signal(float)  # Expose current time signal from view
+    event_date_changed = Signal(str, float)  # (event_id, new_lore_date)
 
     def __init__(self, parent=None):
         """
@@ -1121,6 +1218,7 @@ class TimelineWidget(QWidget):
         self.view.event_selected.connect(self.event_selected.emit)
         self.view.playhead_time_changed.connect(self.playhead_time_changed.emit)
         self.view.current_time_changed.connect(self.current_time_changed.emit)
+        self.view.event_date_changed.connect(self.event_date_changed.emit)
         self.layout.addWidget(self.view)
 
     def set_events(self, events):

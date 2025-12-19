@@ -129,3 +129,79 @@ def test_playhead_drag(timeline, qtbot):
     # 4. Verify new time
     # moved 100px / 10.0 scale = 10.0 time units
     assert blocker.args[0] == 10.0
+
+
+def test_event_drag_date_change(timeline, qtbot):
+    """Test that dragging an event item emits event_date_changed signal."""
+    # 1. Setup event
+    events = [
+        Event(id="test-event-1", name="Draggable", lore_date=50.0, type="generic")
+    ]
+    timeline.set_events(events)
+
+    # 2. Find the event item
+    items = [i for i in timeline.view.scene.items() if isinstance(i, EventItem)]
+    assert len(items) == 1
+    item = items[0]
+
+    # 3. Verify initial state
+    scale = timeline.view.scale_factor
+    initial_x = 50.0 * scale
+    assert abs(item.x() - initial_x) < 0.01
+
+    # 4. Store initial Y position (should be preserved during drag)
+    initial_y = item.y()
+
+    # 5. Simulate user-initiated drag:
+    # - Set _is_dragging to True (normally set by mousePressEvent)
+    # - Set _initial_y (normally captured from current Y at drag start)
+    item._is_dragging = True
+    item._initial_y = initial_y
+
+    # 6. Simulate drag: move to new position
+    new_lore_date = 75.0
+    new_x = new_lore_date * scale
+    item.setPos(new_x, initial_y)
+
+    # 7. Verify the event's lore_date was updated in-memory
+    assert abs(item.event.lore_date - new_lore_date) < 0.01
+
+    # 8. Test signal emission on mouse release
+    with qtbot.waitSignal(timeline.event_date_changed) as blocker:
+        # Call callback directly (simulates mouseReleaseEvent logic)
+        item.on_drag_complete = timeline.view._on_event_drag_complete
+        if item.on_drag_complete:
+            item.on_drag_complete(item.event.id, item.x() / scale)
+        item._is_dragging = False
+
+    # 9. Verify signal was emitted with correct values
+    assert blocker.args[0] == "test-event-1"
+    assert abs(blocker.args[1] - new_lore_date) < 0.01
+
+
+def test_event_drag_constrained_to_horizontal(timeline):
+    """Test that event dragging is constrained to horizontal movement."""
+    events = [Event(id="h-test", name="Horizontal", lore_date=100.0, type="generic")]
+    timeline.set_events(events)
+
+    items = [i for i in timeline.view.scene.items() if isinstance(i, EventItem)]
+    item = items[0]
+
+    initial_y = item.y()
+
+    # Simulate user-initiated drag
+    item._is_dragging = True
+    item._initial_y = initial_y
+
+    # Try to move both X and Y
+    new_x = 200.0 * timeline.view.scale_factor
+    new_y = initial_y + 100  # Try to move vertically
+
+    item.setPos(new_x, new_y)
+
+    # Y should be constrained to initial value
+    assert item.y() == initial_y
+    # X should have changed
+    assert abs(item.x() - new_x) < 0.01
+
+    item._is_dragging = False

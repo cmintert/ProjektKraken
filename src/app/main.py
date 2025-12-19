@@ -307,6 +307,7 @@ class MainWindow(QMainWindow):
         self.timeline.event_selected.connect(self.load_event_details)
         self.timeline.current_time_changed.connect(self.on_current_time_changed)
         self.timeline.playhead_time_changed.connect(self.update_playhead_time_label)
+        self.timeline.event_date_changed.connect(self._on_event_date_changed)
 
         # Longform Editor
         self.longform_editor.promote_requested.connect(self.promote_longform_entry)
@@ -705,7 +706,7 @@ class MainWindow(QMainWindow):
         """
         self.ui_manager.docks["event"].raise_()
         self.event_editor.load_event(event, relations, incoming)
-        self.timeline.focus_event(event.id)
+        # Note: Removed self.timeline.focus_event(event.id) - was disruptive
 
     @Slot(object, list, list)
     def on_entity_details_loaded(self, entity, relations, incoming):
@@ -903,6 +904,20 @@ class MainWindow(QMainWindow):
         if "description" in event_data:
             wiki_cmd = ProcessWikiLinksCommand(event_id, event_data["description"])
             self.command_requested.emit(wiki_cmd)
+
+    @Slot(str, float)
+    def _on_event_date_changed(self, event_id: str, new_lore_date: float):
+        """
+        Handles event date changes from timeline dragging.
+        Persists the new lore_date via UpdateEventCommand.
+
+        Args:
+            event_id: The ID of the event that was dragged.
+            new_lore_date: The new lore_date value.
+        """
+        logger.debug(f"Event {event_id} date changed to {new_lore_date}")
+        cmd = UpdateEventCommand(event_id, {"lore_date": new_lore_date})
+        self.command_requested.emit(cmd)
 
     def create_entity(self):
         """
