@@ -51,7 +51,7 @@ class EventItem(QGraphicsItem):
     }
 
     MAX_WIDTH = 400  # Increased to fit longer calendar-formatted dates
-    ICON_SIZE = 14
+    ICON_SIZE = 16  # Diamond size in pixels (increased from 14)
     PADDING = 5
 
     # Class-level calendar converter (shared across all event items)
@@ -91,6 +91,9 @@ class EventItem(QGraphicsItem):
         # Enable caching for improved rendering performance
         self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
 
+        # Set pointing hand cursor to indicate clickability
+        self.setCursor(QCursor(Qt.PointingHandCursor))
+
     def update_event(self, event):
         """
         Updates the event data for this item and refreshes the display.
@@ -106,7 +109,7 @@ class EventItem(QGraphicsItem):
 
     def boundingRect(self) -> QRectF:
         """
-        Defines the clickable and redrawable area of the item.
+        Defines the redrawable area of the item.
         Includes the diamond icon and the text label.
         Refreshed when selection changes (border width).
         """
@@ -120,6 +123,36 @@ class EventItem(QGraphicsItem):
         return QRectF(
             -self.ICON_SIZE, -self.ICON_SIZE, self.MAX_WIDTH, self.ICON_SIZE * 2 + 8
         )
+
+    def shape(self) -> QPainterPath:
+        """
+        Defines the clickable area of the item.
+        Only includes the diamond icon (or duration bar), not the text labels.
+
+        Returns:
+            QPainterPath: The clickable region path.
+        """
+        path = QPainterPath()
+
+        if self.event.lore_duration > 0:
+            # For duration events, the bar is clickable
+            width = self.event.lore_duration * self.scale_factor
+            width = max(width, 10)
+            path.addRoundedRect(QRectF(0, -6, width, 12), 4, 4)
+        else:
+            # For point events, only the diamond is clickable
+            half = self.ICON_SIZE / 2
+            diamond = QPolygonF(
+                [
+                    QPointF(0, -half),
+                    QPointF(half, 0),
+                    QPointF(0, half),
+                    QPointF(-half, 0),
+                ]
+            )
+            path.addPolygon(diamond)
+
+        return path
 
     def paint(self, painter, option, widget=None):
         """
@@ -445,6 +478,7 @@ class TimelineView(QGraphicsView):
         # Connect to theme manager to trigger redraw of foreground (ruler)
         # Use shiboken6 to check if the C++ object is still valid
         from shiboken6 import isValid
+
         ThemeManager().theme_changed.connect(
             lambda t: self.viewport().update() if isValid(self) else None
         )
@@ -497,15 +531,16 @@ class TimelineView(QGraphicsView):
     def minimumSizeHint(self):
         """
         Override minimum size hint to allow vertical shrinking.
-        
+
         By default, QGraphicsView uses the scene rect to determine
         its minimum size, which prevents the dock from being resized
         smaller than the content. We override this to allow free resizing.
-        
+
         Returns:
             QSize: A small minimum size (200x100) to allow shrinking.
         """
         from PySide6.QtCore import QSize
+
         return QSize(200, 100)
 
     def _on_playhead_moved(self, x_pos):
@@ -787,7 +822,9 @@ class TimelineView(QGraphicsView):
             # Y bounds
             # Events start at 60. Max y is approx (num_lanes * 40) + 60
             # Calculate max lane from assignments
-            max_lane = max(event_lane_assignments.values()) if event_lane_assignments else 0
+            max_lane = (
+                max(event_lane_assignments.values()) if event_lane_assignments else 0
+            )
             max_y = 60 + (max_lane + 1) * self.LANE_HEIGHT + 40
             min_y = 0  # Ruler area
 
@@ -803,7 +840,6 @@ class TimelineView(QGraphicsView):
                 self.set_playhead_time(center_date)
 
             # Don't auto-center current time line - only show when explicitly set by user
-
 
             # Check if we can fit immediately
             if self.isVisible() and self.width() > 0 and self.height() > 0:
