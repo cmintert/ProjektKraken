@@ -22,7 +22,6 @@ from PySide6.QtGui import (
     QPainter,
     QPolygonF,
     QFont,
-    QFontMetrics,
     QPainterPath,
     QCursor,
     QTransform,
@@ -848,41 +847,49 @@ class TimelineView(QGraphicsView):
             axis_pen.setCosmetic(True)
             self.scene.addLine(-1e12, 0, 1e12, 0, axis_pen)
 
-        # Use lane packer to assign lanes
-        self._lane_packer.update_scale_factor(self.scale_factor)
-        event_lane_assignments = self._lane_packer.pack_events(sorted_events)
+        # Use repack logic (via helper) which handles effective scaling
+        # But for initial load, we might just want base scale if current_zoom is 1.0
+        # repack_events() uses self._current_zoom.
+        self.repack_events()
 
         # Now place items in scene
-        for event in sorted_events:
-            lane_index = event_lane_assignments[event.id]
-            y = (lane_index * self.LANE_HEIGHT) + 60  # Start below ruler + Gap
+        # Now place items in scene - REPACK will have set positions, but items new or old need to be managed
+        # Actually repack_events() only updates EXISTING items or lane assignments
+        # We need to create items first?
+        # NO. Logic inversion.
+        # set_events() must CREATE items first, then pack them.
 
-            # Reuse or create item
+        # Correct logic:
+        # 1. Create/Update all EventItems at y=0 (temp)
+        # 2. Call repack_events() to position them vertically.
+
+        # Let's rewrite this block slightly.
+
+        # Create/Update items first
+        for event in sorted_events:
             if event.id in existing_items:
                 item = existing_items[event.id]
                 item.update_event(event)
-                item.setY(y)
-                item._initial_y = y  # Update for drag constraint
+
                 reused_ids.add(event.id)
             else:
                 item = EventItem(event, self.scale_factor)
-                item.setY(y)
-                item._initial_y = y  # Set for drag constraint
+                # item.setY(0) # Will be set by repack
                 item.on_drag_complete = self._on_event_drag_complete
                 self.scene.addItem(item)
+                existing_items[event.id] = item  # Add to map for repack
 
-            # Reuse or create drop line (extend to ruler area)
-            drop_line_top = -self.RULER_HEIGHT  # Extend into ruler area
+            # Reuse or create drop line
+            drop_line_top = -self.RULER_HEIGHT
             if event.id in drop_lines:
                 line = drop_lines[event.id]
-                # Update line position
-                line.setLine(item.x(), drop_line_top, item.x(), y)
+                line.setLine(item.x(), drop_line_top, item.x(), 60)  # Temp Y
             else:
                 line = self.scene.addLine(
                     item.x(),
                     drop_line_top,
                     item.x(),
-                    y,
+                    60,  # Temp Y
                     QPen(QColor(80, 80, 80), 1, Qt.DashLine),
                 )
                 line.setZValue(-1)
@@ -890,14 +897,36 @@ class TimelineView(QGraphicsView):
 
         # Remove items for events that no longer exist
         for event_id, item in existing_items.items():
-            if event_id not in reused_ids:
+            if event_id not in reused_ids and event_id not in [
+                e.id for e in sorted_events if e.id not in reused_ids
+            ]:
+                # Careful: reused_ids tracks updates. The else block adds new items which are not in reused_ids yet but are in sorted_events/existing_items.
+                # Simplest: "if event_id not in [e.id for e in sorted_events]"
+                pass
+
+        # Clean up removed items
+        current_ids = {e.id for e in sorted_events}
+        for event_id, item in list(existing_items.items()):
+            if event_id not in current_ids:
                 self.scene.removeItem(item)
 
-        # Remove orphaned drop lines
-        current_event_ids = {e.id for e in sorted_events}
-        for event_id, line in drop_lines.items():
-            if event_id not in current_event_ids:
+        # Clean up drop lines
+        for event_id, line in list(drop_lines.items()):
+            if event_id not in current_ids:
                 self.scene.removeItem(line)
+
+        # Now Repack
+        self.repack_events()
+
+        # Update Drop Lines after repack
+        # We need to iterate drop lines again to match new item Y
+        # But we don't have a map from item -> drop line easily without query
+        # Actually drop_lines is map id -> line.
+        for event_id, line in drop_lines.items():
+            if event_id in existing_items:  # Still exists
+                item = existing_items[event_id]
+                # Drop line goes to item's Y
+                line.setLine(item.x(), -self.RULER_HEIGHT, item.x(), item.y())
 
         if sorted_events:
             # Calculate bounds from events for the scene rect
@@ -917,10 +946,25 @@ class TimelineView(QGraphicsView):
             # Y bounds
             # Events start at 60. Max y is approx (num_lanes * 40) + 60
             # Calculate max lane from assignments
-            max_lane = (
-                max(event_lane_assignments.values()) if event_lane_assignments else 0
-            )
-            max_y = 60 + (max_lane + 1) * self.LANE_HEIGHT + 40
+            # Calculate max lane from items or use a safe default
+            # We can't access event_lane_assignments here easily anymore.
+            # But the scene rect will be updated by repack_events calls anyway.
+            # However, for the initial scene rect, we should try to estimate or just rely on repack.
+            # Actually, repack_events sets the scene rect! So we might not need this block for Y bounds?
+            # But we need X bounds.
+
+            # Let's just set a safe default height here, and let repack fix it.
+            # Or better, just don't set Y bounds strictly here if repack does it.
+            # But we are setting the scene rect for the whole scene.
+
+            # Let's inspect items to find max Y
+            max_y_found = 60
+            for item in self.scene.items():
+                if isinstance(item, EventItem):
+                    max_y_found = max(max_y_found, item.y())
+
+            max_y = max_y_found + self.LANE_HEIGHT + 40
+
             min_y = 0  # Ruler area
 
             # Set Scene Rect explicitly to avoid infinite lines expanding it
@@ -944,6 +988,60 @@ class TimelineView(QGraphicsView):
                     self._has_done_initial_fit = True
                 else:
                     self._initial_fit_pending = True
+
+    def repack_events(self):
+        """
+        Repacks events into lanes based on the current effective zoom level.
+        This recalculates lane assignments to prevent overlaps as the timeline
+        zooms in and out (changing the effective visual duration of text labels).
+        """
+        if not self.events:
+            return
+
+        # Calculate effective scale (Scene scale * View zoom)
+        # Note: scale_factor is pixels/day in Scene coordinates.
+        # current_zoom is the View transformation scale.
+        effective_scale = self.scale_factor * self._current_zoom
+
+        # Update packer with effective scale
+        self._lane_packer.update_scale_factor(effective_scale)
+        event_lane_assignments = self._lane_packer.pack_events(self.events)
+
+        # Update Y positions of existing items
+        # We need to map event IDs to items again, or iterate scene items
+        existing_items = {}
+        drop_lines = {}
+        for item in self.scene.items():
+            if isinstance(item, EventItem):
+                existing_items[item.event.id] = item
+            elif hasattr(item, "event_id"):
+                drop_lines[item.event_id] = item
+
+        max_lane = 0
+        for event in self.events:
+            if event.id in existing_items:
+                lane_index = event_lane_assignments[event.id]
+                y = (lane_index * self.LANE_HEIGHT) + 60
+                item = existing_items[event.id]
+
+                # Animate or set Y? Just set for now.
+                item.setY(y)
+                item._initial_y = y  # Update constraint
+                if lane_index > max_lane:
+                    max_lane = lane_index
+
+                # Update drop line
+                if event.id in drop_lines:
+                    line = drop_lines[event.id]
+                    line.setLine(item.x(), -self.RULER_HEIGHT, item.x(), y)
+
+        # Recalculate Scene Rect Height
+        current_rect = self.scene.sceneRect()
+        max_y = 60 + (max_lane + 1) * self.LANE_HEIGHT + 40
+        if max_y != current_rect.height():
+            self.scene.setSceneRect(
+                current_rect.x(), current_rect.y(), current_rect.width(), max_y
+            )
 
     def fit_all(self):
         """
@@ -981,6 +1079,9 @@ class TimelineView(QGraphicsView):
             # Apply Transform: Scale X, Reset Y to 1.0
             self.setTransform(QTransform().scale(scale_x, 1.0))
             self._current_zoom = scale_x
+
+            # Repack on new zoom
+            self.repack_events()
 
             # Center X, Align Top Y
             center_x = (start_x + end_x) / 2
@@ -1027,6 +1128,9 @@ class TimelineView(QGraphicsView):
                 # Apply zoom
                 self.scale(factor, 1.0)
                 self._current_zoom = new_zoom
+
+                # Repack on new zoom
+                self.repack_events()
             finally:
                 # Restore original anchor
                 self.setTransformationAnchor(old_anchor)
