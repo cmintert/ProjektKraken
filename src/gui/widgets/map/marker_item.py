@@ -5,7 +5,14 @@ Provides the MarkerItem class for rendering markers on the map.
 """
 
 import logging
-from PySide6.QtWidgets import QGraphicsItem, QGraphicsEllipseItem, QGraphicsTextItem
+from typing import Optional
+from PySide6.QtWidgets import (
+    QGraphicsItem,
+    QGraphicsEllipseItem,
+    QGraphicsTextItem,
+    QGraphicsObject,
+    QGraphicsPixmapItem,
+)
 from PySide6.QtCore import Qt, QRectF, QPointF, Signal
 from PySide6.QtGui import QPainter, QBrush, QPen, QColor, QPixmap, QCursor
 

@@ -585,9 +585,6 @@ class MainWindow(QMainWindow):
             return self.calendar_converter.format_date(time_val)
         return f"{time_val:.2f}"
 
-    @Slot(list)
-            self.load_longform_sequence()
-
     def closeEvent(self, event):
         """
         Handles application close event.
@@ -972,7 +969,10 @@ class MainWindow(QMainWindow):
             cmd = DeleteMarkerCommand(marker_id)
             self.command_requested.emit(cmd)
 
-    @Slot(str, list)
+    @Slot(str, str)
+    def _on_marker_clicked(self, marker_id: str, object_type: str):
+        """
+        Navigates to the clicked marker's item.
 
         Args:
             marker_id: The ID of the item.

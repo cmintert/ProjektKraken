@@ -5,9 +5,13 @@ Provides the MapGraphicsView class for rendering and interacting with the map.
 """
 
 import logging
+from typing import Optional, TYPE_CHECKING
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene
 from PySide6.QtCore import Qt, Signal, QRectF, QPointF
 from PySide6.QtGui import QPainter, QColor, QPixmap, QTransform, QPen, QBrush
+
+if TYPE_CHECKING:
+    from src.gui.widgets.map.marker_item import MarkerItem
 
 logger = logging.getLogger(__name__)
 
@@ -419,7 +423,7 @@ class MapGraphicsView(QGraphicsView):
                     menu.addAction(add_action)
                     menu.exec(event.globalPos())
 
-    def _show_icon_picker(self, marker_item: MarkerItem) -> None:
+    def _show_icon_picker(self, marker_item: "MarkerItem") -> None:
         """
         Shows the icon picker dialog for a marker.
 
@@ -435,7 +439,7 @@ class MapGraphicsView(QGraphicsView):
                     marker_item.marker_id, selected_icon
                 )
 
-    def _show_color_picker(self, marker_item: MarkerItem) -> None:
+    def _show_color_picker(self, marker_item: "MarkerItem") -> None:
         """
         Shows the color picker dialog for a marker.
 
