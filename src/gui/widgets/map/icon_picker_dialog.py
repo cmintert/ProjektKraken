@@ -5,11 +5,39 @@ Provides the IconPickerDialog for selecting marker icons.
 """
 
 import logging
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, QListWidgetItem
+import os
+from typing import Optional
+from PySide6.QtWidgets import (
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QListWidget,
+    QListWidgetItem,
+    QScrollArea,
+    QWidget,
+    QGridLayout,
+    QLabel,
+    QFrame,
+)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QPixmap
 
+# Define locally to avoid circular import
+MARKER_ICONS_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "..", "..", "assets", "icons", "markers"
+)
+
+
+def get_available_icons():
+    """Returns a list of available marker icon filenames."""
+    if not os.path.exists(MARKER_ICONS_PATH):
+        return []
+    return [f for f in os.listdir(MARKER_ICONS_PATH) if f.endswith(".svg")]
+
+
 logger = logging.getLogger(__name__)
+
 
 class IconPickerDialog(QDialog):
     """
@@ -88,5 +116,3 @@ class IconPickerDialog(QDialog):
         """
         self.selected_icon = icon_name
         self.accept()
-
-
