@@ -25,7 +25,7 @@ from PySide6.QtGui import QIcon, QPixmap
 
 # Define locally to avoid circular import
 MARKER_ICONS_PATH = os.path.join(
-    os.path.dirname(__file__), "..", "..", "..", "assets", "icons", "markers"
+    os.path.dirname(__file__), "..", "..", "..", "..", "assets", "icons", "markers"
 )
 
 
