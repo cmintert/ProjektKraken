@@ -586,6 +586,171 @@ class MainWindow(QMainWindow):
         return f"{time_val:.2f}"
 
     @Slot(list)
+    def on_events_loaded(self, events):
+        """
+        Updates the UI with the loaded events.
+        """
+        self._cached_events = events
+        self.unified_list.set_data(self._cached_events, self._cached_entities)
+        self.timeline.set_events(events)
+        self.status_bar.showMessage(f"Loaded {len(events)} events.")
+        self._update_editor_suggestions()
+
+        if self._pending_select_type == "event" and self._pending_select_id:
+            self.unified_list.select_item("event", self._pending_select_id)
+            self._pending_select_type = None
+            self._pending_select_id = None
+
+    @Slot(list)
+    def on_entities_loaded(self, entities):
+        """
+        Updates the UI with loaded entities.
+        """
+        self._cached_entities = entities
+        self.unified_list.set_data(self._cached_events, self._cached_entities)
+        self.status_bar.showMessage(f"Loaded {len(entities)} entities.")
+        self._update_editor_suggestions()
+
+        if self._pending_select_type == "entity" and self._pending_select_id:
+            self.unified_list.select_item("entity", self._pending_select_id)
+            self._pending_select_type = None
+            self._pending_select_id = None
+
+    def _update_editor_suggestions(self):
+        """
+        Update editor completers with Event and Entity names.
+
+        Aggregates all Event and Entity names with IDs and updates
+        the editors' completers. Provides ID-based completion for
+        robust wiki-linking.
+        """
+        items = []
+
+        # Add entities: (id, name, type)
+        if self._cached_entities:
+            for entity in self._cached_entities:
+                items.append((entity.id, entity.name, "entity"))
+
+        # Add events: (id, name, type)
+        if self._cached_events:
+            for event in self._cached_events:
+                items.append((event.id, event.name, "event"))
+
+        # Sort by name for better UX
+        items.sort(key=lambda x: x[1].lower())
+
+        # Update editors with ID-based completion
+        self.event_editor.update_suggestions(items=items)
+        self.entity_editor.update_suggestions(items=items)
+
+    @Slot(object, list, list)
+    def on_event_details_loaded(self, event, relations, incoming):
+        """
+        Populates the Event Editor with detailed event data.
+
+        Args:
+            event (Event): The event object.
+            relations (list): Outgoing relations.
+            incoming (list): Incoming relations.
+        """
+        self.ui_manager.docks["event"].raise_()
+        self.event_editor.load_event(event, relations, incoming)
+        # Note: Removed self.timeline.focus_event(event.id) - was disruptive
+
+    @Slot(object, list, list)
+    def on_entity_details_loaded(self, entity, relations, incoming):
+        """
+        Populates the Entity Editor with detailed entity data.
+
+        Args:
+            entity (Entity): The entity object.
+            relations (list): Outgoing relations.
+            incoming (list): Incoming relations.
+        """
+        self.ui_manager.docks["entity"].raise_()
+        self.entity_editor.load_entity(entity, relations, incoming)
+
+    @Slot(list)
+    def on_longform_sequence_loaded(self, sequence):
+        """
+        Updates the longform editor with the loaded sequence.
+
+        Args:
+            sequence (list): List of longform items from build_longform_sequence.
+        """
+        self._cached_longform_sequence = sequence
+        self.longform_editor.load_sequence(sequence)
+        self.status_bar.showMessage(f"Loaded {len(sequence)} longform items.")
+
+    @Slot(object)
+    def on_command_finished(self, result):
+        """
+        Handles completion of async commands, triggering necessary UI refreshes.
+
+        Args:
+            result (CommandResult): The result of the executed command.
+        """
+        if not isinstance(result, CommandResult):
+            # Fallback or error
+            return
+
+        command_name = result.command_name
+        success = result.success
+        message = result.message
+
+        # Determine what to reload based on command
+        if not success:
+            if message:
+                QMessageBox.warning(self, "Command Failed", message)
+            return
+
+        if command_name == "CreateEventCommand" and result.data.get("id"):
+            self._pending_select_type = "event"
+            self._pending_select_id = result.data["id"]
+        elif command_name == "CreateEntityCommand" and result.data.get("id"):
+            self._pending_select_type = "entity"
+            self._pending_select_id = result.data["id"]
+
+        if "Map" in command_name:
+            self.load_maps()
+            # If map was deleted, MapWidget handles selection logic if needed,
+            # but reloading maps will update the list.
+
+        if "Marker" in command_name and "Update" not in command_name:
+            # Refresh markers for the current map (but NOT for UpdateMarkerCommand
+            # since the UI already reflects the new position)
+            current_map_id = self.map_widget.map_selector.currentData()
+            if current_map_id:
+                QMetaObject.invokeMethod(
+                    self.worker,
+                    "load_markers",
+                    QtCore_Qt.QueuedConnection,
+                    Q_ARG(str, current_map_id),
+                )
+
+        if "Event" in command_name:
+            self.load_events()
+            # If we just updated/created, maybe refresh details if active?
+            # For now, simplistic reload is fine
+        if "Entity" in command_name:
+            self.load_entities()
+        if "Relation" in command_name:
+            # Reload both to be safe, or check active editor
+            # Accessing private props is a bit smelly, but acceptable for now
+            if self.event_editor._current_event_id:
+                self.load_event_details(self.event_editor._current_event_id)
+            if self.entity_editor._current_entity_id:
+                self.load_entity_details(self.entity_editor._current_entity_id)
+
+        if "WikiLinks" in command_name:
+            # WikiLink processing creates relations, so we need to refresh details
+            if self.event_editor._current_event_id:
+                self.load_event_details(self.event_editor._current_event_id)
+            if self.entity_editor._current_entity_id:
+                self.load_entity_details(self.entity_editor._current_entity_id)
+
+        if "Longform" in command_name:
+            # Reload longform sequence after any longform command
             self.load_longform_sequence()
 
     def closeEvent(self, event):
@@ -783,6 +948,24 @@ class MainWindow(QMainWindow):
         QMetaObject.invokeMethod(self.worker, "load_maps", QtCore_Qt.QueuedConnection)
 
     @Slot(list)
+    def on_maps_loaded(self, maps):
+        """
+        Handler for maps loaded from worker.
+
+        Args:
+            maps (list): List of Map objects.
+        """
+        self.map_widget.set_maps(maps)
+        if maps:
+            # If nothing selected (or default), select the first one
+            # self.map_widget.select_map(maps[0].id)
+            # Actually, `set_maps` might clear selection depending on widget logic.
+            # Best to let user select, or default to first if none active.
+
+            # For simplicity, pick first if none active or if just loaded
+            current_id = self.map_widget.map_selector.currentData()
+            if not current_id:
+                self.map_widget.select_map(maps[0].id)
 
     @Slot(str)
     def on_map_selected(self, map_id):
@@ -973,6 +1156,65 @@ class MainWindow(QMainWindow):
             self.command_requested.emit(cmd)
 
     @Slot(str, list)
+    def on_markers_loaded(self, map_id, markers):
+        """
+        Handler for markers loaded from worker.
+
+        Args:
+            map_id (str): The map ID.
+            markers (list): List of Marker objects.
+        """
+        # Verify we are still looking at this map
+        current_map_id = self.map_widget.map_selector.currentData()
+        if current_map_id != map_id:
+            return
+
+        self.map_widget.clear_markers()
+        self._marker_object_to_id.clear()  # Reset mapping
+        for marker in markers:
+            # Determine label (fallback to 'Unknown' if missing)
+            label = getattr(marker, "label", None) or "Unknown Marker"
+            # Get icon from attributes if present
+            icon = marker.attributes.get("icon") if marker.attributes else None
+            # Get color from attributes if present
+            color = marker.attributes.get("color") if marker.attributes else None
+            # Use object_id as the marker_id so clicks return the entity/event ID
+            self.map_widget.add_marker(
+                marker.object_id,
+                marker.object_type,
+                label,
+                marker.x,
+                marker.y,
+                icon,
+                color,
+            )
+            # Track mapping for position updates
+            self._marker_object_to_id[marker.object_id] = marker.id
+
+    @Slot(str, float, float)
+    def _on_marker_position_changed(self, marker_id, x, y):
+        """
+        Handle marker movement from MapWidget.
+
+        Args:
+            marker_id: ID of the moved marker (actually object_id from view)
+            x: New normalized X
+            y: New normalized Y
+        """
+        # Translate object_id to actual marker ID
+        actual_marker_id = self._marker_object_to_id.get(marker_id)
+        if not actual_marker_id:
+            logger.warning(f"No marker mapping found for object_id: {marker_id}")
+            return
+        cmd = UpdateMarkerCommand(
+            marker_id=actual_marker_id, update_data={"x": x, "y": y}
+        )
+        self.command_requested.emit(cmd)
+
+    @Slot(str, str)
+    def _on_marker_clicked(self, marker_id: str, object_type: str):
+        """
+        Navigates to the clicked marker's item.
 
         Args:
             marker_id: The ID of the item.
