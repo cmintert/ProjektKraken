@@ -2,6 +2,9 @@
 Database Service Module.
 Provides the low-level SQL interface to the SQLite database.
 Follows the Hybrid Schema (Strict Columns + JSON Attributes).
+
+This service now uses specialized repository classes for better
+separation of concerns and maintainability.
 """
 
 import sqlite3
@@ -15,6 +18,15 @@ from src.core.calendar import CalendarConfig
 from src.core.map import Map
 from src.core.marker import Marker
 
+# Import repositories for modular CRUD operations
+from src.services.repositories import (
+    EventRepository,
+    EntityRepository,
+    RelationRepository,
+    MapRepository,
+    CalendarRepository,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -22,6 +34,9 @@ class DatabaseService:
     """
     Handles all raw interactions with the SQLite database.
     Implements the Hybrid Schema (Strict Columns + JSON Attributes).
+    
+    This service delegates CRUD operations to specialized repository
+    classes while maintaining schema management and connection handling.
     """
 
     def __init__(self, db_path: str = ":memory:"):
@@ -32,6 +47,14 @@ class DatabaseService:
         """
         self.db_path = db_path
         self._connection: Optional[sqlite3.Connection] = None
+        
+        # Initialize repositories (will be connected after connection is established)
+        self._event_repo = EventRepository()
+        self._entity_repo = EntityRepository()
+        self._relation_repo = RelationRepository()
+        self._map_repo = MapRepository()
+        self._calendar_repo = CalendarRepository()
+        
         logger.info(f"DatabaseService initialized with path: {self.db_path}")
 
     def connect(self):
@@ -40,11 +63,24 @@ class DatabaseService:
             self._connection = sqlite3.connect(self.db_path)
             # Enable Foreign Keys
             self._connection.execute("PRAGMA foreign_keys = ON;")
+            # Enable Write-Ahead Logging for better concurrency
+            # WAL mode allows concurrent readers with a single writer
+            if self.db_path != ":memory:":
+                self._connection.execute("PRAGMA journal_mode=WAL;")
+                logger.debug("WAL mode enabled for database.")
             # Return rows as Row objects for name access
             self._connection.row_factory = sqlite3.Row
             logger.debug("Database connection established.")
 
             self._init_schema()
+            
+            # Connect repositories to the database connection
+            self._event_repo.set_connection(self._connection)
+            self._entity_repo.set_connection(self._connection)
+            self._relation_repo.set_connection(self._connection)
+            self._map_repo.set_connection(self._connection)
+            self._calendar_repo.set_connection(self._connection)
+            
         except sqlite3.Error as e:
             logger.critical(f"Failed to connect to database: {e}")
             raise
@@ -164,7 +200,7 @@ class DatabaseService:
             raise
 
     # --------------------------------------------------------------------------
-    # Event CRUD
+    # Event CRUD - Delegates to EventRepository
     # --------------------------------------------------------------------------
 
     def insert_event(self, event: Event) -> None:
@@ -177,34 +213,7 @@ class DatabaseService:
         Raises:
             sqlite3.Error: If the database operation fails.
         """
-        sql = """
-            INSERT INTO events (id, type, name, lore_date, lore_duration,
-                                description, attributes, created_at, modified_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
-                type=excluded.type,
-                name=excluded.name,
-                lore_date=excluded.lore_date,
-                lore_duration=excluded.lore_duration,
-                description=excluded.description,
-                attributes=excluded.attributes,
-                modified_at=excluded.modified_at;
-        """
-        with self.transaction() as conn:
-            conn.execute(
-                sql,
-                (
-                    event.id,
-                    event.type,
-                    event.name,
-                    event.lore_date,
-                    event.lore_duration,
-                    event.description,
-                    json.dumps(event.attributes),
-                    event.created_at,
-                    event.modified_at,
-                ),
-            )
+        self._event_repo.insert(event)
 
     def get_event(self, event_id: str) -> Optional[Event]:
         """
@@ -216,22 +225,7 @@ class DatabaseService:
         Returns:
             Optional[Event]: The Event object if found, else None.
         """
-        sql = "SELECT * FROM events WHERE id = ?"
-        # We don't necessarily need a transaction for reading,
-        # but connection must be open
-        if not self._connection:
-            self.connect()
-
-        cursor = self._connection.execute(sql, (event_id,))
-        row = cursor.fetchone()
-
-        if row:
-            data = dict(row)
-            # Parse JSON attributes back to dict
-            if data.get("attributes"):
-                data["attributes"] = json.loads(data["attributes"])
-            return Event.from_dict(data)
-        return None
+        return self._event_repo.get(event_id)
 
     def get_all_events(self) -> List[Event]:
         """
@@ -240,18 +234,7 @@ class DatabaseService:
         Returns:
             List[Event]: A list of all Event objects in the database.
         """
-        sql = "SELECT * FROM events ORDER BY lore_date ASC"
-        if not self._connection:
-            self.connect()
-
-        cursor = self._connection.execute(sql)
-        events = []
-        for row in cursor.fetchall():
-            data = dict(row)
-            if data.get("attributes"):
-                data["attributes"] = json.loads(data["attributes"])
-            events.append(Event.from_dict(data))
-        return events
+        return self._event_repo.get_all()
 
     def delete_event(self, event_id: str) -> None:
         """
@@ -263,11 +246,10 @@ class DatabaseService:
         Raises:
             sqlite3.Error: If the database operation fails.
         """
-        with self.transaction() as conn:
-            conn.execute("DELETE FROM events WHERE id = ?", (event_id,))
+        self._event_repo.delete(event_id)
 
     # --------------------------------------------------------------------------
-    # Entity CRUD
+    # Entity CRUD - Delegates to EntityRepository
     # --------------------------------------------------------------------------
 
     def insert_entity(self, entity: Entity) -> None:
@@ -280,30 +262,7 @@ class DatabaseService:
         Raises:
             sqlite3.Error: If the database operation fails.
         """
-        sql = """
-            INSERT INTO entities (id, type, name, description,
-                                  attributes, created_at, modified_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
-                type=excluded.type,
-                name=excluded.name,
-                description=excluded.description,
-                attributes=excluded.attributes,
-                modified_at=excluded.modified_at;
-        """
-        with self.transaction() as conn:
-            conn.execute(
-                sql,
-                (
-                    entity.id,
-                    entity.type,
-                    entity.name,
-                    entity.description,
-                    json.dumps(entity.attributes),
-                    entity.created_at,
-                    entity.modified_at,
-                ),
-            )
+        self._entity_repo.insert(entity)
 
     def get_entity(self, entity_id: str) -> Optional[Entity]:
         """
