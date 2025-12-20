@@ -2,6 +2,8 @@ import pytest
 from unittest.mock import patch, MagicMock
 from src.app.main import MainWindow
 from src.commands.base_command import CommandResult
+from src.core.events import Event
+from src.core.entities import Entity
 
 
 @pytest.fixture
@@ -53,14 +55,11 @@ def test_create_entity_success_selects_item(main_window):
     assert main_window._pending_select_id == "new-ent-id"
     assert main_window._pending_select_type == "entity"
 
-    # 5. Simulate entities loaded
-    mock_entity = MagicMock()
-    mock_entity.id = "new-ent-id"
-    mock_entity.name = "New Entity"
-    mock_entity.type = "Concept"
+    # 5. Simulate entities loaded - use real Entity class
+    test_entity = Entity(id="new-ent-id", name="New Entity", type="Concept")
 
     with patch.object(main_window.unified_list, "select_item") as mock_select:
-        main_window.on_entities_loaded([mock_entity])
+        main_window.on_entities_loaded([test_entity])
 
         # 6. Verify selection called
         mock_select.assert_called_once_with("entity", "new-ent-id")
@@ -100,15 +99,12 @@ def test_create_event_success_selects_item(main_window):
     assert main_window._pending_select_id == "new-evt-id"
     assert main_window._pending_select_type == "event"
 
-    # 5. Simulate events loaded
-    mock_event = MagicMock()
-    mock_event.id = "new-evt-id"
-    mock_event.name = "New Event"
-    mock_event.lore_date = 0.0
+    # 5. Simulate events loaded - use real Event class
+    test_event = Event(id="new-evt-id", name="New Event", lore_date=0.0, type="generic")
 
     with patch.object(main_window.unified_list, "select_item") as mock_select:
         with patch.object(main_window.timeline, "set_events"):
-            main_window.on_events_loaded([mock_event])
+            main_window.on_events_loaded([test_event])
 
         mock_select.assert_called_once_with("event", "new-evt-id")
 
@@ -128,23 +124,15 @@ def test_create_cancel_does_nothing(main_window):
 
 def test_select_item_switches_filter_if_needed(main_window):
     """Verify that select_item switches selection if item is hidden."""
-    # Mock data objects
-    mock_entity = MagicMock()
-    mock_entity.id = "ent1"
-    mock_entity.name = "Entity 1"
-    mock_entity.type = "Concept"
-
-    mock_event = MagicMock()
-    mock_event.id = "evt1"
-    mock_event.name = "Event 1"
-    mock_event.lore_date = 10.0
+    # Use real objects to avoid MagicMock 'name' comparison issues
+    test_entity = Entity(id="ent1", name="Entity 1", type="Concept")
+    test_event = Event(id="evt1", name="Event 1", lore_date=10.0, type="generic")
 
     # Pre-populate
-    main_window._cached_entities = [mock_entity]
-    main_window._cached_events = [mock_event]
+    main_window._cached_entities = [test_entity]
+    main_window._cached_events = [test_event]
 
-    # We must mock timeline.set_events if we call set_data on main_window or unified_list logic?
-    # No, unified_list.set_data is safe.
+    # Set data on unified_list
     main_window.unified_list.set_data(
         main_window._cached_events, main_window._cached_entities
     )

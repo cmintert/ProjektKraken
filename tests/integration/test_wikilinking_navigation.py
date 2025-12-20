@@ -48,16 +48,16 @@ def test_navigate_to_entity_not_found(qtbot, monkeypatch):
     window = MainWindow()
     window.worker = MagicMock()
     window._cached_entities = []
+    window._cached_events = []  # Also need to mock events cache
     window.load_entity_details = MagicMock()
 
-    # Mock MessageBox to prevent blocking
-    mock_msg = MagicMock()
-    monkeypatch.setattr("PySide6.QtWidgets.QMessageBox.information", mock_msg)
+    # Mock the _prompt_create_missing_target method to prevent blocking dialog
+    mock_prompt = MagicMock()
+    window._prompt_create_missing_target = mock_prompt
 
     window.navigate_to_entity("Unknown")
 
     window.load_entity_details.assert_not_called()
-    mock_msg.assert_called_once()
-    assert "No entity or event" in mock_msg.call_args[0][2]
+    mock_prompt.assert_called_once_with("Unknown")
 
     window.close()
