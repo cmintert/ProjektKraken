@@ -13,8 +13,6 @@ from PySide6.QtWidgets import (
     QComboBox,
     QPushButton,
     QHBoxLayout,
-    QTabWidget,
-    QSizePolicy,
     QGroupBox,
     QListWidget,
     QMessageBox,
@@ -47,6 +45,7 @@ class EventEditorWidget(QWidget):
     update_relation_requested = Signal(str, str, str)  # rel_id, target_id, rel_type
     link_clicked = Signal(str)  # target_name
     dirty_changed = Signal(bool)
+    current_data_changed = Signal(dict)  # Emits current event data for preview
 
     def __init__(self, parent=None):
         """
@@ -60,7 +59,10 @@ class EventEditorWidget(QWidget):
         self.layout = QVBoxLayout(self)
         self.layout.setSpacing(8)
         self.layout.setContentsMargins(16, 16, 16, 16)
+        self.layout.setContentsMargins(16, 16, 16, 16)
 
+        self._is_loading = False
+        self._is_dirty = False
         self._calendar_converter = None
 
         # Splitter-based tab inspector for vertical stacking
@@ -89,23 +91,17 @@ class EventEditorWidget(QWidget):
         self.form_layout.addRow("Name:", self.name_edit)
         self.form_layout.addRow("Lore Date:", self.date_edit)
 
-        # Duration / End Date Tabs
-        self.dur_tabs = QTabWidget()
-        self.dur_tabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-
-        # Tab 1: Granular Duration
+        # Duration & End Date
         self.duration_widget = LoreDurationWidget()
         self.duration_widget.set_calendar_converter(self._calendar_converter)
         self.duration_widget.value_changed.connect(self._on_duration_changed)
-        self.dur_tabs.addTab(self.duration_widget, "Duration")
 
-        # Tab 2: End Date
         self.end_date_edit = LoreDateWidget()
         self.end_date_edit.set_calendar_converter(self._calendar_converter)
         self.end_date_edit.value_changed.connect(self._on_end_date_changed)
-        self.dur_tabs.addTab(self.end_date_edit, "End Date")
 
-        self.form_layout.addRow("Duration:", self.dur_tabs)
+        self.form_layout.addRow("Duration:", self.duration_widget)
+        self.form_layout.addRow("End Date:", self.end_date_edit)
 
         self.form_layout.addRow("Type:", self.type_edit)
         self.form_layout.addRow("Description:", self.desc_edit)
@@ -115,6 +111,14 @@ class EventEditorWidget(QWidget):
 
         # Connect Start Date change to Duration Context
         self.date_edit.value_changed.connect(self._on_start_date_changed)
+
+        # Connect modifications to dirty check and live preview
+        self.name_edit.textChanged.connect(self._on_field_changed)
+        self.date_edit.value_changed.connect(lambda val: self._on_field_changed())
+        self.type_edit.editTextChanged.connect(self._on_field_changed)
+        self.type_edit.currentIndexChanged.connect(self._on_field_changed)
+        self.desc_edit.textChanged.connect(self._on_field_changed)
+        self.duration_widget.value_changed.connect(lambda val: self._on_field_changed())
 
         # --- Tab 2: Tags ---
         self.tab_tags = QWidget()
@@ -300,74 +304,78 @@ class EventEditorWidget(QWidget):
         self._current_event_id = event.id
         self._current_created_at = event.created_at  # Preserve validation data
 
-        # Block signals to prevent dirty trigger during load
-        self.name_edit.blockSignals(True)
-        self.date_edit.blockSignals(True)
-        self.duration_widget.blockSignals(True)
-        self.end_date_edit.blockSignals(True)
-        self.type_edit.blockSignals(True)
-        self.desc_edit.blockSignals(True)
-        # Custom widgets might not need blocking if we don't connect to them directly
-        # or if they don't emit on programmatic set.
-        # TagEditor and AttributeEditor emit on programmatic load usually?
-        # Let's check their code.. load_tags calls clear() -> might trigger?
-        # TagEditor.load_tags clears and adds items. It does NOT emit tags_changed.
-        # AttributeEditor.load_attributes sets _block_signals=True internally.
+        self._is_loading = True
+        try:
+            # Block signals to prevent dirty trigger during load
+            # Block signals to prevent dirty trigger during load
+            self.name_edit.blockSignals(True)
+            self.date_edit.blockSignals(True)
+            self.duration_widget.blockSignals(True)
+            self.end_date_edit.blockSignals(True)
+            self.type_edit.blockSignals(True)
+            self.desc_edit.blockSignals(True)
+            # Custom widgets might not need blocking if we don't
+            # connect to them directly or emit on programmatic set.
+            # TagEditor and AttributeEditor emit on programmatic load usually?
+            # Let's check their code.. load_tags calls clear() -> might trigger?
+            # TagEditor.load_tags clears and adds items. It does NOT emit tags_changed.
+            # AttributeEditor.load_attributes sets _block_signals=True internally.
 
-        self.name_edit.setText(event.name)
-        self.date_edit.set_value(event.lore_date)
+            self.name_edit.setText(event.name)
+            self.date_edit.set_value(event.lore_date)
 
-        # Initialize duration widgets
-        self.duration_widget.set_start_date(event.lore_date)
-        self.duration_widget.set_value(event.lore_duration)
-        self.end_date_edit.set_value(event.lore_date + event.lore_duration)
+            # Initialize duration widgets
+            self.duration_widget.set_start_date(event.lore_date)
+            self.duration_widget.set_value(event.lore_duration)
+            self.end_date_edit.set_value(event.lore_date + event.lore_duration)
 
-        self.type_edit.setCurrentText(event.type)
-        self.desc_edit.set_wiki_text(event.description)
+            self.type_edit.setCurrentText(event.type)
+            self.desc_edit.set_wiki_text(event.description)
 
-        # Load Attributes (filter out _tags for display)
-        display_attrs = {k: v for k, v in event.attributes.items() if k != "_tags"}
-        self.attribute_editor.load_attributes(display_attrs)
+            # Load Attributes (filter out _tags for display)
+            display_attrs = {k: v for k, v in event.attributes.items() if k != "_tags"}
+            self.attribute_editor.load_attributes(display_attrs)
 
-        # Load Tags
-        self.tag_editor.load_tags(event.tags)
+            # Load Tags
+            self.tag_editor.load_tags(event.tags)
 
-        # Load relations
-        self.rel_list.clear()
+            # Load relations
+            self.rel_list.clear()
 
-        # Outgoing
-        if relations:
-            for rel in relations:
-                # Format: -> TargetID [Type]
-                target_display = rel.get("target_name") or rel["target_id"]
-                label = f"-> {target_display} [{rel['rel_type']}]"
-                item = QListWidgetItem(label)
-                item.setData(Qt.UserRole, rel)
-                # Differentiate visually? Maybe standard color.
-                self.rel_list.addItem(item)
+            # Outgoing
+            if relations:
+                for rel in relations:
+                    # Format: -> TargetID [Type]
+                    target_display = rel.get("target_name") or rel["target_id"]
+                    label = f"-> {target_display} [{rel['rel_type']}]"
+                    item = QListWidgetItem(label)
+                    item.setData(Qt.UserRole, rel)
+                    # Differentiate visually? Maybe standard color.
+                    self.rel_list.addItem(item)
 
-        # Incoming
-        if incoming_relations:
-            for rel in incoming_relations:
-                # Format: <- SourceID [Type]
-                source_display = rel.get("source_name") or rel["source_id"]
-                label = f"<- {source_display} [{rel['rel_type']}]"
-                item = QListWidgetItem(label)
-                item.setData(Qt.UserRole, rel)
-                item.setData(Qt.UserRole, rel)
-                item.setForeground(Qt.gray)  # Visually distinct
-                self.rel_list.addItem(item)
+            # Incoming
+            if incoming_relations:
+                for rel in incoming_relations:
+                    # Format: <- SourceID [Type]
+                    source_display = rel.get("source_name") or rel["source_id"]
+                    label = f"<- {source_display} [{rel['rel_type']}]"
+                    item = QListWidgetItem(label)
+                    item.setData(Qt.UserRole, rel)
+                    item.setForeground(Qt.gray)  # Visually distinct
+                    self.rel_list.addItem(item)
 
-        # Unblock signals
-        self.name_edit.blockSignals(False)
-        self.date_edit.blockSignals(False)
-        self.duration_widget.blockSignals(False)
-        self.end_date_edit.blockSignals(False)
-        self.type_edit.blockSignals(False)
-        self.desc_edit.blockSignals(False)
+            # Unblock signals
+            self.name_edit.blockSignals(False)
+            self.date_edit.blockSignals(False)
+            self.duration_widget.blockSignals(False)
+            self.end_date_edit.blockSignals(False)
+            self.type_edit.blockSignals(False)
+            self.desc_edit.blockSignals(False)
 
-        self.set_dirty(False)
-        self.setEnabled(True)
+            self.set_dirty(False)
+            self.setEnabled(True)
+        finally:
+            self._is_loading = False
 
     def _on_save(self):
         """
@@ -497,3 +505,36 @@ class EventEditorWidget(QWidget):
             QMessageBox.information(
                 self, "Selection", "Please select a relation to remove."
             )
+
+    def _on_field_changed(self):
+        """Marks the editor as dirty and emits live preview signal."""
+        if not self._is_loading:
+            self._is_dirty = True
+            self.dirty_changed.emit(True)
+            self._emit_current_data()
+
+    def _emit_current_data(self):
+        """Emits the current form data for live preview."""
+        if self._is_loading:
+            return
+
+        try:
+            data = {
+                "id": self._current_event_id,
+                "name": self.name_edit.text(),
+                "lore_date": self.date_edit.get_value(),
+                "type": self.type_edit.currentText(),
+                "description": self.desc_edit.toPlainText(),
+                "lore_duration": self.duration_widget.get_value(),
+                # Include other fields if necessary for preview
+                # (e.g. attributes not yet)
+            }
+            self.current_data_changed.emit(data)
+        except Exception:
+            pass  # Be safe against incomplete states
+
+    def _mark_dirty(self):
+        """Marks the editor as dirty."""
+        if not self._is_loading:
+            self._is_dirty = True
+            self.dirty_changed.emit(True)

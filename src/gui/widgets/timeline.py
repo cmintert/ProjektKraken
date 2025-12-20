@@ -853,7 +853,7 @@ class TimelineView(QGraphicsView):
         self.repack_events()
 
         # Now place items in scene
-        # Now place items in scene - REPACK will have set positions, but items new or old need to be managed
+        # REPACK will have set positions, but items new or old need to be managed
         # Actually repack_events() only updates EXISTING items or lane assignments
         # We need to create items first?
         # NO. Logic inversion.
@@ -900,7 +900,9 @@ class TimelineView(QGraphicsView):
             if event_id not in reused_ids and event_id not in [
                 e.id for e in sorted_events if e.id not in reused_ids
             ]:
-                # Careful: reused_ids tracks updates. The else block adds new items which are not in reused_ids yet but are in sorted_events/existing_items.
+                # Careful: reused_ids tracks updates.
+                # The else block adds new items which are not in
+                # reused_ids yet but are in sorted_events/existing_items.
                 # Simplest: "if event_id not in [e.id for e in sorted_events]"
                 pass
 
@@ -929,8 +931,9 @@ class TimelineView(QGraphicsView):
                 line.setLine(item.x(), -self.RULER_HEIGHT, item.x(), item.y())
 
         if sorted_events:
-            # Calculate bounds from events for the scene rect
-            # We want the scene rect to be defined by events + margin, ignoring infinite lines
+            # Calculate bounds from events for the scene rect.
+            # We want the scene rect defined by events + margin,
+            # ignoring infinite lines
 
             # X bounds
             min_date = sorted_events[0].lore_date
@@ -949,9 +952,12 @@ class TimelineView(QGraphicsView):
             # Calculate max lane from items or use a safe default
             # We can't access event_lane_assignments here easily anymore.
             # But the scene rect will be updated by repack_events calls anyway.
-            # However, for the initial scene rect, we should try to estimate or just rely on repack.
-            # Actually, repack_events sets the scene rect! So we might not need this block for Y bounds?
-            # But we need X bounds.
+            # However, for the initial scene rect, we should try to
+            # estimate or just rely on repack.
+            # Actually, repack_events sets the scene rect!
+            # Custom widgets might not need blocking
+            # if we don't connect to them directly
+            # or if they don't emit on programmatic set.
 
             # Let's just set a safe default height here, and let repack fix it.
             # Or better, just don't set Y bounds strictly here if repack does it.
@@ -978,7 +984,8 @@ class TimelineView(QGraphicsView):
             if self._playhead._time == 0:
                 self.set_playhead_time(center_date)
 
-            # Don't auto-center current time line - only show when explicitly set by user
+            # Don't auto-center current time line
+            # Only show when explicitly set by user
 
             # Only fit_all on initial load, not on refreshes/updates
             if not self._has_done_initial_fit:
@@ -1134,6 +1141,49 @@ class TimelineView(QGraphicsView):
             finally:
                 # Restore original anchor
                 self.setTransformationAnchor(old_anchor)
+
+    def update_event_preview(self, event_data: dict):
+        """
+        Updates the visual representation of an event in real-time.
+
+        Args:
+            event_data: dictionary containing transient event state.
+        """
+        event_id = event_data.get("id")
+        if not event_id:
+            return
+
+        # Find the item
+        found_item = None
+        for item in self.scene.items():
+            if isinstance(item, EventItem) and item.event.id == event_id:
+                found_item = item
+                break
+
+        if not found_item:
+            return
+
+        # Update Event Object Shallowly
+        # Note: We are modifying the live object in the scene.
+        # Discarding needs to revert this.
+        # Ideally, we should update visual properties without mutating the object,
+        # or accept that the object is mutable and "Discard" reloads from DB.
+        # Since "Discard" reloads, mutating here is fine for preview.
+
+        if "name" in event_data:
+            found_item.event.name = event_data["name"]
+        if "lore_date" in event_data:
+            found_item.event.lore_date = event_data["lore_date"]
+        if "lore_duration" in event_data:
+            found_item.event.lore_duration = event_data["lore_duration"]
+
+        found_item.setToolTip(f"{found_item.event.name} ({found_item.event.lore_date})")
+
+        # Repack to handle position/size changes
+        self.repack_events()
+
+        # Update view
+        self.viewport().update()
 
     def mousePressEvent(self, event):
         """
@@ -1427,3 +1477,10 @@ class TimelineWidget(QWidget):
         self.view.set_ruler_calendar(converter)
         # Trigger repaint to update existing items
         self.view.viewport().update()
+
+    def update_event_preview(self, event_data: dict):
+        """
+        Updates the visual representation of an event in real-time.
+        Delegates to the view.
+        """
+        self.view.update_event_preview(event_data)

@@ -247,31 +247,138 @@ class LoreDurationWidget(QWidget):
     def set_value(self, days_float: float):
         """
         Sets the inputs based on a float duration.
-        Attempts to decompose, but currently prioritizes "Raw" interpretation for safety
-        if exact semantic match isn't obvious.
-
-        Wait, calculating semantic from float is ambiguous (is 30 days = 1 month or 30 days?).
-
-        Approach:
-        1. If strict mode inputs are already matching this float? keep them.
-        2. If not, can we decompose greedily?
-            - Check how many full years fit.
-            - Check how many full months fit.
-            - Remainder days.
+        Attempts to decompose into semantic units (Years, Months, Days).
         """
         if self._updating:
             return
 
-        # Check if current inputs already result in roughly this float (precision)
+        # Check if current inputs already result in roughly this float
         current_calc = self.get_value()
         if abs(current_calc - days_float) < 0.001:
             return
 
-        # Decompose
         self._updating = True
         try:
-            if not self._converter:
-                # No calendar converter - decompose to days, hours, minutes
+            # 1. Start with robust decomposition if Converter is available
+            if self._converter and self._converter._config:
+                config = self._converter._config
+
+                # We need to simulate walking forward from Start Date
+                # to see how many full years/months fit into 'days_float'.
+
+                start_date = self._converter.from_float(self._start_date_float)
+                target_float = self._start_date_float + days_float
+
+                # Current simulation state
+                curr_float = self._start_date_float
+                curr_date = start_date
+
+                years_count = 0
+                months_count = 0
+
+                # --- Count Years ---
+                # Heuristic: Check if moving +1 year keeps us <= target_float
+                # But "moving +1 year" is context dependent (year length).
+                # We can just iterate.
+                while True:
+                    # Get length of current year
+                    # Current year is curr_date.year
+                    # But wait, date logic is complex.
+                    # Simplification: Calculate float for (Year+1, Month, Day)
+
+                    next_year = curr_date.year + 1
+                    # Handle leap days/missing days in target year?
+                    # CalendarConverter handles "valid date" clamping usually via from_float or to_float?
+                    # Let's perform a check:
+                    try:
+                        # Construct candidate date for same Month/Day in next year
+                        # We need to know max days in that month for next year to clamp
+                        months_def = config.get_months_for_year(next_year)
+                        target_month_idx = curr_date.month - 1
+                        if target_month_idx >= len(months_def):
+                            target_month_idx = len(months_def) - 1
+
+                        max_days = months_def[target_month_idx].days
+                        clamped_day = min(curr_date.day, max_days)
+
+                        candidate_date = CalendarDate(
+                            year=next_year,
+                            month=target_month_idx + 1,
+                            day=clamped_day,
+                            time_fraction=curr_date.time_fraction,
+                        )
+                        candidate_float = self._converter.to_float(candidate_date)
+
+                        if (
+                            candidate_float <= target_float + 0.0001
+                        ):  # Epsilon for float math
+                            years_count += 1
+                            curr_date = candidate_date
+                            curr_float = candidate_float
+                        else:
+                            break
+                    except Exception:
+                        break
+
+                # --- Count Months ---
+                while True:
+                    # Next month logic
+                    # Advance month index
+                    next_month = curr_date.month + 1
+                    next_year = curr_date.year
+                    months_def = config.get_months_for_year(next_year)
+
+                    if next_month > len(months_def):
+                        next_month = 1
+                        next_year += 1
+                        months_def = config.get_months_for_year(next_year)
+
+                    # Clamp day
+                    target_month_idx = next_month - 1
+                    if target_month_idx >= len(months_def):
+                        # Should not happen if logic is correct
+                        break
+
+                    max_days = months_def[target_month_idx].days
+                    clamped_day = min(curr_date.day, max_days)
+
+                    try:
+                        candidate_date = CalendarDate(
+                            year=next_year,
+                            month=next_month,
+                            day=clamped_day,
+                            time_fraction=curr_date.time_fraction,
+                        )
+                        candidate_float = self._converter.to_float(candidate_date)
+
+                        if (
+                            candidate_float <= target_float + 0.0001
+                        ):  # Epsilon for float math
+                            months_count += 1
+                            curr_date = candidate_date
+                            curr_float = candidate_float
+                        else:
+                            break
+                    except Exception:
+                        break
+
+                # --- Remaining Days / Time ---
+                remaining_days = target_float - curr_float
+
+                d = int(remaining_days)
+                rem = (remaining_days - d) * 24
+                h = int(rem)
+                rem = (rem - h) * 60
+                m = int(round(rem))
+
+                self.spin_years.setValue(years_count)
+                self.spin_months.setValue(months_count)
+                self.spin_days.setValue(d)
+                self.spin_hours.setValue(h)
+                self.spin_minutes.setValue(m)
+
+            else:
+                # No calendar fallback
                 total_days = days_float
                 d = int(total_days)
                 rem = (total_days - d) * 24
@@ -284,67 +391,6 @@ class LoreDurationWidget(QWidget):
                 self.spin_days.setValue(d)
                 self.spin_hours.setValue(h)
                 self.spin_minutes.setValue(m)
-                return
-
-            # start_float = self._start_date_float
-            # years = end_date.year - start_date.year  # Unused for now
-
-            # 2. Months diff
-            # This is complex because we need to count total months between them.
-            # Simplified: just use the difference in numbers + year offset
-            # But we want "full months".
-
-            # Let's try to infer from date diffs directly
-            # If end month < start month, year didn't fully complete relative to months?
-            # No, assume years is correct or off by 1?
-
-            # Algorithm:
-            # 1. Start with Years = end.year - start.year
-            # 2. Check if (Start + Years) > End. If so, Years--.
-            # 3. Apply Years. Now we have temp_date.
-            # 4. Count Months from temp_date to end_date.
-            # 5. Apply Months.
-            # 6. Days = remaining.
-
-            # ... Implementing this robustly is hard.
-            # For this iteration, let's just dump into Days/Hours if calculation is tricky?
-            # Or simplified:
-            # Set Years = 0, Months = 0.
-            # Set Days = int(days_float)
-            # Set Hours/Mins from fraction.
-
-            # USER REQUESTED: "entries like 1 year 3 months ... possible".
-            # So I should accept them as input.
-            # But when loading an EXISTING event that was just stored as "5.5",
-            # showing it as "5 Days 12 Hours" is nice.
-            # Showing it as "0 Y 0 M 5 D 12 h" is fine.
-            # Showing "365 days" as "1 Year" is better but risky if year length varies next year.
-
-            # DECISION: Only decompose into Days/Hours/Minutes for now to ensure accuracy.
-            # Years/Months are "Input Only" conveniences.
-            # Unless... we saved the semantic values?
-            # The Event model only stores `lore_duration` (float).
-            # So we effectively lose the "1 Month" semantic intent upon save.
-            # If user types "1 Month" (30 days), saves, reloads...
-            # It will likely come back as "30 Days".
-            # This is a limitation of the current Model.
-            # Creating a robust "Duration" struct in DB is out of scope (requires schema change).
-
-            # So: Decompose to [Days, Hours, Minutes].
-            # Leave Years/Months at 0.
-
-            total_days = days_float
-            d = int(total_days)
-            rem = (total_days - d) * 24
-            h = int(rem)
-            rem = (rem - h) * 60
-            m = int(round(rem))
-
-            self.spin_years.setValue(0)
-            self.spin_months.setValue(0)
-            self.spin_days.setValue(d)
-            self.spin_hours.setValue(h)
-            self.spin_minutes.setValue(m)
 
         finally:
             self._updating = False
