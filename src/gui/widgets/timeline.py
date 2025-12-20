@@ -889,7 +889,7 @@ class TimelineView(QGraphicsView):
                     item.x(),
                     drop_line_top,
                     item.x(),
-                    60,  # Temp Y
+                    80,  # Temp Y
                     QPen(QColor(80, 80, 80), 1, Qt.DashLine),
                 )
                 line.setZValue(-1)
@@ -1021,7 +1021,7 @@ class TimelineView(QGraphicsView):
         for event in self.events:
             if event.id in existing_items:
                 lane_index = event_lane_assignments[event.id]
-                y = (lane_index * self.LANE_HEIGHT) + 60
+                y = (lane_index * self.LANE_HEIGHT) + 80
                 item = existing_items[event.id]
 
                 # Animate or set Y? Just set for now.
@@ -1037,7 +1037,7 @@ class TimelineView(QGraphicsView):
 
         # Recalculate Scene Rect Height
         current_rect = self.scene.sceneRect()
-        max_y = 60 + (max_lane + 1) * self.LANE_HEIGHT + 40
+        max_y = 80 + (max_lane + 1) * self.LANE_HEIGHT + 40
         if max_y != current_rect.height():
             self.scene.setSceneRect(
                 current_rect.x(), current_rect.y(), current_rect.width(), max_y
