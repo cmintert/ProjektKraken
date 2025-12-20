@@ -5,11 +5,25 @@ Provides the MapGraphicsView class for rendering and interacting with the map.
 """
 
 import logging
-from PySide6.QtWidgets import QGraphicsView, QGraphicsScene
+import json
+from typing import Optional, Dict
+from PySide6.QtWidgets import (
+    QGraphicsView,
+    QGraphicsScene,
+    QGraphicsPixmapItem,
+    QMenu,
+    QDialog,
+    QColorDialog,
+)
 from PySide6.QtCore import Qt, Signal, QRectF, QPointF
-from PySide6.QtGui import QPainter, QColor, QPixmap, QTransform, QPen, QBrush
+from PySide6.QtGui import QPainter, QColor, QPixmap, QTransform, QPen, QBrush, QAction
+
+from src.gui.widgets.map.marker_item import MarkerItem
+from src.gui.widgets.map.icon_picker_dialog import IconPickerDialog
+from src.core.theme_manager import ThemeManager
 
 logger = logging.getLogger(__name__)
+
 
 class MapGraphicsView(QGraphicsView):
     """
@@ -451,5 +465,3 @@ class MapGraphicsView(QGraphicsView):
             color_hex = color.name().upper()
             marker_item.set_color(color_hex)
             self.change_marker_color_requested.emit(marker_item.marker_id, color_hex)
-
-

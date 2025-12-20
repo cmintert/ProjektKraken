@@ -30,7 +30,7 @@ from PySide6.QtCore import (
 from src.core.logging_config import setup_logging, get_logger
 from src.core.theme_manager import ThemeManager
 from src.services.worker import DatabaseWorker
-from src.commands.base_command import CommandResult
+
 
 # UI Components
 from src.gui.widgets.event_editor import EventEditorWidget
@@ -63,7 +63,6 @@ from src.commands.longform_commands import (
     MoveLongformEntryCommand,
 )
 from src.commands.map_commands import (
-    UpdateMarkerCommand,
     CreateMapCommand,
     DeleteMapCommand,
     CreateMarkerCommand,
@@ -122,6 +121,9 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle(WINDOW_TITLE)
         self.resize(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
+
+        # 0. Initialize Data Handler (needed by worker initialization)
+        self.data_handler = DataHandler(self)
 
         # 1. Init Services (Worker Thread)
         self.init_worker()
@@ -183,9 +185,6 @@ class MainWindow(QMainWindow):
         self.command_coordinator.command_requested.connect(
             lambda cmd: self.command_requested.emit(cmd)
         )
-
-        # 6. Initialize Data Handler
-        self.data_handler = DataHandler(self)
 
         # Central Widget
         self.setCentralWidget(QWidget())
@@ -424,13 +423,19 @@ class MainWindow(QMainWindow):
         self.worker.initialized.connect(self.on_db_initialized)
         self.worker.events_loaded.connect(self.data_handler.on_events_loaded)
         self.worker.entities_loaded.connect(self.data_handler.on_entities_loaded)
-        self.worker.event_details_loaded.connect(self.data_handler.on_event_details_loaded)
-        self.worker.entity_details_loaded.connect(self.data_handler.on_entity_details_loaded)
+        self.worker.event_details_loaded.connect(
+            self.data_handler.on_event_details_loaded
+        )
+        self.worker.entity_details_loaded.connect(
+            self.data_handler.on_entity_details_loaded
+        )
         self.worker.command_finished.connect(self.data_handler.on_command_finished)
         self.worker.operation_started.connect(self.update_status_message)
         self.worker.operation_finished.connect(self.clear_status_message)
         self.worker.error_occurred.connect(self.show_error_message)
-        self.worker.longform_sequence_loaded.connect(self.data_handler.on_longform_sequence_loaded)
+        self.worker.longform_sequence_loaded.connect(
+            self.data_handler.on_longform_sequence_loaded
+        )
         self.worker.calendar_config_loaded.connect(self.on_calendar_config_loaded)
         self.worker.current_time_loaded.connect(self.on_current_time_loaded)
         self.worker.maps_loaded.connect(self.data_handler.on_maps_loaded)
@@ -585,8 +590,9 @@ class MainWindow(QMainWindow):
             return self.calendar_converter.format_date(time_val)
         return f"{time_val:.2f}"
 
-    @Slot(list)
-            self.load_longform_sequence()
+    def on_command_finished_reload_longform(self):
+        """Handler to reload longform sequence after command completion."""
+        self.load_longform_sequence()
 
     def closeEvent(self, event):
         """
@@ -782,8 +788,6 @@ class MainWindow(QMainWindow):
         """Requests loading of all maps."""
         QMetaObject.invokeMethod(self.worker, "load_maps", QtCore_Qt.QueuedConnection)
 
-    @Slot(list)
-
     @Slot(str)
     def on_map_selected(self, map_id):
         """
@@ -972,7 +976,10 @@ class MainWindow(QMainWindow):
             cmd = DeleteMarkerCommand(marker_id)
             self.command_requested.emit(cmd)
 
-    @Slot(str, list)
+    @Slot(str, str)
+    def _on_marker_clicked(self, marker_id: str, object_type: str):
+        """
+        Handle marker click from MapWidget.
 
         Args:
             marker_id: The ID of the item.
@@ -1030,6 +1037,27 @@ class MainWindow(QMainWindow):
             logger.warning(f"No marker mapping found for object_id: {marker_id}")
             return
         cmd = UpdateMarkerColorCommand(marker_id=actual_marker_id, color=color)
+        self.command_requested.emit(cmd)
+
+    @Slot(str, float, float)
+    def _on_marker_position_changed(self, marker_id: str, x: float, y: float):
+        """
+        Handle marker position change from MapWidget.
+
+        Args:
+            marker_id: ID of the marker (actually object_id from view)
+            x: New normalized X coordinate
+            y: New normalized Y coordinate
+        """
+        # Translate object_id to actual marker ID
+        actual_marker_id = self._marker_object_to_id.get(marker_id)
+        if not actual_marker_id:
+            logger.warning(f"No marker mapping found for object_id: {marker_id}")
+            return
+        # Import the command
+        from src.commands.map_commands import UpdateMarkerPositionCommand
+
+        cmd = UpdateMarkerPositionCommand(marker_id=actual_marker_id, x=x, y=y)
         self.command_requested.emit(cmd)
 
     def remove_relation(self, rel_id):

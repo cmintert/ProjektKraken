@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class DataHandler(QObject):
     """
     Manages data loading and UI updates.
-    
+
     Handles:
     - Loading events, entities, maps, and longform sequences
     - Updating UI components with loaded data
@@ -29,7 +29,7 @@ class DataHandler(QObject):
     def __init__(self, main_window):
         """
         Initialize the data handler.
-        
+
         Args:
             main_window: Reference to the MainWindow instance.
         """
@@ -41,24 +41,24 @@ class DataHandler(QObject):
     def on_events_loaded(self, events):
         """
         Updates the UI with the loaded events.
-        
+
         Args:
             events: List of Event objects.
         """
         self.window._cached_events = events
         self.window.unified_list.set_data(
-            self.window._cached_events, 
-            self.window._cached_entities
+            self.window._cached_events, self.window._cached_entities
         )
         self.window.timeline.set_events(events)
         self.window.status_bar.showMessage(f"Loaded {len(events)} events.")
         self._update_editor_suggestions()
 
-        if (self.window._pending_select_type == "event" and 
-            self.window._pending_select_id):
+        if (
+            self.window._pending_select_type == "event"
+            and self.window._pending_select_id
+        ):
             self.window.unified_list.select_item(
-                "event", 
-                self.window._pending_select_id
+                "event", self.window._pending_select_id
             )
             self.window._pending_select_type = None
             self.window._pending_select_id = None
@@ -67,23 +67,23 @@ class DataHandler(QObject):
     def on_entities_loaded(self, entities):
         """
         Updates the UI with loaded entities.
-        
+
         Args:
             entities: List of Entity objects.
         """
         self.window._cached_entities = entities
         self.window.unified_list.set_data(
-            self.window._cached_events, 
-            self.window._cached_entities
+            self.window._cached_events, self.window._cached_entities
         )
         self.window.status_bar.showMessage(f"Loaded {len(entities)} entities.")
         self._update_editor_suggestions()
 
-        if (self.window._pending_select_type == "entity" and 
-            self.window._pending_select_id):
+        if (
+            self.window._pending_select_type == "entity"
+            and self.window._pending_select_id
+        ):
             self.window.unified_list.select_item(
-                "entity", 
-                self.window._pending_select_id
+                "entity", self.window._pending_select_id
             )
             self.window._pending_select_type = None
             self.window._pending_select_id = None
@@ -151,9 +151,7 @@ class DataHandler(QObject):
         """
         self.window._cached_longform_sequence = sequence
         self.window.longform_editor.load_sequence(sequence)
-        self.window.status_bar.showMessage(
-            f"Loaded {len(sequence)} longform items."
-        )
+        self.window.status_bar.showMessage(f"Loaded {len(sequence)} longform items.")
 
     @Slot(list)
     def on_maps_loaded(self, maps):
@@ -165,7 +163,7 @@ class DataHandler(QObject):
         """
         self.window.map_widget.set_maps(maps)
         self.window.status_bar.showMessage(f"Loaded {len(maps)} maps.")
-        
+
         # Auto-select first map if none selected
         if maps:
             current_id = self.window.map_widget.map_selector.currentData()
@@ -188,38 +186,44 @@ class DataHandler(QObject):
 
         self.window.map_widget.clear_markers()
         self.window._marker_object_to_id.clear()  # Reset mapping
-        
+
         for marker in markers:
             # Determine label from cached data
             label = "Unknown"
             if marker.object_type == "entity" and self.window._cached_entities:
                 entity = next(
-                    (e for e in self.window._cached_entities 
-                     if e.id == marker.object_id), 
-                    None
+                    (
+                        e
+                        for e in self.window._cached_entities
+                        if e.id == marker.object_id
+                    ),
+                    None,
                 )
                 if entity:
                     label = entity.name
             elif marker.object_type == "event" and self.window._cached_events:
                 event = next(
-                    (e for e in self.window._cached_events 
-                     if e.id == marker.object_id), 
-                    None
+                    (e for e in self.window._cached_events if e.id == marker.object_id),
+                    None,
                 )
                 if event:
                     label = event.name
-            
+
             # Add marker to map
             self.window.map_widget.add_marker(
-                marker.x,
-                marker.y,
-                label,
-                icon_name=marker.attributes.get("icon"),
+                marker_id=marker.object_id,  # Use object_id as marker_id for UI
+                object_type=marker.object_type,
+                label=label,
+                x=marker.x,
+                y=marker.y,
+                icon=marker.attributes.get("icon"),
                 color=marker.attributes.get("color"),
             )
-            
+
             # Store mapping for later updates
-            self.window._marker_object_to_id[(marker.object_id, marker.object_type)] = marker.id
+            self.window._marker_object_to_id[(marker.object_id, marker.object_type)] = (
+                marker.id
+            )
 
     @Slot(object)
     def on_command_finished(self, result):
@@ -239,11 +243,7 @@ class DataHandler(QObject):
         # Determine what to reload based on command
         if not success:
             if message:
-                QMessageBox.warning(
-                    self.window, 
-                    "Command Failed", 
-                    message
-                )
+                QMessageBox.warning(self.window, "Command Failed", message)
             return
 
         if command_name == "CreateEventCommand" and result.data.get("id"):

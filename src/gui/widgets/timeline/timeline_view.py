@@ -7,15 +7,20 @@ Provides the TimelineView class for rendering and interacting with the timeline.
 import logging
 from PySide6.QtWidgets import QGraphicsView, QWidget
 from PySide6.QtCore import Qt, Signal, QTimer, QRectF, QPointF
-from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QTransform
+from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QTransform, QFont
 
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.timeline_ruler import TimelineRuler
 from src.gui.widgets.timeline_lane_packer import TimelineLanePacker
-from src.gui.widgets.timeline.timeline_scene import TimelineScene, PlayheadItem, CurrentTimeLineItem
+from src.gui.widgets.timeline.timeline_scene import (
+    TimelineScene,
+    PlayheadItem,
+    CurrentTimeLineItem,
+)
 from src.gui.widgets.timeline.event_item import EventItem
 
 logger = logging.getLogger(__name__)
+
 
 class TimelineView(QGraphicsView):
     """
@@ -819,5 +824,3 @@ class TimelineView(QGraphicsView):
             float: The current time in lore_date units.
         """
         return self._current_time_line.get_time(self.scale_factor)
-
-

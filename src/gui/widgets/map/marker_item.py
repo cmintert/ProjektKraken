@@ -5,11 +5,26 @@ Provides the MarkerItem class for rendering markers on the map.
 """
 
 import logging
-from PySide6.QtWidgets import QGraphicsItem, QGraphicsEllipseItem, QGraphicsTextItem
-from PySide6.QtCore import Qt, QRectF, QPointF, Signal
+import os
+from typing import Optional
+from PySide6.QtWidgets import QGraphicsItem, QGraphicsObject, QGraphicsPixmapItem
+from PySide6.QtCore import Qt, QRectF, Signal
 from PySide6.QtGui import QPainter, QBrush, QPen, QColor, QPixmap, QCursor
+from PySide6.QtSvg import QSvgRenderer
+
+# Forward declaration to avoid circular import
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.gui.widgets.map.map_graphics_view import MapGraphicsView
+
+# Resolve marker icons path
+MARKER_ICONS_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "..", "..", "..", "assets", "icons", "markers"
+)
 
 logger = logging.getLogger(__name__)
+
 
 class MarkerItem(QGraphicsObject):
     """
@@ -292,5 +307,3 @@ class MarkerItem(QGraphicsObject):
             The processed value.
         """
         return super().itemChange(change, value)
-
-
