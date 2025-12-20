@@ -274,18 +274,7 @@ class DatabaseService:
         Returns:
             Optional[Entity]: The Entity object if found, else None.
         """
-        sql = "SELECT * FROM entities WHERE id = ?"
-        if not self._connection:
-            self.connect()
-
-        cursor = self._connection.execute(sql, (entity_id,))
-        row = cursor.fetchone()
-        if row:
-            data = dict(row)
-            if data.get("attributes"):
-                data["attributes"] = json.loads(data["attributes"])
-            return Entity.from_dict(data)
-        return None
+        return self._entity_repo.get(entity_id)
 
     def get_all_entities(self) -> List[Entity]:
         """
@@ -294,18 +283,7 @@ class DatabaseService:
         Returns:
             List[Entity]: A list of all Entity objects.
         """
-        sql = "SELECT * FROM entities"
-        if not self._connection:
-            self.connect()
-
-        cursor = self._connection.execute(sql)
-        entities = []
-        for row in cursor.fetchall():
-            data = dict(row)
-            if data.get("attributes"):
-                data["attributes"] = json.loads(data["attributes"])
-            entities.append(Entity.from_dict(data))
-        return entities
+        return self._entity_repo.get_all()
 
     def delete_entity(self, entity_id: str) -> None:
         """
@@ -317,11 +295,10 @@ class DatabaseService:
         Raises:
             sqlite3.Error: If the database operation fails.
         """
-        with self.transaction() as conn:
-            conn.execute("DELETE FROM entities WHERE id = ?", (entity_id,))
+        self._entity_repo.delete(entity_id)
 
     # --------------------------------------------------------------------------
-    # Relation CRUD
+    # Relation CRUD - Delegates to RelationRepository
     # --------------------------------------------------------------------------
 
     def insert_relation(
@@ -355,23 +332,9 @@ class DatabaseService:
         rel_id = str(uuid.uuid4())
         created_at = time.time()
 
-        sql = """
-            INSERT INTO relations (id, source_id, target_id, rel_type,
-                                   attributes, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """
-        with self.transaction() as conn:
-            conn.execute(
-                sql,
-                (
-                    rel_id,
-                    source_id,
-                    target_id,
-                    rel_type,
-                    json.dumps(attributes),
-                    created_at,
-                ),
-            )
+        self._relation_repo.insert(
+            rel_id, source_id, target_id, rel_type, attributes, created_at
+        )
 
         logger.info(
             f"DB: Inserted relation {rel_id}: {source_id} -> {target_id} ({rel_type})"
@@ -388,18 +351,7 @@ class DatabaseService:
         Returns:
             List[Dict[str, Any]]: List of relation dictionaries.
         """
-        sql = "SELECT * FROM relations WHERE source_id = ?"
-        if not self._connection:
-            self.connect()
-
-        cursor = self._connection.execute(sql, (source_id,))
-        relations = []
-        for row in cursor.fetchall():
-            data = dict(row)
-            if data.get("attributes"):
-                data["attributes"] = json.loads(data["attributes"])
-            relations.append(data)
-        return relations
+        return self._relation_repo.get_by_source(source_id)
 
     def get_incoming_relations(self, target_id: str) -> List[Dict[str, Any]]:
         """
@@ -411,18 +363,7 @@ class DatabaseService:
         Returns:
             List[Dict[str, Any]]: List of relation dictionaries.
         """
-        sql = "SELECT * FROM relations WHERE target_id = ?"
-        if not self._connection:
-            self.connect()
-
-        cursor = self._connection.execute(sql, (target_id,))
-        relations = []
-        for row in cursor.fetchall():
-            data = dict(row)
-            if data.get("attributes"):
-                data["attributes"] = json.loads(data["attributes"])
-            relations.append(data)
-        return relations
+        return self._relation_repo.get_by_target(target_id)
 
     def get_relation(self, rel_id: str) -> Optional[Dict[str, Any]]:
         """
@@ -434,17 +375,10 @@ class DatabaseService:
         Returns:
             Optional[Dict[str, Any]]: The relation dict or None.
         """
-        sql = "SELECT * FROM relations WHERE id = ?"
-        if not self._connection:
-            self.connect()
-
-        cursor = self._connection.execute(sql, (rel_id,))
-        row = cursor.fetchone()
-        if row:
-            data = dict(row)
-            if data.get("attributes"):
-                data["attributes"] = json.loads(data["attributes"])
-            return data
+        relations = self._relation_repo.get_all()
+        for rel in relations:
+            if rel.get("id") == rel_id:
+                return rel
         return None
 
     def delete_relation(self, rel_id: str) -> None:
@@ -454,8 +388,7 @@ class DatabaseService:
         Args:
             rel_id (str): The unique identifier of the relation.
         """
-        with self.transaction() as conn:
-            conn.execute("DELETE FROM relations WHERE id = ?", (rel_id,))
+        self._relation_repo.delete(rel_id)
 
     def update_relation(
         self,
@@ -479,6 +412,8 @@ class DatabaseService:
         if attributes is None:
             attributes = {}
 
+        # Note: RelationRepository.update doesn't update target_id
+        # We need to add that functionality or handle it here
         sql = """
             UPDATE relations
             SET target_id = ?, rel_type = ?, attributes = ?
@@ -541,40 +476,7 @@ class DatabaseService:
         Raises:
             sqlite3.Error: If the database operation fails.
         """
-        if not events:
-            return
-
-        sql = """
-            INSERT INTO events (id, type, name, lore_date, lore_duration,
-                                description, attributes, created_at, modified_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
-                type=excluded.type,
-                name=excluded.name,
-                lore_date=excluded.lore_date,
-                lore_duration=excluded.lore_duration,
-                description=excluded.description,
-                attributes=excluded.attributes,
-                modified_at=excluded.modified_at;
-        """
-
-        data = [
-            (
-                event.id,
-                event.type,
-                event.name,
-                event.lore_date,
-                event.lore_duration,
-                event.description,
-                json.dumps(event.attributes),
-                event.created_at,
-                event.modified_at,
-            )
-            for event in events
-        ]
-
-        with self.transaction() as conn:
-            conn.executemany(sql, data)
+        self._event_repo.insert_bulk(events)
         logger.info(f"Bulk inserted {len(events)} events")
 
     def insert_entities_bulk(self, entities: List[Entity]) -> None:
@@ -592,40 +494,11 @@ class DatabaseService:
         Raises:
             sqlite3.Error: If the database operation fails.
         """
-        if not entities:
-            return
-
-        sql = """
-            INSERT INTO entities (id, type, name, description,
-                                  attributes, created_at, modified_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
-                type=excluded.type,
-                name=excluded.name,
-                description=excluded.description,
-                attributes=excluded.attributes,
-                modified_at=excluded.modified_at;
-        """
-
-        data = [
-            (
-                entity.id,
-                entity.type,
-                entity.name,
-                entity.description,
-                json.dumps(entity.attributes),
-                entity.created_at,
-                entity.modified_at,
-            )
-            for entity in entities
-        ]
-
-        with self.transaction() as conn:
-            conn.executemany(sql, data)
+        self._entity_repo.insert_bulk(entities)
         logger.info(f"Bulk inserted {len(entities)} entities")
 
     # --------------------------------------------------------------------------
-    # Calendar Config CRUD
+    # Calendar Config CRUD - Delegates to CalendarRepository
     # --------------------------------------------------------------------------
 
     def insert_calendar_config(self, config: CalendarConfig) -> None:
@@ -638,26 +511,7 @@ class DatabaseService:
         Raises:
             sqlite3.Error: If the database operation fails.
         """
-        sql = """
-            INSERT INTO calendar_config (id, name, config_json, is_active,
-                                         created_at, modified_at)
-            VALUES (?, ?, ?, 0, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
-                name=excluded.name,
-                config_json=excluded.config_json,
-                modified_at=excluded.modified_at;
-        """
-        with self.transaction() as conn:
-            conn.execute(
-                sql,
-                (
-                    config.id,
-                    config.name,
-                    json.dumps(config.to_dict()),
-                    config.created_at,
-                    config.modified_at,
-                ),
-            )
+        self._calendar_repo.insert(config)
         logger.debug(f"Inserted/updated calendar config: {config.id}")
 
     def get_calendar_config(self, config_id: str) -> Optional[CalendarConfig]:
@@ -670,17 +524,7 @@ class DatabaseService:
         Returns:
             Optional[CalendarConfig]: The config if found, else None.
         """
-        sql = "SELECT config_json FROM calendar_config WHERE id = ?"
-        if not self._connection:
-            self.connect()
-
-        cursor = self._connection.execute(sql, (config_id,))
-        row = cursor.fetchone()
-
-        if row:
-            data = json.loads(row["config_json"])
-            return CalendarConfig.from_dict(data)
-        return None
+        return self._calendar_repo.get(config_id)
 
     def get_all_calendar_configs(self) -> List[CalendarConfig]:
         """
@@ -689,16 +533,7 @@ class DatabaseService:
         Returns:
             List[CalendarConfig]: A list of all calendar configs.
         """
-        sql = "SELECT config_json FROM calendar_config ORDER BY name"
-        if not self._connection:
-            self.connect()
-
-        cursor = self._connection.execute(sql)
-        configs = []
-        for row in cursor.fetchall():
-            data = json.loads(row["config_json"])
-            configs.append(CalendarConfig.from_dict(data))
-        return configs
+        return self._calendar_repo.get_all()
 
     def delete_calendar_config(self, config_id: str) -> None:
         """
@@ -710,8 +545,7 @@ class DatabaseService:
         Raises:
             sqlite3.Error: If the database operation fails.
         """
-        with self.transaction() as conn:
-            conn.execute("DELETE FROM calendar_config WHERE id = ?", (config_id,))
+        self._calendar_repo.delete(config_id)
         logger.debug(f"Deleted calendar config: {config_id}")
 
     def get_active_calendar_config(self) -> Optional[CalendarConfig]:
@@ -745,14 +579,7 @@ class DatabaseService:
         Raises:
             sqlite3.Error: If the database operation fails.
         """
-        with self.transaction() as conn:
-            # Deactivate all
-            conn.execute("UPDATE calendar_config SET is_active = 0")
-            # Activate the specified one
-            conn.execute(
-                "UPDATE calendar_config SET is_active = 1 WHERE id = ?",
-                (config_id,),
-            )
+        self._calendar_repo.set_active(config_id)
         logger.debug(f"Set active calendar config: {config_id}")
 
     # --------------------------------------------------------------------------
@@ -801,7 +628,7 @@ class DatabaseService:
         logger.debug(f"Set current_time to {current_time}")
 
     # --------------------------------------------------------------------------
-    # Map CRUD
+    # Map CRUD - Delegates to MapRepository
     # --------------------------------------------------------------------------
 
     def insert_map(self, map_obj: Map) -> None:
@@ -814,30 +641,7 @@ class DatabaseService:
         Raises:
             sqlite3.Error: If the database operation fails.
         """
-        sql = """
-            INSERT INTO maps (id, name, image_path, description, attributes,
-                            created_at, modified_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
-                name=excluded.name,
-                image_path=excluded.image_path,
-                description=excluded.description,
-                attributes=excluded.attributes,
-                modified_at=excluded.modified_at;
-        """
-        with self.transaction() as conn:
-            conn.execute(
-                sql,
-                (
-                    map_obj.id,
-                    map_obj.name,
-                    map_obj.image_path,
-                    map_obj.description,
-                    json.dumps(map_obj.attributes),
-                    map_obj.created_at,
-                    map_obj.modified_at,
-                ),
-            )
+        self._map_repo.insert_map(map_obj)
 
     def get_map(self, map_id: str) -> Optional[Map]:
         """
@@ -849,19 +653,7 @@ class DatabaseService:
         Returns:
             Optional[Map]: The Map object if found, else None.
         """
-        sql = "SELECT * FROM maps WHERE id = ?"
-        if not self._connection:
-            self.connect()
-
-        cursor = self._connection.execute(sql, (map_id,))
-        row = cursor.fetchone()
-
-        if row:
-            data = dict(row)
-            if data.get("attributes"):
-                data["attributes"] = json.loads(data["attributes"])
-            return Map.from_dict(data)
-        return None
+        return self._map_repo.get_map(map_id)
 
     def get_all_maps(self) -> List[Map]:
         """
@@ -870,20 +662,7 @@ class DatabaseService:
         Returns:
             List[Map]: List of all Map objects.
         """
-        sql = "SELECT * FROM maps ORDER BY name"
-        if not self._connection:
-            self.connect()
-
-        cursor = self._connection.execute(sql)
-        rows = cursor.fetchall()
-
-        maps = []
-        for row in rows:
-            data = dict(row)
-            if data.get("attributes"):
-                data["attributes"] = json.loads(data["attributes"])
-            maps.append(Map.from_dict(data))
-        return maps
+        return self._map_repo.get_all_maps()
 
     def delete_map(self, map_id: str) -> None:
         """
@@ -895,12 +674,10 @@ class DatabaseService:
         Raises:
             sqlite3.Error: If the database operation fails.
         """
-        sql = "DELETE FROM maps WHERE id = ?"
-        with self.transaction() as conn:
-            conn.execute(sql, (map_id,))
+        self._map_repo.delete_map(map_id)
 
     # --------------------------------------------------------------------------
-    # Marker CRUD
+    # Marker CRUD - Delegates to MapRepository
     # --------------------------------------------------------------------------
 
     def insert_marker(self, marker: Marker) -> str:
@@ -920,6 +697,7 @@ class DatabaseService:
         Raises:
             sqlite3.Error: If the database operation fails.
         """
+        # Note: Repository insert_marker doesn't return ID, so we need special handling
         sql = """
             INSERT INTO markers (id, map_id, object_id, object_type, x, y,
                                label, attributes, created_at, modified_at)
@@ -961,19 +739,7 @@ class DatabaseService:
         Returns:
             Optional[Marker]: The Marker object if found, else None.
         """
-        sql = "SELECT * FROM markers WHERE id = ?"
-        if not self._connection:
-            self.connect()
-
-        cursor = self._connection.execute(sql, (marker_id,))
-        row = cursor.fetchone()
-
-        if row:
-            data = dict(row)
-            if data.get("attributes"):
-                data["attributes"] = json.loads(data["attributes"])
-            return Marker.from_dict(data)
-        return None
+        return self._map_repo.get_marker(marker_id)
 
     def get_markers_for_map(self, map_id: str) -> List[Marker]:
         """
@@ -985,20 +751,7 @@ class DatabaseService:
         Returns:
             List[Marker]: List of all Marker objects on the map.
         """
-        sql = "SELECT * FROM markers WHERE map_id = ?"
-        if not self._connection:
-            self.connect()
-
-        cursor = self._connection.execute(sql, (map_id,))
-        rows = cursor.fetchall()
-
-        markers = []
-        for row in rows:
-            data = dict(row)
-            if data.get("attributes"):
-                data["attributes"] = json.loads(data["attributes"])
-            markers.append(Marker.from_dict(data))
-        return markers
+        return self._map_repo.get_markers_by_map(map_id)
 
     def get_markers_for_object(
         self, object_id: str, object_type: str
