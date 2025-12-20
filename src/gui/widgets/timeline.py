@@ -396,10 +396,10 @@ class PlayheadItem(QGraphicsLineItem):
         Returns a path roughly 10px wide centered on the line.
         """
         path = QPainterPath()
-        # Create a rectangle 10px wide centered on x=0
+        # Create a rectangle 20px wide centered on x=0
         # Spanning the vertical extent (or just a large range if infinite)
         # Using a finite but large range ensures it works within reasonable view limits
-        path.addRect(-5, -100000, 10, 200000)
+        path.addRect(-10, -100000, 20, 200000)
         return path
 
     def itemChange(self, change, value):
