@@ -25,6 +25,7 @@ from PySide6.QtGui import (
     QFontMetrics,
     QPainterPath,
     QCursor,
+    QTransform,
 )
 from src.core.theme_manager import ThemeManager
 
@@ -567,7 +568,7 @@ class TimelineView(QGraphicsView):
         self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
 
         # Viewport alignment
-        self.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.setAlignment(Qt.AlignLeft | Qt.AlignTop)
 
         self.events = []
         self.scale_factor = 20.0
@@ -969,17 +970,29 @@ class TimelineView(QGraphicsView):
         end_x = (max_date + margin) * self.scale_factor
         width = end_x - start_x
 
-        # 2. Calculate Y bounds based on lanes
-        # Each item is at y = (lane_index * LANE_HEIGHT) + 60
-        # Max 8 lanes (0-7), so max y is roughly (7 * 40) + 60 + height
-        # But let's just use a fixed reasonable height or scan items if needed.
-        # Fixed height covering all 8 lanes is safe + room for labels.
-        # 8 lanes * 40 = 320. Start at 60. So bottom is ~380.
-        height = 400
+        # 2. Fit Horizontal Only
+        viewport_width = self.viewport().width()
+        if viewport_width > 0 and width > 0:
+            scale_x = viewport_width / width
 
-        # 3. Fit
-        target_rect = QRectF(start_x, 0, width, height)
-        self.fitInView(target_rect, Qt.KeepAspectRatio)
+            # Enforce limits
+            scale_x = max(self.MIN_ZOOM, min(scale_x, self.MAX_ZOOM))
+
+            # Apply Transform: Scale X, Reset Y to 1.0
+            self.setTransform(QTransform().scale(scale_x, 1.0))
+            self._current_zoom = scale_x
+
+            # Center X, Align Top Y
+            center_x = (start_x + end_x) / 2
+
+            # centerOn(x, y) puts (x,y) in the center of the viewport
+            # To ensure Y=0 is at the top, we center on (center_x, viewport_height/2)
+            # This relies on Scene Y=0 being the top of the content
+            vh = self.viewport().height()
+            self.centerOn(center_x, vh / 2)
+
+            # Explicitly ensure we are at the top (redundancy for safety)
+            self.verticalScrollBar().setValue(0)
 
     def wheelEvent(self, event):
         """
@@ -1012,7 +1025,7 @@ class TimelineView(QGraphicsView):
 
             try:
                 # Apply zoom
-                self.scale(factor, factor)
+                self.scale(factor, 1.0)
                 self._current_zoom = new_zoom
             finally:
                 # Restore original anchor
