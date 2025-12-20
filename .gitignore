@@ -49,3 +49,6 @@ world.kraken
 *.sqlite3
 docs/_build/
 .pytest_cache/
+.coverage
+htmlcov/
+*.bak
