@@ -1,5 +1,4 @@
 import pytest
-from PySide6.QtWidgets import QTabWidget
 from src.core.calendar import (
     CalendarConfig,
     CalendarConverter,
@@ -7,7 +6,7 @@ from src.core.calendar import (
     WeekDefinition,
 )
 from src.gui.widgets.event_editor import EventEditorWidget
-from src.gui.widgets.lore_duration_widget import LoreDurationWidget
+from src.gui.widgets.compact_duration_widget import CompactDurationWidget
 
 
 @pytest.fixture
@@ -32,8 +31,8 @@ def mock_converter():
 
 class TestGranularDuration:
 
-    def test_lore_duration_widget_simple(self, qtbot, mock_converter):
-        widget = LoreDurationWidget()
+    def test_compact_duration_widget_simple(self, qtbot, mock_converter):
+        widget = CompactDurationWidget()
         widget.set_calendar_converter(mock_converter)
         qtbot.addWidget(widget)
 
@@ -41,16 +40,16 @@ class TestGranularDuration:
         widget.spin_months.setValue(1)
         widget.spin_days.setValue(5)
 
-        # With standard 30 day months, 1 Month = 30 days. + 5 = 35.
+        # With custom 30 day months, 1 Month = 30 days. + 5 = 35.
         assert widget.get_value() == 35.0
 
-    def test_event_editor_has_duration_tabs(self, qtbot):
+    def test_event_editor_has_duration_widget(self, qtbot):
+        """EventEditorWidget should have the new  CompactDurationWidget."""
         widget = EventEditorWidget()
         qtbot.addWidget(widget)
 
-        assert hasattr(widget, "dur_tabs")
-        assert isinstance(widget.dur_tabs, QTabWidget)
-        assert widget.dur_tabs.count() == 2
+        assert hasattr(widget, "duration_widget")
+        assert isinstance(widget.duration_widget, CompactDurationWidget)
 
     def test_sync_duration_to_end_date(self, qtbot, mock_converter):
         widget = EventEditorWidget()
