@@ -23,8 +23,8 @@ from PySide6.QtCore import Signal, Qt
 from src.core.events import Event
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
-from src.gui.widgets.lore_date_widget import LoreDateWidget
-from src.gui.widgets.lore_duration_widget import LoreDurationWidget
+from src.gui.widgets.compact_date_widget import CompactDateWidget
+from src.gui.widgets.compact_duration_widget import CompactDurationWidget
 from src.gui.widgets.tag_editor import TagEditorWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
 
@@ -77,7 +77,7 @@ class EventEditorWidget(QWidget):
         self.name_edit = QLineEdit()
 
         # Lore date widget with structured input
-        self.date_edit = LoreDateWidget()
+        self.date_edit = CompactDateWidget()
 
         self.type_edit = QComboBox()
         self.type_edit.addItems(
@@ -92,11 +92,11 @@ class EventEditorWidget(QWidget):
         self.form_layout.addRow("Lore Date:", self.date_edit)
 
         # Duration & End Date
-        self.duration_widget = LoreDurationWidget()
+        self.duration_widget = CompactDurationWidget()
         self.duration_widget.set_calendar_converter(self._calendar_converter)
         self.duration_widget.value_changed.connect(self._on_duration_changed)
 
-        self.end_date_edit = LoreDateWidget()
+        self.end_date_edit = CompactDateWidget()
         self.end_date_edit.set_calendar_converter(self._calendar_converter)
         self.end_date_edit.value_changed.connect(self._on_end_date_changed)
 
@@ -509,8 +509,7 @@ class EventEditorWidget(QWidget):
     def _on_field_changed(self):
         """Marks the editor as dirty and emits live preview signal."""
         if not self._is_loading:
-            self._is_dirty = True
-            self.dirty_changed.emit(True)
+            self.set_dirty(True)  # Use set_dirty to properly enable save button
             self._emit_current_data()
 
     def _emit_current_data(self):
