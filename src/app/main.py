@@ -299,6 +299,11 @@ class MainWindow(QMainWindow):
         self.event_editor.link_clicked.connect(self.navigate_to_entity)
         self.entity_editor.link_clicked.connect(self.navigate_to_entity)
 
+        # Connect live preview for Timeline
+        self.event_editor.current_data_changed.connect(
+            self.timeline.update_event_preview
+        )
+
         # Discard signals - reload from database
         self.event_editor.discard_requested.connect(self.load_event_details)
         self.entity_editor.discard_requested.connect(self.load_entity_details)
@@ -855,8 +860,9 @@ class MainWindow(QMainWindow):
         # But if called programmatically, we might want to check here too?
         # Actually _on_item_selected calls this.
         # But for robust safety, checking here is good, unless it causes double prompts.
-        # Let's rely on the caller (selection/navigation) to guard, as this is a "request"
-        # and checking UI state inside a low-level request might be mixing concerns slightly.
+        # Let's rely on the caller (selection/navigation) to guard,
+        # as this is a "request" and checking UI state inside
+        # a low-level request might be mixing concerns slightly.
         # However, to start simple, we guard at user-interaction points.
 
         QMetaObject.invokeMethod(
@@ -1115,7 +1121,7 @@ class MainWindow(QMainWindow):
 
         # Simple choice: Entity or Event?
         # For a better UX, we could use a custom dialog with a search box.
-        # For now, let's just ask for ID/Name via InputDialog is tricky because we need UUIDs.
+        # For now, using InputDialog is tricky because we need UUIDs.
         # Better: Use a simple list selection from cached items.
 
         items = []
@@ -1271,7 +1277,8 @@ class MainWindow(QMainWindow):
             object_type: 'event' or 'entity'.
         """
         logger.info(
-            f"_on_marker_clicked called: marker_id={marker_id}, object_type={object_type}"
+            f"_on_marker_clicked called: marker_id={marker_id}, "
+            f"object_type={object_type}"
         )
         if object_type == "event":
             if not self.check_unsaved_changes(self.event_editor):
