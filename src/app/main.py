@@ -84,6 +84,8 @@ from src.app.constants import (
     IMAGE_FILE_FILTER,
 )
 from src.app.ui_manager import UIManager
+from src.app.connection_manager import ConnectionManager
+from src.app.command_coordinator import CommandCoordinator
 from src.services import longform_builder
 
 # Initialize Logging
@@ -171,8 +173,15 @@ class MainWindow(QMainWindow):
             }
         )
 
-        # 4. Connect Signals
-        self._connect_signals()
+        # 4. Initialize Connection Manager
+        self.connection_manager = ConnectionManager(self)
+        self.connection_manager.connect_all()
+
+        # 5. Initialize Command Coordinator
+        self.command_coordinator = CommandCoordinator(self)
+        self.command_coordinator.command_requested.connect(
+            lambda cmd: self.command_requested.emit(cmd)
+        )
 
         # Central Widget
         self.setCentralWidget(QWidget())
@@ -271,75 +280,6 @@ class MainWindow(QMainWindow):
             QDockWidget: The dock widget containing the map.
         """
         return self.ui_manager.docks.get("map")
-
-    def _connect_signals(self):
-        """Connects all UI signals to their respective slots."""
-        # Unified List
-        self.unified_list.refresh_requested.connect(self.load_data)
-        self.unified_list.create_event_requested.connect(self.create_event)
-        self.unified_list.create_entity_requested.connect(self.create_entity)
-        self.unified_list.delete_requested.connect(self._on_item_delete_requested)
-        self.unified_list.item_selected.connect(self._on_item_selected)
-
-        # Editors
-        for editor in [self.event_editor, self.entity_editor]:
-            editor.save_requested.connect(self.update_item)  # Generalized update
-            editor.add_relation_requested.connect(self.add_relation)
-            editor.remove_relation_requested.connect(self.remove_relation)
-            editor.update_relation_requested.connect(self.update_relation)
-
-        # Specific connections if needed
-        # (generalized above, but keeping specific if logic differs)
-        self.event_editor.save_requested.disconnect(self.update_item)
-        self.entity_editor.save_requested.disconnect(self.update_item)
-
-        self.event_editor.save_requested.connect(self.update_event)
-        self.entity_editor.save_requested.connect(self.update_entity)
-
-        self.event_editor.link_clicked.connect(self.navigate_to_entity)
-        self.entity_editor.link_clicked.connect(self.navigate_to_entity)
-
-        # Connect live preview for Timeline
-        self.event_editor.current_data_changed.connect(
-            self.timeline.update_event_preview
-        )
-
-        # Discard signals - reload from database
-        self.event_editor.discard_requested.connect(self.load_event_details)
-        self.entity_editor.discard_requested.connect(self.load_entity_details)
-
-        # Timeline
-        self.timeline.event_selected.connect(self.load_event_details)
-        self.timeline.current_time_changed.connect(self.on_current_time_changed)
-        self.timeline.playhead_time_changed.connect(self.update_playhead_time_label)
-        self.timeline.event_date_changed.connect(self._on_event_date_changed)
-
-        # Longform Editor
-        self.longform_editor.promote_requested.connect(self.promote_longform_entry)
-        self.longform_editor.demote_requested.connect(self.demote_longform_entry)
-        self.longform_editor.refresh_requested.connect(self.load_longform_sequence)
-        self.longform_editor.export_requested.connect(self.export_longform_document)
-        self.longform_editor.item_selected.connect(self._on_item_selected)
-        self.longform_editor.item_moved.connect(self.move_longform_entry)
-        self.longform_editor.link_clicked.connect(self.navigate_to_entity)
-
-        # Map Widget
-        self.map_widget.marker_position_changed.connect(
-            self._on_marker_position_changed
-        )
-        self.map_widget.marker_clicked.connect(self._on_marker_clicked)
-        self.map_widget.create_map_requested.connect(self.create_map)
-        self.map_widget.delete_map_requested.connect(self.delete_map)
-        self.map_widget.map_selected.connect(self.on_map_selected)
-        self.map_widget.create_marker_requested.connect(self.create_marker)
-        self.map_widget.delete_marker_requested.connect(self.delete_marker)
-        self.map_widget.change_marker_icon_requested.connect(
-            self._on_marker_icon_changed
-        )
-        self.map_widget.change_marker_color_requested.connect(
-            self._on_marker_color_changed
-        )
-        self.map_widget.marker_drop_requested.connect(self._on_marker_dropped)
 
     def _restore_window_state(self):
         """Restores window geometry and state from settings."""

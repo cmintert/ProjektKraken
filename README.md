@@ -82,8 +82,7 @@ See [CODE_REVIEW_SUMMARY.md](CODE_REVIEW_SUMMARY.md) for detailed assessment.
 - **[DATABASE.md](docs/DATABASE.md)**: Database architecture and best practices
 - **[SECURITY.md](docs/SECURITY.md)**: Security guidelines and best practices
 - **[Design.md](Design.md)**: Architecture and design decisions
-- **[CODE_REVIEW_SUMMARY.md](CODE_REVIEW_SUMMARY.md)**: Production readiness assessment
-- **[ARCHITECTURAL_REVIEW_REPORT.md](ARCHITECTURAL_REVIEW_REPORT.md)**: Comprehensive architectural analysis
+- **[SENIOR_ARCHITECT_REVIEW.md](SENIOR_ARCHITECT_REVIEW.md)**: Comprehensive architectural review and refactoring report
 
 ## Architecture
 
