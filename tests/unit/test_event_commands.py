@@ -2,12 +2,14 @@
 Unit tests for event commands.
 """
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
+
 from src.commands.event_commands import (
     CreateEventCommand,
-    UpdateEventCommand,
     DeleteEventCommand,
+    UpdateEventCommand,
 )
 from src.core.events import Event
 

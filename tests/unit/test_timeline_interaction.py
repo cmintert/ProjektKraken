@@ -1,9 +1,10 @@
 import pytest
-from PySide6.QtCore import Qt, QPoint, QPointF
+from PySide6.QtCore import QPoint, QPointF, Qt
 from PySide6.QtGui import QWheelEvent
 from PySide6.QtWidgets import QApplication, QGraphicsView
-from src.gui.widgets.timeline import TimelineWidget, EventItem
+
 from src.core.events import Event
+from src.gui.widgets.timeline import EventItem, TimelineWidget
 
 
 @pytest.fixture

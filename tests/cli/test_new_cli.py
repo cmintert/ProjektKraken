@@ -1,6 +1,7 @@
-import pytest
-import sys
 from unittest.mock import MagicMock, patch
+
+import pytest
+
 from src.cli.map import main as map_main
 from src.cli.wiki import main as wiki_main
 
@@ -12,7 +13,7 @@ from src.cli.wiki import main as wiki_main
 @patch("src.cli.map.CreateMapCommand")
 @patch("sys.argv", ["map.py", "create", "--database", "test.db", "--name", "Test Map"])
 def test_map_create(MockCommand, MockDB, MockValidate, capsys):
-    mock_db_instance = MockDB.return_value
+
     mock_cmd_instance = MockCommand.return_value
     mock_cmd_instance.execute.return_value.success = True
     mock_cmd_instance.execute.return_value.data = {"id": "new-map-id"}

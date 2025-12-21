@@ -9,20 +9,21 @@ The longform editor displays events and entities in a hierarchical document
 structure, allowing users to organize narrative content.
 """
 
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QSplitter,
-    QTreeWidget,
-    QTreeWidgetItem,
-    QToolBar,
-    QLabel,
-)
-from PySide6.QtCore import Signal, Qt, QMimeData
-from PySide6.QtGui import QAction, QBrush, QColor, QDrag
 import json
 import logging
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
+from PySide6.QtCore import QMimeData, Qt, Signal
+from PySide6.QtGui import QAction, QBrush, QColor, QDrag
+from PySide6.QtWidgets import (
+    QLabel,
+    QSplitter,
+    QToolBar,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
 

@@ -7,21 +7,19 @@ Provides the IconPickerDialog for selecting marker icons.
 import logging
 import os
 from typing import Optional
+
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QDialog,
-    QVBoxLayout,
-    QHBoxLayout,
-    QPushButton,
-    QListWidget,
-    QListWidgetItem,
-    QScrollArea,
-    QWidget,
+    QFrame,
     QGridLayout,
     QLabel,
-    QFrame,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon, QPixmap
 
 # Define locally to avoid circular import
 MARKER_ICONS_PATH = os.path.join(

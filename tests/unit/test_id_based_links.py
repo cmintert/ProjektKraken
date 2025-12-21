@@ -4,8 +4,7 @@ Unit tests for ID-based wiki links.
 Tests the new ID-based linking format: [[id:UUID|DisplayName]]
 """
 
-import pytest
-from src.services.text_parser import WikiLinkParser, LinkCandidate
+from src.services.text_parser import WikiLinkParser
 
 
 def test_parse_id_based_link():

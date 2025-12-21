@@ -11,6 +11,7 @@ import logging
 from typing import Dict
 
 from PySide6.QtCore import QObject, Signal
+
 from src.core.base_theme_manager import BaseThemeManager
 
 logger = logging.getLogger(__name__)

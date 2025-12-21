@@ -5,16 +5,15 @@ Provides a custom QSplitter-based widget that supports vertical stacking
 of tabs with drag-and-drop functionality.
 """
 
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QSplitter,
-    QTabWidget,
-    QTabBar,
-)
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QMimeData, QPoint, Qt, Signal
 from PySide6.QtGui import QDrag
-from PySide6.QtCore import QMimeData, QPoint
+from PySide6.QtWidgets import (
+    QSplitter,
+    QTabBar,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
 
 class DraggableTabBar(QTabBar):

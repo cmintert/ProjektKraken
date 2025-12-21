@@ -1,11 +1,18 @@
 import pytest
-from src.gui.widgets.event_editor import EventEditorWidget
+
 from src.core.events import Event
+from src.gui.widgets.event_editor import EventEditorWidget
 
 
 @pytest.fixture
 def editor(qtbot):
-    widget = EventEditorWidget()
+    from unittest.mock import MagicMock
+
+    from PySide6.QtWidgets import QWidget
+
+    mock_parent = QWidget()
+    mock_parent.worker = MagicMock()
+    widget = EventEditorWidget(parent=mock_parent)
     qtbot.addWidget(widget)
     return widget
 
@@ -46,6 +53,7 @@ def test_add_relation_flow(editor, qtbot, monkeypatch):
 
     # Mock RelationEditDialog
     from unittest.mock import MagicMock
+
     import src.gui.dialogs.relation_dialog
 
     mock_dialog = MagicMock()
@@ -99,6 +107,7 @@ def test_context_menu_actions(editor, qtbot, monkeypatch):
 
     # Mock RelationEditDialog
     from unittest.mock import MagicMock
+
     import src.gui.dialogs.relation_dialog
 
     mock_dialog = MagicMock()

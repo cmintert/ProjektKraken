@@ -5,10 +5,11 @@ Tests for CalendarConfig CRUD operations in DatabaseService.
 """
 
 import pytest
+
 from src.core.calendar import (
+    CalendarConfig,
     MonthDefinition,
     WeekDefinition,
-    CalendarConfig,
 )
 
 

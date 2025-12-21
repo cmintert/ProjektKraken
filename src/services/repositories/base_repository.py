@@ -6,10 +6,10 @@ Repositories handle CRUD operations for specific domain entities.
 """
 
 import json
-import sqlite3
 import logging
-from typing import Optional
+import sqlite3
 from contextlib import contextmanager
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 

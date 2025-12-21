@@ -4,21 +4,20 @@ Calendar Commands Unit Tests.
 Tests for calendar-related commands following the Command pattern.
 """
 
-import pytest
-import time
-from unittest.mock import Mock, MagicMock
 
+import pytest
+
+from src.commands.base_command import CommandResult
 from src.commands.calendar_commands import (
     CreateCalendarConfigCommand,
-    UpdateCalendarConfigCommand,
     DeleteCalendarConfigCommand,
     SetActiveCalendarCommand,
+    UpdateCalendarConfigCommand,
 )
-from src.commands.base_command import CommandResult
 from src.core.calendar import (
+    CalendarConfig,
     MonthDefinition,
     WeekDefinition,
-    CalendarConfig,
 )
 
 

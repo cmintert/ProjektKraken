@@ -2,8 +2,8 @@
 Integration test for WikiLink navigation in MainWindow.
 """
 
-import pytest
 from unittest.mock import MagicMock
+
 from src.app.main import MainWindow
 from src.core.entities import Entity
 

@@ -1,5 +1,5 @@
 import pytest
-from PySide6.QtCore import Qt
+
 from src.gui.dialogs.relation_dialog import RelationEditDialog
 
 

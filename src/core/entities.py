@@ -9,10 +9,10 @@ objects that exist across time with:
 - Automatic ID generation and timestamp tracking
 """
 
-from dataclasses import dataclass, field
-from typing import Dict, Any
-import uuid
 import time
+import uuid
+from dataclasses import dataclass, field
+from typing import Any, Dict
 
 
 @dataclass

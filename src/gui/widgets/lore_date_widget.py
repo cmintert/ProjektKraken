@@ -5,17 +5,18 @@ Provides a structured date input widget that adapts to calendar configuration,
 with Year/Month/Day dropdowns and fallback to raw float input.
 """
 
+import logging
+
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
-    QWidget,
-    QHBoxLayout,
-    QSpinBox,
+    QCheckBox,
     QComboBox,
     QDoubleSpinBox,
-    QCheckBox,
+    QHBoxLayout,
     QLabel,
+    QSpinBox,
+    QWidget,
 )
-from PySide6.QtCore import Signal
-import logging
 
 from src.core.calendar import CalendarConverter, CalendarDate
 

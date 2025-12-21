@@ -6,24 +6,25 @@ filtering and color-coded differentiation.
 """
 
 import json
+from typing import List
+
+from PySide6.QtCore import QMimeData, Qt, Signal
+from PySide6.QtGui import QAction, QBrush, QColor, QDrag
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QListWidget,
-    QListWidgetItem,
-    QPushButton,
+    QComboBox,
     QHBoxLayout,
     QLabel,
-    QComboBox,
     QLineEdit,
+    QListWidget,
+    QListWidgetItem,
     QMenu,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtGui import QAction, QDrag
-from PySide6.QtCore import Qt, Signal, QMimeData
-from PySide6.QtGui import QColor, QBrush
-from typing import List
-from src.core.events import Event
+
 from src.core.entities import Entity
+from src.core.events import Event
 
 # Custom MIME type for Kraken items (DRY: reusable across drop targets)
 KRAKEN_ITEM_MIME_TYPE = "application/x-kraken-item"

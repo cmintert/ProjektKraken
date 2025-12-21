@@ -4,9 +4,10 @@ Commands for manipulating Entity objects.
 
 import logging
 from typing import Optional
+
 from src.commands.base_command import BaseCommand, CommandResult
-from src.services.db_service import DatabaseService
 from src.core.entities import Entity
+from src.services.db_service import DatabaseService
 
 logger = logging.getLogger(__name__)
 

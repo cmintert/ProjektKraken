@@ -2,7 +2,6 @@
 Unit tests for map and marker database operations.
 """
 
-import pytest
 from src.core.map import Map
 from src.core.marker import Marker
 

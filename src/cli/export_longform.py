@@ -11,12 +11,13 @@ Usage:
     python -m src.cli.export_longform world.kraken longform_export.md
 """
 
-import sys
 import argparse
 import logging
+import sys
 from pathlib import Path
-from src.services.db_service import DatabaseService
+
 from src.services import longform_builder
+from src.services.db_service import DatabaseService
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")

@@ -1,6 +1,8 @@
-import pytest
 from unittest.mock import MagicMock
-from src.commands.map_commands import UpdateMarkerColorCommand, CommandResult
+
+import pytest
+
+from src.commands.map_commands import UpdateMarkerColorCommand
 from src.core.marker import Marker
 from src.services.db_service import DatabaseService
 

@@ -1,7 +1,9 @@
-import pytest
 from unittest.mock import MagicMock, Mock
-from src.gui.widgets.lore_duration_widget import LoreDurationWidget
+
+import pytest
+
 from src.core.calendar import CalendarConverter, CalendarDate
+from src.gui.widgets.lore_duration_widget import LoreDurationWidget
 
 
 @pytest.fixture

@@ -1,5 +1,7 @@
 import unittest
+
 from PySide6.QtWidgets import QApplication
+
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
 # Ensure QApplication exists

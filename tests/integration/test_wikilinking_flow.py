@@ -2,11 +2,13 @@
 Integration test for WikiLinking flow in MainWindow.
 """
 
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, call
+
 from src.app.main import MainWindow
-from src.commands.wiki_commands import ProcessWikiLinksCommand
 from src.commands.event_commands import UpdateEventCommand
+from src.commands.wiki_commands import ProcessWikiLinksCommand
 
 
 @pytest.fixture

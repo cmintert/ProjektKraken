@@ -5,6 +5,7 @@ Tests table name validation to ensure SQL injection protection.
 """
 
 import pytest
+
 from src.services import longform_builder
 
 

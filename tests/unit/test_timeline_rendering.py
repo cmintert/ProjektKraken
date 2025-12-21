@@ -4,15 +4,16 @@ Additional tests for Timeline rendering and EventItem paint methods.
 
 import pytest
 from PySide6.QtCore import QRectF, Qt
-from PySide6.QtGui import QPainter, QImage
+from PySide6.QtGui import QImage, QPainter
 from PySide6.QtWidgets import QStyleOptionGraphicsItem
+
+from src.core.events import Event
 from src.gui.widgets.timeline import (
-    TimelineWidget,
-    TimelineView,
     EventItem,
     TimelineScene,
+    TimelineView,
+    TimelineWidget,
 )
-from src.core.events import Event
 
 
 @pytest.fixture

@@ -8,10 +8,10 @@ The Event class is the fundamental unit of the timeline, supporting:
 - Automatic ID generation and timestamp tracking
 """
 
-from dataclasses import dataclass, field
-from typing import Dict, Any
-import uuid
 import time
+import uuid
+from dataclasses import dataclass, field
+from typing import Any, Dict
 
 
 @dataclass

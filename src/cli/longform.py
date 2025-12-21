@@ -9,19 +9,18 @@ Usage:
     python -m src.cli.longform move --database world.kraken --table events --id <id> --parent <pid>
 """
 
-import sys
 import argparse
 import logging
+import sys
 from pathlib import Path
-from src.services.db_service import DatabaseService
-from src.services import longform_builder
+
+from src.cli.utils import validate_database_path
 from src.commands.longform_commands import (
     MoveLongformEntryCommand,
-    PromoteLongformEntryCommand,
-    DemoteLongformEntryCommand,
     RemoveLongformEntryCommand,
 )
-from src.cli.utils import validate_database_path
+from src.services import longform_builder
+from src.services.db_service import DatabaseService
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")

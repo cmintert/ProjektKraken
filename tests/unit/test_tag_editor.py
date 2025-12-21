@@ -2,8 +2,9 @@
 Unit tests for TagEditorWidget.
 """
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 from PySide6.QtCore import Qt
 
 

@@ -17,16 +17,17 @@ Usage:
         --id <entity-id>
 """
 
-import sys
 import argparse
 import logging
-from src.services.db_service import DatabaseService
+import sys
+
+from src.cli.utils import validate_database_path
 from src.commands.entity_commands import (
     CreateEntityCommand,
-    UpdateEntityCommand,
     DeleteEntityCommand,
+    UpdateEntityCommand,
 )
-from src.cli.utils import validate_database_path
+from src.services.db_service import DatabaseService
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")

@@ -5,40 +5,51 @@ Responsible for initializing the MainWindow, Workers, and UI components.
 
 import sys
 
-from PySide6.QtWidgets import (
-    QApplication,
-    QMainWindow,
-    QWidget,
-    QStatusBar,
-    QMessageBox,
-    QInputDialog,
-    QLabel,
-    QFileDialog,
+from PySide6.QtCore import (
+    Q_ARG,
+    QMetaObject,
+    QSettings,
+    Qt,
+    QThread,
+    QTimer,
+    Signal,
+    Slot,
 )
 from PySide6.QtCore import (
-    Qt,
-    QSettings,
-    QThread,
-    Slot,
-    Signal,
-    QTimer,
-    QMetaObject,
     Qt as QtCore_Qt,
-    Q_ARG,
+)
+from PySide6.QtWidgets import (
+    QApplication,
+    QFileDialog,
+    QInputDialog,
+    QLabel,
+    QMainWindow,
+    QMessageBox,
+    QStatusBar,
+    QWidget,
 )
 
-from src.core.logging_config import setup_logging, get_logger
-from src.core.theme_manager import ThemeManager
-from src.services.worker import DatabaseWorker
+from src.app.command_coordinator import CommandCoordinator
+from src.app.connection_manager import ConnectionManager
 
-
-# UI Components
-from src.gui.widgets.event_editor import EventEditorWidget
-from src.gui.widgets.entity_editor import EntityEditorWidget
-from src.gui.widgets.unified_list import UnifiedListWidget
-from src.gui.widgets.timeline import TimelineWidget
-from src.gui.widgets.longform_editor import LongformEditorWidget
-from src.gui.widgets.map_widget import MapWidget
+# Refactor Imports
+from src.app.constants import (
+    DEFAULT_WINDOW_HEIGHT,
+    DEFAULT_WINDOW_WIDTH,
+    IMAGE_FILE_FILTER,
+    STATUS_DB_INIT_FAIL,
+    STATUS_ERROR_PREFIX,
+    WINDOW_SETTINGS_APP,
+    WINDOW_SETTINGS_KEY,
+    WINDOW_TITLE,
+)
+from src.app.data_handler import DataHandler
+from src.app.ui_manager import UIManager
+from src.commands.entity_commands import (
+    CreateEntityCommand,
+    DeleteEntityCommand,
+    UpdateEntityCommand,
+)
 
 # Commands
 from src.commands.event_commands import (
@@ -46,10 +57,18 @@ from src.commands.event_commands import (
     DeleteEventCommand,
     UpdateEventCommand,
 )
-from src.commands.entity_commands import (
-    CreateEntityCommand,
-    DeleteEntityCommand,
-    UpdateEntityCommand,
+from src.commands.longform_commands import (
+    DemoteLongformEntryCommand,
+    MoveLongformEntryCommand,
+    PromoteLongformEntryCommand,
+)
+from src.commands.map_commands import (
+    CreateMapCommand,
+    CreateMarkerCommand,
+    DeleteMapCommand,
+    DeleteMarkerCommand,
+    UpdateMarkerColorCommand,
+    UpdateMarkerIconCommand,
 )
 from src.commands.relation_commands import (
     AddRelationCommand,
@@ -57,36 +76,18 @@ from src.commands.relation_commands import (
     UpdateRelationCommand,
 )
 from src.commands.wiki_commands import ProcessWikiLinksCommand
-from src.commands.longform_commands import (
-    PromoteLongformEntryCommand,
-    DemoteLongformEntryCommand,
-    MoveLongformEntryCommand,
-)
-from src.commands.map_commands import (
-    CreateMapCommand,
-    DeleteMapCommand,
-    CreateMarkerCommand,
-    DeleteMarkerCommand,
-    UpdateMarkerIconCommand,
-    UpdateMarkerColorCommand,
-)
+from src.core.logging_config import get_logger, setup_logging
+from src.core.theme_manager import ThemeManager
+from src.gui.widgets.entity_editor import EntityEditorWidget
 
-# Refactor Imports
-from src.app.constants import (
-    WINDOW_TITLE,
-    DEFAULT_WINDOW_WIDTH,
-    DEFAULT_WINDOW_HEIGHT,
-    WINDOW_SETTINGS_KEY,
-    WINDOW_SETTINGS_APP,
-    STATUS_DB_INIT_FAIL,
-    STATUS_ERROR_PREFIX,
-    IMAGE_FILE_FILTER,
-)
-from src.app.ui_manager import UIManager
-from src.app.connection_manager import ConnectionManager
-from src.app.command_coordinator import CommandCoordinator
-from src.app.data_handler import DataHandler
+# UI Components
+from src.gui.widgets.event_editor import EventEditorWidget
+from src.gui.widgets.longform_editor import LongformEditorWidget
+from src.gui.widgets.map_widget import MapWidget
+from src.gui.widgets.timeline import TimelineWidget
+from src.gui.widgets.unified_list import UnifiedListWidget
 from src.services import longform_builder
+from src.services.worker import DatabaseWorker
 
 # Initialize Logging
 setup_logging(debug_mode=True)
@@ -130,8 +131,8 @@ class MainWindow(QMainWindow):
 
         # 2. Init Widgets
         self.unified_list = UnifiedListWidget()
-        self.event_editor = EventEditorWidget()
-        self.entity_editor = EntityEditorWidget()
+        self.event_editor = EventEditorWidget(self)
+        self.entity_editor = EntityEditorWidget(self)
 
         # Connect dirty signals to update dock titles
         self.event_editor.dirty_changed.connect(
@@ -513,7 +514,7 @@ class MainWindow(QMainWindow):
             config: CalendarConfig or None.
         """
         try:
-            from src.core.calendar import CalendarConverter, CalendarConfig
+            from src.core.calendar import CalendarConfig, CalendarConverter
 
             if config:
                 converter = CalendarConverter(config)

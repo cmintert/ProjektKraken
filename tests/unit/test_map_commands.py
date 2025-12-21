@@ -2,14 +2,13 @@
 Unit tests for map and marker commands.
 """
 
-import pytest
 from src.commands.map_commands import (
     CreateMapCommand,
-    UpdateMapCommand,
-    DeleteMapCommand,
     CreateMarkerCommand,
-    UpdateMarkerCommand,
+    DeleteMapCommand,
     DeleteMarkerCommand,
+    UpdateMapCommand,
+    UpdateMarkerCommand,
 )
 from src.core.map import Map
 from src.core.marker import Marker

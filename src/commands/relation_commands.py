@@ -8,10 +8,11 @@ Provides command classes for managing relationships between events and entities:
 
 All commands support undo/redo operations and return CommandResult objects.
 """
+import logging
+from typing import Any, Dict
+
 from src.commands.base_command import BaseCommand
 from src.services.db_service import DatabaseService
-import logging
-from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 

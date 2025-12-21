@@ -5,10 +5,10 @@ A specialized QTextEdit that supports WikiLink navigation via Ctrl+Click.
 
 import logging
 import re
-from PySide6.QtWidgets import QTextEdit, QCompleter
-from PySide6.QtCore import Signal, Qt, QStringListModel
-from PySide6.QtGui import QTextCursor
 
+from PySide6.QtCore import QStringListModel, Qt, Signal
+from PySide6.QtGui import QTextCursor
+from PySide6.QtWidgets import QCompleter, QTextEdit
 
 from src.core.theme_manager import ThemeManager
 

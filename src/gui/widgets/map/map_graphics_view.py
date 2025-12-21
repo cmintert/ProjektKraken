@@ -4,23 +4,24 @@ Map Graphics View Module.
 Provides the MapGraphicsView class for rendering and interacting with the map.
 """
 
-import logging
 import json
-from typing import Optional, Dict
-from PySide6.QtWidgets import (
-    QGraphicsView,
-    QGraphicsScene,
-    QGraphicsPixmapItem,
-    QMenu,
-    QDialog,
-    QColorDialog,
-)
-from PySide6.QtCore import Qt, Signal, QRectF, QPointF
-from PySide6.QtGui import QPainter, QColor, QPixmap, QTransform, QPen, QBrush, QAction
+import logging
+from typing import Dict, Optional
 
-from src.gui.widgets.map.marker_item import MarkerItem
-from src.gui.widgets.map.icon_picker_dialog import IconPickerDialog
+from PySide6.QtCore import QPointF, Qt, Signal
+from PySide6.QtGui import QAction, QBrush, QColor, QPainter, QPixmap
+from PySide6.QtWidgets import (
+    QColorDialog,
+    QDialog,
+    QGraphicsPixmapItem,
+    QGraphicsScene,
+    QGraphicsView,
+    QMenu,
+)
+
 from src.core.theme_manager import ThemeManager
+from src.gui.widgets.map.icon_picker_dialog import IconPickerDialog
+from src.gui.widgets.map.marker_item import MarkerItem
 
 logger = logging.getLogger(__name__)
 

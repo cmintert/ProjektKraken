@@ -1,6 +1,8 @@
-import pytest
 from unittest.mock import patch
+
+import pytest
 from PySide6.QtWidgets import QDockWidget
+
 from src.app.main import MainWindow
 
 

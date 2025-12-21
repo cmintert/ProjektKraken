@@ -4,10 +4,10 @@ Marker Data Model.
 Represents a marker on a map that points to an entity or event.
 """
 
-import uuid
 import time
+import uuid
 from dataclasses import dataclass, field
-from typing import Dict, Any
+from typing import Any, Dict
 
 
 @dataclass

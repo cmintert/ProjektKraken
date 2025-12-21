@@ -6,3 +6,6 @@ mypy
 black
 pytest-qt
 markdown
+
+Pillow
+ruff

@@ -1,7 +1,7 @@
 import pytest
-from PySide6.QtWidgets import QApplication, QCompleter
-from PySide6.QtCore import Qt
 from PySide6.QtGui import QTextCursor
+from PySide6.QtWidgets import QApplication, QCompleter
+
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
 

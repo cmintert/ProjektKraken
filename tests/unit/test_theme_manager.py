@@ -1,6 +1,8 @@
-import pytest
 import logging
-from unittest.mock import patch, mock_open
+from unittest.mock import mock_open, patch
+
+import pytest
+
 from src.core.theme_manager import ThemeManager
 
 

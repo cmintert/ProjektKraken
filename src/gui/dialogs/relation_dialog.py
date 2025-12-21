@@ -5,17 +5,17 @@ Provides a consolidated dialog for adding or editing relations,
 featuring autocompletion for target entities/events.
 """
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QCompleter,
     QDialog,
-    QVBoxLayout,
+    QDialogButtonBox,
     QFormLayout,
     QLineEdit,
-    QComboBox,
-    QCheckBox,
-    QDialogButtonBox,
-    QCompleter,
+    QVBoxLayout,
 )
-from PySide6.QtCore import Qt
 
 
 class RelationEditDialog(QDialog):

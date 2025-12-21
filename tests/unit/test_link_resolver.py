@@ -4,10 +4,9 @@ Unit tests for LinkResolver service.
 Tests ID-to-name resolution and broken link detection.
 """
 
-import pytest
-from src.services.link_resolver import LinkResolver
 from src.core.entities import Entity
 from src.core.events import Event
+from src.services.link_resolver import LinkResolver
 
 
 def test_resolve_entity(db_service):

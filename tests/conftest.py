@@ -1,6 +1,11 @@
-import pytest
 import os
-from PySide6.QtWidgets import QApplication
+
+import pytest
+
+try:
+    from PySide6.QtWidgets import QApplication
+except ImportError:
+    QApplication = None
 
 
 @pytest.fixture(scope="session")
@@ -8,10 +13,14 @@ def qapp():
     """
     Ensure QApplication is instantiated only once.
     """
+    if QApplication is None:
+        yield None
+        return
+
     app = QApplication.instance()
     if app is None:
         app = QApplication([])
-    return app
+    yield app
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -56,7 +65,15 @@ def mock_invoke_method():
     Mocks QMetaObject.invokeMethod to prevent TypeErrors when called with
     MagicMocks and to allow verifying thread-safe calls.
     """
+    import sys
     from unittest.mock import patch
 
-    with patch("PySide6.QtCore.QMetaObject.invokeMethod") as mock:
-        yield mock
+    if "PySide6" not in sys.modules and QApplication is None:
+        yield None
+        return
+
+    try:
+        with patch("PySide6.QtCore.QMetaObject.invokeMethod") as mock:
+            yield mock
+    except (ImportError, AttributeError):
+        yield None

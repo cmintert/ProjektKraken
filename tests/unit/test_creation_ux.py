@@ -1,9 +1,11 @@
-import pytest
 from unittest.mock import patch
+
+import pytest
+
 from src.app.main import MainWindow
 from src.commands.base_command import CommandResult
-from src.core.events import Event
 from src.core.entities import Entity
+from src.core.events import Event
 
 
 @pytest.fixture

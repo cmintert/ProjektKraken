@@ -10,14 +10,15 @@ Tests cover:
 - Sticky parent context labels
 """
 
-import pytest
 from unittest.mock import MagicMock
-from src.gui.widgets.timeline_ruler import (
-    TimelineRuler,
-    TickLevel,
-    TickInfo,
-)
 
+import pytest
+
+from src.gui.widgets.timeline_ruler import (
+    TickInfo,
+    TickLevel,
+    TimelineRuler,
+)
 
 # ============================================================================
 # Fixtures

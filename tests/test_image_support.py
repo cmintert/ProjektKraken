@@ -1,6 +1,7 @@
-import pytest
 from PySide6.QtGui import QImageReader
-from src.app.constants import SUPPORTED_IMAGE_FORMATS, IMAGE_FILE_FILTER
+
+from src.app.constants import IMAGE_FILE_FILTER, SUPPORTED_IMAGE_FORMATS
+
 
 def test_webp_is_supported_by_qt():
     """Verify that the running Qt environment supports WebP."""

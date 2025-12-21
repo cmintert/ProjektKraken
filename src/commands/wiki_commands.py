@@ -5,8 +5,8 @@ Commands for processing WikiLinks and updating relations.
 
 import logging
 import time
-from typing import List, Dict, Set
 from collections import defaultdict
+from typing import Dict, List, Set
 
 from src.commands.base_command import BaseCommand, CommandResult
 from src.services.db_service import DatabaseService

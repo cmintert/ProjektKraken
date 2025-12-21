@@ -8,12 +8,13 @@ Usage:
     python -m src.cli.wiki scan --database world.kraken --source <id> --field description
 """
 
-import sys
 import argparse
 import logging
-from src.services.db_service import DatabaseService
-from src.commands.wiki_commands import ProcessWikiLinksCommand
+import sys
+
 from src.cli.utils import validate_database_path
+from src.commands.wiki_commands import ProcessWikiLinksCommand
+from src.services.db_service import DatabaseService
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")

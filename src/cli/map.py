@@ -11,21 +11,17 @@ Usage:
     python -m src.cli.map marker-add --database world.kraken --map-id <id> ...
 """
 
-import sys
 import argparse
 import logging
-from src.services.db_service import DatabaseService
+import sys
+
+from src.cli.utils import validate_database_path
 from src.commands.map_commands import (
     CreateMapCommand,
-    UpdateMapCommand,
-    DeleteMapCommand,
     CreateMarkerCommand,
-    UpdateMarkerCommand,
-    DeleteMarkerCommand,
-    UpdateMarkerColorCommand,
-    UpdateMarkerIconCommand,
+    DeleteMapCommand,
 )
-from src.cli.utils import validate_database_path
+from src.services.db_service import DatabaseService
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")

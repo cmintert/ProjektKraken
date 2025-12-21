@@ -4,6 +4,7 @@ Tests the new 'mentions' relation type with metadata.
 """
 
 import pytest
+
 from src.commands.wiki_commands import ProcessWikiLinksCommand
 from src.core.entities import Entity
 from src.services.db_service import DatabaseService

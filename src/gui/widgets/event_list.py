@@ -3,18 +3,19 @@ Event List Widget Module.
 
 Displays a list of events with controls for refreshing and deleting.
 """
+from typing import List
+
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
     QListWidget,
     QListWidgetItem,
     QPushButton,
-    QHBoxLayout,
-    QLabel,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt
-from PySide6.QtCore import Signal
-from typing import List
+
 from src.core.events import Event
 
 

@@ -5,26 +5,27 @@ Provides a GUI form for creating and editing Entity objects with support
 for wiki-style text editing, custom attributes, tags, and relationship management.
 """
 
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QFormLayout,
-    QLineEdit,
     QComboBox,
-    QPushButton,
-    QHBoxLayout,
+    QFormLayout,
     QGroupBox,
+    QHBoxLayout,
+    QLineEdit,
     QListWidget,
-    QMessageBox,
     QListWidgetItem,
     QMenu,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Signal, Qt
+
 from src.core.entities import Entity
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
-from src.gui.widgets.wiki_text_edit import WikiTextEdit
-from src.gui.widgets.tag_editor import TagEditorWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
+from src.gui.widgets.tag_editor import TagEditorWidget
+from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
 
 class EntityEditorWidget(QWidget):
@@ -116,7 +117,17 @@ class EntityEditorWidget(QWidget):
         rel_tab_layout.addWidget(self.rel_group)
         self.inspector.add_tab(self.tab_relations, "Relations")
 
-        # --- Tab 4: Attributes ---
+        # --- Tab 4: Gallery ---
+        self.tab_gallery = QWidget()
+        gallery_layout = QVBoxLayout(self.tab_gallery)
+        gallery_layout.setContentsMargins(0, 0, 0, 0)
+        from src.gui.widgets.gallery_widget import GalleryWidget
+
+        self.gallery = GalleryWidget(parent)
+        gallery_layout.addWidget(self.gallery)
+        self.inspector.add_tab(self.tab_gallery, "Gallery")
+
+        # --- Tab 5: Attributes ---
         self.tab_attributes = QWidget()
         attr_layout = QVBoxLayout(self.tab_attributes)
         self.attribute_editor = AttributeEditorWidget()
@@ -225,6 +236,9 @@ class EntityEditorWidget(QWidget):
 
         # Load Tags
         self.tag_editor.load_tags(entity.tags)
+
+        # Load Gallery
+        self.gallery.set_owner("entity", entity.id)
 
         self.rel_list.clear()
 

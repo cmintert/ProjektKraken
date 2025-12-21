@@ -5,7 +5,7 @@ Handles CRUD operations for Map and Marker entities in the database.
 """
 
 import logging
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 
 from src.core.map import Map
 from src.core.marker import Marker

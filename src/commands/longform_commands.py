@@ -10,11 +10,12 @@ Provides command classes for manipulating longform document structure:
 All commands support undo/redo operations and return CommandResult objects.
 """
 
-from src.commands.base_command import BaseCommand, CommandResult
-from src.services.db_service import DatabaseService
-from src.services import longform_builder
 import logging
-from typing import Dict, Any
+from typing import Any, Dict
+
+from src.commands.base_command import BaseCommand, CommandResult
+from src.services import longform_builder
+from src.services.db_service import DatabaseService
 
 logger = logging.getLogger(__name__)
 

@@ -9,14 +9,13 @@ Tests cover:
 - Edge cases (negative years, month boundaries, year variants)
 """
 
+
 import pytest
-from unittest.mock import MagicMock, Mock, patch
 from PySide6.QtWidgets import QApplication
 
 from src.core.calendar import (
     CalendarConfig,
     CalendarConverter,
-    CalendarDate,
     MonthDefinition,
     WeekDefinition,
 )

@@ -1,5 +1,5 @@
-from src.gui.widgets.timeline import TimelineWidget, EventItem
 from src.core.events import Event
+from src.gui.widgets.timeline import EventItem, TimelineWidget
 
 
 def test_timeline_init(qapp):

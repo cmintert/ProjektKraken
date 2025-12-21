@@ -11,12 +11,12 @@ Classes:
     SetActiveCalendarCommand: Sets a calendar as the active one.
 """
 
-from typing import Optional
 import logging
+from typing import Optional
 
 from src.commands.base_command import BaseCommand, CommandResult
-from src.services.db_service import DatabaseService
 from src.core.calendar import CalendarConfig
+from src.services.db_service import DatabaseService
 
 logger = logging.getLogger(__name__)
 

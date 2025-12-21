@@ -2,8 +2,10 @@
 Additional tests for MainWindow to improve coverage.
 """
 
-import pytest
 from unittest.mock import patch
+
+import pytest
+
 from src.app.main import MainWindow
 from src.core.events import Event
 

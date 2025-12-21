@@ -5,9 +5,10 @@ Provides the lane packing algorithm for organizing events on the timeline
 without overlaps using a greedy "First Fit" approach.
 """
 
-from typing import List, Dict
-from PySide6.QtGui import QFont, QFontMetrics
 import logging
+from typing import Dict, List
+
+from PySide6.QtGui import QFont, QFontMetrics
 
 logger = logging.getLogger(__name__)
 

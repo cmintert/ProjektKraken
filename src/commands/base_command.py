@@ -9,11 +9,10 @@ Classes:
 """
 
 from abc import ABC, abstractmethod
-from src.services.db_service import DatabaseService
-
-
 from dataclasses import dataclass, field
 from typing import Dict, Union
+
+from src.services.db_service import DatabaseService
 
 
 @dataclass

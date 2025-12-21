@@ -5,11 +5,15 @@ Handles asynchronous database operations to keep the UI responsive.
 
 import logging
 import traceback
-from PySide6.QtCore import QObject, Signal, Slot
-from src.services.db_service import DatabaseService
-from src.services import longform_builder
-from src.commands.base_command import BaseCommand, CommandResult
+from pathlib import Path
 
+from PySide6.QtCore import QObject, Signal, Slot
+
+from src.commands.base_command import BaseCommand, CommandResult
+from src.services import longform_builder
+from src.services.asset_store import AssetStore
+from src.services.attachment_service import AttachmentService
+from src.services.db_service import DatabaseService
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +34,11 @@ class DatabaseWorker(QObject):
     calendar_config_loaded = Signal(object)  # CalendarConfig or None
     current_time_loaded = Signal(float)  # Current time in lore_date units
 
-    # Details signals
     event_details_loaded = Signal(object, list, list)  # Event, relations, incoming
     entity_details_loaded = Signal(object, list, list)  # Entity, relations, incoming
+    attachments_loaded = Signal(
+        str, str, list
+    )  # owner_type, owner_id, List[ImageAttachment]
 
     command_finished = Signal(object)  # CommandResult object
     error_occurred = Signal(str)
@@ -51,14 +57,32 @@ class DatabaseWorker(QObject):
         super().__init__()
         self.db_path = db_path
         self.db_service = None
+        self.asset_store = None
+        self.attachment_service = None
 
     @Slot()
     def initialize_db(self):
-        """Initializes the database connection."""
+        """Initializes the database connection and services."""
         try:
             self.operation_started.emit("Connecting to Database...")
             self.db_service = DatabaseService(self.db_path)
             self.db_service.connect()
+
+            # Initialize AssetStore
+            # Assume db_path is in project root
+            project_root = Path(self.db_path).resolve().parent
+            self.asset_store = AssetStore(project_root)
+
+            # Initialize AttachmentService
+            # We access the repo directly from db_service (it was initialized in
+            # connect())
+            self.attachment_service = AttachmentService(
+                self.db_service._attachment_repo, self.asset_store
+            )
+
+            # Attach to db_service for Command access (Dependency Injection via Context)
+            self.db_service.attachment_service = self.attachment_service
+
             logger.info("DatabaseWorker initialized successfully.")
             self.initialized.emit(True)
             self.operation_finished.emit("Database Connected.")
@@ -175,6 +199,24 @@ class DatabaseWorker(QObject):
         except Exception:
             logger.error(f"Failed to load entity details: {traceback.format_exc()}")
             self.error_occurred.emit(f"Failed to load entity {entity_id}")
+
+    @Slot(str, str)
+    def load_attachments(self, owner_type: str, owner_id: str):
+        """
+        Loads attachments for a specific owner.
+        """
+        if not self.attachment_service:
+            return
+
+        try:
+            # self.operation_started.emit(f"Loading attachments for {owner_id}...")
+            # (Optional: reduce noise if lazy loading)
+            attachments = self.attachment_service.get_attachments(owner_type, owner_id)
+            self.attachments_loaded.emit(owner_type, owner_id, attachments)
+            # self.operation_finished.emit("Attachments Loaded.")
+        except Exception:
+            logger.error(f"Failed to load attachments: {traceback.format_exc()}")
+            self.error_occurred.emit(f"Failed to load attachments for {owner_id}")
 
     @Slot(str)
     def load_longform_sequence(self, doc_id: str):

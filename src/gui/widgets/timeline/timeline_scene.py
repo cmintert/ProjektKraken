@@ -5,9 +5,10 @@ Provides scene and playhead components for the timeline visualization.
 """
 
 import logging
-from PySide6.QtWidgets import QGraphicsScene, QGraphicsLineItem, QGraphicsItem
-from PySide6.QtCore import Qt, QPointF
-from PySide6.QtGui import QBrush, QPen, QColor, QPainterPath, QCursor
+
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QBrush, QColor, QCursor, QPainterPath, QPen
+from PySide6.QtWidgets import QGraphicsItem, QGraphicsLineItem, QGraphicsScene
 
 from src.core.theme_manager import ThemeManager
 

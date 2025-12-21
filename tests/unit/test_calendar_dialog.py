@@ -5,15 +5,14 @@ Tests for the CalendarConfigDialog widget.
 """
 
 import pytest
-
 from PySide6.QtWidgets import QDialogButtonBox
 
-from src.gui.dialogs.calendar_config_dialog import CalendarConfigDialog
 from src.core.calendar import (
+    CalendarConfig,
     MonthDefinition,
     WeekDefinition,
-    CalendarConfig,
 )
+from src.gui.dialogs.calendar_config_dialog import CalendarConfigDialog
 
 
 @pytest.fixture

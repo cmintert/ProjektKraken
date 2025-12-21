@@ -1,7 +1,9 @@
+from unittest.mock import MagicMock
+
 import pytest
 from PySide6.QtWidgets import QApplication
+
 from src.app.main import MainWindow
-from unittest.mock import MagicMock
 
 
 @pytest.fixture

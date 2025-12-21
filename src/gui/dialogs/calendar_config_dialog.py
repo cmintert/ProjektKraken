@@ -5,35 +5,35 @@ Provides a dialog for editing calendar configurations including
 month definitions, week structure, and year variants.
 """
 
-from typing import List, Optional
 import logging
+from typing import List, Optional
 
-from PySide6.QtWidgets import (
-    QDialog,
-    QVBoxLayout,
-    QHBoxLayout,
-    QFormLayout,
-    QLineEdit,
-    QSpinBox,
-    QPushButton,
-    QTableWidget,
-    QTableWidgetItem,
-    QHeaderView,
-    QDialogButtonBox,
-    QLabel,
-    QGroupBox,
-    QMessageBox,
-    QTabWidget,
-    QWidget,
-)
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
+from PySide6.QtWidgets import (
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QSpinBox,
+    QTableWidget,
+    QTableWidgetItem,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
 from src.core.calendar import (
-    MonthDefinition,
-    WeekDefinition,
     CalendarConfig,
     CalendarConverter,
+    MonthDefinition,
+    WeekDefinition,
 )
 
 logger = logging.getLogger(__name__)

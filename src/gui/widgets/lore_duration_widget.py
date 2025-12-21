@@ -5,14 +5,16 @@ Provides a structured input for event duration (Years, Months, Days, Hours, Minu
 and calculates the floating point day duration based on a start date context.
 """
 
-from PySide6.QtWidgets import (
-    QWidget,
-    QHBoxLayout,
-    QSpinBox,
-    QLabel,
-)
-from PySide6.QtCore import Signal
 import logging
+
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QSpinBox,
+    QWidget,
+)
+
 from src.core.calendar import CalendarConverter, CalendarDate
 
 logger = logging.getLogger(__name__)

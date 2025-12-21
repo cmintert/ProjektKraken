@@ -6,10 +6,11 @@ the ID-based linking system.
 """
 
 import sys
-from src.services.db_service import DatabaseService
+
+from src.commands.wiki_commands import ProcessWikiLinksCommand
 from src.core.entities import Entity
 from src.core.events import Event
-from src.commands.wiki_commands import ProcessWikiLinksCommand
+from src.services.db_service import DatabaseService
 
 
 def populate_middle_earth_data(db_path=":memory:"):
@@ -393,7 +394,7 @@ def populate_middle_earth_data(db_path=":memory:"):
     print("\n" + "=" * 60)
     print("Middle Earth database populated successfully!")
     print("=" * 60)
-    print(f"\nStatistics:")
+    print("\nStatistics:")
     print(f"  Entities: {len(db.get_all_entities())}")
     print(f"  Events: {len(db.get_all_events())}")
 

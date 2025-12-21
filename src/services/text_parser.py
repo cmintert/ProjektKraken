@@ -5,7 +5,7 @@ Handles parsing of WikiLinks and other text processing tasks.
 
 import re
 from dataclasses import dataclass
-from typing import List, Tuple, Optional
+from typing import List, Optional, Tuple
 
 
 @dataclass

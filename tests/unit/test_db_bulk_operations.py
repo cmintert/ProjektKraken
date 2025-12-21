@@ -5,11 +5,12 @@ Tests bulk insert functionality, transaction rollbacks, edge cases,
 and performance optimizations.
 """
 
-import pytest
 import sqlite3
 
-from src.core.events import Event
+import pytest
+
 from src.core.entities import Entity
+from src.core.events import Event
 from src.services.db_service import DatabaseService
 
 

@@ -1,12 +1,13 @@
 import pytest
+
 from src.core.calendar import (
     CalendarConfig,
     CalendarConverter,
     MonthDefinition,
     WeekDefinition,
 )
-from src.gui.widgets.event_editor import EventEditorWidget
 from src.gui.widgets.compact_duration_widget import CompactDurationWidget
+from src.gui.widgets.event_editor import EventEditorWidget
 
 
 @pytest.fixture

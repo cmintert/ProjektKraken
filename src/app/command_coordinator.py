@@ -6,6 +6,7 @@ and communication with the database worker thread.
 """
 
 import logging
+
 from PySide6.QtCore import QObject, Signal, Slot
 
 logger = logging.getLogger(__name__)

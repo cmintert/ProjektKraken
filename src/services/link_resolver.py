@@ -6,7 +6,8 @@ Provides caching and broken link detection.
 """
 
 import logging
-from typing import Optional, Dict, Tuple, List
+from typing import Dict, List, Optional, Tuple
+
 from src.services.db_service import DatabaseService
 
 logger = logging.getLogger(__name__)

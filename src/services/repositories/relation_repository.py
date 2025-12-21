@@ -5,7 +5,7 @@ Handles CRUD operations for Relation entities in the database.
 """
 
 import logging
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List
 
 from src.services.repositories.base_repository import BaseRepository
 

@@ -1,14 +1,13 @@
-import pytest
 from unittest.mock import MagicMock, patch
-from PySide6.QtWidgets import QGraphicsScene, QGraphicsObject, QGraphicsView
-from PySide6.QtCore import Qt, QPointF, Signal
-from PySide6.QtGui import QMouseEvent
+
+import pytest
+from PySide6.QtCore import QPointF, Qt
+from PySide6.QtWidgets import QGraphicsObject
+
+from src.app.main import MainWindow
 
 # Import from new map package structure
-from src.gui.widgets.map.marker_item import MarkerItem
-from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 from src.gui.widgets.map_widget import MapWidget
-from src.app.main import MainWindow
 
 # --- Mocks and Helpers ---
 
@@ -37,7 +36,7 @@ def map_widget(qtbot):
 
 def test_marker_item_inheritance():
     """Verify MarkerItem is a QGraphicsObject to support signals."""
-    from src.gui.widgets.map_widget import MarkerItem
+    from src.gui.widgets.map.marker_item import MarkerItem
 
     assert issubclass(MarkerItem, QGraphicsObject)
 
@@ -61,8 +60,9 @@ def test_marker_emits_clicked(qtbot, map_widget):
     marker = map_widget.view.markers["m1"]
 
     # Mock super().mousePressEvent and mouseReleaseEvent to avoid type errors
-    with patch.object(QGraphicsObject, "mousePressEvent"), patch.object(
-        QGraphicsObject, "mouseReleaseEvent"
+    with (
+        patch.object(QGraphicsObject, "mousePressEvent"),
+        patch.object(QGraphicsObject, "mouseReleaseEvent"),
     ):
 
         # Mock the signal spy
@@ -90,11 +90,13 @@ def test_marker_drag_does_not_emit_clicked(qtbot, map_widget):
     marker = map_widget.view.markers["m1"]
 
     # Use built-in waitSignal with raising=True to assert NOT emitted?
-    # qtbot.assertNotEmitted is not standard, we handle by checking trigger count or timeout
+    # qtbot.assertNotEmitted is not standard, we handle by checking trigger count
+    # or timeout
 
     try:
-        with patch.object(QGraphicsObject, "mousePressEvent"), patch.object(
-            QGraphicsObject, "mouseReleaseEvent"
+        with (
+            patch.object(QGraphicsObject, "mousePressEvent"),
+            patch.object(QGraphicsObject, "mouseReleaseEvent"),
         ):
 
             # Release far away (dragged)
@@ -126,8 +128,9 @@ def test_map_widget_signal_propagation(qtbot, map_widget):
 
     with qtbot.waitSignal(map_widget.marker_clicked) as blocker:
         # Simulate click on marker
-        with patch.object(QGraphicsObject, "mousePressEvent"), patch.object(
-            QGraphicsObject, "mouseReleaseEvent"
+        with (
+            patch.object(QGraphicsObject, "mousePressEvent"),
+            patch.object(QGraphicsObject, "mouseReleaseEvent"),
         ):
             press_event = MockMouseEvent(Qt.LeftButton, QPointF(0, 0))
             marker.mousePressEvent(press_event)
@@ -142,31 +145,23 @@ def test_mainwindow_integration(qtbot):
     """Verify MainWindow connects signal to navigation logic."""
 
     # We mock components to avoid launching the full app
-    from src.app.main import MainWindow
-    from src.gui.widgets.event_editor import EventEditorWidget
     from src.gui.widgets.entity_editor import EntityEditorWidget
+    from src.gui.widgets.event_editor import EventEditorWidget
 
     # Create required mocks
-    mock_event_editor_cls = MagicMock(spec=EventEditorWidget)
-    mock_entity_editor_cls = MagicMock(spec=EntityEditorWidget)
 
     # We need to patch the classes inside main.py namespace or where they are used
-    with patch("src.app.main.DatabaseWorker"), patch(
-        "src.app.main.UnifiedListWidget"
-    ), patch("src.app.main.EventEditorWidget", spec=EventEditorWidget), patch(
-        "src.app.main.EntityEditorWidget", spec=EntityEditorWidget
-    ), patch(
-        "src.app.main.TimelineWidget"
-    ), patch(
-        "src.app.main.MapWidget"
-    ) as MockMapWidgetClass, patch(
-        "src.app.main.ThemeManager"
-    ), patch(
-        "src.app.ui_manager.UIManager.setup_docks"
-    ), patch.object(
-        QGraphicsObject, "mousePressEvent"
-    ), patch.object(
-        QGraphicsObject, "mouseReleaseEvent"
+    with (
+        patch("src.app.main.DatabaseWorker"),
+        patch("src.app.main.UnifiedListWidget"),
+        patch("src.app.main.EventEditorWidget", spec=EventEditorWidget),
+        patch("src.app.main.EntityEditorWidget", spec=EntityEditorWidget),
+        patch("src.app.main.TimelineWidget"),
+        patch("src.app.main.MapWidget") as MockMapWidgetClass,
+        patch("src.app.main.ThemeManager"),
+        patch("src.app.ui_manager.UIManager.setup_docks"),
+        patch.object(QGraphicsObject, "mousePressEvent"),
+        patch.object(QGraphicsObject, "mouseReleaseEvent"),
     ):
 
         # Setup the mock map instance
@@ -179,32 +174,36 @@ def test_mainwindow_integration(qtbot):
 
         # Verify connection exists
         # window.map_widget.marker_clicked.connect(window._on_marker_clicked)
-        # Since we mocked the class, we can check if connect was called on the mock's signal
+        # Since we mocked the class, we can check if connect was called on the mock's
+        # signal
         mock_map_instance.marker_clicked.connect.assert_called_with(
             window._on_marker_clicked
         )
 
         # Test navigation logic invocation directly
         # 1. Event Navigation
-        with patch.object(
-            window, "check_unsaved_changes", return_value=True
-        ), patch.object(window, "load_event_details") as mock_load_event:
+        with (
+            patch.object(window, "check_unsaved_changes", return_value=True),
+            patch.object(window, "load_event_details") as mock_load_event,
+        ):
 
             window._on_marker_clicked("e1", "event")
             mock_load_event.assert_called_with("e1")
 
         # 2. Entity Navigation
-        with patch.object(
-            window, "check_unsaved_changes", return_value=True
-        ), patch.object(window, "load_entity_details") as mock_load_entity:
+        with (
+            patch.object(window, "check_unsaved_changes", return_value=True),
+            patch.object(window, "load_entity_details") as mock_load_entity,
+        ):
 
             window._on_marker_clicked("en1", "entity")
             mock_load_entity.assert_called_with("en1")
 
         # 3. Unsaved Changes Guard
-        with patch.object(
-            window, "check_unsaved_changes", return_value=False
-        ), patch.object(window, "load_entity_details") as mock_load_entity:
+        with (
+            patch.object(window, "check_unsaved_changes", return_value=False),
+            patch.object(window, "load_entity_details") as mock_load_entity,
+        ):
 
             window._on_marker_clicked("en2", "entity")
             mock_load_entity.assert_not_called()

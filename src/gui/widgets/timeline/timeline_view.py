@@ -5,19 +5,20 @@ Provides the TimelineView class for rendering and interacting with the timeline.
 """
 
 import logging
+
+from PySide6.QtCore import QPointF, QRectF, Qt, QTimer, Signal
+from PySide6.QtGui import QColor, QFont, QPainter, QPen, QTransform
 from PySide6.QtWidgets import QGraphicsView, QWidget
-from PySide6.QtCore import Qt, Signal, QTimer, QRectF, QPointF
-from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QTransform, QFont
 
 from src.core.theme_manager import ThemeManager
-from src.gui.widgets.timeline_ruler import TimelineRuler
-from src.gui.widgets.timeline_lane_packer import TimelineLanePacker
-from src.gui.widgets.timeline.timeline_scene import (
-    TimelineScene,
-    PlayheadItem,
-    CurrentTimeLineItem,
-)
 from src.gui.widgets.timeline.event_item import EventItem
+from src.gui.widgets.timeline.timeline_scene import (
+    CurrentTimeLineItem,
+    PlayheadItem,
+    TimelineScene,
+)
+from src.gui.widgets.timeline_lane_packer import TimelineLanePacker
+from src.gui.widgets.timeline_ruler import TimelineRuler
 
 logger = logging.getLogger(__name__)
 

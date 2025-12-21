@@ -9,11 +9,12 @@ Provides command classes for managing events in the timeline:
 All commands support undo/redo operations and return CommandResult objects.
 """
 
+import logging
+from typing import Optional
+
 from src.commands.base_command import BaseCommand, CommandResult
 from src.core.events import Event
 from src.services.db_service import DatabaseService
-import logging
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 

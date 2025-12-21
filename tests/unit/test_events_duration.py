@@ -1,5 +1,3 @@
-import pytest
-from PySide6.QtCore import Qt, QRectF
 from src.core.events import Event
 from src.gui.widgets.event_editor import EventEditorWidget
 from src.gui.widgets.timeline import EventItem

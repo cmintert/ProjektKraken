@@ -6,9 +6,8 @@ including rotating file handlers and console output.
 """
 import logging
 import os
-from logging.handlers import RotatingFileHandler
 from datetime import datetime
-
+from logging.handlers import RotatingFileHandler
 
 # Configuration
 LOG_DIR = "logs"

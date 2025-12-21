@@ -4,11 +4,9 @@ Integration tests for ID-based wiki links with commands.
 Tests the complete flow of creating ID-based links and processing them.
 """
 
-import pytest
-from src.services.db_service import DatabaseService
+from src.commands.wiki_commands import ProcessWikiLinksCommand
 from src.core.entities import Entity
 from src.core.events import Event
-from src.commands.wiki_commands import ProcessWikiLinksCommand
 from src.services.text_parser import WikiLinkParser
 
 

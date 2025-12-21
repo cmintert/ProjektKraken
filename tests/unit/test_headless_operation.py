@@ -4,13 +4,13 @@ Test for headless operation (separation of concerns).
 This test verifies that the core business logic can run without UI dependencies.
 """
 
-import sqlite3
-import tempfile
 import os
-from src.services.db_service import DatabaseService
-from src.core.events import Event
+import tempfile
+
 from src.core.entities import Entity
+from src.core.events import Event
 from src.services import longform_builder
+from src.services.db_service import DatabaseService
 
 
 def test_database_operations_headless():
@@ -107,7 +107,6 @@ def test_cli_export_headless():
         db_service.close()
 
         # Test CLI export (would normally be called from command line)
-        from src.cli.export_longform import main
         import sys
 
         # Simulate command line arguments

@@ -9,14 +9,13 @@ Tests cover:
 - Edge cases (zero values, very large durations, fractional days)
 """
 
+
 import pytest
-from unittest.mock import MagicMock, Mock
 from PySide6.QtWidgets import QApplication
 
 from src.core.calendar import (
     CalendarConfig,
     CalendarConverter,
-    CalendarDate,
     MonthDefinition,
     WeekDefinition,
 )

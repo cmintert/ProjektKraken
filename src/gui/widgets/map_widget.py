@@ -11,52 +11,22 @@ maintainability:
 - map/icon_picker_dialog.py - Icon selection dialog
 """
 
-from src.gui.widgets.map.map_graphics_view import MapGraphicsView
-from src.gui.widgets.map.marker_item import MarkerItem
-from src.gui.widgets.map.icon_picker_dialog import IconPickerDialog
-
-"""
-Map Widget Module.
-
-Provides an interactive map view with draggable markers using QGraphicsView/Scene.
-Supports normalized coordinates [0.0, 1.0] for markers independent of image size.
-"""
-
+import logging
 import os
-import json
-from PySide6.QtWidgets import (
-    QGraphicsView,
-    QGraphicsScene,
-    QGraphicsItem,
-    QGraphicsObject,
-    QGraphicsPixmapItem,
-    QWidget,
-    QVBoxLayout,
-    QToolBar,
-    QComboBox,
-    QMenu,
-    QDialog,
-    QColorDialog,
-    QGridLayout,
-    QPushButton,
-    QLabel,
-    QScrollArea,
-    QFrame,
-)
-from PySide6.QtCore import Qt, Signal, QPointF, QRectF
+from typing import List, Optional
+
+from PySide6.QtCore import Signal
 from PySide6.QtGui import (
-    QBrush,
-    QPen,
-    QColor,
-    QPainter,
-    QPixmap,
-    QCursor,
     QAction,
 )
-from PySide6.QtSvg import QSvgRenderer
-from src.core.theme_manager import ThemeManager
-from typing import Optional, Dict, List
-import logging
+from PySide6.QtWidgets import (
+    QComboBox,
+    QToolBar,
+    QVBoxLayout,
+    QWidget,
+)
+
+from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 
 logger = logging.getLogger(__name__)
 

@@ -5,11 +5,12 @@ Tests the core functions for building, manipulating, and exporting
 longform documents.
 """
 
-import pytest
-from unittest.mock import MagicMock, patch
 import json
-from src.services import longform_builder
+from unittest.mock import MagicMock
 
+import pytest
+
+from src.services import longform_builder
 
 # Test helper functions
 

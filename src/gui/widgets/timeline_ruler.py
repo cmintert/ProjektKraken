@@ -9,11 +9,11 @@ Provides semantic zoom ruler with Aeon Timeline-style behavior:
 - Calendar-aware date divisions
 """
 
+import logging
+import math
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import List, Tuple, Optional, TYPE_CHECKING
-import math
-import logging
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 

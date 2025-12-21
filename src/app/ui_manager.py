@@ -3,21 +3,22 @@ UIManager Module.
 Handles the creation and layout of dock widgets and menus for the MainWindow.
 """
 
-from PySide6.QtWidgets import QMainWindow, QDockWidget, QTabWidget, QMenuBar
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QDockWidget, QMainWindow, QMenuBar, QTabWidget
+
 from src.app.constants import (
-    DOCK_TITLE_PROJECT,
-    DOCK_TITLE_EVENT_INSPECTOR,
-    DOCK_TITLE_ENTITY_INSPECTOR,
-    DOCK_TITLE_TIMELINE,
-    DOCK_OBJ_PROJECT,
-    DOCK_OBJ_EVENT_INSPECTOR,
     DOCK_OBJ_ENTITY_INSPECTOR,
-    DOCK_OBJ_TIMELINE,
-    DOCK_TITLE_LONGFORM,
+    DOCK_OBJ_EVENT_INSPECTOR,
     DOCK_OBJ_LONGFORM,
-    DOCK_TITLE_MAP,
     DOCK_OBJ_MAP,
+    DOCK_OBJ_PROJECT,
+    DOCK_OBJ_TIMELINE,
+    DOCK_TITLE_ENTITY_INSPECTOR,
+    DOCK_TITLE_EVENT_INSPECTOR,
+    DOCK_TITLE_LONGFORM,
+    DOCK_TITLE_MAP,
+    DOCK_TITLE_PROJECT,
+    DOCK_TITLE_TIMELINE,
 )
 
 
@@ -195,7 +196,8 @@ class UIManager:
 
     def _open_calendar_config(self):
         """Requests loading of calendar config to open dialog."""
-        from PySide6.QtCore import QMetaObject, Qt as QtCore_Qt
+        from PySide6.QtCore import QMetaObject
+        from PySide6.QtCore import Qt as QtCore_Qt
 
         # Request config from worker (will be handled by on_calendar_config_loaded)
         self._calendar_dialog_pending = True
@@ -214,12 +216,12 @@ class UIManager:
             return
         self._calendar_dialog_pending = False
 
-        from src.gui.dialogs.calendar_config_dialog import CalendarConfigDialog
         from src.commands.calendar_commands import (
             CreateCalendarConfigCommand,
-            UpdateCalendarConfigCommand,
             SetActiveCalendarCommand,
+            UpdateCalendarConfigCommand,
         )
+        from src.gui.dialogs.calendar_config_dialog import CalendarConfigDialog
 
         dialog = CalendarConfigDialog(self.main_window, config=current_config)
 

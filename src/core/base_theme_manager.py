@@ -8,7 +8,7 @@ This allows the theme system to work in headless environments.
 import json
 import logging
 import os
-from typing import Dict, List, Callable
+from typing import Callable, Dict, List
 
 logger = logging.getLogger(__name__)
 

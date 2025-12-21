@@ -7,24 +7,26 @@ This service now uses specialized repository classes for better
 separation of concerns and maintainability.
 """
 
-import sqlite3
 import json
 import logging
-from typing import List, Optional, Dict, Any
+import sqlite3
 from contextlib import contextmanager
-from src.core.events import Event
-from src.core.entities import Entity
+from typing import Any, Dict, List, Optional
+
 from src.core.calendar import CalendarConfig
+from src.core.entities import Entity
+from src.core.events import Event
 from src.core.map import Map
 from src.core.marker import Marker
 
 # Import repositories for modular CRUD operations
 from src.services.repositories import (
-    EventRepository,
-    EntityRepository,
-    RelationRepository,
-    MapRepository,
+    AttachmentRepository,
     CalendarRepository,
+    EntityRepository,
+    EventRepository,
+    MapRepository,
+    RelationRepository,
 )
 
 logger = logging.getLogger(__name__)
@@ -54,6 +56,7 @@ class DatabaseService:
         self._relation_repo = RelationRepository()
         self._map_repo = MapRepository()
         self._calendar_repo = CalendarRepository()
+        self._attachment_repo = AttachmentRepository()
 
         logger.info(f"DatabaseService initialized with path: {self.db_path}")
 
@@ -80,6 +83,7 @@ class DatabaseService:
             self._relation_repo.set_connection(self._connection)
             self._map_repo.set_connection(self._connection)
             self._calendar_repo.set_connection(self._connection)
+            self._attachment_repo.set_connection(self._connection)
 
         except sqlite3.Error as e:
             logger.critical(f"Failed to connect to database: {e}")
@@ -190,6 +194,24 @@ class DatabaseService:
         CREATE INDEX IF NOT EXISTS idx_markers_map ON markers(map_id);
         CREATE INDEX IF NOT EXISTS idx_markers_object
             ON markers(object_id, object_type);
+
+        -- Image Attachments Table
+        CREATE TABLE IF NOT EXISTS image_attachments (
+            id TEXT PRIMARY KEY,
+            owner_type TEXT NOT NULL,
+            owner_id TEXT NOT NULL,
+            image_rel_path TEXT NOT NULL,
+            thumb_rel_path TEXT,
+            caption TEXT,
+            order_index INTEGER DEFAULT 0,
+            created_at REAL,
+            resolution TEXT, -- Stored as "widthxheight" or JSON [w, h]
+            source TEXT
+        );
+
+        -- Indexes for image attachments
+        CREATE INDEX IF NOT EXISTS idx_attachments_owner
+            ON image_attachments(owner_type, owner_id);
         """
 
         try:
@@ -340,8 +362,8 @@ class DatabaseService:
         Raises:
             sqlite3.Error: If DB fails.
         """
-        import uuid
         import time
+        import uuid
 
         if attributes is None:
             attributes = {}

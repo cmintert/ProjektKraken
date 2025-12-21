@@ -4,19 +4,19 @@ Attribute Editor Widget Module.
 Provides a table-based interface for editing key-value attribute pairs
 with support for different data types.
 """
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QComboBox,
     QHBoxLayout,
+    QHeaderView,
+    QInputDialog,
+    QMessageBox,
+    QPushButton,
     QTableWidget,
     QTableWidgetItem,
-    QPushButton,
-    QComboBox,
-    QHeaderView,
-    QMessageBox,
-    QInputDialog,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Signal
 
 
 class AttributeEditorWidget(QWidget):

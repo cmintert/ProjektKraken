@@ -1,23 +1,35 @@
-import pytest
-from PySide6.QtWidgets import QMessageBox
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-from src.gui.widgets.event_editor import EventEditorWidget
-from src.gui.widgets.entity_editor import EntityEditorWidget
-from src.core.events import Event
+import pytest
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import QMessageBox, QWidget
+
 from src.core.entities import Entity
+from src.core.events import Event
+from src.gui.widgets.entity_editor import EntityEditorWidget
+from src.gui.widgets.event_editor import EventEditorWidget
 
 
 @pytest.fixture
 def event_editor(qtbot):
-    widget = EventEditorWidget()
+    from unittest.mock import MagicMock
+
+    # Use QWidget as parent
+    mock_parent = QWidget()
+    mock_parent.worker = MagicMock()
+    widget = EventEditorWidget(parent=mock_parent)
     qtbot.addWidget(widget)
     return widget
 
 
 @pytest.fixture
 def entity_editor(qtbot):
-    widget = EntityEditorWidget()
+    from unittest.mock import MagicMock
+
+    # Use QWidget as parent
+    mock_parent = QWidget()
+    mock_parent.worker = MagicMock()
+    widget = EntityEditorWidget(parent=mock_parent)
     qtbot.addWidget(widget)
     return widget
 
@@ -68,10 +80,6 @@ def test_entity_editor_dirty_tracking(entity_editor):
     assert not entity_editor.has_unsaved_changes()
 
 
-from PySide6.QtWidgets import QWidget
-from PySide6.QtCore import Signal
-
-
 class MockEditor(QWidget):
     save_requested = Signal(dict)
     discard_requested = Signal(str)  # Added to match interface
@@ -103,21 +111,23 @@ def test_mainwindow_check_unsaved_changes(qtbot):
     mock_entity_editor = MockEditor()
 
     # We'll use a real instance but mock internal components to avoid side effects
-    with patch("src.app.main.DatabaseWorker"), patch(
-        "src.app.main.UnifiedListWidget"
-    ), patch("src.app.main.EventEditorWidget", return_value=mock_event_editor), patch(
-        "src.app.main.EntityEditorWidget", return_value=mock_entity_editor
-    ), patch(
-        "src.app.main.TimelineWidget"
-    ), patch(
-        "src.app.main.MapWidget"
-    ), patch(
-        "src.app.main.ThemeManager"
-    ), patch(
-        "src.app.ui_manager.UIManager.setup_docks"
+    with (
+        patch("src.app.main.DatabaseWorker"),
+        patch("src.app.main.UnifiedListWidget"),
+        patch("src.app.main.EventEditorWidget", return_value=mock_event_editor),
+        patch("src.app.main.EntityEditorWidget", return_value=mock_entity_editor),
+        patch("src.app.main.TimelineWidget"),
+        patch("src.app.main.MapWidget"),
+        patch("src.app.main.ThemeManager"),
+        patch("src.app.ui_manager.UIManager.setup_docks"),
     ):
 
         window = MainWindow()
+        qtbot.addWidget(window)
+
+        # Parent mocks to window to match production ownership and prevent crashes/leaks
+        mock_event_editor.setParent(window)
+        mock_entity_editor.setParent(window)
 
         # 1. Clean Editor -> Returns True, no prompt
         mock_event_editor.unsaved = False
@@ -128,7 +138,7 @@ def test_mainwindow_check_unsaved_changes(qtbot):
 
         with patch(
             "PySide6.QtWidgets.QMessageBox.warning", return_value=QMessageBox.Save
-        ) as mock_msg:
+        ):
             # We mock _on_save on the instance
             with patch.object(mock_event_editor, "_on_save") as mock_on_save:
                 assert window.check_unsaved_changes(window.event_editor)
@@ -137,7 +147,7 @@ def test_mainwindow_check_unsaved_changes(qtbot):
         # 3. Dirty Editor, User selects Discard
         with patch(
             "PySide6.QtWidgets.QMessageBox.warning", return_value=QMessageBox.Discard
-        ) as mock_msg:
+        ):
             with patch.object(mock_event_editor, "_on_save") as mock_on_save:
                 assert window.check_unsaved_changes(window.event_editor)
                 mock_on_save.assert_not_called()
@@ -145,19 +155,28 @@ def test_mainwindow_check_unsaved_changes(qtbot):
         # 4. Dirty Editor, User selects Cancel
         with patch(
             "PySide6.QtWidgets.QMessageBox.warning", return_value=QMessageBox.Cancel
-        ) as mock_msg:
+        ):
             with patch.object(mock_event_editor, "_on_save") as mock_on_save:
                 assert not window.check_unsaved_changes(window.event_editor)
                 mock_on_save.assert_not_called()
 
+        # Explicitly close to ensure clean teardown
+        window.close()
+
 
 def test_editor_init_not_dirty(qtbot):
     """Regression test: Editor should not be dirty on init or when no item loaded."""
-    from src.gui.widgets.event_editor import EventEditorWidget
+    from unittest.mock import MagicMock
+
     from src.gui.widgets.entity_editor import EntityEditorWidget
+    from src.gui.widgets.event_editor import EventEditorWidget
+
+    # Mock parent
+    mock_parent = QWidget()
+    mock_parent.worker = MagicMock()
 
     # Check Event Editor
-    event_editor = EventEditorWidget()
+    event_editor = EventEditorWidget(parent=mock_parent)
     qtbot.addWidget(event_editor)
     assert not event_editor.has_unsaved_changes()
 
@@ -167,7 +186,7 @@ def test_editor_init_not_dirty(qtbot):
     assert not event_editor.has_unsaved_changes()
 
     # Check Entity Editor
-    entity_editor = EntityEditorWidget()
+    entity_editor = EntityEditorWidget(parent=mock_parent)
     qtbot.addWidget(entity_editor)
     assert not entity_editor.has_unsaved_changes()
 

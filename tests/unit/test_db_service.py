@@ -1,5 +1,5 @@
-from src.core.events import Event
 from src.core.entities import Entity
+from src.core.events import Event
 
 
 def test_event_crud(db_service):

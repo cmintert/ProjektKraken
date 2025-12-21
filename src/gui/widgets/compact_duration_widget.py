@@ -8,15 +8,15 @@ Provides a polished, calendar-aware duration input widget with:
 - Preview label with written format (hides zero values)
 """
 
-from PySide6.QtWidgets import (
-    QWidget,
-    QHBoxLayout,
-    QVBoxLayout,
-    QSpinBox,
-    QLabel,
-    QFrame,
-)
 from PySide6.QtCore import Signal
+from PySide6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QSpinBox,
+    QVBoxLayout,
+    QWidget,
+)
 
 from src.core.calendar import CalendarConverter
 

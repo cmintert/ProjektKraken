@@ -5,16 +5,17 @@ Tests zoom-to-cursor, smart lane packing, EventItem reuse, and scrubber/playhead
 """
 
 import pytest
-from PySide6.QtCore import Qt, QPoint, QPointF
+from PySide6.QtCore import QPoint, QPointF, Qt
 from PySide6.QtGui import QWheelEvent
 from PySide6.QtWidgets import QGraphicsItem
+
+from src.core.events import Event
 from src.gui.widgets.timeline import (
-    TimelineWidget,
-    TimelineView,
     EventItem,
     PlayheadItem,
+    TimelineView,
+    TimelineWidget,
 )
-from src.core.events import Event
 
 
 @pytest.fixture

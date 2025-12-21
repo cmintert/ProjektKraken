@@ -5,17 +5,18 @@ Provides the EventItem class for rendering individual events on the timeline.
 """
 
 import logging
-from PySide6.QtWidgets import QGraphicsItem
-from PySide6.QtCore import Qt, QRectF, QPointF
+
+from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import (
     QBrush,
-    QPen,
     QColor,
-    QPainter,
-    QPolygonF,
-    QPainterPath,
     QCursor,
+    QPainter,
+    QPainterPath,
+    QPen,
+    QPolygonF,
 )
+from PySide6.QtWidgets import QGraphicsItem
 
 logger = logging.getLogger(__name__)
 

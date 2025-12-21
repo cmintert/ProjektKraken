@@ -2,15 +2,17 @@
 Unit tests for map widget functionality.
 """
 
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import MagicMock, patch
 from PySide6.QtCore import QPointF, Qt
-from PySide6.QtGui import QPixmap, QImage
+from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsPixmapItem
+
+from src.gui.widgets.map.marker_item import MarkerItem
 from src.gui.widgets.map_widget import (
-    MapWidget,
     MapGraphicsView,
-    MarkerItem,
+    MapWidget,
 )
 
 
@@ -251,7 +253,7 @@ def test_marker_item_change_emits_signal(map_view, qtbot):
     # Note: itemChange is only called during interactive drag or certain
     # specific operations. Manual setPos doesn't trigger ItemPositionHasChanged.
     # For testing, we can verify the marker is draggable and can be moved.
-    initial_pos = marker.pos()
+    # initial_pos = marker.pos()
 
     # Move the marker programmatically
     new_pos = QPointF(50, 50)

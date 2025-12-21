@@ -4,11 +4,8 @@ Unit tests for map image storage functionality.
 Tests the image copying and path resolution for map images.
 """
 
-import pytest
-from unittest.mock import MagicMock, patch
-from pathlib import Path
-import tempfile
 import shutil
+from pathlib import Path
 
 
 class TestMapImageStorage:

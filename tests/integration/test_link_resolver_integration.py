@@ -6,9 +6,10 @@ Tests the complete ID-based linking system including broken link visualization.
 
 import pytest
 from PySide6.QtWidgets import QApplication
+
+from src.core.entities import Entity
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
 from src.services.link_resolver import LinkResolver
-from src.core.entities import Entity
 
 
 @pytest.fixture(scope="session")

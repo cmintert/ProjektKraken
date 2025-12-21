@@ -1,7 +1,8 @@
 import pytest
-from src.services.db_service import DatabaseService
-from src.core.events import Event
+
 from src.commands.event_commands import CreateEventCommand, DeleteEventCommand
+from src.core.events import Event
+from src.services.db_service import DatabaseService
 
 
 @pytest.fixture

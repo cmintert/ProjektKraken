@@ -7,17 +7,15 @@ Follows TDD approach - tests written before implementation.
 
 import pytest
 
-
 # These imports will work once the module is implemented
 from src.core.calendar import (
+    CalendarConfig,
+    CalendarConverter,
+    CalendarDate,
     MonthDefinition,
     WeekDefinition,
     YearVariant,
-    CalendarConfig,
-    CalendarDate,
-    CalendarConverter,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

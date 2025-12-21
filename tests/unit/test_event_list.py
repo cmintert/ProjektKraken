@@ -4,8 +4,9 @@ Unit tests for EventListWidget.
 
 import pytest
 from PySide6.QtCore import Qt
-from src.gui.widgets.event_list import EventListWidget
+
 from src.core.events import Event
+from src.gui.widgets.event_list import EventListWidget
 
 
 @pytest.fixture

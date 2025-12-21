@@ -11,19 +11,19 @@ maintainability:
 - timeline/timeline_view.py - Main view with zoom/pan and interaction
 """
 
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
     QHBoxLayout,
     QPushButton,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Qt, Signal
 
 from src.gui.widgets.timeline.event_item import EventItem
 from src.gui.widgets.timeline.timeline_scene import (
-    TimelineScene,
-    PlayheadItem,
     CurrentTimeLineItem,
+    PlayheadItem,
+    TimelineScene,
 )
 from src.gui.widgets.timeline.timeline_view import TimelineView
 

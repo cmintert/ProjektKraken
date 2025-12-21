@@ -6,17 +6,17 @@ Provides the MarkerItem class for rendering markers on the map.
 
 import logging
 import os
-from typing import Optional
-from PySide6.QtWidgets import QGraphicsItem, QGraphicsObject, QGraphicsPixmapItem
-from PySide6.QtCore import Qt, QRectF, Signal
-from PySide6.QtGui import QPainter, QBrush, QPen, QColor, QPixmap, QCursor
-from PySide6.QtSvg import QSvgRenderer
 
 # Forward declaration to avoid circular import
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
+
+from PySide6.QtCore import QRectF, Qt, Signal
+from PySide6.QtGui import QBrush, QColor, QCursor, QPainter, QPen, QPixmap
+from PySide6.QtSvg import QSvgRenderer
+from PySide6.QtWidgets import QGraphicsItem, QGraphicsObject, QGraphicsPixmapItem
 
 if TYPE_CHECKING:
-    from src.gui.widgets.map.map_graphics_view import MapGraphicsView
+    pass
 
 # Resolve marker icons path
 MARKER_ICONS_PATH = os.path.join(

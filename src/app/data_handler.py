@@ -6,9 +6,10 @@ Separates data management logic from the main window class.
 """
 
 import logging
-from PySide6.QtCore import QObject, Slot
+
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Slot
+from PySide6.QtCore import Qt as QtCore_Qt
 from PySide6.QtWidgets import QMessageBox
-from PySide6.QtCore import QMetaObject, Qt as QtCore_Qt, Q_ARG
 
 from src.commands.base_command import CommandResult
 

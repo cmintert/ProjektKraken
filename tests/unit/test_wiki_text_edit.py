@@ -2,10 +2,11 @@
 Unit tests for WikiTextEdit.
 """
 
-from PySide6.QtCore import Qt
-from src.gui.widgets.wiki_text_edit import WikiTextEdit
-from src.core.theme_manager import ThemeManager
 import pytest
+from PySide6.QtCore import Qt
+
+from src.core.theme_manager import ThemeManager
+from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
 # Requires qtbot to interact with widgets
 

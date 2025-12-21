@@ -4,9 +4,8 @@ Unit tests for TimelineLanePacker.
 Tests the lane packing algorithm in isolation.
 """
 
-import pytest
-from src.gui.widgets.timeline_lane_packer import TimelineLanePacker
 from src.core.events import Event
+from src.gui.widgets.timeline_lane_packer import TimelineLanePacker
 
 
 class TestTimelineLanePacker:

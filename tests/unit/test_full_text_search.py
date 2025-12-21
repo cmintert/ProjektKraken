@@ -1,8 +1,8 @@
 import pytest
-from PySide6.QtWidgets import QApplication
-from src.gui.widgets.unified_list import UnifiedListWidget
-from src.core.events import Event
+
 from src.core.entities import Entity
+from src.core.events import Event
+from src.gui.widgets.unified_list import UnifiedListWidget
 
 
 @pytest.fixture

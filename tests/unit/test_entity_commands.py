@@ -2,12 +2,14 @@
 Unit tests for entity commands.
 """
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
+
 from src.commands.entity_commands import (
     CreateEntityCommand,
-    UpdateEntityCommand,
     DeleteEntityCommand,
+    UpdateEntityCommand,
 )
 from src.core.entities import Entity
 

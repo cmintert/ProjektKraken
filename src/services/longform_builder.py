@@ -19,8 +19,8 @@ in Python layer to maintain SQLite compatibility.
 
 import json
 import logging
-from typing import List, Dict, Any, Optional, Tuple
 from sqlite3 import Connection
+from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
