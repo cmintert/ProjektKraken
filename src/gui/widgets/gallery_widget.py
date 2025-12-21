@@ -203,12 +203,19 @@ class GalleryWidget(QWidget):
             # MainWindow doesn't auto-trigger 'load_attachments' on command finish.
 
     def on_item_double_clicked(self, item):
-        idx = self.list_widget.row(item)
-        if idx >= 0:
-            logger.debug(f"GalleryWidget: Opening viewer at index {idx}")
-            # We pass the list of attachments to viewer
-            viewer = ImageViewerDialog(self, self.attachments, idx)
+        att_id = item.data(Qt.UserRole)
+        # Find index in self.attachments
+        try:
+            target_index = next(
+                i for i, att in enumerate(self.attachments) if att.id == att_id
+            )
+            logger.debug(
+                f"GalleryWidget: Opening viewer for {att_id} at index {target_index}"
+            )
+            viewer = ImageViewerDialog(self, self.attachments, target_index)
             viewer.exec()
+        except StopIteration:
+            logger.error(f"GalleryWidget: Attachment {att_id} not found in data list")
 
     def show_context_menu(self, pos):
         item = self.list_widget.itemAt(pos)
