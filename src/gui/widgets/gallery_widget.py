@@ -50,6 +50,7 @@ class GalleryWidget(QWidget):
         self.connect_signals()
 
     def init_ui(self):
+        self.setAcceptDrops(True)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
@@ -253,3 +254,39 @@ class GalleryWidget(QWidget):
             logger.info(f"GalleryWidget: Requesting removal of {att_id}")
             cmd = RemoveImageCommand(att_id)
             self.main_window.command_requested.emit(cmd)
+
+    def dragEnterEvent(self, event):
+        """Handle drag enter event for files."""
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        """Handle drop event for files."""
+        if not self.owner_id:
+            return
+
+        urls = event.mimeData().urls()
+        if not urls:
+            return
+
+        files = []
+        for url in urls:
+            if url.isLocalFile():
+                files.append(url.toLocalFile())
+
+        if files:
+            logger.info(f"GalleryWidget: Dropped files: {files}")
+            # Filter for images roughly
+            valid_files = [
+                f
+                for f in files
+                if f.lower().endswith(
+                    (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp")
+                )
+            ]
+            if valid_files:
+                cmd = AddImagesCommand(self.owner_type, self.owner_id, valid_files)
+                self.main_window.command_requested.emit(cmd)
+                event.acceptProposedAction()

@@ -160,12 +160,7 @@ class UpdateImageCaptionCommand(BaseCommand):
 
         try:
             # Capture old caption
-            att = db_service.attachment_repo.get(
-                self.attachment_id
-            )  # Direct repo access? Or via service? Service getter?
-            # Service has get_attachments (list) but not get(id). Repository has
-            # get(id). We should probably expose get(id) on service or access repo.
-            # db_service has _attachment_repo, can use that safely.
+            att = db_service.attachment_service.get_attachment(self.attachment_id)
             if att:
                 self._old_caption = att.caption
 

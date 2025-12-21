@@ -159,3 +159,7 @@ class AttachmentService:
     def update_caption(self, attachment_id: str, caption: Optional[str]) -> None:
         """Updates the caption of an attachment."""
         self._repo.update_caption(attachment_id, caption)
+
+    def get_attachment(self, attachment_id: str) -> Optional[ImageAttachment]:
+        """Retrieves a single attachment by ID."""
+        return self._repo.get(attachment_id)
