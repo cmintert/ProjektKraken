@@ -3,6 +3,7 @@ Main Application Entry Point.
 Responsible for initializing the MainWindow, Workers, and UI components.
 """
 
+import os
 import sys
 
 from PySide6.QtCore import (
@@ -77,6 +78,7 @@ from src.commands.relation_commands import (
 )
 from src.commands.wiki_commands import ProcessWikiLinksCommand
 from src.core.logging_config import get_logger, setup_logging
+from src.core.paths import get_resource_path, get_user_data_path
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.entity_editor import EntityEditorWidget
 
@@ -417,7 +419,8 @@ class MainWindow(QMainWindow):
         Connects all worker signals to MainWindow slots.
         """
         self.worker_thread = QThread()
-        self.worker = DatabaseWorker("world.kraken")
+        db_path = get_user_data_path("world.kraken")
+        self.worker = DatabaseWorker(db_path)
         self.worker.moveToThread(self.worker_thread)
 
         # Connect Worker Signals
@@ -1299,7 +1302,8 @@ def main():
         # 2. Apply Theme
         tm = ThemeManager()
         try:
-            with open("src/resources/main.qss", "r") as f:
+            qss_path = get_resource_path(os.path.join("src", "resources", "main.qss"))
+            with open(qss_path, "r") as f:
                 qss_template = f.read()
                 tm.apply_theme(app, qss_template)
         except FileNotFoundError:

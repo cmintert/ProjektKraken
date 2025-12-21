@@ -10,6 +10,8 @@ import logging
 import os
 from typing import Callable, Dict, List
 
+from src.core.paths import get_resource_path
+
 logger = logging.getLogger(__name__)
 
 
@@ -52,7 +54,7 @@ class BaseThemeManager:
         if hasattr(self, "_initialized"):
             return
 
-        self.theme_file = theme_file
+        self.theme_file = get_resource_path(theme_file)
         self.themes: Dict[str, Dict[str, str]] = {}
         self.current_theme_name: str = "dark_mode"
         self._theme_changed_callbacks: List[Callable[[Dict], None]] = []

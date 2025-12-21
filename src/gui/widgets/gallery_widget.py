@@ -26,6 +26,7 @@ from src.commands.image_commands import (
     UpdateImageCaptionCommand,
 )
 from src.core.image_attachment import ImageAttachment
+from src.core.paths import get_user_data_path
 from src.gui.dialogs.image_viewer_dialog import ImageViewerDialog
 
 logger = logging.getLogger(__name__)
@@ -143,7 +144,7 @@ class GalleryWidget(QWidget):
             # Load thumbnail
             # Try thumb path, else full path
             rel_path = att.thumb_rel_path if att.thumb_rel_path else att.image_rel_path
-            full_path = Path.cwd() / rel_path
+            full_path = Path(get_user_data_path(rel_path))
 
             if full_path.exists():
                 icon = QIcon(str(full_path))
