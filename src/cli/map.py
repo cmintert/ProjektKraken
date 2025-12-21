@@ -20,6 +20,9 @@ from src.commands.map_commands import (
     CreateMapCommand,
     CreateMarkerCommand,
     DeleteMapCommand,
+    DeleteMarkerCommand,
+    UpdateMapCommand,
+    UpdateMarkerCommand,
 )
 from src.services.db_service import DatabaseService
 
@@ -177,6 +180,165 @@ def add_marker(args) -> int:
             db_service.close()
 
 
+def update_map(args) -> int:
+    """Update an existing map."""
+    db_service = None
+    try:
+        db_service = DatabaseService(args.database)
+        db_service.connect()
+
+        update_data = {}
+        if args.name:
+            update_data["name"] = args.name
+        if args.image is not None:
+            update_data["image_path"] = args.image
+
+        if not update_data:
+            print("✗ No updates specified. Use --name or --image.")
+            return 1
+
+        cmd = UpdateMapCommand(args.id, update_data)
+        result = cmd.execute(db_service)
+
+        if result.success:
+            print(f"✓ Updated map: {args.id}")
+            return 0
+        else:
+            print(f"✗ Error: {result.message}")
+            return 1
+
+    except Exception as e:
+        logger.error(f"Failed to update map: {e}")
+        if args.verbose:
+            raise
+        return 1
+    finally:
+        if db_service:
+            db_service.close()
+
+
+def marker_update(args) -> int:
+    """Update an existing marker."""
+    db_service = None
+    try:
+        db_service = DatabaseService(args.database)
+        db_service.connect()
+
+        update_data = {}
+        if args.x is not None:
+            update_data["x"] = args.x
+        if args.y is not None:
+            update_data["y"] = args.y
+        if args.label is not None:
+            update_data["label"] = args.label
+
+        # Attributes
+        attributes = {}
+        if args.color is not None:
+            attributes["color"] = args.color
+        if args.icon is not None:
+            attributes["icon"] = args.icon
+
+        if attributes:
+            update_data["attributes"] = attributes
+
+        if not update_data:
+            print("✗ No updates specified.")
+            return 1
+
+        cmd = UpdateMarkerCommand(args.id, update_data)
+        result = cmd.execute(db_service)
+
+        if result.success:
+            print(f"✓ Updated marker: {args.id}")
+            return 0
+        else:
+            print(f"✗ Error: {result.message}")
+            return 1
+
+    except Exception as e:
+        logger.error(f"Failed to update marker: {e}")
+        if args.verbose:
+            raise
+        return 1
+    finally:
+        if db_service:
+            db_service.close()
+
+
+def marker_delete(args) -> int:
+    """Delete a marker."""
+    db_service = None
+    try:
+        db_service = DatabaseService(args.database)
+        db_service.connect()
+
+        if not args.force:
+            m = db_service.get_marker(args.id)
+            if not m:
+                print(f"Marker not found: {args.id}")
+                return 1
+            print(f"About to delete marker: {m.label or m.id} ({args.id})")
+            if input("Are you sure? (y/n): ").lower() != "y":
+                return 0
+
+        cmd = DeleteMarkerCommand(args.id)
+        result = cmd.execute(db_service)
+
+        if result.success:
+            print(f"✓ Deleted marker: {args.id}")
+            return 0
+        else:
+            print(f"✗ Error: {result.message}")
+            return 1
+
+    except Exception as e:
+        logger.error(f"Failed to delete marker: {e}")
+        if args.verbose:
+            raise
+        return 1
+    finally:
+        if db_service:
+            db_service.close()
+
+
+def marker_list(args) -> int:
+    """List markers for a map."""
+    db_service = None
+    try:
+        db_service = DatabaseService(args.database)
+        db_service.connect()
+
+        markers = db_service.get_markers_for_map(args.map_id)
+
+        if args.json:
+            import json
+
+            print(json.dumps([m.to_dict() for m in markers], indent=2))
+        else:
+            print(f"\nFound {len(markers)} marker(s) for map {args.map_id}:\n")
+            for m in markers:
+                print(f"ID: {m.id}")
+                print(f"  Object: {m.object_type} {m.object_id}")
+                print(f"  Pos: ({m.x}, {m.y})")
+                if m.label:
+                    print(f"  Label: {m.label}")
+                if m.attributes:
+                    print(f"  Attributes: {m.attributes}")
+                print()
+
+        return 0
+
+    except Exception as e:
+        logger.error(f"Failed to list markers: {e}")
+        if args.verbose:
+            raise
+        return 1
+    finally:
+        if db_service:
+            db_service.close()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Manage ProjektKraken maps")
     parser.add_argument(
@@ -197,6 +359,14 @@ def main():
     list_p.add_argument("--database", "-d", required=True)
     list_p.add_argument("--json", action="store_true")
     list_p.set_defaults(func=list_maps)
+
+    # Map Update
+    update_p = subparsers.add_parser("update", help="Update a map")
+    update_p.add_argument("--database", "-d", required=True)
+    update_p.add_argument("--id", required=True)
+    update_p.add_argument("--name", "-n")
+    update_p.add_argument("--image", "-i", help="Path to image file")
+    update_p.set_defaults(func=update_map)
 
     # Map Delete
     del_p = subparsers.add_parser("delete", help="Delete a map")
@@ -219,6 +389,31 @@ def main():
     marker_add_p.add_argument("--color")
     marker_add_p.add_argument("--icon")
     marker_add_p.set_defaults(func=add_marker)
+
+    # Marker Update
+    marker_upd_p = subparsers.add_parser("marker-update", help="Update marker")
+    marker_upd_p.add_argument("--database", "-d", required=True)
+    marker_upd_p.add_argument("--id", required=True)
+    marker_upd_p.add_argument("--x", type=float)
+    marker_upd_p.add_argument("--y", type=float)
+    marker_upd_p.add_argument("--label")
+    marker_upd_p.add_argument("--color")
+    marker_upd_p.add_argument("--icon")
+    marker_upd_p.set_defaults(func=marker_update)
+
+    # Marker Delete
+    marker_del_p = subparsers.add_parser("marker-delete", help="Delete marker")
+    marker_del_p.add_argument("--database", "-d", required=True)
+    marker_del_p.add_argument("--id", required=True)
+    marker_del_p.add_argument("--force", "-f", action="store_true")
+    marker_del_p.set_defaults(func=marker_delete)
+
+    # Marker List
+    marker_list_p = subparsers.add_parser("marker-list", help="List markers for map")
+    marker_list_p.add_argument("--database", "-d", required=True)
+    marker_list_p.add_argument("--map-id", required=True)
+    marker_list_p.add_argument("--json", action="store_true")
+    marker_list_p.set_defaults(func=marker_list)
 
     args = parser.parse_args()
 

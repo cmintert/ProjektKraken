@@ -261,8 +261,22 @@ class DatabaseService:
         Returns:
             List[Event]: A list of all Event objects in the database.
         """
+        return self.get_events()
+
+    def get_events(self, event_type: str = None) -> List[Event]:
+        """
+        Retrieves events, optionally filtered by type.
+
+        Args:
+            event_type: Optional type filter.
+
+        Returns:
+            List[Event]: List of matching Event objects.
+        """
         if not self._connection:
             self.connect()
+        if event_type:
+            return self._event_repo.get_by_type(event_type)
         return self._event_repo.get_all()
 
     def delete_event(self, event_id: str) -> None:
@@ -318,8 +332,22 @@ class DatabaseService:
         Returns:
             List[Entity]: A list of all Entity objects.
         """
+        return self.get_entities()
+
+    def get_entities(self, entity_type: str = None) -> List[Entity]:
+        """
+        Retrieves entities, optionally filtered by type.
+
+        Args:
+            entity_type: Optional type filter.
+
+        Returns:
+            List[Entity]: List of matching Entity objects.
+        """
         if not self._connection:
             self.connect()
+        if entity_type:
+            return self._entity_repo.get_by_type(entity_type)
         return self._entity_repo.get_all()
 
     def delete_entity(self, entity_id: str) -> None:

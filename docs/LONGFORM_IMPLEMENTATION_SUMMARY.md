@@ -29,7 +29,7 @@ All deliverables have been implemented and tested with **zero errors**.
 
 ### CLI Tool
 - `src/cli/__init__.py` - CLI package initialization
-- `src/cli/export_longform.py` - Markdown export CLI (118 lines)
+- `src/cli/longform.py` - Integrated longform CLI with export functionality
 
 ### GUI
 - `src/gui/widgets/longform_editor.py` - Split-view editor widget (325 lines)

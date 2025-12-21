@@ -5,7 +5,7 @@ Wiki Management CLI.
 Provides command-line tools for wiki operations, such as scanning content for links.
 
 Usage:
-    python -m src.cli.wiki scan --database world.kraken --source <id> --field description
+    python -m src.cli.wiki scan --database world.kraken --source <id> -f description
 """
 
 import argparse

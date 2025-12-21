@@ -1,12 +1,12 @@
-#!/usr/bin/env python3
 """
 Longform Document Management CLI.
 
-Provides command-line tools for exporting and manipulating the longform document structure.
+Provides command-line tools for exporting and manipulating the document structure.
 
 Usage:
     python -m src.cli.longform export --database world.kraken
-    python -m src.cli.longform move --database world.kraken --table events --id <id> --parent <pid>
+    python -m src.cli.longform move --database world.kraken --table events \
+        --id <id> --parent <pid>
 """
 
 import argparse
@@ -16,7 +16,9 @@ from pathlib import Path
 
 from src.cli.utils import validate_database_path
 from src.commands.longform_commands import (
+    DemoteLongformEntryCommand,
     MoveLongformEntryCommand,
+    PromoteLongformEntryCommand,
     RemoveLongformEntryCommand,
 )
 from src.services import longform_builder
@@ -58,11 +60,9 @@ def export_longform(args) -> int:
 
 def _get_current_meta(db_service, table, row_id, doc_id):
     """Helper to get current longform metadata."""
-    # This minimal query helper is needed because metadata isn't exposed perfectly in logic yet
-    # Or we can use longform_builder.get_longform_item if it exists?
-    # Actually longform_builder has no simple 'get item' that returns meta dict directly.
-    # We can query SQL directly for CLI utility or use db_service if it had it.
-    # For now, let's do a direct SQL query via db_service connection (hacky but effective for CLI)
+    # This minimal helper is needed because meta isn't exposed in logic yet.
+    # longform_builder has no simple 'get item' returning meta dict.
+    # Direct SQL query via db_service connection for now.
     cursor = db_service._connection.cursor()
     cursor.execute(
         "SELECT position, parent_id, depth, title_override FROM longform_structure "
@@ -81,16 +81,22 @@ def _get_current_meta(db_service, table, row_id, doc_id):
 
 
 def move_entry(args) -> int:
-    """Move a longform entry."""
+    """Move a longform entry (or add it if missing)."""
     db_service = None
     try:
         db_service = DatabaseService(args.database)
         db_service.connect()
 
-        old_meta = _get_current_meta(db_service, args.table, args.id, args.doc_id)
-        if not old_meta:
-            print(f"✗ Item not in longform: {args.table}.{args.id}")
+        # Check if item exists in database at all
+        name = db_service.get_name(args.id)
+        if not name:
+            print(f"✗ Item not found in database: {args.id}")
             return 1
+
+        old_meta = _get_current_meta(db_service, args.table, args.id, args.doc_id)
+        # If not in longform, we use empty defaults
+        if not old_meta:
+            old_meta = {"position": 0, "parent_id": None, "depth": 0}
 
         new_meta = old_meta.copy()
         if args.parent:
@@ -98,16 +104,13 @@ def move_entry(args) -> int:
         if args.position is not None:
             new_meta["position"] = args.position
 
-        # In this CLI version, we are naive about 'position' conflict.
-        # Ideally we use logic that calculates position.
-
         cmd = MoveLongformEntryCommand(
             args.table, args.id, old_meta, new_meta, args.doc_id
         )
         result = cmd.execute(db_service)
 
         if result.success:
-            print(f"✓ Moved entry: {args.id}")
+            print(f"✓ Moved/Added entry: {args.id}")
             return 0
         else:
             print(f"✗ Error: {result.message}")
@@ -151,6 +154,82 @@ def remove_entry(args) -> int:
             db_service.close()
 
 
+def promote_entry(args) -> int:
+    """Promote a longform entry (reduce depth)."""
+    db_service = None
+    try:
+        db_service = DatabaseService(args.database)
+        db_service.connect()
+
+        old_meta = _get_current_meta(db_service, args.table, args.id, args.doc_id)
+        if not old_meta:
+            print(f"✗ Item not in longform: {args.table}.{args.id}")
+            return 1
+
+        cmd = PromoteLongformEntryCommand(args.table, args.id, old_meta, args.doc_id)
+        result = cmd.execute(db_service)
+
+        if result.success:
+            print(f"✓ Promoted entry: {args.id}")
+            return 0
+        else:
+            print(f"✗ Error: {result.message}")
+            return 1
+    except Exception as e:
+        logger.error(f"Failed to promote: {e}")
+        return 1
+    finally:
+        if db_service:
+            db_service.close()
+
+
+def demote_entry(args) -> int:
+    """Demote a longform entry (increase depth)."""
+    db_service = None
+    try:
+        db_service = DatabaseService(args.database)
+        db_service.connect()
+
+        old_meta = _get_current_meta(db_service, args.table, args.id, args.doc_id)
+        if not old_meta:
+            print(f"✗ Item not in longform: {args.table}.{args.id}")
+            return 1
+
+        cmd = DemoteLongformEntryCommand(args.table, args.id, old_meta, args.doc_id)
+        result = cmd.execute(db_service)
+
+        if result.success:
+            print(f"✓ Demoted entry: {args.id}")
+            return 0
+        else:
+            print(f"✗ Error: {result.message}")
+            return 1
+    except Exception as e:
+        logger.error(f"Failed to demote: {e}")
+        return 1
+    finally:
+        if db_service:
+            db_service.close()
+
+
+def reindex_longform(args) -> int:
+    """Reindex all positions in the longform document."""
+    db_service = None
+    try:
+        db_service = DatabaseService(args.database)
+        db_service.connect()
+
+        longform_builder.reindex_document_positions(db_service._connection, args.doc_id)
+        print("✓ Reindexed longform document positions.")
+        return 0
+    except Exception as e:
+        logger.error(f"Failed to reindex: {e}")
+        return 1
+    finally:
+        if db_service:
+            db_service.close()
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Manage ProjektKraken longform document"
@@ -185,6 +264,38 @@ def main():
     rm_p.add_argument("--id", required=True)
     rm_p.add_argument("--doc-id", default="default")
     rm_p.set_defaults(func=remove_entry)
+
+    # Add (Alias for move but ensures item is in longform)
+    add_p = subparsers.add_parser("add", help="Add an entry to longform")
+    add_p.add_argument("--database", "-d", required=True)
+    add_p.add_argument("--table", required=True, choices=["events", "entities"])
+    add_p.add_argument("--id", required=True)
+    add_p.add_argument("--parent", help="New parent ID (or ROOT)")
+    add_p.add_argument("--position", type=int, help="New position index")
+    add_p.add_argument("--doc-id", default="default")
+    add_p.set_defaults(func=move_entry)
+
+    # Promote
+    prom_p = subparsers.add_parser("promote", help="Promote an entry (reduce depth)")
+    prom_p.add_argument("--database", "-d", required=True)
+    prom_p.add_argument("--table", required=True, choices=["events", "entities"])
+    prom_p.add_argument("--id", required=True)
+    prom_p.add_argument("--doc-id", default="default")
+    prom_p.set_defaults(func=promote_entry)
+
+    # Demote
+    dem_p = subparsers.add_parser("demote", help="Demote an entry (increase depth)")
+    dem_p.add_argument("--database", "-d", required=True)
+    dem_p.add_argument("--table", required=True, choices=["events", "entities"])
+    dem_p.add_argument("--id", required=True)
+    dem_p.add_argument("--doc-id", default="default")
+    dem_p.set_defaults(func=demote_entry)
+
+    # Reindex
+    reindex_p = subparsers.add_parser("reindex", help="Reindex all positions")
+    reindex_p.add_argument("--database", "-d", required=True)
+    reindex_p.add_argument("--doc-id", default="default")
+    reindex_p.set_defaults(func=reindex_longform)
 
     args = parser.parse_args()
 

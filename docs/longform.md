@@ -158,13 +158,13 @@ The longform export CLI tool generates a Markdown file from your longform docume
 
 ```bash
 # Export to stdout
-python -m src.cli.export_longform world.kraken
+python -m src.cli.longform export --database world.kraken
 
 # Export to file
-python -m src.cli.export_longform world.kraken longform_export.md
+python -m src.cli.longform export --database world.kraken --output longform_export.md
 
 # Export with verbose logging
-python -m src.cli.export_longform world.kraken output.md --verbose
+python -m src.cli.longform export --database world.kraken --output output.md --verbose
 ```
 
 ### Markdown Format

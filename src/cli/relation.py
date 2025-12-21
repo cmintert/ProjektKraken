@@ -22,6 +22,7 @@ from src.cli.utils import validate_database_path
 from src.commands.relation_commands import (
     AddRelationCommand,
     RemoveRelationCommand,
+    UpdateRelationCommand,
 )
 from src.services.db_service import DatabaseService
 
@@ -98,11 +99,7 @@ def list_relations(args) -> int:
         if args.json:
             import json
 
-            print(
-                json.dumps(
-                    {"outgoing": outgoing, "incoming": incoming}, indent=2
-                )
-            )
+            print(json.dumps({"outgoing": outgoing, "incoming": incoming}, indent=2))
         else:
             print(f"\nRelations for: {source_name} ({args.source[:8]}...)\n")
 
@@ -158,7 +155,7 @@ def delete_relation(args) -> int:
         if not args.force:
             source_name = db_service.get_name(relation["source_id"])
             target_name = db_service.get_name(relation["target_id"])
-            rel_type = relation['rel_type']
+            rel_type = relation["rel_type"]
             print(
                 f"About to delete relation: {source_name} → {target_name} "
                 f"({rel_type})"
@@ -180,6 +177,50 @@ def delete_relation(args) -> int:
 
     except Exception as e:
         logger.error(f"Failed to delete relation: {e}")
+        if args.verbose:
+            raise
+        return 1
+    finally:
+        if db_service:
+            db_service.close()
+
+
+def update_relation(args) -> int:
+    """Update an existing relation."""
+    db_service = None
+    try:
+        db_service = DatabaseService(args.database)
+        db_service.connect()
+
+        # Check if relation exists
+        relation = db_service.get_relation(args.id)
+        if not relation:
+            print(f"✗ Relation not found: {args.id}")
+            return 1
+
+        target_id = args.target if args.target else relation["target_id"]
+        rel_type = args.type if args.type else relation["rel_type"]
+
+        # Attributes
+        attributes = relation.get("attributes", {}).copy()
+        if args.attr:
+            for kv in args.attr:
+                if "=" in kv:
+                    k, v = kv.split("=", 1)
+                    attributes[k] = v
+
+        cmd = UpdateRelationCommand(args.id, target_id, rel_type, attributes)
+        result = cmd.execute(db_service)
+
+        if result:
+            print(f"✓ Updated relation: {args.id}")
+            return 0
+        else:
+            print("✗ Failed to update relation")
+            return 1
+
+    except Exception as e:
+        logger.error(f"Failed to update relation: {e}")
         if args.verbose:
             raise
         return 1
@@ -235,6 +276,19 @@ def main():
     )
     list_parser.add_argument("--json", action="store_true", help="Output as JSON")
     list_parser.set_defaults(func=list_relations)
+
+    # Update command
+    update_parser = subparsers.add_parser("update", help="Update a relation")
+    update_parser.add_argument(
+        "--database", "-d", required=True, help="Path to .kraken database file"
+    )
+    update_parser.add_argument("--id", required=True, help="Relation ID")
+    update_parser.add_argument("--target", "-t", help="New target ID")
+    update_parser.add_argument("--type", help="New relation type")
+    update_parser.add_argument(
+        "--attr", nargs="*", help="Update attributes (key=value)"
+    )
+    update_parser.set_defaults(func=update_relation)
 
     # Delete command
     delete_parser = subparsers.add_parser("delete", help="Delete a relation")

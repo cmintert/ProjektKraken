@@ -97,7 +97,9 @@ def list_entities(args) -> int:
 
             print(json.dumps([e.to_dict() for e in entities], indent=2))
         else:
-            print(f"\nFound {len(entities)} {'entity' if len(entities) == 1 else 'entities'}:\n")
+            n = len(entities)
+            msg = f"\nFound {n} {'entity' if n == 1 else 'entities'}:\n"
+            print(msg)
             for entity in entities:
                 print(f"ID: {entity.id}")
                 print(f"  Name: {entity.name}")
@@ -168,7 +170,7 @@ def show_entity(args) -> int:
                     print(f"\nOutgoing ({len(outgoing)}):")
                     for rel in outgoing:
                         target_name = db_service.get_name(rel["target_id"])
-                        target_id_short = rel['target_id'][:8]
+                        target_id_short = rel["target_id"][:8]
                         print(
                             f"  → {target_name} ({rel['rel_type']}) "
                             f"[{target_id_short}...]"
@@ -178,7 +180,7 @@ def show_entity(args) -> int:
                     print(f"\nIncoming ({len(incoming)}):")
                     for rel in incoming:
                         source_name = db_service.get_name(rel["source_id"])
-                        source_id_short = rel['source_id'][:8]
+                        source_id_short = rel["source_id"][:8]
                         print(
                             f"  ← {source_name} ({rel['rel_type']}) "
                             f"[{source_id_short}...]"

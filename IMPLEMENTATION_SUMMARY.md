@@ -130,7 +130,7 @@ CLI Coverage: ~50% (18/36 features)
 - Event CRUD: 5/5 operations ✅
 - Entity CRUD: 5/5 operations ✅
 - Relation management: 3/3 operations ✅
-- Longform export: 1/1 operations ✅
+- Longform export: 1/1 operations ✅ (integrated in longform CLI)
 - Headless theme support: ✅
 ```
 
