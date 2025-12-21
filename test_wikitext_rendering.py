@@ -1,11 +1,13 @@
 import sys
+
 from PySide6.QtWidgets import QApplication
+
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
 
 def test_rendering():
-    app = QApplication(sys.argv)
+    _ = QApplication(sys.argv)
 
     # 1. Setup Theme
     tm = ThemeManager()
