@@ -45,8 +45,13 @@ credentials/
 # Project Specific
 logs/
 world.kraken
+world.kraken-*
 *.db
+*.db-shm
+*.db-wal
 *.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
 docs/_build/
 .pytest_cache/
 .coverage
