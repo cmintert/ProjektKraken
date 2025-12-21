@@ -13,7 +13,7 @@ def main_window(qtbot):
     """Create MainWindow with mocked DB."""
     with patch("src.app.main.DatabaseWorker") as MockWorker, patch(
         "src.app.main.QTimer"
-    ) as MockTimer:
+    ):
         mock_worker = MockWorker.return_value
         mock_db = mock_worker.db_service
         mock_db.get_all_events.return_value = []
@@ -61,7 +61,8 @@ def test_update_event_success(main_window):
         # Verify command was sent to worker via signal
         # Since usage of signals + mocks can be tricky without Qt loop processing,
         # we check if the worker's slot was called.
-        # NOTE: Real signals connected to Mocks might not fire synchronously without an event loop spin.
+        # NOTE: Real signals connected to Mocks might not fire synchronously
+        # without an event loop spin.
         # But previous tests (delete) suggest it works or we should use qtbot.
         # Let's try direct check first as per other tests.
         main_window.worker.run_command.assert_called_once()
@@ -215,7 +216,6 @@ def test_load_event_details_no_event(main_window):
 def test_wikilink_completion_refreshes_ui(main_window):
     """Test that WikiLink command completion triggers UI refresh."""
     from src.commands.base_command import CommandResult
-    from unittest.mock import call
 
     # Setup active event in editor
     main_window.event_editor._current_event_id = "evt1"
@@ -228,7 +228,7 @@ def test_wikilink_completion_refreshes_ui(main_window):
 
     # Patch load_event_details to verify it gets called
     with patch.object(main_window, "load_event_details") as mock_load:
-        main_window.on_command_finished(result)
+        main_window.data_handler.on_command_finished(result)
 
         # Verify load_event_details was called with the correct ID
         mock_load.assert_called_once_with("evt1")

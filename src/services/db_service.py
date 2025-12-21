@@ -34,7 +34,7 @@ class DatabaseService:
     """
     Handles all raw interactions with the SQLite database.
     Implements the Hybrid Schema (Strict Columns + JSON Attributes).
-    
+
     This service delegates CRUD operations to specialized repository
     classes while maintaining schema management and connection handling.
     """
@@ -47,14 +47,14 @@ class DatabaseService:
         """
         self.db_path = db_path
         self._connection: Optional[sqlite3.Connection] = None
-        
+
         # Initialize repositories (will be connected after connection is established)
         self._event_repo = EventRepository()
         self._entity_repo = EntityRepository()
         self._relation_repo = RelationRepository()
         self._map_repo = MapRepository()
         self._calendar_repo = CalendarRepository()
-        
+
         logger.info(f"DatabaseService initialized with path: {self.db_path}")
 
     def connect(self):
@@ -73,14 +73,14 @@ class DatabaseService:
             logger.debug("Database connection established.")
 
             self._init_schema()
-            
+
             # Connect repositories to the database connection
             self._event_repo.set_connection(self._connection)
             self._entity_repo.set_connection(self._connection)
             self._relation_repo.set_connection(self._connection)
             self._map_repo.set_connection(self._connection)
             self._calendar_repo.set_connection(self._connection)
-            
+
         except sqlite3.Error as e:
             logger.critical(f"Failed to connect to database: {e}")
             raise
@@ -188,7 +188,8 @@ class DatabaseService:
 
         -- Indexes for markers
         CREATE INDEX IF NOT EXISTS idx_markers_map ON markers(map_id);
-        CREATE INDEX IF NOT EXISTS idx_markers_object ON markers(object_id, object_type);
+        CREATE INDEX IF NOT EXISTS idx_markers_object
+            ON markers(object_id, object_type);
         """
 
         try:
@@ -213,6 +214,8 @@ class DatabaseService:
         Raises:
             sqlite3.Error: If the database operation fails.
         """
+        if not self._connection:
+            self.connect()
         self._event_repo.insert(event)
 
     def get_event(self, event_id: str) -> Optional[Event]:
@@ -225,6 +228,8 @@ class DatabaseService:
         Returns:
             Optional[Event]: The Event object if found, else None.
         """
+        if not self._connection:
+            self.connect()
         return self._event_repo.get(event_id)
 
     def get_all_events(self) -> List[Event]:
@@ -234,6 +239,8 @@ class DatabaseService:
         Returns:
             List[Event]: A list of all Event objects in the database.
         """
+        if not self._connection:
+            self.connect()
         return self._event_repo.get_all()
 
     def delete_event(self, event_id: str) -> None:
@@ -246,6 +253,8 @@ class DatabaseService:
         Raises:
             sqlite3.Error: If the database operation fails.
         """
+        if not self._connection:
+            self.connect()
         self._event_repo.delete(event_id)
 
     # --------------------------------------------------------------------------
@@ -262,6 +271,8 @@ class DatabaseService:
         Raises:
             sqlite3.Error: If the database operation fails.
         """
+        if not self._connection:
+            self.connect()
         self._entity_repo.insert(entity)
 
     def get_entity(self, entity_id: str) -> Optional[Entity]:
@@ -274,6 +285,8 @@ class DatabaseService:
         Returns:
             Optional[Entity]: The Entity object if found, else None.
         """
+        if not self._connection:
+            self.connect()
         return self._entity_repo.get(entity_id)
 
     def get_all_entities(self) -> List[Entity]:
@@ -283,6 +296,8 @@ class DatabaseService:
         Returns:
             List[Entity]: A list of all Entity objects.
         """
+        if not self._connection:
+            self.connect()
         return self._entity_repo.get_all()
 
     def delete_entity(self, entity_id: str) -> None:
@@ -295,6 +310,8 @@ class DatabaseService:
         Raises:
             sqlite3.Error: If the database operation fails.
         """
+        if not self._connection:
+            self.connect()
         self._entity_repo.delete(entity_id)
 
     # --------------------------------------------------------------------------
@@ -351,6 +368,8 @@ class DatabaseService:
         Returns:
             List[Dict[str, Any]]: List of relation dictionaries.
         """
+        if not self._connection:
+            self.connect()
         return self._relation_repo.get_by_source(source_id)
 
     def get_incoming_relations(self, target_id: str) -> List[Dict[str, Any]]:
@@ -363,6 +382,8 @@ class DatabaseService:
         Returns:
             List[Dict[str, Any]]: List of relation dictionaries.
         """
+        if not self._connection:
+            self.connect()
         return self._relation_repo.get_by_target(target_id)
 
     def get_relation(self, rel_id: str) -> Optional[Dict[str, Any]]:
@@ -388,6 +409,8 @@ class DatabaseService:
         Args:
             rel_id (str): The unique identifier of the relation.
         """
+        if not self._connection:
+            self.connect()
         self._relation_repo.delete(rel_id)
 
     def update_relation(
@@ -476,6 +499,8 @@ class DatabaseService:
         Raises:
             sqlite3.Error: If the database operation fails.
         """
+        if not self._connection:
+            self.connect()
         self._event_repo.insert_bulk(events)
         logger.info(f"Bulk inserted {len(events)} events")
 
@@ -494,6 +519,8 @@ class DatabaseService:
         Raises:
             sqlite3.Error: If the database operation fails.
         """
+        if not self._connection:
+            self.connect()
         self._entity_repo.insert_bulk(entities)
         logger.info(f"Bulk inserted {len(entities)} entities")
 
@@ -511,6 +538,8 @@ class DatabaseService:
         Raises:
             sqlite3.Error: If the database operation fails.
         """
+        if not self._connection:
+            self.connect()
         self._calendar_repo.insert(config)
         logger.debug(f"Inserted/updated calendar config: {config.id}")
 
@@ -524,6 +553,8 @@ class DatabaseService:
         Returns:
             Optional[CalendarConfig]: The config if found, else None.
         """
+        if not self._connection:
+            self.connect()
         return self._calendar_repo.get(config_id)
 
     def get_all_calendar_configs(self) -> List[CalendarConfig]:
@@ -533,6 +564,8 @@ class DatabaseService:
         Returns:
             List[CalendarConfig]: A list of all calendar configs.
         """
+        if not self._connection:
+            self.connect()
         return self._calendar_repo.get_all()
 
     def delete_calendar_config(self, config_id: str) -> None:
@@ -545,6 +578,8 @@ class DatabaseService:
         Raises:
             sqlite3.Error: If the database operation fails.
         """
+        if not self._connection:
+            self.connect()
         self._calendar_repo.delete(config_id)
         logger.debug(f"Deleted calendar config: {config_id}")
 
@@ -579,6 +614,8 @@ class DatabaseService:
         Raises:
             sqlite3.Error: If the database operation fails.
         """
+        if not self._connection:
+            self.connect()
         self._calendar_repo.set_active(config_id)
         logger.debug(f"Set active calendar config: {config_id}")
 
@@ -641,6 +678,8 @@ class DatabaseService:
         Raises:
             sqlite3.Error: If the database operation fails.
         """
+        if not self._connection:
+            self.connect()
         self._map_repo.insert_map(map_obj)
 
     def get_map(self, map_id: str) -> Optional[Map]:
@@ -653,6 +692,8 @@ class DatabaseService:
         Returns:
             Optional[Map]: The Map object if found, else None.
         """
+        if not self._connection:
+            self.connect()
         return self._map_repo.get_map(map_id)
 
     def get_all_maps(self) -> List[Map]:
@@ -662,6 +703,8 @@ class DatabaseService:
         Returns:
             List[Map]: List of all Map objects.
         """
+        if not self._connection:
+            self.connect()
         return self._map_repo.get_all_maps()
 
     def delete_map(self, map_id: str) -> None:
@@ -674,6 +717,8 @@ class DatabaseService:
         Raises:
             sqlite3.Error: If the database operation fails.
         """
+        if not self._connection:
+            self.connect()
         self._map_repo.delete_map(map_id)
 
     # --------------------------------------------------------------------------
@@ -739,6 +784,8 @@ class DatabaseService:
         Returns:
             Optional[Marker]: The Marker object if found, else None.
         """
+        if not self._connection:
+            self.connect()
         return self._map_repo.get_marker(marker_id)
 
     def get_markers_for_map(self, map_id: str) -> List[Marker]:
@@ -751,11 +798,11 @@ class DatabaseService:
         Returns:
             List[Marker]: List of all Marker objects on the map.
         """
+        if not self._connection:
+            self.connect()
         return self._map_repo.get_markers_by_map(map_id)
 
-    def get_markers_for_object(
-        self, object_id: str, object_type: str
-    ) -> List[Marker]:
+    def get_markers_for_object(self, object_id: str, object_type: str) -> List[Marker]:
         """
         Retrieves all markers for a specific entity or event.
 

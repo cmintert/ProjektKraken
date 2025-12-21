@@ -10,7 +10,7 @@ def main_window(qtbot):
     # Also Mock QTimer to prevent deferred initialization crash in tests
     with patch("src.app.main.DatabaseWorker") as MockWorker, patch(
         "src.app.main.QTimer"
-    ) as MockTimer:
+    ):
         mock_worker = MockWorker.return_value
         mock_db = mock_worker.db_service
         mock_db.get_all_events.return_value = []
@@ -48,7 +48,7 @@ def test_load_event_details(main_window, mock_invoke_method):
     assert found_call, "load_event_details was not invoked via QMetaObject.invokeMethod"
 
     # Manually invoke the slot to verify UI update
-    main_window.on_event_details_loaded(ev, [], [])
+    main_window.data_handler.on_event_details_loaded(ev, [], [])
 
     # Assert
     assert main_window.event_editor.name_edit.text() == "Test"

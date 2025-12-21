@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from src.app.main import MainWindow
 from src.commands.base_command import CommandResult
 from src.core.events import Event
@@ -48,7 +48,7 @@ def test_create_entity_success_selects_item(main_window):
 
     # 4. Mock load_entities triggering
     with patch.object(main_window, "load_entities") as mock_load:
-        main_window.on_command_finished(cmd_result)
+        main_window.data_handler.on_command_finished(cmd_result)
         mock_load.assert_called_once()
 
     # Check pending state
@@ -59,7 +59,7 @@ def test_create_entity_success_selects_item(main_window):
     test_entity = Entity(id="new-ent-id", name="New Entity", type="Concept")
 
     with patch.object(main_window.unified_list, "select_item") as mock_select:
-        main_window.on_entities_loaded([test_entity])
+        main_window.data_handler.on_entities_loaded([test_entity])
 
         # 6. Verify selection called
         mock_select.assert_called_once_with("entity", "new-ent-id")
@@ -93,7 +93,7 @@ def test_create_event_success_selects_item(main_window):
     )
 
     with patch.object(main_window, "load_events") as mock_load:
-        main_window.on_command_finished(cmd_result)
+        main_window.data_handler.on_command_finished(cmd_result)
         mock_load.assert_called_once()
 
     assert main_window._pending_select_id == "new-evt-id"
@@ -104,7 +104,7 @@ def test_create_event_success_selects_item(main_window):
 
     with patch.object(main_window.unified_list, "select_item") as mock_select:
         with patch.object(main_window.timeline, "set_events"):
-            main_window.on_events_loaded([test_event])
+            main_window.data_handler.on_events_loaded([test_event])
 
         mock_select.assert_called_once_with("event", "new-evt-id")
 

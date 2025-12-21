@@ -81,7 +81,7 @@ def test_load_entity_details_signal(main_window):
 
     with patch.object(main_window.entity_editor, "load_entity") as mock_load:
         # Simulate signal emission
-        main_window.on_entity_details_loaded(entity, relations, incoming)
+        main_window.data_handler.on_entity_details_loaded(entity, relations, incoming)
 
         mock_load.assert_called_once_with(entity, relations, incoming)
         # Check dock raise

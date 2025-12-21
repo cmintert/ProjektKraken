@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any
 import uuid
 import time
+import json
 import logging
 
 logger = logging.getLogger(__name__)
@@ -181,6 +182,7 @@ class CalendarConfig:
     week: WeekDefinition
     year_variants: List[YearVariant]
     epoch_name: str
+    is_active: bool = False
     created_at: float = field(default_factory=time.time)
     modified_at: float = field(default_factory=time.time)
 
@@ -275,9 +277,19 @@ class CalendarConfig:
             "week": self.week.to_dict(),
             "year_variants": [v.to_dict() for v in self.year_variants],
             "epoch_name": self.epoch_name,
+            "is_active": self.is_active,
             "created_at": self.created_at,
             "modified_at": self.modified_at,
         }
+
+    def to_json(self) -> str:
+        """
+        Converts the CalendarConfig to a JSON string.
+
+        Returns:
+            str: JSON representation.
+        """
+        return json.dumps(self.to_dict())
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "CalendarConfig":
@@ -299,9 +311,23 @@ class CalendarConfig:
                 YearVariant.from_dict(v) for v in data.get("year_variants", [])
             ],
             epoch_name=data["epoch_name"],
+            is_active=data.get("is_active", False),
             created_at=data.get("created_at", time.time()),
             modified_at=data.get("modified_at", time.time()),
         )
+
+    @classmethod
+    def from_json(cls, json_str: str) -> "CalendarConfig":
+        """
+        Creates a CalendarConfig from a JSON string.
+
+        Args:
+            json_str: JSON string containing calendar data.
+
+        Returns:
+            CalendarConfig: New instance.
+        """
+        return cls.from_dict(json.loads(json_str))
 
     @classmethod
     def create_default(cls) -> "CalendarConfig":
