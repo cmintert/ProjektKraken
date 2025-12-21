@@ -41,7 +41,9 @@ class AddImagesCommand(BaseCommand):
             self._added_attachment_ids = [a.id for a in attachments]
             self._is_executed = True
 
-            return CommandResult(True, f"Added {len(attachments)} images")
+            result = CommandResult(True, f"Added {len(attachments)} images")
+            result.data = {"owner_type": self.owner_type, "owner_id": self.owner_id}
+            return result
         except Exception as e:
             return CommandResult(False, str(e))
 
@@ -83,7 +85,10 @@ class RemoveImageCommand(BaseCommand):
             if success:
                 self._trash_info = info
                 self._is_executed = True
-                return CommandResult(True, "Image removed")
+                result = CommandResult(True, "Image removed")
+                # We return attachment_id so listeners can check if they care
+                result.data = {"attachment_id": self.attachment_id}
+                return result
             else:
                 return CommandResult(False, "Image not found")
         except Exception as e:
@@ -124,7 +129,9 @@ class ReorderImagesCommand(BaseCommand):
                 self.owner_type, self.owner_id, self.new_order_ids
             )
             self._is_executed = True
-            return CommandResult(True, "Images reordered")
+            result = CommandResult(True, "Images reordered")
+            result.data = {"owner_type": self.owner_type, "owner_id": self.owner_id}
+            return result
         except Exception as e:
             return CommandResult(False, str(e))
 
@@ -166,7 +173,9 @@ class UpdateImageCaptionCommand(BaseCommand):
                 self.attachment_id, self.new_caption
             )
             self._is_executed = True
-            return CommandResult(True, "Caption updated")
+            result = CommandResult(True, "Caption updated")
+            result.data = {"attachment_id": self.attachment_id}
+            return result
         except Exception as e:
             return CommandResult(False, str(e))
 

@@ -1,5 +1,4 @@
 import json
-import os
 
 try:
     with open("themes.json", "r") as f:

@@ -89,6 +89,7 @@ class GalleryWidget(QWidget):
             self.main_window.worker.attachments_loaded.connect(
                 self.on_attachments_loaded
             )
+            self.main_window.worker.command_finished.connect(self.on_command_finished)
 
     def set_owner(self, owner_type: str, owner_id: str):
         """Sets the current owner and refreshes the view."""
@@ -124,7 +125,8 @@ class GalleryWidget(QWidget):
         """Callback when data is loaded from worker."""
         if owner_type != self.owner_type or owner_id != self.owner_id:
             logger.debug(
-                f"GalleryWidget: Received stale data for {owner_type}/{owner_id}. Current: {self.owner_type}/{self.owner_id}"
+                f"GalleryWidget: Stale data {owner_type}/{owner_id} "
+                f"vs {self.owner_type}/{self.owner_id}"
             )
             return  # Stale data
 
@@ -151,7 +153,39 @@ class GalleryWidget(QWidget):
 
             self.list_widget.addItem(item)
 
-        self.list_widget.sortItems()  # If we want specific sort, we need to handle it manually or use sort key
+        self.list_widget.sortItems()
+
+    @Slot(object)
+    def on_command_finished(self, result):
+        """
+        Handles command completion signals to auto-refresh the gallery.
+        """
+        if not result.success:
+            return
+
+        should_refresh = False
+
+        # 1. Check Owner Match (Add, Reorder)
+        if "owner_id" in result.data and "owner_type" in result.data:
+            if (
+                result.data["owner_id"] == self.owner_id
+                and result.data["owner_type"] == self.owner_type
+            ):
+                should_refresh = True
+
+        # 2. Check Attachment Match (Remove, UpdateCaption)
+        if not should_refresh and "attachment_id" in result.data:
+            att_id = result.data["attachment_id"]
+            # Check if this attachment is currently displayed
+            if any(a.id == att_id for a in self.attachments):
+                should_refresh = True
+
+        if should_refresh:
+            logger.info(
+                f"GalleryWidget: Refreshing due to command {result.command_name}"
+            )
+            # Re-fetch data
+            self.set_owner(self.owner_type, self.owner_id)
 
     def on_add_clicked(self):
         if not self.owner_id:
@@ -164,12 +198,8 @@ class GalleryWidget(QWidget):
             logger.info(f"GalleryWidget: Adding images: {files}")
             cmd = AddImagesCommand(self.owner_type, self.owner_id, files)
             self.main_window.command_requested.emit(cmd)
-            # Auto-refresh handled by listening to command_finished?
-            # Ideally ui_manager or main_window refreshes appropriate views.
-            # But for now we might need to manual refresh or hook into command finished.
-            # Let's assume on success, we reload.
-            # MainWindow doesn't automatically trigger 'load_attachments' on command finish.
-            # We can fix that by listening to worker.command_finished here?
+            # Auto-refresh handled by listing to command_finished signal.
+            # MainWindow doesn't auto-trigger 'load_attachments' on command finish.
 
     def on_item_double_clicked(self, item):
         idx = self.list_widget.row(item)
