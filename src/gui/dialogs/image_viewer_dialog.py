@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import List
 
@@ -10,9 +11,12 @@ from PySide6.QtWidgets import (
     QPushButton,
     QScrollArea,
     QVBoxLayout,
+    QWidget,
 )
 
 from src.core.image_attachment import ImageAttachment
+
+logger = logging.getLogger(__name__)
 
 
 class ImageViewerDialog(QDialog):
@@ -28,7 +32,7 @@ class ImageViewerDialog(QDialog):
     ):
         super().__init__(parent)
         self.setWindowTitle("Image Viewer")
-        self.resize(1024, 768)
+        # Self resize removed to allow adjustSize() to work optimally
 
         self.attachments = attachments or []
         self.current_index = current_index
@@ -37,25 +41,41 @@ class ImageViewerDialog(QDialog):
         self.load_current_image()
 
     def init_ui(self):
+        self.setStyleSheet("background-color: #2b2b2b; color: #e0e0e0;")
+        # Main layout with zero margins to let image touch edges if desired
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
         # Image Area
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setAlignment(Qt.AlignCenter)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scroll_area.setFrameShape(QScrollArea.NoFrame)
+
+        # Style the scroll area background to match
+        self.scroll_area.setStyleSheet("background-color: #2b2b2b;")
+
         self.image_label = QLabel()
         self.image_label.setAlignment(Qt.AlignCenter)
         self.scroll_area.setWidget(self.image_label)
         layout.addWidget(self.scroll_area)
 
+        # Controls Container (Caption + Buttons)
+        # We wrap this in a widget to apply margins/spacing nicely separate from image
+        controls_widget = QWidget()
+        controls_layout = QVBoxLayout(controls_widget)
+        controls_layout.setContentsMargins(10, 10, 10, 10)
+        controls_layout.setSpacing(10)
+
         # Caption
         self.caption_label = QLabel()
         self.caption_label.setAlignment(Qt.AlignCenter)
         self.caption_label.setWordWrap(True)
-        self.caption_label.setStyleSheet(
-            "font-weight: bold; font-size: 14px; margin: 10px;"
-        )
-        layout.addWidget(self.caption_label)
+        self.caption_label.setStyleSheet("font-weight: bold; font-size: 14px;")
+        controls_layout.addWidget(self.caption_label)
 
         # Navigation
         nav_layout = QHBoxLayout()
@@ -73,7 +93,9 @@ class ImageViewerDialog(QDialog):
         nav_layout.addStretch()
         nav_layout.addWidget(self.btn_next)
 
-        layout.addLayout(nav_layout)
+        controls_layout.addLayout(nav_layout)
+
+        layout.addWidget(controls_widget)
 
     def load_current_image(self):
         if not self.attachments:
@@ -86,33 +108,116 @@ class ImageViewerDialog(QDialog):
             self.current_index = len(self.attachments) - 1
 
         attachment = self.attachments[self.current_index]
-
-        # Resolve Path (Assuming CWD is project root)
-        # In a real app we might need a robust way to get project root
         full_path = Path.cwd() / attachment.image_rel_path
 
         if full_path.exists():
-            pixmap = QPixmap(str(full_path))
-            if not pixmap.isNull():
-                # Scale if too large? Or let scroll area handle it?
-                # Let's scale to fit window if huge, but keep aspect ratio
-                # Actually scroll area handles it if we set resizeable.
-                # But we might want to scale down to fit view initially?
-                # Simple approach: set pixmap on label.
-                self.image_label.setPixmap(pixmap)
+            original = QPixmap(str(full_path))
+            if not original.isNull():
+                # 1. Scale down largest dimension to 1024 if needed
+                if original.width() > 1024 or original.height() > 1024:
+                    self._base_pixmap = original.scaled(
+                        1024, 1024, Qt.KeepAspectRatio, Qt.SmoothTransformation
+                    )
+                else:
+                    self._base_pixmap = original
+
+                # 2. Update Label
+                self.image_label.setPixmap(self._base_pixmap)
+
+                # 2. Update Label
+                self.image_label.setPixmap(self._base_pixmap)
+
+                # 3. Request Resize
+                # If we are already visible, we can resize now.
+                # If not, showEvent will handle it.
+                if self.isVisible():
+                    self._resize_to_fit()
             else:
                 self.image_label.setText("Failed to load image.")
+                self._base_pixmap = None
         else:
             self.image_label.setText(f"File not found: {attachment.image_rel_path}")
+            self._base_pixmap = None
 
         # Update Caption and Counter
         caption = attachment.caption or "No caption"
         self.caption_label.setText(caption)
         self.lbl_counter.setText(f"{self.current_index + 1} / {len(self.attachments)}")
 
+    def showEvent(self, event):
+        """Ensure we resize to fit image when first shown."""
+        super().showEvent(event)
+        if hasattr(self, "_base_pixmap") and self._base_pixmap:
+            self._resize_to_fit()
+
+    def _resize_to_fit(self):
+        """Calculates optimal window size and applies it."""
+        if not self._base_pixmap:
+            return
+
+        img_w = self._base_pixmap.width()
+        img_h = self._base_pixmap.height()
+
+        # Minimum width for controls (buttons etc)
+        min_controls_w = 300
+        target_w = max(img_w, min_controls_w)
+
+        # Estimate controls height via sizeHint of controls_widget
+        controls_widget = self.layout().itemAt(1).widget()
+        if controls_widget:
+            # Force layout update to get accurate hint if needed
+            controls_widget.adjustSize()
+            controls_h = controls_widget.sizeHint().height()
+        else:
+            controls_h = 100  # Fallback
+
+        target_h = img_h + controls_h
+
+        # Ensure we don't go larger than available screen geometry (optional safety)
+        # For now, just trust the calcs as per user request (1024 max)
+
+        logger.info(f"ImageViewer: Resizing window to {target_w}x{target_h}")
+        self.resize(target_w, target_h)
+
         # Update buttons
         self.btn_prev.setEnabled(self.current_index > 0)
         self.btn_next.setEnabled(self.current_index < len(self.attachments) - 1)
+
+    def _update_image(self):
+        """
+        Updates the displayed image based on scroll area size.
+        - Downscales if viewport < base image.
+        - Centers base image if viewport > base image (No Upscale).
+        """
+        if not hasattr(self, "_base_pixmap") or not self._base_pixmap:
+            return
+
+        viewport_size = self.scroll_area.viewport().size()
+        if viewport_size.isEmpty():
+            return
+
+        base_size = self._base_pixmap.size()
+
+        logger.debug(
+            f"ImageViewer: Resize Event. Viewport: {viewport_size}, Image: {base_size}"
+        )
+
+        if (
+            base_size.width() > viewport_size.width()
+            or base_size.height() > viewport_size.height()
+        ):
+            scaled = self._base_pixmap.scaled(
+                viewport_size, Qt.KeepAspectRatio, Qt.SmoothTransformation
+            )
+            self.image_label.setPixmap(scaled)
+        else:
+            # Viewport area is larger or equal (in containing rect), use base (no upscale)
+            self.image_label.setPixmap(self._base_pixmap)
+
+    def resizeEvent(self, event):
+        """Handle resize to update image scaling."""
+        super().resizeEvent(event)
+        self._update_image()
 
     def show_prev(self):
         if self.current_index > 0:
