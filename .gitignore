@@ -52,3 +52,9 @@ docs/_build/
 .coverage
 htmlcov/
 *.bak
+
+# Assets (User Content)
+assets/images/
+assets/maps/
+assets/thumbnails/
+assets/.trash/
