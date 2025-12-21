@@ -38,7 +38,8 @@ class TimelineView(QGraphicsView):
     current_time_changed = Signal(float)  # Emitted when current time is changed
     event_date_changed = Signal(str, float)  # (event_id, new_lore_date)
 
-    LANE_HEIGHT = 40
+    # Use the tallest event type height for lane spacing
+    LANE_HEIGHT = EventItem.DURATION_EVENT_HEIGHT
     RULER_HEIGHT = 50  # Increased for semantic ruler with context tier
 
     # Zoom limits
@@ -516,6 +517,7 @@ class TimelineView(QGraphicsView):
         Repacks events into lanes based on the current effective zoom level.
         This recalculates lane assignments to prevent overlaps as the timeline
         zooms in and out (changing the effective visual duration of text labels).
+        Uses variable lane heights based on event content.
         """
         if not self.events:
             return
@@ -527,10 +529,16 @@ class TimelineView(QGraphicsView):
 
         # Update packer with effective scale
         self._lane_packer.update_scale_factor(effective_scale)
-        event_lane_assignments = self._lane_packer.pack_events(self.events)
+        event_lane_assignments, lane_heights = self._lane_packer.pack_events(
+            self.events
+        )
+
+        # Calculate cumulative Y offsets for each lane
+        lane_y_offsets = [80]  # Start at 80 (below ruler)
+        for height in lane_heights[:-1]:  # Don't need offset after last lane
+            lane_y_offsets.append(lane_y_offsets[-1] + height + 10)  # 10px padding
 
         # Update Y positions of existing items
-        # We need to map event IDs to items again, or iterate scene items
         existing_items = {}
         drop_lines = {}
         for item in self.scene.items():
@@ -539,18 +547,24 @@ class TimelineView(QGraphicsView):
             elif hasattr(item, "event_id"):
                 drop_lines[item.event_id] = item
 
-        max_lane = 0
+        max_y = 80
         for event in self.events:
             if event.id in existing_items:
                 lane_index = event_lane_assignments[event.id]
-                y = (lane_index * self.LANE_HEIGHT) + 80
+                y = (
+                    lane_y_offsets[lane_index]
+                    if lane_index < len(lane_y_offsets)
+                    else 80
+                )
                 item = existing_items[event.id]
 
-                # Animate or set Y? Just set for now.
+                # Set Y position
                 item.setY(y)
                 item._initial_y = y  # Update constraint
-                if lane_index > max_lane:
-                    max_lane = lane_index
+
+                # Track max Y for scene rect
+                event_height = EventItem.get_event_height(event)
+                max_y = max(max_y, y + event_height)
 
                 # Update drop line
                 if event.id in drop_lines:
@@ -559,7 +573,7 @@ class TimelineView(QGraphicsView):
 
         # Recalculate Scene Rect Height
         current_rect = self.scene.sceneRect()
-        max_y = 80 + (max_lane + 1) * self.LANE_HEIGHT + 40
+        max_y = max_y + 40  # Add margin
         if max_y != current_rect.height():
             self.scene.setSceneRect(
                 current_rect.x(), current_rect.y(), current_rect.width(), max_y

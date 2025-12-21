@@ -40,8 +40,27 @@ class EventItem(QGraphicsItem):
     ICON_SIZE = 16  # Diamond size in pixels (increased from 14)
     PADDING = 5
 
+    # Height constants for lane packing (includes label space)
+    DURATION_EVENT_HEIGHT = 60  # Bar + label + date below
+    POINT_EVENT_HEIGHT = 40  # Diamond + text to right
+
     # Class-level calendar converter (shared across all event items)
     _calendar_converter = None
+
+    @classmethod
+    def get_event_height(cls, event) -> int:
+        """
+        Returns the visual height for an event based on its type.
+
+        Args:
+            event: The Event object.
+
+        Returns:
+            int: Height in pixels.
+        """
+        if event.lore_duration > 0:
+            return cls.DURATION_EVENT_HEIGHT
+        return cls.POINT_EVENT_HEIGHT
 
     @classmethod
     def set_calendar_converter(cls, converter):
@@ -114,7 +133,8 @@ class EventItem(QGraphicsItem):
             width = self.event.lore_duration * self.scale_factor
             # Ensure minimum width for visibility and clicking
             width = max(width, 10)
-            return QRectF(0, -10, width, 30)
+            # Extra height below for label + date
+            return QRectF(0, -10, max(width, self.MAX_WIDTH), 50)
 
         # Bounding box includes Diamond + Text (extra height for date line)
         return QRectF(
@@ -244,23 +264,34 @@ class EventItem(QGraphicsItem):
         # Draw rounded rect for the bar
         painter.drawRoundedRect(rect, 4, 4)
 
-        # Draw Text Label (inside if fits, otherwise right)
+        # Draw Text Label BELOW the bar
         painter.setPen(QPen(Qt.white))
 
         font = painter.font()
         font.setBold(True)
         painter.setFont(font)
 
-        # Check if text fits inside
-        fm = painter.fontMetrics()
-        text_width = fm.horizontalAdvance(self.event.name)
+        # Event name below the bar
+        label_y = rect.bottom() + 14
+        painter.drawText(QPointF(0, label_y), self.event.name)
 
-        if text_width < width - 10:
-            # Draw inside
-            painter.drawText(rect, Qt.AlignCenter, self.event.name)
+        # Date below the name
+        font.setBold(False)
+        font.setPointSize(8)
+        painter.setFont(font)
+
+        if EventItem._calendar_converter:
+            try:
+                date_str = EventItem._calendar_converter.format_date(
+                    self.event.lore_date
+                )
+            except Exception:
+                date_str = f"{self.event.lore_date:,.1f}"
         else:
-            # Draw to the right
-            painter.drawText(QPointF(width + 5, 4), self.event.name)
+            date_str = f"{self.event.lore_date:,.1f}"
+
+        painter.setPen(QPen(QColor(180, 180, 180)))
+        painter.drawText(QPointF(0, label_y + 12), date_str)
 
     def _paint_point_event(self, painter):
         """Draws the standard diamond marker for point events."""
