@@ -284,7 +284,8 @@ class MarkerItem(QGraphicsObject):
                     # Emit only on release
                     if self.scene() and self.scene().views():
                         view = self.scene().views()[0]
-                        if isinstance(view, MapGraphicsView):
+                        # Use string check to avoid circular import
+                        if view.__class__.__name__ == "MapGraphicsView":
                             view.marker_moved.emit(self.marker_id, norm_x, norm_y)
                             logger.debug(
                                 f"Marker {self.marker_id} drag ended at normalized "
