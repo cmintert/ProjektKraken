@@ -57,9 +57,14 @@ class EventEditorWidget(QWidget):
         """
         super().__init__(parent)
         self.setAttribute(Qt.WA_StyledBackground, True)
+
+        # Set size policy to prevent dock collapse
+        from PySide6.QtWidgets import QSizePolicy
+
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
         self.layout = QVBoxLayout(self)
         self.layout.setSpacing(8)
-        self.layout.setContentsMargins(16, 16, 16, 16)
         self.layout.setContentsMargins(16, 16, 16, 16)
 
         self._is_loading = False
@@ -551,3 +556,25 @@ class EventEditorWidget(QWidget):
         if not self._is_loading:
             self._is_dirty = True
             self.dirty_changed.emit(True)
+
+    def minimumSizeHint(self):
+        """
+        Override to prevent dock collapse.
+
+        Returns:
+            QSize: Minimum size for usable event editor.
+        """
+        from PySide6.QtCore import QSize
+
+        return QSize(300, 200)  # Width for form labels, height for controls
+
+    def sizeHint(self):
+        """
+        Preferred size for the event editor.
+
+        Returns:
+            QSize: Comfortable working size for editing events.
+        """
+        from PySide6.QtCore import QSize
+
+        return QSize(400, 600)  # Ideal size for editing

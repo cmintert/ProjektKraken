@@ -100,6 +100,12 @@ class UnifiedListWidget(QWidget):
         """
         super().__init__(parent)
         self.setAttribute(Qt.WA_StyledBackground, True)
+
+        # Set size policy to prevent dock collapse
+        from PySide6.QtWidgets import QSizePolicy
+
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
         self.layout = QVBoxLayout(self)
         self.layout.setSpacing(8)
         self.layout.setContentsMargins(16, 16, 16, 16)
@@ -577,3 +583,25 @@ class UnifiedListWidget(QWidget):
             self.filter_combo.setCurrentText("All Items")
             # Signal should trigger _render_list synchronously
             find_and_select()
+
+    def minimumSizeHint(self):
+        """
+        Override to prevent dock collapse.
+
+        Returns:
+            QSize: Minimum size for usable project explorer.
+        """
+        from PySide6.QtCore import QSize
+
+        return QSize(250, 200)  # Width for list items, height for toolbar + items
+
+    def sizeHint(self):
+        """
+        Preferred size for the project explorer.
+
+        Returns:
+            QSize: Comfortable working size for browsing items.
+        """
+        from PySide6.QtCore import QSize
+
+        return QSize(350, 500)  # Comfortable browsing size

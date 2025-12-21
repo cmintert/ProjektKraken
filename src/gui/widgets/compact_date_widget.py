@@ -81,29 +81,31 @@ class CompactDateWidget(QWidget):
         date_row = QHBoxLayout()
         date_row.setSpacing(8)
 
-        # Year
+        # Year - allow expanding
+        from PySide6.QtWidgets import QSizePolicy
+
         self.spin_year = QSpinBox()
         self.spin_year.setRange(-9999, 9999)
         self.spin_year.setValue(1)
         self.spin_year.setPrefix("Year ")
-        self.spin_year.setMinimumWidth(80)
-        date_row.addWidget(self.spin_year)
+        self.spin_year.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        date_row.addWidget(self.spin_year, stretch=2)  # Higher stretch factor
 
-        # Month dropdown
+        # Month dropdown - widen stretch
         self.combo_month = QComboBox()
-        self.combo_month.setMinimumWidth(100)
-        date_row.addWidget(self.combo_month)
+        self.combo_month.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        date_row.addWidget(self.combo_month, stretch=3)  # Widest element
 
-        # Day dropdown
+        # Day dropdown - moderate stretch
         self.combo_day = QComboBox()
-        self.combo_day.setMinimumWidth(60)
-        date_row.addWidget(self.combo_day)
+        self.combo_day.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        date_row.addWidget(self.combo_day, stretch=1)
 
-        # Calendar button with text
-        self.btn_calendar = QPushButton("📅 Pick")
-        self.btn_calendar.setMinimumWidth(60)
+        # Calendar button with icon
+        self.btn_calendar = QPushButton("📅")
+        self.btn_calendar.setFixedWidth(32)  # Icon button - fixed small size
         self.btn_calendar.setToolTip("Open calendar picker")
-        date_row.addWidget(self.btn_calendar)
+        date_row.addWidget(self.btn_calendar, stretch=0)
 
         date_row.addStretch()
         main_layout.addLayout(date_row)
@@ -112,26 +114,27 @@ class CompactDateWidget(QWidget):
         time_row = QHBoxLayout()
         time_row.setSpacing(8)
 
-        # Hour
+        # Hour - allow expanding
         self.spin_hour = QSpinBox()
         self.spin_hour.setRange(0, 23)
         self.spin_hour.setValue(0)
         self.spin_hour.setSuffix("h")
-        self.spin_hour.setMinimumWidth(50)
-        time_row.addWidget(self.spin_hour)
+        self.spin_hour.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        time_row.addWidget(self.spin_hour, stretch=1)
 
-        # Minute
+        # Minute - allow expanding
         self.spin_minute = QSpinBox()
         self.spin_minute.setRange(0, 59)
         self.spin_minute.setValue(0)
         self.spin_minute.setSuffix("m")
-        self.spin_minute.setMinimumWidth(50)
-        time_row.addWidget(self.spin_minute)
+        self.spin_minute.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        time_row.addWidget(self.spin_minute, stretch=1)
 
-        # Preview label
+        # Preview label - takes remaining space
         self.lbl_preview = QLabel()
         self.lbl_preview.setStyleSheet("color: #888; font-style: italic;")
-        time_row.addWidget(self.lbl_preview)
+        self.lbl_preview.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        time_row.addWidget(self.lbl_preview, stretch=4)  # Wider for text
 
         time_row.addStretch()
         main_layout.addLayout(time_row)

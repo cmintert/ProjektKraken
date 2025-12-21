@@ -115,7 +115,21 @@ class UIManager:
             self.main_window.tabifyDockWidget(self.docks["timeline"], self.docks["map"])
 
     def _create_dock(self, title: str, obj_name: str, widget) -> QDockWidget:
-        """Helper to create a configured dock widget."""
+        """
+        Helper to create a configured dock widget with size constraints.
+
+        Sets minimum sizes to prevent dock collapse during resize/rearrangement.
+
+        Args:
+            title: Display title for the dock widget.
+            obj_name: Object name for state persistence.
+            widget: The widget to contain in the dock.
+
+        Returns:
+            Configured QDockWidget with size constraints.
+        """
+        from PySide6.QtWidgets import QSizePolicy
+
         dock = QDockWidget(title, self.main_window)
         dock.setObjectName(obj_name)
         dock.setWidget(widget)
@@ -125,6 +139,18 @@ class UIManager:
             | QDockWidget.DockWidgetFloatable
             | QDockWidget.DockWidgetClosable
         )
+
+        # Set minimum sizes to prevent collapse
+        # Base minimum that shows title bar + some content
+        dock.setMinimumWidth(250)  # Enough for form labels
+        dock.setMinimumHeight(150)  # Enough for controls
+
+        # Set size policy to allow shrinking but with limits
+        policy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        policy.setHorizontalStretch(1)
+        policy.setVerticalStretch(1)
+        dock.setSizePolicy(policy)
+
         return dock
 
     def create_view_menu(self, menu_bar: QMenuBar):

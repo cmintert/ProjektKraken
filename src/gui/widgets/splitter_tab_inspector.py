@@ -202,6 +202,11 @@ class SplitterTabInspector(QWidget):
         self.layout.setSpacing(0)
 
         self.splitter = QSplitter(Qt.Vertical)
+
+        # Set splitter constraints to prevent collapse
+        self.splitter.setChildrenCollapsible(False)  # Prevent full collapse
+        self.splitter.setHandleWidth(4)  # Make handle easier to grab
+
         self.layout.addWidget(self.splitter)
 
         # Initial tab widget
@@ -224,3 +229,25 @@ class SplitterTabInspector(QWidget):
     def get_main_tabs(self) -> QTabWidget:
         """Return the main tab widget."""
         return self.main_tabs
+
+    def minimumSizeHint(self):
+        """
+        Prevent tab inspector collapse.
+
+        Returns:
+            QSize: Minimum size for usable tab inspector.
+        """
+        from PySide6.QtCore import QSize
+
+        return QSize(200, 150)  # Minimum height for at least one tab visible
+
+    def sizeHint(self):
+        """
+        Preferred size for tab inspector.
+
+        Returns:
+            QSize: Comfortable working size for inspector tabs.
+        """
+        from PySide6.QtCore import QSize
+
+        return QSize(400, 500)  # Ideal size for tab content

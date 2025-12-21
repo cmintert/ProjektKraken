@@ -51,6 +51,12 @@ class EntityEditorWidget(QWidget):
         """
         super().__init__(parent)
         self.setAttribute(Qt.WA_StyledBackground, True)
+
+        # Set size policy to prevent dock collapse
+        from PySide6.QtWidgets import QSizePolicy
+
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
         self.layout = QVBoxLayout(self)
         self.layout.setSpacing(8)
         self.layout.setContentsMargins(16, 16, 16, 16)
@@ -413,3 +419,25 @@ class EntityEditorWidget(QWidget):
         item = self.rel_list.currentItem()
         if item:
             self._on_remove_relation_item(item)
+
+    def minimumSizeHint(self):
+        """
+        Override to prevent dock collapse.
+
+        Returns:
+            QSize: Minimum size for usable entity editor.
+        """
+        from PySide6.QtCore import QSize
+
+        return QSize(300, 200)  # Width for form labels, height for controls
+
+    def sizeHint(self):
+        """
+        Preferred size for the entity editor.
+
+        Returns:
+            QSize: Comfortable working size for editing entities.
+        """
+        from PySide6.QtCore import QSize
+
+        return QSize(400, 600)  # Ideal size for editing

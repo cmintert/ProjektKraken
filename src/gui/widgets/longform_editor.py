@@ -404,6 +404,11 @@ class LongformEditorWidget(QWidget):
         super().__init__(parent)
         self.setAttribute(Qt.WA_StyledBackground, True)
 
+        # Set size policy to prevent dock collapse
+        from PySide6.QtWidgets import QSizePolicy
+
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
         # Store current sequence
         self._sequence = []
 
@@ -507,3 +512,25 @@ class LongformEditorWidget(QWidget):
                 table, row_id, _ = meta_data
                 return (table, row_id)
         return None
+
+    def minimumSizeHint(self):
+        """
+        Override to prevent dock collapse.
+
+        Returns:
+            QSize: Minimum size for usable longform editor.
+        """
+        from PySide6.QtCore import QSize
+
+        return QSize(400, 300)  # Width for split view, height for toolbar + content
+
+    def sizeHint(self):
+        """
+        Preferred size for the longform editor.
+
+        Returns:
+            QSize: Comfortable working size for editing longform documents.
+        """
+        from PySide6.QtCore import QSize
+
+        return QSize(600, 700)  # Comfortable size for split view

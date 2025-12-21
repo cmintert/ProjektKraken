@@ -74,31 +74,36 @@ class CompactDurationWidget(QWidget):
         ymd_row = QHBoxLayout()
         ymd_row.setSpacing(12)
 
-        # Years
+        # Years - allow expanding
+        from PySide6.QtWidgets import QSizePolicy
+
         self.spin_years = QSpinBox()
         self.spin_years.setRange(0, 9999)
         self.spin_years.setValue(0)
-        self.spin_years.setMinimumWidth(50)
-        ymd_row.addWidget(self.spin_years)
+        self.spin_years.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        ymd_row.addWidget(self.spin_years, stretch=1)
         self.lbl_years = QLabel("Years")
+        self.lbl_years.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         ymd_row.addWidget(self.lbl_years)
 
-        # Months
+        # Months - allow expanding
         self.spin_months = QSpinBox()
         self.spin_months.setRange(0, 99)
         self.spin_months.setValue(0)
-        self.spin_months.setMinimumWidth(50)
-        ymd_row.addWidget(self.spin_months)
+        self.spin_months.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        ymd_row.addWidget(self.spin_months, stretch=1)
         self.lbl_months = QLabel("Months")
+        self.lbl_months.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         ymd_row.addWidget(self.lbl_months)
 
-        # Days
+        # Days - allow expanding
         self.spin_days = QSpinBox()
         self.spin_days.setRange(0, 999)
         self.spin_days.setValue(0)
-        self.spin_days.setMinimumWidth(50)
-        ymd_row.addWidget(self.spin_days)
+        self.spin_days.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        ymd_row.addWidget(self.spin_days, stretch=1)
         self.lbl_days = QLabel("Days")
+        self.lbl_days.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         ymd_row.addWidget(self.lbl_days)
 
         ymd_row.addStretch()
@@ -108,28 +113,31 @@ class CompactDurationWidget(QWidget):
         hm_row = QHBoxLayout()
         hm_row.setSpacing(12)
 
-        # Hours
+        # Hours - allow expanding
         self.spin_hours = QSpinBox()
         self.spin_hours.setRange(0, 23)
         self.spin_hours.setValue(0)
-        self.spin_hours.setMinimumWidth(50)
-        hm_row.addWidget(self.spin_hours)
+        self.spin_hours.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        hm_row.addWidget(self.spin_hours, stretch=1)
         self.lbl_hours = QLabel("Hours")
+        self.lbl_hours.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         hm_row.addWidget(self.lbl_hours)
 
-        # Minutes
+        # Minutes - allow expanding
         self.spin_minutes = QSpinBox()
         self.spin_minutes.setRange(0, 59)
         self.spin_minutes.setValue(0)
-        self.spin_minutes.setMinimumWidth(50)
-        hm_row.addWidget(self.spin_minutes)
+        self.spin_minutes.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        hm_row.addWidget(self.spin_minutes, stretch=1)
         self.lbl_minutes = QLabel("Minutes")
+        self.lbl_minutes.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         hm_row.addWidget(self.lbl_minutes)
 
-        # Preview
+        # Preview - takes remaining space
         self.lbl_preview = QLabel()
         self.lbl_preview.setStyleSheet("color: #888; font-style: italic;")
-        hm_row.addWidget(self.lbl_preview)
+        self.lbl_preview.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        hm_row.addWidget(self.lbl_preview, stretch=3)  # Wider for text
 
         hm_row.addStretch()
         main_layout.addLayout(hm_row)
