@@ -26,9 +26,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Generate Changelog
+        run: python scripts/generate_changelog.py
+
       - name: Build Documentation
         run: |
           sphinx-build -b html docs docs/_build
+
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4

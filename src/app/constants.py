@@ -7,8 +7,9 @@ Stores default values for UI configuration and magic numbers.
 WINDOW_TITLE = "Project Kraken - v0.4.0 (Alpha)"
 DEFAULT_WINDOW_WIDTH = 1280
 DEFAULT_WINDOW_HEIGHT = 720
-WINDOW_SETTINGS_KEY = "Antigravity"
-WINDOW_SETTINGS_APP = "ProjectKraken_v0.4.0"
+WINDOW_SETTINGS_KEY = "ChristianMintert"
+WINDOW_SETTINGS_APP = "ProjektKraken"
+
 
 # Dock Titles
 # Dock Object Names

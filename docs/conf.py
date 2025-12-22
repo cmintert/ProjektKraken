@@ -1,14 +1,21 @@
 # Configuration file for the Sphinx documentation builder.
 import os
 import sys
+import tomllib
+
 
 sys.path.insert(0, os.path.abspath(".."))
 sys.path.insert(0, os.path.abspath("../src"))
 
+with open("../pyproject.toml", "rb") as f:
+    pyproject = tomllib.load(f)
+
 project = "Project Kraken"
-copyright = "2025, Antigravity"
-author = "Antigravity"
-release = "0.2.0"
+copyright = pyproject["project"].get("copyright", "2025, Christian Mintert")
+author = ", ".join([a["name"] for a in pyproject["project"].get("authors", [])])
+release = pyproject["project"]["version"]
+version = release
+
 
 # -- General configuration ---------------------------------------------------
 extensions = [
