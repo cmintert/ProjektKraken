@@ -65,6 +65,7 @@ class EventEditorWidget(QWidget):
 
         self.layout = QVBoxLayout(self)
         from src.gui.utils.style_helper import StyleHelper
+
         StyleHelper.apply_form_spacing(self.layout)
 
         self._is_loading = False
@@ -80,6 +81,10 @@ class EventEditorWidget(QWidget):
         details_layout = QVBoxLayout(self.tab_details)
 
         self.form_layout = QFormLayout()
+        # Configure form layout to respect widget minimum sizes
+        self.form_layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+        self.form_layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
+
         self.name_edit = QLineEdit()
 
         # Lore date widget with structured input
@@ -113,6 +118,8 @@ class EventEditorWidget(QWidget):
         self.form_layout.addRow("Description:", self.desc_edit)
 
         details_layout.addLayout(self.form_layout)
+        # Set minimum height on details tab to ensure it doesn't collapse
+        self.tab_details.setMinimumHeight(400)
         self.inspector.add_tab(self.tab_details, "Details")
 
         # Connect Start Date change to Duration Context

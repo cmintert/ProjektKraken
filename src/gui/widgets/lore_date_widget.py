@@ -45,6 +45,11 @@ class LoreDateWidget(QWidget):
             parent: The parent widget, if any.
         """
         super().__init__(parent)
+        # Set size policy to prevent vertical squashing
+        from PySide6.QtWidgets import QSizePolicy
+
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
         self._converter: CalendarConverter = None
         self._updating = False  # Prevents signal loops during updates
 
@@ -449,3 +454,25 @@ class LoreDateWidget(QWidget):
         )
 
         return self._converter.to_float(date)
+
+    def minimumSizeHint(self):
+        """
+        Returns the minimum size hint to prevent vertical collapse.
+
+        Returns:
+            QSize: Minimum size for the lore date widget.
+        """
+        from PySide6.QtCore import QSize
+
+        return QSize(400, 40)  # Single row of controls
+
+    def sizeHint(self):
+        """
+        Returns the preferred size hint.
+
+        Returns:
+            QSize: Preferred size for comfortable date input.
+        """
+        from PySide6.QtCore import QSize
+
+        return QSize(500, 40)  # Comfortable size for single-row layout

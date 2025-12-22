@@ -56,8 +56,9 @@ class CompactDateWidget(QWidget):
         super().__init__(parent)
         # Set size policy to prevent vertical squashing
         from PySide6.QtWidgets import QSizePolicy
+
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        
+
         self._converter = None
         self._updating = False
 
@@ -348,6 +349,28 @@ class CompactDateWidget(QWidget):
             self._populate_days()
             self.combo_day.setCurrentIndex(day - 1)
 
+    def minimumSizeHint(self):
+        """
+        Returns the minimum size hint to prevent vertical collapse.
+
+        Returns:
+            QSize: Minimum size for the date widget (two rows of controls).
+        """
+        from PySide6.QtCore import QSize
+
+        return QSize(250, 72)  # Two rows of controls + frame padding
+
+    def sizeHint(self):
+        """
+        Returns the preferred size hint.
+
+        Returns:
+            QSize: Preferred size for comfortable date input.
+        """
+        from PySide6.QtCore import QSize
+
+        return QSize(350, 80)  # Comfortable size for two-row layout
+
 
 class CalendarPopup(QDialog):
     """
@@ -477,23 +500,3 @@ class CalendarPopup(QDialog):
     def get_selected_date(self):
         """Returns the selected date as (year, month, day)."""
         return self._year, self._month, self._selected_day
-
-    def minimumSizeHint(self):
-        """
-        Returns the minimum size hint to prevent vertical collapse.
-        
-        Returns:
-            QSize: Minimum size for the date widget (two rows of controls).
-        """
-        from PySide6.QtCore import QSize
-        return QSize(250, 72)  # Two rows of controls + frame padding
-
-    def sizeHint(self):
-        """
-        Returns the preferred size hint.
-        
-        Returns:
-            QSize: Preferred size for comfortable date input.
-        """
-        from PySide6.QtCore import QSize
-        return QSize(350, 80)  # Comfortable size for two-row layout

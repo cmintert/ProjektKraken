@@ -36,6 +36,11 @@ class LoreDurationWidget(QWidget):
             parent: Optional parent widget.
         """
         super().__init__(parent)
+        # Set size policy to prevent vertical squashing
+        from PySide6.QtWidgets import QSizePolicy
+
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
         self._converter: CalendarConverter = None
         self._start_date_float: float = 1.0  # Default to Year 1 Day 1
         self._updating = False
@@ -396,3 +401,25 @@ class LoreDurationWidget(QWidget):
 
         finally:
             self._updating = False
+
+    def minimumSizeHint(self):
+        """
+        Returns the minimum size hint to prevent vertical collapse.
+
+        Returns:
+            QSize: Minimum size for the lore duration widget.
+        """
+        from PySide6.QtCore import QSize
+
+        return QSize(350, 40)  # Single row of controls
+
+    def sizeHint(self):
+        """
+        Returns the preferred size hint.
+
+        Returns:
+            QSize: Preferred size for comfortable duration input.
+        """
+        from PySide6.QtCore import QSize
+
+        return QSize(450, 40)  # Comfortable size for single-row layout
