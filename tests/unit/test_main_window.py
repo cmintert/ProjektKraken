@@ -10,8 +10,9 @@ from src.core.events import Event
 def main_window(qtbot):
     # Mock DB service to avoid real DB creation
     # Also Mock QTimer to prevent deferred initialization crash in tests
-    with patch("src.app.main.DatabaseWorker") as MockWorker, patch(
-        "src.app.main.QTimer"
+    with (
+        patch("src.app.main.DatabaseWorker") as MockWorker,
+        patch("src.app.main.QTimer"),
     ):
         mock_worker = MockWorker.return_value
         mock_db = mock_worker.db_service
@@ -22,7 +23,7 @@ def main_window(qtbot):
 
 
 def test_init_window(main_window):
-    assert main_window.windowTitle() == "Project Kraken - v0.2.0 (Editor Phase)"
+    assert main_window.windowTitle() == "Project Kraken - v0.4.0 (Alpha)"
     assert main_window.timeline is not None
 
 

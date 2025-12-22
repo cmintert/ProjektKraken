@@ -21,7 +21,7 @@ class TestTimelineLanePacker:
             Event(name="E3", lore_date=30, lore_duration=5),  # 30-35
         ]
 
-        assignments = packer.pack_events(events)
+        assignments, lane_heights = packer.pack_events(events)
 
         # All should be on the same lane
         assert assignments[events[0].id] == 0
@@ -37,7 +37,7 @@ class TestTimelineLanePacker:
             Event(name="E2", lore_date=20, lore_duration=30),  # 20-50 (overlaps E1)
         ]
 
-        assignments = packer.pack_events(events)
+        assignments, lane_heights = packer.pack_events(events)
 
         # Should use different lanes
         assert assignments[events[0].id] != assignments[events[1].id]
@@ -52,7 +52,7 @@ class TestTimelineLanePacker:
             Event(name="E3", lore_date=55, lore_duration=10),  # 55-65 (after both)
         ]
 
-        assignments = packer.pack_events(events)
+        assignments, lane_heights = packer.pack_events(events)
 
         # E1 and E2 should be in different lanes
         assert assignments[events[0].id] != assignments[events[1].id]
@@ -68,7 +68,7 @@ class TestTimelineLanePacker:
             Event(name="P2", lore_date=15, lore_duration=0),  # Point event
         ]
 
-        assignments = packer.pack_events(events)
+        assignments, lane_heights = packer.pack_events(events)
 
         # Both should have lane assignments
         assert events[0].id in assignments
@@ -83,11 +83,11 @@ class TestTimelineLanePacker:
         ]
 
         # Pack with initial scale
-        assignments1 = packer.pack_events(events)
+        assignments1, lane_heights1 = packer.pack_events(events)
 
         # Update scale and pack again
         packer.update_scale_factor(20.0)
-        assignments2 = packer.pack_events(events)
+        assignments2, lane_heights2 = packer.pack_events(events)
 
         # Should still assign to lane 0, but internal calculations differ
         assert assignments1[events[0].id] == 0
@@ -98,9 +98,10 @@ class TestTimelineLanePacker:
         """Empty events list should return empty assignments."""
         packer = TimelineLanePacker(scale_factor=10.0)
 
-        assignments = packer.pack_events([])
+        assignments, lane_heights = packer.pack_events([])
 
         assert assignments == {}
+        assert lane_heights == []
 
     def test_long_event_names(self):
         """Events with long names should get appropriate spacing."""
@@ -119,7 +120,7 @@ class TestTimelineLanePacker:
             ),
         ]
 
-        assignments = packer.pack_events(events)
+        assignments, lane_heights = packer.pack_events(events)
 
         # The second event should be in a different lane due to text width
         # (though this depends on exact font metrics)

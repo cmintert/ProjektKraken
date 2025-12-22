@@ -22,7 +22,7 @@ def timeline(qtbot):
 
 def test_timeline_init(timeline):
     assert timeline.view.scene is not None
-    assert timeline.view.LANE_HEIGHT == 40
+    assert timeline.view.LANE_HEIGHT == 60
 
 
 def test_set_events_creates_items(timeline):

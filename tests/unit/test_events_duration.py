@@ -1,3 +1,7 @@
+from unittest.mock import MagicMock
+
+from PySide6.QtWidgets import QWidget
+
 from src.core.events import Event
 from src.gui.widgets.event_editor import EventEditorWidget
 from src.gui.widgets.timeline import EventItem
@@ -6,13 +10,17 @@ from src.gui.widgets.timeline import EventItem
 class TestEventDuration:
 
     def test_event_editor_has_duration_field(self, qtbot):
-        widget = EventEditorWidget()
+        mock_parent = QWidget()
+        mock_parent.worker = MagicMock()
+        widget = EventEditorWidget(parent=mock_parent)
         qtbot.addWidget(widget)
 
         assert hasattr(widget, "duration_widget")
 
     def test_event_editor_loads_saves_duration(self, qtbot):
-        widget = EventEditorWidget()
+        mock_parent = QWidget()
+        mock_parent.worker = MagicMock()
+        widget = EventEditorWidget(parent=mock_parent)
         qtbot.addWidget(widget)
 
         event = Event(name="Test Event", lore_date=100.0, lore_duration=5.5)
@@ -46,8 +54,9 @@ class TestEventDuration:
         item = EventItem(event, scale_factor=scale)
 
         rect = item.boundingRect()
-        expected_width = duration * scale
+        # Duration events use MAX_WIDTH for text label space
+        expected_width = max(duration * scale, EventItem.MAX_WIDTH)
 
         assert rect.width() == expected_width
-        assert rect.height() == 30  # Fixed height for bar logic
+        assert rect.height() == 50  # Height for bar + label + date below
         assert rect.top() == -10

@@ -225,7 +225,7 @@ def test_event_item_flags():
 
 def test_timeline_view_lane_height_constant(timeline_view):
     """Test LANE_HEIGHT constant."""
-    assert timeline_view.LANE_HEIGHT == 40
+    assert timeline_view.LANE_HEIGHT == 60
 
 
 def test_timeline_view_ruler_height_constant(timeline_view):
