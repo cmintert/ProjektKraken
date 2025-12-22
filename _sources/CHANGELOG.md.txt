@@ -1,0 +1,10 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+## [Development] - 2025-12-22
+### Documentation
+- docs: automate changelog and reorganize sphinx structure
+
+
+*This changelog was automatically generated.*
