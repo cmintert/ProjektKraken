@@ -1,11 +1,24 @@
-PySide6
-pytest
-Sphinx
-flake8
-mypy
-black
-pytest-qt
-markdown
+# Core GUI Framework
+PySide6==6.10.1
 
-Pillow
-ruff
+# Testing
+pytest==9.0.2
+pytest-qt==4.5.0
+pytest-cov==7.0.0
+
+# Documentation
+Sphinx==8.2.3
+myst-parser==4.0.1
+
+# Code Quality
+ruff==0.14.10
+mypy==1.19.0
+
+# Image Processing
+Pillow==12.0.0
+
+# Markdown Support
+Markdown==3.10
+
+# Packaging (optional, for building executables)
+pyinstaller==6.17.0
