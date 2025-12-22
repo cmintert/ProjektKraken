@@ -9,7 +9,6 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
-    QGroupBox,
     QHBoxLayout,
     QLineEdit,
     QListWidget,
@@ -144,14 +143,7 @@ class EventEditorWidget(QWidget):
         self.tab_relations = QWidget()
         rel_tab_layout = QVBoxLayout(self.tab_relations)
 
-        self.rel_group = QGroupBox("Relationships")
-        self.rel_layout = QVBoxLayout()
-        self.rel_list = QListWidget()
-        self.rel_list.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.rel_list.customContextMenuRequested.connect(self._show_rel_menu)
-        self.rel_list.itemDoubleClicked.connect(self._on_edit_relation)
-        self.rel_layout.addWidget(self.rel_list)
-
+        # Buttons first
         rel_btn_layout = QHBoxLayout()
         self.btn_add_rel = StandardButton("Add Relation")
         self.btn_add_rel.clicked.connect(self._on_add_relation)
@@ -166,10 +158,16 @@ class EventEditorWidget(QWidget):
         self.btn_remove_rel.clicked.connect(self._on_remove_selected_relation)
         rel_btn_layout.addWidget(self.btn_remove_rel)
 
-        self.rel_layout.addLayout(rel_btn_layout)
-        self.rel_group.setLayout(self.rel_layout)
+        rel_btn_layout.addStretch()
+        rel_tab_layout.addLayout(rel_btn_layout)
 
-        rel_tab_layout.addWidget(self.rel_group)
+        # List second
+        self.rel_list = QListWidget()
+        self.rel_list.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.rel_list.customContextMenuRequested.connect(self._show_rel_menu)
+        self.rel_list.itemDoubleClicked.connect(self._on_edit_relation)
+        rel_tab_layout.addWidget(self.rel_list)
+
         self.inspector.add_tab(self.tab_relations, "Relations")
 
         # --- Tab 4: Gallery ---

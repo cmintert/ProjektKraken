@@ -39,34 +39,35 @@ class TagEditorWidget(QWidget):
         super().__init__(parent)
         self.layout = QVBoxLayout(self)
         from src.gui.utils.style_helper import StyleHelper
+
         StyleHelper.apply_compact_spacing(self.layout)
+
+        # Toolbar with action buttons
+        toolbar_layout = QHBoxLayout()
+        self.btn_add = StandardButton("Add Tag")
+        self.btn_add.clicked.connect(self._on_add)
+        toolbar_layout.addWidget(self.btn_add)
+
+        self.btn_remove = StandardButton("Remove")
+        self.btn_remove.setStyleSheet(StyleHelper.get_destructive_button_style())
+        self.btn_remove.clicked.connect(self._on_remove)
+        toolbar_layout.addWidget(self.btn_remove)
+
+        toolbar_layout.addStretch()
+        self.layout.addLayout(toolbar_layout)
 
         # Input row
         input_layout = QHBoxLayout()
         self.tag_input = QLineEdit()
-        self.tag_input.setPlaceholderText("Enter tag and press Enter or Add...")
+        self.tag_input.setPlaceholderText("Enter tag and press Enter...")
         self.tag_input.returnPressed.connect(self._on_add)
         input_layout.addWidget(self.tag_input)
-
-        self.btn_add = StandardButton("Add")
-        self.btn_add.clicked.connect(self._on_add)
-        input_layout.addWidget(self.btn_add)
-
         self.layout.addLayout(input_layout)
 
         # Tag list
         self.tag_list = QListWidget()
         self.tag_list.setSelectionMode(QListWidget.SingleSelection)
         self.layout.addWidget(self.tag_list)
-
-        # Remove button
-        btn_layout = QHBoxLayout()
-        btn_layout.addStretch()
-        self.btn_remove = StandardButton("Remove Selected")
-        self.btn_remove.setStyleSheet(StyleHelper.get_destructive_button_style())
-        self.btn_remove.clicked.connect(self._on_remove)
-        btn_layout.addWidget(self.btn_remove)
-        self.layout.addLayout(btn_layout)
 
     def load_tags(self, tags: list):
         """

@@ -4,6 +4,7 @@ Attribute Editor Widget Module.
 Provides a table-based interface for editing key-value attribute pairs
 with support for different data types.
 """
+
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QComboBox,
@@ -38,13 +39,14 @@ class AttributeEditorWidget(QWidget):
         super().__init__(parent)
         self.layout = QVBoxLayout(self)
         from src.gui.utils.style_helper import StyleHelper
+
         StyleHelper.apply_compact_spacing(self.layout)
 
         # Toolbar
         self.toolbar_layout = QHBoxLayout()
         self.btn_add = StandardButton("Add Attribute")
         self.btn_add.clicked.connect(self._on_add)
-        self.btn_remove = StandardButton("Remove Selected")
+        self.btn_remove = StandardButton("Remove")
         self.btn_remove.setStyleSheet(StyleHelper.get_destructive_button_style())
         self.btn_remove.clicked.connect(self._on_remove)
 
