@@ -114,7 +114,6 @@ class EntityEditorWidget(QWidget):
         rel_btn_layout.addWidget(self.btn_edit_rel)
 
         self.btn_remove_rel = StandardButton("Remove")
-        from src.gui.utils.style_helper import StyleHelper
         self.btn_remove_rel.setStyleSheet(StyleHelper.get_destructive_button_style())
         self.btn_remove_rel.clicked.connect(self._on_remove_selected_relation)
         rel_btn_layout.addWidget(self.btn_remove_rel)

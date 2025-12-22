@@ -45,7 +45,6 @@ class AttributeEditorWidget(QWidget):
         self.btn_add = StandardButton("Add Attribute")
         self.btn_add.clicked.connect(self._on_add)
         self.btn_remove = StandardButton("Remove Selected")
-        from src.gui.utils.style_helper import StyleHelper
         self.btn_remove.setStyleSheet(StyleHelper.get_destructive_button_style())
         self.btn_remove.clicked.connect(self._on_remove)
 

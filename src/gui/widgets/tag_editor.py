@@ -63,7 +63,6 @@ class TagEditorWidget(QWidget):
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()
         self.btn_remove = StandardButton("Remove Selected")
-        from src.gui.utils.style_helper import StyleHelper
         self.btn_remove.setStyleSheet(StyleHelper.get_destructive_button_style())
         self.btn_remove.clicked.connect(self._on_remove)
         btn_layout.addWidget(self.btn_remove)
