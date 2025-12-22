@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.entities import Entity
+from src.gui.utils.style_helper import StyleHelper
 
 
 class EntityListWidget(QWidget):
@@ -43,8 +44,7 @@ class EntityListWidget(QWidget):
             self.setParent(parent)
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.layout = QVBoxLayout(self)
-        self.layout.setSpacing(8)
-        self.layout.setContentsMargins(16, 16, 16, 16)
+        StyleHelper.apply_standard_list_spacing(self.layout)
 
         # Controls
         self.btn_create = QPushButton("New Entity")
@@ -71,7 +71,7 @@ class EntityListWidget(QWidget):
         # Empty State
         self.empty_label = QLabel("No Entities Loaded")
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet("color: #757575; font-size: 14pt;")
+        self.empty_label.setStyleSheet(StyleHelper.get_empty_state_style())
         self.layout.addWidget(self.empty_label)
         self.empty_label.hide()
 

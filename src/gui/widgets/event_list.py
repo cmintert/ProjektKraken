@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.events import Event
+from src.gui.utils.style_helper import StyleHelper
 
 
 class EventListWidget(QWidget):
@@ -43,8 +44,7 @@ class EventListWidget(QWidget):
             self.setParent(parent)
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.layout = QVBoxLayout(self)
-        self.layout.setSpacing(8)
-        self.layout.setContentsMargins(16, 16, 16, 16)
+        StyleHelper.apply_standard_list_spacing(self.layout)
 
         # Controls
         self.btn_refresh = QPushButton("Refresh List")
@@ -67,9 +67,7 @@ class EventListWidget(QWidget):
         # Empty State (Spec 7.2)
         self.empty_label = QLabel("No Events Loaded")
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(
-            "color: #757575; font-size: 14pt;"
-        )  # Hardcoded dim fallback
+        self.empty_label.setStyleSheet(StyleHelper.get_empty_state_style())
         self.layout.addWidget(self.empty_label)
         self.empty_label.hide()
 

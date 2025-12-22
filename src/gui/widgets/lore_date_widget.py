@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.calendar import CalendarConverter, CalendarDate
+from src.gui.utils.style_helper import StyleHelper
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +107,7 @@ class LoreDateWidget(QWidget):
 
         # Preview label
         self._preview_label = QLabel()
-        self._preview_label.setStyleSheet("color: #888; font-style: italic;")
+        self._preview_label.setStyleSheet(StyleHelper.get_preview_label_style())
         layout.addWidget(self._preview_label)
 
         layout.addStretch()

@@ -28,6 +28,7 @@ from src.commands.image_commands import (
 from src.core.image_attachment import ImageAttachment
 from src.core.paths import get_user_data_path
 from src.gui.dialogs.image_viewer_dialog import ImageViewerDialog
+from src.gui.utils.style_helper import StyleHelper
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +58,9 @@ class GalleryWidget(QWidget):
 
         # Header / Toolbar
         toolbar = QHBoxLayout()
+        StyleHelper.apply_no_margins(toolbar)
         self.lbl_title = QLabel("Images")
-        self.lbl_title.setStyleSheet("font-weight: bold;")
+        self.lbl_title.setStyleSheet(StyleHelper.get_section_header_style())
 
         self.btn_add = QPushButton("Add...")
         self.btn_add.setToolTip("Add images")

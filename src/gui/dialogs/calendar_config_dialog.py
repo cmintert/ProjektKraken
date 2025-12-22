@@ -35,6 +35,7 @@ from src.core.calendar import (
     MonthDefinition,
     WeekDefinition,
 )
+from src.gui.utils.style_helper import StyleHelper
 
 logger = logging.getLogger(__name__)
 
@@ -181,7 +182,7 @@ class CalendarConfigDialog(QDialog):
 
         # --- Validation Errors ---
         self.error_label = QLabel()
-        self.error_label.setStyleSheet("color: #ff6b6b; font-weight: bold;")
+        self.error_label.setStyleSheet(StyleHelper.get_error_label_style())
         self.error_label.setWordWrap(True)
         self.error_label.hide()
         self.layout.addWidget(self.error_label)
