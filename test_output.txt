@@ -5,12 +5,60 @@ PySide6 6.10.1 -- Qt runtime 6.10.1 -- Qt compiled 6.10.1
 rootdir: C:\Users\chris\Antigravity Projects\ProjektKraken
 configfile: pytest.ini
 plugins: cov-7.0.0, qt-4.5.0
-collecting ... collected 4 items
+collecting ... collected 1 item
 
-tests/test_unsaved_changes.py::test_event_editor_dirty_tracking PASSED   [ 25%]
-tests/test_unsaved_changes.py::test_entity_editor_dirty_tracking PASSED  [ 50%]
-tests/test_unsaved_changes.py::test_mainwindow_check_unsaved_changes PASSED [ 75%]
-tests/test_unsaved_changes.py::test_editor_init_not_dirty PASSED         [100%]
+tests/unit/test_events_duration.py::TestEventDuration::test_event_editor_loads_saves_duration FAILED [100%]
 
-============================== 4 passed in 0.41s ==============================
-QThread: Destroyed while thread '' is still running
+================================== FAILURES ===================================
+__________ TestEventDuration.test_event_editor_loads_saves_duration ___________
+
+self = <test_events_duration.TestEventDuration object at 0x0000026B7E13E0D0>
+qtbot = <pytestqt.qtbot.QtBot object at 0x0000026B7E3D63C0>
+
+    def test_event_editor_loads_saves_duration(self, qtbot):
+        widget = EventEditorWidget()
+        qtbot.addWidget(widget)
+    
+        event = Event(name="Test Event", lore_date=100.0, lore_duration=5.5)
+>       widget.load_event(event)
+
+tests\unit\test_events_duration.py:19: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\gui\widgets\event_editor.py:359: in load_event
+    self.gallery.set_owner("event", event.id)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <src.gui.widgets.gallery_widget.GalleryWidget(0x26b7c8d0390) at 0x0000026B7E4ED400>
+owner_type = 'event', owner_id = '8c636ecb-54fe-40e7-afb1-cda166b927b2'
+
+    def set_owner(self, owner_type: str, owner_id: str):
+        """Sets the current owner and refreshes the view."""
+        logger.debug(
+            f"GalleryWidget: set_owner called with type={owner_type}, id={owner_id}"
+        )
+        self.owner_type = owner_type
+        self.owner_id = owner_id
+        self.btn_add.setEnabled(True)
+        self.clear()
+    
+        # Request data
+        # We need to invoke method on worker via QMetaObject usually,
+        # or expose a slot on main_window that calls worker.
+        # But connecting signal directly is easier but we are in UI thread,
+        # invoking slot on worker (in bg thread) is safe via queues.
+        from PySide6.QtCore import Q_ARG, QMetaObject
+    
+        QMetaObject.invokeMethod(
+>           self.main_window.worker,
+            ^^^^^^^^^^^^^^^^^^^^^^^
+            "load_attachments",
+            Qt.QueuedConnection,
+            Q_ARG(str, self.owner_type),
+            Q_ARG(str, self.owner_id),
+        )
+E       AttributeError: 'NoneType' object has no attribute 'worker'
+
+src\gui\widgets\gallery_widget.py:116: AttributeError
+=========================== short test summary info ===========================
+FAILED tests/unit/test_events_duration.py::TestEventDuration::test_event_editor_loads_saves_duration - AttributeError: 'NoneType' object has no attribute 'worker'
+============================== 1 failed in 0.42s ==============================
