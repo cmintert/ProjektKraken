@@ -9,12 +9,10 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
     QInputDialog,
-    QLabel,
     QListWidget,
     QListWidgetItem,
     QMenu,
     QMessageBox,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
@@ -28,7 +26,7 @@ from src.commands.image_commands import (
 from src.core.image_attachment import ImageAttachment
 from src.core.paths import get_user_data_path
 from src.gui.dialogs.image_viewer_dialog import ImageViewerDialog
-from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.standard_buttons import StandardButton
 
 logger = logging.getLogger(__name__)
 
@@ -54,22 +52,32 @@ class GalleryWidget(QWidget):
     def init_ui(self):
         self.setAcceptDrops(True)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        from src.gui.utils.style_helper import StyleHelper
 
-        # Header / Toolbar
+        StyleHelper.apply_compact_spacing(layout)
+
+        # Toolbar / Action buttons
         toolbar = QHBoxLayout()
-        StyleHelper.apply_no_margins(toolbar)
-        self.lbl_title = QLabel("Images")
-        self.lbl_title.setStyleSheet(StyleHelper.get_section_header_style())
-
-        self.btn_add = QPushButton("Add...")
-        self.btn_add.setToolTip("Add images")
+        self.btn_add = StandardButton("Add Image")
+        self.btn_add.setToolTip("Add images to this item")
         self.btn_add.clicked.connect(self.on_add_clicked)
         self.btn_add.setEnabled(False)  # Disabled until owner set
 
-        toolbar.addWidget(self.lbl_title)
-        toolbar.addStretch()
+        self.btn_edit = StandardButton("Edit Caption")
+        self.btn_edit.setToolTip("Edit caption for selected image")
+        self.btn_edit.clicked.connect(self._on_edit_caption_clicked)
+        self.btn_edit.setEnabled(False)
+
+        self.btn_remove = StandardButton("Remove")
+        self.btn_remove.setToolTip("Remove selected image")
+        self.btn_remove.setStyleSheet(StyleHelper.get_destructive_button_style())
+        self.btn_remove.clicked.connect(self._on_remove_clicked)
+        self.btn_remove.setEnabled(False)
+
         toolbar.addWidget(self.btn_add)
+        toolbar.addWidget(self.btn_edit)
+        toolbar.addWidget(self.btn_remove)
+        toolbar.addStretch()
 
         layout.addLayout(toolbar)
 
@@ -81,6 +89,7 @@ class GalleryWidget(QWidget):
         self.list_widget.setSpacing(10)
         self.list_widget.setSelectionMode(QAbstractItemView.SingleSelection)
         self.list_widget.itemDoubleClicked.connect(self.on_item_double_clicked)
+        self.list_widget.itemSelectionChanged.connect(self._update_button_states)
 
         # Context Menu
         self.list_widget.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -94,6 +103,13 @@ class GalleryWidget(QWidget):
                 self.on_attachments_loaded
             )
             self.main_window.worker.command_finished.connect(self.on_command_finished)
+
+    def _update_button_states(self):
+        """Updates enabled states for Edit and Remove buttons based on selection."""
+        items = self.list_widget.selectedItems()
+        count = len(items)
+        self.btn_edit.setEnabled(count == 1)
+        self.btn_remove.setEnabled(count > 0)
 
     def set_owner(self, owner_type: str, owner_id: str):
         """Sets the current owner and refreshes the view."""
@@ -123,6 +139,7 @@ class GalleryWidget(QWidget):
     def clear(self):
         self.list_widget.clear()
         self.attachments = []
+        self._update_button_states()
 
     @Slot(str, str, list)
     def on_attachments_loaded(self, owner_type, owner_id, attachments):
@@ -158,6 +175,7 @@ class GalleryWidget(QWidget):
             self.list_widget.addItem(item)
 
         self.list_widget.sortItems()
+        self._update_button_states()
 
     @Slot(object)
     def on_command_finished(self, result):
@@ -238,6 +256,18 @@ class GalleryWidget(QWidget):
         elif action == edit_caption_action:
             self.edit_caption(item)
         elif action == remove_action:
+            self.remove_item(item)
+
+    def _on_edit_caption_clicked(self):
+        """Handles toolbar button click for editing caption."""
+        item = self.list_widget.currentItem()
+        if item:
+            self.edit_caption(item)
+
+    def _on_remove_clicked(self):
+        """Handles toolbar button click for removal."""
+        item = self.list_widget.currentItem()
+        if item:
             self.remove_item(item)
 
     def edit_caption(self, item):

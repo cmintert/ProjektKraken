@@ -5,7 +5,7 @@ Provides a GUI form for creating and editing Entity objects with support
 for wiki-style text editing, custom attributes, tags, and relationship management.
 """
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
@@ -70,6 +70,7 @@ class EntityEditorWidget(QWidget):
         # --- Tab 1: Details ---
         self.tab_details = QWidget()
         details_layout = QVBoxLayout(self.tab_details)
+        StyleHelper.apply_compact_spacing(details_layout)
 
         self.form_layout = QFormLayout()
         self.name_edit = QLineEdit()
@@ -89,6 +90,7 @@ class EntityEditorWidget(QWidget):
         # --- Tab 2: Tags ---
         self.tab_tags = QWidget()
         tags_layout = QVBoxLayout(self.tab_tags)
+        StyleHelper.apply_no_margins(tags_layout)
         self.tag_editor = TagEditorWidget()
         tags_layout.addWidget(self.tag_editor)
         self.inspector.add_tab(self.tab_tags, "Tags")
@@ -96,6 +98,7 @@ class EntityEditorWidget(QWidget):
         # --- Tab 3: Relations ---
         self.tab_relations = QWidget()
         rel_tab_layout = QVBoxLayout(self.tab_relations)
+        StyleHelper.apply_compact_spacing(rel_tab_layout)
 
         # Buttons first
         rel_btn_layout = QHBoxLayout()
@@ -138,6 +141,7 @@ class EntityEditorWidget(QWidget):
         # --- Tab 5: Attributes ---
         self.tab_attributes = QWidget()
         attr_layout = QVBoxLayout(self.tab_attributes)
+        StyleHelper.apply_no_margins(attr_layout)
         self.attribute_editor = AttributeEditorWidget()
         attr_layout.addWidget(self.attribute_editor)
         self.inspector.add_tab(self.tab_attributes, "Attributes")
@@ -267,8 +271,6 @@ class EntityEditorWidget(QWidget):
                 # Create list item with explicit size hint BEFORE adding
                 item = QListWidgetItem()
                 item.setData(Qt.UserRole, rel)
-                from PySide6.QtCore import QSize
-
                 item.setSizeHint(QSize(200, 36))  # Explicit height for button
                 self.rel_list.addItem(item)
                 self.rel_list.setItemWidget(item, widget)
@@ -291,8 +293,6 @@ class EntityEditorWidget(QWidget):
                 # Create list item with explicit size hint BEFORE adding
                 item = QListWidgetItem()
                 item.setData(Qt.UserRole, rel)
-                from PySide6.QtCore import QSize
-
                 item.setSizeHint(QSize(200, 36))  # Explicit height for button
                 self.rel_list.addItem(item)
                 self.rel_list.setItemWidget(item, widget)
