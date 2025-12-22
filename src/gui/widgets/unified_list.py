@@ -191,11 +191,12 @@ class UnifiedListWidget(QWidget):
         # Filter State
         self._available_types: set = set()  # All types found in data
         self._available_tags: set = set()  # All tags found in data
-        self._active_types: set = set()  # Currently selected types for filtering
-        self._active_tags: set = set()  # Currently selected tags for filtering
+        self._active_types: set = set()  # Selected types for filtering
+        self._active_tags: set = set()  # Selected tags for filtering
 
         # Colors - use ThemeManager for theme-aware colors
-        # TODO: Migrate to fully dynamic theme updates with ThemeManager.theme_changed signal
+        # TODO: Migrate to fully dynamic theme updates with
+        # ThemeManager.theme_changed signal
         from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()

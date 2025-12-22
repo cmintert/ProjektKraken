@@ -5,8 +5,6 @@ Provides lightweight button wrappers with standardized properties.
 Visual styling is handled via StyleHelper QSS or global QSS.
 """
 
-from typing import Optional
-
 from PySide6.QtCore import QSize
 from PySide6.QtWidgets import QPushButton
 

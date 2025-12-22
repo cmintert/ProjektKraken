@@ -1,25 +1,20 @@
 """
 Style Helper Module.
 
-Provides centralized, theme-aware styling methods that use ThemeManager tokens
-to generate consistent QSS strings. This eliminates hardcoded colors and ensures
-theme switches reliably update the UI.
+Provides centralized, theme-aware styling methods that use ThemeManager
+tokens to generate consistent QSS strings. This eliminates hardcoded
+colors and ensures theme switches reliably update the UI.
 """
 
-from typing import TYPE_CHECKING
-
 from PySide6.QtWidgets import QLayout
-
-if TYPE_CHECKING:
-    from src.core.theme_manager import ThemeManager
 
 
 class StyleHelper:
     """
     Centralized style helper that provides theme-aware QSS strings.
 
-    All methods use ThemeManager.get_theme() to fetch current theme tokens
-    and return formatted QSS strings that adapt to theme changes.
+    All methods use ThemeManager.get_theme() to fetch current theme
+    tokens and return formatted QSS strings that adapt to theme changes.
     """
 
     @staticmethod
@@ -27,7 +22,8 @@ class StyleHelper:
         """
         Returns QSS for empty state labels.
 
-        Empty state labels are shown when no data is available (e.g., "No Events Loaded").
+        Empty state labels are shown when no data is available
+        (e.g., "No Events Loaded").
         Uses text_dim color and appropriate font size.
 
         Returns:
