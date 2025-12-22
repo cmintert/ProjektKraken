@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.calendar import CalendarConverter, CalendarDate
+from src.gui.utils.style_helper import StyleHelper
 
 
 class CompactDateWidget(QWidget):
@@ -68,9 +69,7 @@ class CompactDateWidget(QWidget):
         # Styled frame container
         self.frame = QFrame()
         self.frame.setFrameStyle(QFrame.StyledPanel | QFrame.Raised)
-        self.frame.setStyleSheet(
-            "QFrame { border: 1px solid #555; border-radius: 3px; padding: 2px; }"
-        )
+        self.frame.setStyleSheet(StyleHelper.get_frame_style())
         outer_layout.addWidget(self.frame)
 
         main_layout = QVBoxLayout(self.frame)
@@ -132,7 +131,7 @@ class CompactDateWidget(QWidget):
 
         # Preview label - takes remaining space
         self.lbl_preview = QLabel()
-        self.lbl_preview.setStyleSheet("color: #888; font-style: italic;")
+        self.lbl_preview.setStyleSheet(StyleHelper.get_preview_label_style())
         self.lbl_preview.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         time_row.addWidget(self.lbl_preview, stretch=4)  # Wider for text
 
@@ -384,28 +383,15 @@ class CalendarPopup(QDialog):
 
     def _setup_ui(self):
         """Sets up the popup UI."""
-        # Set dialog-level stylesheet for day buttons
-        self.setStyleSheet(
-            """
-            QPushButton[objectName^="day_btn"] {
-                background-color: #555;
-                color: white;
-                border: 1px solid #666;
-                padding: 0px;
-                min-height: 0px;
-                font-size: 10pt;
-            }
-            QPushButton[objectName^="day_btn"]:hover {
-                background-color: #666;
-            }
-            QPushButton#day_btn_selected {
-                background-color: #ff8c00;
-                color: white;
-                font-weight: bold;
-                border: 1px solid #ff8c00;
-            }
-        """
+        # Set dialog-level stylesheet for day buttons using StyleHelper
+        dialog_style = (
+            StyleHelper.get_dialog_base_style()
+            + "\n"
+            + StyleHelper.get_dialog_button_style(selected=False)
+            + "\n"
+            + StyleHelper.get_dialog_button_style(selected=True)
         )
+        self.setStyleSheet(dialog_style)
 
         layout = QVBoxLayout(self)
 

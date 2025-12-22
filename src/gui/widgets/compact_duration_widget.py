@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.calendar import CalendarConverter
+from src.gui.utils.style_helper import StyleHelper
 
 
 class CompactDurationWidget(QWidget):
@@ -61,9 +62,7 @@ class CompactDurationWidget(QWidget):
         # Styled frame container
         self.frame = QFrame()
         self.frame.setFrameStyle(QFrame.StyledPanel | QFrame.Raised)
-        self.frame.setStyleSheet(
-            "QFrame { border: 1px solid #555; border-radius: 3px; padding: 2px; }"
-        )
+        self.frame.setStyleSheet(StyleHelper.get_frame_style())
         outer_layout.addWidget(self.frame)
 
         main_layout = QVBoxLayout(self.frame)

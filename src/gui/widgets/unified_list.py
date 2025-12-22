@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 
 from src.core.entities import Entity
 from src.core.events import Event
+from src.gui.utils.style_helper import StyleHelper
 
 # Custom MIME type for Kraken items (DRY: reusable across drop targets)
 KRAKEN_ITEM_MIME_TYPE = "application/x-kraken-item"
@@ -107,8 +108,7 @@ class UnifiedListWidget(QWidget):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.layout = QVBoxLayout(self)
-        self.layout.setSpacing(8)
-        self.layout.setContentsMargins(16, 16, 16, 16)
+        StyleHelper.apply_standard_list_spacing(self.layout)
 
         # Toolbar
         top_bar = QHBoxLayout()
@@ -179,7 +179,7 @@ class UnifiedListWidget(QWidget):
         # Empty State
         self.empty_label = QLabel("No Items Loaded")
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet("color: #757575; font-size: 14pt;")
+        self.empty_label.setStyleSheet(StyleHelper.get_empty_state_style())
         self.layout.addWidget(self.empty_label)
         self.empty_label.hide()
 
@@ -191,13 +191,17 @@ class UnifiedListWidget(QWidget):
         # Filter State
         self._available_types: set = set()  # All types found in data
         self._available_tags: set = set()  # All tags found in data
-        self._active_types: set = set()  # Currently selected types for filtering
-        self._active_tags: set = set()  # Currently selected tags for filtering
+        self._active_types: set = set()  # Selected types for filtering
+        self._active_tags: set = set()  # Selected tags for filtering
 
-        # Colors (Hardcoded fallback, ideally from ThemeManager)
-        # dark_mode values from themes.json
-        self.color_event = QColor("#0078D4")  # accent_secondary
-        self.color_entity = QColor("#FF9900")  # primary
+        # Colors - use ThemeManager for theme-aware colors
+        # TODO: Migrate to fully dynamic theme updates with
+        # ThemeManager.theme_changed signal
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
+        self.color_event = QColor(theme["accent_secondary"])
+        self.color_entity = QColor(theme["primary"])
 
         self._render_list()
 
