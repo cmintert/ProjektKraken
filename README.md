@@ -133,4 +133,8 @@ src/
 
 ## License
 
-See [LICENSE](LICENSE) for details.
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPLv3)**. 
+
+AGPLv3 is a strong copyleft license that ensures that if you modify the software and run it on a server for others to interact with, you must share the source code of your modified version. See the [LICENSE](LICENSE) file for the full text.
+
+

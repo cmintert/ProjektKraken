@@ -7,6 +7,9 @@ dependencies = [
     "PySide6",
     "Pillow",
 ]
+license = {text = "AGPL-3.0-only"}
+
+
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
