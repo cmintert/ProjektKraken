@@ -1,0 +1,1829 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="prev" title="gui.dialogs package" href="gui.dialogs.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
+        <title>services package - Project Kraken 0.2.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">Project Kraken 0.2.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  <span class="sidebar-brand-text">Project Kraken 0.2.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current has-children"><a class="reference internal" href="modules.html">src</a><input aria-label="Toggle navigation of src" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="app.html">app package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html">cli package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="commands.html">commands package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core.html">core package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="gui.html">gui package</a><input aria-label="Toggle navigation of gui package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui.widgets.html">gui.widgets package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui.dialogs.html">gui.dialogs package</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">services package</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/services.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="services-package">
+<h1>services package<a class="headerlink" href="#services-package" title="Link to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
+</section>
+<section id="module-services.db_service">
+<span id="services-db-service-module"></span><h2>services.db_service module<a class="headerlink" href="#module-services.db_service" title="Link to this heading">¶</a></h2>
+<p>Database Service Module.
+Provides the low-level SQL interface to the SQLite database.
+Follows the Hybrid Schema (Strict Columns + JSON Attributes).</p>
+<p>This service now uses specialized repository classes for better
+separation of concerns and maintainability.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">services.db_service.</span></span><span class="sig-name descname"><span class="pre">DatabaseService</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">':memory:'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Handles all raw interactions with the SQLite database.
+Implements the Hybrid Schema (Strict Columns + JSON Attributes).</p>
+<p>This service delegates CRUD operations to specialized repository
+classes while maintaining schema management and connection handling.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">':memory:'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.__init__" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_path</strong> – Path to the .kraken database file.
+Defaults to :memory: for testing.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.close" title="Link to this definition">¶</a></dt>
+<dd><p>Closes the database connection.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.connect">
+<span class="sig-name descname"><span class="pre">connect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.connect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.connect" title="Link to this definition">¶</a></dt>
+<dd><p>Establishes connection to the database.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.delete_calendar_config">
+<span class="sig-name descname"><span class="pre">delete_calendar_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.delete_calendar_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.delete_calendar_config" title="Link to this definition">¶</a></dt>
+<dd><p>Deletes a calendar config by its ID.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config_id</strong> (<em>str</em>) – The unique identifier of the config to delete.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sqlite3.Error</strong> – If the database operation fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.delete_entity">
+<span class="sig-name descname"><span class="pre">delete_entity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.delete_entity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.delete_entity" title="Link to this definition">¶</a></dt>
+<dd><p>Deletes an entity permanently.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>entity_id</strong> (<em>str</em>) – The unique identifier of the entity to delete.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sqlite3.Error</strong> – If the database operation fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.delete_event">
+<span class="sig-name descname"><span class="pre">delete_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.delete_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.delete_event" title="Link to this definition">¶</a></dt>
+<dd><p>Deletes an event permanently.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event_id</strong> (<em>str</em>) – The unique identifier of the event to delete.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sqlite3.Error</strong> – If the database operation fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.delete_map">
+<span class="sig-name descname"><span class="pre">delete_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.delete_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.delete_map" title="Link to this definition">¶</a></dt>
+<dd><p>Deletes a map and all its markers from the database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>map_id</strong> (<em>str</em>) – The unique identifier of the map to delete.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sqlite3.Error</strong> – If the database operation fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.delete_marker">
+<span class="sig-name descname"><span class="pre">delete_marker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">marker_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.delete_marker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.delete_marker" title="Link to this definition">¶</a></dt>
+<dd><p>Deletes a marker from the database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>marker_id</strong> (<em>str</em>) – The unique identifier of the marker to delete.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sqlite3.Error</strong> – If the database operation fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.delete_relation">
+<span class="sig-name descname"><span class="pre">delete_relation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rel_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.delete_relation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.delete_relation" title="Link to this definition">¶</a></dt>
+<dd><p>Deletes a relationship by its ID.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rel_id</strong> (<em>str</em>) – The unique identifier of the relation.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_active_calendar_config">
+<span class="sig-name descname"><span class="pre">get_active_calendar_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">CalendarConfig</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_active_calendar_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_active_calendar_config" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves the currently active calendar configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The active config if one is set, else None.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Optional[<a class="reference internal" href="core.html#core.calendar.CalendarConfig" title="core.calendar.CalendarConfig">CalendarConfig</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_all_calendar_configs">
+<span class="sig-name descname"><span class="pre">get_all_calendar_configs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">CalendarConfig</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_all_calendar_configs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_all_calendar_configs" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves all calendar configurations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A list of all calendar configs.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List[<a class="reference internal" href="core.html#core.calendar.CalendarConfig" title="core.calendar.CalendarConfig">CalendarConfig</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_all_entities">
+<span class="sig-name descname"><span class="pre">get_all_entities</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Entity</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_all_entities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_all_entities" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves all entities from the database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A list of all Entity objects.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List[<a class="reference internal" href="core.html#core.entities.Entity" title="core.entities.Entity">Entity</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_all_events">
+<span class="sig-name descname"><span class="pre">get_all_events</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Event</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_all_events"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_all_events" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves all events from the database, sorted chronologically.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A list of all Event objects in the database.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List[<a class="reference internal" href="core.html#core.events.Event" title="core.events.Event">Event</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_all_maps">
+<span class="sig-name descname"><span class="pre">get_all_maps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Map</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_all_maps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_all_maps" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves all maps from the database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of all Map objects.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List[Map]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_calendar_config">
+<span class="sig-name descname"><span class="pre">get_calendar_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">CalendarConfig</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_calendar_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_calendar_config" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves a single calendar config by its ID.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config_id</strong> (<em>str</em>) – The unique identifier of the calendar config.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The config if found, else None.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[<a class="reference internal" href="core.html#core.calendar.CalendarConfig" title="core.calendar.CalendarConfig">CalendarConfig</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_current_time">
+<span class="sig-name descname"><span class="pre">get_current_time</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_current_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_current_time" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves the current time in the world from system_meta.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The current time in lore_date units, or None if not set.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Optional[float]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_entities">
+<span class="sig-name descname"><span class="pre">get_entities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Entity</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_entities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_entities" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves entities, optionally filtered by type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>entity_type</strong> – Optional type filter.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of matching Entity objects.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="core.html#core.entities.Entity" title="core.entities.Entity">Entity</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_entity">
+<span class="sig-name descname"><span class="pre">get_entity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Entity</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_entity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_entity" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves a single entity by its UUID.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>entity_id</strong> (<em>str</em>) – The unique identifier of the entity.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The Entity object if found, else None.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[<a class="reference internal" href="core.html#core.entities.Entity" title="core.entities.Entity">Entity</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_event">
+<span class="sig-name descname"><span class="pre">get_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Event</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_event" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves a single event by its UUID.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event_id</strong> (<em>str</em>) – The unique identifier of the event.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The Event object if found, else None.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[<a class="reference internal" href="core.html#core.events.Event" title="core.events.Event">Event</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_events">
+<span class="sig-name descname"><span class="pre">get_events</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Event</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_events"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_events" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves events, optionally filtered by type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event_type</strong> – Optional type filter.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of matching Event objects.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="core.html#core.events.Event" title="core.events.Event">Event</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_incoming_relations">
+<span class="sig-name descname"><span class="pre">get_incoming_relations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_incoming_relations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_incoming_relations" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves all incoming relations for a given target object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target_id</strong> (<em>str</em>) – The ID of the target object.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of relation dictionaries.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[Dict[str, Any]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_map">
+<span class="sig-name descname"><span class="pre">get_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Map</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_map" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves a single map by its UUID.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>map_id</strong> (<em>str</em>) – The unique identifier of the map.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The Map object if found, else None.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[Map]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_marker">
+<span class="sig-name descname"><span class="pre">get_marker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">marker_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Marker</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_marker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_marker" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves a single marker by its UUID.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>marker_id</strong> (<em>str</em>) – The unique identifier of the marker.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The Marker object if found, else None.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[Marker]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_marker_by_composite">
+<span class="sig-name descname"><span class="pre">get_marker_by_composite</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Marker</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_marker_by_composite"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_marker_by_composite" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves a marker by its composite key (map_id, object_id, object_type).</p>
+<p>This is useful after an upsert to retrieve the canonical marker with its
+actual database ID.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>map_id</strong> (<em>str</em>) – The unique identifier of the map.</p></li>
+<li><p><strong>object_id</strong> (<em>str</em>) – The unique identifier of the entity or event.</p></li>
+<li><p><strong>object_type</strong> (<em>str</em>) – Type of object (‘entity’ or ‘event’).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The Marker object if found, else None.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[Marker]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_markers_for_map">
+<span class="sig-name descname"><span class="pre">get_markers_for_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Marker</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_markers_for_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_markers_for_map" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves all markers for a specific map.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>map_id</strong> (<em>str</em>) – The unique identifier of the map.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of all Marker objects on the map.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[Marker]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_markers_for_object">
+<span class="sig-name descname"><span class="pre">get_markers_for_object</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">object_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Marker</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_markers_for_object"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_markers_for_object" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves all markers for a specific entity or event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>object_id</strong> (<em>str</em>) – The unique identifier of the entity or event.</p></li>
+<li><p><strong>object_type</strong> (<em>str</em>) – Type of object (‘entity’ or ‘event’).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of all Marker objects for the object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[Marker]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_name">
+<span class="sig-name descname"><span class="pre">get_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">object_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_name" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves the name of an entity or event by its ID.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>object_id</strong> (<em>str</em>) – The ID to resolve.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The name if found, else None.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_relation">
+<span class="sig-name descname"><span class="pre">get_relation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rel_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_relation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_relation" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves a single relation by its ID.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rel_id</strong> (<em>str</em>) – The unique identifier of the relation.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The relation dict or None.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[Dict[str, Any]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_relations">
+<span class="sig-name descname"><span class="pre">get_relations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_relations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_relations" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves all outgoing relations for a given source object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>source_id</strong> (<em>str</em>) – The ID of the source object.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of relation dictionaries.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[Dict[str, Any]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.insert_calendar_config">
+<span class="sig-name descname"><span class="pre">insert_calendar_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">CalendarConfig</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.insert_calendar_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.insert_calendar_config" title="Link to this definition">¶</a></dt>
+<dd><p>Inserts a new calendar config or updates an existing one (Upsert).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config</strong> (<a class="reference internal" href="core.html#core.calendar.CalendarConfig" title="core.calendar.CalendarConfig"><em>CalendarConfig</em></a>) – The calendar configuration to persist.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sqlite3.Error</strong> – If the database operation fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.insert_entities_bulk">
+<span class="sig-name descname"><span class="pre">insert_entities_bulk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entities</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Entity</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.insert_entities_bulk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.insert_entities_bulk" title="Link to this definition">¶</a></dt>
+<dd><p>Inserts multiple entities efficiently using executemany.</p>
+<p>This method is optimized for bulk operations, reducing the overhead
+of individual inserts by using SQLite’s executemany. Provides
+approximately 50-100x performance improvement over individual inserts
+for large datasets by reducing transaction overhead.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>entities</strong> (<em>List</em><em>[</em><a class="reference internal" href="core.html#core.entities.Entity" title="core.entities.Entity"><em>Entity</em></a><em>]</em>) – List of Entity objects to insert.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sqlite3.Error</strong> – If the database operation fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.insert_entity">
+<span class="sig-name descname"><span class="pre">insert_entity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Entity</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.insert_entity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.insert_entity" title="Link to this definition">¶</a></dt>
+<dd><p>Inserts a new entity or updates an existing one (Upsert).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>entity</strong> (<a class="reference internal" href="core.html#core.entities.Entity" title="core.entities.Entity"><em>Entity</em></a>) – The entity domain object to persist.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sqlite3.Error</strong> – If the database operation fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.insert_event">
+<span class="sig-name descname"><span class="pre">insert_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Event</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.insert_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.insert_event" title="Link to this definition">¶</a></dt>
+<dd><p>Inserts a new event or updates an existing one (Upsert).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event</strong> (<a class="reference internal" href="core.html#core.events.Event" title="core.events.Event"><em>Event</em></a>) – The event domain object to persist.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sqlite3.Error</strong> – If the database operation fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.insert_events_bulk">
+<span class="sig-name descname"><span class="pre">insert_events_bulk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">events</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Event</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.insert_events_bulk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.insert_events_bulk" title="Link to this definition">¶</a></dt>
+<dd><p>Inserts multiple events efficiently using executemany.</p>
+<p>This method is optimized for bulk operations, reducing the overhead
+of individual inserts by using SQLite’s executemany. Provides
+approximately 50-100x performance improvement over individual inserts
+for large datasets by reducing transaction overhead.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>events</strong> (<em>List</em><em>[</em><a class="reference internal" href="core.html#core.events.Event" title="core.events.Event"><em>Event</em></a><em>]</em>) – List of Event objects to insert.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sqlite3.Error</strong> – If the database operation fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.insert_map">
+<span class="sig-name descname"><span class="pre">insert_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map_obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Map</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.insert_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.insert_map" title="Link to this definition">¶</a></dt>
+<dd><p>Inserts a new map or updates an existing one (Upsert).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>map_obj</strong> (<em>Map</em>) – The map domain object to persist.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sqlite3.Error</strong> – If the database operation fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.insert_marker">
+<span class="sig-name descname"><span class="pre">insert_marker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">marker</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Marker</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.insert_marker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.insert_marker" title="Link to this definition">¶</a></dt>
+<dd><p>Inserts a new marker or updates an existing one (Upsert).</p>
+<p>Upserts on UNIQUE(map_id, object_id, object_type). On conflict,
+the existing row’s id is retained.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>marker</strong> (<em>Marker</em>) – The marker domain object to persist.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>The ID of the inserted/updated marker (may differ from marker.id</dt><dd><p>if a conflict occurred and the existing row was updated).</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sqlite3.Error</strong> – If the database operation fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.insert_relation">
+<span class="sig-name descname"><span class="pre">insert_relation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attributes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.insert_relation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.insert_relation" title="Link to this definition">¶</a></dt>
+<dd><p>Creates a directed relationship between two objects.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source_id</strong> (<em>str</em>) – ID of the source object.</p></li>
+<li><p><strong>target_id</strong> (<em>str</em>) – ID of the target object.</p></li>
+<li><p><strong>rel_type</strong> (<em>str</em>) – Type of relationship (e.g., “caused”).</p></li>
+<li><p><strong>attributes</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Optional metadata.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The UUID of the newly created relation.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sqlite3.Error</strong> – If DB fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.set_active_calendar_config">
+<span class="sig-name descname"><span class="pre">set_active_calendar_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.set_active_calendar_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.set_active_calendar_config" title="Link to this definition">¶</a></dt>
+<dd><p>Sets a calendar config as the active one.</p>
+<p>Deactivates any currently active config and activates the specified one.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config_id</strong> (<em>str</em>) – The ID of the config to activate.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sqlite3.Error</strong> – If the database operation fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.set_current_time">
+<span class="sig-name descname"><span class="pre">set_current_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.set_current_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.set_current_time" title="Link to this definition">¶</a></dt>
+<dd><p>Sets the current time in the world and persists it to system_meta.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>current_time</strong> (<em>float</em>) – The current time in lore_date units.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sqlite3.Error</strong> – If the database operation fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.transaction">
+<span class="sig-name descname"><span class="pre">transaction</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.transaction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.transaction" title="Link to this definition">¶</a></dt>
+<dd><p>Safe context manager for transactions.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.update_relation">
+<span class="sig-name descname"><span class="pre">update_relation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rel_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attributes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.update_relation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.update_relation" title="Link to this definition">¶</a></dt>
+<dd><p>Updates an existing relationship.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rel_id</strong> (<em>str</em>) – The ID of the relation to update.</p></li>
+<li><p><strong>target_id</strong> (<em>str</em>) – New target ID.</p></li>
+<li><p><strong>rel_type</strong> (<em>str</em>) – New relationship type.</p></li>
+<li><p><strong>attributes</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – New attributes.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sqlite3.Error</strong> – If DB fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-services.link_resolver">
+<span id="services-link-resolver-module"></span><h2>services.link_resolver module<a class="headerlink" href="#module-services.link_resolver" title="Link to this heading">¶</a></h2>
+<p>Link Resolver Service.</p>
+<p>Handles resolution of ID-based wiki links to current entity/event names.
+Provides caching and broken link detection.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="services.link_resolver.LinkResolver">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">services.link_resolver.</span></span><span class="sig-name descname"><span class="pre">LinkResolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/link_resolver.html#LinkResolver"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.link_resolver.LinkResolver" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Resolves wiki link IDs to current entity/event names.</p>
+<p>Maintains a cache for performance and provides broken link detection.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="services.link_resolver.LinkResolver.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/link_resolver.html#LinkResolver.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.link_resolver.LinkResolver.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initializes the LinkResolver.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> – Database service for looking up entities/events.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.link_resolver.LinkResolver.find_broken_links">
+<span class="sig-name descname"><span class="pre">find_broken_links</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/link_resolver.html#LinkResolver.find_broken_links"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.link_resolver.LinkResolver.find_broken_links" title="Link to this definition">¶</a></dt>
+<dd><p>Finds all broken links in the given text.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>text</strong> – Text content to scan for broken links.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of broken link IDs.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.link_resolver.LinkResolver.get_display_name">
+<span class="sig-name descname"><span class="pre">get_display_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fallback_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/services/link_resolver.html#LinkResolver.get_display_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.link_resolver.LinkResolver.get_display_name" title="Link to this definition">¶</a></dt>
+<dd><p>Gets the display name for a link, with fallback for broken links.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>target_id</strong> – The UUID of the target.</p></li>
+<li><p><strong>fallback_name</strong> – Name to display if link is broken.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The current name, or fallback with warning indicator.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.link_resolver.LinkResolver.invalidate_cache">
+<span class="sig-name descname"><span class="pre">invalidate_cache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/link_resolver.html#LinkResolver.invalidate_cache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.link_resolver.LinkResolver.invalidate_cache" title="Link to this definition">¶</a></dt>
+<dd><p>Invalidates the resolution cache.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target_id</strong> – If provided, invalidates only this ID.
+If None, clears entire cache.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.link_resolver.LinkResolver.resolve">
+<span class="sig-name descname"><span class="pre">resolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/link_resolver.html#LinkResolver.resolve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.link_resolver.LinkResolver.resolve" title="Link to this definition">¶</a></dt>
+<dd><p>Resolves a target ID to its current name and type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target_id</strong> – The UUID of the target entity or event.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(name, type) if found, None if broken.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[Tuple[str, str]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-services.longform_builder">
+<span id="services-longform-builder-module"></span><h2>services.longform_builder module<a class="headerlink" href="#module-services.longform_builder" title="Link to this heading">¶</a></h2>
+<p>Longform Document Builder Service.</p>
+<p>Provides functions to build, manipulate, and export a single live longform
+document assembled from Events and Entities. Stores per-record metadata in
+the attributes JSON column under attributes.longform.&lt;doc_id&gt;.</p>
+<p>Key Features:
+- Single live document (doc_id = “default”)
+- Float/gap positioning system (100, 200, 300…)
+- Parent-child nesting with depth tracking
+- Title overrides
+- Canonical content edits update underlying Event/Entity
+- Export to Markdown with ID markers</p>
+<p>All operations work with the attributes JSON column, loading and dumping
+in Python layer to maintain SQLite compatibility.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="services.longform_builder.build_longform_sequence">
+<span class="sig-prename descclassname"><span class="pre">services.longform_builder.</span></span><span class="sig-name descname"><span class="pre">build_longform_sequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Connection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/longform_builder.html#build_longform_sequence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.longform_builder.build_longform_sequence" title="Link to this definition">¶</a></dt>
+<dd><p>Build an ordered sequence of longform items for rendering.</p>
+<p>Computes heading_level based on parent-child relationships and depth.
+Returns items in reading order.</p>
+<p>Automatically adds missing DB items to the end of the document.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>conn</strong> – SQLite connection.</p></li>
+<li><p><strong>doc_id</strong> – Document ID to build sequence for.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Ordered list of items with heading_level computed.</dt><dd><p>Each item includes: table, id, name, content, meta, heading_level.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[Dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="services.longform_builder.demote_item">
+<span class="sig-prename descclassname"><span class="pre">services.longform_builder.</span></span><span class="sig-name descname"><span class="pre">demote_item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Connection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/longform_builder.html#demote_item"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.longform_builder.demote_item" title="Link to this definition">¶</a></dt>
+<dd><p>Demote an item (increase depth, make it child of previous sibling).</p>
+<p>Equivalent to Tab in an outline editor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>conn</strong> – SQLite connection.</p></li>
+<li><p><strong>table</strong> – Table name.</p></li>
+<li><p><strong>row_id</strong> – Row ID to demote.</p></li>
+<li><p><strong>doc_id</strong> – Document ID.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="services.longform_builder.ensure_all_items_indexed">
+<span class="sig-prename descclassname"><span class="pre">services.longform_builder.</span></span><span class="sig-name descname"><span class="pre">ensure_all_items_indexed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Connection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/longform_builder.html#ensure_all_items_indexed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.longform_builder.ensure_all_items_indexed" title="Link to this definition">¶</a></dt>
+<dd><p>Ensure all events and entities in the database are present in the longform document.
+Missing items are added to the end of the document, sorted alphabetically.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>conn</strong> – SQLite connection.</p></li>
+<li><p><strong>doc_id</strong> – Document ID.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="services.longform_builder.export_longform_to_markdown">
+<span class="sig-prename descclassname"><span class="pre">services.longform_builder.</span></span><span class="sig-name descname"><span class="pre">export_longform_to_markdown</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Connection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/services/longform_builder.html#export_longform_to_markdown"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.longform_builder.export_longform_to_markdown" title="Link to this definition">¶</a></dt>
+<dd><p>Export the longform document to Markdown format.</p>
+<p>Includes HTML comments with ID markers for traceability.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>conn</strong> – SQLite connection.</p></li>
+<li><p><strong>doc_id</strong> – Document ID.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Markdown-formatted document.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="services.longform_builder.insert_or_update_longform_meta">
+<span class="sig-prename descclassname"><span class="pre">services.longform_builder.</span></span><span class="sig-name descname"><span class="pre">insert_or_update_longform_meta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Connection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Ellipsis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Ellipsis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Ellipsis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title_override</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Ellipsis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/longform_builder.html#insert_or_update_longform_meta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.longform_builder.insert_or_update_longform_meta" title="Link to this definition">¶</a></dt>
+<dd><p>Insert or update longform metadata for a specific row.</p>
+<p>Loads current attributes, updates longform metadata, and writes back.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>conn</strong> – SQLite connection.</p></li>
+<li><p><strong>table</strong> – Table name (“events” or “entities”).</p></li>
+<li><p><strong>row_id</strong> – Row ID to update.</p></li>
+<li><p><strong>position</strong> – Optional position value (float). Use … to skip updating.</p></li>
+<li><p><strong>parent_id</strong> – Optional parent ID. Use … to skip updating, None to clear.</p></li>
+<li><p><strong>depth</strong> – Optional depth value (int). Use … to skip updating.</p></li>
+<li><p><strong>title_override</strong> – Optional title override. Use … to skip updating.</p></li>
+<li><p><strong>doc_id</strong> – Document ID.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If table is invalid or row not found.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="services.longform_builder.place_between_siblings_and_set_parent">
+<span class="sig-prename descclassname"><span class="pre">services.longform_builder.</span></span><span class="sig-name descname"><span class="pre">place_between_siblings_and_set_parent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Connection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prev_sibling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">next_sibling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/longform_builder.html#place_between_siblings_and_set_parent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.longform_builder.place_between_siblings_and_set_parent" title="Link to this definition">¶</a></dt>
+<dd><p>Place an item between two siblings and set its parent.</p>
+<p>Computes a gap position between prev_sibling and next_sibling.
+If no siblings, assigns a default position.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>conn</strong> – SQLite connection.</p></li>
+<li><p><strong>target_table</strong> – Table of the item to move.</p></li>
+<li><p><strong>target_id</strong> – ID of the item to move.</p></li>
+<li><p><strong>prev_sibling</strong> – Tuple of (table, id) for previous sibling, or None.</p></li>
+<li><p><strong>next_sibling</strong> – Tuple of (table, id) for next sibling, or None.</p></li>
+<li><p><strong>parent_id</strong> – Parent ID to set.</p></li>
+<li><p><strong>doc_id</strong> – Document ID.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="services.longform_builder.promote_item">
+<span class="sig-prename descclassname"><span class="pre">services.longform_builder.</span></span><span class="sig-name descname"><span class="pre">promote_item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Connection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/longform_builder.html#promote_item"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.longform_builder.promote_item" title="Link to this definition">¶</a></dt>
+<dd><p>Promote an item (reduce depth, change parent to parent’s parent).</p>
+<p>Equivalent to Shift+Tab in an outline editor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>conn</strong> – SQLite connection.</p></li>
+<li><p><strong>table</strong> – Table name.</p></li>
+<li><p><strong>row_id</strong> – Row ID to promote.</p></li>
+<li><p><strong>doc_id</strong> – Document ID.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="services.longform_builder.read_all_longform_items">
+<span class="sig-prename descclassname"><span class="pre">services.longform_builder.</span></span><span class="sig-name descname"><span class="pre">read_all_longform_items</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Connection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/longform_builder.html#read_all_longform_items"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.longform_builder.read_all_longform_items" title="Link to this definition">¶</a></dt>
+<dd><p>Read all events and entities that have longform metadata.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>conn</strong> – SQLite connection.</p></li>
+<li><p><strong>doc_id</strong> – Document ID to filter by.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>List of items with keys: table, id, name, content,</dt><dd><p>attributes (dict), meta (dict).</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[Dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="services.longform_builder.reindex_document_positions">
+<span class="sig-prename descclassname"><span class="pre">services.longform_builder.</span></span><span class="sig-name descname"><span class="pre">reindex_document_positions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Connection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/longform_builder.html#reindex_document_positions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.longform_builder.reindex_document_positions" title="Link to this definition">¶</a></dt>
+<dd><p>Reindex all positions to 100, 200, 300… in document order.</p>
+<p>Rebuilds the sequence and assigns clean positions with DEFAULT_POSITION_GAP.
+Useful to avoid float exhaustion after many insertions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>conn</strong> – SQLite connection.</p></li>
+<li><p><strong>doc_id</strong> – Document ID.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="services.longform_builder.remove_from_longform">
+<span class="sig-prename descclassname"><span class="pre">services.longform_builder.</span></span><span class="sig-name descname"><span class="pre">remove_from_longform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Connection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/longform_builder.html#remove_from_longform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.longform_builder.remove_from_longform" title="Link to this definition">¶</a></dt>
+<dd><p>Remove longform metadata from a row.</p>
+<p>The row remains in the database but is no longer part of the longform document.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>conn</strong> – SQLite connection.</p></li>
+<li><p><strong>table</strong> – Table name.</p></li>
+<li><p><strong>row_id</strong> – Row ID.</p></li>
+<li><p><strong>doc_id</strong> – Document ID.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-services.text_parser">
+<span id="services-text-parser-module"></span><h2>services.text_parser module<a class="headerlink" href="#module-services.text_parser" title="Link to this heading">¶</a></h2>
+<p>Text Parser Service.
+Handles parsing of WikiLinks and other text processing tasks.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="services.text_parser.LinkCandidate">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">services.text_parser.</span></span><span class="sig-name descname"><span class="pre">LinkCandidate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modifier</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">span</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_id_based</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/text_parser.html#LinkCandidate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.text_parser.LinkCandidate" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Represents a parsed WikiLink with metadata.</p>
+<p>Supports both legacy name-based and ID-based link formats:
+- Legacy: [[Name]] or [[Name|Label]]
+- ID-based: [[id:UUID|DisplayName]]</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.text_parser.LinkCandidate.raw_text">
+<span class="sig-name descname"><span class="pre">raw_text</span></span><a class="headerlink" href="#services.text_parser.LinkCandidate.raw_text" title="Link to this definition">¶</a></dt>
+<dd><p>The full [[…]] text including brackets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.text_parser.LinkCandidate.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#services.text_parser.LinkCandidate.name" title="Link to this definition">¶</a></dt>
+<dd><p>The target name (before pipe if present) or None if ID-based.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.text_parser.LinkCandidate.modifier">
+<span class="sig-name descname"><span class="pre">modifier</span></span><a class="headerlink" href="#services.text_parser.LinkCandidate.modifier" title="Link to this definition">¶</a></dt>
+<dd><p>The label/modifier (after pipe if present), or None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.text_parser.LinkCandidate.span">
+<span class="sig-name descname"><span class="pre">span</span></span><a class="headerlink" href="#services.text_parser.LinkCandidate.span" title="Link to this definition">¶</a></dt>
+<dd><p>Tuple of (start_offset, end_offset) in the source text.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[int, int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.text_parser.LinkCandidate.target_id">
+<span class="sig-name descname"><span class="pre">target_id</span></span><a class="headerlink" href="#services.text_parser.LinkCandidate.target_id" title="Link to this definition">¶</a></dt>
+<dd><p>The UUID if this is an ID-based link, None otherwise.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.text_parser.LinkCandidate.is_id_based">
+<span class="sig-name descname"><span class="pre">is_id_based</span></span><a class="headerlink" href="#services.text_parser.LinkCandidate.is_id_based" title="Link to this definition">¶</a></dt>
+<dd><p>True if this link uses the id:UUID format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">is_id_based</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#id0" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">modifier</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id1" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id2" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">raw_text</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#id3" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">span</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#id4" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">target_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id5" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="services.text_parser.WikiLinkParser">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">services.text_parser.</span></span><span class="sig-name descname"><span class="pre">WikiLinkParser</span></span><a class="reference internal" href="_modules/services/text_parser.html#WikiLinkParser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.text_parser.WikiLinkParser" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Parser for extracting WikiLinks from text.</p>
+<p>Supports both legacy and ID-based link formats:
+- Legacy: [[Name]] or [[Name|Label]]
+- ID-based: [[id:UUID|DisplayName]]</p>
+<p>The ID-based format ensures links remain valid when names change.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.text_parser.WikiLinkParser.ID_PREFIX_RE">
+<span class="sig-name descname"><span class="pre">ID_PREFIX_RE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">re.compile('^id:([a-f0-9-]{36})$',</span> <span class="pre">re.IGNORECASE)</span></em><a class="headerlink" href="#services.text_parser.WikiLinkParser.ID_PREFIX_RE" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.text_parser.WikiLinkParser.WIKILINK_RE">
+<span class="sig-name descname"><span class="pre">WIKILINK_RE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">re.compile('\\[\\[([^[\\]|]+)(?:\\|([^\\]]+))?\\]\\]')</span></em><a class="headerlink" href="#services.text_parser.WikiLinkParser.WIKILINK_RE" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.text_parser.WikiLinkParser.extract_links">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">extract_links</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#services.text_parser.LinkCandidate" title="services.text_parser.LinkCandidate"><span class="pre">LinkCandidate</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/text_parser.html#WikiLinkParser.extract_links"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.text_parser.WikiLinkParser.extract_links" title="Link to this definition">¶</a></dt>
+<dd><p>Extracts WikiLinks from text as ordered LinkCandidate objects.</p>
+<p>Each link includes the name or ID, optional modifier, and position offsets.
+Duplicates are preserved in order of appearance.</p>
+<p>Supports both formats:
+- [[EntityName]] or [[EntityName|DisplayLabel]]
+- [[id:550e8400-e29b-41d4-a716-446655440000|Gandalf]]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>text</strong> – The text to parse for WikiLinks.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Ordered list of parsed links with metadata.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="#services.text_parser.LinkCandidate" title="services.text_parser.LinkCandidate">LinkCandidate</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.text_parser.WikiLinkParser.format_id_link">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">format_id_link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">display_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/services/text_parser.html#WikiLinkParser.format_id_link"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.text_parser.WikiLinkParser.format_id_link" title="Link to this definition">¶</a></dt>
+<dd><p>Creates an ID-based wiki link string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>target_id</strong> – The UUID of the target entity/event.</p></li>
+<li><p><strong>display_name</strong> – The human-readable name to display.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Formatted link like “[[id:UUID|DisplayName]]”</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.text_parser.WikiLinkParser.format_name_link">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">format_name_link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">display_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/services/text_parser.html#WikiLinkParser.format_name_link"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.text_parser.WikiLinkParser.format_name_link" title="Link to this definition">¶</a></dt>
+<dd><p>Creates a legacy name-based wiki link string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – The target name.</p></li>
+<li><p><strong>display_label</strong> – Optional display label (after pipe).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Formatted link like “[[Name]]” or “[[Name|Label]]”</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-services.worker">
+<span id="services-worker-module"></span><h2>services.worker module<a class="headerlink" href="#module-services.worker" title="Link to this heading">¶</a></h2>
+<p>Database Worker Module.
+Handles asynchronous database operations to keep the UI responsive.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">services.worker.</span></span><span class="sig-name descname"><span class="pre">DatabaseWorker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'world.kraken'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QObject</span></code></p>
+<p>Worker object that executes database operations in a separate thread.
+Owns the DatabaseService instance to ensure thread affinity.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'world.kraken'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initializes the worker.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_path</strong> (<em>str</em>) – Path to the database file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.attachments_loaded">
+<span class="sig-name descname"><span class="pre">attachments_loaded</span></span><a class="headerlink" href="#services.worker.DatabaseWorker.attachments_loaded" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.calendar_config_loaded">
+<span class="sig-name descname"><span class="pre">calendar_config_loaded</span></span><a class="headerlink" href="#services.worker.DatabaseWorker.calendar_config_loaded" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.command_finished">
+<span class="sig-name descname"><span class="pre">command_finished</span></span><a class="headerlink" href="#services.worker.DatabaseWorker.command_finished" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.current_time_loaded">
+<span class="sig-name descname"><span class="pre">current_time_loaded</span></span><a class="headerlink" href="#services.worker.DatabaseWorker.current_time_loaded" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.entities_loaded">
+<span class="sig-name descname"><span class="pre">entities_loaded</span></span><a class="headerlink" href="#services.worker.DatabaseWorker.entities_loaded" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.entity_details_loaded">
+<span class="sig-name descname"><span class="pre">entity_details_loaded</span></span><a class="headerlink" href="#services.worker.DatabaseWorker.entity_details_loaded" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.error_occurred">
+<span class="sig-name descname"><span class="pre">error_occurred</span></span><a class="headerlink" href="#services.worker.DatabaseWorker.error_occurred" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.event_details_loaded">
+<span class="sig-name descname"><span class="pre">event_details_loaded</span></span><a class="headerlink" href="#services.worker.DatabaseWorker.event_details_loaded" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.events_loaded">
+<span class="sig-name descname"><span class="pre">events_loaded</span></span><a class="headerlink" href="#services.worker.DatabaseWorker.events_loaded" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.initialize_db">
+<span class="sig-name descname"><span class="pre">initialize_db</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.initialize_db"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.initialize_db" title="Link to this definition">¶</a></dt>
+<dd><p>Initializes the database connection and services.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.initialized">
+<span class="sig-name descname"><span class="pre">initialized</span></span><a class="headerlink" href="#services.worker.DatabaseWorker.initialized" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.load_attachments">
+<span class="sig-name descname"><span class="pre">load_attachments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">owner_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.load_attachments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.load_attachments" title="Link to this definition">¶</a></dt>
+<dd><p>Loads attachments for a specific owner.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.load_calendar_config">
+<span class="sig-name descname"><span class="pre">load_calendar_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.load_calendar_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.load_calendar_config" title="Link to this definition">¶</a></dt>
+<dd><p>Loads the active calendar configuration.</p>
+<p>Emits calendar_config_loaded with the CalendarConfig or None.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.load_current_time">
+<span class="sig-name descname"><span class="pre">load_current_time</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.load_current_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.load_current_time" title="Link to this definition">¶</a></dt>
+<dd><p>Loads the current time from the database.</p>
+<dl class="simple">
+<dt>Emits:</dt><dd><p>current_time_loaded (float or None): The current time value.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.load_entities">
+<span class="sig-name descname"><span class="pre">load_entities</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.load_entities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.load_entities" title="Link to this definition">¶</a></dt>
+<dd><p>Loads all entities.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.load_entity_details">
+<span class="sig-name descname"><span class="pre">load_entity_details</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.load_entity_details"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.load_entity_details" title="Link to this definition">¶</a></dt>
+<dd><p>Loads entity details and sends them back.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.load_event_details">
+<span class="sig-name descname"><span class="pre">load_event_details</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.load_event_details"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.load_event_details" title="Link to this definition">¶</a></dt>
+<dd><p>Loads event details and sends them back.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.load_events">
+<span class="sig-name descname"><span class="pre">load_events</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.load_events"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.load_events" title="Link to this definition">¶</a></dt>
+<dd><p>Loads all events.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.load_longform_sequence">
+<span class="sig-name descname"><span class="pre">load_longform_sequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.load_longform_sequence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.load_longform_sequence" title="Link to this definition">¶</a></dt>
+<dd><p>Loads the longform document sequence.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>doc_id</strong> (<em>str</em>) – Document ID to load.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.load_maps">
+<span class="sig-name descname"><span class="pre">load_maps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.load_maps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.load_maps" title="Link to this definition">¶</a></dt>
+<dd><p>Loads all maps.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.load_markers">
+<span class="sig-name descname"><span class="pre">load_markers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.load_markers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.load_markers" title="Link to this definition">¶</a></dt>
+<dd><p>Loads markers for a specific map.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.longform_sequence_loaded">
+<span class="sig-name descname"><span class="pre">longform_sequence_loaded</span></span><a class="headerlink" href="#services.worker.DatabaseWorker.longform_sequence_loaded" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.maps_loaded">
+<span class="sig-name descname"><span class="pre">maps_loaded</span></span><a class="headerlink" href="#services.worker.DatabaseWorker.maps_loaded" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.markers_loaded">
+<span class="sig-name descname"><span class="pre">markers_loaded</span></span><a class="headerlink" href="#services.worker.DatabaseWorker.markers_loaded" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.operation_finished">
+<span class="sig-name descname"><span class="pre">operation_finished</span></span><a class="headerlink" href="#services.worker.DatabaseWorker.operation_finished" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.operation_started">
+<span class="sig-name descname"><span class="pre">operation_started</span></span><a class="headerlink" href="#services.worker.DatabaseWorker.operation_started" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.run_command">
+<span class="sig-name descname"><span class="pre">run_command</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">command</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">BaseCommand</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.run_command"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.run_command" title="Link to this definition">¶</a></dt>
+<dd><p>Executes a command object.
+IMPORTANT: The command must NOT already have the db_service injected.
+We inject the worker’s thread-local service here.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>command</strong> (<a class="reference internal" href="commands.html#commands.base_command.BaseCommand" title="commands.base_command.BaseCommand"><em>BaseCommand</em></a>) – The command object to execute.</p>
+</dd>
+</dl>
+<dl>
+<dt>Emits:</dt><dd><dl class="simple">
+<dt>command_finished (CommandResult): The result of the command</dt><dd><p>execution.</p>
+</dd>
+<dt>error_occurred (str): If a critical error prevents execution</dt><dd><p>(though usually captured in result).</p>
+</dd>
+</dl>
+<p>operation_started (str): Status update.
+operation_finished (str): Status update.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.save_current_time">
+<span class="sig-name descname"><span class="pre">save_current_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.save_current_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.save_current_time" title="Link to this definition">¶</a></dt>
+<dd><p>Saves the current time to the database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>time</strong> (<em>float</em>) – The current time in lore_date units.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.staticMetaObject">
+<span class="sig-name descname"><span class="pre">staticMetaObject</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">PySide6.QtCore.QMetaObject(&quot;DatabaseWorker&quot;</span> <span class="pre">inherits</span> <span class="pre">&quot;QObject&quot;:</span> <span class="pre">Methods:</span>&#160;&#160; <span class="pre">#4</span> <span class="pre">type=Signal,</span> <span class="pre">signature=initialized(bool),</span> <span class="pre">parameters=bool</span>&#160;&#160; <span class="pre">#5</span> <span class="pre">type=Signal,</span> <span class="pre">signature=events_loaded(QVariantList),</span> <span class="pre">parameters=QVariantList</span>&#160;&#160; <span class="pre">#6</span> <span class="pre">type=Signal,</span> <span class="pre">signature=entities_loaded(QVariantList),</span> <span class="pre">parameters=QVariantList</span>&#160;&#160; <span class="pre">#7</span> <span class="pre">type=Signal,</span> <span class="pre">signature=maps_loaded(QVariantList),</span> <span class="pre">parameters=QVariantList</span>&#160;&#160; <span class="pre">#8</span> <span class="pre">type=Signal,</span> <span class="pre">signature=markers_loaded(QString,QVariantList),</span> <span class="pre">parameters=QString,</span> <span class="pre">QVariantList</span>&#160;&#160; <span class="pre">#9</span> <span class="pre">type=Signal,</span> <span class="pre">signature=longform_sequence_loaded(QVariantList),</span> <span class="pre">parameters=QVariantList</span>&#160;&#160; <span class="pre">#10</span> <span class="pre">type=Signal,</span> <span class="pre">signature=calendar_config_loaded(PyObject),</span> <span class="pre">parameters=PyObject</span>&#160;&#160; <span class="pre">#11</span> <span class="pre">type=Signal,</span> <span class="pre">signature=current_time_loaded(double),</span> <span class="pre">parameters=double</span>&#160;&#160; <span class="pre">#12</span> <span class="pre">type=Signal,</span> <span class="pre">signature=event_details_loaded(PyObject,QVariantList,QVariantList),</span> <span class="pre">parameters=PyObject,</span> <span class="pre">QVariantList,</span> <span class="pre">QVariantList</span>&#160;&#160; <span class="pre">#13</span> <span class="pre">type=Signal,</span> <span class="pre">signature=entity_details_loaded(PyObject,QVariantList,QVariantList),</span> <span class="pre">parameters=PyObject,</span> <span class="pre">QVariantList,</span> <span class="pre">QVariantList</span>&#160;&#160; <span class="pre">#14</span> <span class="pre">type=Signal,</span> <span class="pre">signature=attachments_loaded(QString,QString,QVariantList),</span> <span class="pre">parameters=QString,</span> <span class="pre">QString,</span> <span class="pre">QVariantList</span>&#160;&#160; <span class="pre">#15</span> <span class="pre">type=Signal,</span> <span class="pre">signature=command_finished(PyObject),</span> <span class="pre">parameters=PyObject</span>&#160;&#160; <span class="pre">#16</span> <span class="pre">type=Signal,</span> <span class="pre">signature=error_occurred(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#17</span> <span class="pre">type=Signal,</span> <span class="pre">signature=operation_started(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#18</span> <span class="pre">type=Signal,</span> <span class="pre">signature=operation_finished(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#19</span> <span class="pre">type=Slot,</span> <span class="pre">signature=initialize_db()</span>&#160;&#160; <span class="pre">#20</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_events()</span>&#160;&#160; <span class="pre">#21</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_entities()</span>&#160;&#160; <span class="pre">#22</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_maps()</span>&#160;&#160; <span class="pre">#23</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_markers(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#24</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_event_details(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#25</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_entity_details(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#26</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_attachments(QString,QString),</span> <span class="pre">parameters=QString,</span> <span class="pre">QString</span>&#160;&#160; <span class="pre">#27</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_longform_sequence(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#28</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_calendar_config()</span>&#160;&#160; <span class="pre">#29</span> <span class="pre">type=Slot,</span> <span class="pre">signature=run_command(PyObject,PyObject),</span> <span class="pre">parameters=PyObject,</span> <span class="pre">PyObject</span>&#160;&#160; <span class="pre">#30</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_current_time()</span>&#160;&#160; <span class="pre">#31</span> <span class="pre">type=Slot,</span> <span class="pre">signature=save_current_time(double),</span> <span class="pre">parameters=double</span> <span class="pre">)</span></em><a class="headerlink" href="#services.worker.DatabaseWorker.staticMetaObject" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-services">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-services" title="Link to this heading">¶</a></h2>
+<p>Services Package.</p>
+<p>This package contains service layer classes for database operations,
+text parsing, and background workers.</p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          <a class="prev-page" href="gui.dialogs.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">gui.dialogs package</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, Antigravity
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">services package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-services.db_service">services.db_service module</a><ul>
+<li><a class="reference internal" href="#services.db_service.DatabaseService"><code class="docutils literal notranslate"><span class="pre">DatabaseService</span></code></a><ul>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.__init__"><code class="docutils literal notranslate"><span class="pre">DatabaseService.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.close"><code class="docutils literal notranslate"><span class="pre">DatabaseService.close()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.connect"><code class="docutils literal notranslate"><span class="pre">DatabaseService.connect()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.delete_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_calendar_config()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.delete_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_entity()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.delete_event"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_event()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.delete_map"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_map()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.delete_marker"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_marker()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.delete_relation"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_relation()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_active_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_active_calendar_config()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_all_calendar_configs"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_all_calendar_configs()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_all_entities"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_all_entities()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_all_events"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_all_events()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_all_maps"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_all_maps()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_calendar_config()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_current_time"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_current_time()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_entities"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_entities()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_entity()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_event"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_event()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_events"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_events()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_incoming_relations"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_incoming_relations()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_map"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_map()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_marker"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_marker()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_marker_by_composite"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_marker_by_composite()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_markers_for_map"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_markers_for_map()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_markers_for_object"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_markers_for_object()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_name"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_name()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_relation"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_relation()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_relations"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_relations()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.insert_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_calendar_config()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.insert_entities_bulk"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_entities_bulk()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.insert_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_entity()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.insert_event"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_event()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.insert_events_bulk"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_events_bulk()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.insert_map"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_map()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.insert_marker"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_marker()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.insert_relation"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_relation()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.set_active_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.set_active_calendar_config()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.set_current_time"><code class="docutils literal notranslate"><span class="pre">DatabaseService.set_current_time()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.transaction"><code class="docutils literal notranslate"><span class="pre">DatabaseService.transaction()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.update_relation"><code class="docutils literal notranslate"><span class="pre">DatabaseService.update_relation()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-services.link_resolver">services.link_resolver module</a><ul>
+<li><a class="reference internal" href="#services.link_resolver.LinkResolver"><code class="docutils literal notranslate"><span class="pre">LinkResolver</span></code></a><ul>
+<li><a class="reference internal" href="#services.link_resolver.LinkResolver.__init__"><code class="docutils literal notranslate"><span class="pre">LinkResolver.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#services.link_resolver.LinkResolver.find_broken_links"><code class="docutils literal notranslate"><span class="pre">LinkResolver.find_broken_links()</span></code></a></li>
+<li><a class="reference internal" href="#services.link_resolver.LinkResolver.get_display_name"><code class="docutils literal notranslate"><span class="pre">LinkResolver.get_display_name()</span></code></a></li>
+<li><a class="reference internal" href="#services.link_resolver.LinkResolver.invalidate_cache"><code class="docutils literal notranslate"><span class="pre">LinkResolver.invalidate_cache()</span></code></a></li>
+<li><a class="reference internal" href="#services.link_resolver.LinkResolver.resolve"><code class="docutils literal notranslate"><span class="pre">LinkResolver.resolve()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-services.longform_builder">services.longform_builder module</a><ul>
+<li><a class="reference internal" href="#services.longform_builder.build_longform_sequence"><code class="docutils literal notranslate"><span class="pre">build_longform_sequence()</span></code></a></li>
+<li><a class="reference internal" href="#services.longform_builder.demote_item"><code class="docutils literal notranslate"><span class="pre">demote_item()</span></code></a></li>
+<li><a class="reference internal" href="#services.longform_builder.ensure_all_items_indexed"><code class="docutils literal notranslate"><span class="pre">ensure_all_items_indexed()</span></code></a></li>
+<li><a class="reference internal" href="#services.longform_builder.export_longform_to_markdown"><code class="docutils literal notranslate"><span class="pre">export_longform_to_markdown()</span></code></a></li>
+<li><a class="reference internal" href="#services.longform_builder.insert_or_update_longform_meta"><code class="docutils literal notranslate"><span class="pre">insert_or_update_longform_meta()</span></code></a></li>
+<li><a class="reference internal" href="#services.longform_builder.place_between_siblings_and_set_parent"><code class="docutils literal notranslate"><span class="pre">place_between_siblings_and_set_parent()</span></code></a></li>
+<li><a class="reference internal" href="#services.longform_builder.promote_item"><code class="docutils literal notranslate"><span class="pre">promote_item()</span></code></a></li>
+<li><a class="reference internal" href="#services.longform_builder.read_all_longform_items"><code class="docutils literal notranslate"><span class="pre">read_all_longform_items()</span></code></a></li>
+<li><a class="reference internal" href="#services.longform_builder.reindex_document_positions"><code class="docutils literal notranslate"><span class="pre">reindex_document_positions()</span></code></a></li>
+<li><a class="reference internal" href="#services.longform_builder.remove_from_longform"><code class="docutils literal notranslate"><span class="pre">remove_from_longform()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-services.text_parser">services.text_parser module</a><ul>
+<li><a class="reference internal" href="#services.text_parser.LinkCandidate"><code class="docutils literal notranslate"><span class="pre">LinkCandidate</span></code></a><ul>
+<li><a class="reference internal" href="#services.text_parser.LinkCandidate.raw_text"><code class="docutils literal notranslate"><span class="pre">LinkCandidate.raw_text</span></code></a></li>
+<li><a class="reference internal" href="#services.text_parser.LinkCandidate.name"><code class="docutils literal notranslate"><span class="pre">LinkCandidate.name</span></code></a></li>
+<li><a class="reference internal" href="#services.text_parser.LinkCandidate.modifier"><code class="docutils literal notranslate"><span class="pre">LinkCandidate.modifier</span></code></a></li>
+<li><a class="reference internal" href="#services.text_parser.LinkCandidate.span"><code class="docutils literal notranslate"><span class="pre">LinkCandidate.span</span></code></a></li>
+<li><a class="reference internal" href="#services.text_parser.LinkCandidate.target_id"><code class="docutils literal notranslate"><span class="pre">LinkCandidate.target_id</span></code></a></li>
+<li><a class="reference internal" href="#services.text_parser.LinkCandidate.is_id_based"><code class="docutils literal notranslate"><span class="pre">LinkCandidate.is_id_based</span></code></a></li>
+<li><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">LinkCandidate.is_id_based</span></code></a></li>
+<li><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">LinkCandidate.modifier</span></code></a></li>
+<li><a class="reference internal" href="#id2"><code class="docutils literal notranslate"><span class="pre">LinkCandidate.name</span></code></a></li>
+<li><a class="reference internal" href="#id3"><code class="docutils literal notranslate"><span class="pre">LinkCandidate.raw_text</span></code></a></li>
+<li><a class="reference internal" href="#id4"><code class="docutils literal notranslate"><span class="pre">LinkCandidate.span</span></code></a></li>
+<li><a class="reference internal" href="#id5"><code class="docutils literal notranslate"><span class="pre">LinkCandidate.target_id</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#services.text_parser.WikiLinkParser"><code class="docutils literal notranslate"><span class="pre">WikiLinkParser</span></code></a><ul>
+<li><a class="reference internal" href="#services.text_parser.WikiLinkParser.ID_PREFIX_RE"><code class="docutils literal notranslate"><span class="pre">WikiLinkParser.ID_PREFIX_RE</span></code></a></li>
+<li><a class="reference internal" href="#services.text_parser.WikiLinkParser.WIKILINK_RE"><code class="docutils literal notranslate"><span class="pre">WikiLinkParser.WIKILINK_RE</span></code></a></li>
+<li><a class="reference internal" href="#services.text_parser.WikiLinkParser.extract_links"><code class="docutils literal notranslate"><span class="pre">WikiLinkParser.extract_links()</span></code></a></li>
+<li><a class="reference internal" href="#services.text_parser.WikiLinkParser.format_id_link"><code class="docutils literal notranslate"><span class="pre">WikiLinkParser.format_id_link()</span></code></a></li>
+<li><a class="reference internal" href="#services.text_parser.WikiLinkParser.format_name_link"><code class="docutils literal notranslate"><span class="pre">WikiLinkParser.format_name_link()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-services.worker">services.worker module</a><ul>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker</span></code></a><ul>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.__init__"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.attachments_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.attachments_loaded</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.calendar_config_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.calendar_config_loaded</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.command_finished"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.command_finished</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.current_time_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.current_time_loaded</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.entities_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.entities_loaded</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.entity_details_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.entity_details_loaded</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.error_occurred"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.error_occurred</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.event_details_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.event_details_loaded</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.events_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.events_loaded</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.initialize_db"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.initialize_db()</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.initialized"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.initialized</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.load_attachments"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_attachments()</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.load_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_calendar_config()</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.load_current_time"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_current_time()</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.load_entities"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_entities()</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.load_entity_details"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_entity_details()</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.load_event_details"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_event_details()</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.load_events"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_events()</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.load_longform_sequence"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_longform_sequence()</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.load_maps"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_maps()</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.load_markers"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_markers()</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.longform_sequence_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.longform_sequence_loaded</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.maps_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.maps_loaded</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.markers_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.markers_loaded</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.operation_finished"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.operation_finished</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.operation_started"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.operation_started</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.run_command"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.run_command()</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.save_current_time"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.save_current_time()</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.staticMetaObject"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.staticMetaObject</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-services">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=95e61db4"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

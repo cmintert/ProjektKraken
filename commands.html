@@ -1,0 +1,1541 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="core package" href="core.html"><link rel="prev" title="cli package" href="cli.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
+        <title>commands package - Project Kraken 0.2.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">Project Kraken 0.2.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  <span class="sidebar-brand-text">Project Kraken 0.2.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current has-children"><a class="reference internal" href="modules.html">src</a><input aria-label="Toggle navigation of src" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="app.html">app package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html">cli package</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">commands package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core.html">core package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="gui.html">gui package</a><input aria-label="Toggle navigation of gui package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui.widgets.html">gui.widgets package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui.dialogs.html">gui.dialogs package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="services.html">services package</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/commands.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="commands-package">
+<h1>commands package<a class="headerlink" href="#commands-package" title="Link to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
+</section>
+<section id="module-commands.base_command">
+<span id="commands-base-command-module"></span><h2>commands.base_command module<a class="headerlink" href="#module-commands.base_command" title="Link to this heading">¶</a></h2>
+<p>Base Command Module.</p>
+<p>Defines the abstract base class and result type for all commands in the application.</p>
+<dl class="simple">
+<dt>Classes:</dt><dd><p>CommandResult: Standardized result object for command execution.
+BaseCommand: Abstract base class implementing command pattern with undo/redo.</p>
+</dd>
+</dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="commands.base_command.BaseCommand">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.base_command.</span></span><span class="sig-name descname"><span class="pre">BaseCommand</span></span><a class="reference internal" href="_modules/commands/base_command.html#BaseCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.base_command.BaseCommand" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
+<p>Abstract base class for all user actions.
+Encapsulates logic to generic execution and undo/redo support.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.base_command.BaseCommand.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/base_command.html#BaseCommand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.base_command.BaseCommand.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initializes the command.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.base_command.BaseCommand.execute">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult"><span class="pre">CommandResult</span></a></span></span><a class="reference internal" href="_modules/commands/base_command.html#BaseCommand.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.base_command.BaseCommand.execute" title="Link to this definition">¶</a></dt>
+<dd><p>Performs the action.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> (<a class="reference internal" href="services.html#services.db_service.DatabaseService" title="services.db_service.DatabaseService"><em>DatabaseService</em></a>) – The database service to operate on.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Result object or success boolean.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[bool, <a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult">CommandResult</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="commands.base_command.BaseCommand.is_executed">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_executed</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#commands.base_command.BaseCommand.is_executed" title="Link to this definition">¶</a></dt>
+<dd><p>Checks if the command has been executed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if the command has been executed, False otherwise.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.base_command.BaseCommand.undo">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/base_command.html#BaseCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.base_command.BaseCommand.undo" title="Link to this definition">¶</a></dt>
+<dd><p>Reverts the action.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> (<a class="reference internal" href="services.html#services.db_service.DatabaseService" title="services.db_service.DatabaseService"><em>DatabaseService</em></a>) – The database service to operate on.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="commands.base_command.CommandResult">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.base_command.</span></span><span class="sig-name descname"><span class="pre">CommandResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">success:</span> <span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">message:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors:</span> <span class="pre">~typing.Dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data:</span> <span class="pre">~typing.Dict</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">command_name:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/base_command.html#CommandResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.base_command.CommandResult" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Standardized result object for command execution.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="commands.base_command.CommandResult.success">
+<span class="sig-name descname"><span class="pre">success</span></span><a class="headerlink" href="#commands.base_command.CommandResult.success" title="Link to this definition">¶</a></dt>
+<dd><p>True if the command executed successfully,
+False otherwise.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="commands.base_command.CommandResult.message">
+<span class="sig-name descname"><span class="pre">message</span></span><a class="headerlink" href="#commands.base_command.CommandResult.message" title="Link to this definition">¶</a></dt>
+<dd><p>A human-readable message describing the result.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="commands.base_command.CommandResult.errors">
+<span class="sig-name descname"><span class="pre">errors</span></span><a class="headerlink" href="#commands.base_command.CommandResult.errors" title="Link to this definition">¶</a></dt>
+<dd><p>A dictionary of validation errors
+(field -&gt; error content).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict[str, str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="commands.base_command.CommandResult.command_name">
+<span class="sig-name descname"><span class="pre">command_name</span></span><a class="headerlink" href="#commands.base_command.CommandResult.command_name" title="Link to this definition">¶</a></dt>
+<dd><p>The name of the command that generated
+this result.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">command_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#id0" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="commands.base_command.CommandResult.data">
+<span class="sig-name descname"><span class="pre">data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><a class="headerlink" href="#commands.base_command.CommandResult.data" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">errors</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#id1" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">message</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#id2" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">success</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#id3" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-commands.calendar_commands">
+<span id="commands-calendar-commands-module"></span><h2>commands.calendar_commands module<a class="headerlink" href="#module-commands.calendar_commands" title="Link to this heading">¶</a></h2>
+<p>Calendar Commands Module.</p>
+<p>Implements the Command pattern for calendar configuration operations.
+All commands support undo/redo functionality.</p>
+<dl class="simple">
+<dt>Classes:</dt><dd><p>CreateCalendarConfigCommand: Creates a new calendar configuration.
+UpdateCalendarConfigCommand: Updates an existing calendar configuration.
+DeleteCalendarConfigCommand: Deletes a calendar configuration.
+SetActiveCalendarCommand: Sets a calendar as the active one.</p>
+</dd>
+</dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="commands.calendar_commands.CreateCalendarConfigCommand">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.calendar_commands.</span></span><span class="sig-name descname"><span class="pre">CreateCalendarConfigCommand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">CalendarConfig</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/calendar_commands.html#CreateCalendarConfigCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.CreateCalendarConfigCommand" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCommand</span></code></p>
+<p>Creates a new calendar configuration.</p>
+<p>Supports undo by deleting the created configuration.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.calendar_commands.CreateCalendarConfigCommand.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">CalendarConfig</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/calendar_commands.html#CreateCalendarConfigCommand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.CreateCalendarConfigCommand.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initializes the command.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config</strong> – The calendar configuration to create.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.calendar_commands.CreateCalendarConfigCommand.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">CommandResult</span></span></span><a class="reference internal" href="_modules/commands/calendar_commands.html#CreateCalendarConfigCommand.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.CreateCalendarConfigCommand.execute" title="Link to this definition">¶</a></dt>
+<dd><p>Creates the calendar configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> – The database service to use.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Success result with config ID in data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult">CommandResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.calendar_commands.CreateCalendarConfigCommand.undo">
+<span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/calendar_commands.html#CreateCalendarConfigCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.CreateCalendarConfigCommand.undo" title="Link to this definition">¶</a></dt>
+<dd><p>Undoes the creation by deleting the config.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> – The database service to use.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="commands.calendar_commands.DeleteCalendarConfigCommand">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.calendar_commands.</span></span><span class="sig-name descname"><span class="pre">DeleteCalendarConfigCommand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/calendar_commands.html#DeleteCalendarConfigCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.DeleteCalendarConfigCommand" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCommand</span></code></p>
+<p>Deletes a calendar configuration.</p>
+<p>Stores the deleted config for undo support.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.calendar_commands.DeleteCalendarConfigCommand.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/calendar_commands.html#DeleteCalendarConfigCommand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.DeleteCalendarConfigCommand.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initializes the command.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config_id</strong> – The ID of the calendar configuration to delete.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.calendar_commands.DeleteCalendarConfigCommand.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">CommandResult</span></span></span><a class="reference internal" href="_modules/commands/calendar_commands.html#DeleteCalendarConfigCommand.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.DeleteCalendarConfigCommand.execute" title="Link to this definition">¶</a></dt>
+<dd><p>Deletes the calendar configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> – The database service to use.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Success result with config ID in data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult">CommandResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.calendar_commands.DeleteCalendarConfigCommand.undo">
+<span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/calendar_commands.html#DeleteCalendarConfigCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.DeleteCalendarConfigCommand.undo" title="Link to this definition">¶</a></dt>
+<dd><p>Undoes the deletion by restoring the config.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> – The database service to use.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="commands.calendar_commands.SetActiveCalendarCommand">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.calendar_commands.</span></span><span class="sig-name descname"><span class="pre">SetActiveCalendarCommand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/calendar_commands.html#SetActiveCalendarCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.SetActiveCalendarCommand" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCommand</span></code></p>
+<p>Sets a calendar configuration as the active one.</p>
+<p>Stores the previously active config ID for undo support.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.calendar_commands.SetActiveCalendarCommand.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/calendar_commands.html#SetActiveCalendarCommand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.SetActiveCalendarCommand.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initializes the command.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config_id</strong> – The ID of the calendar to set as active.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.calendar_commands.SetActiveCalendarCommand.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">CommandResult</span></span></span><a class="reference internal" href="_modules/commands/calendar_commands.html#SetActiveCalendarCommand.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.SetActiveCalendarCommand.execute" title="Link to this definition">¶</a></dt>
+<dd><p>Sets the calendar as active.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> – The database service to use.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Success result with config ID in data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult">CommandResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.calendar_commands.SetActiveCalendarCommand.undo">
+<span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/calendar_commands.html#SetActiveCalendarCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.SetActiveCalendarCommand.undo" title="Link to this definition">¶</a></dt>
+<dd><p>Undoes by restoring the previously active calendar.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> – The database service to use.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="commands.calendar_commands.UpdateCalendarConfigCommand">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.calendar_commands.</span></span><span class="sig-name descname"><span class="pre">UpdateCalendarConfigCommand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">CalendarConfig</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/calendar_commands.html#UpdateCalendarConfigCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.UpdateCalendarConfigCommand" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCommand</span></code></p>
+<p>Updates an existing calendar configuration.</p>
+<p>Stores the original config for undo support.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.calendar_commands.UpdateCalendarConfigCommand.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">CalendarConfig</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/calendar_commands.html#UpdateCalendarConfigCommand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.UpdateCalendarConfigCommand.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initializes the command.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config</strong> – The updated calendar configuration.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.calendar_commands.UpdateCalendarConfigCommand.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">CommandResult</span></span></span><a class="reference internal" href="_modules/commands/calendar_commands.html#UpdateCalendarConfigCommand.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.UpdateCalendarConfigCommand.execute" title="Link to this definition">¶</a></dt>
+<dd><p>Updates the calendar configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> – The database service to use.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Success result with config ID in data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult">CommandResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.calendar_commands.UpdateCalendarConfigCommand.undo">
+<span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/calendar_commands.html#UpdateCalendarConfigCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.UpdateCalendarConfigCommand.undo" title="Link to this definition">¶</a></dt>
+<dd><p>Undoes the update by restoring the original config.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> – The database service to use.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-commands.entity_commands">
+<span id="commands-entity-commands-module"></span><h2>commands.entity_commands module<a class="headerlink" href="#module-commands.entity_commands" title="Link to this heading">¶</a></h2>
+<p>Commands for manipulating Entity objects.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="commands.entity_commands.CreateEntityCommand">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.entity_commands.</span></span><span class="sig-name descname"><span class="pre">CreateEntityCommand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/entity_commands.html#CreateEntityCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.entity_commands.CreateEntityCommand" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCommand</span></code></p>
+<p>Command to create a new entity.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.entity_commands.CreateEntityCommand.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/entity_commands.html#CreateEntityCommand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.entity_commands.CreateEntityCommand.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initializes the CreateEntityCommand.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>entity_data</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary containing entity data.
+If None, default values are used.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.entity_commands.CreateEntityCommand.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">CommandResult</span></span></span><a class="reference internal" href="_modules/commands/entity_commands.html#CreateEntityCommand.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.entity_commands.CreateEntityCommand.execute" title="Link to this definition">¶</a></dt>
+<dd><p>Executes the command to create the entity.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> (<a class="reference internal" href="services.html#services.db_service.DatabaseService" title="services.db_service.DatabaseService"><em>DatabaseService</em></a>) – The database service to use.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Result object indicating success or failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult">CommandResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.entity_commands.CreateEntityCommand.undo">
+<span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/entity_commands.html#CreateEntityCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.entity_commands.CreateEntityCommand.undo" title="Link to this definition">¶</a></dt>
+<dd><p>Reverts the entity creation by deleting it from the database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> (<a class="reference internal" href="services.html#services.db_service.DatabaseService" title="services.db_service.DatabaseService"><em>DatabaseService</em></a>) – The database service to operate on.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="commands.entity_commands.DeleteEntityCommand">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.entity_commands.</span></span><span class="sig-name descname"><span class="pre">DeleteEntityCommand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/entity_commands.html#DeleteEntityCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.entity_commands.DeleteEntityCommand" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCommand</span></code></p>
+<p>Command to delete an entity.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.entity_commands.DeleteEntityCommand.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/entity_commands.html#DeleteEntityCommand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.entity_commands.DeleteEntityCommand.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initializes the DeleteEntityCommand.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>entity_id</strong> (<em>str</em>) – The ID of the entity to delete.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.entity_commands.DeleteEntityCommand.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">CommandResult</span></span></span><a class="reference internal" href="_modules/commands/entity_commands.html#DeleteEntityCommand.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.entity_commands.DeleteEntityCommand.execute" title="Link to this definition">¶</a></dt>
+<dd><p>Executes the command to delete the entity.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> (<a class="reference internal" href="services.html#services.db_service.DatabaseService" title="services.db_service.DatabaseService"><em>DatabaseService</em></a>) – The database service to use.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Result object indicating success or fail (e.g. not found).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult">CommandResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.entity_commands.DeleteEntityCommand.undo">
+<span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/entity_commands.html#DeleteEntityCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.entity_commands.DeleteEntityCommand.undo" title="Link to this definition">¶</a></dt>
+<dd><p>Reverts the entity deletion by restoring it to the database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> (<a class="reference internal" href="services.html#services.db_service.DatabaseService" title="services.db_service.DatabaseService"><em>DatabaseService</em></a>) – The database service to operate on.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="commands.entity_commands.UpdateEntityCommand">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.entity_commands.</span></span><span class="sig-name descname"><span class="pre">UpdateEntityCommand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/entity_commands.html#UpdateEntityCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.entity_commands.UpdateEntityCommand" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCommand</span></code></p>
+<p>Command to update an existing entity.
+Accepts a dictionary of changes.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.entity_commands.UpdateEntityCommand.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/entity_commands.html#UpdateEntityCommand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.entity_commands.UpdateEntityCommand.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initializes the UpdateEntityCommand.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>entity_id</strong> (<em>str</em>) – The ID of the entity to update.</p></li>
+<li><p><strong>update_data</strong> (<em>dict</em>) – Dictionary of fields to update.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.entity_commands.UpdateEntityCommand.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">CommandResult</span></span></span><a class="reference internal" href="_modules/commands/entity_commands.html#UpdateEntityCommand.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.entity_commands.UpdateEntityCommand.execute" title="Link to this definition">¶</a></dt>
+<dd><p>Executes the update.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> (<a class="reference internal" href="services.html#services.db_service.DatabaseService" title="services.db_service.DatabaseService"><em>DatabaseService</em></a>) – The database service to use.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Result object containing success status and messages.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult">CommandResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.entity_commands.UpdateEntityCommand.undo">
+<span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/entity_commands.html#UpdateEntityCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.entity_commands.UpdateEntityCommand.undo" title="Link to this definition">¶</a></dt>
+<dd><p>Reverts the entity update by restoring the previous state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> (<a class="reference internal" href="services.html#services.db_service.DatabaseService" title="services.db_service.DatabaseService"><em>DatabaseService</em></a>) – The database service to operate on.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-commands.event_commands">
+<span id="commands-event-commands-module"></span><h2>commands.event_commands module<a class="headerlink" href="#module-commands.event_commands" title="Link to this heading">¶</a></h2>
+<p>Event Commands Module.</p>
+<p>Provides command classes for managing events in the timeline:
+- CreateEventCommand: Create new events with default or custom data
+- UpdateEventCommand: Modify existing events with validation
+- DeleteEventCommand: Remove events with backup for undo</p>
+<p>All commands support undo/redo operations and return CommandResult objects.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="commands.event_commands.CreateEventCommand">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.event_commands.</span></span><span class="sig-name descname"><span class="pre">CreateEventCommand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/event_commands.html#CreateEventCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.event_commands.CreateEventCommand" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCommand</span></code></p>
+<p>Command to create a new event.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.event_commands.CreateEventCommand.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/event_commands.html#CreateEventCommand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.event_commands.CreateEventCommand.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initializes the CreateEventCommand.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event_data</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary containing event data.
+If None, default values are used.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.event_commands.CreateEventCommand.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">CommandResult</span></span></span><a class="reference internal" href="_modules/commands/event_commands.html#CreateEventCommand.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.event_commands.CreateEventCommand.execute" title="Link to this definition">¶</a></dt>
+<dd><p>Executes the command to insert the event into the database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> (<a class="reference internal" href="services.html#services.db_service.DatabaseService" title="services.db_service.DatabaseService"><em>DatabaseService</em></a>) – The database service to use.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Result object indicating success or failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult">CommandResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.event_commands.CreateEventCommand.undo">
+<span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/event_commands.html#CreateEventCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.event_commands.CreateEventCommand.undo" title="Link to this definition">¶</a></dt>
+<dd><p>Reverts the event creation by deleting it from the database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> (<a class="reference internal" href="services.html#services.db_service.DatabaseService" title="services.db_service.DatabaseService"><em>DatabaseService</em></a>) – The database service to operate on.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="commands.event_commands.DeleteEventCommand">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.event_commands.</span></span><span class="sig-name descname"><span class="pre">DeleteEventCommand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/event_commands.html#DeleteEventCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.event_commands.DeleteEventCommand" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCommand</span></code></p>
+<p>Command to delete an event, storing its state for undo.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.event_commands.DeleteEventCommand.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/event_commands.html#DeleteEventCommand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.event_commands.DeleteEventCommand.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initializes the DeleteEventCommand.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event_id</strong> (<em>str</em>) – The ID of the event to delete.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.event_commands.DeleteEventCommand.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">CommandResult</span></span></span><a class="reference internal" href="_modules/commands/event_commands.html#DeleteEventCommand.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.event_commands.DeleteEventCommand.execute" title="Link to this definition">¶</a></dt>
+<dd><p>Executes the command to delete the event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> (<a class="reference internal" href="services.html#services.db_service.DatabaseService" title="services.db_service.DatabaseService"><em>DatabaseService</em></a>) – The database service to use.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Result object indicating success or fail (e.g. not found).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult">CommandResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.event_commands.DeleteEventCommand.undo">
+<span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/event_commands.html#DeleteEventCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.event_commands.DeleteEventCommand.undo" title="Link to this definition">¶</a></dt>
+<dd><p>Reverts the event deletion by restoring it to the database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> (<a class="reference internal" href="services.html#services.db_service.DatabaseService" title="services.db_service.DatabaseService"><em>DatabaseService</em></a>) – The database service to operate on.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="commands.event_commands.UpdateEventCommand">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.event_commands.</span></span><span class="sig-name descname"><span class="pre">UpdateEventCommand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/event_commands.html#UpdateEventCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.event_commands.UpdateEventCommand" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCommand</span></code></p>
+<p>Command to update an existing event.
+Accepts a dictionary of changes to apply to the existing event.
+Snapshots the clean state before update for undo.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.event_commands.UpdateEventCommand.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/event_commands.html#UpdateEventCommand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.event_commands.UpdateEventCommand.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initializes the Update command.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>event_id</strong> (<em>str</em>) – The ID of the event to update.</p></li>
+<li><p><strong>update_data</strong> (<em>dict</em>) – Dictionary of fields to update.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.event_commands.UpdateEventCommand.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">CommandResult</span></span></span><a class="reference internal" href="_modules/commands/event_commands.html#UpdateEventCommand.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.event_commands.UpdateEventCommand.execute" title="Link to this definition">¶</a></dt>
+<dd><p>Executes the update.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> (<a class="reference internal" href="services.html#services.db_service.DatabaseService" title="services.db_service.DatabaseService"><em>DatabaseService</em></a>) – The database service to use.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Result object containing success status and messages.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult">CommandResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.event_commands.UpdateEventCommand.undo">
+<span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/event_commands.html#UpdateEventCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.event_commands.UpdateEventCommand.undo" title="Link to this definition">¶</a></dt>
+<dd><p>Reverts the update by restoring the previous state of the event.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-commands.longform_commands">
+<span id="commands-longform-commands-module"></span><h2>commands.longform_commands module<a class="headerlink" href="#module-commands.longform_commands" title="Link to this heading">¶</a></h2>
+<p>Longform Commands Module.</p>
+<p>Provides command classes for manipulating longform document structure:
+- MoveLongformEntryCommand: Move an entry to a new position
+- PromoteLongformEntryCommand: Reduce depth and change parent
+- DemoteLongformEntryCommand: Increase depth and reparent to sibling
+- RemoveLongformEntryCommand: Remove from longform document</p>
+<p>All commands support undo/redo operations and return CommandResult objects.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="commands.longform_commands.DemoteLongformEntryCommand">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.longform_commands.</span></span><span class="sig-name descname"><span class="pre">DemoteLongformEntryCommand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_meta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/longform_commands.html#DemoteLongformEntryCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.DemoteLongformEntryCommand" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCommand</span></code></p>
+<p>Command to demote a longform entry (increase depth).</p>
+<p>Stores old metadata for undo support.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.longform_commands.DemoteLongformEntryCommand.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_meta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/longform_commands.html#DemoteLongformEntryCommand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.DemoteLongformEntryCommand.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initialize the DemoteLongformEntryCommand.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table</strong> – Table name (“events” or “entities”).</p></li>
+<li><p><strong>row_id</strong> – ID of the row to demote.</p></li>
+<li><p><strong>old_meta</strong> – Previous longform metadata for undo.</p></li>
+<li><p><strong>doc_id</strong> – Document ID.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.longform_commands.DemoteLongformEntryCommand.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">CommandResult</span></span></span><a class="reference internal" href="_modules/commands/longform_commands.html#DemoteLongformEntryCommand.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.DemoteLongformEntryCommand.execute" title="Link to this definition">¶</a></dt>
+<dd><p>Execute the demote operation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> – The database service to operate on.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Result object indicating success or failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult">CommandResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.longform_commands.DemoteLongformEntryCommand.undo">
+<span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/longform_commands.html#DemoteLongformEntryCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.DemoteLongformEntryCommand.undo" title="Link to this definition">¶</a></dt>
+<dd><p>Undo the demote by restoring old metadata.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> – The database service to operate on.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="commands.longform_commands.MoveLongformEntryCommand">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.longform_commands.</span></span><span class="sig-name descname"><span class="pre">MoveLongformEntryCommand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_meta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_meta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/longform_commands.html#MoveLongformEntryCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.MoveLongformEntryCommand" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCommand</span></code></p>
+<p>Command to move a longform entry to a new position.</p>
+<p>Stores old and new metadata for undo/redo support.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.longform_commands.MoveLongformEntryCommand.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_meta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_meta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/longform_commands.html#MoveLongformEntryCommand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.MoveLongformEntryCommand.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initialize the MoveLongformEntryCommand.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table</strong> – Table name (“events” or “entities”).</p></li>
+<li><p><strong>row_id</strong> – ID of the row to move.</p></li>
+<li><p><strong>old_meta</strong> – Previous longform metadata.</p></li>
+<li><p><strong>new_meta</strong> – New longform metadata.</p></li>
+<li><p><strong>doc_id</strong> – Document ID.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.longform_commands.MoveLongformEntryCommand.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">CommandResult</span></span></span><a class="reference internal" href="_modules/commands/longform_commands.html#MoveLongformEntryCommand.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.MoveLongformEntryCommand.execute" title="Link to this definition">¶</a></dt>
+<dd><p>Execute the move by applying new metadata.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> – The database service to operate on.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Result object indicating success or failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult">CommandResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.longform_commands.MoveLongformEntryCommand.undo">
+<span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/longform_commands.html#MoveLongformEntryCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.MoveLongformEntryCommand.undo" title="Link to this definition">¶</a></dt>
+<dd><p>Undo the move by restoring old metadata.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> – The database service to operate on.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="commands.longform_commands.PromoteLongformEntryCommand">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.longform_commands.</span></span><span class="sig-name descname"><span class="pre">PromoteLongformEntryCommand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_meta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/longform_commands.html#PromoteLongformEntryCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.PromoteLongformEntryCommand" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCommand</span></code></p>
+<p>Command to promote a longform entry (reduce depth).</p>
+<p>Stores old metadata for undo support.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.longform_commands.PromoteLongformEntryCommand.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_meta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/longform_commands.html#PromoteLongformEntryCommand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.PromoteLongformEntryCommand.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initialize the PromoteLongformEntryCommand.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table</strong> – Table name (“events” or “entities”).</p></li>
+<li><p><strong>row_id</strong> – ID of the row to promote.</p></li>
+<li><p><strong>old_meta</strong> – Previous longform metadata for undo.</p></li>
+<li><p><strong>doc_id</strong> – Document ID.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.longform_commands.PromoteLongformEntryCommand.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">CommandResult</span></span></span><a class="reference internal" href="_modules/commands/longform_commands.html#PromoteLongformEntryCommand.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.PromoteLongformEntryCommand.execute" title="Link to this definition">¶</a></dt>
+<dd><p>Execute the promote operation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> – The database service to operate on.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Result object indicating success or failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult">CommandResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.longform_commands.PromoteLongformEntryCommand.undo">
+<span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/longform_commands.html#PromoteLongformEntryCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.PromoteLongformEntryCommand.undo" title="Link to this definition">¶</a></dt>
+<dd><p>Undo the promote by restoring old metadata.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> – The database service to operate on.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="commands.longform_commands.RemoveLongformEntryCommand">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.longform_commands.</span></span><span class="sig-name descname"><span class="pre">RemoveLongformEntryCommand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_meta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/longform_commands.html#RemoveLongformEntryCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.RemoveLongformEntryCommand" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCommand</span></code></p>
+<p>Command to remove an entry from the longform document.</p>
+<p>Stores old metadata for undo support.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.longform_commands.RemoveLongformEntryCommand.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_meta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/longform_commands.html#RemoveLongformEntryCommand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.RemoveLongformEntryCommand.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initialize the RemoveLongformEntryCommand.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table</strong> – Table name (“events” or “entities”).</p></li>
+<li><p><strong>row_id</strong> – ID of the row to remove from longform.</p></li>
+<li><p><strong>old_meta</strong> – Previous longform metadata for undo.</p></li>
+<li><p><strong>doc_id</strong> – Document ID.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.longform_commands.RemoveLongformEntryCommand.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">CommandResult</span></span></span><a class="reference internal" href="_modules/commands/longform_commands.html#RemoveLongformEntryCommand.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.RemoveLongformEntryCommand.execute" title="Link to this definition">¶</a></dt>
+<dd><p>Execute the removal operation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> – The database service to operate on.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Result object indicating success or failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult">CommandResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.longform_commands.RemoveLongformEntryCommand.undo">
+<span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/longform_commands.html#RemoveLongformEntryCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.RemoveLongformEntryCommand.undo" title="Link to this definition">¶</a></dt>
+<dd><p>Undo the removal by restoring old metadata.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> – The database service to operate on.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-commands.relation_commands">
+<span id="commands-relation-commands-module"></span><h2>commands.relation_commands module<a class="headerlink" href="#module-commands.relation_commands" title="Link to this heading">¶</a></h2>
+<p>Relation Commands Module.</p>
+<p>Provides command classes for managing relationships between events and entities:
+- AddRelationCommand: Create directed relationships
+- RemoveRelationCommand: Delete relationships
+- UpdateRelationCommand: Modify existing relationships</p>
+<p>All commands support undo/redo operations and return CommandResult objects.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="commands.relation_commands.AddRelationCommand">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.relation_commands.</span></span><span class="sig-name descname"><span class="pre">AddRelationCommand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attributes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bidirectional</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/relation_commands.html#AddRelationCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.relation_commands.AddRelationCommand" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCommand</span></code></p>
+<p>Command to add a directed relationship between two events/entities.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.relation_commands.AddRelationCommand.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attributes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bidirectional</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/relation_commands.html#AddRelationCommand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.relation_commands.AddRelationCommand.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initializes the AddRelation command.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source_id</strong> (<em>str</em>) – The ID of the source object.</p></li>
+<li><p><strong>target_id</strong> (<em>str</em>) – The ID of the target object.</p></li>
+<li><p><strong>rel_type</strong> (<em>str</em>) – The type of relationship (e.g. “caused”).</p></li>
+<li><p><strong>attributes</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Optional metadata for the relationship.</p></li>
+<li><p><strong>bidirectional</strong> (<em>bool</em>) – If True, also creates target-&gt;source relation.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.relation_commands.AddRelationCommand.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/commands/relation_commands.html#AddRelationCommand.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.relation_commands.AddRelationCommand.execute" title="Link to this definition">¶</a></dt>
+<dd><p>Executes insertion of the relation(s).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if successful.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.relation_commands.AddRelationCommand.undo">
+<span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/relation_commands.html#AddRelationCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.relation_commands.AddRelationCommand.undo" title="Link to this definition">¶</a></dt>
+<dd><p>Reverts the action by deleting the created relation(s).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="commands.relation_commands.RemoveRelationCommand">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.relation_commands.</span></span><span class="sig-name descname"><span class="pre">RemoveRelationCommand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rel_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/relation_commands.html#RemoveRelationCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.relation_commands.RemoveRelationCommand" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCommand</span></code></p>
+<p>Command to remove a relationship.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.relation_commands.RemoveRelationCommand.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rel_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/relation_commands.html#RemoveRelationCommand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.relation_commands.RemoveRelationCommand.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initializes the RemoveRelation command.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rel_id</strong> (<em>str</em>) – The ID of the relationship to remove.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.relation_commands.RemoveRelationCommand.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/commands/relation_commands.html#RemoveRelationCommand.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.relation_commands.RemoveRelationCommand.execute" title="Link to this definition">¶</a></dt>
+<dd><p>Executes the command to delete the relation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if successful, False if error.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.relation_commands.RemoveRelationCommand.undo">
+<span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/relation_commands.html#RemoveRelationCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.relation_commands.RemoveRelationCommand.undo" title="Link to this definition">¶</a></dt>
+<dd><p>Reverts the deletion (Not fully implemented yet, needs backup logic).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="commands.relation_commands.UpdateRelationCommand">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.relation_commands.</span></span><span class="sig-name descname"><span class="pre">UpdateRelationCommand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rel_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attributes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/relation_commands.html#UpdateRelationCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.relation_commands.UpdateRelationCommand" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCommand</span></code></p>
+<p>Command to update a relationship.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.relation_commands.UpdateRelationCommand.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rel_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attributes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/relation_commands.html#UpdateRelationCommand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.relation_commands.UpdateRelationCommand.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initializes the UpdateRelation command.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rel_id</strong> (<em>str</em>) – The ID of the relationship.</p></li>
+<li><p><strong>target_id</strong> (<em>str</em>) – The new target ID.</p></li>
+<li><p><strong>rel_type</strong> (<em>str</em>) – The new relationship type.</p></li>
+<li><p><strong>attributes</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – The new attributes.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.relation_commands.UpdateRelationCommand.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/commands/relation_commands.html#UpdateRelationCommand.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.relation_commands.UpdateRelationCommand.execute" title="Link to this definition">¶</a></dt>
+<dd><p>Executes the update, snapshotting the old state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if successful.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.relation_commands.UpdateRelationCommand.undo">
+<span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/relation_commands.html#UpdateRelationCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.relation_commands.UpdateRelationCommand.undo" title="Link to this definition">¶</a></dt>
+<dd><p>Reverts the update.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-commands.wiki_commands">
+<span id="commands-wiki-commands-module"></span><h2>commands.wiki_commands module<a class="headerlink" href="#module-commands.wiki_commands" title="Link to this heading">¶</a></h2>
+<p>Wiki Commands Module.
+Commands for processing WikiLinks and updating relations.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="commands.wiki_commands.ProcessWikiLinksCommand">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.wiki_commands.</span></span><span class="sig-name descname"><span class="pre">ProcessWikiLinksCommand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_content</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'description'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/wiki_commands.html#ProcessWikiLinksCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.wiki_commands.ProcessWikiLinksCommand" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCommand</span></code></p>
+<p>Command to process text content, extract WikiLinks, and create ‘mentions’ relations.</p>
+<p>This command:
+- Parses WikiLinks from text content
+- Resolves names to entities (case-insensitive, including aliases)
+- Creates ‘mentions’ relations with metadata (snippet, offsets, field)
+- Skips ambiguous matches (multiple entities with same name/alias)
+- Deduplicates by (target_id, start_offset)</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.wiki_commands.ProcessWikiLinksCommand.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_content</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'description'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/wiki_commands.html#ProcessWikiLinksCommand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.wiki_commands.ProcessWikiLinksCommand.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initializes the command.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source_id</strong> – The ID of the source entity or event.</p></li>
+<li><p><strong>text_content</strong> – The text content to parse for WikiLinks.</p></li>
+<li><p><strong>field</strong> – The field name where the text is stored (default: “description”).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.wiki_commands.ProcessWikiLinksCommand.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">CommandResult</span></span></span><a class="reference internal" href="_modules/commands/wiki_commands.html#ProcessWikiLinksCommand.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.wiki_commands.ProcessWikiLinksCommand.execute" title="Link to this definition">¶</a></dt>
+<dd><p>Executes the link processing.</p>
+<p>Extracts WikiLinks, resolves them to entities or events, and
+creates ‘mentions’ relations with metadata including field,
+snippet, and offsets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_service</strong> – Database service instance.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Result of the operation.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult">CommandResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.wiki_commands.ProcessWikiLinksCommand.undo">
+<span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/wiki_commands.html#ProcessWikiLinksCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.wiki_commands.ProcessWikiLinksCommand.undo" title="Link to this definition">¶</a></dt>
+<dd><p>Undoes the relation creation by deleting all created relations.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-commands">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-commands" title="Link to this heading">¶</a></h2>
+<p>Commands Package.</p>
+<p>This package contains all command classes implementing the Command pattern
+for undo/redo functionality. Commands encapsulate actions related to entities,
+events, and relations.</p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="core.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">core package</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="cli.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">cli package</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, Antigravity
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">commands package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-commands.base_command">commands.base_command module</a><ul>
+<li><a class="reference internal" href="#commands.base_command.BaseCommand"><code class="docutils literal notranslate"><span class="pre">BaseCommand</span></code></a><ul>
+<li><a class="reference internal" href="#commands.base_command.BaseCommand.__init__"><code class="docutils literal notranslate"><span class="pre">BaseCommand.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#commands.base_command.BaseCommand.execute"><code class="docutils literal notranslate"><span class="pre">BaseCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.base_command.BaseCommand.is_executed"><code class="docutils literal notranslate"><span class="pre">BaseCommand.is_executed</span></code></a></li>
+<li><a class="reference internal" href="#commands.base_command.BaseCommand.undo"><code class="docutils literal notranslate"><span class="pre">BaseCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#commands.base_command.CommandResult"><code class="docutils literal notranslate"><span class="pre">CommandResult</span></code></a><ul>
+<li><a class="reference internal" href="#commands.base_command.CommandResult.success"><code class="docutils literal notranslate"><span class="pre">CommandResult.success</span></code></a></li>
+<li><a class="reference internal" href="#commands.base_command.CommandResult.message"><code class="docutils literal notranslate"><span class="pre">CommandResult.message</span></code></a></li>
+<li><a class="reference internal" href="#commands.base_command.CommandResult.errors"><code class="docutils literal notranslate"><span class="pre">CommandResult.errors</span></code></a></li>
+<li><a class="reference internal" href="#commands.base_command.CommandResult.command_name"><code class="docutils literal notranslate"><span class="pre">CommandResult.command_name</span></code></a></li>
+<li><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">CommandResult.command_name</span></code></a></li>
+<li><a class="reference internal" href="#commands.base_command.CommandResult.data"><code class="docutils literal notranslate"><span class="pre">CommandResult.data</span></code></a></li>
+<li><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">CommandResult.errors</span></code></a></li>
+<li><a class="reference internal" href="#id2"><code class="docutils literal notranslate"><span class="pre">CommandResult.message</span></code></a></li>
+<li><a class="reference internal" href="#id3"><code class="docutils literal notranslate"><span class="pre">CommandResult.success</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-commands.calendar_commands">commands.calendar_commands module</a><ul>
+<li><a class="reference internal" href="#commands.calendar_commands.CreateCalendarConfigCommand"><code class="docutils literal notranslate"><span class="pre">CreateCalendarConfigCommand</span></code></a><ul>
+<li><a class="reference internal" href="#commands.calendar_commands.CreateCalendarConfigCommand.__init__"><code class="docutils literal notranslate"><span class="pre">CreateCalendarConfigCommand.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#commands.calendar_commands.CreateCalendarConfigCommand.execute"><code class="docutils literal notranslate"><span class="pre">CreateCalendarConfigCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.calendar_commands.CreateCalendarConfigCommand.undo"><code class="docutils literal notranslate"><span class="pre">CreateCalendarConfigCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#commands.calendar_commands.DeleteCalendarConfigCommand"><code class="docutils literal notranslate"><span class="pre">DeleteCalendarConfigCommand</span></code></a><ul>
+<li><a class="reference internal" href="#commands.calendar_commands.DeleteCalendarConfigCommand.__init__"><code class="docutils literal notranslate"><span class="pre">DeleteCalendarConfigCommand.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#commands.calendar_commands.DeleteCalendarConfigCommand.execute"><code class="docutils literal notranslate"><span class="pre">DeleteCalendarConfigCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.calendar_commands.DeleteCalendarConfigCommand.undo"><code class="docutils literal notranslate"><span class="pre">DeleteCalendarConfigCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#commands.calendar_commands.SetActiveCalendarCommand"><code class="docutils literal notranslate"><span class="pre">SetActiveCalendarCommand</span></code></a><ul>
+<li><a class="reference internal" href="#commands.calendar_commands.SetActiveCalendarCommand.__init__"><code class="docutils literal notranslate"><span class="pre">SetActiveCalendarCommand.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#commands.calendar_commands.SetActiveCalendarCommand.execute"><code class="docutils literal notranslate"><span class="pre">SetActiveCalendarCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.calendar_commands.SetActiveCalendarCommand.undo"><code class="docutils literal notranslate"><span class="pre">SetActiveCalendarCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#commands.calendar_commands.UpdateCalendarConfigCommand"><code class="docutils literal notranslate"><span class="pre">UpdateCalendarConfigCommand</span></code></a><ul>
+<li><a class="reference internal" href="#commands.calendar_commands.UpdateCalendarConfigCommand.__init__"><code class="docutils literal notranslate"><span class="pre">UpdateCalendarConfigCommand.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#commands.calendar_commands.UpdateCalendarConfigCommand.execute"><code class="docutils literal notranslate"><span class="pre">UpdateCalendarConfigCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.calendar_commands.UpdateCalendarConfigCommand.undo"><code class="docutils literal notranslate"><span class="pre">UpdateCalendarConfigCommand.undo()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-commands.entity_commands">commands.entity_commands module</a><ul>
+<li><a class="reference internal" href="#commands.entity_commands.CreateEntityCommand"><code class="docutils literal notranslate"><span class="pre">CreateEntityCommand</span></code></a><ul>
+<li><a class="reference internal" href="#commands.entity_commands.CreateEntityCommand.__init__"><code class="docutils literal notranslate"><span class="pre">CreateEntityCommand.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#commands.entity_commands.CreateEntityCommand.execute"><code class="docutils literal notranslate"><span class="pre">CreateEntityCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.entity_commands.CreateEntityCommand.undo"><code class="docutils literal notranslate"><span class="pre">CreateEntityCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#commands.entity_commands.DeleteEntityCommand"><code class="docutils literal notranslate"><span class="pre">DeleteEntityCommand</span></code></a><ul>
+<li><a class="reference internal" href="#commands.entity_commands.DeleteEntityCommand.__init__"><code class="docutils literal notranslate"><span class="pre">DeleteEntityCommand.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#commands.entity_commands.DeleteEntityCommand.execute"><code class="docutils literal notranslate"><span class="pre">DeleteEntityCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.entity_commands.DeleteEntityCommand.undo"><code class="docutils literal notranslate"><span class="pre">DeleteEntityCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#commands.entity_commands.UpdateEntityCommand"><code class="docutils literal notranslate"><span class="pre">UpdateEntityCommand</span></code></a><ul>
+<li><a class="reference internal" href="#commands.entity_commands.UpdateEntityCommand.__init__"><code class="docutils literal notranslate"><span class="pre">UpdateEntityCommand.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#commands.entity_commands.UpdateEntityCommand.execute"><code class="docutils literal notranslate"><span class="pre">UpdateEntityCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.entity_commands.UpdateEntityCommand.undo"><code class="docutils literal notranslate"><span class="pre">UpdateEntityCommand.undo()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-commands.event_commands">commands.event_commands module</a><ul>
+<li><a class="reference internal" href="#commands.event_commands.CreateEventCommand"><code class="docutils literal notranslate"><span class="pre">CreateEventCommand</span></code></a><ul>
+<li><a class="reference internal" href="#commands.event_commands.CreateEventCommand.__init__"><code class="docutils literal notranslate"><span class="pre">CreateEventCommand.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#commands.event_commands.CreateEventCommand.execute"><code class="docutils literal notranslate"><span class="pre">CreateEventCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.event_commands.CreateEventCommand.undo"><code class="docutils literal notranslate"><span class="pre">CreateEventCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#commands.event_commands.DeleteEventCommand"><code class="docutils literal notranslate"><span class="pre">DeleteEventCommand</span></code></a><ul>
+<li><a class="reference internal" href="#commands.event_commands.DeleteEventCommand.__init__"><code class="docutils literal notranslate"><span class="pre">DeleteEventCommand.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#commands.event_commands.DeleteEventCommand.execute"><code class="docutils literal notranslate"><span class="pre">DeleteEventCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.event_commands.DeleteEventCommand.undo"><code class="docutils literal notranslate"><span class="pre">DeleteEventCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#commands.event_commands.UpdateEventCommand"><code class="docutils literal notranslate"><span class="pre">UpdateEventCommand</span></code></a><ul>
+<li><a class="reference internal" href="#commands.event_commands.UpdateEventCommand.__init__"><code class="docutils literal notranslate"><span class="pre">UpdateEventCommand.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#commands.event_commands.UpdateEventCommand.execute"><code class="docutils literal notranslate"><span class="pre">UpdateEventCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.event_commands.UpdateEventCommand.undo"><code class="docutils literal notranslate"><span class="pre">UpdateEventCommand.undo()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-commands.longform_commands">commands.longform_commands module</a><ul>
+<li><a class="reference internal" href="#commands.longform_commands.DemoteLongformEntryCommand"><code class="docutils literal notranslate"><span class="pre">DemoteLongformEntryCommand</span></code></a><ul>
+<li><a class="reference internal" href="#commands.longform_commands.DemoteLongformEntryCommand.__init__"><code class="docutils literal notranslate"><span class="pre">DemoteLongformEntryCommand.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#commands.longform_commands.DemoteLongformEntryCommand.execute"><code class="docutils literal notranslate"><span class="pre">DemoteLongformEntryCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.longform_commands.DemoteLongformEntryCommand.undo"><code class="docutils literal notranslate"><span class="pre">DemoteLongformEntryCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#commands.longform_commands.MoveLongformEntryCommand"><code class="docutils literal notranslate"><span class="pre">MoveLongformEntryCommand</span></code></a><ul>
+<li><a class="reference internal" href="#commands.longform_commands.MoveLongformEntryCommand.__init__"><code class="docutils literal notranslate"><span class="pre">MoveLongformEntryCommand.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#commands.longform_commands.MoveLongformEntryCommand.execute"><code class="docutils literal notranslate"><span class="pre">MoveLongformEntryCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.longform_commands.MoveLongformEntryCommand.undo"><code class="docutils literal notranslate"><span class="pre">MoveLongformEntryCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#commands.longform_commands.PromoteLongformEntryCommand"><code class="docutils literal notranslate"><span class="pre">PromoteLongformEntryCommand</span></code></a><ul>
+<li><a class="reference internal" href="#commands.longform_commands.PromoteLongformEntryCommand.__init__"><code class="docutils literal notranslate"><span class="pre">PromoteLongformEntryCommand.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#commands.longform_commands.PromoteLongformEntryCommand.execute"><code class="docutils literal notranslate"><span class="pre">PromoteLongformEntryCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.longform_commands.PromoteLongformEntryCommand.undo"><code class="docutils literal notranslate"><span class="pre">PromoteLongformEntryCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#commands.longform_commands.RemoveLongformEntryCommand"><code class="docutils literal notranslate"><span class="pre">RemoveLongformEntryCommand</span></code></a><ul>
+<li><a class="reference internal" href="#commands.longform_commands.RemoveLongformEntryCommand.__init__"><code class="docutils literal notranslate"><span class="pre">RemoveLongformEntryCommand.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#commands.longform_commands.RemoveLongformEntryCommand.execute"><code class="docutils literal notranslate"><span class="pre">RemoveLongformEntryCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.longform_commands.RemoveLongformEntryCommand.undo"><code class="docutils literal notranslate"><span class="pre">RemoveLongformEntryCommand.undo()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-commands.relation_commands">commands.relation_commands module</a><ul>
+<li><a class="reference internal" href="#commands.relation_commands.AddRelationCommand"><code class="docutils literal notranslate"><span class="pre">AddRelationCommand</span></code></a><ul>
+<li><a class="reference internal" href="#commands.relation_commands.AddRelationCommand.__init__"><code class="docutils literal notranslate"><span class="pre">AddRelationCommand.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#commands.relation_commands.AddRelationCommand.execute"><code class="docutils literal notranslate"><span class="pre">AddRelationCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.relation_commands.AddRelationCommand.undo"><code class="docutils literal notranslate"><span class="pre">AddRelationCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#commands.relation_commands.RemoveRelationCommand"><code class="docutils literal notranslate"><span class="pre">RemoveRelationCommand</span></code></a><ul>
+<li><a class="reference internal" href="#commands.relation_commands.RemoveRelationCommand.__init__"><code class="docutils literal notranslate"><span class="pre">RemoveRelationCommand.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#commands.relation_commands.RemoveRelationCommand.execute"><code class="docutils literal notranslate"><span class="pre">RemoveRelationCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.relation_commands.RemoveRelationCommand.undo"><code class="docutils literal notranslate"><span class="pre">RemoveRelationCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#commands.relation_commands.UpdateRelationCommand"><code class="docutils literal notranslate"><span class="pre">UpdateRelationCommand</span></code></a><ul>
+<li><a class="reference internal" href="#commands.relation_commands.UpdateRelationCommand.__init__"><code class="docutils literal notranslate"><span class="pre">UpdateRelationCommand.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#commands.relation_commands.UpdateRelationCommand.execute"><code class="docutils literal notranslate"><span class="pre">UpdateRelationCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.relation_commands.UpdateRelationCommand.undo"><code class="docutils literal notranslate"><span class="pre">UpdateRelationCommand.undo()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-commands.wiki_commands">commands.wiki_commands module</a><ul>
+<li><a class="reference internal" href="#commands.wiki_commands.ProcessWikiLinksCommand"><code class="docutils literal notranslate"><span class="pre">ProcessWikiLinksCommand</span></code></a><ul>
+<li><a class="reference internal" href="#commands.wiki_commands.ProcessWikiLinksCommand.__init__"><code class="docutils literal notranslate"><span class="pre">ProcessWikiLinksCommand.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#commands.wiki_commands.ProcessWikiLinksCommand.execute"><code class="docutils literal notranslate"><span class="pre">ProcessWikiLinksCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.wiki_commands.ProcessWikiLinksCommand.undo"><code class="docutils literal notranslate"><span class="pre">ProcessWikiLinksCommand.undo()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-commands">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=95e61db4"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

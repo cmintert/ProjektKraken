@@ -1,0 +1,764 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
+        <title>Longform Document Feature - Project Kraken 0.2.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">Project Kraken 0.2.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  <span class="sidebar-brand-text">Project Kraken 0.2.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="modules.html">src</a><input aria-label="Toggle navigation of src" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="app.html">app package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html">cli package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="commands.html">commands package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core.html">core package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="gui.html">gui package</a><input aria-label="Toggle navigation of gui package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui.widgets.html">gui.widgets package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui.dialogs.html">gui.dialogs package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="services.html">services package</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/longform.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="longform-document-feature">
+<h1>Longform Document Feature<a class="headerlink" href="#longform-document-feature" title="Link to this heading">¶</a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>The Longform Document feature allows you to assemble Events and Entities into a single continuous narrative document. This feature provides:</p>
+<ul class="simple">
+<li><p><strong>Single Live Document</strong>: All events and entities can participate in one unified document (identified by <code class="docutils literal notranslate"><span class="pre">doc_id</span> <span class="pre">=</span> <span class="pre">&quot;default&quot;</span></code>)</p></li>
+<li><p><strong>Flexible Ordering</strong>: Reorder entries using float-based positions</p></li>
+<li><p><strong>Hierarchical Structure</strong>: Create parent-child relationships with unlimited nesting depth</p></li>
+<li><p><strong>Title Overrides</strong>: Customize headings without changing the underlying Event/Entity name</p></li>
+<li><p><strong>Canonical Editing</strong>: Edit content directly, and changes update the source Event/Entity</p></li>
+<li><p><strong>Markdown Export</strong>: Export the complete document to Markdown with ID traceability markers</p></li>
+</ul>
+</section>
+<section id="attributes-json-format">
+<h2>Attributes JSON Format<a class="headerlink" href="#attributes-json-format" title="Link to this heading">¶</a></h2>
+<p>Longform metadata is stored in the <code class="docutils literal notranslate"><span class="pre">attributes</span></code> JSON column of both <code class="docutils literal notranslate"><span class="pre">events</span></code> and <code class="docutils literal notranslate"><span class="pre">entities</span></code> tables. The structure follows this format:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;longform&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;position&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">100.0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;parent_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;uuid-of-parent-or-null&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;depth&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;title_override&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Optional custom heading&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;other_metadata&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<section id="metadata-fields">
+<h3>Metadata Fields<a class="headerlink" href="#metadata-fields" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">position</span></code></strong> (float, required): Determines the order of items in the document. Uses gaps of 100.0 by default (100, 200, 300…). Items are sorted by position within their parent group.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">parent_id</span></code></strong> (string or null, required): The UUID of the parent item. <code class="docutils literal notranslate"><span class="pre">null</span></code> indicates a top-level item. Parent can be from either events or entities table.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">depth</span></code></strong> (integer, required): The nesting depth, starting at 0 for top-level items. Child items have <code class="docutils literal notranslate"><span class="pre">depth</span> <span class="pre">=</span> <span class="pre">parent_depth</span> <span class="pre">+</span> <span class="pre">1</span></code>.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">title_override</span></code></strong> (string, optional): If provided, this text is used as the heading instead of the item’s name. Useful for customizing section titles.</p></li>
+</ul>
+</section>
+<section id="example-metadata">
+<h3>Example Metadata<a class="headerlink" href="#example-metadata" title="Link to this heading">¶</a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;longform&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;position&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">150.0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;parent_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;abc-123-parent-uuid&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;depth&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;title_override&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Act II: The Confrontation&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading">¶</a></h2>
+<section id="gui-longform-editor">
+<h3>GUI Longform Editor<a class="headerlink" href="#gui-longform-editor" title="Link to this heading">¶</a></h3>
+<p>The longform editor provides a split-view interface:</p>
+<ul class="simple">
+<li><p><strong>Left Panel</strong>: Outline tree view with drag-and-drop reordering</p></li>
+<li><p><strong>Right Panel</strong>: Continuous document view with synchronized scrolling</p></li>
+</ul>
+<p><strong>Keyboard Shortcuts:</strong></p>
+<ul class="simple">
+<li><p><strong>Ctrl+[</strong>: Promote selected item (decrease indent, make it a sibling of its parent)</p></li>
+<li><p><strong>Ctrl+]</strong>: Demote selected item (increase indent, make it a child of the previous sibling)</p></li>
+</ul>
+<p><strong>Drag and Drop:</strong></p>
+<ul class="simple">
+<li><p>Drag items in the outline tree to reorder them or change their parent</p></li>
+<li><p>The document view updates automatically to reflect the new structure</p></li>
+</ul>
+</section>
+<section id="adding-items-to-longform">
+<h3>Adding Items to Longform<a class="headerlink" href="#adding-items-to-longform" title="Link to this heading">¶</a></h3>
+<p>To add an Event or Entity to the longform document, you need to add the longform metadata to its <code class="docutils literal notranslate"><span class="pre">attributes</span></code> JSON:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">src.services</span><span class="w"> </span><span class="kn">import</span> <span class="n">longform_builder</span>
+
+<span class="c1"># Add an event to longform</span>
+<span class="n">longform_builder</span><span class="o">.</span><span class="n">insert_or_update_longform_meta</span><span class="p">(</span>
+    <span class="n">conn</span><span class="p">,</span>
+    <span class="n">table</span><span class="o">=</span><span class="s2">&quot;events&quot;</span><span class="p">,</span>
+    <span class="n">row_id</span><span class="o">=</span><span class="s2">&quot;event-uuid-here&quot;</span><span class="p">,</span>
+    <span class="n">position</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span>
+    <span class="n">parent_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># Top level</span>
+    <span class="n">depth</span><span class="o">=</span><span class="mi">0</span>
+<span class="p">)</span>
+
+<span class="c1"># Add as a child</span>
+<span class="n">longform_builder</span><span class="o">.</span><span class="n">insert_or_update_longform_meta</span><span class="p">(</span>
+    <span class="n">conn</span><span class="p">,</span>
+    <span class="n">table</span><span class="o">=</span><span class="s2">&quot;entities&quot;</span><span class="p">,</span>
+    <span class="n">row_id</span><span class="o">=</span><span class="s2">&quot;entity-uuid-here&quot;</span><span class="p">,</span>
+    <span class="n">position</span><span class="o">=</span><span class="mf">150.0</span><span class="p">,</span>
+    <span class="n">parent_id</span><span class="o">=</span><span class="s2">&quot;event-uuid-here&quot;</span><span class="p">,</span>  <span class="c1"># Parent</span>
+    <span class="n">depth</span><span class="o">=</span><span class="mi">1</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="building-the-document-sequence">
+<h3>Building the Document Sequence<a class="headerlink" href="#building-the-document-sequence" title="Link to this heading">¶</a></h3>
+<p>To retrieve the ordered, hierarchical sequence for rendering:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">src.services</span><span class="w"> </span><span class="kn">import</span> <span class="n">longform_builder</span>
+
+<span class="n">sequence</span> <span class="o">=</span> <span class="n">longform_builder</span><span class="o">.</span><span class="n">build_longform_sequence</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">sequence</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;#&#39;</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;heading_level&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</section>
+<section id="reordering-and-nesting">
+<h3>Reordering and Nesting<a class="headerlink" href="#reordering-and-nesting" title="Link to this heading">¶</a></h3>
+<p><strong>Place between siblings:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">longform_builder</span><span class="o">.</span><span class="n">place_between_siblings_and_set_parent</span><span class="p">(</span>
+    <span class="n">conn</span><span class="p">,</span>
+    <span class="n">target_table</span><span class="o">=</span><span class="s2">&quot;events&quot;</span><span class="p">,</span>
+    <span class="n">target_id</span><span class="o">=</span><span class="s2">&quot;item-to-move&quot;</span><span class="p">,</span>
+    <span class="n">prev_sibling</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;events&quot;</span><span class="p">,</span> <span class="s2">&quot;previous-item-id&quot;</span><span class="p">),</span>
+    <span class="n">next_sibling</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;events&quot;</span><span class="p">,</span> <span class="s2">&quot;next-item-id&quot;</span><span class="p">),</span>
+    <span class="n">parent_id</span><span class="o">=</span><span class="s2">&quot;parent-id-or-none&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Promote (reduce depth):</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">longform_builder</span><span class="o">.</span><span class="n">promote_item</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="s2">&quot;events&quot;</span><span class="p">,</span> <span class="s2">&quot;item-id&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Demote (increase depth, make child of previous sibling):</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">longform_builder</span><span class="o">.</span><span class="n">demote_item</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="s2">&quot;events&quot;</span><span class="p">,</span> <span class="s2">&quot;item-id&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Remove from longform:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">longform_builder</span><span class="o">.</span><span class="n">remove_from_longform</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="s2">&quot;events&quot;</span><span class="p">,</span> <span class="s2">&quot;item-id&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="reindexing-positions">
+<h3>Reindexing Positions<a class="headerlink" href="#reindexing-positions" title="Link to this heading">¶</a></h3>
+<p>After many insertions, float positions may become fragmented. Reindex to reset to clean 100, 200, 300… positions:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">longform_builder</span><span class="o">.</span><span class="n">reindex_document_positions</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="cli-export-tool">
+<h2>CLI Export Tool<a class="headerlink" href="#cli-export-tool" title="Link to this heading">¶</a></h2>
+<p>The longform export CLI tool generates a Markdown file from your longform document.</p>
+<section id="basic-usage">
+<h3>Basic Usage<a class="headerlink" href="#basic-usage" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Export to stdout</span>
+python<span class="w"> </span>-m<span class="w"> </span>src.cli.longform<span class="w"> </span><span class="nb">export</span><span class="w"> </span>--database<span class="w"> </span>world.kraken
+
+<span class="c1"># Export to file</span>
+python<span class="w"> </span>-m<span class="w"> </span>src.cli.longform<span class="w"> </span><span class="nb">export</span><span class="w"> </span>--database<span class="w"> </span>world.kraken<span class="w"> </span>--output<span class="w"> </span>longform_export.md
+
+<span class="c1"># Export with verbose logging</span>
+python<span class="w"> </span>-m<span class="w"> </span>src.cli.longform<span class="w"> </span><span class="nb">export</span><span class="w"> </span>--database<span class="w"> </span>world.kraken<span class="w"> </span>--output<span class="w"> </span>output.md<span class="w"> </span>--verbose
+</pre></div>
+</div>
+</section>
+<section id="markdown-format">
+<h3>Markdown Format<a class="headerlink" href="#markdown-format" title="Link to this heading">¶</a></h3>
+<p>The exported Markdown includes:</p>
+<ul class="simple">
+<li><p>Document title header</p></li>
+<li><p>HTML comment markers with ID and table information for traceability</p></li>
+<li><p>Hierarchical headings based on depth (# for depth 0, ## for depth 1, etc., capped at 6)</p></li>
+<li><p>Content from the <code class="docutils literal notranslate"><span class="pre">description</span></code> field</p></li>
+</ul>
+<p>Example output:</p>
+<div class="highlight-markdown notranslate"><div class="highlight"><pre><span></span><span class="gh"># Longform Document: default</span>
+
+&lt;!-- PK-LONGFORM id=abc-123 table=events doc=default --&gt;
+<span class="gh"># Chapter 1: The Beginning</span>
+
+Once upon a time, in a land far away...
+
+&lt;!-- PK-LONGFORM id=def-456 table=events doc=default --&gt;
+<span class="gu">## Section 1.1: The Hero&#39;s Journey</span>
+
+The hero set out on a quest...
+</pre></div>
+</div>
+</section>
+</section>
+<section id="migration-and-database-safety">
+<h2>Migration and Database Safety<a class="headerlink" href="#migration-and-database-safety" title="Link to this heading">¶</a></h2>
+<section id="running-the-migration">
+<h3>Running the Migration<a class="headerlink" href="#running-the-migration" title="Link to this heading">¶</a></h3>
+<p>Before using the longform feature, ensure the <code class="docutils literal notranslate"><span class="pre">attributes</span></code> column exists:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># IMPORTANT: Backup your database first!</span>
+cp<span class="w"> </span>world.kraken<span class="w"> </span>world.kraken.backup
+
+<span class="c1"># The migration is idempotent and safe to run</span>
+sqlite3<span class="w"> </span>world.kraken<span class="w"> </span>&lt;<span class="w"> </span>migrations/0003_add_attributes_columns_longform.sql
+</pre></div>
+</div>
+<p><strong>Note:</strong> The <code class="docutils literal notranslate"><span class="pre">DatabaseService._init_schema()</span></code> already creates the attributes column for new databases, so this migration is mainly for legacy databases.</p>
+</section>
+<section id="migration-safety">
+<h3>Migration Safety<a class="headerlink" href="#migration-safety" title="Link to this heading">¶</a></h3>
+<p>The migration is designed to be <strong>idempotent</strong> (safe to run multiple times):</p>
+<ul class="simple">
+<li><p>If the <code class="docutils literal notranslate"><span class="pre">attributes</span></code> column already exists, the <code class="docutils literal notranslate"><span class="pre">ALTER</span> <span class="pre">TABLE</span></code> commands will fail harmlessly</p></li>
+<li><p>The migration includes defensive <code class="docutils literal notranslate"><span class="pre">UPDATE</span></code> statements to ensure no <code class="docutils literal notranslate"><span class="pre">NULL</span></code> values remain</p></li>
+<li><p>No data is deleted or modified beyond adding the column</p></li>
+</ul>
+</section>
+<section id="safety-checklist">
+<h3>Safety Checklist<a class="headerlink" href="#safety-checklist" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p>✅ <strong>Backup</strong>: Always backup your <code class="docutils literal notranslate"><span class="pre">.kraken</span></code> file before running migrations</p></li>
+<li><p>✅ <strong>Test First</strong>: Run on a copy of your database before production</p></li>
+<li><p>✅ <strong>Verify</strong>: Use the sanity check script (see below) to validate JSON parsing</p></li>
+<li><p>✅ <strong>Staged Rollout</strong>: Test in a staging environment first</p></li>
+</ol>
+</section>
+<section id="rollback-instructions">
+<h3>Rollback Instructions<a class="headerlink" href="#rollback-instructions" title="Link to this heading">¶</a></h3>
+<p>If you need to rollback the migration:</p>
+<p><strong>Option 1: Restore from Backup</strong> (Recommended)</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Stop the application</span>
+cp<span class="w"> </span>world.kraken.backup<span class="w"> </span>world.kraken
+<span class="c1"># Restart the application</span>
+</pre></div>
+</div>
+<p><strong>Option 2: Remove Longform Metadata Only</strong></p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="c1">-- This removes only longform data, keeping the attributes column</span>
+<span class="k">UPDATE</span><span class="w"> </span><span class="n">events</span><span class="w"> </span>
+<span class="k">SET</span><span class="w"> </span><span class="n">attributes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">json_remove</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;$.longform&#39;</span><span class="p">)</span><span class="w"> </span>
+<span class="k">WHERE</span><span class="w"> </span><span class="n">json_extract</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;$.longform&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">IS</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">;</span>
+
+<span class="k">UPDATE</span><span class="w"> </span><span class="n">entities</span><span class="w"> </span>
+<span class="k">SET</span><span class="w"> </span><span class="n">attributes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">json_remove</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;$.longform&#39;</span><span class="p">)</span><span class="w"> </span>
+<span class="k">WHERE</span><span class="w"> </span><span class="n">json_extract</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;$.longform&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">IS</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">;</span>
+</pre></div>
+</div>
+<p><strong>Option 3: Remove Column</strong> (Not recommended - loses all attributes data)</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="c1">-- WARNING: This removes ALL data in the attributes column, not just longform!</span>
+<span class="c1">-- Only use if you have no other data in attributes</span>
+<span class="k">ALTER</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">events</span><span class="w"> </span><span class="k">DROP</span><span class="w"> </span><span class="k">COLUMN</span><span class="w"> </span><span class="n">attributes</span><span class="p">;</span>
+<span class="k">ALTER</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">entities</span><span class="w"> </span><span class="k">DROP</span><span class="w"> </span><span class="k">COLUMN</span><span class="w"> </span><span class="n">attributes</span><span class="p">;</span>
+</pre></div>
+</div>
+</section>
+<section id="sanity-check-script">
+<h3>Sanity Check Script<a class="headerlink" href="#sanity-check-script" title="Link to this heading">¶</a></h3>
+<p>Create a simple script to verify attributes JSON can be parsed:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="sd">&quot;&quot;&quot;Sanity check for attributes JSON parsing.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">sqlite3</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">check_database</span><span class="p">(</span><span class="n">db_path</span><span class="p">):</span>
+    <span class="n">conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">db_path</span><span class="p">)</span>
+    <span class="n">conn</span><span class="o">.</span><span class="n">row_factory</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Row</span>
+    
+    <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="c1"># Check events</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT id, attributes FROM events&quot;</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]:</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">])</span>
+        <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Event </span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Check entities</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT id, attributes FROM entities&quot;</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]:</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">])</span>
+        <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Entity </span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    
+    <span class="k">if</span> <span class="n">errors</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;❌ JSON parsing errors found:&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">error</span> <span class="ow">in</span> <span class="n">errors</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;✅ All attributes JSON valid&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Usage: python sanity_check.py world.kraken&quot;</span><span class="p">)</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    
+    <span class="n">success</span> <span class="o">=</span> <span class="n">check_database</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span> <span class="k">if</span> <span class="n">success</span> <span class="k">else</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Save as <code class="docutils literal notranslate"><span class="pre">sanity_check.py</span></code> and run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>sanity_check.py<span class="w"> </span>world.kraken
+</pre></div>
+</div>
+</section>
+</section>
+<section id="command-pattern-undo-redo">
+<h2>Command Pattern (Undo/Redo)<a class="headerlink" href="#command-pattern-undo-redo" title="Link to this heading">¶</a></h2>
+<p>All longform operations that modify structure support undo/redo via command objects:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">src.commands.longform_commands</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">MoveLongformEntryCommand</span><span class="p">,</span>
+    <span class="n">PromoteLongformEntryCommand</span><span class="p">,</span>
+    <span class="n">DemoteLongformEntryCommand</span><span class="p">,</span>
+    <span class="n">RemoveLongformEntryCommand</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Move command</span>
+<span class="n">old_meta</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;position&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span> <span class="s2">&quot;parent_id&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;depth&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+<span class="n">new_meta</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;position&quot;</span><span class="p">:</span> <span class="mf">200.0</span><span class="p">,</span> <span class="s2">&quot;parent_id&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;depth&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+<span class="n">cmd</span> <span class="o">=</span> <span class="n">MoveLongformEntryCommand</span><span class="p">(</span><span class="s2">&quot;events&quot;</span><span class="p">,</span> <span class="s2">&quot;event-id&quot;</span><span class="p">,</span> <span class="n">old_meta</span><span class="p">,</span> <span class="n">new_meta</span><span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">db_service</span><span class="p">)</span>
+
+<span class="c1"># Undo the move</span>
+<span class="n">cmd</span><span class="o">.</span><span class="n">undo</span><span class="p">(</span><span class="n">db_service</span><span class="p">)</span>
+
+<span class="c1"># Promote command</span>
+<span class="n">cmd</span> <span class="o">=</span> <span class="n">PromoteLongformEntryCommand</span><span class="p">(</span><span class="s2">&quot;events&quot;</span><span class="p">,</span> <span class="s2">&quot;event-id&quot;</span><span class="p">,</span> <span class="n">old_meta</span><span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">db_service</span><span class="p">)</span>
+<span class="n">cmd</span><span class="o">.</span><span class="n">undo</span><span class="p">(</span><span class="n">db_service</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="best-practices">
+<h2>Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading">¶</a></h2>
+<section id="position-management">
+<h3>Position Management<a class="headerlink" href="#position-management" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Use large gaps</strong>: Default gap of 100.0 allows many insertions without reindexing</p></li>
+<li><p><strong>Reindex periodically</strong>: If you notice many fractional positions (e.g., 100.5, 100.25), run reindex</p></li>
+<li><p><strong>Place between siblings</strong>: Use <code class="docutils literal notranslate"><span class="pre">place_between_siblings_and_set_parent()</span></code> for clean insertions</p></li>
+</ul>
+</section>
+<section id="parent-child-relationships">
+<h3>Parent-Child Relationships<a class="headerlink" href="#parent-child-relationships" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>No circular detection</strong>: Avoid creating circular parent relationships (A → B → A)</p></li>
+<li><p><strong>Orphaned parents</strong>: If you delete a parent, children become orphaned. Update children before deleting parents</p></li>
+<li><p><strong>Cross-table parents</strong>: Parents can be from events or entities table</p></li>
+</ul>
+</section>
+<section id="performance">
+<h3>Performance<a class="headerlink" href="#performance" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Modest scale</strong>: Full scan of events/entities is fine for databases with &lt; 10,000 items</p></li>
+<li><p><strong>Large databases</strong>: Consider adding an index column or cache if you have &gt; 50,000 items</p></li>
+<li><p><strong>Lazy loading</strong>: For very large documents, consider loading/rendering sections on demand</p></li>
+</ul>
+</section>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">¶</a></h2>
+<section id="row-not-found-errors">
+<h3>“Row not found” errors<a class="headerlink" href="#row-not-found-errors" title="Link to this heading">¶</a></h3>
+<p>Ensure the Event/Entity exists in the database before adding longform metadata.</p>
+</section>
+<section id="positions-not-in-order">
+<h3>Positions not in order<a class="headerlink" href="#positions-not-in-order" title="Link to this heading">¶</a></h3>
+<p>Run <code class="docutils literal notranslate"><span class="pre">reindex_document_positions()</span></code> to reset positions to clean values.</p>
+</section>
+<section id="json-parsing-errors">
+<h3>JSON parsing errors<a class="headerlink" href="#json-parsing-errors" title="Link to this heading">¶</a></h3>
+<p>Run the sanity check script to identify malformed JSON in attributes column.</p>
+</section>
+<section id="parent-child-structure-not-rendering-correctly">
+<h3>Parent-child structure not rendering correctly<a class="headerlink" href="#parent-child-structure-not-rendering-correctly" title="Link to this heading">¶</a></h3>
+<p>Verify that:</p>
+<ul class="simple">
+<li><p>Parent IDs are valid UUIDs of existing items</p></li>
+<li><p>Depth values are consistent (child depth = parent depth + 1)</p></li>
+<li><p>All items in the hierarchy have longform metadata</p></li>
+</ul>
+</section>
+<section id="float-exhaustion">
+<h3>Float exhaustion<a class="headerlink" href="#float-exhaustion" title="Link to this heading">¶</a></h3>
+<p>After many insertions between the same two items, you may get very small or large position values. Run reindex to fix.</p>
+</section>
+</section>
+<section id="future-enhancements">
+<h2>Future Enhancements<a class="headerlink" href="#future-enhancements" title="Link to this heading">¶</a></h2>
+<p>Potential improvements for future versions:</p>
+<ul class="simple">
+<li><p>Multiple document support (custom <code class="docutils literal notranslate"><span class="pre">doc_id</span></code> values)</p></li>
+<li><p>Automatic circular parent detection</p></li>
+<li><p>Index column for faster querying on large databases</p></li>
+<li><p>Real-time collaborative editing</p></li>
+<li><p>Version history for longform changes</p></li>
+<li><p>GUI outline editor with drag-and-drop</p></li>
+<li><p>Export to other formats (PDF, HTML, EPUB)</p></li>
+</ul>
+</section>
+<section id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">src/services/longform_builder.py</span></code> - Core service implementation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/commands/longform_commands.py</span></code> - Command objects for undo/redo</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/cli/export_longform.py</span></code> - CLI export tool</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">migrations/0003_add_attributes_columns_longform.sql</span></code> - Database migration</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tests/integration/test_longform_integration.py</span></code> - Integration test examples</p></li>
+</ul>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, Antigravity
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Longform Document Feature</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#attributes-json-format">Attributes JSON Format</a><ul>
+<li><a class="reference internal" href="#metadata-fields">Metadata Fields</a></li>
+<li><a class="reference internal" href="#example-metadata">Example Metadata</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#usage">Usage</a><ul>
+<li><a class="reference internal" href="#gui-longform-editor">GUI Longform Editor</a></li>
+<li><a class="reference internal" href="#adding-items-to-longform">Adding Items to Longform</a></li>
+<li><a class="reference internal" href="#building-the-document-sequence">Building the Document Sequence</a></li>
+<li><a class="reference internal" href="#reordering-and-nesting">Reordering and Nesting</a></li>
+<li><a class="reference internal" href="#reindexing-positions">Reindexing Positions</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#cli-export-tool">CLI Export Tool</a><ul>
+<li><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
+<li><a class="reference internal" href="#markdown-format">Markdown Format</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#migration-and-database-safety">Migration and Database Safety</a><ul>
+<li><a class="reference internal" href="#running-the-migration">Running the Migration</a></li>
+<li><a class="reference internal" href="#migration-safety">Migration Safety</a></li>
+<li><a class="reference internal" href="#safety-checklist">Safety Checklist</a></li>
+<li><a class="reference internal" href="#rollback-instructions">Rollback Instructions</a></li>
+<li><a class="reference internal" href="#sanity-check-script">Sanity Check Script</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#command-pattern-undo-redo">Command Pattern (Undo/Redo)</a></li>
+<li><a class="reference internal" href="#best-practices">Best Practices</a><ul>
+<li><a class="reference internal" href="#position-management">Position Management</a></li>
+<li><a class="reference internal" href="#parent-child-relationships">Parent-Child Relationships</a></li>
+<li><a class="reference internal" href="#performance">Performance</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
+<li><a class="reference internal" href="#row-not-found-errors">“Row not found” errors</a></li>
+<li><a class="reference internal" href="#positions-not-in-order">Positions not in order</a></li>
+<li><a class="reference internal" href="#json-parsing-errors">JSON parsing errors</a></li>
+<li><a class="reference internal" href="#parent-child-structure-not-rendering-correctly">Parent-child structure not rendering correctly</a></li>
+<li><a class="reference internal" href="#float-exhaustion">Float exhaustion</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#future-enhancements">Future Enhancements</a></li>
+<li><a class="reference internal" href="#see-also">See Also</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=95e61db4"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

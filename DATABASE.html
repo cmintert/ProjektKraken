@@ -1,0 +1,719 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
+        <title>Database Architecture and Best Practices - Project Kraken 0.2.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">Project Kraken 0.2.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  <span class="sidebar-brand-text">Project Kraken 0.2.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="modules.html">src</a><input aria-label="Toggle navigation of src" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="app.html">app package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html">cli package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="commands.html">commands package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core.html">core package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="gui.html">gui package</a><input aria-label="Toggle navigation of gui package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui.widgets.html">gui.widgets package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui.dialogs.html">gui.dialogs package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="services.html">services package</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/DATABASE.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="database-architecture-and-best-practices">
+<h1>Database Architecture and Best Practices<a class="headerlink" href="#database-architecture-and-best-practices" title="Link to this heading">¶</a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>ProjektKraken uses SQLite as its database engine with a hybrid schema approach that combines strict SQL columns for searchable/sortable fields with flexible JSON attributes for custom data.</p>
+</section>
+<section id="architecture">
+<h2>Architecture<a class="headerlink" href="#architecture" title="Link to this heading">¶</a></h2>
+<section id="database-service-src-services-db-service-py">
+<h3>Database Service (<code class="docutils literal notranslate"><span class="pre">src/services/db_service.py</span></code>)<a class="headerlink" href="#database-service-src-services-db-service-py" title="Link to this heading">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">DatabaseService</span></code> class is the single point of interaction with the SQLite database. It implements:</p>
+<ul class="simple">
+<li><p><strong>Connection Management</strong>: Persistent connection with lazy initialization</p></li>
+<li><p><strong>Transaction Safety</strong>: Context manager for ACID compliance</p></li>
+<li><p><strong>Hybrid Schema</strong>: SQL columns + JSON attributes</p></li>
+<li><p><strong>Parameterized Queries</strong>: SQL injection prevention</p></li>
+<li><p><strong>Automatic Rollback</strong>: Error handling with transaction rollback</p></li>
+</ul>
+</section>
+<section id="schema-design">
+<h3>Schema Design<a class="headerlink" href="#schema-design" title="Link to this heading">¶</a></h3>
+<section id="core-tables">
+<h4>Core Tables<a class="headerlink" href="#core-tables" title="Link to this heading">¶</a></h4>
+<ol class="arabic simple">
+<li><p><strong>events</strong> - Timeline events (points or spans in time)</p>
+<ul class="simple">
+<li><p>Strict columns: <code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">type</span></code>, <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">lore_date</span></code>, <code class="docutils literal notranslate"><span class="pre">lore_duration</span></code>, <code class="docutils literal notranslate"><span class="pre">description</span></code></p></li>
+<li><p>Flexible: <code class="docutils literal notranslate"><span class="pre">attributes</span></code> (JSON)</p></li>
+<li><p>Metadata: <code class="docutils literal notranslate"><span class="pre">created_at</span></code>, <code class="docutils literal notranslate"><span class="pre">modified_at</span></code></p></li>
+</ul>
+</li>
+<li><p><strong>entities</strong> - Timeless objects (characters, locations, artifacts)</p>
+<ul class="simple">
+<li><p>Strict columns: <code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">type</span></code>, <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">description</span></code></p></li>
+<li><p>Flexible: <code class="docutils literal notranslate"><span class="pre">attributes</span></code> (JSON)</p></li>
+<li><p>Metadata: <code class="docutils literal notranslate"><span class="pre">created_at</span></code>, <code class="docutils literal notranslate"><span class="pre">modified_at</span></code></p></li>
+</ul>
+</li>
+<li><p><strong>relations</strong> - Directed relationships between objects</p>
+<ul class="simple">
+<li><p>Columns: <code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">source_id</span></code>, <code class="docutils literal notranslate"><span class="pre">target_id</span></code>, <code class="docutils literal notranslate"><span class="pre">rel_type</span></code></p></li>
+<li><p>Flexible: <code class="docutils literal notranslate"><span class="pre">attributes</span></code> (JSON)</p></li>
+<li><p>Metadata: <code class="docutils literal notranslate"><span class="pre">created_at</span></code></p></li>
+</ul>
+</li>
+<li><p><strong>system_meta</strong> - Application metadata</p>
+<ul class="simple">
+<li><p>Key-value store for settings</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="indexes">
+<h4>Indexes<a class="headerlink" href="#indexes" title="Link to this heading">¶</a></h4>
+<p>Performance indexes are automatically created:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">idx_events_date</span></code> - Chronological event queries</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">idx_relations_source</span></code> - Outgoing relation lookups</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">idx_relations_target</span></code> - Incoming relation lookups</p></li>
+</ul>
+</section>
+</section>
+<section id="connection-management">
+<h3>Connection Management<a class="headerlink" href="#connection-management" title="Link to this heading">¶</a></h3>
+<section id="connection-lifecycle">
+<h4>Connection Lifecycle<a class="headerlink" href="#connection-lifecycle" title="Link to this heading">¶</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Automatic connection on first use</span>
+<span class="n">service</span> <span class="o">=</span> <span class="n">DatabaseService</span><span class="p">(</span><span class="s2">&quot;path/to/world.kraken&quot;</span><span class="p">)</span>
+<span class="n">service</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>  <span class="c1"># Explicit connection</span>
+
+<span class="c1"># Lazy connection on first query</span>
+<span class="n">event</span> <span class="o">=</span> <span class="n">service</span><span class="o">.</span><span class="n">get_event</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span>  <span class="c1"># Auto-connects if needed</span>
+
+<span class="c1"># Cleanup</span>
+<span class="n">service</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="thread-safety">
+<h4>Thread Safety<a class="headerlink" href="#thread-safety" title="Link to this heading">¶</a></h4>
+<p><strong>Important</strong>: SQLite connections are NOT thread-safe. The codebase uses a Worker thread pattern:</p>
+<ul class="simple">
+<li><p>Main thread: UI operations only</p></li>
+<li><p>Worker thread: All database operations via <code class="docutils literal notranslate"><span class="pre">DatabaseWorker</span></code></p></li>
+<li><p>Communication: Qt signals/slots with queued connections</p></li>
+</ul>
+<p><strong>Never</strong> access the database service directly from the UI thread in production code.</p>
+</section>
+</section>
+<section id="transaction-management">
+<h3>Transaction Management<a class="headerlink" href="#transaction-management" title="Link to this heading">¶</a></h3>
+<p>All write operations use the transaction context manager:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">db_service</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+    <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+    <span class="c1"># Automatic commit on success</span>
+    <span class="c1"># Automatic rollback on exception</span>
+</pre></div>
+</div>
+<section id="transaction-guarantees">
+<h4>Transaction Guarantees<a class="headerlink" href="#transaction-guarantees" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p><strong>Atomicity</strong>: All operations succeed or all fail</p></li>
+<li><p><strong>Consistency</strong>: Database constraints are enforced</p></li>
+<li><p><strong>Isolation</strong>: Default SQLite isolation level</p></li>
+<li><p><strong>Durability</strong>: Changes persisted to disk</p></li>
+</ul>
+</section>
+<section id="error-handling">
+<h4>Error Handling<a class="headerlink" href="#error-handling" title="Link to this heading">¶</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">db_service</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+        <span class="c1"># ... database operations ...</span>
+<span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="c1"># Transaction automatically rolled back</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Database error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1"># Handle error appropriately</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="performance-optimization">
+<h3>Performance Optimization<a class="headerlink" href="#performance-optimization" title="Link to this heading">¶</a></h3>
+<section id="bulk-operations">
+<h4>Bulk Operations<a class="headerlink" href="#bulk-operations" title="Link to this heading">¶</a></h4>
+<p>For inserting multiple records, use bulk methods:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Inefficient: Multiple transactions</span>
+<span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">events</span><span class="p">:</span>
+    <span class="n">db_service</span><span class="o">.</span><span class="n">insert_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+
+<span class="c1"># Efficient: Single transaction with executemany</span>
+<span class="n">db_service</span><span class="o">.</span><span class="n">insert_events_bulk</span><span class="p">(</span><span class="n">events</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="query-optimization">
+<h4>Query Optimization<a class="headerlink" href="#query-optimization" title="Link to this heading">¶</a></h4>
+<ol class="arabic simple">
+<li><p><strong>Use Indexes</strong>: Queries on <code class="docutils literal notranslate"><span class="pre">lore_date</span></code>, <code class="docutils literal notranslate"><span class="pre">source_id</span></code>, <code class="docutils literal notranslate"><span class="pre">target_id</span></code> are indexed</p></li>
+<li><p><strong>Limit Results</strong>: Use SQL <code class="docutils literal notranslate"><span class="pre">LIMIT</span></code> for pagination when needed</p></li>
+<li><p><strong>Avoid N+1 Queries</strong>: Fetch related data in single query when possible</p></li>
+</ol>
+</section>
+<section id="database-locking">
+<h4>Database Locking<a class="headerlink" href="#database-locking" title="Link to this heading">¶</a></h4>
+<p>SQLite uses file-level locking:</p>
+<ul class="simple">
+<li><p><strong>Readers</strong>: Multiple concurrent readers allowed</p></li>
+<li><p><strong>Writers</strong>: Exclusive lock required</p></li>
+<li><p><strong>Busy Timeout</strong>: Not explicitly set (uses SQLite defaults)</p></li>
+</ul>
+<p>For high-concurrency scenarios, consider:</p>
+<ul class="simple">
+<li><p>Using WAL (Write-Ahead Logging) mode</p></li>
+<li><p>Implementing retry logic for locked database</p></li>
+<li><p>Keeping transactions short</p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="security-best-practices">
+<h2>Security Best Practices<a class="headerlink" href="#security-best-practices" title="Link to this heading">¶</a></h2>
+<section id="sql-injection-prevention">
+<h3>SQL Injection Prevention<a class="headerlink" href="#sql-injection-prevention" title="Link to this heading">¶</a></h3>
+<p><strong>All queries use parameterized statements:</strong></p>
+<p>✅ <strong>Correct</strong> - Parameterized query:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT * FROM events WHERE id = ?&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">event_id</span><span class="p">,))</span>
+</pre></div>
+</div>
+<p>❌ <strong>Wrong</strong> - String interpolation (SQL injection risk):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SELECT * FROM events WHERE id = &#39;</span><span class="si">{</span><span class="n">event_id</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+<span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT * FROM events WHERE id = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">event_id</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="data-validation">
+<h3>Data Validation<a class="headerlink" href="#data-validation" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Input Validation</strong>: Validate data before database operations</p></li>
+<li><p><strong>Type Safety</strong>: Use type hints and dataclasses</p></li>
+<li><p><strong>Constraint Enforcement</strong>: Database constraints (PRIMARY KEY, NOT NULL, etc.)</p></li>
+</ol>
+</section>
+<section id="sensitive-data">
+<h3>Sensitive Data<a class="headerlink" href="#sensitive-data" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>No Passwords in Database</strong>: Not applicable for this app</p></li>
+<li><p><strong>No API Keys in Code</strong>: Use environment variables</p></li>
+<li><p><strong>File Permissions</strong>: Database files should have appropriate OS permissions</p></li>
+</ol>
+</section>
+<section id="backup-and-recovery">
+<h3>Backup and Recovery<a class="headerlink" href="#backup-and-recovery" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>File-based Backup</strong>: Copy <code class="docutils literal notranslate"><span class="pre">.kraken</span></code> file when app is closed</p></li>
+<li><p><strong>Export</strong>: Implement JSON export for data portability</p></li>
+<li><p><strong>Version Control</strong>: Never commit <code class="docutils literal notranslate"><span class="pre">.kraken</span></code> files to git (see <code class="docutils literal notranslate"><span class="pre">.gitignore</span></code>)</p></li>
+</ol>
+</section>
+</section>
+<section id="testing-best-practices">
+<h2>Testing Best Practices<a class="headerlink" href="#testing-best-practices" title="Link to this heading">¶</a></h2>
+<section id="in-memory-testing">
+<h3>In-Memory Testing<a class="headerlink" href="#in-memory-testing" title="Link to this heading">¶</a></h3>
+<p>Always use <code class="docutils literal notranslate"><span class="pre">:memory:</span></code> for tests:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">db_service</span><span class="p">():</span>
+    <span class="n">service</span> <span class="o">=</span> <span class="n">DatabaseService</span><span class="p">(</span><span class="s2">&quot;:memory:&quot;</span><span class="p">)</span>
+    <span class="n">service</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+    <span class="k">yield</span> <span class="n">service</span>
+    <span class="n">service</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="test-coverage">
+<h3>Test Coverage<a class="headerlink" href="#test-coverage" title="Link to this heading">¶</a></h3>
+<p>Ensure tests cover:</p>
+<ul class="simple">
+<li><p>✅ CRUD operations (Create, Read, Update, Delete)</p></li>
+<li><p>✅ Transaction rollback on errors</p></li>
+<li><p>✅ Edge cases (empty data, nonexistent IDs)</p></li>
+<li><p>✅ Bulk operations</p></li>
+<li><p>✅ Concurrent access (if applicable)</p></li>
+<li><p>✅ Data integrity (foreign keys, constraints)</p></li>
+</ul>
+</section>
+<section id="example-test">
+<h3>Example Test<a class="headerlink" href="#example-test" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_transaction_rollback</span><span class="p">(</span><span class="n">db_service</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that failed transactions rollback changes.&quot;&quot;&quot;</span>
+    <span class="n">event</span> <span class="o">=</span> <span class="n">Event</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Test&quot;</span><span class="p">,</span> <span class="n">lore_date</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">db_service</span><span class="o">.</span><span class="n">insert_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">db_service</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;INSERT INTO events ...&quot;</span><span class="p">)</span>  <span class="c1"># Valid</span>
+            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;INVALID SQL&quot;</span><span class="p">)</span>  <span class="c1"># Causes rollback</span>
+    <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span><span class="p">:</span>
+        <span class="k">pass</span>
+    
+    <span class="c1"># First insert should still exist</span>
+    <span class="k">assert</span> <span class="n">db_service</span><span class="o">.</span><span class="n">get_event</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="common-patterns">
+<h2>Common Patterns<a class="headerlink" href="#common-patterns" title="Link to this heading">¶</a></h2>
+<section id="crud-operations">
+<h3>CRUD Operations<a class="headerlink" href="#crud-operations" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create</span>
+<span class="n">event</span> <span class="o">=</span> <span class="n">Event</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Battle&quot;</span><span class="p">,</span> <span class="n">lore_date</span><span class="o">=</span><span class="mf">1066.0</span><span class="p">)</span>
+<span class="n">db_service</span><span class="o">.</span><span class="n">insert_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+
+<span class="c1"># Read</span>
+<span class="n">event</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">get_event</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span>
+<span class="n">events</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">get_all_events</span><span class="p">()</span>
+
+<span class="c1"># Update (via upsert)</span>
+<span class="n">event</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Updated Name&quot;</span>
+<span class="n">db_service</span><span class="o">.</span><span class="n">insert_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+
+<span class="c1"># Delete</span>
+<span class="n">db_service</span><span class="o">.</span><span class="n">delete_event</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="relations">
+<h3>Relations<a class="headerlink" href="#relations" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create relation</span>
+<span class="n">rel_id</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">insert_relation</span><span class="p">(</span>
+    <span class="n">source_id</span><span class="o">=</span><span class="n">event1</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+    <span class="n">target_id</span><span class="o">=</span><span class="n">event2</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+    <span class="n">rel_type</span><span class="o">=</span><span class="s2">&quot;caused&quot;</span><span class="p">,</span>
+    <span class="n">attributes</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;certainty&quot;</span><span class="p">:</span> <span class="mf">0.9</span><span class="p">}</span>
+<span class="p">)</span>
+
+<span class="c1"># Query relations</span>
+<span class="n">outgoing</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">get_relations</span><span class="p">(</span><span class="n">source_id</span><span class="p">)</span>
+<span class="n">incoming</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">get_incoming_relations</span><span class="p">(</span><span class="n">target_id</span><span class="p">)</span>
+
+<span class="c1"># Update relation</span>
+<span class="n">db_service</span><span class="o">.</span><span class="n">update_relation</span><span class="p">(</span>
+    <span class="n">rel_id</span><span class="o">=</span><span class="n">rel_id</span><span class="p">,</span>
+    <span class="n">target_id</span><span class="o">=</span><span class="n">new_target</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+    <span class="n">rel_type</span><span class="o">=</span><span class="s2">&quot;prevented&quot;</span><span class="p">,</span>
+    <span class="n">attributes</span><span class="o">=</span><span class="p">{}</span>
+<span class="p">)</span>
+
+<span class="c1"># Delete relation</span>
+<span class="n">db_service</span><span class="o">.</span><span class="n">delete_relation</span><span class="p">(</span><span class="n">rel_id</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="migration-strategy">
+<h2>Migration Strategy<a class="headerlink" href="#migration-strategy" title="Link to this heading">¶</a></h2>
+<p>For schema changes:</p>
+<ol class="arabic simple">
+<li><p><strong>Version System Metadata</strong>: Track schema version in <code class="docutils literal notranslate"><span class="pre">system_meta</span></code> table</p></li>
+<li><p><strong>Migration Scripts</strong>: Create upgrade functions</p></li>
+<li><p><strong>Backup First</strong>: Always backup before migration</p></li>
+<li><p><strong>Test Migration</strong>: Test on copy of production data</p></li>
+</ol>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">migrate_v1_to_v2</span><span class="p">(</span><span class="n">db_service</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Migrate database from v1 to v2.&quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">db_service</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+        <span class="c1"># Add new column</span>
+        <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;ALTER TABLE events ADD COLUMN new_field TEXT&quot;</span><span class="p">)</span>
+        <span class="c1"># Update version</span>
+        <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="s2">&quot;INSERT OR REPLACE INTO system_meta VALUES (?, ?)&quot;</span><span class="p">,</span>
+            <span class="p">(</span><span class="s2">&quot;schema_version&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">¶</a></h2>
+<section id="database-locked">
+<h3>Database Locked<a class="headerlink" href="#database-locked" title="Link to this heading">¶</a></h3>
+<p><strong>Symptom</strong>: <code class="docutils literal notranslate"><span class="pre">sqlite3.OperationalError:</span> <span class="pre">database</span> <span class="pre">is</span> <span class="pre">locked</span></code></p>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic simple">
+<li><p>Ensure transactions are short</p></li>
+<li><p>Close connections properly</p></li>
+<li><p>Use WAL mode for better concurrency</p></li>
+<li><p>Implement retry logic with exponential backoff</p></li>
+</ol>
+</section>
+<section id="disk-full">
+<h3>Disk Full<a class="headerlink" href="#disk-full" title="Link to this heading">¶</a></h3>
+<p><strong>Symptom</strong>: <code class="docutils literal notranslate"><span class="pre">sqlite3.OperationalError:</span> <span class="pre">disk</span> <span class="pre">I/O</span> <span class="pre">error</span></code></p>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic simple">
+<li><p>Check available disk space</p></li>
+<li><p>Implement size monitoring</p></li>
+<li><p>Regular cleanup of old data</p></li>
+</ol>
+</section>
+<section id="corrupted-database">
+<h3>Corrupted Database<a class="headerlink" href="#corrupted-database" title="Link to this heading">¶</a></h3>
+<p><strong>Symptom</strong>: <code class="docutils literal notranslate"><span class="pre">sqlite3.DatabaseError:</span> <span class="pre">database</span> <span class="pre">disk</span> <span class="pre">image</span> <span class="pre">is</span> <span class="pre">malformed</span></code></p>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic simple">
+<li><p>Restore from backup</p></li>
+<li><p>Use SQLite’s <code class="docutils literal notranslate"><span class="pre">PRAGMA</span> <span class="pre">integrity_check</span></code></p></li>
+<li><p>Export data if partially readable</p></li>
+</ol>
+</section>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.sqlite.org/docs.html">SQLite Documentation</a></p></li>
+<li><p><a class="reference external" href="https://www.sqlite.org/bestpractice.html">SQLite Best Practices</a></p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/sqlite3.html">Python sqlite3 Module</a></p></li>
+</ul>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, Antigravity
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Database Architecture and Best Practices</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#architecture">Architecture</a><ul>
+<li><a class="reference internal" href="#database-service-src-services-db-service-py">Database Service (<code class="docutils literal notranslate"><span class="pre">src/services/db_service.py</span></code>)</a></li>
+<li><a class="reference internal" href="#schema-design">Schema Design</a><ul>
+<li><a class="reference internal" href="#core-tables">Core Tables</a></li>
+<li><a class="reference internal" href="#indexes">Indexes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#connection-management">Connection Management</a><ul>
+<li><a class="reference internal" href="#connection-lifecycle">Connection Lifecycle</a></li>
+<li><a class="reference internal" href="#thread-safety">Thread Safety</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#transaction-management">Transaction Management</a><ul>
+<li><a class="reference internal" href="#transaction-guarantees">Transaction Guarantees</a></li>
+<li><a class="reference internal" href="#error-handling">Error Handling</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#performance-optimization">Performance Optimization</a><ul>
+<li><a class="reference internal" href="#bulk-operations">Bulk Operations</a></li>
+<li><a class="reference internal" href="#query-optimization">Query Optimization</a></li>
+<li><a class="reference internal" href="#database-locking">Database Locking</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#security-best-practices">Security Best Practices</a><ul>
+<li><a class="reference internal" href="#sql-injection-prevention">SQL Injection Prevention</a></li>
+<li><a class="reference internal" href="#data-validation">Data Validation</a></li>
+<li><a class="reference internal" href="#sensitive-data">Sensitive Data</a></li>
+<li><a class="reference internal" href="#backup-and-recovery">Backup and Recovery</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#testing-best-practices">Testing Best Practices</a><ul>
+<li><a class="reference internal" href="#in-memory-testing">In-Memory Testing</a></li>
+<li><a class="reference internal" href="#test-coverage">Test Coverage</a></li>
+<li><a class="reference internal" href="#example-test">Example Test</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#common-patterns">Common Patterns</a><ul>
+<li><a class="reference internal" href="#crud-operations">CRUD Operations</a></li>
+<li><a class="reference internal" href="#relations">Relations</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#migration-strategy">Migration Strategy</a></li>
+<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
+<li><a class="reference internal" href="#database-locked">Database Locked</a></li>
+<li><a class="reference internal" href="#disk-full">Disk Full</a></li>
+<li><a class="reference internal" href="#corrupted-database">Corrupted Database</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=95e61db4"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

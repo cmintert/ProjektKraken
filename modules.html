@@ -1,0 +1,786 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="app package" href="app.html"><link rel="prev" title="Welcome to Project Kraken’s documentation!" href="index.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
+        <title>src - Project Kraken 0.2.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">Project Kraken 0.2.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  <span class="sidebar-brand-text">Project Kraken 0.2.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current has-children current-page"><a class="current reference internal" href="#">src</a><input aria-label="Toggle navigation of src" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="app.html">app package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html">cli package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="commands.html">commands package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core.html">core package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="gui.html">gui package</a><input aria-label="Toggle navigation of gui package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui.widgets.html">gui.widgets package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui.dialogs.html">gui.dialogs package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="services.html">services package</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/modules.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="src">
+<h1>src<a class="headerlink" href="#src" title="Link to this heading">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="app.html">app package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="app.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="app.html#app-main-module">app.main module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="app.html#app-ui-manager-module">app.ui_manager module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="app.html#module-app.constants">app.constants module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="app.html#module-app">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">cli package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cli.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html#cli-export-longform-module">cli.export_longform module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html#module-cli">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="commands.html">commands package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="commands.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="commands.html#module-commands.base_command">commands.base_command module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="commands.html#commands.base_command.BaseCommand"><code class="docutils literal notranslate"><span class="pre">BaseCommand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.base_command.BaseCommand.__init__"><code class="docutils literal notranslate"><span class="pre">BaseCommand.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.base_command.BaseCommand.execute"><code class="docutils literal notranslate"><span class="pre">BaseCommand.execute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.base_command.BaseCommand.is_executed"><code class="docutils literal notranslate"><span class="pre">BaseCommand.is_executed</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.base_command.BaseCommand.undo"><code class="docutils literal notranslate"><span class="pre">BaseCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="commands.html#commands.base_command.CommandResult"><code class="docutils literal notranslate"><span class="pre">CommandResult</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.base_command.CommandResult.success"><code class="docutils literal notranslate"><span class="pre">CommandResult.success</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.base_command.CommandResult.message"><code class="docutils literal notranslate"><span class="pre">CommandResult.message</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.base_command.CommandResult.errors"><code class="docutils literal notranslate"><span class="pre">CommandResult.errors</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.base_command.CommandResult.command_name"><code class="docutils literal notranslate"><span class="pre">CommandResult.command_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#id0"><code class="docutils literal notranslate"><span class="pre">CommandResult.command_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.base_command.CommandResult.data"><code class="docutils literal notranslate"><span class="pre">CommandResult.data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#id1"><code class="docutils literal notranslate"><span class="pre">CommandResult.errors</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#id2"><code class="docutils literal notranslate"><span class="pre">CommandResult.message</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#id3"><code class="docutils literal notranslate"><span class="pre">CommandResult.success</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="commands.html#module-commands.calendar_commands">commands.calendar_commands module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="commands.html#commands.calendar_commands.CreateCalendarConfigCommand"><code class="docutils literal notranslate"><span class="pre">CreateCalendarConfigCommand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.calendar_commands.CreateCalendarConfigCommand.__init__"><code class="docutils literal notranslate"><span class="pre">CreateCalendarConfigCommand.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.calendar_commands.CreateCalendarConfigCommand.execute"><code class="docutils literal notranslate"><span class="pre">CreateCalendarConfigCommand.execute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.calendar_commands.CreateCalendarConfigCommand.undo"><code class="docutils literal notranslate"><span class="pre">CreateCalendarConfigCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="commands.html#commands.calendar_commands.DeleteCalendarConfigCommand"><code class="docutils literal notranslate"><span class="pre">DeleteCalendarConfigCommand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.calendar_commands.DeleteCalendarConfigCommand.__init__"><code class="docutils literal notranslate"><span class="pre">DeleteCalendarConfigCommand.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.calendar_commands.DeleteCalendarConfigCommand.execute"><code class="docutils literal notranslate"><span class="pre">DeleteCalendarConfigCommand.execute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.calendar_commands.DeleteCalendarConfigCommand.undo"><code class="docutils literal notranslate"><span class="pre">DeleteCalendarConfigCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="commands.html#commands.calendar_commands.SetActiveCalendarCommand"><code class="docutils literal notranslate"><span class="pre">SetActiveCalendarCommand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.calendar_commands.SetActiveCalendarCommand.__init__"><code class="docutils literal notranslate"><span class="pre">SetActiveCalendarCommand.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.calendar_commands.SetActiveCalendarCommand.execute"><code class="docutils literal notranslate"><span class="pre">SetActiveCalendarCommand.execute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.calendar_commands.SetActiveCalendarCommand.undo"><code class="docutils literal notranslate"><span class="pre">SetActiveCalendarCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="commands.html#commands.calendar_commands.UpdateCalendarConfigCommand"><code class="docutils literal notranslate"><span class="pre">UpdateCalendarConfigCommand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.calendar_commands.UpdateCalendarConfigCommand.__init__"><code class="docutils literal notranslate"><span class="pre">UpdateCalendarConfigCommand.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.calendar_commands.UpdateCalendarConfigCommand.execute"><code class="docutils literal notranslate"><span class="pre">UpdateCalendarConfigCommand.execute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.calendar_commands.UpdateCalendarConfigCommand.undo"><code class="docutils literal notranslate"><span class="pre">UpdateCalendarConfigCommand.undo()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="commands.html#module-commands.entity_commands">commands.entity_commands module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="commands.html#commands.entity_commands.CreateEntityCommand"><code class="docutils literal notranslate"><span class="pre">CreateEntityCommand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.entity_commands.CreateEntityCommand.__init__"><code class="docutils literal notranslate"><span class="pre">CreateEntityCommand.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.entity_commands.CreateEntityCommand.execute"><code class="docutils literal notranslate"><span class="pre">CreateEntityCommand.execute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.entity_commands.CreateEntityCommand.undo"><code class="docutils literal notranslate"><span class="pre">CreateEntityCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="commands.html#commands.entity_commands.DeleteEntityCommand"><code class="docutils literal notranslate"><span class="pre">DeleteEntityCommand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.entity_commands.DeleteEntityCommand.__init__"><code class="docutils literal notranslate"><span class="pre">DeleteEntityCommand.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.entity_commands.DeleteEntityCommand.execute"><code class="docutils literal notranslate"><span class="pre">DeleteEntityCommand.execute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.entity_commands.DeleteEntityCommand.undo"><code class="docutils literal notranslate"><span class="pre">DeleteEntityCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="commands.html#commands.entity_commands.UpdateEntityCommand"><code class="docutils literal notranslate"><span class="pre">UpdateEntityCommand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.entity_commands.UpdateEntityCommand.__init__"><code class="docutils literal notranslate"><span class="pre">UpdateEntityCommand.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.entity_commands.UpdateEntityCommand.execute"><code class="docutils literal notranslate"><span class="pre">UpdateEntityCommand.execute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.entity_commands.UpdateEntityCommand.undo"><code class="docutils literal notranslate"><span class="pre">UpdateEntityCommand.undo()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="commands.html#module-commands.event_commands">commands.event_commands module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="commands.html#commands.event_commands.CreateEventCommand"><code class="docutils literal notranslate"><span class="pre">CreateEventCommand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.event_commands.CreateEventCommand.__init__"><code class="docutils literal notranslate"><span class="pre">CreateEventCommand.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.event_commands.CreateEventCommand.execute"><code class="docutils literal notranslate"><span class="pre">CreateEventCommand.execute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.event_commands.CreateEventCommand.undo"><code class="docutils literal notranslate"><span class="pre">CreateEventCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="commands.html#commands.event_commands.DeleteEventCommand"><code class="docutils literal notranslate"><span class="pre">DeleteEventCommand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.event_commands.DeleteEventCommand.__init__"><code class="docutils literal notranslate"><span class="pre">DeleteEventCommand.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.event_commands.DeleteEventCommand.execute"><code class="docutils literal notranslate"><span class="pre">DeleteEventCommand.execute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.event_commands.DeleteEventCommand.undo"><code class="docutils literal notranslate"><span class="pre">DeleteEventCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="commands.html#commands.event_commands.UpdateEventCommand"><code class="docutils literal notranslate"><span class="pre">UpdateEventCommand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.event_commands.UpdateEventCommand.__init__"><code class="docutils literal notranslate"><span class="pre">UpdateEventCommand.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.event_commands.UpdateEventCommand.execute"><code class="docutils literal notranslate"><span class="pre">UpdateEventCommand.execute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.event_commands.UpdateEventCommand.undo"><code class="docutils literal notranslate"><span class="pre">UpdateEventCommand.undo()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="commands.html#module-commands.longform_commands">commands.longform_commands module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="commands.html#commands.longform_commands.DemoteLongformEntryCommand"><code class="docutils literal notranslate"><span class="pre">DemoteLongformEntryCommand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.longform_commands.DemoteLongformEntryCommand.__init__"><code class="docutils literal notranslate"><span class="pre">DemoteLongformEntryCommand.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.longform_commands.DemoteLongformEntryCommand.execute"><code class="docutils literal notranslate"><span class="pre">DemoteLongformEntryCommand.execute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.longform_commands.DemoteLongformEntryCommand.undo"><code class="docutils literal notranslate"><span class="pre">DemoteLongformEntryCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="commands.html#commands.longform_commands.MoveLongformEntryCommand"><code class="docutils literal notranslate"><span class="pre">MoveLongformEntryCommand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.longform_commands.MoveLongformEntryCommand.__init__"><code class="docutils literal notranslate"><span class="pre">MoveLongformEntryCommand.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.longform_commands.MoveLongformEntryCommand.execute"><code class="docutils literal notranslate"><span class="pre">MoveLongformEntryCommand.execute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.longform_commands.MoveLongformEntryCommand.undo"><code class="docutils literal notranslate"><span class="pre">MoveLongformEntryCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="commands.html#commands.longform_commands.PromoteLongformEntryCommand"><code class="docutils literal notranslate"><span class="pre">PromoteLongformEntryCommand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.longform_commands.PromoteLongformEntryCommand.__init__"><code class="docutils literal notranslate"><span class="pre">PromoteLongformEntryCommand.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.longform_commands.PromoteLongformEntryCommand.execute"><code class="docutils literal notranslate"><span class="pre">PromoteLongformEntryCommand.execute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.longform_commands.PromoteLongformEntryCommand.undo"><code class="docutils literal notranslate"><span class="pre">PromoteLongformEntryCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="commands.html#commands.longform_commands.RemoveLongformEntryCommand"><code class="docutils literal notranslate"><span class="pre">RemoveLongformEntryCommand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.longform_commands.RemoveLongformEntryCommand.__init__"><code class="docutils literal notranslate"><span class="pre">RemoveLongformEntryCommand.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.longform_commands.RemoveLongformEntryCommand.execute"><code class="docutils literal notranslate"><span class="pre">RemoveLongformEntryCommand.execute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.longform_commands.RemoveLongformEntryCommand.undo"><code class="docutils literal notranslate"><span class="pre">RemoveLongformEntryCommand.undo()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="commands.html#module-commands.relation_commands">commands.relation_commands module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="commands.html#commands.relation_commands.AddRelationCommand"><code class="docutils literal notranslate"><span class="pre">AddRelationCommand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.relation_commands.AddRelationCommand.__init__"><code class="docutils literal notranslate"><span class="pre">AddRelationCommand.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.relation_commands.AddRelationCommand.execute"><code class="docutils literal notranslate"><span class="pre">AddRelationCommand.execute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.relation_commands.AddRelationCommand.undo"><code class="docutils literal notranslate"><span class="pre">AddRelationCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="commands.html#commands.relation_commands.RemoveRelationCommand"><code class="docutils literal notranslate"><span class="pre">RemoveRelationCommand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.relation_commands.RemoveRelationCommand.__init__"><code class="docutils literal notranslate"><span class="pre">RemoveRelationCommand.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.relation_commands.RemoveRelationCommand.execute"><code class="docutils literal notranslate"><span class="pre">RemoveRelationCommand.execute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.relation_commands.RemoveRelationCommand.undo"><code class="docutils literal notranslate"><span class="pre">RemoveRelationCommand.undo()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="commands.html#commands.relation_commands.UpdateRelationCommand"><code class="docutils literal notranslate"><span class="pre">UpdateRelationCommand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.relation_commands.UpdateRelationCommand.__init__"><code class="docutils literal notranslate"><span class="pre">UpdateRelationCommand.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.relation_commands.UpdateRelationCommand.execute"><code class="docutils literal notranslate"><span class="pre">UpdateRelationCommand.execute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.relation_commands.UpdateRelationCommand.undo"><code class="docutils literal notranslate"><span class="pre">UpdateRelationCommand.undo()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="commands.html#module-commands.wiki_commands">commands.wiki_commands module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="commands.html#commands.wiki_commands.ProcessWikiLinksCommand"><code class="docutils literal notranslate"><span class="pre">ProcessWikiLinksCommand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.wiki_commands.ProcessWikiLinksCommand.__init__"><code class="docutils literal notranslate"><span class="pre">ProcessWikiLinksCommand.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.wiki_commands.ProcessWikiLinksCommand.execute"><code class="docutils literal notranslate"><span class="pre">ProcessWikiLinksCommand.execute()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.wiki_commands.ProcessWikiLinksCommand.undo"><code class="docutils literal notranslate"><span class="pre">ProcessWikiLinksCommand.undo()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="commands.html#module-commands">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="core.html">core package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="core.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core.html#module-core.calendar">core.calendar module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="core.html#core.calendar.CalendarConfig"><code class="docutils literal notranslate"><span class="pre">CalendarConfig</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarConfig.id"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarConfig.name"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarConfig.months"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.months</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarConfig.week"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.week</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarConfig.year_variants"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.year_variants</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarConfig.epoch_name"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.epoch_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarConfig.created_at"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.created_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarConfig.modified_at"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.modified_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarConfig.create_default"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.create_default()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#id0"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.created_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#id1"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.epoch_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarConfig.from_dict"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.from_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarConfig.from_json"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.from_json()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarConfig.get_months_for_year"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.get_months_for_year()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarConfig.get_year_length"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.get_year_length()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#id2"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarConfig.is_active"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.is_active</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#id3"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.modified_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#id4"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.months</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#id5"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarConfig.to_dict"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarConfig.to_json"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.to_json()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarConfig.validate"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.validate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#id6"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.week</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#id7"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.year_variants</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="core.html#core.calendar.CalendarConverter"><code class="docutils literal notranslate"><span class="pre">CalendarConverter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarConverter.__init__"><code class="docutils literal notranslate"><span class="pre">CalendarConverter.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarConverter.format_date"><code class="docutils literal notranslate"><span class="pre">CalendarConverter.format_date()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarConverter.from_float"><code class="docutils literal notranslate"><span class="pre">CalendarConverter.from_float()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarConverter.to_float"><code class="docutils literal notranslate"><span class="pre">CalendarConverter.to_float()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="core.html#core.calendar.CalendarDate"><code class="docutils literal notranslate"><span class="pre">CalendarDate</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarDate.year"><code class="docutils literal notranslate"><span class="pre">CalendarDate.year</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarDate.month"><code class="docutils literal notranslate"><span class="pre">CalendarDate.month</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarDate.day"><code class="docutils literal notranslate"><span class="pre">CalendarDate.day</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarDate.time_fraction"><code class="docutils literal notranslate"><span class="pre">CalendarDate.time_fraction</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarDate.month_name"><code class="docutils literal notranslate"><span class="pre">CalendarDate.month_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarDate.day_of_week_name"><code class="docutils literal notranslate"><span class="pre">CalendarDate.day_of_week_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.CalendarDate.__str__"><code class="docutils literal notranslate"><span class="pre">CalendarDate.__str__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#id8"><code class="docutils literal notranslate"><span class="pre">CalendarDate.day</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#id9"><code class="docutils literal notranslate"><span class="pre">CalendarDate.day_of_week_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#id10"><code class="docutils literal notranslate"><span class="pre">CalendarDate.month</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#id11"><code class="docutils literal notranslate"><span class="pre">CalendarDate.month_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#id12"><code class="docutils literal notranslate"><span class="pre">CalendarDate.time_fraction</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#id13"><code class="docutils literal notranslate"><span class="pre">CalendarDate.year</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="core.html#core.calendar.MonthDefinition"><code class="docutils literal notranslate"><span class="pre">MonthDefinition</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.MonthDefinition.name"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.MonthDefinition.abbreviation"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.abbreviation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.MonthDefinition.days"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.days</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#id14"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.abbreviation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#id15"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.days</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.MonthDefinition.from_dict"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.from_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#id16"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.MonthDefinition.to_dict"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.to_dict()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="core.html#core.calendar.WeekDefinition"><code class="docutils literal notranslate"><span class="pre">WeekDefinition</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.WeekDefinition.day_names"><code class="docutils literal notranslate"><span class="pre">WeekDefinition.day_names</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.WeekDefinition.day_abbreviations"><code class="docutils literal notranslate"><span class="pre">WeekDefinition.day_abbreviations</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#id17"><code class="docutils literal notranslate"><span class="pre">WeekDefinition.day_abbreviations</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#id18"><code class="docutils literal notranslate"><span class="pre">WeekDefinition.day_names</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.WeekDefinition.from_dict"><code class="docutils literal notranslate"><span class="pre">WeekDefinition.from_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.WeekDefinition.to_dict"><code class="docutils literal notranslate"><span class="pre">WeekDefinition.to_dict()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="core.html#core.calendar.YearVariant"><code class="docutils literal notranslate"><span class="pre">YearVariant</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.YearVariant.year"><code class="docutils literal notranslate"><span class="pre">YearVariant.year</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.YearVariant.months"><code class="docutils literal notranslate"><span class="pre">YearVariant.months</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.YearVariant.from_dict"><code class="docutils literal notranslate"><span class="pre">YearVariant.from_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#id19"><code class="docutils literal notranslate"><span class="pre">YearVariant.months</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.calendar.YearVariant.to_dict"><code class="docutils literal notranslate"><span class="pre">YearVariant.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#id20"><code class="docutils literal notranslate"><span class="pre">YearVariant.year</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="core.html#module-core.entities">core.entities module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="core.html#core.entities.Entity"><code class="docutils literal notranslate"><span class="pre">Entity</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.entities.Entity.attributes"><code class="docutils literal notranslate"><span class="pre">Entity.attributes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.entities.Entity.created_at"><code class="docutils literal notranslate"><span class="pre">Entity.created_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.entities.Entity.description"><code class="docutils literal notranslate"><span class="pre">Entity.description</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.entities.Entity.from_dict"><code class="docutils literal notranslate"><span class="pre">Entity.from_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.entities.Entity.id"><code class="docutils literal notranslate"><span class="pre">Entity.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.entities.Entity.modified_at"><code class="docutils literal notranslate"><span class="pre">Entity.modified_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.entities.Entity.name"><code class="docutils literal notranslate"><span class="pre">Entity.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.entities.Entity.tags"><code class="docutils literal notranslate"><span class="pre">Entity.tags</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.entities.Entity.to_dict"><code class="docutils literal notranslate"><span class="pre">Entity.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.entities.Entity.type"><code class="docutils literal notranslate"><span class="pre">Entity.type</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="core.html#module-core.events">core.events module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="core.html#core.events.Event"><code class="docutils literal notranslate"><span class="pre">Event</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.events.Event.attributes"><code class="docutils literal notranslate"><span class="pre">Event.attributes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.events.Event.created_at"><code class="docutils literal notranslate"><span class="pre">Event.created_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.events.Event.description"><code class="docutils literal notranslate"><span class="pre">Event.description</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.events.Event.from_dict"><code class="docutils literal notranslate"><span class="pre">Event.from_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.events.Event.id"><code class="docutils literal notranslate"><span class="pre">Event.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.events.Event.lore_date"><code class="docutils literal notranslate"><span class="pre">Event.lore_date</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.events.Event.lore_duration"><code class="docutils literal notranslate"><span class="pre">Event.lore_duration</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.events.Event.modified_at"><code class="docutils literal notranslate"><span class="pre">Event.modified_at</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.events.Event.name"><code class="docutils literal notranslate"><span class="pre">Event.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.events.Event.tags"><code class="docutils literal notranslate"><span class="pre">Event.tags</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.events.Event.to_dict"><code class="docutils literal notranslate"><span class="pre">Event.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.events.Event.type"><code class="docutils literal notranslate"><span class="pre">Event.type</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="core.html#module-core.logging_config">core.logging_config module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="core.html#core.logging_config.get_logger"><code class="docutils literal notranslate"><span class="pre">get_logger()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="core.html#core.logging_config.setup_logging"><code class="docutils literal notranslate"><span class="pre">setup_logging()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="core.html#module-core.theme_manager">core.theme_manager module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="core.html#core.theme_manager.ThemeManager"><code class="docutils literal notranslate"><span class="pre">ThemeManager</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.theme_manager.ThemeManager.__init__"><code class="docutils literal notranslate"><span class="pre">ThemeManager.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.theme_manager.ThemeManager.__new__"><code class="docutils literal notranslate"><span class="pre">ThemeManager.__new__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.theme_manager.ThemeManager.apply_theme"><code class="docutils literal notranslate"><span class="pre">ThemeManager.apply_theme()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.theme_manager.ThemeManager.set_theme"><code class="docutils literal notranslate"><span class="pre">ThemeManager.set_theme()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.theme_manager.ThemeManager.staticMetaObject"><code class="docutils literal notranslate"><span class="pre">ThemeManager.staticMetaObject</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="core.html#core.theme_manager.ThemeManager.theme_changed"><code class="docutils literal notranslate"><span class="pre">ThemeManager.theme_changed</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="core.html#module-core">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gui.html">gui package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gui.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui.widgets.html">gui.widgets package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="gui.widgets.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui.widgets.html#gui-widgets-attribute-editor-module">gui.widgets.attribute_editor module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui.widgets.html#gui-widgets-entity-editor-module">gui.widgets.entity_editor module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui.widgets.html#gui-widgets-entity-list-module">gui.widgets.entity_list module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui.widgets.html#gui-widgets-event-editor-module">gui.widgets.event_editor module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui.widgets.html#gui-widgets-event-list-module">gui.widgets.event_list module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui.widgets.html#gui-widgets-longform-editor-module">gui.widgets.longform_editor module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui.widgets.html#gui-widgets-timeline-module">gui.widgets.timeline module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui.widgets.html#gui-widgets-unified-list-module">gui.widgets.unified_list module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui.widgets.html#gui-widgets-wiki-text-edit-module">gui.widgets.wiki_text_edit module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui.widgets.html#module-gui.widgets">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="gui.dialogs.html">gui.dialogs package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="gui.dialogs.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui.dialogs.html#gui-dialogs-calendar-config-dialog-module">gui.dialogs.calendar_config_dialog module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui.dialogs.html#gui-dialogs-relation-dialog-module">gui.dialogs.relation_dialog module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gui.dialogs.html#module-gui.dialogs">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="gui.html#module-gui">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="services.html">services package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="services.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="services.html#module-services.db_service">services.db_service module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="services.html#services.db_service.DatabaseService"><code class="docutils literal notranslate"><span class="pre">DatabaseService</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.__init__"><code class="docutils literal notranslate"><span class="pre">DatabaseService.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.close"><code class="docutils literal notranslate"><span class="pre">DatabaseService.close()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.connect"><code class="docutils literal notranslate"><span class="pre">DatabaseService.connect()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.delete_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_calendar_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.delete_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_entity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.delete_event"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_event()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.delete_map"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_map()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.delete_marker"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_marker()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.delete_relation"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_relation()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.get_active_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_active_calendar_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.get_all_calendar_configs"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_all_calendar_configs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.get_all_entities"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_all_entities()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.get_all_events"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_all_events()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.get_all_maps"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_all_maps()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.get_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_calendar_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.get_current_time"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_current_time()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.get_entities"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_entities()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.get_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_entity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.get_event"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_event()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.get_events"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_events()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.get_incoming_relations"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_incoming_relations()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.get_map"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_map()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.get_marker"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_marker()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.get_marker_by_composite"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_marker_by_composite()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.get_markers_for_map"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_markers_for_map()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.get_markers_for_object"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_markers_for_object()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.get_name"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_name()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.get_relation"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_relation()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.get_relations"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_relations()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.insert_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_calendar_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.insert_entities_bulk"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_entities_bulk()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.insert_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_entity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.insert_event"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_event()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.insert_events_bulk"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_events_bulk()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.insert_map"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_map()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.insert_marker"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_marker()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.insert_relation"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_relation()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.set_active_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.set_active_calendar_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.set_current_time"><code class="docutils literal notranslate"><span class="pre">DatabaseService.set_current_time()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.transaction"><code class="docutils literal notranslate"><span class="pre">DatabaseService.transaction()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.update_relation"><code class="docutils literal notranslate"><span class="pre">DatabaseService.update_relation()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="services.html#module-services.link_resolver">services.link_resolver module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="services.html#services.link_resolver.LinkResolver"><code class="docutils literal notranslate"><span class="pre">LinkResolver</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.link_resolver.LinkResolver.__init__"><code class="docutils literal notranslate"><span class="pre">LinkResolver.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.link_resolver.LinkResolver.find_broken_links"><code class="docutils literal notranslate"><span class="pre">LinkResolver.find_broken_links()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.link_resolver.LinkResolver.get_display_name"><code class="docutils literal notranslate"><span class="pre">LinkResolver.get_display_name()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.link_resolver.LinkResolver.invalidate_cache"><code class="docutils literal notranslate"><span class="pre">LinkResolver.invalidate_cache()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.link_resolver.LinkResolver.resolve"><code class="docutils literal notranslate"><span class="pre">LinkResolver.resolve()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="services.html#module-services.longform_builder">services.longform_builder module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="services.html#services.longform_builder.build_longform_sequence"><code class="docutils literal notranslate"><span class="pre">build_longform_sequence()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="services.html#services.longform_builder.demote_item"><code class="docutils literal notranslate"><span class="pre">demote_item()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="services.html#services.longform_builder.ensure_all_items_indexed"><code class="docutils literal notranslate"><span class="pre">ensure_all_items_indexed()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="services.html#services.longform_builder.export_longform_to_markdown"><code class="docutils literal notranslate"><span class="pre">export_longform_to_markdown()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="services.html#services.longform_builder.insert_or_update_longform_meta"><code class="docutils literal notranslate"><span class="pre">insert_or_update_longform_meta()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="services.html#services.longform_builder.place_between_siblings_and_set_parent"><code class="docutils literal notranslate"><span class="pre">place_between_siblings_and_set_parent()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="services.html#services.longform_builder.promote_item"><code class="docutils literal notranslate"><span class="pre">promote_item()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="services.html#services.longform_builder.read_all_longform_items"><code class="docutils literal notranslate"><span class="pre">read_all_longform_items()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="services.html#services.longform_builder.reindex_document_positions"><code class="docutils literal notranslate"><span class="pre">reindex_document_positions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="services.html#services.longform_builder.remove_from_longform"><code class="docutils literal notranslate"><span class="pre">remove_from_longform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="services.html#module-services.text_parser">services.text_parser module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="services.html#services.text_parser.LinkCandidate"><code class="docutils literal notranslate"><span class="pre">LinkCandidate</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.text_parser.LinkCandidate.raw_text"><code class="docutils literal notranslate"><span class="pre">LinkCandidate.raw_text</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.text_parser.LinkCandidate.name"><code class="docutils literal notranslate"><span class="pre">LinkCandidate.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.text_parser.LinkCandidate.modifier"><code class="docutils literal notranslate"><span class="pre">LinkCandidate.modifier</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.text_parser.LinkCandidate.span"><code class="docutils literal notranslate"><span class="pre">LinkCandidate.span</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.text_parser.LinkCandidate.target_id"><code class="docutils literal notranslate"><span class="pre">LinkCandidate.target_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.text_parser.LinkCandidate.is_id_based"><code class="docutils literal notranslate"><span class="pre">LinkCandidate.is_id_based</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#id0"><code class="docutils literal notranslate"><span class="pre">LinkCandidate.is_id_based</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#id1"><code class="docutils literal notranslate"><span class="pre">LinkCandidate.modifier</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#id2"><code class="docutils literal notranslate"><span class="pre">LinkCandidate.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#id3"><code class="docutils literal notranslate"><span class="pre">LinkCandidate.raw_text</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#id4"><code class="docutils literal notranslate"><span class="pre">LinkCandidate.span</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#id5"><code class="docutils literal notranslate"><span class="pre">LinkCandidate.target_id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="services.html#services.text_parser.WikiLinkParser"><code class="docutils literal notranslate"><span class="pre">WikiLinkParser</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.text_parser.WikiLinkParser.ID_PREFIX_RE"><code class="docutils literal notranslate"><span class="pre">WikiLinkParser.ID_PREFIX_RE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.text_parser.WikiLinkParser.WIKILINK_RE"><code class="docutils literal notranslate"><span class="pre">WikiLinkParser.WIKILINK_RE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.text_parser.WikiLinkParser.extract_links"><code class="docutils literal notranslate"><span class="pre">WikiLinkParser.extract_links()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.text_parser.WikiLinkParser.format_id_link"><code class="docutils literal notranslate"><span class="pre">WikiLinkParser.format_id_link()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.text_parser.WikiLinkParser.format_name_link"><code class="docutils literal notranslate"><span class="pre">WikiLinkParser.format_name_link()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="services.html#module-services.worker">services.worker module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="services.html#services.worker.DatabaseWorker"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.__init__"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.attachments_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.attachments_loaded</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.calendar_config_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.calendar_config_loaded</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.command_finished"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.command_finished</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.current_time_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.current_time_loaded</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.entities_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.entities_loaded</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.entity_details_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.entity_details_loaded</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.error_occurred"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.error_occurred</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.event_details_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.event_details_loaded</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.events_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.events_loaded</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.initialize_db"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.initialize_db()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.initialized"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.initialized</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.load_attachments"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_attachments()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.load_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_calendar_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.load_current_time"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_current_time()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.load_entities"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_entities()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.load_entity_details"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_entity_details()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.load_event_details"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_event_details()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.load_events"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_events()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.load_longform_sequence"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_longform_sequence()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.load_maps"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_maps()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.load_markers"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_markers()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.longform_sequence_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.longform_sequence_loaded</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.maps_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.maps_loaded</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.markers_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.markers_loaded</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.operation_finished"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.operation_finished</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.operation_started"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.operation_started</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.run_command"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.run_command()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.save_current_time"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.save_current_time()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.staticMetaObject"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.staticMetaObject</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="services.html#module-services">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="app.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">app package</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="index.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Home</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, Antigravity
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=95e61db4"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

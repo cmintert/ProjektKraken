@@ -1,0 +1,1537 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="gui package" href="gui.html"><link rel="prev" title="commands package" href="commands.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
+        <title>core package - Project Kraken 0.2.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">Project Kraken 0.2.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  <span class="sidebar-brand-text">Project Kraken 0.2.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current has-children"><a class="reference internal" href="modules.html">src</a><input aria-label="Toggle navigation of src" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="app.html">app package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html">cli package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="commands.html">commands package</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">core package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="gui.html">gui package</a><input aria-label="Toggle navigation of gui package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui.widgets.html">gui.widgets package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui.dialogs.html">gui.dialogs package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="services.html">services package</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/core.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="core-package">
+<h1>core package<a class="headerlink" href="#core-package" title="Link to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
+</section>
+<section id="module-core.calendar">
+<span id="core-calendar-module"></span><h2>core.calendar module<a class="headerlink" href="#module-core.calendar" title="Link to this heading">¶</a></h2>
+<p>Calendar System Module.</p>
+<p>Provides domain models and conversion logic for custom fantasy calendars.
+Supports variable month lengths, year variants, and bidirectional
+conversion between structured dates and continuous float values.</p>
+<dl class="simple">
+<dt>Classes:</dt><dd><p>MonthDefinition: Definition of a calendar month.
+WeekDefinition: Definition of week structure.
+YearVariant: Year-specific structure override.
+CalendarConfig: Complete calendar configuration.
+CalendarDate: Structured representation of a date.
+CalendarConverter: Bidirectional float/date converter.</p>
+</dd>
+</dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="core.calendar.CalendarConfig">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.calendar.</span></span><span class="sig-name descname"><span class="pre">CalendarConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">id:</span> <span class="pre">str,</span> <span class="pre">name:</span> <span class="pre">str,</span> <span class="pre">months:</span> <span class="pre">~typing.List[~core.calendar.MonthDefinition],</span> <span class="pre">week:</span> <span class="pre">~core.calendar.WeekDefinition,</span> <span class="pre">year_variants:</span> <span class="pre">~typing.List[~core.calendar.YearVariant],</span> <span class="pre">epoch_name:</span> <span class="pre">str,</span> <span class="pre">is_active:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">False,</span> <span class="pre">created_at:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">modified_at:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/calendar.html#CalendarConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.CalendarConfig" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Complete calendar configuration for a world.</p>
+<p>Defines the structure of a fantasy calendar including months,
+week days, and any year-specific variations.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.CalendarConfig.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#core.calendar.CalendarConfig.id" title="Link to this definition">¶</a></dt>
+<dd><p>Unique identifier for this calendar.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.CalendarConfig.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#core.calendar.CalendarConfig.name" title="Link to this definition">¶</a></dt>
+<dd><p>Display name (e.g., “Harptos Calendar”).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.CalendarConfig.months">
+<span class="sig-name descname"><span class="pre">months</span></span><a class="headerlink" href="#core.calendar.CalendarConfig.months" title="Link to this definition">¶</a></dt>
+<dd><p>Default month structure for standard years.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="#core.calendar.MonthDefinition" title="core.calendar.MonthDefinition">core.calendar.MonthDefinition</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.CalendarConfig.week">
+<span class="sig-name descname"><span class="pre">week</span></span><a class="headerlink" href="#core.calendar.CalendarConfig.week" title="Link to this definition">¶</a></dt>
+<dd><p>Week day definitions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#core.calendar.WeekDefinition" title="core.calendar.WeekDefinition">core.calendar.WeekDefinition</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.CalendarConfig.year_variants">
+<span class="sig-name descname"><span class="pre">year_variants</span></span><a class="headerlink" href="#core.calendar.CalendarConfig.year_variants" title="Link to this definition">¶</a></dt>
+<dd><p>Optional per-year structure overrides.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="#core.calendar.YearVariant" title="core.calendar.YearVariant">core.calendar.YearVariant</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.CalendarConfig.epoch_name">
+<span class="sig-name descname"><span class="pre">epoch_name</span></span><a class="headerlink" href="#core.calendar.CalendarConfig.epoch_name" title="Link to this definition">¶</a></dt>
+<dd><p>Era designation (e.g., “DR”, “AD”).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.CalendarConfig.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><a class="headerlink" href="#core.calendar.CalendarConfig.created_at" title="Link to this definition">¶</a></dt>
+<dd><p>Real-world creation timestamp.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.CalendarConfig.modified_at">
+<span class="sig-name descname"><span class="pre">modified_at</span></span><a class="headerlink" href="#core.calendar.CalendarConfig.modified_at" title="Link to this definition">¶</a></dt>
+<dd><p>Real-world modification timestamp.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.calendar.CalendarConfig.create_default">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create_default</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#core.calendar.CalendarConfig" title="core.calendar.CalendarConfig"><span class="pre">CalendarConfig</span></a></span></span><a class="reference internal" href="_modules/core/calendar.html#CalendarConfig.create_default"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.CalendarConfig.create_default" title="Link to this definition">¶</a></dt>
+<dd><p>Creates a default calendar configuration (simple 12x30 structure).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A basic calendar with 12 months of 30 days.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#core.calendar.CalendarConfig" title="core.calendar.CalendarConfig">CalendarConfig</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">created_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#id0" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">epoch_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#id1" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.calendar.CalendarConfig.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#core.calendar.CalendarConfig" title="core.calendar.CalendarConfig"><span class="pre">CalendarConfig</span></a></span></span><a class="reference internal" href="_modules/core/calendar.html#CalendarConfig.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.CalendarConfig.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Creates a CalendarConfig from a dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> – Dictionary containing calendar data.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>New instance.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#core.calendar.CalendarConfig" title="core.calendar.CalendarConfig">CalendarConfig</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.calendar.CalendarConfig.from_json">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_str</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#core.calendar.CalendarConfig" title="core.calendar.CalendarConfig"><span class="pre">CalendarConfig</span></a></span></span><a class="reference internal" href="_modules/core/calendar.html#CalendarConfig.from_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.CalendarConfig.from_json" title="Link to this definition">¶</a></dt>
+<dd><p>Creates a CalendarConfig from a JSON string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>json_str</strong> – JSON string containing calendar data.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>New instance.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#core.calendar.CalendarConfig" title="core.calendar.CalendarConfig">CalendarConfig</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.calendar.CalendarConfig.get_months_for_year">
+<span class="sig-name descname"><span class="pre">get_months_for_year</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">year</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#core.calendar.MonthDefinition" title="core.calendar.MonthDefinition"><span class="pre">MonthDefinition</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/core/calendar.html#CalendarConfig.get_months_for_year"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.CalendarConfig.get_months_for_year" title="Link to this definition">¶</a></dt>
+<dd><p>Gets the month structure for a specific year.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>year</strong> – The year to get months for.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Months for that year (may differ</dt><dd><p>if a YearVariant exists).</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="#core.calendar.MonthDefinition" title="core.calendar.MonthDefinition">MonthDefinition</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.calendar.CalendarConfig.get_year_length">
+<span class="sig-name descname"><span class="pre">get_year_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">year</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/core/calendar.html#CalendarConfig.get_year_length"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.CalendarConfig.get_year_length" title="Link to this definition">¶</a></dt>
+<dd><p>Gets the total number of days in a specific year.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>year</strong> – The year to calculate length for.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Total days in that year.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#id2" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.CalendarConfig.is_active">
+<span class="sig-name descname"><span class="pre">is_active</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#core.calendar.CalendarConfig.is_active" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">modified_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#id3" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">months</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#core.calendar.MonthDefinition" title="core.calendar.MonthDefinition"><span class="pre">MonthDefinition</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#id4" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#id5" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.calendar.CalendarConfig.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/core/calendar.html#CalendarConfig.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.CalendarConfig.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Converts the CalendarConfig to a dictionary for serialization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary representation.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict[str, Any]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.calendar.CalendarConfig.to_json">
+<span class="sig-name descname"><span class="pre">to_json</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/core/calendar.html#CalendarConfig.to_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.CalendarConfig.to_json" title="Link to this definition">¶</a></dt>
+<dd><p>Converts the CalendarConfig to a JSON string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>JSON representation.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.calendar.CalendarConfig.validate">
+<span class="sig-name descname"><span class="pre">validate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/core/calendar.html#CalendarConfig.validate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.CalendarConfig.validate" title="Link to this definition">¶</a></dt>
+<dd><p>Validates the calendar configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>List of validation error messages.</dt><dd><p>Empty list if valid.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">week</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#core.calendar.WeekDefinition" title="core.calendar.WeekDefinition"><span class="pre">WeekDefinition</span></a></em><a class="headerlink" href="#id6" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">year_variants</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#core.calendar.YearVariant" title="core.calendar.YearVariant"><span class="pre">YearVariant</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#id7" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.calendar.CalendarConverter">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.calendar.</span></span><span class="sig-name descname"><span class="pre">CalendarConverter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#core.calendar.CalendarConfig" title="core.calendar.CalendarConfig"><span class="pre">CalendarConfig</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/calendar.html#CalendarConverter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.CalendarConverter" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Bidirectional converter between float and CalendarDate.</p>
+<p>Handles the math to convert continuous float time values to
+structured calendar dates and vice versa. Supports:
+- Variable month lengths
+- Year-specific month structures
+- Negative floats (pre-Epoch dates)
+- Time fractions (sub-day precision)</p>
+<p>Internal indexing is 0-based: 0.0 = start of Year 1, Month 1, Day 1.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.calendar.CalendarConverter.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#core.calendar.CalendarConfig" title="core.calendar.CalendarConfig"><span class="pre">CalendarConfig</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/calendar.html#CalendarConverter.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.CalendarConverter.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initializes the converter with a calendar configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config</strong> – The calendar configuration to use.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.calendar.CalendarConverter.format_date">
+<span class="sig-name descname"><span class="pre">format_date</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">absolute_day</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format_str</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/core/calendar.html#CalendarConverter.format_date"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.CalendarConverter.format_date" title="Link to this definition">¶</a></dt>
+<dd><p>Formats a float date as a human-readable string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>absolute_day</strong> – The float value to format.</p></li>
+<li><p><strong>format_str</strong> – Optional format string (future expansion).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Formatted date string.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.calendar.CalendarConverter.from_float">
+<span class="sig-name descname"><span class="pre">from_float</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">absolute_day</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#core.calendar.CalendarDate" title="core.calendar.CalendarDate"><span class="pre">CalendarDate</span></a></span></span><a class="reference internal" href="_modules/core/calendar.html#CalendarConverter.from_float"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.CalendarConverter.from_float" title="Link to this definition">¶</a></dt>
+<dd><p>Converts an absolute day float to a structured date.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>absolute_day</strong> – The float value to convert.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Structured date representation.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#core.calendar.CalendarDate" title="core.calendar.CalendarDate">CalendarDate</a></p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>0.0 = Year 1, Month 1, Day 1
+Negative values produce pre-Epoch dates.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.calendar.CalendarConverter.to_float">
+<span class="sig-name descname"><span class="pre">to_float</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#core.calendar.CalendarDate" title="core.calendar.CalendarDate"><span class="pre">CalendarDate</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/core/calendar.html#CalendarConverter.to_float"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.CalendarConverter.to_float" title="Link to this definition">¶</a></dt>
+<dd><p>Converts a structured date to an absolute day float.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>date</strong> – The CalendarDate to convert.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Absolute day value where 0.0 = start of Epoch.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Year 1, Month 1, Day 1 = 0.0
+Negative years produce negative floats.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.calendar.CalendarDate">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.calendar.</span></span><span class="sig-name descname"><span class="pre">CalendarDate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">year</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">month</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">day</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_fraction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">month_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">day_of_week_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/calendar.html#CalendarDate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.CalendarDate" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A structured representation of a calendar date.</p>
+<p>Uses 1-based indexing for user display (Year 1, Month 1, Day 1).</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.CalendarDate.year">
+<span class="sig-name descname"><span class="pre">year</span></span><a class="headerlink" href="#core.calendar.CalendarDate.year" title="Link to this definition">¶</a></dt>
+<dd><p>Year number (can be negative for pre-Epoch).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.CalendarDate.month">
+<span class="sig-name descname"><span class="pre">month</span></span><a class="headerlink" href="#core.calendar.CalendarDate.month" title="Link to this definition">¶</a></dt>
+<dd><p>Month number (1-indexed, 1-12 typically).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.CalendarDate.day">
+<span class="sig-name descname"><span class="pre">day</span></span><a class="headerlink" href="#core.calendar.CalendarDate.day" title="Link to this definition">¶</a></dt>
+<dd><p>Day of month (1-indexed, 1-30 typically).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.CalendarDate.time_fraction">
+<span class="sig-name descname"><span class="pre">time_fraction</span></span><a class="headerlink" href="#core.calendar.CalendarDate.time_fraction" title="Link to this definition">¶</a></dt>
+<dd><p>Fractional part of day (0.0-1.0, 0.5 = noon).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.CalendarDate.month_name">
+<span class="sig-name descname"><span class="pre">month_name</span></span><a class="headerlink" href="#core.calendar.CalendarDate.month_name" title="Link to this definition">¶</a></dt>
+<dd><p>Optional resolved month name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.CalendarDate.day_of_week_name">
+<span class="sig-name descname"><span class="pre">day_of_week_name</span></span><a class="headerlink" href="#core.calendar.CalendarDate.day_of_week_name" title="Link to this definition">¶</a></dt>
+<dd><p>Optional resolved day of week name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.calendar.CalendarDate.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/core/calendar.html#CalendarDate.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.CalendarDate.__str__" title="Link to this definition">¶</a></dt>
+<dd><p>Returns human-readable string representation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Formatted date string.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id8">
+<span class="sig-name descname"><span class="pre">day</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#id8" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id9">
+<span class="sig-name descname"><span class="pre">day_of_week_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id9" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id10">
+<span class="sig-name descname"><span class="pre">month</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#id10" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id11">
+<span class="sig-name descname"><span class="pre">month_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id11" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id12">
+<span class="sig-name descname"><span class="pre">time_fraction</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></em><a class="headerlink" href="#id12" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id13">
+<span class="sig-name descname"><span class="pre">year</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#id13" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.calendar.MonthDefinition">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.calendar.</span></span><span class="sig-name descname"><span class="pre">MonthDefinition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">abbreviation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">days</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/calendar.html#MonthDefinition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.MonthDefinition" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Definition of a calendar month.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.MonthDefinition.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#core.calendar.MonthDefinition.name" title="Link to this definition">¶</a></dt>
+<dd><p>Full month name (e.g., “Hammer”, “January”).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.MonthDefinition.abbreviation">
+<span class="sig-name descname"><span class="pre">abbreviation</span></span><a class="headerlink" href="#core.calendar.MonthDefinition.abbreviation" title="Link to this definition">¶</a></dt>
+<dd><p>Short form (e.g., “Ham”, “Jan”).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.MonthDefinition.days">
+<span class="sig-name descname"><span class="pre">days</span></span><a class="headerlink" href="#core.calendar.MonthDefinition.days" title="Link to this definition">¶</a></dt>
+<dd><p>Number of days in this month (must be &gt; 0).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id14">
+<span class="sig-name descname"><span class="pre">abbreviation</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#id14" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id15">
+<span class="sig-name descname"><span class="pre">days</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#id15" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.calendar.MonthDefinition.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#core.calendar.MonthDefinition" title="core.calendar.MonthDefinition"><span class="pre">MonthDefinition</span></a></span></span><a class="reference internal" href="_modules/core/calendar.html#MonthDefinition.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.MonthDefinition.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Creates a MonthDefinition from a dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> – Dictionary containing month data.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>New instance.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#core.calendar.MonthDefinition" title="core.calendar.MonthDefinition">MonthDefinition</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id16">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#id16" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.calendar.MonthDefinition.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/core/calendar.html#MonthDefinition.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.MonthDefinition.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Converts the MonthDefinition to a dictionary for serialization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary representation.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict[str, Any]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.calendar.WeekDefinition">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.calendar.</span></span><span class="sig-name descname"><span class="pre">WeekDefinition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">day_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">day_abbreviations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/calendar.html#WeekDefinition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.WeekDefinition" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Definition of week structure.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.WeekDefinition.day_names">
+<span class="sig-name descname"><span class="pre">day_names</span></span><a class="headerlink" href="#core.calendar.WeekDefinition.day_names" title="Link to this definition">¶</a></dt>
+<dd><p>Full names for each day of the week.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.WeekDefinition.day_abbreviations">
+<span class="sig-name descname"><span class="pre">day_abbreviations</span></span><a class="headerlink" href="#core.calendar.WeekDefinition.day_abbreviations" title="Link to this definition">¶</a></dt>
+<dd><p>Short forms for each day.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id17">
+<span class="sig-name descname"><span class="pre">day_abbreviations</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#id17" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id18">
+<span class="sig-name descname"><span class="pre">day_names</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#id18" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.calendar.WeekDefinition.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#core.calendar.WeekDefinition" title="core.calendar.WeekDefinition"><span class="pre">WeekDefinition</span></a></span></span><a class="reference internal" href="_modules/core/calendar.html#WeekDefinition.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.WeekDefinition.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Creates a WeekDefinition from a dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> – Dictionary containing week data.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>New instance.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#core.calendar.WeekDefinition" title="core.calendar.WeekDefinition">WeekDefinition</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.calendar.WeekDefinition.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/core/calendar.html#WeekDefinition.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.WeekDefinition.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Converts the WeekDefinition to a dictionary for serialization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary representation.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict[str, Any]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.calendar.YearVariant">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.calendar.</span></span><span class="sig-name descname"><span class="pre">YearVariant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">year</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">months</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#core.calendar.MonthDefinition" title="core.calendar.MonthDefinition"><span class="pre">MonthDefinition</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/calendar.html#YearVariant"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.YearVariant" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Year-specific structure override for non-repeating calendars.</p>
+<p>Some fantasy calendars have years that differ from the standard
+structure (e.g., a special “Festival Year” with extra months).</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.YearVariant.year">
+<span class="sig-name descname"><span class="pre">year</span></span><a class="headerlink" href="#core.calendar.YearVariant.year" title="Link to this definition">¶</a></dt>
+<dd><p>The year number this variant applies to.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.YearVariant.months">
+<span class="sig-name descname"><span class="pre">months</span></span><a class="headerlink" href="#core.calendar.YearVariant.months" title="Link to this definition">¶</a></dt>
+<dd><p>Custom month structure for this year.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="#core.calendar.MonthDefinition" title="core.calendar.MonthDefinition">core.calendar.MonthDefinition</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.calendar.YearVariant.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#core.calendar.YearVariant" title="core.calendar.YearVariant"><span class="pre">YearVariant</span></a></span></span><a class="reference internal" href="_modules/core/calendar.html#YearVariant.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.YearVariant.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Creates a YearVariant from a dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> – Dictionary containing year variant data.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>New instance.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#core.calendar.YearVariant" title="core.calendar.YearVariant">YearVariant</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id19">
+<span class="sig-name descname"><span class="pre">months</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#core.calendar.MonthDefinition" title="core.calendar.MonthDefinition"><span class="pre">MonthDefinition</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#id19" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.calendar.YearVariant.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/core/calendar.html#YearVariant.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.YearVariant.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Converts the YearVariant to a dictionary for serialization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary representation.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict[str, Any]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id20">
+<span class="sig-name descname"><span class="pre">year</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#id20" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-core.entities">
+<span id="core-entities-module"></span><h2>core.entities module<a class="headerlink" href="#module-core.entities" title="Link to this heading">¶</a></h2>
+<p>Core Entities Module.</p>
+<p>Defines the Entity dataclass representing timeless objects in the world.</p>
+<p>The Entity class represents characters, locations, artifacts, and other
+objects that exist across time with:
+- Flexible type system (character, location, faction, etc.)
+- JSON attributes for custom world-specific properties
+- Automatic ID generation and timestamp tracking</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="core.entities.Entity">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.entities.</span></span><span class="sig-name descname"><span class="pre">Entity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attributes:</span> <span class="pre">~typing.Dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">created_at:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modified_at:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/entities.html#Entity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.entities.Entity" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Represents a timeless object (Character, Location, Artifact).</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.entities.Entity.attributes">
+<span class="sig-name descname"><span class="pre">attributes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#core.entities.Entity.attributes" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.entities.Entity.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#core.entities.Entity.created_at" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.entities.Entity.description">
+<span class="sig-name descname"><span class="pre">description</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#core.entities.Entity.description" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.entities.Entity.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#core.entities.Entity" title="core.entities.Entity"><span class="pre">Entity</span></a></span></span><a class="reference internal" href="_modules/core/entities.html#Entity.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.entities.Entity.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Creates an Entity instance from a dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – A dictionary containing entity data.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new Entity instance.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#core.entities.Entity" title="core.entities.Entity">Entity</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.entities.Entity.id">
+<span class="sig-name descname"><span class="pre">id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#core.entities.Entity.id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.entities.Entity.modified_at">
+<span class="sig-name descname"><span class="pre">modified_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#core.entities.Entity.modified_at" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.entities.Entity.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#core.entities.Entity.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="core.entities.Entity.tags">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">tags</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#core.entities.Entity.tags" title="Link to this definition">¶</a></dt>
+<dd><p>Returns the list of tags for this entity.</p>
+<p>Tags are stored in the attributes dict under the “_tags” key.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of tag strings.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.entities.Entity.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/core/entities.html#Entity.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.entities.Entity.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Converts the Entity instance to a dictionary for storage or serialization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A dictionary containing all the entity’s data.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict[str, Any]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.entities.Entity.type">
+<span class="sig-name descname"><span class="pre">type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#core.entities.Entity.type" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-core.events">
+<span id="core-events-module"></span><h2>core.events module<a class="headerlink" href="#module-core.events" title="Link to this heading">¶</a></h2>
+<p>Core Events Module.</p>
+<p>Defines the Event dataclass representing points or spans in time.</p>
+<p>The Event class is the fundamental unit of the timeline, supporting:
+- Precise chronological data from cosmic to seconds scale
+- Flexible JSON attributes for world-specific data
+- Automatic ID generation and timestamp tracking</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="core.events.Event">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.events.</span></span><span class="sig-name descname"><span class="pre">Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lore_date:</span> <span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'generic'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lore_duration:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attributes:</span> <span class="pre">~typing.Dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">created_at:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modified_at:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/events.html#Event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.events.Event" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Represents a specific point or span in time.
+Core unit of the Timeline.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.events.Event.attributes">
+<span class="sig-name descname"><span class="pre">attributes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#core.events.Event.attributes" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.events.Event.created_at">
+<span class="sig-name descname"><span class="pre">created_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#core.events.Event.created_at" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.events.Event.description">
+<span class="sig-name descname"><span class="pre">description</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#core.events.Event.description" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.events.Event.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#core.events.Event" title="core.events.Event"><span class="pre">Event</span></a></span></span><a class="reference internal" href="_modules/core/events.html#Event.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.events.Event.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Creates an Event instance from a dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – A dictionary containing event data.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new Event instance populated with the data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#core.events.Event" title="core.events.Event">Event</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.events.Event.id">
+<span class="sig-name descname"><span class="pre">id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#core.events.Event.id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.events.Event.lore_date">
+<span class="sig-name descname"><span class="pre">lore_date</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#core.events.Event.lore_date" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.events.Event.lore_duration">
+<span class="sig-name descname"><span class="pre">lore_duration</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></em><a class="headerlink" href="#core.events.Event.lore_duration" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.events.Event.modified_at">
+<span class="sig-name descname"><span class="pre">modified_at</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#core.events.Event.modified_at" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.events.Event.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#core.events.Event.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="core.events.Event.tags">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">tags</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#core.events.Event.tags" title="Link to this definition">¶</a></dt>
+<dd><p>Returns the list of tags for this event.</p>
+<p>Tags are stored in the attributes dict under the “_tags” key.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of tag strings.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.events.Event.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/core/events.html#Event.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.events.Event.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Converts the Event instance to a dictionary for storage or serialization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>A dictionary containing all the event’s data,</dt><dd><p>strictly typed keys.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict[str, Any]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.events.Event.type">
+<span class="sig-name descname"><span class="pre">type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'generic'</span></em><a class="headerlink" href="#core.events.Event.type" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-core.logging_config">
+<span id="core-logging-config-module"></span><h2>core.logging_config module<a class="headerlink" href="#module-core.logging_config" title="Link to this heading">¶</a></h2>
+<p>Logging Configuration Module.</p>
+<p>This module provides centralized logging configuration for the application,
+including rotating file handlers and console output.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="core.logging_config.get_logger">
+<span class="sig-prename descclassname"><span class="pre">core.logging_config.</span></span><span class="sig-name descname"><span class="pre">get_logger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Logger</span></span></span><a class="reference internal" href="_modules/core/logging_config.html#get_logger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.logging_config.get_logger" title="Link to this definition">¶</a></dt>
+<dd><p>Convenience function to get a logger with the given name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> (<em>str</em>) – The name of the logger (usually __name__).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The logger instance.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>logging.Logger</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.logging_config.setup_logging">
+<span class="sig-prename descclassname"><span class="pre">core.logging_config.</span></span><span class="sig-name descname"><span class="pre">setup_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">debug_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_to_console</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/core/logging_config.html#setup_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.logging_config.setup_logging" title="Link to this definition">¶</a></dt>
+<dd><p>Configures the root logger with a rotating file handler
+and optional console handler.</p>
+<p>This function should be called once at the application startup.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>debug_mode</strong> (<em>bool</em>) – If True, sets level to DEBUG. Defaults to False (INFO).</p></li>
+<li><p><strong>log_to_console</strong> (<em>bool</em>) – If True, adds a StreamHandler. Defaults to True.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-core.theme_manager">
+<span id="core-theme-manager-module"></span><h2>core.theme_manager module<a class="headerlink" href="#module-core.theme_manager" title="Link to this heading">¶</a></h2>
+<p>Theme Manager Module.</p>
+<p>Manages loading and applying UI themes (Dark/Light) for the application.
+Implements a singleton pattern to ensure consistent theming across the app.</p>
+<p>This is the Qt-specific implementation that extends BaseThemeManager.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="core.theme_manager.ThemeManager">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.theme_manager.</span></span><span class="sig-name descname"><span class="pre">ThemeManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/theme_manager.html#ThemeManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.theme_manager.ThemeManager" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QObject</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseThemeManager</span></code></p>
+<p>Qt-specific theme manager that extends BaseThemeManager.</p>
+<p>Manages loading and applying UI themes (Dark/Light) with Qt signal support.
+Reads ‘themes.json’ and applies values to a QSS template.
+Implements Singleton pattern.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.theme_manager.ThemeManager.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theme_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'themes.json'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/theme_manager.html#ThemeManager.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.theme_manager.ThemeManager.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initializes the ThemeManager.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>theme_file</strong> – Path to the themes JSON file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.theme_manager.ThemeManager.__new__">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__new__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/theme_manager.html#ThemeManager.__new__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.theme_manager.ThemeManager.__new__" title="Link to this definition">¶</a></dt>
+<dd><p>Create or return the singleton instance of ThemeManager.</p>
+<p>Implements the singleton pattern to ensure only one ThemeManager
+instance exists throughout the application lifecycle. This is
+critical for maintaining consistent theming across all UI components.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*args</strong> – Variable length argument list (unused).</p></li>
+<li><p><strong>**kwargs</strong> – Arbitrary keyword arguments (unused).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The singleton instance.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#core.theme_manager.ThemeManager" title="core.theme_manager.ThemeManager">ThemeManager</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.theme_manager.ThemeManager.apply_theme">
+<span class="sig-name descname"><span class="pre">apply_theme</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qss_template</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/theme_manager.html#ThemeManager.apply_theme"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.theme_manager.ThemeManager.apply_theme" title="Link to this definition">¶</a></dt>
+<dd><p>Formats the QSS template with current theme values
+and applies it to the QApplication.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>app</strong> – QApplication instance.</p></li>
+<li><p><strong>qss_template</strong> – Optional QSS template string.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.theme_manager.ThemeManager.set_theme">
+<span class="sig-name descname"><span class="pre">set_theme</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theme_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/theme_manager.html#ThemeManager.set_theme"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.theme_manager.ThemeManager.set_theme" title="Link to this definition">¶</a></dt>
+<dd><p>Switches the current theme and updates the application.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>theme_name</strong> – The key of the theme to switch to.</p></li>
+<li><p><strong>app</strong> – The QApplication instance to apply the stylesheet to (optional).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.theme_manager.ThemeManager.staticMetaObject">
+<span class="sig-name descname"><span class="pre">staticMetaObject</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">PySide6.QtCore.QMetaObject(&quot;ThemeManager&quot;</span> <span class="pre">inherits</span> <span class="pre">&quot;QObject&quot;:</span> <span class="pre">Methods:</span>&#160;&#160; <span class="pre">#4</span> <span class="pre">type=Signal,</span> <span class="pre">signature=theme_changed(QVariantMap),</span> <span class="pre">parameters=QVariantMap</span> <span class="pre">)</span></em><a class="headerlink" href="#core.theme_manager.ThemeManager.staticMetaObject" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.theme_manager.ThemeManager.theme_changed">
+<span class="sig-name descname"><span class="pre">theme_changed</span></span><a class="headerlink" href="#core.theme_manager.ThemeManager.theme_changed" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-core">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-core" title="Link to this heading">¶</a></h2>
+<p>Core Package.</p>
+<p>This package contains core business logic including entity and event models,
+logging configuration, and theme management.</p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="gui.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">gui package</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="commands.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">commands package</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, Antigravity
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">core package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-core.calendar">core.calendar module</a><ul>
+<li><a class="reference internal" href="#core.calendar.CalendarConfig"><code class="docutils literal notranslate"><span class="pre">CalendarConfig</span></code></a><ul>
+<li><a class="reference internal" href="#core.calendar.CalendarConfig.id"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.id</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarConfig.name"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.name</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarConfig.months"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.months</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarConfig.week"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.week</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarConfig.year_variants"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.year_variants</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarConfig.epoch_name"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.epoch_name</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarConfig.created_at"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.created_at</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarConfig.modified_at"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.modified_at</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarConfig.create_default"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.create_default()</span></code></a></li>
+<li><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.created_at</span></code></a></li>
+<li><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.epoch_name</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarConfig.from_dict"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarConfig.from_json"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.from_json()</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarConfig.get_months_for_year"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.get_months_for_year()</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarConfig.get_year_length"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.get_year_length()</span></code></a></li>
+<li><a class="reference internal" href="#id2"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.id</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarConfig.is_active"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.is_active</span></code></a></li>
+<li><a class="reference internal" href="#id3"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.modified_at</span></code></a></li>
+<li><a class="reference internal" href="#id4"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.months</span></code></a></li>
+<li><a class="reference internal" href="#id5"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.name</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarConfig.to_dict"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.to_dict()</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarConfig.to_json"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.to_json()</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarConfig.validate"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.validate()</span></code></a></li>
+<li><a class="reference internal" href="#id6"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.week</span></code></a></li>
+<li><a class="reference internal" href="#id7"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.year_variants</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#core.calendar.CalendarConverter"><code class="docutils literal notranslate"><span class="pre">CalendarConverter</span></code></a><ul>
+<li><a class="reference internal" href="#core.calendar.CalendarConverter.__init__"><code class="docutils literal notranslate"><span class="pre">CalendarConverter.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarConverter.format_date"><code class="docutils literal notranslate"><span class="pre">CalendarConverter.format_date()</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarConverter.from_float"><code class="docutils literal notranslate"><span class="pre">CalendarConverter.from_float()</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarConverter.to_float"><code class="docutils literal notranslate"><span class="pre">CalendarConverter.to_float()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#core.calendar.CalendarDate"><code class="docutils literal notranslate"><span class="pre">CalendarDate</span></code></a><ul>
+<li><a class="reference internal" href="#core.calendar.CalendarDate.year"><code class="docutils literal notranslate"><span class="pre">CalendarDate.year</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarDate.month"><code class="docutils literal notranslate"><span class="pre">CalendarDate.month</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarDate.day"><code class="docutils literal notranslate"><span class="pre">CalendarDate.day</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarDate.time_fraction"><code class="docutils literal notranslate"><span class="pre">CalendarDate.time_fraction</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarDate.month_name"><code class="docutils literal notranslate"><span class="pre">CalendarDate.month_name</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarDate.day_of_week_name"><code class="docutils literal notranslate"><span class="pre">CalendarDate.day_of_week_name</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarDate.__str__"><code class="docutils literal notranslate"><span class="pre">CalendarDate.__str__()</span></code></a></li>
+<li><a class="reference internal" href="#id8"><code class="docutils literal notranslate"><span class="pre">CalendarDate.day</span></code></a></li>
+<li><a class="reference internal" href="#id9"><code class="docutils literal notranslate"><span class="pre">CalendarDate.day_of_week_name</span></code></a></li>
+<li><a class="reference internal" href="#id10"><code class="docutils literal notranslate"><span class="pre">CalendarDate.month</span></code></a></li>
+<li><a class="reference internal" href="#id11"><code class="docutils literal notranslate"><span class="pre">CalendarDate.month_name</span></code></a></li>
+<li><a class="reference internal" href="#id12"><code class="docutils literal notranslate"><span class="pre">CalendarDate.time_fraction</span></code></a></li>
+<li><a class="reference internal" href="#id13"><code class="docutils literal notranslate"><span class="pre">CalendarDate.year</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#core.calendar.MonthDefinition"><code class="docutils literal notranslate"><span class="pre">MonthDefinition</span></code></a><ul>
+<li><a class="reference internal" href="#core.calendar.MonthDefinition.name"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.name</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.MonthDefinition.abbreviation"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.abbreviation</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.MonthDefinition.days"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.days</span></code></a></li>
+<li><a class="reference internal" href="#id14"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.abbreviation</span></code></a></li>
+<li><a class="reference internal" href="#id15"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.days</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.MonthDefinition.from_dict"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#id16"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.name</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.MonthDefinition.to_dict"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.to_dict()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#core.calendar.WeekDefinition"><code class="docutils literal notranslate"><span class="pre">WeekDefinition</span></code></a><ul>
+<li><a class="reference internal" href="#core.calendar.WeekDefinition.day_names"><code class="docutils literal notranslate"><span class="pre">WeekDefinition.day_names</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.WeekDefinition.day_abbreviations"><code class="docutils literal notranslate"><span class="pre">WeekDefinition.day_abbreviations</span></code></a></li>
+<li><a class="reference internal" href="#id17"><code class="docutils literal notranslate"><span class="pre">WeekDefinition.day_abbreviations</span></code></a></li>
+<li><a class="reference internal" href="#id18"><code class="docutils literal notranslate"><span class="pre">WeekDefinition.day_names</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.WeekDefinition.from_dict"><code class="docutils literal notranslate"><span class="pre">WeekDefinition.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.WeekDefinition.to_dict"><code class="docutils literal notranslate"><span class="pre">WeekDefinition.to_dict()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#core.calendar.YearVariant"><code class="docutils literal notranslate"><span class="pre">YearVariant</span></code></a><ul>
+<li><a class="reference internal" href="#core.calendar.YearVariant.year"><code class="docutils literal notranslate"><span class="pre">YearVariant.year</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.YearVariant.months"><code class="docutils literal notranslate"><span class="pre">YearVariant.months</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.YearVariant.from_dict"><code class="docutils literal notranslate"><span class="pre">YearVariant.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#id19"><code class="docutils literal notranslate"><span class="pre">YearVariant.months</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.YearVariant.to_dict"><code class="docutils literal notranslate"><span class="pre">YearVariant.to_dict()</span></code></a></li>
+<li><a class="reference internal" href="#id20"><code class="docutils literal notranslate"><span class="pre">YearVariant.year</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-core.entities">core.entities module</a><ul>
+<li><a class="reference internal" href="#core.entities.Entity"><code class="docutils literal notranslate"><span class="pre">Entity</span></code></a><ul>
+<li><a class="reference internal" href="#core.entities.Entity.attributes"><code class="docutils literal notranslate"><span class="pre">Entity.attributes</span></code></a></li>
+<li><a class="reference internal" href="#core.entities.Entity.created_at"><code class="docutils literal notranslate"><span class="pre">Entity.created_at</span></code></a></li>
+<li><a class="reference internal" href="#core.entities.Entity.description"><code class="docutils literal notranslate"><span class="pre">Entity.description</span></code></a></li>
+<li><a class="reference internal" href="#core.entities.Entity.from_dict"><code class="docutils literal notranslate"><span class="pre">Entity.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#core.entities.Entity.id"><code class="docutils literal notranslate"><span class="pre">Entity.id</span></code></a></li>
+<li><a class="reference internal" href="#core.entities.Entity.modified_at"><code class="docutils literal notranslate"><span class="pre">Entity.modified_at</span></code></a></li>
+<li><a class="reference internal" href="#core.entities.Entity.name"><code class="docutils literal notranslate"><span class="pre">Entity.name</span></code></a></li>
+<li><a class="reference internal" href="#core.entities.Entity.tags"><code class="docutils literal notranslate"><span class="pre">Entity.tags</span></code></a></li>
+<li><a class="reference internal" href="#core.entities.Entity.to_dict"><code class="docutils literal notranslate"><span class="pre">Entity.to_dict()</span></code></a></li>
+<li><a class="reference internal" href="#core.entities.Entity.type"><code class="docutils literal notranslate"><span class="pre">Entity.type</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-core.events">core.events module</a><ul>
+<li><a class="reference internal" href="#core.events.Event"><code class="docutils literal notranslate"><span class="pre">Event</span></code></a><ul>
+<li><a class="reference internal" href="#core.events.Event.attributes"><code class="docutils literal notranslate"><span class="pre">Event.attributes</span></code></a></li>
+<li><a class="reference internal" href="#core.events.Event.created_at"><code class="docutils literal notranslate"><span class="pre">Event.created_at</span></code></a></li>
+<li><a class="reference internal" href="#core.events.Event.description"><code class="docutils literal notranslate"><span class="pre">Event.description</span></code></a></li>
+<li><a class="reference internal" href="#core.events.Event.from_dict"><code class="docutils literal notranslate"><span class="pre">Event.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#core.events.Event.id"><code class="docutils literal notranslate"><span class="pre">Event.id</span></code></a></li>
+<li><a class="reference internal" href="#core.events.Event.lore_date"><code class="docutils literal notranslate"><span class="pre">Event.lore_date</span></code></a></li>
+<li><a class="reference internal" href="#core.events.Event.lore_duration"><code class="docutils literal notranslate"><span class="pre">Event.lore_duration</span></code></a></li>
+<li><a class="reference internal" href="#core.events.Event.modified_at"><code class="docutils literal notranslate"><span class="pre">Event.modified_at</span></code></a></li>
+<li><a class="reference internal" href="#core.events.Event.name"><code class="docutils literal notranslate"><span class="pre">Event.name</span></code></a></li>
+<li><a class="reference internal" href="#core.events.Event.tags"><code class="docutils literal notranslate"><span class="pre">Event.tags</span></code></a></li>
+<li><a class="reference internal" href="#core.events.Event.to_dict"><code class="docutils literal notranslate"><span class="pre">Event.to_dict()</span></code></a></li>
+<li><a class="reference internal" href="#core.events.Event.type"><code class="docutils literal notranslate"><span class="pre">Event.type</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-core.logging_config">core.logging_config module</a><ul>
+<li><a class="reference internal" href="#core.logging_config.get_logger"><code class="docutils literal notranslate"><span class="pre">get_logger()</span></code></a></li>
+<li><a class="reference internal" href="#core.logging_config.setup_logging"><code class="docutils literal notranslate"><span class="pre">setup_logging()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-core.theme_manager">core.theme_manager module</a><ul>
+<li><a class="reference internal" href="#core.theme_manager.ThemeManager"><code class="docutils literal notranslate"><span class="pre">ThemeManager</span></code></a><ul>
+<li><a class="reference internal" href="#core.theme_manager.ThemeManager.__init__"><code class="docutils literal notranslate"><span class="pre">ThemeManager.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#core.theme_manager.ThemeManager.__new__"><code class="docutils literal notranslate"><span class="pre">ThemeManager.__new__()</span></code></a></li>
+<li><a class="reference internal" href="#core.theme_manager.ThemeManager.apply_theme"><code class="docutils literal notranslate"><span class="pre">ThemeManager.apply_theme()</span></code></a></li>
+<li><a class="reference internal" href="#core.theme_manager.ThemeManager.set_theme"><code class="docutils literal notranslate"><span class="pre">ThemeManager.set_theme()</span></code></a></li>
+<li><a class="reference internal" href="#core.theme_manager.ThemeManager.staticMetaObject"><code class="docutils literal notranslate"><span class="pre">ThemeManager.staticMetaObject</span></code></a></li>
+<li><a class="reference internal" href="#core.theme_manager.ThemeManager.theme_changed"><code class="docutils literal notranslate"><span class="pre">ThemeManager.theme_changed</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-core">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=95e61db4"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

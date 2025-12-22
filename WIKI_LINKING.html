@@ -1,0 +1,828 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
+        <title>ID-Based Wiki Linking Implementation Guide - Project Kraken 0.2.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">Project Kraken 0.2.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  <span class="sidebar-brand-text">Project Kraken 0.2.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="modules.html">src</a><input aria-label="Toggle navigation of src" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="app.html">app package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html">cli package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="commands.html">commands package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core.html">core package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="gui.html">gui package</a><input aria-label="Toggle navigation of gui package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui.widgets.html">gui.widgets package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui.dialogs.html">gui.dialogs package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="services.html">services package</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/WIKI_LINKING.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="id-based-wiki-linking-implementation-guide">
+<h1>ID-Based Wiki Linking Implementation Guide<a class="headerlink" href="#id-based-wiki-linking-implementation-guide" title="Link to this heading">¶</a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>ProjektKraken now supports robust, ID-based wiki-style linking that ensures links remain valid even when entity or event names change. This document describes the implementation, usage, and technical details.</p>
+</section>
+<section id="features">
+<h2>Features<a class="headerlink" href="#features" title="Link to this heading">¶</a></h2>
+<section id="id-based-link-format">
+<h3>1. ID-Based Link Format<a class="headerlink" href="#id-based-link-format" title="Link to this heading">¶</a></h3>
+<p>Links now use stable UUIDs internally while displaying human-readable names:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Format</span><span class="p">:</span> <span class="p">[[</span><span class="nb">id</span><span class="p">:</span><span class="n">UUID</span><span class="o">|</span><span class="n">DisplayName</span><span class="p">]]</span>
+<span class="n">Example</span><span class="p">:</span> <span class="p">[[</span><span class="nb">id</span><span class="p">:</span><span class="mf">550e8400</span><span class="o">-</span><span class="n">e29b</span><span class="o">-</span><span class="mi">41</span><span class="n">d4</span><span class="o">-</span><span class="n">a716</span><span class="o">-</span><span class="mi">446655440000</span><span class="o">|</span><span class="n">Gandalf</span> <span class="n">the</span> <span class="n">Grey</span><span class="p">]]</span>
+</pre></div>
+</div>
+</section>
+<section id="backward-compatibility">
+<h3>2. Backward Compatibility<a class="headerlink" href="#backward-compatibility" title="Link to this heading">¶</a></h3>
+<p>Legacy name-based links continue to work:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Legacy</span><span class="p">:</span> <span class="p">[[</span><span class="n">EntityName</span><span class="p">]]</span>
+<span class="n">Legacy</span> <span class="k">with</span> <span class="n">Label</span><span class="p">:</span> <span class="p">[[</span><span class="n">EntityName</span><span class="o">|</span><span class="n">Custom</span> <span class="n">Label</span><span class="p">]]</span>
+</pre></div>
+</div>
+<p>The system automatically handles both formats, making migration seamless.</p>
+</section>
+<section id="smart-autocomplete">
+<h3>3. Smart Autocomplete<a class="headerlink" href="#smart-autocomplete" title="Link to this heading">¶</a></h3>
+<p>When typing <code class="docutils literal notranslate"><span class="pre">[[</span></code> in any description field:</p>
+<ul class="simple">
+<li><p>Autocomplete popup shows all entities and events</p></li>
+<li><p>Selecting an item inserts an ID-based link automatically</p></li>
+<li><p>Format: <code class="docutils literal notranslate"><span class="pre">[[id:UUID|Name]]</span></code></p></li>
+</ul>
+</section>
+<section id="broken-link-detection">
+<h3>4. Broken Link Detection<a class="headerlink" href="#broken-link-detection" title="Link to this heading">¶</a></h3>
+<p>Broken links (where the target has been deleted) are visually indicated:</p>
+<ul class="simple">
+<li><p><strong>Red text color</strong></p></li>
+<li><p><strong>Strikethrough styling</strong></p></li>
+<li><p>Hover tooltip shows the broken ID</p></li>
+</ul>
+</section>
+<section id="name-change-propagation">
+<h3>5. Name Change Propagation<a class="headerlink" href="#name-change-propagation" title="Link to this heading">¶</a></h3>
+<p>When you rename an entity or event:</p>
+<ul class="simple">
+<li><p>All ID-based links automatically show the new name</p></li>
+<li><p>No manual updates needed</p></li>
+<li><p>Cache invalidation ensures real-time updates</p></li>
+</ul>
+</section>
+<section id="link-navigation">
+<h3>6. Link Navigation<a class="headerlink" href="#link-navigation" title="Link to this heading">¶</a></h3>
+<p>Ctrl+Click on any wiki link to navigate:</p>
+<ul class="simple">
+<li><p>ID-based links: Jumps directly to target by UUID</p></li>
+<li><p>Name-based links: Searches by name (case-insensitive)</p></li>
+<li><p>Works for both entities and events</p></li>
+</ul>
+</section>
+</section>
+<section id="architecture">
+<h2>Architecture<a class="headerlink" href="#architecture" title="Link to this heading">¶</a></h2>
+<section id="components">
+<h3>Components<a class="headerlink" href="#components" title="Link to this heading">¶</a></h3>
+<section id="wikilinkparser-src-services-text-parser-py">
+<h4>1. WikiLinkParser (<code class="docutils literal notranslate"><span class="pre">src/services/text_parser.py</span></code>)<a class="headerlink" href="#wikilinkparser-src-services-text-parser-py" title="Link to this heading">¶</a></h4>
+<p>Parses wiki links from text content.</p>
+<p><strong>Key Methods:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">extract_links(text)</span></code> - Parses all links in text</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">format_id_link(uuid,</span> <span class="pre">name)</span></code> - Creates ID-based link string</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">format_name_link(name,</span> <span class="pre">label)</span></code> - Creates name-based link string</p></li>
+</ul>
+<p><strong>Link Candidate Structure:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">LinkCandidate</span><span class="p">:</span>
+    <span class="n">raw_text</span><span class="p">:</span> <span class="nb">str</span>           <span class="c1"># Full [[...]] text</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>     <span class="c1"># Target name (if name-based)</span>
+    <span class="n">modifier</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="c1"># Display label</span>
+    <span class="n">span</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>   <span class="c1"># Position in text</span>
+    <span class="n">target_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="c1"># UUID (if ID-based)</span>
+    <span class="n">is_id_based</span><span class="p">:</span> <span class="nb">bool</span>       <span class="c1"># Format flag</span>
+</pre></div>
+</div>
+</section>
+<section id="linkresolver-src-services-link-resolver-py">
+<h4>2. LinkResolver (<code class="docutils literal notranslate"><span class="pre">src/services/link_resolver.py</span></code>)<a class="headerlink" href="#linkresolver-src-services-link-resolver-py" title="Link to this heading">¶</a></h4>
+<p>Resolves UUIDs to current entity/event names.</p>
+<p><strong>Key Methods:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">resolve(uuid)</span></code> - Returns (name, type) for given UUID</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">get_display_name(uuid,</span> <span class="pre">fallback)</span></code> - Gets display name with fallback</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">find_broken_links(text)</span></code> - Finds all broken links in text</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">invalidate_cache(uuid)</span></code> - Clears cache for updated item</p></li>
+</ul>
+<p><strong>Caching:</strong></p>
+<ul class="simple">
+<li><p>In-memory cache for performance</p></li>
+<li><p>Automatic invalidation on updates</p></li>
+<li><p>Supports both entities and events</p></li>
+</ul>
+</section>
+<section id="wikitextedit-src-gui-widgets-wiki-text-edit-py">
+<h4>3. WikiTextEdit (<code class="docutils literal notranslate"><span class="pre">src/gui/widgets/wiki_text_edit.py</span></code>)<a class="headerlink" href="#wikitextedit-src-gui-widgets-wiki-text-edit-py" title="Link to this heading">¶</a></h4>
+<p>Enhanced text editor with wiki link support.</p>
+<p><strong>Key Features:</strong></p>
+<ul class="simple">
+<li><p>Smart autocomplete for entities/events</p></li>
+<li><p>ID-based link insertion</p></li>
+<li><p>Ctrl+Click navigation</p></li>
+<li><p>Syntax highlighting integration</p></li>
+</ul>
+<p><strong>Usage:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">editor</span> <span class="o">=</span> <span class="n">WikiTextEdit</span><span class="p">()</span>
+
+<span class="c1"># Set up autocomplete with IDs</span>
+<span class="n">items</span> <span class="o">=</span> <span class="p">[(</span><span class="n">entity</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">entity</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;entity&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">entity</span> <span class="ow">in</span> <span class="n">entities</span><span class="p">]</span>
+<span class="n">editor</span><span class="o">.</span><span class="n">set_completer</span><span class="p">(</span><span class="n">items</span><span class="o">=</span><span class="n">items</span><span class="p">)</span>
+
+<span class="c1"># Set link resolver for broken link detection</span>
+<span class="n">resolver</span> <span class="o">=</span> <span class="n">LinkResolver</span><span class="p">(</span><span class="n">db_service</span><span class="p">)</span>
+<span class="n">editor</span><span class="o">.</span><span class="n">set_link_resolver</span><span class="p">(</span><span class="n">resolver</span><span class="p">)</span>
+
+<span class="c1"># Connect navigation signal</span>
+<span class="n">editor</span><span class="o">.</span><span class="n">link_clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">navigate_handler</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="wikisyntaxhighlighter-src-gui-utils-wiki-highlighter-py">
+<h4>4. WikiSyntaxHighlighter (<code class="docutils literal notranslate"><span class="pre">src/gui/utils/wiki_highlighter.py</span></code>)<a class="headerlink" href="#wikisyntaxhighlighter-src-gui-utils-wiki-highlighter-py" title="Link to this heading">¶</a></h4>
+<p>Highlights wiki links with different styles.</p>
+<p><strong>Styles:</strong></p>
+<ul class="simple">
+<li><p>Valid links: Blue, bold, underlined</p></li>
+<li><p>Broken links: Red, bold, strikethrough</p></li>
+</ul>
+<p><strong>Usage:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">highlighter</span> <span class="o">=</span> <span class="n">WikiSyntaxHighlighter</span><span class="p">(</span><span class="n">document</span><span class="p">)</span>
+<span class="n">highlighter</span><span class="o">.</span><span class="n">set_link_resolver</span><span class="p">(</span><span class="n">resolver</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="processwikilinkscommand-src-commands-wiki-commands-py">
+<h4>5. ProcessWikiLinksCommand (<code class="docutils literal notranslate"><span class="pre">src/commands/wiki_commands.py</span></code>)<a class="headerlink" href="#processwikilinkscommand-src-commands-wiki-commands-py" title="Link to this heading">¶</a></h4>
+<p>Command pattern for processing wiki links into relations.</p>
+<p><strong>Behavior:</strong></p>
+<ul class="simple">
+<li><p>Parses both ID-based and name-based links</p></li>
+<li><p>Creates “mentions” relations in database</p></li>
+<li><p>Stores metadata (snippet, offsets, is_id_based flag)</p></li>
+<li><p>Supports undo/redo</p></li>
+</ul>
+<p><strong>Usage:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cmd</span> <span class="o">=</span> <span class="n">ProcessWikiLinksCommand</span><span class="p">(</span>
+    <span class="n">source_id</span><span class="o">=</span><span class="n">entity</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+    <span class="n">text_content</span><span class="o">=</span><span class="n">entity</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
+    <span class="n">field</span><span class="o">=</span><span class="s2">&quot;description&quot;</span>
+<span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">db_service</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="usage-examples">
+<h2>Usage Examples<a class="headerlink" href="#usage-examples" title="Link to this heading">¶</a></h2>
+<section id="creating-id-based-links-in-code">
+<h3>Creating ID-Based Links in Code<a class="headerlink" href="#creating-id-based-links-in-code" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">src.services.text_parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">WikiLinkParser</span>
+
+<span class="c1"># Create an ID-based link</span>
+<span class="n">link</span> <span class="o">=</span> <span class="n">WikiLinkParser</span><span class="o">.</span><span class="n">format_id_link</span><span class="p">(</span>
+    <span class="n">target_id</span><span class="o">=</span><span class="s2">&quot;550e8400-e29b-41d4-a716-446655440000&quot;</span><span class="p">,</span>
+    <span class="n">display_name</span><span class="o">=</span><span class="s2">&quot;Gandalf the Grey&quot;</span>
+<span class="p">)</span>
+<span class="c1"># Result: [[id:550e8400-e29b-41d4-a716-446655440000|Gandalf the Grey]]</span>
+</pre></div>
+</div>
+</section>
+<section id="parsing-links-from-text">
+<h3>Parsing Links from Text<a class="headerlink" href="#parsing-links-from-text" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">src.services.text_parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">WikiLinkParser</span>
+
+<span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">The wizard [[id:550e8400-e29b-41d4-a716-446655440000|Gandalf]] </span>
+<span class="s2">met [[Frodo]] in [[The Shire]].</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">links</span> <span class="o">=</span> <span class="n">WikiLinkParser</span><span class="o">.</span><span class="n">extract_links</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">link</span> <span class="ow">in</span> <span class="n">links</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">link</span><span class="o">.</span><span class="n">is_id_based</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ID-based: </span><span class="si">{</span><span class="n">link</span><span class="o">.</span><span class="n">target_id</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">link</span><span class="o">.</span><span class="n">modifier</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Name-based: </span><span class="si">{</span><span class="n">link</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="resolving-links">
+<h3>Resolving Links<a class="headerlink" href="#resolving-links" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">src.services.link_resolver</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinkResolver</span>
+
+<span class="n">resolver</span> <span class="o">=</span> <span class="n">LinkResolver</span><span class="p">(</span><span class="n">db_service</span><span class="p">)</span>
+
+<span class="c1"># Resolve by ID</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">resolver</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span><span class="s2">&quot;550e8400-e29b-41d4-a716-446655440000&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">result</span><span class="p">:</span>
+    <span class="n">name</span><span class="p">,</span> <span class="n">type_</span> <span class="o">=</span> <span class="n">result</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="n">type_</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Broken link&quot;</span><span class="p">)</span>
+
+<span class="c1"># Get display name with fallback</span>
+<span class="n">display</span> <span class="o">=</span> <span class="n">resolver</span><span class="o">.</span><span class="n">get_display_name</span><span class="p">(</span>
+    <span class="s2">&quot;550e8400-e29b-41d4-a716-446655440000&quot;</span><span class="p">,</span>
+    <span class="n">fallback_name</span><span class="o">=</span><span class="s2">&quot;Deleted Entity&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="finding-broken-links">
+<h3>Finding Broken Links<a class="headerlink" href="#finding-broken-links" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">src.services.link_resolver</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinkResolver</span>
+
+<span class="n">resolver</span> <span class="o">=</span> <span class="n">LinkResolver</span><span class="p">(</span><span class="n">db_service</span><span class="p">)</span>
+
+<span class="n">text</span> <span class="o">=</span> <span class="n">entity</span><span class="o">.</span><span class="n">description</span>
+<span class="n">broken</span> <span class="o">=</span> <span class="n">resolver</span><span class="o">.</span><span class="n">find_broken_links</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">broken</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">broken</span><span class="p">)</span><span class="si">}</span><span class="s2"> broken links:&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">uuid</span> <span class="ow">in</span> <span class="n">broken</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  - </span><span class="si">{</span><span class="n">uuid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="migration-from-name-based-links">
+<h2>Migration from Name-Based Links<a class="headerlink" href="#migration-from-name-based-links" title="Link to this heading">¶</a></h2>
+<p>While ID-based links are preferred, migration is not required due to backward compatibility:</p>
+<section id="automatic-migration-future-enhancement">
+<h3>Automatic Migration (Future Enhancement)<a class="headerlink" href="#automatic-migration-future-enhancement" title="Link to this heading">¶</a></h3>
+<p>A migration tool can be implemented to convert all name-based links to ID-based:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Pseudo-code for future migration tool</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">migrate_links</span><span class="p">(</span><span class="n">db_service</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">entity</span> <span class="ow">in</span> <span class="n">db_service</span><span class="o">.</span><span class="n">get_all_entities</span><span class="p">():</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">entity</span><span class="o">.</span><span class="n">description</span>
+        <span class="n">links</span> <span class="o">=</span> <span class="n">WikiLinkParser</span><span class="o">.</span><span class="n">extract_links</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">link</span> <span class="ow">in</span> <span class="n">links</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">link</span><span class="o">.</span><span class="n">is_id_based</span><span class="p">:</span>
+                <span class="c1"># Find matching entity</span>
+                <span class="n">target</span> <span class="o">=</span> <span class="n">find_entity_by_name</span><span class="p">(</span><span class="n">link</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">target</span><span class="p">:</span>
+                    <span class="c1"># Replace with ID-based link</span>
+                    <span class="n">new_link</span> <span class="o">=</span> <span class="n">WikiLinkParser</span><span class="o">.</span><span class="n">format_id_link</span><span class="p">(</span>
+                        <span class="n">target</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">link</span><span class="o">.</span><span class="n">name</span>
+                    <span class="p">)</span>
+                    <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">link</span><span class="o">.</span><span class="n">raw_text</span><span class="p">,</span> <span class="n">new_link</span><span class="p">)</span>
+        
+        <span class="n">entity</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">text</span>
+        <span class="n">db_service</span><span class="o">.</span><span class="n">insert_entity</span><span class="p">(</span><span class="n">entity</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="manual-migration">
+<h3>Manual Migration<a class="headerlink" href="#manual-migration" title="Link to this heading">¶</a></h3>
+<p>Users can manually convert links:</p>
+<ol class="arabic simple">
+<li><p>Edit the entity/event description</p></li>
+<li><p>Delete old link: <code class="docutils literal notranslate"><span class="pre">[[Name]]</span></code></p></li>
+<li><p>Type <code class="docutils literal notranslate"><span class="pre">[[</span></code> and select from autocomplete</p></li>
+<li><p>New ID-based link is inserted automatically</p></li>
+</ol>
+</section>
+</section>
+<section id="testing">
+<h2>Testing<a class="headerlink" href="#testing" title="Link to this heading">¶</a></h2>
+<section id="unit-tests">
+<h3>Unit Tests<a class="headerlink" href="#unit-tests" title="Link to this heading">¶</a></h3>
+<p>Run parser and resolver tests:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>tests/unit/test_id_based_links.py
+pytest<span class="w"> </span>tests/unit/test_link_resolver.py
+pytest<span class="w"> </span>tests/unit/test_text_parser.py
+</pre></div>
+</div>
+</section>
+<section id="integration-tests">
+<h3>Integration Tests<a class="headerlink" href="#integration-tests" title="Link to this heading">¶</a></h3>
+<p>Run full workflow tests:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>tests/integration/test_id_based_wiki_commands.py
+pytest<span class="w"> </span>tests/integration/test_link_resolver_integration.py
+</pre></div>
+</div>
+</section>
+<section id="all-wiki-tests">
+<h3>All Wiki Tests<a class="headerlink" href="#all-wiki-tests" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>tests/<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;wiki or link or text_parser&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="sample-data">
+<h3>Sample Data<a class="headerlink" href="#sample-data" title="Link to this heading">¶</a></h3>
+<p>Create test database with Middle Earth data:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>tests/populate_middle_earth.py<span class="w"> </span>/tmp/test.kraken
+</pre></div>
+</div>
+<p>This creates:</p>
+<ul class="simple">
+<li><p>8 entities (characters, locations, artifacts)</p></li>
+<li><p>3 events with ID-based links</p></li>
+<li><p>15 relations demonstrating the system</p></li>
+</ul>
+</section>
+</section>
+<section id="database-schema">
+<h2>Database Schema<a class="headerlink" href="#database-schema" title="Link to this heading">¶</a></h2>
+<section id="relations-table">
+<h3>Relations Table<a class="headerlink" href="#relations-table" title="Link to this heading">¶</a></h3>
+<p>Relations created by <code class="docutils literal notranslate"><span class="pre">ProcessWikiLinksCommand</span></code> include:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;relation-uuid&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;source_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;source-entity-uuid&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;target_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;target-entity-uuid&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;rel_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;mentions&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;field&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;description&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;snippet&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...[[link text]]...&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;start_offset&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;end_offset&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">145</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;is_id_based&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;created_by&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ProcessWikiLinksCommand&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;created_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1234567890.0</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="performance-considerations">
+<h2>Performance Considerations<a class="headerlink" href="#performance-considerations" title="Link to this heading">¶</a></h2>
+<section id="caching">
+<h3>Caching<a class="headerlink" href="#caching" title="Link to this heading">¶</a></h3>
+<p>LinkResolver uses an in-memory cache:</p>
+<ul class="simple">
+<li><p>First resolution: Database query</p></li>
+<li><p>Subsequent: Cache hit (O(1))</p></li>
+<li><p>Cache invalidation: On entity/event updates</p></li>
+</ul>
+</section>
+<section id="best-practices">
+<h3>Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Share LinkResolver instances</strong> - Don’t create multiple resolvers</p></li>
+<li><p><strong>Invalidate cache on updates</strong> - Call <code class="docutils literal notranslate"><span class="pre">invalidate_cache(uuid)</span></code> after renaming</p></li>
+<li><p><strong>Use ID-based links</strong> - Preferred for new content</p></li>
+<li><p><strong>Batch operations</strong> - Process multiple links in one command</p></li>
+</ol>
+</section>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">¶</a></h2>
+<section id="links-not-highlighting">
+<h3>Links Not Highlighting<a class="headerlink" href="#links-not-highlighting" title="Link to this heading">¶</a></h3>
+<p>Check that highlighter has resolver set:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">editor</span><span class="o">.</span><span class="n">highlighter</span><span class="o">.</span><span class="n">set_link_resolver</span><span class="p">(</span><span class="n">resolver</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="autocomplete-not-working">
+<h3>Autocomplete Not Working<a class="headerlink" href="#autocomplete-not-working" title="Link to this heading">¶</a></h3>
+<p>Verify completer is configured:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">items</span> <span class="o">=</span> <span class="p">[(</span><span class="nb">id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span> <span class="k">for</span> <span class="o">...</span><span class="p">]</span>
+<span class="n">editor</span><span class="o">.</span><span class="n">set_completer</span><span class="p">(</span><span class="n">items</span><span class="o">=</span><span class="n">items</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="broken-links-not-showing">
+<h3>Broken Links Not Showing<a class="headerlink" href="#broken-links-not-showing" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p>Check LinkResolver is set on editor</p></li>
+<li><p>Verify target entity/event exists in database</p></li>
+<li><p>Clear cache: <code class="docutils literal notranslate"><span class="pre">resolver.invalidate_cache()</span></code></p></li>
+</ol>
+</section>
+<section id="navigation-not-working">
+<h3>Navigation Not Working<a class="headerlink" href="#navigation-not-working" title="Link to this heading">¶</a></h3>
+<p>Ensure signal is connected:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">editor</span><span class="o">.</span><span class="n">link_clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">main_window</span><span class="o">.</span><span class="n">navigate_to_entity</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="future-enhancements">
+<h2>Future Enhancements<a class="headerlink" href="#future-enhancements" title="Link to this heading">¶</a></h2>
+<section id="phase-4-link-integrity-tools">
+<h3>Phase 4: Link Integrity Tools<a class="headerlink" href="#phase-4-link-integrity-tools" title="Link to this heading">¶</a></h3>
+<p>Planned features for future releases:</p>
+<ol class="arabic simple">
+<li><p><strong>Link Integrity Checker</strong></p>
+<ul class="simple">
+<li><p>Scan all entities/events for broken links</p></li>
+<li><p>Generate report with statistics</p></li>
+<li><p>Show link targets and sources</p></li>
+</ul>
+</li>
+<li><p><strong>Link Manager UI</strong></p>
+<ul class="simple">
+<li><p>Dialog showing all broken links</p></li>
+<li><p>Bulk fixing/relinking capabilities</p></li>
+<li><p>Search and replace functionality</p></li>
+</ul>
+</li>
+<li><p><strong>Automatic Migration Tool</strong></p>
+<ul class="simple">
+<li><p>Convert all name-based links to ID-based</p></li>
+<li><p>Handle ambiguous name matches</p></li>
+<li><p>Preview before applying</p></li>
+</ul>
+</li>
+<li><p><strong>Link Analytics</strong></p>
+<ul class="simple">
+<li><p>Most-linked entities</p></li>
+<li><p>Orphaned entities (no incoming links)</p></li>
+<li><p>Link graph visualization</p></li>
+</ul>
+</li>
+</ol>
+</section>
+</section>
+<section id="api-reference">
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">¶</a></h2>
+<p>See inline docstrings for detailed API documentation:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">src/services/text_parser.py</span></code> - Link parsing</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/services/link_resolver.py</span></code> - Link resolution</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/wiki_text_edit.py</span></code> - Editor widget</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/gui/utils/wiki_highlighter.py</span></code> - Syntax highlighting</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/commands/wiki_commands.py</span></code> - Link processing command</p></li>
+</ul>
+</section>
+<section id="contributing">
+<h2>Contributing<a class="headerlink" href="#contributing" title="Link to this heading">¶</a></h2>
+<p>When modifying the wiki linking system:</p>
+<ol class="arabic simple">
+<li><p><strong>Add tests</strong> - Both unit and integration tests</p></li>
+<li><p><strong>Update docs</strong> - Keep this guide current</p></li>
+<li><p><strong>Maintain compatibility</strong> - Support legacy format</p></li>
+<li><p><strong>Test thoroughly</strong> - Run full test suite</p></li>
+<li><p><strong>Consider performance</strong> - Use caching appropriately</p></li>
+</ol>
+</section>
+<section id="license">
+<h2>License<a class="headerlink" href="#license" title="Link to this heading">¶</a></h2>
+<p>This implementation follows the ProjektKraken project license.</p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, Antigravity
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">ID-Based Wiki Linking Implementation Guide</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#features">Features</a><ul>
+<li><a class="reference internal" href="#id-based-link-format">1. ID-Based Link Format</a></li>
+<li><a class="reference internal" href="#backward-compatibility">2. Backward Compatibility</a></li>
+<li><a class="reference internal" href="#smart-autocomplete">3. Smart Autocomplete</a></li>
+<li><a class="reference internal" href="#broken-link-detection">4. Broken Link Detection</a></li>
+<li><a class="reference internal" href="#name-change-propagation">5. Name Change Propagation</a></li>
+<li><a class="reference internal" href="#link-navigation">6. Link Navigation</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#architecture">Architecture</a><ul>
+<li><a class="reference internal" href="#components">Components</a><ul>
+<li><a class="reference internal" href="#wikilinkparser-src-services-text-parser-py">1. WikiLinkParser (<code class="docutils literal notranslate"><span class="pre">src/services/text_parser.py</span></code>)</a></li>
+<li><a class="reference internal" href="#linkresolver-src-services-link-resolver-py">2. LinkResolver (<code class="docutils literal notranslate"><span class="pre">src/services/link_resolver.py</span></code>)</a></li>
+<li><a class="reference internal" href="#wikitextedit-src-gui-widgets-wiki-text-edit-py">3. WikiTextEdit (<code class="docutils literal notranslate"><span class="pre">src/gui/widgets/wiki_text_edit.py</span></code>)</a></li>
+<li><a class="reference internal" href="#wikisyntaxhighlighter-src-gui-utils-wiki-highlighter-py">4. WikiSyntaxHighlighter (<code class="docutils literal notranslate"><span class="pre">src/gui/utils/wiki_highlighter.py</span></code>)</a></li>
+<li><a class="reference internal" href="#processwikilinkscommand-src-commands-wiki-commands-py">5. ProcessWikiLinksCommand (<code class="docutils literal notranslate"><span class="pre">src/commands/wiki_commands.py</span></code>)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#usage-examples">Usage Examples</a><ul>
+<li><a class="reference internal" href="#creating-id-based-links-in-code">Creating ID-Based Links in Code</a></li>
+<li><a class="reference internal" href="#parsing-links-from-text">Parsing Links from Text</a></li>
+<li><a class="reference internal" href="#resolving-links">Resolving Links</a></li>
+<li><a class="reference internal" href="#finding-broken-links">Finding Broken Links</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#migration-from-name-based-links">Migration from Name-Based Links</a><ul>
+<li><a class="reference internal" href="#automatic-migration-future-enhancement">Automatic Migration (Future Enhancement)</a></li>
+<li><a class="reference internal" href="#manual-migration">Manual Migration</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#testing">Testing</a><ul>
+<li><a class="reference internal" href="#unit-tests">Unit Tests</a></li>
+<li><a class="reference internal" href="#integration-tests">Integration Tests</a></li>
+<li><a class="reference internal" href="#all-wiki-tests">All Wiki Tests</a></li>
+<li><a class="reference internal" href="#sample-data">Sample Data</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#database-schema">Database Schema</a><ul>
+<li><a class="reference internal" href="#relations-table">Relations Table</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#performance-considerations">Performance Considerations</a><ul>
+<li><a class="reference internal" href="#caching">Caching</a></li>
+<li><a class="reference internal" href="#best-practices">Best Practices</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
+<li><a class="reference internal" href="#links-not-highlighting">Links Not Highlighting</a></li>
+<li><a class="reference internal" href="#autocomplete-not-working">Autocomplete Not Working</a></li>
+<li><a class="reference internal" href="#broken-links-not-showing">Broken Links Not Showing</a></li>
+<li><a class="reference internal" href="#navigation-not-working">Navigation Not Working</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#future-enhancements">Future Enhancements</a><ul>
+<li><a class="reference internal" href="#phase-4-link-integrity-tools">Phase 4: Link Integrity Tools</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#api-reference">API Reference</a></li>
+<li><a class="reference internal" href="#contributing">Contributing</a></li>
+<li><a class="reference internal" href="#license">License</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=95e61db4"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>
