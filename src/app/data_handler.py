@@ -221,10 +221,9 @@ class DataHandler(QObject):
                 color=marker.attributes.get("color"),
             )
 
-            # Store mapping for later updates
-            self.window._marker_object_to_id[(marker.object_id, marker.object_type)] = (
-                marker.id
-            )
+            # Store mapping for later updates (object_id -> marker.id)
+            # Using just object_id as key since entity/event UUIDs don't overlap
+            self.window._marker_object_to_id[marker.object_id] = marker.id
 
     @Slot(object)
     def on_command_finished(self, result):

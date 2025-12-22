@@ -969,7 +969,18 @@ class MainWindow(QMainWindow):
         logger.info(f"Creating marker for {item_type} '{item_name}' via drag-drop")
 
     def delete_marker(self, marker_id):
-        """Deletes a marker."""
+        """
+        Deletes a marker.
+
+        Args:
+            marker_id: The object_id from the UI (not the actual marker.id).
+        """
+        # Translate object_id to actual marker ID
+        actual_marker_id = self._marker_object_to_id.get(marker_id)
+        if not actual_marker_id:
+            logger.warning(f"No marker mapping found for object_id: {marker_id}")
+            return
+
         confirm = QMessageBox.question(
             self,
             "Delete Marker",
@@ -977,7 +988,12 @@ class MainWindow(QMainWindow):
             QMessageBox.Yes | QMessageBox.No,
         )
         if confirm == QMessageBox.Yes:
-            cmd = DeleteMarkerCommand(marker_id)
+            # Remove marker from UI immediately for instant feedback
+            self.map_widget.remove_marker(marker_id)
+            # Also remove from mapping
+            del self._marker_object_to_id[marker_id]
+            # Then execute the database command
+            cmd = DeleteMarkerCommand(actual_marker_id)
             self.command_requested.emit(cmd)
 
     @Slot(str, str)
