@@ -3,6 +3,7 @@ Event List Widget Module.
 
 Displays a list of events with controls for refreshing and deleting.
 """
+
 from typing import List
 
 from PySide6.QtCore import Qt, Signal
@@ -119,3 +120,25 @@ class EventListWidget(QWidget):
         if items:
             event_id = items[0].data(100)
             self.delete_requested.emit(event_id)
+
+    def minimumSizeHint(self):
+        """
+        Override to prevent dock collapse.
+
+        Returns:
+            QSize: Minimum size for usable event list.
+        """
+        from PySide6.QtCore import QSize
+
+        return QSize(250, 200)
+
+    def sizeHint(self):
+        """
+        Preferred size for the event list.
+
+        Returns:
+            QSize: Comfortable working size.
+        """
+        from PySide6.QtCore import QSize
+
+        return QSize(350, 500)

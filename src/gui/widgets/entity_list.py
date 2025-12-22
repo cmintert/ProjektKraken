@@ -3,6 +3,7 @@ Entity List Widget Module.
 
 Displays a list of entities with controls for creating, refreshing, and deleting.
 """
+
 from typing import List
 
 from PySide6.QtCore import Qt, Signal
@@ -120,3 +121,25 @@ class EntityListWidget(QWidget):
         if items:
             entity_id = items[0].data(Qt.UserRole)
             self.delete_requested.emit(entity_id)
+
+    def minimumSizeHint(self):
+        """
+        Override to prevent dock collapse.
+
+        Returns:
+            QSize: Minimum size for usable entity list.
+        """
+        from PySide6.QtCore import QSize
+
+        return QSize(250, 200)
+
+    def sizeHint(self):
+        """
+        Preferred size for the entity list.
+
+        Returns:
+            QSize: Comfortable working size.
+        """
+        from PySide6.QtCore import QSize
+
+        return QSize(350, 500)

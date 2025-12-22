@@ -330,3 +330,25 @@ class GalleryWidget(QWidget):
                 cmd = AddImagesCommand(self.owner_type, self.owner_id, valid_files)
                 self.main_window.command_requested.emit(cmd)
                 event.acceptProposedAction()
+
+    def minimumSizeHint(self):
+        """
+        Override to prevent dock collapse.
+
+        Returns:
+            QSize: Minimum size for usable gallery.
+        """
+        from PySide6.QtCore import QSize
+
+        return QSize(250, 150)
+
+    def sizeHint(self):
+        """
+        Preferred size for the gallery.
+
+        Returns:
+            QSize: Comfortable working size.
+        """
+        from PySide6.QtCore import QSize
+
+        return QSize(350, 300)
