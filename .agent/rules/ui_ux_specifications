@@ -48,6 +48,53 @@ Assets: Do not rely on pixel-based sizing for icons; rely on vector graphics.
 
 Hardcoding hex values is strictly forbidden. The application must load colors from an external configuration file (e.g., themes.json) at runtime. This allows for user-defined themes and easy maintenance.
 
+**CRITICAL RULE: Use StyleHelper for Widget Styling**
+
+All widget-level styling must use the `StyleHelper` utility class from `src.gui.utils.style_helper` instead of hardcoded QSS strings or hex color values. The StyleHelper provides theme-aware styling methods that automatically use ThemeManager tokens, ensuring consistent theming and proper theme switching.
+
+**Examples:**
+
+DO ✅:
+```python
+from src.gui.utils.style_helper import StyleHelper
+
+# Empty state label
+empty_label.setStyleSheet(StyleHelper.get_empty_state_style())
+
+# Error label
+error_label.setStyleSheet(StyleHelper.get_error_label_style())
+
+# Frame
+frame.setStyleSheet(StyleHelper.get_frame_style())
+
+# Layout spacing
+StyleHelper.apply_standard_list_spacing(layout)
+```
+
+DON'T ❌:
+```python
+# Hardcoded colors - FORBIDDEN!
+label.setStyleSheet("color: #757575; font-size: 14pt;")
+frame.setStyleSheet("border: 1px solid #555;")
+layout.setSpacing(8)
+layout.setContentsMargins(16, 16, 16, 16)
+```
+
+Available StyleHelper methods:
+- `get_empty_state_style()` - For "No items" messages
+- `get_preview_label_style()` - For preview/hint text
+- `get_error_label_style()` - For validation errors
+- `get_section_header_style()` - For section headers
+- `get_frame_style()` - For standard frames
+- `get_lore_frame_style()` - For lore/narrative frames
+- `get_primary_button_style()` - For primary action buttons
+- `apply_standard_list_spacing(layout)` - 8px spacing, 16px margins
+- `apply_compact_spacing(layout)` - 4px spacing, 8px margins
+- `apply_form_spacing(layout)` - 8px spacing, 12px margins
+- `apply_no_margins(layout)` - Removes all margins
+
+For dynamic theme updates, widgets should reconnect to `ThemeManager.theme_changed` signal and reapply StyleHelper styles when the theme changes.
+
 3.1 Theme Configuration Schema (themes.json)
 
 The developer must implement a ThemeManager class that reads this file and injects values into the QSS.
