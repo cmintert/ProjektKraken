@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class ConnectionManager:
     """
     Manages signal/slot connections between UI components.
-    
+
     Separates connection logic from MainWindow to improve
     maintainability and reduce coupling.
     """
@@ -21,7 +21,7 @@ class ConnectionManager:
     def __init__(self, main_window):
         """
         Initialize the connection manager.
-        
+
         Args:
             main_window: Reference to the MainWindow instance.
         """
@@ -54,19 +54,24 @@ class ConnectionManager:
             editor.remove_relation_requested.connect(self.window.remove_relation)
             editor.update_relation_requested.connect(self.window.update_relation)
             editor.link_clicked.connect(self.window.navigate_to_entity)
-        
+            editor.navigate_to_relation.connect(self.window.navigate_to_entity)
+
         # Specific connections for each editor
         self.window.event_editor.save_requested.connect(self.window.update_event)
         self.window.entity_editor.save_requested.connect(self.window.update_entity)
-        
+
         # Live preview for Timeline
         self.window.event_editor.current_data_changed.connect(
             self.window.timeline.update_event_preview
         )
-        
+
         # Discard signals - reload from database
-        self.window.event_editor.discard_requested.connect(self.window.load_event_details)
-        self.window.entity_editor.discard_requested.connect(self.window.load_entity_details)
+        self.window.event_editor.discard_requested.connect(
+            self.window.load_event_details
+        )
+        self.window.entity_editor.discard_requested.connect(
+            self.window.load_entity_details
+        )
 
     def connect_timeline(self):
         """Connect signals from the timeline widget."""

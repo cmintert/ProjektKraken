@@ -23,6 +23,7 @@ from src.core.events import Event
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.compact_duration_widget import CompactDurationWidget
+from src.gui.widgets.relation_item_widget import RelationItemWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
 from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
 from src.gui.widgets.tag_editor import TagEditorWidget
@@ -44,6 +45,7 @@ class EventEditorWidget(QWidget):
     remove_relation_requested = Signal(str)  # rel_id
     update_relation_requested = Signal(str, str, str)  # rel_id, target_id, rel_type
     link_clicked = Signal(str)  # target_name
+    navigate_to_relation = Signal(str)  # target_id for Go to button
     dirty_changed = Signal(bool)
     current_data_changed = Signal(dict)  # Emits current event data for preview
 
@@ -163,6 +165,7 @@ class EventEditorWidget(QWidget):
 
         # List second
         self.rel_list = QListWidget()
+        self.rel_list.setSpacing(2)  # Add spacing between items
         self.rel_list.setContextMenuPolicy(Qt.CustomContextMenu)
         self.rel_list.customContextMenuRequested.connect(self._show_rel_menu)
         self.rel_list.itemDoubleClicked.connect(self._on_edit_relation)
@@ -370,24 +373,55 @@ class EventEditorWidget(QWidget):
             # Outgoing
             if relations:
                 for rel in relations:
-                    # Format: -> TargetID [Type]
+                    # Format: → TargetID [Type]
                     target_display = rel.get("target_name") or rel["target_id"]
-                    label = f"-> {target_display} [{rel['rel_type']}]"
-                    item = QListWidgetItem(label)
+                    label = f"→ {target_display} [{rel['rel_type']}]"
+
+                    # Create custom widget with Go to button
+                    widget = RelationItemWidget(
+                        label=label,
+                        target_id=rel["target_id"],
+                        target_name=target_display,
+                    )
+                    widget.go_to_clicked.connect(
+                        lambda tid, tn: self.navigate_to_relation.emit(tid)
+                    )
+
+                    # Create list item with explicit size hint BEFORE adding
+                    item = QListWidgetItem()
                     item.setData(Qt.UserRole, rel)
-                    # Differentiate visually? Maybe standard color.
+                    from PySide6.QtCore import QSize
+
+                    item.setSizeHint(QSize(200, 36))  # Explicit height for button
                     self.rel_list.addItem(item)
+                    self.rel_list.setItemWidget(item, widget)
 
             # Incoming
             if incoming_relations:
                 for rel in incoming_relations:
-                    # Format: <- SourceID [Type]
+                    # Format: ← SourceID [Type]
                     source_display = rel.get("source_name") or rel["source_id"]
-                    label = f"<- {source_display} [{rel['rel_type']}]"
-                    item = QListWidgetItem(label)
+                    label = f"← {source_display} [{rel['rel_type']}]"
+
+                    # Create custom widget - navigate to source for incoming
+                    widget = RelationItemWidget(
+                        label=label,
+                        target_id=rel["source_id"],
+                        target_name=source_display,
+                    )
+                    widget.go_to_clicked.connect(
+                        lambda tid, tn: self.navigate_to_relation.emit(tid)
+                    )
+                    widget.label.setStyleSheet("color: gray;")
+
+                    # Create list item with explicit size hint BEFORE adding
+                    item = QListWidgetItem()
                     item.setData(Qt.UserRole, rel)
-                    item.setForeground(Qt.gray)  # Visually distinct
+                    from PySide6.QtCore import QSize
+
+                    item.setSizeHint(QSize(200, 36))  # Explicit height for button
                     self.rel_list.addItem(item)
+                    self.rel_list.setItemWidget(item, widget)
 
             # Unblock signals
             self.name_edit.blockSignals(False)
