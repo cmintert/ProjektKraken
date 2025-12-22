@@ -11,12 +11,13 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QInputDialog,
     QMessageBox,
-    QPushButton,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
+
+from src.gui.widgets.standard_buttons import StandardButton
 
 
 class AttributeEditorWidget(QWidget):
@@ -36,13 +37,16 @@ class AttributeEditorWidget(QWidget):
         """
         super().__init__(parent)
         self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        from src.gui.utils.style_helper import StyleHelper
+        StyleHelper.apply_compact_spacing(self.layout)
 
         # Toolbar
         self.toolbar_layout = QHBoxLayout()
-        self.btn_add = QPushButton("Add Attribute")
+        self.btn_add = StandardButton("Add Attribute")
         self.btn_add.clicked.connect(self._on_add)
-        self.btn_remove = QPushButton("Remove Selected")
+        self.btn_remove = StandardButton("Remove Selected")
+        from src.gui.utils.style_helper import StyleHelper
+        self.btn_remove.setStyleSheet(StyleHelper.get_destructive_button_style())
         self.btn_remove.clicked.connect(self._on_remove)
 
         self.toolbar_layout.addWidget(self.btn_add)

@@ -26,6 +26,7 @@ from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.compact_duration_widget import CompactDurationWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
+from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
 from src.gui.widgets.tag_editor import TagEditorWidget
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
@@ -64,8 +65,8 @@ class EventEditorWidget(QWidget):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.layout = QVBoxLayout(self)
-        self.layout.setSpacing(8)
-        self.layout.setContentsMargins(16, 16, 16, 16)
+        from src.gui.utils.style_helper import StyleHelper
+        StyleHelper.apply_form_spacing(self.layout)
 
         self._is_loading = False
         self._is_dirty = False
@@ -146,15 +147,17 @@ class EventEditorWidget(QWidget):
         self.rel_layout.addWidget(self.rel_list)
 
         rel_btn_layout = QHBoxLayout()
-        self.btn_add_rel = QPushButton("Add Relation")
+        self.btn_add_rel = StandardButton("Add Relation")
         self.btn_add_rel.clicked.connect(self._on_add_relation)
         rel_btn_layout.addWidget(self.btn_add_rel)
 
-        self.btn_edit_rel = QPushButton("Edit")
+        self.btn_edit_rel = StandardButton("Edit")
         self.btn_edit_rel.clicked.connect(self._on_edit_selected_relation)
         rel_btn_layout.addWidget(self.btn_edit_rel)
 
-        self.btn_remove_rel = QPushButton("Remove")
+        self.btn_remove_rel = StandardButton("Remove")
+        from src.gui.utils.style_helper import StyleHelper
+        self.btn_remove_rel.setStyleSheet(StyleHelper.get_destructive_button_style())
         self.btn_remove_rel.clicked.connect(self._on_remove_selected_relation)
         rel_btn_layout.addWidget(self.btn_remove_rel)
 
@@ -183,11 +186,11 @@ class EventEditorWidget(QWidget):
 
         # Buttons
         btn_layout = QHBoxLayout()
-        self.btn_save = QPushButton("Save Changes")
+        self.btn_save = PrimaryButton("Save Changes")
         self.btn_save.setEnabled(False)
         self.btn_save.clicked.connect(self._on_save)
 
-        self.btn_discard = QPushButton("Discard")
+        self.btn_discard = StandardButton("Discard")
         self.btn_discard.setEnabled(False)
         self.btn_discard.clicked.connect(self._on_discard)
 

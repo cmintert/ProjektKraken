@@ -46,6 +46,10 @@ class CompactDurationWidget(QWidget):
             parent: Parent widget.
         """
         super().__init__(parent)
+        # Set size policy to prevent vertical squashing
+        from PySide6.QtWidgets import QSizePolicy
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        
         self._converter = None
         self._start_date_float = 0.0
         self._updating = False
@@ -73,72 +77,60 @@ class CompactDurationWidget(QWidget):
         ymd_row = QHBoxLayout()
         ymd_row.setSpacing(12)
 
-        # Years - allow expanding
+        # Years - allow expanding with suffix
         from PySide6.QtWidgets import QSizePolicy
 
         self.spin_years = QSpinBox()
         self.spin_years.setRange(0, 9999)
         self.spin_years.setValue(0)
+        self.spin_years.setSuffix(" Y")
         self.spin_years.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         ymd_row.addWidget(self.spin_years, stretch=1)
-        self.lbl_years = QLabel("Years")
-        self.lbl_years.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        ymd_row.addWidget(self.lbl_years)
 
-        # Months - allow expanding
+        # Months - allow expanding with suffix
         self.spin_months = QSpinBox()
         self.spin_months.setRange(0, 99)
         self.spin_months.setValue(0)
+        self.spin_months.setSuffix(" M")
         self.spin_months.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         ymd_row.addWidget(self.spin_months, stretch=1)
-        self.lbl_months = QLabel("Months")
-        self.lbl_months.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        ymd_row.addWidget(self.lbl_months)
 
-        # Days - allow expanding
+        # Days - allow expanding with suffix
         self.spin_days = QSpinBox()
         self.spin_days.setRange(0, 999)
         self.spin_days.setValue(0)
+        self.spin_days.setSuffix(" D")
         self.spin_days.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         ymd_row.addWidget(self.spin_days, stretch=1)
-        self.lbl_days = QLabel("Days")
-        self.lbl_days.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        ymd_row.addWidget(self.lbl_days)
 
-        ymd_row.addStretch()
         main_layout.addLayout(ymd_row)
 
         # Row 2: Hours, Minutes, Preview
         hm_row = QHBoxLayout()
         hm_row.setSpacing(12)
 
-        # Hours - allow expanding
+        # Hours - allow expanding with suffix
         self.spin_hours = QSpinBox()
         self.spin_hours.setRange(0, 23)
         self.spin_hours.setValue(0)
+        self.spin_hours.setSuffix(" h")
         self.spin_hours.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         hm_row.addWidget(self.spin_hours, stretch=1)
-        self.lbl_hours = QLabel("Hours")
-        self.lbl_hours.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        hm_row.addWidget(self.lbl_hours)
 
-        # Minutes - allow expanding
+        # Minutes - allow expanding with suffix
         self.spin_minutes = QSpinBox()
         self.spin_minutes.setRange(0, 59)
         self.spin_minutes.setValue(0)
+        self.spin_minutes.setSuffix(" m")
         self.spin_minutes.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         hm_row.addWidget(self.spin_minutes, stretch=1)
-        self.lbl_minutes = QLabel("Minutes")
-        self.lbl_minutes.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        hm_row.addWidget(self.lbl_minutes)
 
         # Preview - takes remaining space
         self.lbl_preview = QLabel()
-        self.lbl_preview.setStyleSheet("color: #888; font-style: italic;")
+        self.lbl_preview.setStyleSheet(StyleHelper.get_preview_label_style())
         self.lbl_preview.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         hm_row.addWidget(self.lbl_preview, stretch=3)  # Wider for text
 
-        hm_row.addStretch()
         main_layout.addLayout(hm_row)
 
     def _connect_signals(self):
@@ -176,20 +168,9 @@ class CompactDurationWidget(QWidget):
         if self._updating:
             return
 
-        self._update_labels()
         self._update_preview()
         value = self.get_value()
         self.value_changed.emit(value)
-
-    def _update_labels(self):
-        """Updates singular/plural labels."""
-        self.lbl_years.setText("Year" if self.spin_years.value() == 1 else "Years")
-        self.lbl_months.setText("Month" if self.spin_months.value() == 1 else "Months")
-        self.lbl_days.setText("Day" if self.spin_days.value() == 1 else "Days")
-        self.lbl_hours.setText("Hour" if self.spin_hours.value() == 1 else "Hours")
-        self.lbl_minutes.setText(
-            "Minute" if self.spin_minutes.value() == 1 else "Minutes"
-        )
 
     def _update_preview(self):
         """Updates the preview label with written format."""
@@ -292,7 +273,6 @@ class CompactDurationWidget(QWidget):
                 self.spin_days.setValue(0)
                 self.spin_hours.setValue(0)
                 self.spin_minutes.setValue(0)
-                self._update_labels()
                 self._update_preview()
                 return
 
@@ -312,7 +292,6 @@ class CompactDurationWidget(QWidget):
                 self.spin_days.setValue(days)
                 self.spin_hours.setValue(hours)
                 self.spin_minutes.setValue(minutes)
-                self._update_labels()
                 self._update_preview()
                 return
 
@@ -365,8 +344,27 @@ class CompactDurationWidget(QWidget):
             self.spin_hours.setValue(hours)
             self.spin_minutes.setValue(minutes)
 
-            self._update_labels()
             self._update_preview()
 
         finally:
             self._updating = False
+
+    def minimumSizeHint(self):
+        """
+        Returns the minimum size hint to prevent vertical collapse.
+        
+        Returns:
+            QSize: Minimum size for the duration widget (two rows of controls).
+        """
+        from PySide6.QtCore import QSize
+        return QSize(250, 72)  # Two rows of controls + frame padding
+
+    def sizeHint(self):
+        """
+        Returns the preferred size hint.
+        
+        Returns:
+            QSize: Preferred size for comfortable duration input.
+        """
+        from PySide6.QtCore import QSize
+        return QSize(350, 80)  # Comfortable size for two-row layout

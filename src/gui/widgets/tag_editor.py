@@ -10,10 +10,11 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QListWidget,
     QListWidgetItem,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
+
+from src.gui.widgets.standard_buttons import StandardButton
 
 
 class TagEditorWidget(QWidget):
@@ -37,7 +38,8 @@ class TagEditorWidget(QWidget):
         """
         super().__init__(parent)
         self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        from src.gui.utils.style_helper import StyleHelper
+        StyleHelper.apply_compact_spacing(self.layout)
 
         # Input row
         input_layout = QHBoxLayout()
@@ -46,7 +48,7 @@ class TagEditorWidget(QWidget):
         self.tag_input.returnPressed.connect(self._on_add)
         input_layout.addWidget(self.tag_input)
 
-        self.btn_add = QPushButton("Add")
+        self.btn_add = StandardButton("Add")
         self.btn_add.clicked.connect(self._on_add)
         input_layout.addWidget(self.btn_add)
 
@@ -60,7 +62,9 @@ class TagEditorWidget(QWidget):
         # Remove button
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()
-        self.btn_remove = QPushButton("Remove Selected")
+        self.btn_remove = StandardButton("Remove Selected")
+        from src.gui.utils.style_helper import StyleHelper
+        self.btn_remove.setStyleSheet(StyleHelper.get_destructive_button_style())
         self.btn_remove.clicked.connect(self._on_remove)
         btn_layout.addWidget(self.btn_remove)
         self.layout.addLayout(btn_layout)
