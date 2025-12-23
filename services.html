@@ -297,6 +297,46 @@ Defaults to :memory: for testing.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.assign_tag_to_entity">
+<span class="sig-name descname"><span class="pre">assign_tag_to_entity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.assign_tag_to_entity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.assign_tag_to_entity" title="Link to this definition">¶</a></dt>
+<dd><p>Assigns a tag to an entity, creating the tag if it doesn’t exist.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>entity_id</strong> (<em>str</em>) – The ID of the entity.</p></li>
+<li><p><strong>tag_name</strong> (<em>str</em>) – The name of the tag to assign.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – If tag_name is empty.</p></li>
+<li><p><strong>sqlite3.Error</strong> – If the database operation fails.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.assign_tag_to_event">
+<span class="sig-name descname"><span class="pre">assign_tag_to_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.assign_tag_to_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.assign_tag_to_event" title="Link to this definition">¶</a></dt>
+<dd><p>Assigns a tag to an event, creating the tag if it doesn’t exist.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>event_id</strong> (<em>str</em>) – The ID of the event.</p></li>
+<li><p><strong>tag_name</strong> (<em>str</em>) – The name of the tag to assign.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – If tag_name is empty.</p></li>
+<li><p><strong>sqlite3.Error</strong> – If the database operation fails.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.close">
 <span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.close" title="Link to this definition">¶</a></dt>
 <dd><p>Closes the database connection.</p>
@@ -306,6 +346,29 @@ Defaults to :memory: for testing.</p>
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.connect">
 <span class="sig-name descname"><span class="pre">connect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.connect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.connect" title="Link to this definition">¶</a></dt>
 <dd><p>Establishes connection to the database.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.create_tag">
+<span class="sig-name descname"><span class="pre">create_tag</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.create_tag"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.create_tag" title="Link to this definition">¶</a></dt>
+<dd><p>Creates a new tag or returns existing tag ID.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>tag_name</strong> (<em>str</em>) – The name of the tag to create.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The UUID of the tag (new or existing).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – If tag_name is empty or whitespace-only.</p></li>
+<li><p><strong>sqlite3.Error</strong> – If the database operation fails.</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -390,6 +453,20 @@ Defaults to :memory: for testing.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.delete_tag">
+<span class="sig-name descname"><span class="pre">delete_tag</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.delete_tag"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.delete_tag" title="Link to this definition">¶</a></dt>
+<dd><p>Deletes a tag and all its associations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>tag_name</strong> (<em>str</em>) – The name of the tag to delete.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sqlite3.Error</strong> – If the database operation fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.get_active_calendar_config">
 <span class="sig-name descname"><span class="pre">get_active_calendar_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">CalendarConfig</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_active_calendar_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_active_calendar_config" title="Link to this definition">¶</a></dt>
 <dd><p>Retrieves the currently active calendar configuration.</p>
@@ -460,6 +537,20 @@ Defaults to :memory: for testing.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_all_tags">
+<span class="sig-name descname"><span class="pre">get_all_tags</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_all_tags"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_all_tags" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves all tags from the database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of tag dictionaries with id, name, created_at.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List[Dict[str, Any]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.get_calendar_config">
 <span class="sig-name descname"><span class="pre">get_calendar_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">CalendarConfig</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_calendar_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_calendar_config" title="Link to this definition">¶</a></dt>
 <dd><p>Retrieves a single calendar config by its ID.</p>
@@ -500,6 +591,23 @@ Defaults to :memory: for testing.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>List of matching Entity objects.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="core.html#core.entities.Entity" title="core.entities.Entity">Entity</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_entities_by_tag">
+<span class="sig-name descname"><span class="pre">get_entities_by_tag</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Entity</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_entities_by_tag"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_entities_by_tag" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves all entities that have a specific tag.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>tag_name</strong> (<em>str</em>) – The name of the tag.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of Entity objects with the specified tag.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>List[<a class="reference internal" href="core.html#core.entities.Entity" title="core.entities.Entity">Entity</a>]</p>
@@ -551,6 +659,23 @@ Defaults to :memory: for testing.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>List of matching Event objects.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="core.html#core.events.Event" title="core.events.Event">Event</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_events_by_tag">
+<span class="sig-name descname"><span class="pre">get_events_by_tag</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Event</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_events_by_tag"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_events_by_tag" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves all events that have a specific tag.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>tag_name</strong> (<em>str</em>) – The name of the tag.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of Event objects with the specified tag.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>List[<a class="reference internal" href="core.html#core.events.Event" title="core.events.Event">Event</a>]</p>
@@ -721,6 +846,40 @@ actual database ID.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_tags_for_entity">
+<span class="sig-name descname"><span class="pre">get_tags_for_entity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_tags_for_entity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_tags_for_entity" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves all tags for a specific entity.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>entity_id</strong> (<em>str</em>) – The ID of the entity.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of tag dictionaries.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[Dict[str, Any]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_tags_for_event">
+<span class="sig-name descname"><span class="pre">get_tags_for_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_tags_for_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_tags_for_event" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves all tags for a specific event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event_id</strong> (<em>str</em>) – The ID of the event.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of tag dictionaries.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[Dict[str, Any]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.insert_calendar_config">
 <span class="sig-name descname"><span class="pre">insert_calendar_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">CalendarConfig</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.insert_calendar_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.insert_calendar_config" title="Link to this definition">¶</a></dt>
 <dd><p>Inserts a new calendar config or updates an existing one (Upsert).</p>
@@ -859,6 +1018,40 @@ the existing row’s id is retained.</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>sqlite3.Error</strong> – If DB fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.remove_tag_from_entity">
+<span class="sig-name descname"><span class="pre">remove_tag_from_entity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.remove_tag_from_entity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.remove_tag_from_entity" title="Link to this definition">¶</a></dt>
+<dd><p>Removes a tag from an entity.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>entity_id</strong> (<em>str</em>) – The ID of the entity.</p></li>
+<li><p><strong>tag_name</strong> (<em>str</em>) – The name of the tag to remove.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sqlite3.Error</strong> – If the database operation fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.remove_tag_from_event">
+<span class="sig-name descname"><span class="pre">remove_tag_from_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.remove_tag_from_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.remove_tag_from_event" title="Link to this definition">¶</a></dt>
+<dd><p>Removes a tag from an event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>event_id</strong> (<em>str</em>) – The ID of the event.</p></li>
+<li><p><strong>tag_name</strong> (<em>str</em>) – The name of the tag to remove.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sqlite3.Error</strong> – If the database operation fails.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1703,25 +1896,32 @@ text parsing, and background workers.</p>
 <li><a class="reference internal" href="#module-services.db_service">services.db_service module</a><ul>
 <li><a class="reference internal" href="#services.db_service.DatabaseService"><code class="docutils literal notranslate"><span class="pre">DatabaseService</span></code></a><ul>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.__init__"><code class="docutils literal notranslate"><span class="pre">DatabaseService.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.assign_tag_to_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.assign_tag_to_entity()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.assign_tag_to_event"><code class="docutils literal notranslate"><span class="pre">DatabaseService.assign_tag_to_event()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.close"><code class="docutils literal notranslate"><span class="pre">DatabaseService.close()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.connect"><code class="docutils literal notranslate"><span class="pre">DatabaseService.connect()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.create_tag"><code class="docutils literal notranslate"><span class="pre">DatabaseService.create_tag()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.delete_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_calendar_config()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.delete_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_entity()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.delete_event"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_event()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.delete_map"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_map()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.delete_marker"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_marker()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.delete_relation"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_relation()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.delete_tag"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_tag()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_active_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_active_calendar_config()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_all_calendar_configs"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_all_calendar_configs()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_all_entities"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_all_entities()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_all_events"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_all_events()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_all_maps"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_all_maps()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_all_tags"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_all_tags()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_calendar_config()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_current_time"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_current_time()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_entities"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_entities()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_entities_by_tag"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_entities_by_tag()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_entity()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_event"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_event()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_events"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_events()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_events_by_tag"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_events_by_tag()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_incoming_relations"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_incoming_relations()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_map"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_map()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_marker"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_marker()</span></code></a></li>
@@ -1731,6 +1931,8 @@ text parsing, and background workers.</p>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_name"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_name()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_relation"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_relation()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_relations"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_relations()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_tags_for_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_tags_for_entity()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_tags_for_event"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_tags_for_event()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.insert_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_calendar_config()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.insert_entities_bulk"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_entities_bulk()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.insert_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_entity()</span></code></a></li>
@@ -1739,6 +1941,8 @@ text parsing, and background workers.</p>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.insert_map"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_map()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.insert_marker"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_marker()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.insert_relation"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_relation()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.remove_tag_from_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.remove_tag_from_entity()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.remove_tag_from_event"><code class="docutils literal notranslate"><span class="pre">DatabaseService.remove_tag_from_event()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.set_active_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.set_active_calendar_config()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.set_current_time"><code class="docutils literal notranslate"><span class="pre">DatabaseService.set_current_time()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.transaction"><code class="docutils literal notranslate"><span class="pre">DatabaseService.transaction()</span></code></a></li>

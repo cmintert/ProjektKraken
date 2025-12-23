@@ -487,6 +487,45 @@
 <span class="s2">        -- Indexes for image attachments</span>
 <span class="s2">        CREATE INDEX IF NOT EXISTS idx_attachments_owner</span>
 <span class="s2">            ON image_attachments(owner_type, owner_id);</span>
+
+<span class="s2">        -- Normalized Tags Tables</span>
+<span class="s2">        -- Tags table: stores unique tag names</span>
+<span class="s2">        CREATE TABLE IF NOT EXISTS tags (</span>
+<span class="s2">            id TEXT PRIMARY KEY,</span>
+<span class="s2">            name TEXT NOT NULL UNIQUE,</span>
+<span class="s2">            created_at REAL NOT NULL</span>
+<span class="s2">        );</span>
+
+<span class="s2">        -- Create index on tag name for fast lookups</span>
+<span class="s2">        CREATE INDEX IF NOT EXISTS idx_tags_name ON tags(name);</span>
+
+<span class="s2">        -- Event-Tag association table</span>
+<span class="s2">        CREATE TABLE IF NOT EXISTS event_tags (</span>
+<span class="s2">            event_id TEXT NOT NULL,</span>
+<span class="s2">            tag_id TEXT NOT NULL,</span>
+<span class="s2">            created_at REAL NOT NULL,</span>
+<span class="s2">            PRIMARY KEY (event_id, tag_id),</span>
+<span class="s2">            FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,</span>
+<span class="s2">            FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE</span>
+<span class="s2">        );</span>
+
+<span class="s2">        -- Create indexes for fast lookups</span>
+<span class="s2">        CREATE INDEX IF NOT EXISTS idx_event_tags_event ON event_tags(event_id);</span>
+<span class="s2">        CREATE INDEX IF NOT EXISTS idx_event_tags_tag ON event_tags(tag_id);</span>
+
+<span class="s2">        -- Entity-Tag association table</span>
+<span class="s2">        CREATE TABLE IF NOT EXISTS entity_tags (</span>
+<span class="s2">            entity_id TEXT NOT NULL,</span>
+<span class="s2">            tag_id TEXT NOT NULL,</span>
+<span class="s2">            created_at REAL NOT NULL,</span>
+<span class="s2">            PRIMARY KEY (entity_id, tag_id),</span>
+<span class="s2">            FOREIGN KEY (entity_id) REFERENCES entities(id) ON DELETE CASCADE,</span>
+<span class="s2">            FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE</span>
+<span class="s2">        );</span>
+
+<span class="s2">        -- Create indexes for fast lookups</span>
+<span class="s2">        CREATE INDEX IF NOT EXISTS idx_entity_tags_entity ON entity_tags(entity_id);</span>
+<span class="s2">        CREATE INDEX IF NOT EXISTS idx_entity_tags_tag ON entity_tags(tag_id);</span>
 <span class="s2">        &quot;&quot;&quot;</span>
 
         <span class="k">try</span><span class="p">:</span>
@@ -1310,6 +1349,373 @@
         <span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;DELETE FROM markers WHERE id = ?&quot;</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
             <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="p">(</span><span class="n">marker_id</span><span class="p">,))</span></div>
+
+
+    <span class="c1"># --------------------------------------------------------------------------</span>
+    <span class="c1"># Tag Management - Normalized Tags</span>
+    <span class="c1"># --------------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="DatabaseService.get_all_tags">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_all_tags">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_all_tags</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves all tags from the database.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[Dict[str, Any]]: List of tag dictionaries with id, name, created_at.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="s2">&quot;SELECT id, name, created_at FROM tags ORDER BY name&quot;</span>
+        <span class="p">)</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.create_tag">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.create_tag">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_tag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a new tag or returns existing tag ID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tag_name (str): The name of the tag to create.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The UUID of the tag (new or existing).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If tag_name is empty or whitespace-only.</span>
+<span class="sd">            sqlite3.Error: If the database operation fails.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+
+        <span class="c1"># Validate and normalize tag name</span>
+        <span class="n">normalized_name</span> <span class="o">=</span> <span class="n">tag_name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">normalized_name</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tag name cannot be empty or whitespace-only&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Check if tag already exists</span>
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="s2">&quot;SELECT id FROM tags WHERE name = ?&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">normalized_name</span><span class="p">,)</span>
+        <span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">result</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Create new tag</span>
+        <span class="n">tag_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
+        <span class="n">created_at</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                <span class="s2">&quot;INSERT INTO tags (id, name, created_at) VALUES (?, ?, ?)&quot;</span><span class="p">,</span>
+                <span class="p">(</span><span class="n">tag_id</span><span class="p">,</span> <span class="n">normalized_name</span><span class="p">,</span> <span class="n">created_at</span><span class="p">),</span>
+            <span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Created tag: </span><span class="si">{</span><span class="n">normalized_name</span><span class="si">}</span><span class="s2"> (ID: </span><span class="si">{</span><span class="n">tag_id</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tag_id</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.assign_tag_to_event">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.assign_tag_to_event">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">assign_tag_to_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Assigns a tag to an event, creating the tag if it doesn&#39;t exist.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            event_id (str): The ID of the event.</span>
+<span class="sd">            tag_name (str): The name of the tag to assign.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If tag_name is empty.</span>
+<span class="sd">            sqlite3.Error: If the database operation fails.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+        <span class="c1"># Create tag if it doesn&#39;t exist</span>
+        <span class="n">tag_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_tag</span><span class="p">(</span><span class="n">tag_name</span><span class="p">)</span>
+
+        <span class="c1"># Create association (idempotent due to PRIMARY KEY constraint)</span>
+        <span class="n">created_at</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+                <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<span class="w">                    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">                    INSERT OR IGNORE INTO event_tags (event_id, tag_id, created_at)</span>
+<span class="sd">                    VALUES (?, ?, ?)</span>
+<span class="sd">                    &quot;&quot;&quot;</span><span class="p">,</span>
+                    <span class="p">(</span><span class="n">event_id</span><span class="p">,</span> <span class="n">tag_id</span><span class="p">,</span> <span class="n">created_at</span><span class="p">),</span>
+                <span class="p">)</span>
+        <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Failed to assign tag &#39;</span><span class="si">{</span><span class="n">tag_name</span><span class="si">}</span><span class="s2">&#39; to event </span><span class="si">{</span><span class="n">event_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.assign_tag_to_entity">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.assign_tag_to_entity">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">assign_tag_to_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Assigns a tag to an entity, creating the tag if it doesn&#39;t exist.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entity_id (str): The ID of the entity.</span>
+<span class="sd">            tag_name (str): The name of the tag to assign.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If tag_name is empty.</span>
+<span class="sd">            sqlite3.Error: If the database operation fails.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+        <span class="c1"># Create tag if it doesn&#39;t exist</span>
+        <span class="n">tag_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_tag</span><span class="p">(</span><span class="n">tag_name</span><span class="p">)</span>
+
+        <span class="c1"># Create association (idempotent due to PRIMARY KEY constraint)</span>
+        <span class="n">created_at</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+                <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<span class="w">                    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">                    INSERT OR IGNORE INTO entity_tags (entity_id, tag_id, created_at)</span>
+<span class="sd">                    VALUES (?, ?, ?)</span>
+<span class="sd">                    &quot;&quot;&quot;</span><span class="p">,</span>
+                    <span class="p">(</span><span class="n">entity_id</span><span class="p">,</span> <span class="n">tag_id</span><span class="p">,</span> <span class="n">created_at</span><span class="p">),</span>
+                <span class="p">)</span>
+        <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Failed to assign tag &#39;</span><span class="si">{</span><span class="n">tag_name</span><span class="si">}</span><span class="s2">&#39; to entity </span><span class="si">{</span><span class="n">entity_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.remove_tag_from_event">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.remove_tag_from_event">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">remove_tag_from_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Removes a tag from an event.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            event_id (str): The ID of the event.</span>
+<span class="sd">            tag_name (str): The name of the tag to remove.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            sqlite3.Error: If the database operation fails.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get tag ID</span>
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="s2">&quot;SELECT id FROM tags WHERE name = ?&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">tag_name</span><span class="o">.</span><span class="n">strip</span><span class="p">(),)</span>
+        <span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="p">:</span>
+            <span class="c1"># Tag doesn&#39;t exist, nothing to remove</span>
+            <span class="k">return</span>
+
+        <span class="n">tag_id</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                <span class="s2">&quot;DELETE FROM event_tags WHERE event_id = ? AND tag_id = ?&quot;</span><span class="p">,</span>
+                <span class="p">(</span><span class="n">event_id</span><span class="p">,</span> <span class="n">tag_id</span><span class="p">),</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.remove_tag_from_entity">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.remove_tag_from_entity">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">remove_tag_from_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Removes a tag from an entity.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entity_id (str): The ID of the entity.</span>
+<span class="sd">            tag_name (str): The name of the tag to remove.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            sqlite3.Error: If the database operation fails.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get tag ID</span>
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="s2">&quot;SELECT id FROM tags WHERE name = ?&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">tag_name</span><span class="o">.</span><span class="n">strip</span><span class="p">(),)</span>
+        <span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="p">:</span>
+            <span class="c1"># Tag doesn&#39;t exist, nothing to remove</span>
+            <span class="k">return</span>
+
+        <span class="n">tag_id</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                <span class="s2">&quot;DELETE FROM entity_tags WHERE entity_id = ? AND tag_id = ?&quot;</span><span class="p">,</span>
+                <span class="p">(</span><span class="n">entity_id</span><span class="p">,</span> <span class="n">tag_id</span><span class="p">),</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.get_tags_for_event">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_tags_for_event">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_tags_for_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves all tags for a specific event.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            event_id (str): The ID of the event.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[Dict[str, Any]]: List of tag dictionaries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            SELECT t.id, t.name, t.created_at</span>
+<span class="sd">            FROM tags t</span>
+<span class="sd">            INNER JOIN event_tags et ON t.id = et.tag_id</span>
+<span class="sd">            WHERE et.event_id = ?</span>
+<span class="sd">            ORDER BY t.name</span>
+<span class="sd">            &quot;&quot;&quot;</span><span class="p">,</span>
+            <span class="p">(</span><span class="n">event_id</span><span class="p">,),</span>
+        <span class="p">)</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.get_tags_for_entity">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_tags_for_entity">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_tags_for_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves all tags for a specific entity.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entity_id (str): The ID of the entity.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[Dict[str, Any]]: List of tag dictionaries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            SELECT t.id, t.name, t.created_at</span>
+<span class="sd">            FROM tags t</span>
+<span class="sd">            INNER JOIN entity_tags et ON t.id = et.tag_id</span>
+<span class="sd">            WHERE et.entity_id = ?</span>
+<span class="sd">            ORDER BY t.name</span>
+<span class="sd">            &quot;&quot;&quot;</span><span class="p">,</span>
+            <span class="p">(</span><span class="n">entity_id</span><span class="p">,),</span>
+        <span class="p">)</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.delete_tag">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.delete_tag">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delete_tag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Deletes a tag and all its associations.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tag_name (str): The name of the tag to delete.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            sqlite3.Error: If the database operation fails.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get tag ID</span>
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="s2">&quot;SELECT id FROM tags WHERE name = ?&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">tag_name</span><span class="o">.</span><span class="n">strip</span><span class="p">(),)</span>
+        <span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="p">:</span>
+            <span class="c1"># Tag doesn&#39;t exist, nothing to delete</span>
+            <span class="k">return</span>
+
+        <span class="n">tag_id</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Delete tag (CASCADE will handle associations)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;DELETE FROM tags WHERE id = ?&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">tag_id</span><span class="p">,))</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Deleted tag: </span><span class="si">{</span><span class="n">tag_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.get_events_by_tag">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_events_by_tag">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_events_by_tag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Event</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves all events that have a specific tag.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tag_name (str): The name of the tag.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[Event]: List of Event objects with the specified tag.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            SELECT e.*</span>
+<span class="sd">            FROM events e</span>
+<span class="sd">            INNER JOIN event_tags et ON e.id = et.event_id</span>
+<span class="sd">            INNER JOIN tags t ON et.tag_id = t.id</span>
+<span class="sd">            WHERE t.name = ?</span>
+<span class="sd">            ORDER BY e.lore_date</span>
+<span class="sd">            &quot;&quot;&quot;</span><span class="p">,</span>
+            <span class="p">(</span><span class="n">tag_name</span><span class="o">.</span><span class="n">strip</span><span class="p">(),),</span>
+        <span class="p">)</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+
+        <span class="n">events</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attributes&quot;</span><span class="p">):</span>
+                <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">])</span>
+            <span class="n">events</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Event</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">events</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.get_entities_by_tag">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_entities_by_tag">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_entities_by_tag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Entity</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves all entities that have a specific tag.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tag_name (str): The name of the tag.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[Entity]: List of Entity objects with the specified tag.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            SELECT e.*</span>
+<span class="sd">            FROM entities e</span>
+<span class="sd">            INNER JOIN entity_tags et ON e.id = et.entity_id</span>
+<span class="sd">            INNER JOIN tags t ON et.tag_id = t.id</span>
+<span class="sd">            WHERE t.name = ?</span>
+<span class="sd">            ORDER BY e.name</span>
+<span class="sd">            &quot;&quot;&quot;</span><span class="p">,</span>
+            <span class="p">(</span><span class="n">tag_name</span><span class="o">.</span><span class="n">strip</span><span class="p">(),),</span>
+        <span class="p">)</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+
+        <span class="n">entities</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attributes&quot;</span><span class="p">):</span>
+                <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">])</span>
+            <span class="n">entities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Entity</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">entities</span></div>
 </div>
 
 </pre></div>

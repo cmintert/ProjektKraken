@@ -352,6 +352,10 @@
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="core.html#core.theme_manager.ThemeManager.apply_theme">apply_theme() (core.theme_manager.ThemeManager method)</a>
 </li>
+        <li><a href="services.html#services.db_service.DatabaseService.assign_tag_to_entity">assign_tag_to_entity() (services.db_service.DatabaseService method)</a>
+</li>
+        <li><a href="services.html#services.db_service.DatabaseService.assign_tag_to_event">assign_tag_to_event() (services.db_service.DatabaseService method)</a>
+</li>
         <li><a href="services.html#services.worker.DatabaseWorker.attachments_loaded">attachments_loaded (services.worker.DatabaseWorker attribute)</a>
 </li>
         <li><a href="core.html#core.entities.Entity.attributes">attributes (core.entities.Entity attribute)</a>
@@ -509,6 +513,8 @@
         </ul></li>
         <li><a href="core.html#core.calendar.CalendarConfig.create_default">create_default() (core.calendar.CalendarConfig class method)</a>
 </li>
+        <li><a href="services.html#services.db_service.DatabaseService.create_tag">create_tag() (services.db_service.DatabaseService method)</a>
+</li>
         <li><a href="commands.html#commands.calendar_commands.CreateCalendarConfigCommand">CreateCalendarConfigCommand (class in commands.calendar_commands)</a>
 </li>
         <li><a href="core.html#core.calendar.CalendarConfig.created_at">created_at (core.calendar.CalendarConfig attribute)</a>, <a href="core.html#id0">[1]</a>
@@ -553,15 +559,17 @@
 </li>
         <li><a href="services.html#services.db_service.DatabaseService.delete_entity">delete_entity() (services.db_service.DatabaseService method)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="services.html#services.db_service.DatabaseService.delete_event">delete_event() (services.db_service.DatabaseService method)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="services.html#services.db_service.DatabaseService.delete_map">delete_map() (services.db_service.DatabaseService method)</a>
 </li>
         <li><a href="services.html#services.db_service.DatabaseService.delete_marker">delete_marker() (services.db_service.DatabaseService method)</a>
 </li>
         <li><a href="services.html#services.db_service.DatabaseService.delete_relation">delete_relation() (services.db_service.DatabaseService method)</a>
+</li>
+        <li><a href="services.html#services.db_service.DatabaseService.delete_tag">delete_tag() (services.db_service.DatabaseService method)</a>
 </li>
         <li><a href="commands.html#commands.calendar_commands.DeleteCalendarConfigCommand">DeleteCalendarConfigCommand (class in commands.calendar_commands)</a>
 </li>
@@ -707,6 +715,8 @@
 </li>
         <li><a href="services.html#services.db_service.DatabaseService.get_all_maps">get_all_maps() (services.db_service.DatabaseService method)</a>
 </li>
+        <li><a href="services.html#services.db_service.DatabaseService.get_all_tags">get_all_tags() (services.db_service.DatabaseService method)</a>
+</li>
         <li><a href="services.html#services.db_service.DatabaseService.get_calendar_config">get_calendar_config() (services.db_service.DatabaseService method)</a>
 </li>
         <li><a href="services.html#services.db_service.DatabaseService.get_current_time">get_current_time() (services.db_service.DatabaseService method)</a>
@@ -715,20 +725,24 @@
 </li>
         <li><a href="services.html#services.db_service.DatabaseService.get_entities">get_entities() (services.db_service.DatabaseService method)</a>
 </li>
+        <li><a href="services.html#services.db_service.DatabaseService.get_entities_by_tag">get_entities_by_tag() (services.db_service.DatabaseService method)</a>
+</li>
         <li><a href="services.html#services.db_service.DatabaseService.get_entity">get_entity() (services.db_service.DatabaseService method)</a>
 </li>
         <li><a href="services.html#services.db_service.DatabaseService.get_event">get_event() (services.db_service.DatabaseService method)</a>
 </li>
         <li><a href="services.html#services.db_service.DatabaseService.get_events">get_events() (services.db_service.DatabaseService method)</a>
 </li>
+        <li><a href="services.html#services.db_service.DatabaseService.get_events_by_tag">get_events_by_tag() (services.db_service.DatabaseService method)</a>
+</li>
         <li><a href="services.html#services.db_service.DatabaseService.get_incoming_relations">get_incoming_relations() (services.db_service.DatabaseService method)</a>
 </li>
         <li><a href="core.html#core.logging_config.get_logger">get_logger() (in module core.logging_config)</a>
 </li>
-        <li><a href="services.html#services.db_service.DatabaseService.get_map">get_map() (services.db_service.DatabaseService method)</a>
-</li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="services.html#services.db_service.DatabaseService.get_map">get_map() (services.db_service.DatabaseService method)</a>
+</li>
         <li><a href="services.html#services.db_service.DatabaseService.get_marker">get_marker() (services.db_service.DatabaseService method)</a>
 </li>
         <li><a href="services.html#services.db_service.DatabaseService.get_marker_by_composite">get_marker_by_composite() (services.db_service.DatabaseService method)</a>
@@ -744,6 +758,10 @@
         <li><a href="services.html#services.db_service.DatabaseService.get_relation">get_relation() (services.db_service.DatabaseService method)</a>
 </li>
         <li><a href="services.html#services.db_service.DatabaseService.get_relations">get_relations() (services.db_service.DatabaseService method)</a>
+</li>
+        <li><a href="services.html#services.db_service.DatabaseService.get_tags_for_entity">get_tags_for_entity() (services.db_service.DatabaseService method)</a>
+</li>
+        <li><a href="services.html#services.db_service.DatabaseService.get_tags_for_event">get_tags_for_event() (services.db_service.DatabaseService method)</a>
 </li>
         <li><a href="core.html#core.calendar.CalendarConfig.get_year_length">get_year_length() (core.calendar.CalendarConfig method)</a>
 </li>
@@ -1023,8 +1041,12 @@
 </li>
         <li><a href="services.html#services.longform_builder.remove_from_longform">remove_from_longform() (in module services.longform_builder)</a>
 </li>
+        <li><a href="services.html#services.db_service.DatabaseService.remove_tag_from_entity">remove_tag_from_entity() (services.db_service.DatabaseService method)</a>
+</li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="services.html#services.db_service.DatabaseService.remove_tag_from_event">remove_tag_from_event() (services.db_service.DatabaseService method)</a>
+</li>
         <li><a href="commands.html#commands.longform_commands.RemoveLongformEntryCommand">RemoveLongformEntryCommand (class in commands.longform_commands)</a>
 </li>
         <li><a href="commands.html#commands.relation_commands.RemoveRelationCommand">RemoveRelationCommand (class in commands.relation_commands)</a>

@@ -311,6 +311,16 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">db_service</span><span class="o">.</span><span class="n">insert_entity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_entity</span><span class="p">)</span>
+            
+            <span class="c1"># Sync tags to normalized tables</span>
+            <span class="n">tags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_entity</span><span class="o">.</span><span class="n">tags</span>
+            <span class="k">if</span> <span class="n">tags</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">tag_name</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">db_service</span><span class="o">.</span><span class="n">assign_tag_to_entity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_entity</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to assign tag &#39;</span><span class="si">{</span><span class="n">tag_name</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
             <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Created entity: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_entity</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_entity</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">CommandResult</span><span class="p">(</span>
@@ -406,6 +416,27 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_new_entity</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="o">**</span><span class="n">clean_data</span><span class="p">)</span>
 
             <span class="n">db_service</span><span class="o">.</span><span class="n">insert_entity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_new_entity</span><span class="p">)</span>
+            
+            <span class="c1"># Sync tags to normalized tables</span>
+            <span class="c1"># First, get current normalized tags</span>
+            <span class="n">current_tags</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">db_service</span><span class="o">.</span><span class="n">get_tags_for_entity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_id</span><span class="p">))</span>
+            <span class="c1"># Get new tags from entity</span>
+            <span class="n">new_tags</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_new_entity</span><span class="o">.</span><span class="n">tags</span><span class="p">)</span>
+            
+            <span class="c1"># Remove tags that are no longer present</span>
+            <span class="k">for</span> <span class="n">tag_name</span> <span class="ow">in</span> <span class="n">current_tags</span> <span class="o">-</span> <span class="n">new_tags</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">db_service</span><span class="o">.</span><span class="n">remove_tag_from_entity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_id</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to remove tag &#39;</span><span class="si">{</span><span class="n">tag_name</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Add new tags</span>
+            <span class="k">for</span> <span class="n">tag_name</span> <span class="ow">in</span> <span class="n">new_tags</span> <span class="o">-</span> <span class="n">current_tags</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">db_service</span><span class="o">.</span><span class="n">assign_tag_to_entity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_id</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to assign tag &#39;</span><span class="si">{</span><span class="n">tag_name</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
             <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Updated entity: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_new_entity</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">CommandResult</span><span class="p">(</span>
