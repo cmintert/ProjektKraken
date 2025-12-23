@@ -212,6 +212,45 @@ class DatabaseService:
         -- Indexes for image attachments
         CREATE INDEX IF NOT EXISTS idx_attachments_owner
             ON image_attachments(owner_type, owner_id);
+
+        -- Normalized Tags Tables
+        -- Tags table: stores unique tag names
+        CREATE TABLE IF NOT EXISTS tags (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL UNIQUE,
+            created_at REAL NOT NULL
+        );
+
+        -- Create index on tag name for fast lookups
+        CREATE INDEX IF NOT EXISTS idx_tags_name ON tags(name);
+
+        -- Event-Tag association table
+        CREATE TABLE IF NOT EXISTS event_tags (
+            event_id TEXT NOT NULL,
+            tag_id TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            PRIMARY KEY (event_id, tag_id),
+            FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+            FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+        );
+
+        -- Create indexes for fast lookups
+        CREATE INDEX IF NOT EXISTS idx_event_tags_event ON event_tags(event_id);
+        CREATE INDEX IF NOT EXISTS idx_event_tags_tag ON event_tags(tag_id);
+
+        -- Entity-Tag association table
+        CREATE TABLE IF NOT EXISTS entity_tags (
+            entity_id TEXT NOT NULL,
+            tag_id TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            PRIMARY KEY (entity_id, tag_id),
+            FOREIGN KEY (entity_id) REFERENCES entities(id) ON DELETE CASCADE,
+            FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+        );
+
+        -- Create indexes for fast lookups
+        CREATE INDEX IF NOT EXISTS idx_entity_tags_entity ON entity_tags(entity_id);
+        CREATE INDEX IF NOT EXISTS idx_entity_tags_tag ON entity_tags(tag_id);
         """
 
         try:
@@ -925,3 +964,337 @@ class DatabaseService:
         sql = "DELETE FROM markers WHERE id = ?"
         with self.transaction() as conn:
             conn.execute(sql, (marker_id,))
+
+    # --------------------------------------------------------------------------
+    # Tag Management - Normalized Tags
+    # --------------------------------------------------------------------------
+
+    def get_all_tags(self) -> List[Dict[str, Any]]:
+        """
+        Retrieves all tags from the database.
+
+        Returns:
+            List[Dict[str, Any]]: List of tag dictionaries with id, name, created_at.
+        """
+        if not self._connection:
+            self.connect()
+
+        cursor = self._connection.execute(
+            "SELECT id, name, created_at FROM tags ORDER BY name"
+        )
+        rows = cursor.fetchall()
+        return [dict(row) for row in rows]
+
+    def create_tag(self, tag_name: str) -> str:
+        """
+        Creates a new tag or returns existing tag ID.
+
+        Args:
+            tag_name (str): The name of the tag to create.
+
+        Returns:
+            str: The UUID of the tag (new or existing).
+
+        Raises:
+            ValueError: If tag_name is empty or whitespace-only.
+            sqlite3.Error: If the database operation fails.
+        """
+        import time
+        import uuid
+
+        # Validate and normalize tag name
+        normalized_name = tag_name.strip()
+        if not normalized_name:
+            raise ValueError("Tag name cannot be empty or whitespace-only")
+
+        # Check if tag already exists
+        cursor = self._connection.execute(
+            "SELECT id FROM tags WHERE name = ?", (normalized_name,)
+        )
+        result = cursor.fetchone()
+        if result:
+            return result["id"]
+
+        # Create new tag
+        tag_id = str(uuid.uuid4())
+        created_at = time.time()
+
+        with self.transaction() as conn:
+            conn.execute(
+                "INSERT INTO tags (id, name, created_at) VALUES (?, ?, ?)",
+                (tag_id, normalized_name, created_at),
+            )
+
+        logger.debug(f"Created tag: {normalized_name} (ID: {tag_id})")
+        return tag_id
+
+    def assign_tag_to_event(self, event_id: str, tag_name: str) -> None:
+        """
+        Assigns a tag to an event, creating the tag if it doesn't exist.
+
+        Args:
+            event_id (str): The ID of the event.
+            tag_name (str): The name of the tag to assign.
+
+        Raises:
+            ValueError: If tag_name is empty.
+            sqlite3.Error: If the database operation fails.
+        """
+        import time
+
+        # Create tag if it doesn't exist
+        tag_id = self.create_tag(tag_name)
+
+        # Create association (idempotent due to PRIMARY KEY constraint)
+        created_at = time.time()
+        try:
+            with self.transaction() as conn:
+                conn.execute(
+                    """
+                    INSERT OR IGNORE INTO event_tags (event_id, tag_id, created_at)
+                    VALUES (?, ?, ?)
+                    """,
+                    (event_id, tag_id, created_at),
+                )
+        except sqlite3.Error as e:
+            logger.error(
+                f"Failed to assign tag '{tag_name}' to event {event_id}: {e}"
+            )
+            raise
+
+    def assign_tag_to_entity(self, entity_id: str, tag_name: str) -> None:
+        """
+        Assigns a tag to an entity, creating the tag if it doesn't exist.
+
+        Args:
+            entity_id (str): The ID of the entity.
+            tag_name (str): The name of the tag to assign.
+
+        Raises:
+            ValueError: If tag_name is empty.
+            sqlite3.Error: If the database operation fails.
+        """
+        import time
+
+        # Create tag if it doesn't exist
+        tag_id = self.create_tag(tag_name)
+
+        # Create association (idempotent due to PRIMARY KEY constraint)
+        created_at = time.time()
+        try:
+            with self.transaction() as conn:
+                conn.execute(
+                    """
+                    INSERT OR IGNORE INTO entity_tags (entity_id, tag_id, created_at)
+                    VALUES (?, ?, ?)
+                    """,
+                    (entity_id, tag_id, created_at),
+                )
+        except sqlite3.Error as e:
+            logger.error(
+                f"Failed to assign tag '{tag_name}' to entity {entity_id}: {e}"
+            )
+            raise
+
+    def remove_tag_from_event(self, event_id: str, tag_name: str) -> None:
+        """
+        Removes a tag from an event.
+
+        Args:
+            event_id (str): The ID of the event.
+            tag_name (str): The name of the tag to remove.
+
+        Raises:
+            sqlite3.Error: If the database operation fails.
+        """
+        # Get tag ID
+        cursor = self._connection.execute(
+            "SELECT id FROM tags WHERE name = ?", (tag_name.strip(),)
+        )
+        result = cursor.fetchone()
+        if not result:
+            # Tag doesn't exist, nothing to remove
+            return
+
+        tag_id = result["id"]
+
+        with self.transaction() as conn:
+            conn.execute(
+                "DELETE FROM event_tags WHERE event_id = ? AND tag_id = ?",
+                (event_id, tag_id),
+            )
+
+    def remove_tag_from_entity(self, entity_id: str, tag_name: str) -> None:
+        """
+        Removes a tag from an entity.
+
+        Args:
+            entity_id (str): The ID of the entity.
+            tag_name (str): The name of the tag to remove.
+
+        Raises:
+            sqlite3.Error: If the database operation fails.
+        """
+        # Get tag ID
+        cursor = self._connection.execute(
+            "SELECT id FROM tags WHERE name = ?", (tag_name.strip(),)
+        )
+        result = cursor.fetchone()
+        if not result:
+            # Tag doesn't exist, nothing to remove
+            return
+
+        tag_id = result["id"]
+
+        with self.transaction() as conn:
+            conn.execute(
+                "DELETE FROM entity_tags WHERE entity_id = ? AND tag_id = ?",
+                (entity_id, tag_id),
+            )
+
+    def get_tags_for_event(self, event_id: str) -> List[Dict[str, Any]]:
+        """
+        Retrieves all tags for a specific event.
+
+        Args:
+            event_id (str): The ID of the event.
+
+        Returns:
+            List[Dict[str, Any]]: List of tag dictionaries.
+        """
+        if not self._connection:
+            self.connect()
+
+        cursor = self._connection.execute(
+            """
+            SELECT t.id, t.name, t.created_at
+            FROM tags t
+            INNER JOIN event_tags et ON t.id = et.tag_id
+            WHERE et.event_id = ?
+            ORDER BY t.name
+            """,
+            (event_id,),
+        )
+        rows = cursor.fetchall()
+        return [dict(row) for row in rows]
+
+    def get_tags_for_entity(self, entity_id: str) -> List[Dict[str, Any]]:
+        """
+        Retrieves all tags for a specific entity.
+
+        Args:
+            entity_id (str): The ID of the entity.
+
+        Returns:
+            List[Dict[str, Any]]: List of tag dictionaries.
+        """
+        if not self._connection:
+            self.connect()
+
+        cursor = self._connection.execute(
+            """
+            SELECT t.id, t.name, t.created_at
+            FROM tags t
+            INNER JOIN entity_tags et ON t.id = et.tag_id
+            WHERE et.entity_id = ?
+            ORDER BY t.name
+            """,
+            (entity_id,),
+        )
+        rows = cursor.fetchall()
+        return [dict(row) for row in rows]
+
+    def delete_tag(self, tag_name: str) -> None:
+        """
+        Deletes a tag and all its associations.
+
+        Args:
+            tag_name (str): The name of the tag to delete.
+
+        Raises:
+            sqlite3.Error: If the database operation fails.
+        """
+        # Get tag ID
+        cursor = self._connection.execute(
+            "SELECT id FROM tags WHERE name = ?", (tag_name.strip(),)
+        )
+        result = cursor.fetchone()
+        if not result:
+            # Tag doesn't exist, nothing to delete
+            return
+
+        tag_id = result["id"]
+
+        # Delete tag (CASCADE will handle associations)
+        with self.transaction() as conn:
+            conn.execute("DELETE FROM tags WHERE id = ?", (tag_id,))
+
+        logger.debug(f"Deleted tag: {tag_name}")
+
+    def get_events_by_tag(self, tag_name: str) -> List[Event]:
+        """
+        Retrieves all events that have a specific tag.
+
+        Args:
+            tag_name (str): The name of the tag.
+
+        Returns:
+            List[Event]: List of Event objects with the specified tag.
+        """
+        if not self._connection:
+            self.connect()
+
+        cursor = self._connection.execute(
+            """
+            SELECT e.*
+            FROM events e
+            INNER JOIN event_tags et ON e.id = et.event_id
+            INNER JOIN tags t ON et.tag_id = t.id
+            WHERE t.name = ?
+            ORDER BY e.lore_date
+            """,
+            (tag_name.strip(),),
+        )
+        rows = cursor.fetchall()
+
+        events = []
+        for row in rows:
+            data = dict(row)
+            if data.get("attributes"):
+                data["attributes"] = json.loads(data["attributes"])
+            events.append(Event.from_dict(data))
+        return events
+
+    def get_entities_by_tag(self, tag_name: str) -> List[Entity]:
+        """
+        Retrieves all entities that have a specific tag.
+
+        Args:
+            tag_name (str): The name of the tag.
+
+        Returns:
+            List[Entity]: List of Entity objects with the specified tag.
+        """
+        if not self._connection:
+            self.connect()
+
+        cursor = self._connection.execute(
+            """
+            SELECT e.*
+            FROM entities e
+            INNER JOIN entity_tags et ON e.id = et.entity_id
+            INNER JOIN tags t ON et.tag_id = t.id
+            WHERE t.name = ?
+            ORDER BY e.name
+            """,
+            (tag_name.strip(),),
+        )
+        rows = cursor.fetchall()
+
+        entities = []
+        for row in rows:
+            data = dict(row)
+            if data.get("attributes"):
+                data["attributes"] = json.loads(data["attributes"])
+            entities.append(Entity.from_dict(data))
+        return entities

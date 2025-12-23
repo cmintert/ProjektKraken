@@ -57,6 +57,16 @@ class CreateEventCommand(BaseCommand):
         try:
             logger.info(f"Executing CreateEvent: {self.event.name}")
             db_service.insert_event(self.event)
+            
+            # Sync tags to normalized tables
+            tags = self.event.tags
+            if tags:
+                for tag_name in tags:
+                    try:
+                        db_service.assign_tag_to_event(self.event.id, tag_name)
+                    except Exception as e:
+                        logger.warning(f"Failed to assign tag '{tag_name}': {e}")
+            
             self._is_executed = True
             return CommandResult(
                 success=True,
@@ -153,6 +163,27 @@ class UpdateEventCommand(BaseCommand):
 
             logger.info(f"Executing UpdateEvent: {self._new_event.name}")
             db_service.insert_event(self._new_event)
+            
+            # Sync tags to normalized tables
+            # First, get current normalized tags
+            current_tags = set(t["name"] for t in db_service.get_tags_for_event(self.event_id))
+            # Get new tags from event
+            new_tags = set(self._new_event.tags)
+            
+            # Remove tags that are no longer present
+            for tag_name in current_tags - new_tags:
+                try:
+                    db_service.remove_tag_from_event(self.event_id, tag_name)
+                except Exception as e:
+                    logger.warning(f"Failed to remove tag '{tag_name}': {e}")
+            
+            # Add new tags
+            for tag_name in new_tags - current_tags:
+                try:
+                    db_service.assign_tag_to_event(self.event_id, tag_name)
+                except Exception as e:
+                    logger.warning(f"Failed to assign tag '{tag_name}': {e}")
+            
             self._is_executed = True
 
             return CommandResult(

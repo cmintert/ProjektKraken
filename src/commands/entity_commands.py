@@ -43,6 +43,16 @@ class CreateEntityCommand(BaseCommand):
         """
         try:
             db_service.insert_entity(self._entity)
+            
+            # Sync tags to normalized tables
+            tags = self._entity.tags
+            if tags:
+                for tag_name in tags:
+                    try:
+                        db_service.assign_tag_to_entity(self._entity.id, tag_name)
+                    except Exception as e:
+                        logger.warning(f"Failed to assign tag '{tag_name}': {e}")
+            
             self._is_executed = True
             logger.info(f"Created entity: {self._entity.name} ({self._entity.id})")
             return CommandResult(
@@ -126,6 +136,27 @@ class UpdateEntityCommand(BaseCommand):
             self._new_entity = dataclasses.replace(current, **clean_data)
 
             db_service.insert_entity(self._new_entity)
+            
+            # Sync tags to normalized tables
+            # First, get current normalized tags
+            current_tags = set(t["name"] for t in db_service.get_tags_for_entity(self.entity_id))
+            # Get new tags from entity
+            new_tags = set(self._new_entity.tags)
+            
+            # Remove tags that are no longer present
+            for tag_name in current_tags - new_tags:
+                try:
+                    db_service.remove_tag_from_entity(self.entity_id, tag_name)
+                except Exception as e:
+                    logger.warning(f"Failed to remove tag '{tag_name}': {e}")
+            
+            # Add new tags
+            for tag_name in new_tags - current_tags:
+                try:
+                    db_service.assign_tag_to_entity(self.entity_id, tag_name)
+                except Exception as e:
+                    logger.warning(f"Failed to assign tag '{tag_name}': {e}")
+            
             self._is_executed = True
             logger.info(f"Updated entity: {self._new_entity.id}")
             return CommandResult(
