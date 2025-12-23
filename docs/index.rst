@@ -18,6 +18,7 @@ Welcome to Project Kraken's documentation!
 
    Design
    DATABASE
+   SCHEMA_REFERENCE
    SECURITY
 
 .. toctree::

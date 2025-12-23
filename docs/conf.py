@@ -23,6 +23,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
     "myst_parser",  # Support for Markdown files
+    "sphinxcontrib.mermaid",  # Support for Mermaid diagrams
 ]
 
 # Markdown support
@@ -67,3 +68,26 @@ html_theme_options = {
     "sidebar_hide_name": False,
     "navigation_with_keys": True,
 }
+
+
+# -- Auto-generate schema documentation --------------------------------------
+def setup(app):
+    """
+    Sphinx setup hook to auto-generate schema documentation.
+
+    Runs the schema extraction script before building the documentation
+    to ensure the schema reference is always up-to-date with the code.
+    """
+    import subprocess
+    from pathlib import Path
+
+    schema_script = Path(__file__).parent / "generate_schema_docs.py"
+    if schema_script.exists():
+        print("Generating database schema documentation...")
+        result = subprocess.run(
+            [sys.executable, str(schema_script)], capture_output=True, text=True
+        )
+        if result.returncode != 0:
+            print(f"Warning: Schema generation failed: {result.stderr}")
+        else:
+            print(result.stdout)
