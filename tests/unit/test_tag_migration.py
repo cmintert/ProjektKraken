@@ -47,16 +47,14 @@ class TestTagMigration:
 
     def test_migration_creates_tags_table(self, db_service):
         """Test that migration creates the tags table."""
-        # Check if tags table exists after migration
+        # Check if tags table exists after schema initialization
         cursor = db_service._connection.execute(
             "SELECT name FROM sqlite_master WHERE type='table' AND name='tags'"
         )
         result = cursor.fetchone()
-        # Initially, table should not exist
-        assert result is None
-
-        # After migration, we'll test this passes
-        # This test will be updated once migration is implemented
+        # Tables are now created during schema initialization
+        assert result is not None
+        assert result["name"] == "tags"
 
     def test_migration_creates_event_tags_table(self, db_service):
         """Test that migration creates the event_tags join table."""
@@ -64,8 +62,9 @@ class TestTagMigration:
             "SELECT name FROM sqlite_master WHERE type='table' AND name='event_tags'"
         )
         result = cursor.fetchone()
-        # Initially, table should not exist
-        assert result is None
+        # Tables are now created during schema initialization
+        assert result is not None
+        assert result["name"] == "event_tags"
 
     def test_migration_creates_entity_tags_table(self, db_service):
         """Test that migration creates the entity_tags join table."""
@@ -73,8 +72,9 @@ class TestTagMigration:
             "SELECT name FROM sqlite_master WHERE type='table' AND name='entity_tags'"
         )
         result = cursor.fetchone()
-        # Initially, table should not exist
-        assert result is None
+        # Tables are now created during schema initialization
+        assert result is not None
+        assert result["name"] == "entity_tags"
 
     def test_migration_extracts_and_deduplicates_tags(self, db_service):
         """Test that migration extracts tags and deduplicates them."""
