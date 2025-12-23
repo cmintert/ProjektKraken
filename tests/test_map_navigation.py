@@ -162,6 +162,7 @@ def test_mainwindow_integration(qtbot):
         patch("src.app.ui_manager.UIManager.setup_docks"),
         patch.object(QGraphicsObject, "mousePressEvent"),
         patch.object(QGraphicsObject, "mouseReleaseEvent"),
+        patch("src.app.main.QThread"),
     ):
 
         # Setup the mock map instance

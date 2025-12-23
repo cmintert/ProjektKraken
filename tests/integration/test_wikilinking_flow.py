@@ -22,26 +22,35 @@ def mock_window(qtbot):
 
 def test_update_event_triggers_commands(qtbot):
     """Test using direct slot connection."""
-    window = MainWindow()
-    try:
-        mock_slot = MagicMock()
-        window.command_requested.connect(mock_slot)
+    from unittest.mock import patch
+    from PySide6.QtWidgets import QMessageBox
 
-        event_id = "event-123"
-        data = {"id": event_id, "description": "See [[Gandalf]]."}
+    with (
+        patch("src.app.main.DatabaseWorker"),
+        patch("src.app.main.QTimer"),
+        patch("src.app.main.QThread"),
+        patch("src.app.main.QMessageBox.warning", return_value=QMessageBox.Discard),
+    ):
+        window = MainWindow()
+        try:
+            mock_slot = MagicMock()
+            window.command_requested.connect(mock_slot)
 
-        window.update_event(data)
+            event_id = "event-123"
+            data = {"id": event_id, "description": "See [[Gandalf]]."}
 
-        assert mock_slot.call_count == 2
-        args1 = mock_slot.call_args_list[0][0][0]
-        args2 = mock_slot.call_args_list[1][0][0]
+            window.update_event(data)
 
-        assert isinstance(args1, UpdateEventCommand)
-        assert isinstance(args2, ProcessWikiLinksCommand)
-        assert args2.source_id == event_id
-        assert args2.text_content == "See [[Gandalf]]."
-    finally:
-        if hasattr(window, "worker_thread") and window.worker_thread.isRunning():
-            window.worker_thread.quit()
-            window.worker_thread.wait()
-        window.close()
+            assert mock_slot.call_count == 2
+            args1 = mock_slot.call_args_list[0][0][0]
+            args2 = mock_slot.call_args_list[1][0][0]
+
+            assert isinstance(args1, UpdateEventCommand)
+            assert isinstance(args2, ProcessWikiLinksCommand)
+            assert args2.source_id == event_id
+            assert args2.text_content == "See [[Gandalf]]."
+        finally:
+            if hasattr(window, "worker_thread") and window.worker_thread.isRunning():
+                window.worker_thread.quit()
+                window.worker_thread.wait()
+            window.close()

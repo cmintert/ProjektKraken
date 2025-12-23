@@ -8,8 +8,10 @@ from src.app.main import MainWindow
 
 @pytest.fixture
 def main_window(qtbot):
-    with patch("src.app.main.DatabaseWorker") as MockWorker, patch(
-        "src.app.main.QTimer"
+    with (
+        patch("src.app.main.DatabaseWorker") as MockWorker,
+        patch("src.app.main.QTimer"),
+        patch("src.app.main.QThread"),
     ):
         mock_worker = MockWorker.return_value
         mock_db = mock_worker.db_service

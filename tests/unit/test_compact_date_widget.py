@@ -9,7 +9,6 @@ Tests cover:
 - Edge cases (negative years, month boundaries, year variants)
 """
 
-
 import pytest
 from PySide6.QtWidgets import QApplication
 
@@ -298,12 +297,24 @@ class TestCompactDateWidgetCalendarPopup:
 
     def test_calendar_popup_opens(self, qtbot, standard_calendar):
         """Clicking calendar button should open popup."""
+        from unittest.mock import patch
+        from PySide6.QtWidgets import QDialog
         from src.gui.widgets.compact_date_widget import CompactDateWidget
 
         widget = CompactDateWidget()
         widget.set_calendar_converter(standard_calendar)
         qtbot.addWidget(widget)
 
-        # Click button (test that it doesn't crash)
-        widget.btn_calendar.click()
-        # If popup is modal, it would block, so we test non-modal or mock
+        # Mock the CalendarPopup class constructor
+        with patch("src.gui.widgets.compact_date_widget.CalendarPopup") as MockPopup:
+            # Mock the instance returned by constructor
+            mock_instance = MockPopup.return_value
+            mock_instance.exec.return_value = QDialog.Accepted
+            # Mock get_selected_date to return consistent values (year, month, day)
+            mock_instance.get_selected_date.return_value = (2020, 1, 1)
+
+            widget.btn_calendar.click()
+
+            # Verify instantiation and exec call
+            MockPopup.assert_called_once()
+            mock_instance.exec.assert_called_once()

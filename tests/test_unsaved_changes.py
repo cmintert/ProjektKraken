@@ -89,6 +89,7 @@ class MockEditor(QWidget):
     link_clicked = Signal(str)
     dirty_changed = Signal(bool)
     current_data_changed = Signal(dict)  # Added for live preview support
+    navigate_to_relation = Signal(str)
 
     def __init__(self):
         super().__init__()
@@ -120,6 +121,8 @@ def test_mainwindow_check_unsaved_changes(qtbot):
         patch("src.app.main.MapWidget"),
         patch("src.app.main.ThemeManager"),
         patch("src.app.ui_manager.UIManager.setup_docks"),
+        patch("src.app.main.QThread"),
+        patch("src.app.main.QTimer"),
     ):
 
         window = MainWindow()
@@ -136,9 +139,7 @@ def test_mainwindow_check_unsaved_changes(qtbot):
         # 2. Dirty Editor, User selects Save
         mock_event_editor.unsaved = True
 
-        with patch(
-            "PySide6.QtWidgets.QMessageBox.warning", return_value=QMessageBox.Save
-        ):
+        with patch("src.app.main.QMessageBox.warning", return_value=QMessageBox.Save):
             # We mock _on_save on the instance
             with patch.object(mock_event_editor, "_on_save") as mock_on_save:
                 assert window.check_unsaved_changes(window.event_editor)
@@ -146,19 +147,21 @@ def test_mainwindow_check_unsaved_changes(qtbot):
 
         # 3. Dirty Editor, User selects Discard
         with patch(
-            "PySide6.QtWidgets.QMessageBox.warning", return_value=QMessageBox.Discard
+            "src.app.main.QMessageBox.warning", return_value=QMessageBox.Discard
         ):
             with patch.object(mock_event_editor, "_on_save") as mock_on_save:
                 assert window.check_unsaved_changes(window.event_editor)
                 mock_on_save.assert_not_called()
 
         # 4. Dirty Editor, User selects Cancel
-        with patch(
-            "PySide6.QtWidgets.QMessageBox.warning", return_value=QMessageBox.Cancel
-        ):
+        with patch("src.app.main.QMessageBox.warning", return_value=QMessageBox.Cancel):
             with patch.object(mock_event_editor, "_on_save") as mock_on_save:
                 assert not window.check_unsaved_changes(window.event_editor)
                 mock_on_save.assert_not_called()
+
+        # Reset editors to clean state before closing to avoid blocking closeEvent dialog
+        mock_event_editor.unsaved = False
+        mock_entity_editor.unsaved = False
 
         # Explicitly close to ensure clean teardown
         window.close()

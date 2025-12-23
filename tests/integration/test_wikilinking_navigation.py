@@ -10,54 +10,81 @@ from src.core.entities import Entity
 
 def test_navigate_to_entity_success(qtbot):
     """Test navigation to an existing entity."""
-    window = MainWindow()
-    # Mock worker
-    window.worker = MagicMock()
+    from unittest.mock import patch
+    from PySide6.QtWidgets import QMessageBox
 
-    # Setup cache
-    target_entity = Entity(id="ent-1", name="Gandalf", type="Character")
-    window._cached_entities = [target_entity]
+    with (
+        patch("src.app.main.DatabaseWorker"),
+        patch("src.app.main.QTimer"),
+        patch("src.app.main.QThread"),
+        patch("src.app.main.QMessageBox.warning", return_value=QMessageBox.Discard),
+    ):
+        window = MainWindow()
+        # Mock worker
+        window.worker = MagicMock()
 
-    # Mock load method
-    window.load_entity_details = MagicMock()
+        # Setup cache
+        target_entity = Entity(id="ent-1", name="Gandalf", type="Character")
+        window._cached_entities = [target_entity]
 
-    # Execute
-    window.navigate_to_entity("Gandalf")
+        # Mock load method
+        window.load_entity_details = MagicMock()
 
-    # Verify
-    window.load_entity_details.assert_called_once_with("ent-1")
+        # Execute
+        window.navigate_to_entity("Gandalf")
 
-    window.close()
+        # Verify
+        window.load_entity_details.assert_called_once_with("ent-1")
+
+        window.close()
 
 
 def test_navigate_to_entity_case_insensitive(qtbot):
     """Test case-insensitive lookup."""
-    window = MainWindow()
-    window.worker = MagicMock()
-    window._cached_entities = [Entity(id="ent-1", name="Gandalf", type="Character")]
-    window.load_entity_details = MagicMock()
+    from unittest.mock import patch
+    from PySide6.QtWidgets import QMessageBox
 
-    window.navigate_to_entity("gAnDaLf")
+    with (
+        patch("src.app.main.DatabaseWorker"),
+        patch("src.app.main.QTimer"),
+        patch("src.app.main.QThread"),
+        patch("src.app.main.QMessageBox.warning", return_value=QMessageBox.Discard),
+    ):
+        window = MainWindow()
+        window.worker = MagicMock()
+        window._cached_entities = [Entity(id="ent-1", name="Gandalf", type="Character")]
+        window.load_entity_details = MagicMock()
 
-    window.load_entity_details.assert_called_once_with("ent-1")
-    window.close()
+        window.navigate_to_entity("gAnDaLf")
+
+        window.load_entity_details.assert_called_once_with("ent-1")
+        window.close()
 
 
 def test_navigate_to_entity_not_found(qtbot, monkeypatch):
     """Test behavior when entity is not found."""
-    window = MainWindow()
-    window.worker = MagicMock()
-    window._cached_entities = []
-    window._cached_events = []  # Also need to mock events cache
-    window.load_entity_details = MagicMock()
+    from unittest.mock import patch
+    from PySide6.QtWidgets import QMessageBox
 
-    # Mock the _prompt_create_missing_target method to prevent blocking dialog
-    mock_prompt = MagicMock()
-    window._prompt_create_missing_target = mock_prompt
+    with (
+        patch("src.app.main.DatabaseWorker"),
+        patch("src.app.main.QTimer"),
+        patch("src.app.main.QThread"),
+        patch("src.app.main.QMessageBox.warning", return_value=QMessageBox.Discard),
+    ):
+        window = MainWindow()
+        window.worker = MagicMock()
+        window._cached_entities = []
+        window._cached_events = []  # Also need to mock events cache
+        window.load_entity_details = MagicMock()
 
-    window.navigate_to_entity("Unknown")
+        # Mock the _prompt_create_missing_target method to prevent blocking dialog
+        mock_prompt = MagicMock()
+        window._prompt_create_missing_target = mock_prompt
 
-    window.load_entity_details.assert_not_called()
-    mock_prompt.assert_called_once_with("Unknown")
+        window.navigate_to_entity("Unknown")
 
-    window.close()
+        window.load_entity_details.assert_not_called()
+        mock_prompt.assert_called_once_with("Unknown")
+
+        window.close()

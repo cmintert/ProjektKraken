@@ -10,9 +10,21 @@ from src.app.main import MainWindow
 def main_window(qtbot):
     # Ensure app exists
     _ = QApplication.instance() or QApplication([])
-    window = MainWindow()
-    qtbot.addWidget(window)
-    return window
+    from unittest.mock import patch
+
+    with (
+        patch("src.app.main.DatabaseWorker") as MockWorker,
+        patch("src.app.main.QTimer"),
+        patch("src.app.main.QThread"),
+    ):
+        mock_worker = MockWorker.return_value
+        mock_db = mock_worker.db_service
+        # Default return for get_all_events to avoid iteration errors if used during init
+        mock_db.get_all_events.return_value = []
+
+        window = MainWindow()
+        qtbot.addWidget(window)
+        yield window
 
 
 def test_status_bar_initialization(main_window):
