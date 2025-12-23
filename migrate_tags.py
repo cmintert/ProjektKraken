@@ -229,14 +229,16 @@ class TagMigration:
                     continue
                 
                 # Use INSERT OR IGNORE to handle potential duplicates
-                self.conn.execute(
+                cursor = self.conn.execute(
                     """
                     INSERT OR IGNORE INTO event_tags (event_id, tag_id, created_at)
                     VALUES (?, ?, ?)
                     """,
                     (event_id, tag_id, created_at)
                 )
-                self.stats["event_tag_associations"] += 1
+                # Only count if a row was actually inserted (not ignored)
+                if cursor.rowcount > 0:
+                    self.stats["event_tag_associations"] += 1
         
         logger.info(
             f"Created {self.stats['event_tag_associations']} event-tag associations"
@@ -265,14 +267,16 @@ class TagMigration:
                     continue
                 
                 # Use INSERT OR IGNORE to handle potential duplicates
-                self.conn.execute(
+                cursor = self.conn.execute(
                     """
                     INSERT OR IGNORE INTO entity_tags (entity_id, tag_id, created_at)
                     VALUES (?, ?, ?)
                     """,
                     (entity_id, tag_id, created_at)
                 )
-                self.stats["entity_tag_associations"] += 1
+                # Only count if a row was actually inserted (not ignored)
+                if cursor.rowcount > 0:
+                    self.stats["entity_tag_associations"] += 1
         
         logger.info(
             f"Created {self.stats['entity_tag_associations']} entity-tag associations"

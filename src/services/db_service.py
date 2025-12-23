@@ -1057,7 +1057,9 @@ class DatabaseService:
                     (event_id, tag_id, created_at),
                 )
         except sqlite3.Error as e:
-            logger.error(f"Failed to assign tag to event: {e}")
+            logger.error(
+                f"Failed to assign tag '{tag_name}' to event {event_id}: {e}"
+            )
             raise
 
     def assign_tag_to_entity(self, entity_id: str, tag_name: str) -> None:
@@ -1089,7 +1091,9 @@ class DatabaseService:
                     (entity_id, tag_id, created_at),
                 )
         except sqlite3.Error as e:
-            logger.error(f"Failed to assign tag to entity: {e}")
+            logger.error(
+                f"Failed to assign tag '{tag_name}' to entity {entity_id}: {e}"
+            )
             raise
 
     def remove_tag_from_event(self, event_id: str, tag_name: str) -> None:
