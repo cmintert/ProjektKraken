@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2025-12-23
-### Fixed
-- fix: eliminate manual input requirements from test suite
+### Documentation
+- docs: add DEVELOPMENT.md with pre-commit guidelines
 
 
 *This changelog was automatically generated.*
