@@ -71,7 +71,7 @@ def test_invalidate_cache_specific(db_service):
     db_service.insert_entity(entity)
 
     resolver = LinkResolver(db_service)
-    
+
     # Populate cache
     resolver.resolve(entity.id)
     assert entity.id in resolver._cache
@@ -89,7 +89,7 @@ def test_invalidate_cache_all(db_service):
     db_service.insert_entity(entity2)
 
     resolver = LinkResolver(db_service)
-    
+
     # Populate cache
     resolver.resolve(entity1.id)
     resolver.resolve(entity2.id)
@@ -151,8 +151,7 @@ def test_find_broken_links_some(db_service):
     # Use a valid UUID format for broken link
     broken_uuid = "00000000-0000-0000-0000-000000000000"
     text = (
-        f"[[id:{entity.id}|Galadriel]] and "
-        f"[[id:{broken_uuid}|Deleted Entity]] appear."
+        f"[[id:{entity.id}|Galadriel]] and [[id:{broken_uuid}|Deleted Entity]] appear."
     )
 
     resolver = LinkResolver(db_service)
@@ -168,7 +167,7 @@ def test_name_change_propagation(db_service):
     db_service.insert_entity(entity)
 
     resolver = LinkResolver(db_service)
-    
+
     # Initial resolution
     result1 = resolver.resolve(entity.id)
     assert result1[0] == "Gandalf the Grey"

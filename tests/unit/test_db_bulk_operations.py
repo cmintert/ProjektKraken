@@ -43,10 +43,7 @@ def test_bulk_insert_events_single(db):
 
 def test_bulk_insert_events_multiple(db):
     """Test bulk insert with multiple events."""
-    events = [
-        Event(name=f"Event {i}", lore_date=float(i * 100))
-        for i in range(1, 101)
-    ]
+    events = [Event(name=f"Event {i}", lore_date=float(i * 100)) for i in range(1, 101)]
 
     db.insert_events_bulk(events)
 
@@ -113,10 +110,7 @@ def test_bulk_insert_entities_empty_list(db):
 
 def test_bulk_insert_entities_multiple(db):
     """Test bulk insert with multiple entities."""
-    entities = [
-        Entity(name=f"Entity {i}", type="character")
-        for i in range(1, 51)
-    ]
+    entities = [Entity(name=f"Entity {i}", type="character") for i in range(1, 51)]
 
     db.insert_entities_bulk(entities)
 
@@ -178,7 +172,7 @@ def test_transaction_rollback_on_error(db):
 
     # Create a second event for testing rollback
     event2 = Event(name="Second Event", lore_date=2.0)
-    
+
     # Try to execute operations within a single transaction that fails
     try:
         with db.transaction() as conn:
@@ -291,9 +285,7 @@ def test_foreign_keys_enabled(db):
 
 def test_indexes_created(db):
     """Test that performance indexes are created."""
-    cursor = db._connection.execute(
-        "SELECT name FROM sqlite_master WHERE type='index'"
-    )
+    cursor = db._connection.execute("SELECT name FROM sqlite_master WHERE type='index'")
     indexes = [row[0] for row in cursor.fetchall()]
 
     assert "idx_events_date" in indexes

@@ -11,6 +11,7 @@ from src.core.entities import Entity
 def test_navigate_to_entity_success(qtbot):
     """Test navigation to an existing entity."""
     from unittest.mock import patch
+
     from PySide6.QtWidgets import QMessageBox
 
     with (
@@ -42,6 +43,7 @@ def test_navigate_to_entity_success(qtbot):
 def test_navigate_to_entity_case_insensitive(qtbot):
     """Test case-insensitive lookup."""
     from unittest.mock import patch
+
     from PySide6.QtWidgets import QMessageBox
 
     with (
@@ -64,6 +66,7 @@ def test_navigate_to_entity_case_insensitive(qtbot):
 def test_navigate_to_entity_not_found(qtbot, monkeypatch):
     """Test behavior when entity is not found."""
     from unittest.mock import patch
+
     from PySide6.QtWidgets import QMessageBox
 
     with (

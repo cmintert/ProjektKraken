@@ -9,15 +9,15 @@ import uuid
 from typing import List
 
 from src.cli.utils import validate_database_path
-from src.core.calendar import (
-    CalendarConfig,
-    MonthDefinition,
-    WeekDefinition,
-)
 from src.commands.calendar_commands import (
     CreateCalendarConfigCommand,
     DeleteCalendarConfigCommand,
     SetActiveCalendarCommand,
+)
+from src.core.calendar import (
+    CalendarConfig,
+    MonthDefinition,
+    WeekDefinition,
 )
 from src.services.db_service import DatabaseService
 
@@ -49,7 +49,9 @@ def create_calendar(args) -> int:
         else:
             # Default structure if not provided
             months = [
-                MonthDefinition(name=f"Month {i+1}", abbreviation=f"M{i+1}", days=30)
+                MonthDefinition(
+                    name=f"Month {i + 1}", abbreviation=f"M{i + 1}", days=30
+                )
                 for i in range(12)
             ]
 
@@ -165,7 +167,7 @@ def show_calendar(args) -> int:
             print(f"Epoch: {config.epoch_name}")
             print("\nMonths:")
             for i, m in enumerate(config.months):
-                print(f"  {i+1}. {m.name} ({m.days} days)")
+                print(f"  {i + 1}. {m.name} ({m.days} days)")
             print("\nWeek Days:")
             print(f"  {', '.join(config.week.day_names)}")
 

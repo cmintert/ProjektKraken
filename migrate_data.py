@@ -3,10 +3,10 @@ Data Migration Utility for ProjektKraken.
 Moves existing world.kraken and assets from project root to the AppData directory.
 """
 
-import os
-import shutil
 import logging
+import shutil
 from pathlib import Path
+
 from src.core.paths import get_user_data_path
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -25,7 +25,7 @@ def migrate():
     new_db_path = Path(get_user_data_path("world.kraken"))
     new_data_dir = new_db_path.parent
 
-    logger.info(f"Migration started.")
+    logger.info("Migration started.")
     logger.info(f"Source: {project_root}")
     logger.info(f"Destination: {new_data_dir}")
 

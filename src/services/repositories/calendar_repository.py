@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class CalendarRepository(BaseRepository):
     """
     Repository for Calendar configuration.
-    
+
     Provides specialized methods for creating, reading, updating,
     and deleting calendar configurations from the database.
     """
@@ -24,10 +24,10 @@ class CalendarRepository(BaseRepository):
     def insert(self, config: CalendarConfig) -> None:
         """
         Insert a new calendar configuration or update an existing one.
-        
+
         Args:
             config: The calendar configuration to persist.
-            
+
         Raises:
             sqlite3.Error: If the database operation fails.
         """
@@ -57,21 +57,21 @@ class CalendarRepository(BaseRepository):
     def get(self, config_id: str) -> Optional[CalendarConfig]:
         """
         Retrieve a calendar configuration by its UUID.
-        
+
         Args:
             config_id: The unique identifier of the configuration.
-            
+
         Returns:
             The CalendarConfig object if found, else None.
         """
         sql = "SELECT * FROM calendar_config WHERE id = ?"
-        
+
         if not self._connection:
             raise RuntimeError("Database connection not initialized")
-        
+
         cursor = self._connection.execute(sql, (config_id,))
         row = cursor.fetchone()
-        
+
         if row:
             data = dict(row)
             return CalendarConfig.from_json(data["config_json"])
@@ -80,15 +80,15 @@ class CalendarRepository(BaseRepository):
     def get_all(self) -> List[CalendarConfig]:
         """
         Retrieve all calendar configurations.
-        
+
         Returns:
             List of all CalendarConfig objects.
         """
         sql = "SELECT * FROM calendar_config ORDER BY name ASC"
-        
+
         if not self._connection:
             raise RuntimeError("Database connection not initialized")
-        
+
         cursor = self._connection.execute(sql)
         configs = []
         for row in cursor.fetchall():
@@ -99,18 +99,18 @@ class CalendarRepository(BaseRepository):
     def get_active(self) -> Optional[CalendarConfig]:
         """
         Retrieve the active calendar configuration.
-        
+
         Returns:
             The active CalendarConfig object if found, else None.
         """
         sql = "SELECT * FROM calendar_config WHERE is_active = 1 LIMIT 1"
-        
+
         if not self._connection:
             raise RuntimeError("Database connection not initialized")
-        
+
         cursor = self._connection.execute(sql)
         row = cursor.fetchone()
-        
+
         if row:
             data = dict(row)
             return CalendarConfig.from_json(data["config_json"])
@@ -119,10 +119,10 @@ class CalendarRepository(BaseRepository):
     def set_active(self, config_id: str) -> None:
         """
         Set a calendar configuration as active (deactivates all others).
-        
+
         Args:
             config_id: The unique identifier of the configuration to activate.
-            
+
         Raises:
             sqlite3.Error: If the database operation fails.
         """
@@ -138,10 +138,10 @@ class CalendarRepository(BaseRepository):
     def delete(self, config_id: str) -> None:
         """
         Delete a calendar configuration permanently.
-        
+
         Args:
             config_id: The unique identifier of the configuration to delete.
-            
+
         Raises:
             sqlite3.Error: If the database operation fails.
         """

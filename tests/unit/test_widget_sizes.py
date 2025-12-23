@@ -4,14 +4,13 @@ Unit tests for widget size hints to prevent layout regressions.
 
 import pytest
 from PySide6.QtCore import QSize
-from PySide6.QtWidgets import QWidget
 
-from src.gui.widgets.unified_list import UnifiedListWidget
-from src.gui.widgets.event_list import EventListWidget
-from src.gui.widgets.entity_list import EntityListWidget
-from src.gui.widgets.gallery_widget import GalleryWidget
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.compact_duration_widget import CompactDurationWidget
+from src.gui.widgets.entity_list import EntityListWidget
+from src.gui.widgets.event_list import EventListWidget
+from src.gui.widgets.gallery_widget import GalleryWidget
+from src.gui.widgets.unified_list import UnifiedListWidget
 
 
 @pytest.mark.parametrize(
@@ -53,12 +52,12 @@ def test_widget_minimum_size_hints(qtbot, widget_class, min_w, min_h):
 
     hint = widget.minimumSizeHint()
     assert isinstance(hint, QSize)
-    assert (
-        hint.width() >= min_w
-    ), f"{widget_class.__name__} min width {hint.width()} < {min_w}"
-    assert (
-        hint.height() >= min_h
-    ), f"{widget_class.__name__} min height {hint.height()} < {min_h}"
+    assert hint.width() >= min_w, (
+        f"{widget_class.__name__} min width {hint.width()} < {min_w}"
+    )
+    assert hint.height() >= min_h, (
+        f"{widget_class.__name__} min height {hint.height()} < {min_h}"
+    )
 
 
 @pytest.mark.parametrize(

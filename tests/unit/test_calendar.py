@@ -28,7 +28,7 @@ def simple_calendar() -> CalendarConfig:
     A simple test calendar with 12 months of 30 days each (360-day year).
     """
     months = [
-        MonthDefinition(name=f"Month{i+1}", abbreviation=f"M{i+1}", days=30)
+        MonthDefinition(name=f"Month{i + 1}", abbreviation=f"M{i + 1}", days=30)
         for i in range(12)
     ]
     week = WeekDefinition(
@@ -93,12 +93,12 @@ def year_variant_calendar() -> CalendarConfig:
     Year 5 has only 6 months instead of 12.
     """
     default_months = [
-        MonthDefinition(name=f"Month{i+1}", abbreviation=f"M{i+1}", days=30)
+        MonthDefinition(name=f"Month{i + 1}", abbreviation=f"M{i + 1}", days=30)
         for i in range(12)
     ]
     # Year 5 is special - only 6 months
     year5_months = [
-        MonthDefinition(name=f"SpecialMonth{i+1}", abbreviation=f"S{i+1}", days=30)
+        MonthDefinition(name=f"SpecialMonth{i + 1}", abbreviation=f"S{i + 1}", days=30)
         for i in range(6)
     ]
     week = WeekDefinition(

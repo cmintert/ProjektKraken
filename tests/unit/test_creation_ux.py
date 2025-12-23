@@ -31,7 +31,6 @@ def test_create_entity_success_selects_item(main_window):
 
         # 2. Mock Command
         with patch("src.app.main.CreateEntityCommand") as MockCmd:
-
             # Execute
             main_window.create_entity()
 
@@ -79,7 +78,6 @@ def test_create_event_success_selects_item(main_window):
 
         # 2. Mock Command
         with patch("src.app.main.CreateEventCommand") as MockCmd:
-
             main_window.create_event()
 
             MockCmd.assert_called_once()

@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class MapRepository(BaseRepository):
     """
     Repository for Map and Marker entities.
-    
+
     Provides specialized methods for creating, reading, updating,
     and deleting maps and markers from the database.
     """
@@ -26,10 +26,10 @@ class MapRepository(BaseRepository):
     def insert_map(self, map_obj: Map) -> None:
         """
         Insert a new map or update an existing one (Upsert).
-        
+
         Args:
             map_obj: The map domain object to persist.
-            
+
         Raises:
             sqlite3.Error: If the database operation fails.
         """
@@ -61,21 +61,21 @@ class MapRepository(BaseRepository):
     def get_map(self, map_id: str) -> Optional[Map]:
         """
         Retrieve a single map by its UUID.
-        
+
         Args:
             map_id: The unique identifier of the map.
-            
+
         Returns:
             The Map object if found, else None.
         """
         sql = "SELECT * FROM maps WHERE id = ?"
-        
+
         if not self._connection:
             raise RuntimeError("Database connection not initialized")
-        
+
         cursor = self._connection.execute(sql, (map_id,))
         row = cursor.fetchone()
-        
+
         if row:
             data = dict(row)
             if data.get("attributes"):
@@ -86,15 +86,15 @@ class MapRepository(BaseRepository):
     def get_all_maps(self) -> List[Map]:
         """
         Retrieve all maps from the database.
-        
+
         Returns:
             List of all Map objects in the database.
         """
         sql = "SELECT * FROM maps ORDER BY name ASC"
-        
+
         if not self._connection:
             raise RuntimeError("Database connection not initialized")
-        
+
         cursor = self._connection.execute(sql)
         maps = []
         for row in cursor.fetchall():
@@ -107,10 +107,10 @@ class MapRepository(BaseRepository):
     def delete_map(self, map_id: str) -> None:
         """
         Delete a map permanently (markers are CASCADE deleted).
-        
+
         Args:
             map_id: The unique identifier of the map to delete.
-            
+
         Raises:
             sqlite3.Error: If the database operation fails.
         """
@@ -121,10 +121,10 @@ class MapRepository(BaseRepository):
     def insert_marker(self, marker: Marker) -> None:
         """
         Insert a new marker or update an existing one (Upsert).
-        
+
         Args:
             marker: The marker domain object to persist.
-            
+
         Raises:
             sqlite3.Error: If the database operation fails.
         """
@@ -159,18 +159,18 @@ class MapRepository(BaseRepository):
     def get_markers_by_map(self, map_id: str) -> List[Marker]:
         """
         Retrieve all markers for a specific map.
-        
+
         Args:
             map_id: The map ID to get markers for.
-            
+
         Returns:
             List of Marker objects for the specified map.
         """
         sql = "SELECT * FROM markers WHERE map_id = ?"
-        
+
         if not self._connection:
             raise RuntimeError("Database connection not initialized")
-        
+
         cursor = self._connection.execute(sql, (map_id,))
         markers = []
         for row in cursor.fetchall():
@@ -183,21 +183,21 @@ class MapRepository(BaseRepository):
     def get_marker(self, marker_id: str) -> Optional[Marker]:
         """
         Retrieve a single marker by its UUID.
-        
+
         Args:
             marker_id: The unique identifier of the marker.
-            
+
         Returns:
             The Marker object if found, else None.
         """
         sql = "SELECT * FROM markers WHERE id = ?"
-        
+
         if not self._connection:
             raise RuntimeError("Database connection not initialized")
-        
+
         cursor = self._connection.execute(sql, (marker_id,))
         row = cursor.fetchone()
-        
+
         if row:
             data = dict(row)
             if data.get("attributes"):
@@ -208,10 +208,10 @@ class MapRepository(BaseRepository):
     def delete_marker(self, marker_id: str) -> None:
         """
         Delete a marker permanently.
-        
+
         Args:
             marker_id: The unique identifier of the marker to delete.
-            
+
         Raises:
             sqlite3.Error: If the database operation fails.
         """

@@ -294,9 +294,7 @@ def main():
     )
     create_parser.add_argument("--type", "-t", help="Event type (e.g., historical)")
     create_parser.add_argument("--description", help="Event description")
-    create_parser.add_argument(
-        "--duration", type=float, help="Event duration (float)"
-    )
+    create_parser.add_argument("--duration", type=float, help="Event duration (float)")
     create_parser.set_defaults(func=create_event)
 
     # List command

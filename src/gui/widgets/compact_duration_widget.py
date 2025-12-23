@@ -48,8 +48,9 @@ class CompactDurationWidget(QWidget):
         super().__init__(parent)
         # Set size policy to prevent vertical squashing
         from PySide6.QtWidgets import QSizePolicy
+
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        
+
         self._converter = None
         self._start_date_float = 0.0
         self._updating = False
@@ -352,19 +353,21 @@ class CompactDurationWidget(QWidget):
     def minimumSizeHint(self):
         """
         Returns the minimum size hint to prevent vertical collapse.
-        
+
         Returns:
             QSize: Minimum size for the duration widget (two rows of controls).
         """
         from PySide6.QtCore import QSize
+
         return QSize(250, 72)  # Two rows of controls + frame padding
 
     def sizeHint(self):
         """
         Returns the preferred size hint.
-        
+
         Returns:
             QSize: Preferred size for comfortable duration input.
         """
         from PySide6.QtCore import QSize
+
         return QSize(350, 80)  # Comfortable size for two-row layout

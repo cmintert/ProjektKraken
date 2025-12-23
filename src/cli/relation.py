@@ -157,8 +157,7 @@ def delete_relation(args) -> int:
             target_name = db_service.get_name(relation["target_id"])
             rel_type = relation["rel_type"]
             print(
-                f"About to delete relation: {source_name} → {target_name} "
-                f"({rel_type})"
+                f"About to delete relation: {source_name} → {target_name} ({rel_type})"
             )
             response = input("Are you sure? (yes/no): ")
             if response.lower() not in ["yes", "y"]:

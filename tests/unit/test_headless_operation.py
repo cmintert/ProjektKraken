@@ -68,9 +68,7 @@ def test_database_operations_headless():
         assert len(sequence) >= 1
 
         # Export to markdown (no UI dependency)
-        markdown = longform_builder.export_longform_to_markdown(
-            db_service._connection
-        )
+        markdown = longform_builder.export_longform_to_markdown(db_service._connection)
         assert "Headless Event" in markdown
 
         db_service.close()

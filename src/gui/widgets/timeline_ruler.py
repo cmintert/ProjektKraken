@@ -446,11 +446,11 @@ class TimelineRuler:
         # Handle standard numeric formatting for decade+ levels
         abs_pos = abs(position)
         if abs_pos >= 1e9:
-            return f"{position/1e9:.1f}B"
+            return f"{position / 1e9:.1f}B"
         elif abs_pos >= 1e6:
-            return f"{position/1e6:.1f}M"
+            return f"{position / 1e6:.1f}M"
         elif abs_pos >= 1e4:
-            return f"{position/1e3:.0f}k"
+            return f"{position / 1e3:.0f}k"
         elif abs_pos >= 1:
             return f"{position:.0f}"
         elif abs_pos >= 0.01:
@@ -544,8 +544,8 @@ class TimelineRuler:
 
         # Numeric fallback
         if abs(start_date) >= 1e6:
-            return f"~{start_date/1e6:.0f}M"
+            return f"~{start_date / 1e6:.0f}M"
         elif abs(start_date) >= 1e3:
-            return f"~{start_date/1e3:.0f}k"
+            return f"~{start_date / 1e3:.0f}k"
         else:
             return f"~{start_date:.0f}"

@@ -96,7 +96,7 @@ def test_marker_crud(db_service):
 def test_marker_upsert_behavior(db_service):
     """
     Test that insert_marker upserts on UNIQUE(map_id, object_id, object_type).
-    
+
     When a conflict occurs, the existing row is updated and its ID is retained.
     """
     # Setup map
@@ -126,14 +126,14 @@ def test_marker_upsert_behavior(db_service):
 
     # Insert should update existing marker, not create new one
     returned_id = db_service.insert_marker(marker2)
-    
+
     # The returned ID should be the original marker's ID
     assert returned_id == marker1_id
-    
+
     # Verify only one marker exists
     markers = db_service.get_markers_for_map(map_obj.id)
     assert len(markers) == 1
-    
+
     # Verify position was updated
     updated_marker = db_service.get_marker(marker1_id)
     assert updated_marker.x == 0.8
@@ -217,9 +217,7 @@ def test_get_marker_by_composite(db_service):
     marker_id = db_service.insert_marker(marker)
 
     # Retrieve by composite key
-    fetched = db_service.get_marker_by_composite(
-        map_obj.id, "entity-777", "entity"
-    )
+    fetched = db_service.get_marker_by_composite(map_obj.id, "entity-777", "entity")
     assert fetched is not None
     assert fetched.id == marker_id
     assert fetched.x == 0.5

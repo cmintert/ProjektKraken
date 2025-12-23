@@ -124,7 +124,6 @@ def test_mainwindow_check_unsaved_changes(qtbot):
         patch("src.app.main.QThread"),
         patch("src.app.main.QTimer"),
     ):
-
         window = MainWindow()
         qtbot.addWidget(window)
 

@@ -31,7 +31,6 @@ def mock_converter():
 
 
 class TestGranularDuration:
-
     def test_compact_duration_widget_simple(self, qtbot, mock_converter):
         widget = CompactDurationWidget()
         widget.set_calendar_converter(mock_converter)

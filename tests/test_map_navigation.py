@@ -64,7 +64,6 @@ def test_marker_emits_clicked(qtbot, map_widget):
         patch.object(QGraphicsObject, "mousePressEvent"),
         patch.object(QGraphicsObject, "mouseReleaseEvent"),
     ):
-
         # Mock the signal spy
         with qtbot.waitSignal(marker.clicked, timeout=1000) as blocker:
             # Simulate click: Press and Release at same location
@@ -98,7 +97,6 @@ def test_marker_drag_does_not_emit_clicked(qtbot, map_widget):
             patch.object(QGraphicsObject, "mousePressEvent"),
             patch.object(QGraphicsObject, "mouseReleaseEvent"),
         ):
-
             # Release far away (dragged)
             release_event = MockMouseEvent(Qt.LeftButton, QPointF(100, 100))
             marker.mouseReleaseEvent(release_event)
@@ -164,7 +162,6 @@ def test_mainwindow_integration(qtbot):
         patch.object(QGraphicsObject, "mouseReleaseEvent"),
         patch("src.app.main.QThread"),
     ):
-
         # Setup the mock map instance
         mock_map_instance = MockMapWidgetClass.return_value
 
@@ -187,7 +184,6 @@ def test_mainwindow_integration(qtbot):
             patch.object(window, "check_unsaved_changes", return_value=True),
             patch.object(window, "load_event_details") as mock_load_event,
         ):
-
             window._on_marker_clicked("e1", "event")
             mock_load_event.assert_called_with("e1")
 
@@ -196,7 +192,6 @@ def test_mainwindow_integration(qtbot):
             patch.object(window, "check_unsaved_changes", return_value=True),
             patch.object(window, "load_entity_details") as mock_load_entity,
         ):
-
             window._on_marker_clicked("en1", "entity")
             mock_load_entity.assert_called_with("en1")
 
@@ -205,6 +200,5 @@ def test_mainwindow_integration(qtbot):
             patch.object(window, "check_unsaved_changes", return_value=False),
             patch.object(window, "load_entity_details") as mock_load_entity,
         ):
-
             window._on_marker_clicked("en2", "entity")
             mock_load_entity.assert_not_called()

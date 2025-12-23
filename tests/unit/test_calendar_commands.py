@@ -4,7 +4,6 @@ Calendar Commands Unit Tests.
 Tests for calendar-related commands following the Command pattern.
 """
 
-
 import pytest
 
 from src.commands.base_command import CommandResult

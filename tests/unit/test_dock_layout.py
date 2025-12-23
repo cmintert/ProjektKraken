@@ -69,12 +69,12 @@ def test_dock_features_enabled(main_window):
 
     for dock in docks:
         features = dock.features()
-        assert (
-            features & QDockWidget.DockWidgetMovable
-        ), f"{dock.objectName()} is not movable"
-        assert (
-            features & QDockWidget.DockWidgetFloatable
-        ), f"{dock.objectName()} is not floatable"
-        assert (
-            features & QDockWidget.DockWidgetClosable
-        ), f"{dock.objectName()} is not closable"
+        assert features & QDockWidget.DockWidgetMovable, (
+            f"{dock.objectName()} is not movable"
+        )
+        assert features & QDockWidget.DockWidgetFloatable, (
+            f"{dock.objectName()} is not floatable"
+        )
+        assert features & QDockWidget.DockWidgetClosable, (
+            f"{dock.objectName()} is not closable"
+        )

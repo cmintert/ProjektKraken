@@ -9,7 +9,6 @@ Tests cover:
 - Edge cases (zero values, very large durations, fractional days)
 """
 
-
 import pytest
 from PySide6.QtWidgets import QApplication
 
@@ -63,7 +62,7 @@ def standard_calendar():
 def simple_calendar():
     """Simple 12x30 = 360 day calendar for easy math."""
     months = [
-        MonthDefinition(name=f"Month {i+1}", abbreviation=f"M{i+1}", days=30)
+        MonthDefinition(name=f"Month {i + 1}", abbreviation=f"M{i + 1}", days=30)
         for i in range(12)
     ]
     week = WeekDefinition(

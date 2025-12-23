@@ -17,10 +17,10 @@ logger = logging.getLogger(__name__)
 class BaseRepository:
     """
     Abstract base class for repository implementations.
-    
+
     Provides common functionality for database operations including
     connection management, transaction handling, and JSON serialization.
-    
+
     Attributes:
         _connection: The SQLite database connection (managed by DatabaseService).
     """
@@ -28,7 +28,7 @@ class BaseRepository:
     def __init__(self, connection: Optional[sqlite3.Connection] = None):
         """
         Initialize the repository.
-        
+
         Args:
             connection: Optional SQLite connection. If None, must be set later.
         """
@@ -37,7 +37,7 @@ class BaseRepository:
     def set_connection(self, connection: sqlite3.Connection) -> None:
         """
         Set the database connection.
-        
+
         Args:
             connection: The SQLite database connection.
         """
@@ -47,16 +47,16 @@ class BaseRepository:
     def transaction(self):
         """
         Context manager for safe transaction handling.
-        
+
         Yields:
             The database connection within a transaction context.
-            
+
         Raises:
             sqlite3.Error: If the transaction fails.
         """
         if not self._connection:
             raise RuntimeError("Database connection not initialized")
-        
+
         try:
             yield self._connection
             self._connection.commit()
@@ -69,10 +69,10 @@ class BaseRepository:
     def _serialize_json(data: dict) -> str:
         """
         Serialize a dictionary to JSON string.
-        
+
         Args:
             data: Dictionary to serialize.
-            
+
         Returns:
             JSON string representation.
         """
@@ -82,10 +82,10 @@ class BaseRepository:
     def _deserialize_json(json_str: str) -> dict:
         """
         Deserialize JSON string to dictionary.
-        
+
         Args:
             json_str: JSON string to deserialize.
-            
+
         Returns:
             Dictionary representation, or empty dict if parsing fails.
         """

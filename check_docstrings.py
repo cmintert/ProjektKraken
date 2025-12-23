@@ -59,7 +59,7 @@ if __name__ == "__main__":
     missing, total, documented = check_docstrings(src_dir)
 
     print(f"Checked {total} items in '{src_dir}'.")
-    print(f"Documented: {documented} ({documented/total:.1%})")
+    print(f"Documented: {documented} ({documented / total:.1%})")
     print(f"Missing: {total - documented}")
     print("\nMissing Docstrings:")
     for item in missing:

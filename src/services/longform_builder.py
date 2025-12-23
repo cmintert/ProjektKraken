@@ -48,9 +48,7 @@ def _validate_table_name(table: str) -> None:
         ValueError: If table name is not in the whitelist.
     """
     if table not in VALID_TABLES:
-        raise ValueError(
-            f"Invalid table name: {table}. Must be one of {VALID_TABLES}"
-        )
+        raise ValueError(f"Invalid table name: {table}. Must be one of {VALID_TABLES}")
 
 
 def _safe_json_loads(json_str: str) -> dict:

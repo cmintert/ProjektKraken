@@ -298,7 +298,9 @@ class TestCompactDateWidgetCalendarPopup:
     def test_calendar_popup_opens(self, qtbot, standard_calendar):
         """Clicking calendar button should open popup."""
         from unittest.mock import patch
+
         from PySide6.QtWidgets import QDialog
+
         from src.gui.widgets.compact_date_widget import CompactDateWidget
 
         widget = CompactDateWidget()

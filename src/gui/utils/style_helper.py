@@ -205,13 +205,13 @@ class StyleHelper:
             )
         else:
             return (
-                f"QPushButton[objectName^=\"day_btn\"] {{ "
+                f'QPushButton[objectName^="day_btn"] {{ '
                 f"background-color: {theme['border']}; "
                 f"color: {theme['text_main']}; "
                 f"border: 1px solid {theme['border']}; "
                 f"padding: 0px; min-height: 0px; "
                 f"font-size: 10pt; }}"
-                f"QPushButton[objectName^=\"day_btn\"]:hover {{ "
+                f'QPushButton[objectName^="day_btn"]:hover {{ '
                 f"background-color: {theme['surface']}; }}"
             )
 
@@ -284,15 +284,9 @@ class StyleHelper:
         theme = ThemeManager().get_theme()
 
         if broken:
-            return (
-                f"color: {theme['error']}; "
-                f"text-decoration: underline dotted;"
-            )
+            return f"color: {theme['error']}; text-decoration: underline dotted;"
         else:
-            return (
-                f"color: {theme['accent_secondary']}; "
-                f"text-decoration: underline;"
-            )
+            return f"color: {theme['accent_secondary']}; text-decoration: underline;"
 
     @staticmethod
     def get_timeline_header_style() -> str:

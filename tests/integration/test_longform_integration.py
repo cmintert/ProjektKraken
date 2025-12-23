@@ -5,7 +5,6 @@ Tests the complete flow of creating, manipulating, and exporting
 longform documents with a real in-memory SQLite database.
 """
 
-
 import pytest
 
 from src.commands.longform_commands import (

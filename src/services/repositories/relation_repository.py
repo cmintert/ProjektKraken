@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class RelationRepository(BaseRepository):
     """
     Repository for Relation entities.
-    
+
     Provides specialized methods for creating, reading, updating,
     and deleting relations from the database.
     """
@@ -31,7 +31,7 @@ class RelationRepository(BaseRepository):
     ) -> None:
         """
         Insert a new relation.
-        
+
         Args:
             relation_id: Unique identifier for the relation.
             source_id: ID of the source entity/event.
@@ -39,7 +39,7 @@ class RelationRepository(BaseRepository):
             rel_type: Type of the relation.
             attributes: Additional relation attributes.
             created_at: Creation timestamp.
-            
+
         Raises:
             sqlite3.Error: If the database operation fails.
         """
@@ -64,15 +64,15 @@ class RelationRepository(BaseRepository):
     def get_all(self) -> List[Dict[str, Any]]:
         """
         Retrieve all relations from the database.
-        
+
         Returns:
             List of relation dictionaries.
         """
         sql = "SELECT * FROM relations"
-        
+
         if not self._connection:
             raise RuntimeError("Database connection not initialized")
-        
+
         cursor = self._connection.execute(sql)
         relations = []
         for row in cursor.fetchall():
@@ -85,18 +85,18 @@ class RelationRepository(BaseRepository):
     def get_by_source(self, source_id: str) -> List[Dict[str, Any]]:
         """
         Retrieve all relations where source_id matches.
-        
+
         Args:
             source_id: The source entity/event ID.
-            
+
         Returns:
             List of relation dictionaries.
         """
         sql = "SELECT * FROM relations WHERE source_id = ?"
-        
+
         if not self._connection:
             raise RuntimeError("Database connection not initialized")
-        
+
         cursor = self._connection.execute(sql, (source_id,))
         relations = []
         for row in cursor.fetchall():
@@ -109,18 +109,18 @@ class RelationRepository(BaseRepository):
     def get_by_target(self, target_id: str) -> List[Dict[str, Any]]:
         """
         Retrieve all relations where target_id matches.
-        
+
         Args:
             target_id: The target entity/event ID.
-            
+
         Returns:
             List of relation dictionaries.
         """
         sql = "SELECT * FROM relations WHERE target_id = ?"
-        
+
         if not self._connection:
             raise RuntimeError("Database connection not initialized")
-        
+
         cursor = self._connection.execute(sql, (target_id,))
         relations = []
         for row in cursor.fetchall():
@@ -133,10 +133,10 @@ class RelationRepository(BaseRepository):
     def delete(self, relation_id: str) -> None:
         """
         Delete a relation permanently.
-        
+
         Args:
             relation_id: The unique identifier of the relation to delete.
-            
+
         Raises:
             sqlite3.Error: If the database operation fails.
         """
@@ -148,12 +148,12 @@ class RelationRepository(BaseRepository):
     ) -> None:
         """
         Update a relation's type and attributes.
-        
+
         Args:
             relation_id: The unique identifier of the relation.
             rel_type: New type for the relation.
             attributes: New attributes for the relation.
-            
+
         Raises:
             sqlite3.Error: If the database operation fails.
         """
@@ -163,6 +163,4 @@ class RelationRepository(BaseRepository):
             WHERE id = ?
         """
         with self.transaction() as conn:
-            conn.execute(
-                sql, (rel_type, self._serialize_json(attributes), relation_id)
-            )
+            conn.execute(sql, (rel_type, self._serialize_json(attributes), relation_id))

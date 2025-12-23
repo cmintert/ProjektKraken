@@ -8,6 +8,7 @@ Provides command classes for managing relationships between events and entities:
 
 All commands support undo/redo operations and return CommandResult objects.
 """
+
 import logging
 from typing import Any, Dict
 

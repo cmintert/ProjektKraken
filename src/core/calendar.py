@@ -338,7 +338,7 @@ class CalendarConfig:
             CalendarConfig: A basic calendar with 12 months of 30 days.
         """
         months = [
-            MonthDefinition(name=f"Month {i+1}", abbreviation=f"M{i+1}", days=30)
+            MonthDefinition(name=f"Month {i + 1}", abbreviation=f"M{i + 1}", days=30)
             for i in range(12)
         ]
         week = WeekDefinition(

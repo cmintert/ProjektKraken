@@ -8,7 +8,6 @@ from src.gui.widgets.timeline import EventItem
 
 
 class TestEventDuration:
-
     def test_event_editor_has_duration_field(self, qtbot):
         mock_parent = QWidget()
         mock_parent.worker = MagicMock()

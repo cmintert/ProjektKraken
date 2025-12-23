@@ -15,12 +15,12 @@ logger = logging.getLogger(__name__)
 class CommandCoordinator(QObject):
     """
     Coordinates command execution and worker thread communication.
-    
+
     Manages:
     - Command submission to worker thread
     - Result handling
     - Undo/redo operations (future enhancement)
-    
+
     Attributes:
         command_requested: Signal emitted when a command needs execution.
     """
@@ -31,7 +31,7 @@ class CommandCoordinator(QObject):
     def __init__(self, main_window):
         """
         Initialize the command coordinator.
-        
+
         Args:
             main_window: Reference to the MainWindow instance.
         """
@@ -42,7 +42,7 @@ class CommandCoordinator(QObject):
     def execute_command(self, command):
         """
         Execute a command via the worker thread.
-        
+
         Args:
             command: The command object to execute.
         """
@@ -53,7 +53,7 @@ class CommandCoordinator(QObject):
     def on_command_result(self, result):
         """
         Handle command execution result from worker thread.
-        
+
         Args:
             result: CommandResult object containing execution status.
         """
@@ -68,25 +68,24 @@ class CommandCoordinator(QObject):
     def _refresh_after_command(self, result):
         """
         Refresh UI data after successful command execution.
-        
+
         Args:
             result: CommandResult object.
         """
         # Determine what needs refreshing based on command type
         # This could be enhanced to be more specific per command
-        if hasattr(self.window, 'load_data'):
+        if hasattr(self.window, "load_data"):
             self.window.load_data()
 
     def _show_error(self, message: str):
         """
         Display error message to user.
-        
+
         Args:
             message: Error message to display.
         """
         from PySide6.QtWidgets import QMessageBox
+
         QMessageBox.critical(
-            self.window,
-            "Command Error",
-            f"Operation failed:\n{message}"
+            self.window, "Command Error", f"Operation failed:\n{message}"
         )

@@ -23,6 +23,7 @@ def mock_window(qtbot):
 def test_update_event_triggers_commands(qtbot):
     """Test using direct slot connection."""
     from unittest.mock import patch
+
     from PySide6.QtWidgets import QMessageBox
 
     with (

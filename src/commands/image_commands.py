@@ -15,9 +15,9 @@ class AddImagesCommand(BaseCommand):
         self.owner_id = owner_id
         self.source_paths = source_paths
         self._added_attachment_ids: List[str] = []
-        self._trash_infos: Dict[str, Any] = (
-            {}
-        )  # For Redo if needed? No, Undo of Add = Remove.
+        self._trash_infos: Dict[
+            str, Any
+        ] = {}  # For Redo if needed? No, Undo of Add = Remove.
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         if not hasattr(db_service, "attachment_service"):
