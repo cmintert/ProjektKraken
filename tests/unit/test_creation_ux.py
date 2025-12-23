@@ -11,8 +11,14 @@ from src.core.events import Event
 @pytest.fixture
 def main_window(qtbot):
     """Create MainWindow with mocked Worker."""
+    from PySide6.QtWidgets import QMessageBox
+
     with patch("src.app.main.DatabaseWorker") as MockWorker:
-        with patch("src.app.main.QThread"), patch("src.app.main.QTimer"):
+        with (
+            patch("src.app.main.QThread"),
+            patch("src.app.main.QTimer"),
+            patch("src.app.main.QMessageBox.warning", return_value=QMessageBox.Discard),
+        ):
             # Mock worker and DB
             mock_worker = MockWorker.return_value
             mock_worker.db_service.get_all_events.return_value = []

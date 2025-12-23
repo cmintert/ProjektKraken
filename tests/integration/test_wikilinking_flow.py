@@ -14,10 +14,20 @@ from src.commands.wiki_commands import ProcessWikiLinksCommand
 @pytest.fixture
 def mock_window(qtbot):
     """Create a MainWindow with mocked worker."""
-    window = MainWindow()
-    window.worker = MagicMock()
-    # Prevent actual startup logic interference if any
-    return window
+    from unittest.mock import patch
+
+    from PySide6.QtWidgets import QMessageBox
+
+    with (
+        patch("src.app.main.DatabaseWorker"),
+        patch("src.app.main.QTimer"),
+        patch("src.app.main.QThread"),
+        patch("src.app.main.QMessageBox.warning", return_value=QMessageBox.Discard),
+    ):
+        window = MainWindow()
+        window.worker = MagicMock()
+        yield window
+        window.close()
 
 
 def test_update_event_triggers_commands(qtbot):

@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -10,17 +10,20 @@ from src.core.events import Event
 def main_window(qtbot):
     # Mock DB service to avoid real DB creation
     # Also Mock QTimer to prevent deferred initialization crash in tests
+    from PySide6.QtWidgets import QMessageBox
+
     with (
         patch("src.app.main.DatabaseWorker") as MockWorker,
         patch("src.app.main.QTimer"),
         patch("src.app.main.QThread"),
+        patch("src.app.main.QMessageBox.warning", return_value=QMessageBox.Discard),
     ):
         mock_worker = MockWorker.return_value
         mock_db = mock_worker.db_service
         mock_db.get_all_events.return_value = []
         window = MainWindow()
         qtbot.addWidget(window)
-        return window
+        yield window
 
 
 def test_init_window(main_window):
@@ -70,3 +73,89 @@ def test_create_event_flow(main_window):
 
     # Verify command was sent to worker
     main_window.worker.run_command.assert_called_once()
+
+
+def test_create_entity(main_window):
+    with patch(
+        "PySide6.QtWidgets.QInputDialog.getText", return_value=("New Entity", True)
+    ):
+        # Ensure editor check passes
+        main_window.entity_editor.has_unsaved_changes = MagicMock(return_value=False)
+
+        main_window.create_entity()
+
+        # Verify run_command called
+        main_window.worker.run_command.assert_called_once()
+        cmd = main_window.worker.run_command.call_args[0][0]
+        assert cmd.__class__.__name__ == "CreateEntityCommand"
+        assert cmd._entity.name == "New Entity"
+
+
+def test_delete_entity(main_window):
+    main_window.delete_entity("ent1")
+
+    main_window.worker.run_command.assert_called_once()
+    cmd = main_window.worker.run_command.call_args[0][0]
+    assert cmd.__class__.__name__ == "DeleteEntityCommand"
+    assert cmd._entity_id == "ent1"
+
+
+def test_delete_event(main_window):
+    main_window.delete_event("ev1")
+
+    main_window.worker.run_command.assert_called_once()
+    cmd = main_window.worker.run_command.call_args[0][0]
+    assert cmd.__class__.__name__ == "DeleteEventCommand"
+    assert cmd.event_id == "ev1"
+
+
+def test_update_entity(main_window):
+    main_window.update_entity({"id": "ent1", "name": "Updated"})
+
+    main_window.worker.run_command.assert_called_once()
+    cmd = main_window.worker.run_command.call_args[0][0]
+    assert cmd.__class__.__name__ == "UpdateEntityCommand"
+    assert cmd.entity_id == "ent1"
+    assert cmd.update_data["name"] == "Updated"
+
+
+def test_add_relation(main_window):
+    main_window.add_relation("src", "dst", "relates_to", bidirectional=True)
+
+    main_window.worker.run_command.assert_called_once()
+    cmd = main_window.worker.run_command.call_args[0][0]
+    assert cmd.__class__.__name__ == "AddRelationCommand"
+    assert cmd.source_id == "src"
+    assert cmd.target_id == "dst"
+    assert cmd.bidirectional is True
+
+
+@patch("src.app.main.QMessageBox.warning")
+def test_check_unsaved_changes_save(mock_warning, main_window):
+    # Setup editor with unsaved changes
+    main_window.event_editor.has_unsaved_changes = MagicMock(return_value=True)
+    main_window.event_editor._on_save = MagicMock()
+
+    # Simulate User clicking Save
+    from PySide6.QtWidgets import QMessageBox
+
+    mock_warning.return_value = QMessageBox.Save
+
+    result = main_window.check_unsaved_changes(main_window.event_editor)
+
+    assert result is True
+    main_window.event_editor._on_save.assert_called_once()
+
+
+@patch("src.app.main.QMessageBox.warning")
+def test_check_unsaved_changes_cancel(mock_warning, main_window):
+    main_window.event_editor.has_unsaved_changes = MagicMock(return_value=True)
+
+    # Simulate User clicking Cancel
+    from PySide6.QtWidgets import QMessageBox
+
+    mock_warning.return_value = QMessageBox.Cancel
+
+    result = main_window.check_unsaved_changes(main_window.event_editor)
+
+    assert result is False
