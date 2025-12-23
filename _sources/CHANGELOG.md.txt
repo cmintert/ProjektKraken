@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2025-12-23
-### Internal
-- Merge pull request #31 from cmintert/copilot/implement-tag-normalization
+### Added
+- feat: Add auto-generated database schema documentation
 
 
 *This changelog was automatically generated.*

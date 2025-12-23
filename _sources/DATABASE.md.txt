@@ -18,6 +18,9 @@ The `DatabaseService` class is the single point of interaction with the SQLite d
 
 ### Schema Design
 
+> [!NOTE]
+> For a complete visual representation of the database schema with all tables, columns, and relationships, see the [Schema Reference](SCHEMA_REFERENCE.md) (auto-generated from code).
+
 #### Core Tables
 
 1. **events** - Timeline events (points or spans in time)
