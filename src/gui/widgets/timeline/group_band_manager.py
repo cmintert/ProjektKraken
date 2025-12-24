@@ -109,6 +109,15 @@ class GroupBandManager(QObject):
             band.collapse_requested.connect(self._on_collapse_requested)
             band.context_menu_requested.connect(self._on_context_menu_requested)
             
+            # Load event dates for tick marks (if collapsed)
+            if is_collapsed and count > 0:
+                events = self.db_service.get_events_for_group(
+                    tag_name=tag_name,
+                    date_range=date_range
+                )
+                event_dates = [e.lore_date for e in events]
+                band.set_event_dates(event_dates)
+            
             # Position band
             band.setY(current_y)
             
@@ -181,6 +190,11 @@ class GroupBandManager(QObject):
         if tag_name in self._bands:
             band = self._bands[tag_name]
             band.set_collapsed(True)
+            
+            # Load event dates for tick marks
+            events = self.db_service.get_events_for_group(tag_name=tag_name)
+            event_dates = [e.lore_date for e in events]
+            band.set_event_dates(event_dates)
             
             # Add to collapsed set
             self._collapsed_tags.add(tag_name)

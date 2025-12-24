@@ -71,6 +71,9 @@ class GroupBandItem(QGraphicsObject):
         self.latest_date = latest_date if latest_date is not None else 0.0
         self.is_collapsed = is_collapsed
 
+        # Event positions for tick marks
+        self.event_dates = []  # List of lore_dates for events in this group
+
         # Visual settings
         self.setAcceptHoverEvents(True)
         self.setCursor(QCursor(Qt.PointingHandCursor))
@@ -83,11 +86,29 @@ class GroupBandItem(QGraphicsObject):
         # Theme
         self.theme = ThemeManager().get_theme()
         ThemeManager().theme_changed.connect(self._on_theme_changed)
+        
+        # Tooltip
+        self._update_tooltip()
 
     def _on_theme_changed(self, theme):
         """Update theme and refresh."""
         self.theme = theme
         self.update()
+
+    def _update_tooltip(self):
+        """Update the tooltip with current metadata."""
+        if self.count == 0:
+            tooltip = f"{self.tag_name}\nNo events"
+        else:
+            date_range = f"{self.earliest_date:.1f} - {self.latest_date:.1f}"
+            span = self.latest_date - self.earliest_date
+            tooltip = (
+                f"<b>{self.tag_name}</b><br>"
+                f"Events: {self.count}<br>"
+                f"Range: {date_range}<br>"
+                f"Span: {span:.1f}"
+            )
+        self.setToolTip(tooltip)
 
     def boundingRect(self) -> QRectF:
         """
@@ -168,9 +189,29 @@ class GroupBandItem(QGraphicsObject):
                 text,
             )
         else:
-            # Draw ticks for collapsed band
-            # TODO: Draw ticks for each event in the group
-            pass
+            # Draw tick marks for collapsed band
+            if self.event_dates:
+                # Get scale factor from parent if available
+                scale_factor = 20.0  # Default
+                if hasattr(self.scene(), 'views') and self.scene().views():
+                    view = self.scene().views()[0]
+                    if hasattr(view, 'scale_factor'):
+                        scale_factor = view.scale_factor
+                
+                # Draw vertical tick for each event
+                tick_color = QColor(self._color).lighter(150)
+                painter.setPen(QPen(tick_color, 1))
+                
+                for event_date in self.event_dates:
+                    # Calculate X position
+                    x_pos = event_date * scale_factor
+                    
+                    # Only draw if in visible range
+                    if scene_rect.left() <= x_pos <= scene_rect.right():
+                        painter.drawLine(
+                            int(x_pos), 0,
+                            int(x_pos), int(height)
+                        )
 
     def mousePressEvent(self, event):
         """Handle mouse press."""
@@ -244,6 +285,17 @@ class GroupBandItem(QGraphicsObject):
         self.count = count
         self.earliest_date = earliest_date if earliest_date is not None else 0.0
         self.latest_date = latest_date if latest_date is not None else 0.0
+        self._update_tooltip()
+        self.update()
+
+    def set_event_dates(self, event_dates: list):
+        """
+        Set the event dates for tick mark rendering.
+
+        Args:
+            event_dates: List of lore_dates for events in this group
+        """
+        self.event_dates = event_dates
         self.update()
 
     def get_height(self) -> int:
