@@ -218,6 +218,7 @@ class DatabaseService:
         CREATE TABLE IF NOT EXISTS tags (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL UNIQUE,
+            color TEXT,
             created_at REAL NOT NULL
         );
 
@@ -1469,3 +1470,270 @@ class DatabaseService:
             )
 
         return counts
+
+    # --------------------------------------------------------------------------
+    # Timeline Grouping Service Methods (Milestone 2)
+    # --------------------------------------------------------------------------
+
+    def get_group_metadata(
+        self,
+        tag_order: List[str],
+        date_range: Optional[tuple] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Returns metadata for each tag group including color, count, and date span.
+
+        Args:
+            tag_order: List of tag names to get metadata for.
+            date_range: Optional tuple (start_date, end_date) to filter events.
+
+        Returns:
+            List of dicts with tag_name, color, count, earliest_date, latest_date.
+        """
+        # Get counts from existing method
+        counts = self.get_group_counts(tag_order=tag_order, date_range=date_range)
+
+        # Add color to each metadata entry
+        metadata = []
+        for count_info in counts:
+            tag_name = count_info["tag_name"]
+            color = self.get_tag_color(tag_name)
+
+            metadata.append(
+                {
+                    "tag_name": tag_name,
+                    "color": color,
+                    "count": count_info["count"],
+                    "earliest_date": count_info["earliest_date"],
+                    "latest_date": count_info["latest_date"],
+                }
+            )
+
+        return metadata
+
+    def get_events_for_group(
+        self,
+        tag_name: str,
+        date_range: Optional[tuple] = None,
+    ) -> List[Event]:
+        """
+        Returns all events for a specific tag group.
+
+        This is a convenience wrapper around get_events_by_tag with date filtering.
+
+        Args:
+            tag_name: The tag name to filter events by.
+            date_range: Optional tuple (start_date, end_date) to filter events.
+
+        Returns:
+            List[Event]: Events with the specified tag, sorted by lore_date.
+        """
+        if not self._connection:
+            self.connect()
+
+        # Build date filter clause
+        date_filter = ""
+        params = [tag_name.strip()]
+
+        if date_range:
+            date_filter = "AND e.lore_date >= ? AND e.lore_date <= ?"
+            params.extend([date_range[0], date_range[1]])
+
+        cursor = self._connection.execute(
+            f"""
+            SELECT e.*
+            FROM events e
+            INNER JOIN event_tags et ON e.id = et.event_id
+            INNER JOIN tags t ON et.tag_id = t.id
+            WHERE t.name = ?
+            {date_filter}
+            ORDER BY e.lore_date
+            """,
+            tuple(params),
+        )
+        rows = cursor.fetchall()
+
+        events = []
+        for row in rows:
+            data = dict(row)
+            if data.get("attributes"):
+                data["attributes"] = json.loads(data["attributes"])
+            events.append(Event.from_dict(data))
+        return events
+
+    def set_tag_color(self, tag_name: str, color: str) -> None:
+        """
+        Sets the color for a tag.
+
+        Args:
+            tag_name: The name of the tag.
+            color: Hex color string (e.g., "#FF0000" or "#abc").
+
+        Raises:
+            ValueError: If color format is invalid.
+        """
+        import re
+
+        # Validate hex color format
+        if not re.match(r"^#[0-9A-Fa-f]{3}$|^#[0-9A-Fa-f]{6}$", color):
+            raise ValueError(f"Invalid hex color format: {color}")
+
+        # Normalize short form to long form
+        if len(color) == 4:
+            color = f"#{color[1]}{color[1]}{color[2]}{color[2]}{color[3]}{color[3]}"
+
+        # Get or create tag
+        tag_id = self.create_tag(tag_name)
+
+        # Update color
+        with self.transaction() as conn:
+            conn.execute(
+                "UPDATE tags SET color = ? WHERE id = ?",
+                (color, tag_id),
+            )
+
+        logger.debug(f"Set color {color} for tag '{tag_name}'")
+
+    def get_tag_color(self, tag_name: str) -> str:
+        """
+        Gets the color for a tag, generating one if not set.
+
+        Args:
+            tag_name: The name of the tag.
+
+        Returns:
+            str: Hex color string (e.g., "#FF0000").
+        """
+        if not self._connection:
+            self.connect()
+
+        # Get tag
+        cursor = self._connection.execute(
+            "SELECT id, color FROM tags WHERE name = ?", (tag_name.strip(),)
+        )
+        result = cursor.fetchone()
+
+        if not result:
+            # Tag doesn't exist, create it and generate color
+            tag_id = self.create_tag(tag_name)
+            return self._generate_tag_color(tag_name)
+
+        if result["color"]:
+            return result["color"]
+
+        # Generate deterministic color
+        return self._generate_tag_color(tag_name)
+
+    def _generate_tag_color(self, tag_name: str) -> str:
+        """
+        Generates a deterministic color for a tag based on its name.
+
+        Args:
+            tag_name: The name of the tag.
+
+        Returns:
+            str: Hex color string (e.g., "#FF0000").
+        """
+        import hashlib
+
+        # Use hash of tag name for deterministic color
+        hash_value = int(hashlib.md5(tag_name.encode()).hexdigest()[:6], 16)
+
+        # Generate RGB values that are reasonably visible
+        r = (hash_value >> 16) & 0xFF
+        g = (hash_value >> 8) & 0xFF
+        b = hash_value & 0xFF
+
+        # Ensure colors are not too dark (min 50 per channel)
+        r = max(r, 80)
+        g = max(g, 80)
+        b = max(b, 80)
+
+        return f"#{r:02X}{g:02X}{b:02X}"
+
+    def get_tag_by_name(self, tag_name: str) -> Optional[Dict[str, Any]]:
+        """
+        Retrieves a tag by its name.
+
+        Args:
+            tag_name: The name of the tag.
+
+        Returns:
+            Optional[Dict[str, Any]]: Tag dictionary with id, name, color, created_at
+                                      or None if not found.
+        """
+        if not self._connection:
+            self.connect()
+
+        cursor = self._connection.execute(
+            "SELECT id, name, color, created_at FROM tags WHERE name = ?",
+            (tag_name.strip(),),
+        )
+        result = cursor.fetchone()
+
+        if result:
+            return dict(result)
+        return None
+
+    def set_timeline_grouping_config(
+        self,
+        tag_order: List[str],
+        mode: str = "DUPLICATE",
+    ) -> None:
+        """
+        Stores timeline grouping configuration.
+
+        Args:
+            tag_order: List of tag names defining groups and their order.
+            mode: Grouping mode - "DUPLICATE" or "FIRST_MATCH".
+
+        Raises:
+            ValueError: If mode is invalid.
+        """
+        if mode not in ("DUPLICATE", "FIRST_MATCH"):
+            raise ValueError(f"Invalid mode: {mode}. Must be DUPLICATE or FIRST_MATCH")
+
+        config = {"tag_order": tag_order, "mode": mode}
+        config_json = json.dumps(config)
+
+        with self.transaction() as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO system_meta (key, value)
+                VALUES ('timeline_grouping_config', ?)
+                """,
+                (config_json,),
+            )
+
+        logger.debug(f"Saved timeline grouping config: {len(tag_order)} tags, mode={mode}")
+
+    def get_timeline_grouping_config(self) -> Optional[Dict[str, Any]]:
+        """
+        Retrieves timeline grouping configuration.
+
+        Returns:
+            Optional[Dict[str, Any]]: Config dict with tag_order and mode,
+                                      or None if not set.
+        """
+        if not self._connection:
+            self.connect()
+
+        cursor = self._connection.execute(
+            "SELECT value FROM system_meta WHERE key = 'timeline_grouping_config'"
+        )
+        result = cursor.fetchone()
+
+        if result and result["value"]:
+            return json.loads(result["value"])
+        return None
+
+    def clear_timeline_grouping_config(self) -> None:
+        """
+        Clears timeline grouping configuration.
+        """
+        with self.transaction() as conn:
+            conn.execute(
+                "DELETE FROM system_meta WHERE key = 'timeline_grouping_config'"
+            )
+
+        logger.debug("Cleared timeline grouping config")
