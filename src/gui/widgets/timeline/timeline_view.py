@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QGraphicsView, QWidget
 
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.timeline.event_item import EventItem
+from src.gui.widgets.timeline.group_band_manager import GroupBandManager
 from src.gui.widgets.timeline.timeline_scene import (
     CurrentTimeLineItem,
     PlayheadItem,
@@ -113,6 +114,10 @@ class TimelineView(QGraphicsView):
         self._playback_timer.timeout.connect(self._advance_playhead)
         self._playback_step = 1.0  # Default step: 1 day per tick
         self._playback_interval = 100  # Default: 100ms between ticks
+
+        # Group band manager (will be initialized when db_service is set)
+        self._band_manager = None
+        self._db_service = None
 
         # Set corner widget for themed scrollbar corner
         self._update_corner_widget(ThemeManager().get_theme())
@@ -839,3 +844,153 @@ class TimelineView(QGraphicsView):
             float: The current time in lore_date units.
         """
         return self._current_time_line.get_time(self.scale_factor)
+
+    # -------------------------------------------------------------------------
+    # Timeline Grouping Methods (Milestone 3)
+    # -------------------------------------------------------------------------
+
+    def set_db_service(self, db_service):
+        """
+        Set the database service for timeline grouping features.
+
+        Args:
+            db_service: DatabaseService instance
+        """
+        self._db_service = db_service
+        
+        # Initialize band manager if not already done
+        if self._band_manager is None and db_service is not None:
+            self._band_manager = GroupBandManager(self.scene, db_service, self)
+            
+            # Connect band manager signals
+            self._band_manager.band_expanded.connect(self._on_band_expanded)
+            self._band_manager.band_collapsed.connect(self._on_band_collapsed)
+            self._band_manager.tag_color_change_requested.connect(
+                self._on_tag_color_change_requested
+            )
+            self._band_manager.tag_rename_requested.connect(
+                self._on_tag_rename_requested
+            )
+            self._band_manager.remove_from_grouping_requested.connect(
+                self._on_remove_from_grouping_requested
+            )
+            
+            logger.info("Group band manager initialized")
+
+    def set_grouping_config(self, tag_order: list, mode: str = "DUPLICATE"):
+        """
+        Set the timeline grouping configuration.
+
+        Args:
+            tag_order: List of tag names to group by
+            mode: Grouping mode ("DUPLICATE" or "FIRST_MATCH")
+        """
+        if self._band_manager is None:
+            logger.warning("Cannot set grouping: band manager not initialized")
+            return
+        
+        # Get visible date range for filtering
+        date_range = self._get_visible_date_range()
+        
+        # Update band manager
+        self._band_manager.set_grouping_config(tag_order, date_range)
+        
+        logger.info(f"Grouping set: {len(tag_order)} tags, mode={mode}")
+
+    def clear_grouping(self):
+        """Clear all timeline grouping bands."""
+        if self._band_manager is not None:
+            self._band_manager.clear_bands()
+            logger.info("Grouping cleared")
+
+    def update_band_metadata(self):
+        """Update metadata for all bands (counts, dates)."""
+        if self._band_manager is not None:
+            date_range = self._get_visible_date_range()
+            self._band_manager.update_band_metadata(date_range)
+
+    def _get_visible_date_range(self):
+        """
+        Get the currently visible date range in the viewport.
+
+        Returns:
+            tuple: (start_date, end_date) or None
+        """
+        try:
+            viewport_rect = self.viewport().rect()
+            left_scene = self.mapToScene(viewport_rect.topLeft())
+            right_scene = self.mapToScene(viewport_rect.topRight())
+            
+            start_date = left_scene.x() / self.scale_factor
+            end_date = right_scene.x() / self.scale_factor
+            
+            return (start_date, end_date)
+        except Exception as e:
+            logger.warning(f"Could not calculate visible date range: {e}")
+            return None
+
+    def _on_band_expanded(self, tag_name: str):
+        """
+        Handle band expansion.
+
+        Args:
+            tag_name: The tag name that was expanded
+        """
+        logger.debug(f"Band expanded: {tag_name}")
+        
+        # TODO: Load and display events for this tag group
+        # For now, just update metadata
+        self.update_band_metadata()
+
+    def _on_band_collapsed(self, tag_name: str):
+        """
+        Handle band collapse.
+
+        Args:
+            tag_name: The tag name that was collapsed
+        """
+        logger.debug(f"Band collapsed: {tag_name}")
+        
+        # TODO: Hide events for this tag group (if showing grouped events separately)
+        # For now, just update metadata
+        self.update_band_metadata()
+
+    def _on_tag_color_change_requested(self, tag_name: str):
+        """
+        Handle tag color change request.
+
+        Args:
+            tag_name: The tag name to change color for
+        """
+        logger.debug(f"Color change requested for: {tag_name}")
+        
+        # TODO: Show color picker dialog and update tag color
+        # This should be handled by the main window/controller
+        # For now, just log
+        pass
+
+    def _on_tag_rename_requested(self, tag_name: str):
+        """
+        Handle tag rename request.
+
+        Args:
+            tag_name: The tag name to rename
+        """
+        logger.debug(f"Rename requested for: {tag_name}")
+        
+        # TODO: Show rename dialog
+        # This should be handled by the main window/controller
+        pass
+
+    def _on_remove_from_grouping_requested(self, tag_name: str):
+        """
+        Handle request to remove a tag from grouping.
+
+        Args:
+            tag_name: The tag name to remove
+        """
+        logger.debug(f"Remove from grouping requested: {tag_name}")
+        
+        # TODO: Update grouping configuration to exclude this tag
+        # This should be handled by the main window/controller
+        pass
