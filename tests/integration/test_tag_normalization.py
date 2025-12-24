@@ -248,4 +248,61 @@ class TestTagNormalizationIntegration:
         all_tags = db_service.get_all_tags()
         tag_names = [t["name"] for t in all_tags]
         assert "tag1" in tag_names
-        assert "tag2" in tag_names
+
+    def test_timeline_grouping_after_migration(self, db_service):
+        """Test that timeline grouping works correctly after tag migration."""
+        # Create events with tags in JSON attributes
+        event1 = Event(name="Battle Event", lore_date=100.0)
+        event1.tags = ["battle", "important"]
+        db_service.insert_event(event1)
+
+        event2 = Event(name="Political Event", lore_date=200.0)
+        event2.tags = ["political", "important"]
+        db_service.insert_event(event2)
+
+        event3 = Event(name="Minor Event", lore_date=300.0)
+        event3.tags = ["other"]
+        db_service.insert_event(event3)
+
+        # Run migration
+        migration = TagMigration(db_service)
+        success = migration.run(dry_run=False)
+        assert success
+
+        # Test DUPLICATE mode grouping
+        tag_order = ["battle", "political", "important"]
+        result = db_service.get_events_grouped_by_tags(
+            tag_order=tag_order, mode="DUPLICATE"
+        )
+
+        groups = result["groups"]
+        assert len(groups) == 3
+
+        # Battle group should have event1
+        battle_group = next(g for g in groups if g["tag_name"] == "battle")
+        battle_event_ids = [e.id for e in battle_group["events"]]
+        assert event1.id in battle_event_ids
+
+        # Political group should have event2
+        political_group = next(g for g in groups if g["tag_name"] == "political")
+        political_event_ids = [e.id for e in political_group["events"]]
+        assert event2.id in political_event_ids
+
+        # Important group should have event1 and event2 (DUPLICATE mode)
+        important_group = next(g for g in groups if g["tag_name"] == "important")
+        important_event_ids = [e.id for e in important_group["events"]]
+        assert event1.id in important_event_ids
+        assert event2.id in important_event_ids
+        assert len(important_event_ids) == 2
+
+        # Remaining should have event3
+        remaining_ids = [e.id for e in result["remaining"]]
+        assert event3.id in remaining_ids
+
+        # Test group counts
+        counts = db_service.get_group_counts(tag_order=tag_order)
+        battle_count = next(c for c in counts if c["tag_name"] == "battle")
+        assert battle_count["count"] == 1
+
+        important_count = next(c for c in counts if c["tag_name"] == "important")
+        assert important_count["count"] == 2
