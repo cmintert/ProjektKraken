@@ -1298,3 +1298,174 @@ class DatabaseService:
                 data["attributes"] = json.loads(data["attributes"])
             entities.append(Entity.from_dict(data))
         return entities
+
+    def get_events_grouped_by_tags(
+        self,
+        tag_order: List[str],
+        mode: str = "DUPLICATE",
+        date_range: Optional[tuple] = None,
+    ) -> Dict[str, Any]:
+        """
+        Groups events by tags with support for DUPLICATE and FIRST_MATCH modes.
+
+        In DUPLICATE mode (default), events with multiple tags appear in all
+        matching groups. In FIRST_MATCH mode, events appear only in their first
+        matching group (by tag_order).
+
+        Args:
+            tag_order: List of tag names defining groups and their order.
+            mode: Grouping mode - "DUPLICATE" (default) or "FIRST_MATCH".
+            date_range: Optional tuple (start_date, end_date) to filter events.
+
+        Returns:
+            Dict containing:
+                - groups: List of dicts with tag_name and events list
+                - remaining: List of events with no matching group tags
+
+        Raises:
+            ValueError: If mode is not DUPLICATE or FIRST_MATCH.
+        """
+        if mode not in ("DUPLICATE", "FIRST_MATCH"):
+            raise ValueError(f"Invalid mode: {mode}. Must be DUPLICATE or FIRST_MATCH")
+
+        if not self._connection:
+            self.connect()
+
+        # Build date filter clause
+        date_filter = ""
+        date_params = []
+        if date_range:
+            date_filter = "AND e.lore_date >= ? AND e.lore_date <= ?"
+            date_params = [date_range[0], date_range[1]]
+
+        # Initialize result structure
+        groups = []
+        assigned_event_ids = set()
+
+        # Process each tag in order
+        for tag_name in tag_order:
+            # Get events for this tag
+            query = f"""
+                SELECT e.*
+                FROM events e
+                INNER JOIN event_tags et ON e.id = et.event_id
+                INNER JOIN tags t ON et.tag_id = t.id
+                WHERE t.name = ?
+                {date_filter}
+                ORDER BY e.lore_date
+            """
+            params = [tag_name.strip()] + date_params
+
+            cursor = self._connection.execute(query, params)
+            rows = cursor.fetchall()
+
+            # Convert rows to Event objects
+            events = []
+            for row in rows:
+                data = dict(row)
+                if data.get("attributes"):
+                    data["attributes"] = json.loads(data["attributes"])
+                event = Event.from_dict(data)
+
+                # In FIRST_MATCH mode, skip if already assigned
+                if mode == "FIRST_MATCH" and event.id in assigned_event_ids:
+                    continue
+
+                events.append(event)
+                assigned_event_ids.add(event.id)
+
+            # Add group even if empty (to maintain tag_order)
+            groups.append({"tag_name": tag_name, "events": events})
+
+        # Get remaining events (those not in any group)
+        remaining_query = f"""
+            SELECT e.*
+            FROM events e
+            WHERE e.id NOT IN (
+                SELECT DISTINCT et.event_id
+                FROM event_tags et
+                INNER JOIN tags t ON et.tag_id = t.id
+                WHERE t.name IN ({','.join('?' * len(tag_order))})
+            )
+            {date_filter}
+            ORDER BY e.lore_date
+        """
+
+        # Handle case where tag_order is empty
+        if not tag_order:
+            remaining_query = f"""
+                SELECT e.*
+                FROM events e
+                WHERE 1=1
+                {date_filter}
+                ORDER BY e.lore_date
+            """
+            remaining_params = date_params
+        else:
+            remaining_params = [t.strip() for t in tag_order] + date_params
+
+        cursor = self._connection.execute(remaining_query, remaining_params)
+        rows = cursor.fetchall()
+
+        remaining = []
+        for row in rows:
+            data = dict(row)
+            if data.get("attributes"):
+                data["attributes"] = json.loads(data["attributes"])
+            remaining.append(Event.from_dict(data))
+
+        return {"groups": groups, "remaining": remaining}
+
+    def get_group_counts(
+        self,
+        tag_order: List[str],
+        date_range: Optional[tuple] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Returns count and metadata for each tag group.
+
+        Args:
+            tag_order: List of tag names to get counts for.
+            date_range: Optional tuple (start_date, end_date) to filter events.
+
+        Returns:
+            List of dicts with tag_name, count, earliest_date, latest_date.
+        """
+        if not self._connection:
+            self.connect()
+
+        # Build date filter clause
+        date_filter = ""
+        date_params = []
+        if date_range:
+            date_filter = "AND e.lore_date >= ? AND e.lore_date <= ?"
+            date_params = [date_range[0], date_range[1]]
+
+        counts = []
+        for tag_name in tag_order:
+            query = f"""
+                SELECT 
+                    COUNT(DISTINCT e.id) as count,
+                    MIN(e.lore_date) as earliest_date,
+                    MAX(e.lore_date) as latest_date
+                FROM events e
+                INNER JOIN event_tags et ON e.id = et.event_id
+                INNER JOIN tags t ON et.tag_id = t.id
+                WHERE t.name = ?
+                {date_filter}
+            """
+            params = [tag_name.strip()] + date_params
+
+            cursor = self._connection.execute(query, params)
+            row = cursor.fetchone()
+
+            counts.append(
+                {
+                    "tag_name": tag_name,
+                    "count": row["count"] if row else 0,
+                    "earliest_date": row["earliest_date"] if row else None,
+                    "latest_date": row["latest_date"] if row else None,
+                }
+            )
+
+        return counts
