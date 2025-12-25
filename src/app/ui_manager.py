@@ -163,6 +163,20 @@ class UIManager:
         reset_action = view_menu.addAction("Reset Layout")
         reset_action.triggered.connect(self.reset_layout)
 
+        # Timeline Grouping
+        view_menu.addSeparator()
+        self.grouping_config_action = view_menu.addAction(
+            "Configure Timeline Grouping..."
+        )
+        self.grouping_config_action.triggered.connect(
+            self.main_window._on_configure_grouping_requested
+        )
+
+        self.grouping_clear_action = view_menu.addAction("Clear Timeline Grouping")
+        self.grouping_clear_action.triggered.connect(
+            self.main_window._on_clear_grouping_requested
+        )
+
     def reset_layout(self):
         """Restores the default docking layout."""
         if "list" in self.docks:

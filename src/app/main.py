@@ -89,6 +89,7 @@ from src.gui.widgets.map_widget import MapWidget
 from src.gui.widgets.timeline import TimelineWidget
 from src.gui.widgets.unified_list import UnifiedListWidget
 from src.services import longform_builder
+from src.services.db_service import DatabaseService
 from src.services.worker import DatabaseWorker
 
 # Initialize Logging
@@ -442,6 +443,9 @@ class MainWindow(QMainWindow):
         )
         self.worker.calendar_config_loaded.connect(self.on_calendar_config_loaded)
         self.worker.current_time_loaded.connect(self.on_current_time_loaded)
+        self.worker.grouping_dialog_data_loaded.connect(
+            self.on_grouping_dialog_data_loaded
+        )
         self.worker.maps_loaded.connect(self.data_handler.on_maps_loaded)
         self.worker.markers_loaded.connect(self.data_handler.on_markers_loaded)
 
@@ -495,9 +499,19 @@ class MainWindow(QMainWindow):
             success (bool): True if connection succeeded, False otherwise.
         """
         if success:
+            # Initialize GUI database connection for UI components
+            try:
+                db_path = get_user_data_path("world.kraken")
+                self.gui_db_service = DatabaseService(db_path)
+                self.gui_db_service.connect()
+                self.timeline.set_db_service(self.gui_db_service)
+            except Exception as e:
+                logger.error(f"Failed to initialize GUI database service: {e}")
+
             self.load_data()
             self._request_calendar_config()
             self._request_current_time()
+            self._request_grouping_config()
             self.load_maps()
         else:
             self.status_bar.showMessage(STATUS_DB_INIT_FAIL)
@@ -597,6 +611,35 @@ class MainWindow(QMainWindow):
     def on_command_finished_reload_longform(self):
         """Handler to reload longform sequence after command completion."""
         self.load_longform_sequence()
+
+    def _request_grouping_config(self):
+        """Requests loading of the timeline grouping configuration."""
+        try:
+            # Load from GUI db_service (thread-safe main thread usage)
+            if hasattr(self, "gui_db_service"):
+                config = self.gui_db_service.get_timeline_grouping_config()
+                self.on_grouping_config_loaded(config)
+        except Exception as e:
+            logger.warning(f"Failed to load grouping config: {e}")
+
+    def on_grouping_config_loaded(self, config):
+        """
+        Handler for grouping config loaded.
+
+        Args:
+            config: Dictionary with 'tag_order' and 'mode', or None.
+        """
+        if config:
+            tag_order = config.get("tag_order", [])
+            mode = config.get("mode", "DUPLICATE")
+            if tag_order:
+                # Apply grouping (db_service is already set in on_db_initialized)
+                self.timeline.set_grouping_config(tag_order, mode)
+                logger.info(
+                    f"Auto-loaded grouping: {len(tag_order)} tags in {mode} mode"
+                )
+        else:
+            logger.debug("No grouping configuration found")
 
     def closeEvent(self, event):
         """
@@ -1079,6 +1122,105 @@ class MainWindow(QMainWindow):
 
         cmd = UpdateMarkerPositionCommand(marker_id=actual_marker_id, x=x, y=y)
         self.command_requested.emit(cmd)
+
+    # ----------------------------------------------------------------------
+    # Timeline Grouping Methods
+    # ----------------------------------------------------------------------
+
+    def _on_configure_grouping_requested(self):
+        """Opens grouping configuration dialog by requesting data from worker thread."""
+        # Request data from worker thread (thread-safe)
+        QMetaObject.invokeMethod(
+            self.worker, "load_grouping_dialog_data", QtCore_Qt.QueuedConnection
+        )
+
+    @Slot(list, object)
+    def on_grouping_dialog_data_loaded(self, tags_data, current_config):
+        """
+        Handler for grouping dialog data loaded from worker.
+
+        Args:
+            tags_data: List of dicts with 'name', 'color', 'count' for each tag.
+            current_config: Current grouping config dict or None.
+        """
+        from src.gui.dialogs.grouping_config_dialog import GroupingConfigDialog
+
+        try:
+            # Create dialog with pre-loaded data
+            dialog = GroupingConfigDialog(
+                tags_data,
+                current_config,
+                self.command_coordinator,
+                self,
+            )
+            dialog.grouping_applied.connect(self._on_grouping_applied)
+            dialog.exec()
+
+        except Exception as e:
+            logger.error(f"Failed to open grouping dialog: {e}")
+            self.show_error_message(f"Failed to open grouping dialog: {e}")
+
+    @Slot(list, str)
+    def _on_grouping_applied(self, tag_order: list, mode: str):
+        """
+        Handle grouping applied from dialog.
+
+        Args:
+            tag_order: List of tag names in order.
+            mode: Grouping mode (DUPLICATE or FIRST_MATCH).
+        """
+        # Update timeline view
+        self.timeline.set_grouping_config(tag_order, mode)
+        logger.info(f"Grouping applied: {len(tag_order)} tags in {mode} mode")
+
+    def _on_clear_grouping_requested(self):
+        """Clears timeline grouping."""
+        from src.commands.timeline_grouping_commands import ClearTimelineGroupingCommand
+
+        cmd = ClearTimelineGroupingCommand()
+        self.command_requested.emit(cmd)
+        # Also clear UI
+        self.timeline.clear_grouping()
+        logger.info("Timeline grouping cleared")
+
+    @Slot(str)
+    def _on_tag_color_change_requested(self, tag_name: str):
+        """
+        Handle tag color change from band context menu.
+
+        Args:
+            tag_name: The name of the tag to change color for.
+        """
+        from PySide6.QtWidgets import QColorDialog
+
+        from src.commands.timeline_grouping_commands import UpdateTagColorCommand
+
+        color = QColorDialog.getColor()
+        if color.isValid():
+            cmd = UpdateTagColorCommand(tag_name, color.name())
+            self.command_requested.emit(cmd)
+            logger.debug(f"Tag color changed: {tag_name} -> {color.name()}")
+
+    @Slot(str)
+    def _on_remove_from_grouping_requested(self, tag_name: str):
+        """
+        Remove a tag from current grouping.
+
+        Args:
+            tag_name: The name of the tag to remove.
+        """
+        from src.commands.timeline_grouping_commands import SetTimelineGroupingCommand
+
+        # Get current config
+        current_config = self.worker.db_service.get_timeline_grouping_config()
+        if current_config:
+            tag_order = current_config["tag_order"]
+            if tag_name in tag_order:
+                tag_order.remove(tag_name)
+                cmd = SetTimelineGroupingCommand(tag_order, current_config["mode"])
+                self.command_requested.emit(cmd)
+                self.timeline.set_grouping_config(tag_order, current_config["mode"])
+                logger.info(f"Removed '{tag_name}' from grouping")
 
     def remove_relation(self, rel_id):
         """

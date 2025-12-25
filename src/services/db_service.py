@@ -1432,7 +1432,7 @@ class DatabaseService:
                 SELECT DISTINCT et.event_id
                 FROM event_tags et
                 INNER JOIN tags t ON et.tag_id = t.id
-                WHERE t.name IN ({','.join('?' * len(tag_order))})
+                WHERE t.name IN ({",".join("?" * len(tag_order))})
             )
             {date_filter}
             ORDER BY e.lore_date
