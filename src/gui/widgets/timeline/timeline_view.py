@@ -13,6 +13,7 @@ from PySide6.QtWidgets import QGraphicsView, QWidget
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.timeline.event_item import EventItem
 from src.gui.widgets.timeline.group_band_manager import GroupBandManager
+from src.gui.widgets.timeline.group_label_overlay import GroupLabelOverlay
 from src.gui.widgets.timeline.timeline_scene import (
     CurrentTimeLineItem,
     PlayheadItem,
@@ -119,6 +120,13 @@ class TimelineView(QGraphicsView):
         self._band_manager = None
         self._db_service = None
 
+        # Group label overlay for fixed lane labels
+        self._label_overlay = GroupLabelOverlay(self)
+        self._label_overlay.setGeometry(
+            0, self.RULER_HEIGHT, GroupLabelOverlay.LABEL_WIDTH, 0
+        )
+        self._label_overlay.raise_()  # Ensure overlay is on top
+
         # Set corner widget for themed scrollbar corner
         self._update_corner_widget(ThemeManager().get_theme())
 
@@ -179,6 +187,19 @@ class TimelineView(QGraphicsView):
             self.fit_all()
             self._initial_fit_pending = False
             self._has_done_initial_fit = True
+
+        # Update label overlay geometry to match viewport
+        if hasattr(self, "_label_overlay"):
+            viewport_height = self.viewport().height()
+            self._label_overlay.setGeometry(
+                0,
+                self.RULER_HEIGHT,
+                GroupLabelOverlay.LABEL_WIDTH,
+                viewport_height - self.RULER_HEIGHT,
+            )
+
+            # Update label positions
+            self._update_label_overlay()
 
     # Height allocated for sticky parent context tier
     CONTEXT_TIER_HEIGHT = 14
@@ -736,6 +757,9 @@ class TimelineView(QGraphicsView):
             current_rect.x(), 0, current_rect.width(), current_y + 100
         )
 
+        # Update label overlay to reflect new band positions
+        self._update_label_overlay()
+
     def fit_all(self):
         """
         Fits the view to encompass all event items, ignoring the infinite axis.
@@ -1107,6 +1131,9 @@ class TimelineView(QGraphicsView):
         # For now, just update metadata
         self.update_band_metadata()
 
+        # Update label overlay to reflect new band heights
+        self._update_label_overlay()
+
     def _on_band_collapsed(self, tag_name: str):
         """
         Handle band collapse.
@@ -1119,6 +1146,52 @@ class TimelineView(QGraphicsView):
         # TODO: Hide events for this tag group (if showing grouped events separately)
         # For now, just update metadata
         self.update_band_metadata()
+
+        # Update label overlay to reflect new band heights
+        self._update_label_overlay()
+
+    def _update_label_overlay(self):
+        """
+        Update the label overlay positions to match current band positions.
+
+        This should be called after bands are repositioned (e.g., after
+        repack_events, band expand/collapse).
+        """
+        if not self._band_manager or not self._grouping_tag_order:
+            self._label_overlay.clear_labels()
+            return
+
+        # Collect label data from bands
+        labels = []
+        for tag in self._grouping_tag_order:
+            band = self._band_manager.get_band(tag)
+            if band and band.isVisible():
+                # Convert scene Y to view Y
+                band_scene_y = band.y()
+                band_view_pos = self.mapFromScene(0, band_scene_y)
+
+                # Adjust for overlay widget's starting position
+                # (overlay starts at RULER_HEIGHT in viewport)
+                y_in_overlay = band_view_pos.y() - self.RULER_HEIGHT
+
+                labels.append(
+                    {
+                        "tag_name": tag,
+                        "y_pos": y_in_overlay,
+                        "color": band._color.name(),
+                        "is_collapsed": band.is_collapsed,
+                    }
+                )
+
+        self._label_overlay.set_labels(labels)
+
+    def scrollContentsBy(self, dx, dy):
+        """Handle scroll events to update label positions."""
+        super().scrollContentsBy(dx, dy)
+
+        # Update label positions when scrolling vertically
+        if dy != 0:
+            self._update_label_overlay()
 
     def _on_tag_color_change_requested(self, tag_name: str):
         """
