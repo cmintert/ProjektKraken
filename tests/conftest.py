@@ -1,6 +1,12 @@
 import os
+import sys
+import pathlib
 
 import pytest
+
+# Ensure project root is in sys.path
+repo_root = pathlib.Path(__file__).parent.parent
+sys.path.insert(0, str(repo_root))
 
 try:
     from PySide6.QtWidgets import QApplication
@@ -30,10 +36,10 @@ def init_theme_manager():
     Sets up the theme manager with fallback to ensure themes are always
     available even if themes.json cannot be loaded.
     """
-    # Change to repository root to ensure themes.json can be found
-    import pathlib
+    if QApplication is None:
+        return
 
-    repo_root = pathlib.Path(__file__).parent.parent
+    # Change to repository root to ensure themes.json can be found
     os.chdir(repo_root)
 
     from src.core.theme_manager import ThemeManager

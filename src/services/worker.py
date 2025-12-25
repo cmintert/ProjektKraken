@@ -33,6 +33,7 @@ class DatabaseWorker(QObject):
     longform_sequence_loaded = Signal(list)  # List[dict]
     calendar_config_loaded = Signal(object)  # CalendarConfig or None
     current_time_loaded = Signal(float)  # Current time in lore_date units
+    grouping_dialog_data_loaded = Signal(list, object)  # tags_data, current_config
 
     event_details_loaded = Signal(object, list, list)  # Event, relations, incoming
     entity_details_loaded = Signal(object, list, list)  # Entity, relations, incoming
@@ -366,3 +367,45 @@ class DatabaseWorker(QObject):
         except Exception:
             logger.error(f"Failed to save current_time: {traceback.format_exc()}")
             self.error_occurred.emit("Failed to save current time.")
+
+    @Slot()
+    def load_grouping_dialog_data(self):
+        """
+        Loads all necessary data for the grouping configuration dialog.
+
+        Emits:
+            grouping_dialog_data_loaded (list, dict): tags_data, current_config
+        """
+        if not self.db_service:
+            return
+
+        try:
+            self.operation_started.emit("Loading grouping data...")
+
+            # Load all tags
+            tags = self.db_service.get_tags_with_events()
+
+            # Prepare tag data with colors and counts
+            tags_data = []
+            for tag in tags:
+                tag_name = tag["name"]
+                color = self.db_service.get_tag_color(tag_name)
+
+                # Get event count
+                metadata = self.db_service.get_group_metadata([tag_name])
+                count = metadata[0]["count"] if metadata and len(metadata) > 0 else 0
+
+                tags_data.append({"name": tag_name, "color": color, "count": count})
+
+            # Get current config
+            current_config = self.db_service.get_timeline_grouping_config()
+
+            # Emit data
+            self.grouping_dialog_data_loaded.emit(tags_data, current_config)
+            self.operation_finished.emit("Grouping data loaded.")
+
+        except Exception:
+            logger.error(
+                f"Failed to load grouping dialog data: {traceback.format_exc()}"
+            )
+            self.error_occurred.emit("Failed to load grouping data.")

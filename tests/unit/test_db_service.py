@@ -97,7 +97,47 @@ def test_relation_crud(db_service):
     assert updated["rel_type"] == "prevented"
     assert updated["attributes"]["certainty"] == 1.0
 
-    # 5. Delete
     db_service.delete_relation(rel_id)
     assert db_service.get_relation(rel_id) is None
     assert len(db_service.get_relations(s.id)) == 0
+
+
+def test_get_tags_with_events(db_service):
+    """Test that only tags associated with events are returned."""
+    # 1. Setup Data
+    e1 = Event(name="Event 1", lore_date=100.0)
+    db_service.insert_event(e1)
+
+    ent1 = Entity(name="Entity 1", type="Person")
+    db_service.insert_entity(ent1)
+
+    # 2. Assign Tags
+    # Pure Event Tag
+    db_service.assign_tag_to_event(e1.id, "EventTag")
+
+    # Pure Entity Tag
+    db_service.assign_tag_to_entity(ent1.id, "EntityTag")
+
+    # Shared Tag
+    db_service.assign_tag_to_event(e1.id, "SharedTag")
+    db_service.assign_tag_to_entity(ent1.id, "SharedTag")
+
+    # Unused Tag (Direct creation)
+    db_service.create_tag("UnusedTag")
+
+    # 3. Test get_tags_with_events
+    event_tags = db_service.get_tags_with_events()
+    event_tag_names = [t["name"] for t in event_tags]
+
+    assert "EventTag" in event_tag_names
+    assert "SharedTag" in event_tag_names
+    assert "EntityTag" not in event_tag_names
+    assert "UnusedTag" not in event_tag_names
+
+    # 4. Test get_all_tags (Control)
+    all_tags = db_service.get_all_tags()
+    all_tag_names = [t["name"] for t in all_tags]
+    assert "EventTag" in all_tag_names
+    assert "EntityTag" in all_tag_names
+    assert "SharedTag" in all_tag_names
+    assert "UnusedTag" in all_tag_names

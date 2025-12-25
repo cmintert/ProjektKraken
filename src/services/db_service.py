@@ -76,6 +76,7 @@ class DatabaseService:
             logger.debug("Database connection established.")
 
             self._init_schema()
+            self._run_migrations()
 
             # Connect repositories to the database connection
             self._event_repo.set_connection(self._connection)
@@ -260,6 +261,32 @@ class DatabaseService:
             logger.debug("Database schema initialized.")
         except sqlite3.Error as e:
             logger.critical(f"Schema initialization failed: {e}")
+            raise
+
+    def _run_migrations(self):
+        """Runs necessary schema migrations."""
+        try:
+            # Check for 'color' column in 'tags' table
+            cursor = self._connection.execute("PRAGMA table_info(tags)")
+            # row_factory is set to sqlite3.Row in connect(), so we can access by name
+            columns = [row["name"] for row in cursor.fetchall()]
+
+            if "color" not in columns:
+                logger.info("Applying migration: Add color column to tags table")
+                # Use a separate transaction for the alteration
+                try:
+                    self._connection.execute("ALTER TABLE tags ADD COLUMN color TEXT")
+                    self._connection.commit()
+                    logger.info(
+                        "Migration successful: Added color column to tags table"
+                    )
+                except sqlite3.Error as e:
+                    self._connection.rollback()
+                    logger.error(f"Failed to add color column to tags table: {e}")
+                    raise
+
+        except sqlite3.Error as e:
+            logger.critical(f"Migration check failed: {e}")
             raise
 
     # --------------------------------------------------------------------------
@@ -986,6 +1013,27 @@ class DatabaseService:
         rows = cursor.fetchall()
         return [dict(row) for row in rows]
 
+    def get_tags_with_events(self) -> List[Dict[str, Any]]:
+        """
+        Retrieves tags that are associated with at least one event.
+
+        Returns:
+            List[Dict[str, Any]]: List of distinct tag dictionaries.
+        """
+        if not self._connection:
+            self.connect()
+
+        cursor = self._connection.execute(
+            """
+            SELECT DISTINCT t.id, t.name, t.created_at
+            FROM tags t
+            INNER JOIN event_tags et ON t.id = et.tag_id
+            ORDER BY t.name
+            """
+        )
+        rows = cursor.fetchall()
+        return [dict(row) for row in rows]
+
     def create_tag(self, tag_name: str) -> str:
         """
         Creates a new tag or returns existing tag ID.
@@ -1058,9 +1106,7 @@ class DatabaseService:
                     (event_id, tag_id, created_at),
                 )
         except sqlite3.Error as e:
-            logger.error(
-                f"Failed to assign tag '{tag_name}' to event {event_id}: {e}"
-            )
+            logger.error(f"Failed to assign tag '{tag_name}' to event {event_id}: {e}")
             raise
 
     def assign_tag_to_entity(self, entity_id: str, tag_name: str) -> None:
@@ -1705,7 +1751,9 @@ class DatabaseService:
                 (config_json,),
             )
 
-        logger.debug(f"Saved timeline grouping config: {len(tag_order)} tags, mode={mode}")
+        logger.debug(
+            f"Saved timeline grouping config: {len(tag_order)} tags, mode={mode}"
+        )
 
     def get_timeline_grouping_config(self) -> Optional[Dict[str, Any]]:
         """
