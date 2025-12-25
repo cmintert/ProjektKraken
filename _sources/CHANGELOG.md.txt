@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2025-12-25
-### Internal
-- Merge pull request #33 from cmintert/copilot/implement-timeline-lane-grouping
+### Added
+- Add tests for event and tag visibility in timeline
 
 
 *This changelog was automatically generated.*
