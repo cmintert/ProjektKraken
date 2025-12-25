@@ -134,6 +134,10 @@ class TimelineView(QGraphicsView):
         # Track duplicate event items created for "All events" group
         self._duplicate_event_items = []
 
+        # Initialize grouping state (will be set by set_grouping_config)
+        self._grouping_tag_order = []
+        self._grouping_mode = "DUPLICATE"
+
         # Set corner widget for themed scrollbar corner
         self._update_corner_widget(ThemeManager().get_theme())
 
@@ -376,6 +380,10 @@ class TimelineView(QGraphicsView):
         # Sort by Date
         sorted_events = sorted(events, key=lambda e: e.lore_date)
         self.events = sorted_events
+        logger.debug(
+            f"set_events: Received {len(events)} events, "
+            f"grouping_tag_order={getattr(self, '_grouping_tag_order', None)}"
+        )
 
         # Build a map of existing items by event ID
         existing_items = {}
@@ -444,6 +452,12 @@ class TimelineView(QGraphicsView):
                 )
                 line.setZValue(-1)
                 line.event_id = event.id  # Mark for tracking
+
+        logger.debug(
+            f"set_events: Created/updated items. Reused: {len(reused_ids)}, "
+            f"New: {len(sorted_events) - len(reused_ids)}, Total scene items: "
+            f"{len([i for i in self.scene.items() if isinstance(i, EventItem)])}"
+        )
 
         # Remove items for events that no longer exist
         for event_id, item in existing_items.items():
@@ -568,9 +582,27 @@ class TimelineView(QGraphicsView):
         self._lane_packer.update_scale_factor(effective_scale)
 
         # Dispatch to swimlane layout if grouping is active
-        if getattr(self, "_grouping_tag_order", None) and self._band_manager:
-            self._repack_grouped_events()
-            return
+        grouping_active = getattr(self, "_grouping_tag_order", None)
+        logger.debug(
+            f"repack_events: grouping_active={bool(grouping_active)}, "
+            f"tag_order={grouping_active}, "
+            f"band_manager={self._band_manager is not None}"
+        )
+        if grouping_active and self._band_manager:
+            # Validate that bands actually exist - if not, clear stale state
+            bands_exist = any(
+                self._band_manager.get_band(tag) for tag in grouping_active
+            )
+            if bands_exist:
+                self._repack_grouped_events()
+                return
+            else:
+                logger.warning(
+                    "Stale grouping state detected - bands don't exist. "
+                    "Falling back to standard layout."
+                )
+                self._grouping_tag_order = []
+
         event_lane_assignments, lane_heights = self._lane_packer.pack_events(
             self.events
         )
@@ -600,8 +632,9 @@ class TimelineView(QGraphicsView):
                 )
                 item = existing_items[event.id]
 
-                # Set Y position
+                # Set Y position and ensure visible
                 item.setY(y)
+                item.setVisible(True)
                 item._initial_y = y  # Update constraint
 
                 # Track max Y for scene rect
@@ -612,6 +645,7 @@ class TimelineView(QGraphicsView):
                 if event.id in drop_lines:
                     line = drop_lines[event.id]
                     line.setLine(item.x(), -self.RULER_HEIGHT, item.x(), y)
+                    line.setVisible(True)
 
         # Recalculate Scene Rect Height
         # Recalculate Scene Rect Height
@@ -1207,7 +1241,13 @@ class TimelineView(QGraphicsView):
         """Clear all timeline grouping bands."""
         if self._band_manager is not None:
             self._band_manager.clear_bands()
-            logger.info("Grouping cleared")
+        # Reset grouping state
+        self._grouping_tag_order = []
+        # Clear label overlay
+        self._label_overlay.clear_labels()
+        # Trigger repack to restore standard layout
+        self.repack_events()
+        logger.info("Grouping cleared")
 
     def update_band_metadata(self):
         """Update metadata for all bands (counts, dates)."""
