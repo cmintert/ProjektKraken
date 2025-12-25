@@ -1690,7 +1690,7 @@ class DatabaseService:
 
         if not result:
             # Tag doesn't exist, create it and generate color
-            tag_id = self.create_tag(tag_name)
+            self.create_tag(tag_name)
             return self._generate_tag_color(tag_name)
 
         if result["color"]:

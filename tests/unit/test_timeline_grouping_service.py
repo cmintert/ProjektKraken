@@ -123,7 +123,7 @@ class TestTimelineGroupingService:
         Test that set_tag_color stores a color for a tag.
         """
         # Create tag
-        tag_id = db_service.create_tag("colored-tag")
+        db_service.create_tag("colored-tag")
 
         # Set color
         db_service.set_tag_color("colored-tag", "#00FF00")
@@ -133,9 +133,7 @@ class TestTimelineGroupingService:
         assert tag is not None
         assert tag["color"] == "#00FF00"
 
-    def test_get_tag_color_generates_deterministic_color_when_not_set(
-        self, db_service
-    ):
+    def test_get_tag_color_generates_deterministic_color_when_not_set(self, db_service):
         """
         Test that get_tag_color generates a deterministic color when none is set.
         """
