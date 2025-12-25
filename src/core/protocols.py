@@ -28,6 +28,9 @@ class MainWindowProtocol(Protocol):
         """Handle timeline grouping clear request."""
         ...
 
+    worker: object  # Worker instance for background operations
+    command_requested: object  # Signal for emitting commands
+
 
 @runtime_checkable
 class TimelineDataProvider(Protocol):

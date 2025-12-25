@@ -20,19 +20,23 @@ from src.app.constants import (
     DOCK_TITLE_PROJECT,
     DOCK_TITLE_TIMELINE,
 )
+from src.core.protocols import MainWindowProtocol
 
 
 class UIManager:
     """
     Manages the UI components of the MainWindow, including Docks and Menus.
+    
+    This class uses the MainWindowProtocol to define its expectations of the
+    main window, making the interface explicit and verifiable.
     """
 
-    def __init__(self, main_window: QMainWindow):
+    def __init__(self, main_window: MainWindowProtocol):
         """
         Initializes the UIManager.
 
         Args:
-            main_window (QMainWindow): The main window instance to manage.
+            main_window: A MainWindow instance implementing MainWindowProtocol.
         """
         self.main_window = main_window
         self.docks = {}
