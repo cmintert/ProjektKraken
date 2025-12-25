@@ -345,6 +345,7 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Database connection established.&quot;</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_init_schema</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_run_migrations</span><span class="p">()</span>
 
             <span class="c1"># Connect repositories to the database connection</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_event_repo</span><span class="o">.</span><span class="n">set_connection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">)</span>
@@ -494,6 +495,7 @@
 <span class="s2">        CREATE TABLE IF NOT EXISTS tags (</span>
 <span class="s2">            id TEXT PRIMARY KEY,</span>
 <span class="s2">            name TEXT NOT NULL UNIQUE,</span>
+<span class="s2">            color TEXT,</span>
 <span class="s2">            created_at REAL NOT NULL</span>
 <span class="s2">        );</span>
 
@@ -535,6 +537,32 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Database schema initialized.&quot;</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Schema initialization failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_run_migrations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Runs necessary schema migrations.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Check for &#39;color&#39; column in &#39;tags&#39; table</span>
+            <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;PRAGMA table_info(tags)&quot;</span><span class="p">)</span>
+            <span class="c1"># row_factory is set to sqlite3.Row in connect(), so we can access by name</span>
+            <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()]</span>
+
+            <span class="k">if</span> <span class="s2">&quot;color&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Applying migration: Add color column to tags table&quot;</span><span class="p">)</span>
+                <span class="c1"># Use a separate transaction for the alteration</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;ALTER TABLE tags ADD COLUMN color TEXT&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="s2">&quot;Migration successful: Added color column to tags table&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to add color column to tags table: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span>
+
+        <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Migration check failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">raise</span>
 
     <span class="c1"># --------------------------------------------------------------------------</span>
@@ -1375,6 +1403,30 @@
         <span class="k">return</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]</span></div>
 
 
+<div class="viewcode-block" id="DatabaseService.get_tags_with_events">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_tags_with_events">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_tags_with_events</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves tags that are associated with at least one event.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[Dict[str, Any]]: List of distinct tag dictionaries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            SELECT DISTINCT t.id, t.name, t.created_at</span>
+<span class="sd">            FROM tags t</span>
+<span class="sd">            INNER JOIN event_tags et ON t.id = et.tag_id</span>
+<span class="sd">            ORDER BY t.name</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        <span class="p">)</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]</span></div>
+
+
 <div class="viewcode-block" id="DatabaseService.create_tag">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.create_tag">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">create_tag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -1452,9 +1504,7 @@
                     <span class="p">(</span><span class="n">event_id</span><span class="p">,</span> <span class="n">tag_id</span><span class="p">,</span> <span class="n">created_at</span><span class="p">),</span>
                 <span class="p">)</span>
         <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Failed to assign tag &#39;</span><span class="si">{</span><span class="n">tag_name</span><span class="si">}</span><span class="s2">&#39; to event </span><span class="si">{</span><span class="n">event_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to assign tag &#39;</span><span class="si">{</span><span class="n">tag_name</span><span class="si">}</span><span class="s2">&#39; to event </span><span class="si">{</span><span class="n">event_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">raise</span></div>
 
 
@@ -1717,6 +1767,505 @@
                 <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">])</span>
             <span class="n">entities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Entity</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">entities</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.get_events_grouped_by_tags">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_events_grouped_by_tags">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_events_grouped_by_tags</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">tag_order</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;DUPLICATE&quot;</span><span class="p">,</span>
+        <span class="n">date_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Groups events by tags with support for DUPLICATE and FIRST_MATCH modes.</span>
+
+<span class="sd">        In DUPLICATE mode (default), events with multiple tags appear in all</span>
+<span class="sd">        matching groups. In FIRST_MATCH mode, events appear only in their first</span>
+<span class="sd">        matching group (by tag_order).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tag_order: List of tag names defining groups and their order.</span>
+<span class="sd">            mode: Grouping mode - &quot;DUPLICATE&quot; (default) or &quot;FIRST_MATCH&quot;.</span>
+<span class="sd">            date_range: Optional tuple (start_date, end_date) to filter events.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict containing:</span>
+<span class="sd">                - groups: List of dicts with tag_name and events list</span>
+<span class="sd">                - remaining: List of events with no matching group tags</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If mode is not DUPLICATE or FIRST_MATCH.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;DUPLICATE&quot;</span><span class="p">,</span> <span class="s2">&quot;FIRST_MATCH&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid mode: </span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2">. Must be DUPLICATE or FIRST_MATCH&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+
+        <span class="c1"># Build date filter clause</span>
+        <span class="n">date_filter</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">date_params</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">date_range</span><span class="p">:</span>
+            <span class="n">date_filter</span> <span class="o">=</span> <span class="s2">&quot;AND e.lore_date &gt;= ? AND e.lore_date &lt;= ?&quot;</span>
+            <span class="n">date_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">date_range</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">date_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+
+        <span class="c1"># Initialize result structure</span>
+        <span class="n">groups</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">assigned_event_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="c1"># Process each tag in order</span>
+        <span class="k">for</span> <span class="n">tag_name</span> <span class="ow">in</span> <span class="n">tag_order</span><span class="p">:</span>
+            <span class="c1"># Get events for this tag</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                SELECT e.*</span>
+<span class="s2">                FROM events e</span>
+<span class="s2">                INNER JOIN event_tags et ON e.id = et.event_id</span>
+<span class="s2">                INNER JOIN tags t ON et.tag_id = t.id</span>
+<span class="s2">                WHERE t.name = ?</span>
+<span class="s2">                </span><span class="si">{</span><span class="n">date_filter</span><span class="si">}</span>
+<span class="s2">                ORDER BY e.lore_date</span>
+<span class="s2">            &quot;&quot;&quot;</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">[</span><span class="n">tag_name</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span> <span class="o">+</span> <span class="n">date_params</span>
+
+            <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+            <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+
+            <span class="c1"># Convert rows to Event objects</span>
+            <span class="n">events</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attributes&quot;</span><span class="p">):</span>
+                    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">])</span>
+                <span class="n">event</span> <span class="o">=</span> <span class="n">Event</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+                <span class="c1"># In FIRST_MATCH mode, skip if already assigned</span>
+                <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;FIRST_MATCH&quot;</span> <span class="ow">and</span> <span class="n">event</span><span class="o">.</span><span class="n">id</span> <span class="ow">in</span> <span class="n">assigned_event_ids</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+                <span class="n">events</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+                <span class="n">assigned_event_ids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+
+            <span class="c1"># Add group even if empty (to maintain tag_order)</span>
+            <span class="n">groups</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;tag_name&quot;</span><span class="p">:</span> <span class="n">tag_name</span><span class="p">,</span> <span class="s2">&quot;events&quot;</span><span class="p">:</span> <span class="n">events</span><span class="p">})</span>
+
+        <span class="c1"># Get remaining events (those not in any group)</span>
+        <span class="n">remaining_query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            SELECT e.*</span>
+<span class="s2">            FROM events e</span>
+<span class="s2">            WHERE e.id NOT IN (</span>
+<span class="s2">                SELECT DISTINCT et.event_id</span>
+<span class="s2">                FROM event_tags et</span>
+<span class="s2">                INNER JOIN tags t ON et.tag_id = t.id</span>
+<span class="s2">                WHERE t.name IN (</span><span class="si">{</span><span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;?&quot;</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">tag_order</span><span class="p">))</span><span class="si">}</span><span class="s2">)</span>
+<span class="s2">            )</span>
+<span class="s2">            </span><span class="si">{</span><span class="n">date_filter</span><span class="si">}</span>
+<span class="s2">            ORDER BY e.lore_date</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Handle case where tag_order is empty</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">tag_order</span><span class="p">:</span>
+            <span class="n">remaining_query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                SELECT e.*</span>
+<span class="s2">                FROM events e</span>
+<span class="s2">                WHERE 1=1</span>
+<span class="s2">                </span><span class="si">{</span><span class="n">date_filter</span><span class="si">}</span>
+<span class="s2">                ORDER BY e.lore_date</span>
+<span class="s2">            &quot;&quot;&quot;</span>
+            <span class="n">remaining_params</span> <span class="o">=</span> <span class="n">date_params</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">remaining_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tag_order</span><span class="p">]</span> <span class="o">+</span> <span class="n">date_params</span>
+
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">remaining_query</span><span class="p">,</span> <span class="n">remaining_params</span><span class="p">)</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+
+        <span class="n">remaining</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attributes&quot;</span><span class="p">):</span>
+                <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">])</span>
+            <span class="n">remaining</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Event</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;groups&quot;</span><span class="p">:</span> <span class="n">groups</span><span class="p">,</span> <span class="s2">&quot;remaining&quot;</span><span class="p">:</span> <span class="n">remaining</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.get_group_counts">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_group_counts">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_group_counts</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">tag_order</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">date_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns count and metadata for each tag group.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tag_order: List of tag names to get counts for.</span>
+<span class="sd">            date_range: Optional tuple (start_date, end_date) to filter events.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of dicts with tag_name, count, earliest_date, latest_date.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+
+        <span class="c1"># Build date filter clause</span>
+        <span class="n">date_filter</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">date_params</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">date_range</span><span class="p">:</span>
+            <span class="n">date_filter</span> <span class="o">=</span> <span class="s2">&quot;AND e.lore_date &gt;= ? AND e.lore_date &lt;= ?&quot;</span>
+            <span class="n">date_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">date_range</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">date_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+
+        <span class="n">counts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">tag_name</span> <span class="ow">in</span> <span class="n">tag_order</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                SELECT</span>
+<span class="s2">                    COUNT(DISTINCT e.id) as count,</span>
+<span class="s2">                    MIN(e.lore_date) as earliest_date,</span>
+<span class="s2">                    MAX(e.lore_date) as latest_date</span>
+<span class="s2">                FROM events e</span>
+<span class="s2">                INNER JOIN event_tags et ON e.id = et.event_id</span>
+<span class="s2">                INNER JOIN tags t ON et.tag_id = t.id</span>
+<span class="s2">                WHERE t.name = ?</span>
+<span class="s2">                </span><span class="si">{</span><span class="n">date_filter</span><span class="si">}</span>
+<span class="s2">            &quot;&quot;&quot;</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">[</span><span class="n">tag_name</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span> <span class="o">+</span> <span class="n">date_params</span>
+
+            <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+            <span class="n">row</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+            <span class="n">counts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;tag_name&quot;</span><span class="p">:</span> <span class="n">tag_name</span><span class="p">,</span>
+                    <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">row</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s2">&quot;earliest_date&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;earliest_date&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">row</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="s2">&quot;latest_date&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;latest_date&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">row</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">counts</span></div>
+
+
+    <span class="c1"># --------------------------------------------------------------------------</span>
+    <span class="c1"># Timeline Grouping Service Methods (Milestone 2)</span>
+    <span class="c1"># --------------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="DatabaseService.get_group_metadata">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_group_metadata">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_group_metadata</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">tag_order</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">date_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns metadata for each tag group including color, count, and date span.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tag_order: List of tag names to get metadata for.</span>
+<span class="sd">            date_range: Optional tuple (start_date, end_date) to filter events.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of dicts with tag_name, color, count, earliest_date, latest_date.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">metadata</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Separate &quot;All events&quot; from regular tags</span>
+        <span class="n">ALL_EVENTS_TAG</span> <span class="o">=</span> <span class="s2">&quot;All events&quot;</span>
+        <span class="n">regular_tags</span> <span class="o">=</span> <span class="p">[</span><span class="n">tag</span> <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">tag_order</span> <span class="k">if</span> <span class="n">tag</span> <span class="o">!=</span> <span class="n">ALL_EVENTS_TAG</span><span class="p">]</span>
+        <span class="n">has_all_events</span> <span class="o">=</span> <span class="n">ALL_EVENTS_TAG</span> <span class="ow">in</span> <span class="n">tag_order</span>
+
+        <span class="c1"># Get counts for regular tags</span>
+        <span class="k">if</span> <span class="n">regular_tags</span><span class="p">:</span>
+            <span class="n">counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_group_counts</span><span class="p">(</span>
+                <span class="n">tag_order</span><span class="o">=</span><span class="n">regular_tags</span><span class="p">,</span> <span class="n">date_range</span><span class="o">=</span><span class="n">date_range</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Add color to each metadata entry</span>
+            <span class="k">for</span> <span class="n">count_info</span> <span class="ow">in</span> <span class="n">counts</span><span class="p">:</span>
+                <span class="n">tag_name</span> <span class="o">=</span> <span class="n">count_info</span><span class="p">[</span><span class="s2">&quot;tag_name&quot;</span><span class="p">]</span>
+                <span class="n">color</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_tag_color</span><span class="p">(</span><span class="n">tag_name</span><span class="p">)</span>
+
+                <span class="n">metadata</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;tag_name&quot;</span><span class="p">:</span> <span class="n">tag_name</span><span class="p">,</span>
+                        <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="n">color</span><span class="p">,</span>
+                        <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="n">count_info</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;earliest_date&quot;</span><span class="p">:</span> <span class="n">count_info</span><span class="p">[</span><span class="s2">&quot;earliest_date&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;latest_date&quot;</span><span class="p">:</span> <span class="n">count_info</span><span class="p">[</span><span class="s2">&quot;latest_date&quot;</span><span class="p">],</span>
+                    <span class="p">}</span>
+                <span class="p">)</span>
+
+        <span class="c1"># Add &quot;All events&quot; metadata if requested</span>
+        <span class="k">if</span> <span class="n">has_all_events</span><span class="p">:</span>
+            <span class="c1"># Count ALL events in database</span>
+            <span class="n">all_events</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_events</span><span class="p">()</span>
+            <span class="n">count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_events</span><span class="p">)</span>
+
+            <span class="c1"># Get min/max dates</span>
+            <span class="n">earliest</span> <span class="o">=</span> <span class="nb">min</span><span class="p">((</span><span class="n">e</span><span class="o">.</span><span class="n">lore_date</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">all_events</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+            <span class="n">latest</span> <span class="o">=</span> <span class="nb">max</span><span class="p">((</span><span class="n">e</span><span class="o">.</span><span class="n">lore_date</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">all_events</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+
+            <span class="n">metadata</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;tag_name&quot;</span><span class="p">:</span> <span class="n">ALL_EVENTS_TAG</span><span class="p">,</span>
+                    <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;#808080&quot;</span><span class="p">,</span>  <span class="c1"># Neutral gray</span>
+                    <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="n">count</span><span class="p">,</span>
+                    <span class="s2">&quot;earliest_date&quot;</span><span class="p">:</span> <span class="n">earliest</span><span class="p">,</span>
+                    <span class="s2">&quot;latest_date&quot;</span><span class="p">:</span> <span class="n">latest</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">metadata</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.get_events_for_group">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_events_for_group">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_events_for_group</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">date_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Event</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns all events for a specific tag group.</span>
+
+<span class="sd">        This is a convenience wrapper around get_events_by_tag with date filtering.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tag_name: The tag name to filter events by.</span>
+<span class="sd">            date_range: Optional tuple (start_date, end_date) to filter events.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[Event]: Events with the specified tag, sorted by lore_date.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+
+        <span class="c1"># Build date filter clause</span>
+        <span class="n">date_filter</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">[</span><span class="n">tag_name</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+
+        <span class="k">if</span> <span class="n">date_range</span><span class="p">:</span>
+            <span class="n">date_filter</span> <span class="o">=</span> <span class="s2">&quot;AND e.lore_date &gt;= ? AND e.lore_date &lt;= ?&quot;</span>
+            <span class="n">params</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">date_range</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">date_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            SELECT e.*</span>
+<span class="s2">            FROM events e</span>
+<span class="s2">            INNER JOIN event_tags et ON e.id = et.event_id</span>
+<span class="s2">            INNER JOIN tags t ON et.tag_id = t.id</span>
+<span class="s2">            WHERE t.name = ?</span>
+<span class="s2">            </span><span class="si">{</span><span class="n">date_filter</span><span class="si">}</span>
+<span class="s2">            ORDER BY e.lore_date</span>
+<span class="s2">            &quot;&quot;&quot;</span><span class="p">,</span>
+            <span class="nb">tuple</span><span class="p">(</span><span class="n">params</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+
+        <span class="n">events</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attributes&quot;</span><span class="p">):</span>
+                <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">])</span>
+            <span class="n">events</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Event</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">events</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.set_tag_color">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.set_tag_color">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_tag_color</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">color</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the color for a tag.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tag_name: The name of the tag.</span>
+<span class="sd">            color: Hex color string (e.g., &quot;#FF0000&quot; or &quot;#abc&quot;).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If color format is invalid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+
+        <span class="c1"># Validate hex color format</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;^#[0-9A-Fa-f]</span><span class="si">{3}</span><span class="s2">$|^#[0-9A-Fa-f]</span><span class="si">{6}</span><span class="s2">$&quot;</span><span class="p">,</span> <span class="n">color</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid hex color format: </span><span class="si">{</span><span class="n">color</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Normalize short form to long form</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">color</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;#</span><span class="si">{</span><span class="n">color</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}{</span><span class="n">color</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}{</span><span class="n">color</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}{</span><span class="n">color</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}{</span><span class="n">color</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="si">}{</span><span class="n">color</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="c1"># Get or create tag</span>
+        <span class="n">tag_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_tag</span><span class="p">(</span><span class="n">tag_name</span><span class="p">)</span>
+
+        <span class="c1"># Update color</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                <span class="s2">&quot;UPDATE tags SET color = ? WHERE id = ?&quot;</span><span class="p">,</span>
+                <span class="p">(</span><span class="n">color</span><span class="p">,</span> <span class="n">tag_id</span><span class="p">),</span>
+            <span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Set color </span><span class="si">{</span><span class="n">color</span><span class="si">}</span><span class="s2"> for tag &#39;</span><span class="si">{</span><span class="n">tag_name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.get_tag_color">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_tag_color">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_tag_color</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the color for a tag, generating one if not set.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tag_name: The name of the tag.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Hex color string (e.g., &quot;#FF0000&quot;).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+
+        <span class="c1"># Get tag</span>
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="s2">&quot;SELECT id, color FROM tags WHERE name = ?&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">tag_name</span><span class="o">.</span><span class="n">strip</span><span class="p">(),)</span>
+        <span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="p">:</span>
+            <span class="c1"># Tag doesn&#39;t exist, create it and generate color</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_tag</span><span class="p">(</span><span class="n">tag_name</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_tag_color</span><span class="p">(</span><span class="n">tag_name</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Generate deterministic color</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_tag_color</span><span class="p">(</span><span class="n">tag_name</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_generate_tag_color</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generates a deterministic color for a tag based on its name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tag_name: The name of the tag.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Hex color string (e.g., &quot;#FF0000&quot;).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
+
+        <span class="c1"># Use hash of tag name for deterministic color</span>
+        <span class="n">hash_value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="n">tag_name</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()[:</span><span class="mi">6</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
+
+        <span class="c1"># Generate RGB values that are reasonably visible</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="p">(</span><span class="n">hash_value</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="p">(</span><span class="n">hash_value</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">hash_value</span> <span class="o">&amp;</span> <span class="mh">0xFF</span>
+
+        <span class="c1"># Ensure colors are not too dark (min 50 per channel)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;#</span><span class="si">{</span><span class="n">r</span><span class="si">:</span><span class="s2">02X</span><span class="si">}{</span><span class="n">g</span><span class="si">:</span><span class="s2">02X</span><span class="si">}{</span><span class="n">b</span><span class="si">:</span><span class="s2">02X</span><span class="si">}</span><span class="s2">&quot;</span>
+
+<div class="viewcode-block" id="DatabaseService.get_tag_by_name">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_tag_by_name">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_tag_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves a tag by its name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tag_name: The name of the tag.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Optional[Dict[str, Any]]: Tag dictionary with id, name, color, created_at</span>
+<span class="sd">                                      or None if not found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="s2">&quot;SELECT id, name, color, created_at FROM tags WHERE name = ?&quot;</span><span class="p">,</span>
+            <span class="p">(</span><span class="n">tag_name</span><span class="o">.</span><span class="n">strip</span><span class="p">(),),</span>
+        <span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">result</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.set_timeline_grouping_config">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.set_timeline_grouping_config">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_timeline_grouping_config</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">tag_order</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;DUPLICATE&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Stores timeline grouping configuration.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tag_order: List of tag names defining groups and their order.</span>
+<span class="sd">            mode: Grouping mode - &quot;DUPLICATE&quot; or &quot;FIRST_MATCH&quot;.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If mode is invalid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;DUPLICATE&quot;</span><span class="p">,</span> <span class="s2">&quot;FIRST_MATCH&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid mode: </span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2">. Must be DUPLICATE or FIRST_MATCH&quot;</span><span class="p">)</span>
+
+        <span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;tag_order&quot;</span><span class="p">:</span> <span class="n">tag_order</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="n">mode</span><span class="p">}</span>
+        <span class="n">config_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<span class="w">                </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">                INSERT OR REPLACE INTO system_meta (key, value)</span>
+<span class="sd">                VALUES (&#39;timeline_grouping_config&#39;, ?)</span>
+<span class="sd">                &quot;&quot;&quot;</span><span class="p">,</span>
+                <span class="p">(</span><span class="n">config_json</span><span class="p">,),</span>
+            <span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Saved timeline grouping config: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">tag_order</span><span class="p">)</span><span class="si">}</span><span class="s2"> tags, mode=</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.get_timeline_grouping_config">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_timeline_grouping_config">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_timeline_grouping_config</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves timeline grouping configuration.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Optional[Dict[str, Any]]: Config dict with tag_order and mode,</span>
+<span class="sd">                                      or None if not set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="s2">&quot;SELECT value FROM system_meta WHERE key = &#39;timeline_grouping_config&#39;&quot;</span>
+        <span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">result</span> <span class="ow">and</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.clear_timeline_grouping_config">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.clear_timeline_grouping_config">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear_timeline_grouping_config</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clears timeline grouping configuration.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                <span class="s2">&quot;DELETE FROM system_meta WHERE key = &#39;timeline_grouping_config&#39;&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Cleared timeline grouping config&quot;</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

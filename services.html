@@ -338,6 +338,12 @@ Defaults to :memory: for testing.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.clear_timeline_grouping_config">
+<span class="sig-name descname"><span class="pre">clear_timeline_grouping_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.clear_timeline_grouping_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.clear_timeline_grouping_config" title="Link to this definition">¶</a></dt>
+<dd><p>Clears timeline grouping configuration.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.close">
 <span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.close" title="Link to this definition">¶</a></dt>
 <dd><p>Closes the database connection.</p>
@@ -685,6 +691,92 @@ Defaults to :memory: for testing.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_events_for_group">
+<span class="sig-name descname"><span class="pre">get_events_for_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_range</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Event</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_events_for_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_events_for_group" title="Link to this definition">¶</a></dt>
+<dd><p>Returns all events for a specific tag group.</p>
+<p>This is a convenience wrapper around get_events_by_tag with date filtering.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tag_name</strong> – The tag name to filter events by.</p></li>
+<li><p><strong>date_range</strong> – Optional tuple (start_date, end_date) to filter events.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Events with the specified tag, sorted by lore_date.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="core.html#core.events.Event" title="core.events.Event">Event</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_events_grouped_by_tags">
+<span class="sig-name descname"><span class="pre">get_events_grouped_by_tags</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag_order</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'DUPLICATE'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_range</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_events_grouped_by_tags"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_events_grouped_by_tags" title="Link to this definition">¶</a></dt>
+<dd><p>Groups events by tags with support for DUPLICATE and FIRST_MATCH modes.</p>
+<p>In DUPLICATE mode (default), events with multiple tags appear in all
+matching groups. In FIRST_MATCH mode, events appear only in their first
+matching group (by tag_order).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tag_order</strong> – List of tag names defining groups and their order.</p></li>
+<li><p><strong>mode</strong> – Grouping mode - “DUPLICATE” (default) or “FIRST_MATCH”.</p></li>
+<li><p><strong>date_range</strong> – Optional tuple (start_date, end_date) to filter events.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>groups: List of dicts with tag_name and events list</p></li>
+<li><p>remaining: List of events with no matching group tags</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict containing</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If mode is not DUPLICATE or FIRST_MATCH.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_group_counts">
+<span class="sig-name descname"><span class="pre">get_group_counts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag_order</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_range</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_group_counts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_group_counts" title="Link to this definition">¶</a></dt>
+<dd><p>Returns count and metadata for each tag group.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tag_order</strong> – List of tag names to get counts for.</p></li>
+<li><p><strong>date_range</strong> – Optional tuple (start_date, end_date) to filter events.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of dicts with tag_name, count, earliest_date, latest_date.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_group_metadata">
+<span class="sig-name descname"><span class="pre">get_group_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag_order</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_range</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_group_metadata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_group_metadata" title="Link to this definition">¶</a></dt>
+<dd><p>Returns metadata for each tag group including color, count, and date span.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tag_order</strong> – List of tag names to get metadata for.</p></li>
+<li><p><strong>date_range</strong> – Optional tuple (start_date, end_date) to filter events.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of dicts with tag_name, color, count, earliest_date, latest_date.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.get_incoming_relations">
 <span class="sig-name descname"><span class="pre">get_incoming_relations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_incoming_relations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_incoming_relations" title="Link to this definition">¶</a></dt>
 <dd><p>Retrieves all incoming relations for a given target object.</p>
@@ -847,6 +939,44 @@ actual database ID.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_tag_by_name">
+<span class="sig-name descname"><span class="pre">get_tag_by_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_tag_by_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_tag_by_name" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves a tag by its name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>tag_name</strong> – The name of the tag.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Tag dictionary with id, name, color, created_at</dt><dd><p>or None if not found.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[Dict[str, Any]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_tag_color">
+<span class="sig-name descname"><span class="pre">get_tag_color</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_tag_color"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_tag_color" title="Link to this definition">¶</a></dt>
+<dd><p>Gets the color for a tag, generating one if not set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>tag_name</strong> – The name of the tag.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Hex color string (e.g., “#FF0000”).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.get_tags_for_entity">
 <span class="sig-name descname"><span class="pre">get_tags_for_entity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_tags_for_entity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_tags_for_entity" title="Link to this definition">¶</a></dt>
 <dd><p>Retrieves all tags for a specific entity.</p>
@@ -876,6 +1006,38 @@ actual database ID.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>List[Dict[str, Any]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_tags_with_events">
+<span class="sig-name descname"><span class="pre">get_tags_with_events</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_tags_with_events"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_tags_with_events" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves tags that are associated with at least one event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of distinct tag dictionaries.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List[Dict[str, Any]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_timeline_grouping_config">
+<span class="sig-name descname"><span class="pre">get_timeline_grouping_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_timeline_grouping_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_timeline_grouping_config" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves timeline grouping configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>Config dict with tag_order and mode,</dt><dd><p>or None if not set.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Optional[Dict[str, Any]]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1082,6 +1244,40 @@ the existing row’s id is retained.</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>sqlite3.Error</strong> – If the database operation fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.set_tag_color">
+<span class="sig-name descname"><span class="pre">set_tag_color</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.set_tag_color"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.set_tag_color" title="Link to this definition">¶</a></dt>
+<dd><p>Sets the color for a tag.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tag_name</strong> – The name of the tag.</p></li>
+<li><p><strong>color</strong> – Hex color string (e.g., “#FF0000” or “#abc”).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If color format is invalid.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.set_timeline_grouping_config">
+<span class="sig-name descname"><span class="pre">set_timeline_grouping_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag_order</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'DUPLICATE'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.set_timeline_grouping_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.set_timeline_grouping_config" title="Link to this definition">¶</a></dt>
+<dd><p>Stores timeline grouping configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tag_order</strong> – List of tag names defining groups and their order.</p></li>
+<li><p><strong>mode</strong> – Grouping mode - “DUPLICATE” or “FIRST_MATCH”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If mode is invalid.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1680,6 +1876,11 @@ Owns the DatabaseService instance to ensure thread affinity.</p>
 <span class="sig-name descname"><span class="pre">events_loaded</span></span><a class="headerlink" href="#services.worker.DatabaseWorker.events_loaded" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.grouping_dialog_data_loaded">
+<span class="sig-name descname"><span class="pre">grouping_dialog_data_loaded</span></span><a class="headerlink" href="#services.worker.DatabaseWorker.grouping_dialog_data_loaded" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="services.worker.DatabaseWorker.initialize_db">
 <span class="sig-name descname"><span class="pre">initialize_db</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.initialize_db"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.initialize_db" title="Link to this definition">¶</a></dt>
@@ -1736,6 +1937,16 @@ Owns the DatabaseService instance to ensure thread affinity.</p>
 <dt class="sig sig-object py" id="services.worker.DatabaseWorker.load_events">
 <span class="sig-name descname"><span class="pre">load_events</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.load_events"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.load_events" title="Link to this definition">¶</a></dt>
 <dd><p>Loads all events.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.load_grouping_dialog_data">
+<span class="sig-name descname"><span class="pre">load_grouping_dialog_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.load_grouping_dialog_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.load_grouping_dialog_data" title="Link to this definition">¶</a></dt>
+<dd><p>Loads all necessary data for the grouping configuration dialog.</p>
+<dl class="simple">
+<dt>Emits:</dt><dd><p>grouping_dialog_data_loaded (list, dict): tags_data, current_config</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1823,7 +2034,7 @@ operation_finished (str): Status update.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="services.worker.DatabaseWorker.staticMetaObject">
-<span class="sig-name descname"><span class="pre">staticMetaObject</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">PySide6.QtCore.QMetaObject(&quot;DatabaseWorker&quot;</span> <span class="pre">inherits</span> <span class="pre">&quot;QObject&quot;:</span> <span class="pre">Methods:</span>&#160;&#160; <span class="pre">#4</span> <span class="pre">type=Signal,</span> <span class="pre">signature=initialized(bool),</span> <span class="pre">parameters=bool</span>&#160;&#160; <span class="pre">#5</span> <span class="pre">type=Signal,</span> <span class="pre">signature=events_loaded(QVariantList),</span> <span class="pre">parameters=QVariantList</span>&#160;&#160; <span class="pre">#6</span> <span class="pre">type=Signal,</span> <span class="pre">signature=entities_loaded(QVariantList),</span> <span class="pre">parameters=QVariantList</span>&#160;&#160; <span class="pre">#7</span> <span class="pre">type=Signal,</span> <span class="pre">signature=maps_loaded(QVariantList),</span> <span class="pre">parameters=QVariantList</span>&#160;&#160; <span class="pre">#8</span> <span class="pre">type=Signal,</span> <span class="pre">signature=markers_loaded(QString,QVariantList),</span> <span class="pre">parameters=QString,</span> <span class="pre">QVariantList</span>&#160;&#160; <span class="pre">#9</span> <span class="pre">type=Signal,</span> <span class="pre">signature=longform_sequence_loaded(QVariantList),</span> <span class="pre">parameters=QVariantList</span>&#160;&#160; <span class="pre">#10</span> <span class="pre">type=Signal,</span> <span class="pre">signature=calendar_config_loaded(PyObject),</span> <span class="pre">parameters=PyObject</span>&#160;&#160; <span class="pre">#11</span> <span class="pre">type=Signal,</span> <span class="pre">signature=current_time_loaded(double),</span> <span class="pre">parameters=double</span>&#160;&#160; <span class="pre">#12</span> <span class="pre">type=Signal,</span> <span class="pre">signature=event_details_loaded(PyObject,QVariantList,QVariantList),</span> <span class="pre">parameters=PyObject,</span> <span class="pre">QVariantList,</span> <span class="pre">QVariantList</span>&#160;&#160; <span class="pre">#13</span> <span class="pre">type=Signal,</span> <span class="pre">signature=entity_details_loaded(PyObject,QVariantList,QVariantList),</span> <span class="pre">parameters=PyObject,</span> <span class="pre">QVariantList,</span> <span class="pre">QVariantList</span>&#160;&#160; <span class="pre">#14</span> <span class="pre">type=Signal,</span> <span class="pre">signature=attachments_loaded(QString,QString,QVariantList),</span> <span class="pre">parameters=QString,</span> <span class="pre">QString,</span> <span class="pre">QVariantList</span>&#160;&#160; <span class="pre">#15</span> <span class="pre">type=Signal,</span> <span class="pre">signature=command_finished(PyObject),</span> <span class="pre">parameters=PyObject</span>&#160;&#160; <span class="pre">#16</span> <span class="pre">type=Signal,</span> <span class="pre">signature=error_occurred(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#17</span> <span class="pre">type=Signal,</span> <span class="pre">signature=operation_started(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#18</span> <span class="pre">type=Signal,</span> <span class="pre">signature=operation_finished(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#19</span> <span class="pre">type=Slot,</span> <span class="pre">signature=initialize_db()</span>&#160;&#160; <span class="pre">#20</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_events()</span>&#160;&#160; <span class="pre">#21</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_entities()</span>&#160;&#160; <span class="pre">#22</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_maps()</span>&#160;&#160; <span class="pre">#23</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_markers(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#24</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_event_details(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#25</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_entity_details(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#26</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_attachments(QString,QString),</span> <span class="pre">parameters=QString,</span> <span class="pre">QString</span>&#160;&#160; <span class="pre">#27</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_longform_sequence(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#28</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_calendar_config()</span>&#160;&#160; <span class="pre">#29</span> <span class="pre">type=Slot,</span> <span class="pre">signature=run_command(PyObject,PyObject),</span> <span class="pre">parameters=PyObject,</span> <span class="pre">PyObject</span>&#160;&#160; <span class="pre">#30</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_current_time()</span>&#160;&#160; <span class="pre">#31</span> <span class="pre">type=Slot,</span> <span class="pre">signature=save_current_time(double),</span> <span class="pre">parameters=double</span> <span class="pre">)</span></em><a class="headerlink" href="#services.worker.DatabaseWorker.staticMetaObject" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">staticMetaObject</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">PySide6.QtCore.QMetaObject(&quot;DatabaseWorker&quot;</span> <span class="pre">inherits</span> <span class="pre">&quot;QObject&quot;:</span> <span class="pre">Methods:</span>&#160;&#160; <span class="pre">#4</span> <span class="pre">type=Signal,</span> <span class="pre">signature=initialized(bool),</span> <span class="pre">parameters=bool</span>&#160;&#160; <span class="pre">#5</span> <span class="pre">type=Signal,</span> <span class="pre">signature=events_loaded(QVariantList),</span> <span class="pre">parameters=QVariantList</span>&#160;&#160; <span class="pre">#6</span> <span class="pre">type=Signal,</span> <span class="pre">signature=entities_loaded(QVariantList),</span> <span class="pre">parameters=QVariantList</span>&#160;&#160; <span class="pre">#7</span> <span class="pre">type=Signal,</span> <span class="pre">signature=maps_loaded(QVariantList),</span> <span class="pre">parameters=QVariantList</span>&#160;&#160; <span class="pre">#8</span> <span class="pre">type=Signal,</span> <span class="pre">signature=markers_loaded(QString,QVariantList),</span> <span class="pre">parameters=QString,</span> <span class="pre">QVariantList</span>&#160;&#160; <span class="pre">#9</span> <span class="pre">type=Signal,</span> <span class="pre">signature=longform_sequence_loaded(QVariantList),</span> <span class="pre">parameters=QVariantList</span>&#160;&#160; <span class="pre">#10</span> <span class="pre">type=Signal,</span> <span class="pre">signature=calendar_config_loaded(PyObject),</span> <span class="pre">parameters=PyObject</span>&#160;&#160; <span class="pre">#11</span> <span class="pre">type=Signal,</span> <span class="pre">signature=current_time_loaded(double),</span> <span class="pre">parameters=double</span>&#160;&#160; <span class="pre">#12</span> <span class="pre">type=Signal,</span> <span class="pre">signature=grouping_dialog_data_loaded(QVariantList,PyObject),</span> <span class="pre">parameters=QVariantList,</span> <span class="pre">PyObject</span>&#160;&#160; <span class="pre">#13</span> <span class="pre">type=Signal,</span> <span class="pre">signature=event_details_loaded(PyObject,QVariantList,QVariantList),</span> <span class="pre">parameters=PyObject,</span> <span class="pre">QVariantList,</span> <span class="pre">QVariantList</span>&#160;&#160; <span class="pre">#14</span> <span class="pre">type=Signal,</span> <span class="pre">signature=entity_details_loaded(PyObject,QVariantList,QVariantList),</span> <span class="pre">parameters=PyObject,</span> <span class="pre">QVariantList,</span> <span class="pre">QVariantList</span>&#160;&#160; <span class="pre">#15</span> <span class="pre">type=Signal,</span> <span class="pre">signature=attachments_loaded(QString,QString,QVariantList),</span> <span class="pre">parameters=QString,</span> <span class="pre">QString,</span> <span class="pre">QVariantList</span>&#160;&#160; <span class="pre">#16</span> <span class="pre">type=Signal,</span> <span class="pre">signature=command_finished(PyObject),</span> <span class="pre">parameters=PyObject</span>&#160;&#160; <span class="pre">#17</span> <span class="pre">type=Signal,</span> <span class="pre">signature=error_occurred(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#18</span> <span class="pre">type=Signal,</span> <span class="pre">signature=operation_started(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#19</span> <span class="pre">type=Signal,</span> <span class="pre">signature=operation_finished(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#20</span> <span class="pre">type=Slot,</span> <span class="pre">signature=initialize_db()</span>&#160;&#160; <span class="pre">#21</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_events()</span>&#160;&#160; <span class="pre">#22</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_entities()</span>&#160;&#160; <span class="pre">#23</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_maps()</span>&#160;&#160; <span class="pre">#24</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_markers(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#25</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_event_details(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#26</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_entity_details(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#27</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_attachments(QString,QString),</span> <span class="pre">parameters=QString,</span> <span class="pre">QString</span>&#160;&#160; <span class="pre">#28</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_longform_sequence(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#29</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_calendar_config()</span>&#160;&#160; <span class="pre">#30</span> <span class="pre">type=Slot,</span> <span class="pre">signature=run_command(PyObject,PyObject),</span> <span class="pre">parameters=PyObject,</span> <span class="pre">PyObject</span>&#160;&#160; <span class="pre">#31</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_current_time()</span>&#160;&#160; <span class="pre">#32</span> <span class="pre">type=Slot,</span> <span class="pre">signature=save_current_time(double),</span> <span class="pre">parameters=double</span>&#160;&#160; <span class="pre">#33</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_grouping_dialog_data()</span> <span class="pre">)</span></em><a class="headerlink" href="#services.worker.DatabaseWorker.staticMetaObject" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1899,6 +2110,7 @@ text parsing, and background workers.</p>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.__init__"><code class="docutils literal notranslate"><span class="pre">DatabaseService.__init__()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.assign_tag_to_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.assign_tag_to_entity()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.assign_tag_to_event"><code class="docutils literal notranslate"><span class="pre">DatabaseService.assign_tag_to_event()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.clear_timeline_grouping_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.clear_timeline_grouping_config()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.close"><code class="docutils literal notranslate"><span class="pre">DatabaseService.close()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.connect"><code class="docutils literal notranslate"><span class="pre">DatabaseService.connect()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.create_tag"><code class="docutils literal notranslate"><span class="pre">DatabaseService.create_tag()</span></code></a></li>
@@ -1923,6 +2135,10 @@ text parsing, and background workers.</p>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_event"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_event()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_events"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_events()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_events_by_tag"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_events_by_tag()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_events_for_group"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_events_for_group()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_events_grouped_by_tags"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_events_grouped_by_tags()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_group_counts"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_group_counts()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_group_metadata"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_group_metadata()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_incoming_relations"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_incoming_relations()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_map"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_map()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_marker"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_marker()</span></code></a></li>
@@ -1932,8 +2148,12 @@ text parsing, and background workers.</p>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_name"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_name()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_relation"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_relation()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_relations"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_relations()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_tag_by_name"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_tag_by_name()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_tag_color"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_tag_color()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_tags_for_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_tags_for_entity()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_tags_for_event"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_tags_for_event()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_tags_with_events"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_tags_with_events()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_timeline_grouping_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_timeline_grouping_config()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.insert_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_calendar_config()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.insert_entities_bulk"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_entities_bulk()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.insert_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_entity()</span></code></a></li>
@@ -1946,6 +2166,8 @@ text parsing, and background workers.</p>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.remove_tag_from_event"><code class="docutils literal notranslate"><span class="pre">DatabaseService.remove_tag_from_event()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.set_active_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.set_active_calendar_config()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.set_current_time"><code class="docutils literal notranslate"><span class="pre">DatabaseService.set_current_time()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.set_tag_color"><code class="docutils literal notranslate"><span class="pre">DatabaseService.set_tag_color()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.set_timeline_grouping_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.set_timeline_grouping_config()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.transaction"><code class="docutils literal notranslate"><span class="pre">DatabaseService.transaction()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.update_relation"><code class="docutils literal notranslate"><span class="pre">DatabaseService.update_relation()</span></code></a></li>
 </ul>
@@ -2014,6 +2236,7 @@ text parsing, and background workers.</p>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.error_occurred"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.error_occurred</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.event_details_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.event_details_loaded</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.events_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.events_loaded</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.grouping_dialog_data_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.grouping_dialog_data_loaded</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.initialize_db"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.initialize_db()</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.initialized"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.initialized</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.load_attachments"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_attachments()</span></code></a></li>
@@ -2023,6 +2246,7 @@ text parsing, and background workers.</p>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.load_entity_details"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_entity_details()</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.load_event_details"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_event_details()</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.load_events"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_events()</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.load_grouping_dialog_data"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_grouping_dialog_data()</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.load_longform_sequence"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_longform_sequence()</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.load_maps"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_maps()</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.load_markers"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_markers()</span></code></a></li>

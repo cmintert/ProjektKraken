@@ -92,6 +92,7 @@ erDiagram
     tags {
         TEXT id PK
         TEXT name
+        TEXT color
         REAL created_at
     }
 
@@ -225,6 +226,7 @@ erDiagram
 |--------|------|-------------|
 | `id` | TEXT | PRIMARY KEY |
 | `name` | TEXT | NOT NULL UNIQUE |
+| `color` | TEXT |  |
 | `created_at` | REAL | NOT NULL |
 
 **Indexes:** `idx_tags_name`
