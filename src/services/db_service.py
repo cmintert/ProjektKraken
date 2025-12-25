@@ -1491,7 +1491,7 @@ class DatabaseService:
         counts = []
         for tag_name in tag_order:
             query = f"""
-                SELECT 
+                SELECT
                     COUNT(DISTINCT e.id) as count,
                     MIN(e.lore_date) as earliest_date,
                     MAX(e.lore_date) as latest_date

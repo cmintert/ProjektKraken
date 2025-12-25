@@ -9,7 +9,7 @@ above the timeline lanes.
 import logging
 
 from PySide6.QtCore import QRectF, Qt, Signal
-from PySide6.QtGui import QBrush, QColor, QCursor, QFont, QPainter, QPen
+from PySide6.QtGui import QBrush, QColor, QCursor, QPainter, QPen
 from PySide6.QtWidgets import QGraphicsObject
 
 from src.core.theme_manager import ThemeManager
@@ -178,20 +178,8 @@ class GroupBandItem(QGraphicsObject):
         )
 
         if not self.is_collapsed:
-            # Draw tag name and count
-            painter.setPen(QColor(self.theme["text_main"]))
-            font = QFont()
-            font.setPointSize(9)
-            font.setBold(True)
-            painter.setFont(font)
-
-            text = f"{self.tag_name} ({self.count})"
-            text_rect = QRectF(scene_rect.left() + 8, 0, 200, height)
-            painter.drawText(
-                text_rect,
-                Qt.AlignVCenter | Qt.AlignLeft,
-                text,
-            )
+            # No internal labels drawn here anymore - handled by GroupLabelOverlay
+            pass
         else:
             # Draw tick marks for collapsed band
             if self.event_dates:
