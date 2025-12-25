@@ -104,6 +104,15 @@ class TimelineWidget(QWidget):
         self.view.event_date_changed.connect(self.event_date_changed.emit)
         self.layout.addWidget(self.view)
 
+    def set_data_provider(self, provider):
+        """
+        Sets the data provider for timeline grouping features.
+
+        Args:
+            provider: Object implementing the data provider interface.
+        """
+        self.view.set_data_provider(provider)
+
     def set_events(self, events):
         """Passes the event list to the view."""
         self.view.set_events(events)

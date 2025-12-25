@@ -2,11 +2,11 @@
 Group Band Manager Module.
 
 Manages multiple GroupBandItem widgets for the timeline, handling stacking,
-ordering, collapse state, and interaction with the service layer.
+ordering, collapse state, and requesting data via callback interface.
 """
 
 import logging
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QMenu
@@ -24,8 +24,13 @@ class GroupBandManager(QObject):
     - Create and position multiple GroupBandItem widgets
     - Track collapse/expand state for each band
     - Handle band reordering
-    - Provide interface for updating band metadata
+    - Request data via callback interface (no direct DB access)
     - Manage band context menus
+    
+    Data Access:
+    Instead of directly accessing DatabaseService, this class uses callback
+    functions provided by the parent to request data. This decouples the UI
+    from the data layer and respects architectural boundaries.
     """
 
     # Signals
@@ -36,19 +41,29 @@ class GroupBandManager(QObject):
     tag_rename_requested = Signal(str)  # tag_name
     remove_from_grouping_requested = Signal(str)  # tag_name
 
-    def __init__(self, scene, db_service, parent=None):
+    def __init__(
+        self, 
+        scene, 
+        get_group_metadata_callback: Callable,
+        get_events_for_group_callback: Callable,
+        parent=None
+    ):
         """
         Initializes the GroupBandManager.
 
         Args:
             scene: The QGraphicsScene to add bands to
-            db_service: DatabaseService instance for querying metadata
+            get_group_metadata_callback: Callable that takes (tag_order, date_range) 
+                and returns list of metadata dicts
+            get_events_for_group_callback: Callable that takes (tag_name, date_range)
+                and returns list of Event objects
             parent: Parent QObject
         """
         super().__init__(parent)
 
         self.scene = scene
-        self.db_service = db_service
+        self._get_group_metadata = get_group_metadata_callback
+        self._get_events_for_group = get_events_for_group_callback
 
         # Track bands by tag name
         self._bands: Dict[str, GroupBandItem] = {}
@@ -56,9 +71,6 @@ class GroupBandManager(QObject):
         # Track order and collapse state
         self._tag_order: List[str] = []
         self._collapsed_tags: set = set()
-
-        # Track Y position for stacking - REMOVED (Layout handled by TimelineView)
-        # self._bands_start_y = -200
 
     def set_grouping_config(
         self, tag_order: List[str], date_range: Optional[tuple] = None
@@ -78,13 +90,10 @@ class GroupBandManager(QObject):
         # Store tag order
         self._tag_order = tag_order.copy()
 
-        # Load metadata for all tags
-        metadata = self.db_service.get_group_metadata(
-            tag_order=tag_order, date_range=date_range
-        )
+        # Load metadata via callback
+        metadata = self._get_group_metadata(tag_order=tag_order, date_range=date_range)
 
         # Create bands
-        # current_y = self._bands_start_y
         for meta in metadata:
             tag_name = meta["tag_name"]
             color = meta["color"]
@@ -112,23 +121,17 @@ class GroupBandManager(QObject):
 
             # Load event dates for tick marks (if collapsed)
             if is_collapsed and count > 0:
-                events = self.db_service.get_events_for_group(
+                events = self._get_events_for_group(
                     tag_name=tag_name, date_range=date_range
                 )
                 event_dates = [e.lore_date for e in events]
                 band.set_event_dates(event_dates)
-
-            # Position band - Handled by TimelineView
-            # band.setY(current_y)
 
             # Add to scene
             self.scene.addItem(band)
 
             # Track band
             self._bands[tag_name] = band
-
-            # Update Y for next band - Handled by TimelineView
-            # current_y += band.get_height() + GroupBandItem.BAND_MARGIN
 
         logger.info(f"Created {len(self._bands)} bands")
 
@@ -149,8 +152,8 @@ class GroupBandManager(QObject):
         if not self._tag_order:
             return
 
-        # Load fresh metadata
-        metadata = self.db_service.get_group_metadata(
+        # Load fresh metadata via callback
+        metadata = self._get_group_metadata(
             tag_order=self._tag_order, date_range=date_range
         )
 
@@ -190,8 +193,8 @@ class GroupBandManager(QObject):
             band = self._bands[tag_name]
             band.set_collapsed(True)
 
-            # Load event dates for tick marks
-            events = self.db_service.get_events_for_group(tag_name=tag_name)
+            # Load event dates for tick marks via callback
+            events = self._get_events_for_group(tag_name=tag_name)
             event_dates = [e.lore_date for e in events]
             band.set_event_dates(event_dates)
 

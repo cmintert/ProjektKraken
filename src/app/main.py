@@ -499,12 +499,13 @@ class MainWindow(QMainWindow):
             success (bool): True if connection succeeded, False otherwise.
         """
         if success:
-            # Initialize GUI database connection for UI components
+            # Initialize GUI database connection for timeline data provider
             try:
                 db_path = get_user_data_path("world.kraken")
                 self.gui_db_service = DatabaseService(db_path)
                 self.gui_db_service.connect()
-                self.timeline.set_db_service(self.gui_db_service)
+                # Set MainWindow as data provider (implements the interface)
+                self.timeline.set_data_provider(self)
             except Exception as e:
                 logger.error(f"Failed to initialize GUI database service: {e}")
 
@@ -675,6 +676,49 @@ class MainWindow(QMainWindow):
         # For now, let's just skip automatic seeding in this refactor or make it
         # a command. Ideally, we should have a 'CheckEmpty' command or similar.
         pass
+
+    # TimelineDataProvider interface implementation
+    def get_group_metadata(
+        self, tag_order: list[str], date_range: tuple[float, float] | None = None
+    ) -> list[dict]:
+        """
+        Get metadata for timeline grouping tags.
+
+        Implements TimelineDataProvider protocol for timeline grouping.
+
+        Args:
+            tag_order: List of tag names to get metadata for.
+            date_range: Optional (start_date, end_date) tuple for filtering.
+
+        Returns:
+            List of dicts containing tag metadata.
+        """
+        if hasattr(self, "gui_db_service"):
+            return self.gui_db_service.get_group_metadata(
+                tag_order=tag_order, date_range=date_range
+            )
+        return []
+
+    def get_events_for_group(
+        self, tag_name: str, date_range: tuple[float, float] | None = None
+    ) -> list:
+        """
+        Get events that belong to a specific tag group.
+
+        Implements TimelineDataProvider protocol for timeline grouping.
+
+        Args:
+            tag_name: Name of the tag to filter by.
+            date_range: Optional (start_date, end_date) tuple for filtering.
+
+        Returns:
+            List of Event objects with the specified tag.
+        """
+        if hasattr(self, "gui_db_service"):
+            return self.gui_db_service.get_events_for_group(
+                tag_name=tag_name, date_range=date_range
+            )
+        return []
 
     def load_events(self):
         """Requests loading of all events."""
