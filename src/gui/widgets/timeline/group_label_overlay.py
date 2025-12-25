@@ -95,36 +95,63 @@ class GroupLabelOverlay(QWidget):
             if y_pos < -30 or y_pos > self.height():
                 continue
 
-            # Determine height based on collapse state
-            label_height = 4 if is_collapsed else 24
+            # Constant height regardless of collapse state
+            label_height = 24
 
             # Draw color indicator
             color.setAlphaF(0.8)
             painter.fillRect(0, int(y_pos), 4, label_height, color)
 
-            # Draw text (only if expanded)
-            if not is_collapsed:
-                painter.setPen(QColor(self.theme["text_main"]))
-                font = QFont()
-                font.setPointSize(8)
-                font.setBold(True)
-                painter.setFont(font)
+            # Draw chevron indicator
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QColor(self.theme["text_main"]))
 
-                # Clip text if too long
-                text_rect = painter.fontMetrics().boundingRect(tag_name)
-                max_width = self.LABEL_WIDTH - self.LABEL_PADDING - 8
+            center_x = self.LABEL_PADDING + 4
+            center_y = int(y_pos) + (label_height // 2)
 
-                if text_rect.width() > max_width:
-                    # Truncate with ellipsis
-                    tag_name = painter.fontMetrics().elidedText(
-                        tag_name, Qt.ElideRight, max_width
-                    )
+            from PySide6.QtGui import QPolygonF
+            from PySide6.QtCore import QPointF
 
-                painter.drawText(
-                    self.LABEL_PADDING,
-                    int(y_pos),
-                    self.LABEL_WIDTH - self.LABEL_PADDING * 2,
-                    label_height,
-                    Qt.AlignVCenter | Qt.AlignLeft,
-                    tag_name,
+            if is_collapsed:
+                # Triangle pointing right (▶)
+                points = [
+                    QPointF(center_x - 3, center_y - 4),
+                    QPointF(center_x + 3, center_y),
+                    QPointF(center_x - 3, center_y + 4),
+                ]
+            else:
+                # Triangle pointing down (▼)
+                points = [
+                    QPointF(center_x - 4, center_y - 3),
+                    QPointF(center_x + 4, center_y - 3),
+                    QPointF(center_x, center_y + 3),
+                ]
+
+            painter.drawPolygon(QPolygonF(points))
+
+            # Draw text (always show title even when collapsed)
+            painter.setPen(QColor(self.theme["text_main"]))
+            font = QFont()
+            font.setPointSize(8)
+            font.setBold(True)
+            painter.setFont(font)
+
+            # Clip text if too long
+            text_offset = self.LABEL_PADDING + 14
+            max_width = self.LABEL_WIDTH - text_offset - 8
+            display_name = tag_name
+
+            if painter.fontMetrics().horizontalAdvance(display_name) > max_width:
+                # Truncate with ellipsis
+                display_name = painter.fontMetrics().elidedText(
+                    display_name, Qt.ElideRight, max_width
                 )
+
+            painter.drawText(
+                text_offset,
+                int(y_pos),
+                max_width,
+                label_height,
+                Qt.AlignVCenter | Qt.AlignLeft,
+                display_name,
+            )

@@ -36,7 +36,7 @@ class GroupBandItem(QGraphicsObject):
     reorder_requested = Signal(str, int)  # tag_name, new_index
 
     # Constants
-    BAND_HEIGHT_COLLAPSED = 4  # Thin line when collapsed
+    BAND_HEIGHT_COLLAPSED = 24  # Keep same height as expanded
     BAND_HEIGHT_EXPANDED = 24  # Full height when expanded
     BAND_MARGIN = 2  # Margin between bands
 
