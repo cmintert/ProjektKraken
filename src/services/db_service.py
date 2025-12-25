@@ -76,6 +76,7 @@ class DatabaseService:
             logger.debug("Database connection established.")
 
             self._init_schema()
+            self._run_migrations()
 
             # Connect repositories to the database connection
             self._event_repo.set_connection(self._connection)
@@ -218,6 +219,7 @@ class DatabaseService:
         CREATE TABLE IF NOT EXISTS tags (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL UNIQUE,
+            color TEXT,
             created_at REAL NOT NULL
         );
 
@@ -259,6 +261,32 @@ class DatabaseService:
             logger.debug("Database schema initialized.")
         except sqlite3.Error as e:
             logger.critical(f"Schema initialization failed: {e}")
+            raise
+
+    def _run_migrations(self):
+        """Runs necessary schema migrations."""
+        try:
+            # Check for 'color' column in 'tags' table
+            cursor = self._connection.execute("PRAGMA table_info(tags)")
+            # row_factory is set to sqlite3.Row in connect(), so we can access by name
+            columns = [row["name"] for row in cursor.fetchall()]
+
+            if "color" not in columns:
+                logger.info("Applying migration: Add color column to tags table")
+                # Use a separate transaction for the alteration
+                try:
+                    self._connection.execute("ALTER TABLE tags ADD COLUMN color TEXT")
+                    self._connection.commit()
+                    logger.info(
+                        "Migration successful: Added color column to tags table"
+                    )
+                except sqlite3.Error as e:
+                    self._connection.rollback()
+                    logger.error(f"Failed to add color column to tags table: {e}")
+                    raise
+
+        except sqlite3.Error as e:
+            logger.critical(f"Migration check failed: {e}")
             raise
 
     # --------------------------------------------------------------------------
@@ -985,6 +1013,27 @@ class DatabaseService:
         rows = cursor.fetchall()
         return [dict(row) for row in rows]
 
+    def get_tags_with_events(self) -> List[Dict[str, Any]]:
+        """
+        Retrieves tags that are associated with at least one event.
+
+        Returns:
+            List[Dict[str, Any]]: List of distinct tag dictionaries.
+        """
+        if not self._connection:
+            self.connect()
+
+        cursor = self._connection.execute(
+            """
+            SELECT DISTINCT t.id, t.name, t.created_at
+            FROM tags t
+            INNER JOIN event_tags et ON t.id = et.tag_id
+            ORDER BY t.name
+            """
+        )
+        rows = cursor.fetchall()
+        return [dict(row) for row in rows]
+
     def create_tag(self, tag_name: str) -> str:
         """
         Creates a new tag or returns existing tag ID.
@@ -1057,9 +1106,7 @@ class DatabaseService:
                     (event_id, tag_id, created_at),
                 )
         except sqlite3.Error as e:
-            logger.error(
-                f"Failed to assign tag '{tag_name}' to event {event_id}: {e}"
-            )
+            logger.error(f"Failed to assign tag '{tag_name}' to event {event_id}: {e}")
             raise
 
     def assign_tag_to_entity(self, entity_id: str, tag_name: str) -> None:
@@ -1298,3 +1345,472 @@ class DatabaseService:
                 data["attributes"] = json.loads(data["attributes"])
             entities.append(Entity.from_dict(data))
         return entities
+
+    def get_events_grouped_by_tags(
+        self,
+        tag_order: List[str],
+        mode: str = "DUPLICATE",
+        date_range: Optional[tuple] = None,
+    ) -> Dict[str, Any]:
+        """
+        Groups events by tags with support for DUPLICATE and FIRST_MATCH modes.
+
+        In DUPLICATE mode (default), events with multiple tags appear in all
+        matching groups. In FIRST_MATCH mode, events appear only in their first
+        matching group (by tag_order).
+
+        Args:
+            tag_order: List of tag names defining groups and their order.
+            mode: Grouping mode - "DUPLICATE" (default) or "FIRST_MATCH".
+            date_range: Optional tuple (start_date, end_date) to filter events.
+
+        Returns:
+            Dict containing:
+                - groups: List of dicts with tag_name and events list
+                - remaining: List of events with no matching group tags
+
+        Raises:
+            ValueError: If mode is not DUPLICATE or FIRST_MATCH.
+        """
+        if mode not in ("DUPLICATE", "FIRST_MATCH"):
+            raise ValueError(f"Invalid mode: {mode}. Must be DUPLICATE or FIRST_MATCH")
+
+        if not self._connection:
+            self.connect()
+
+        # Build date filter clause
+        date_filter = ""
+        date_params = []
+        if date_range:
+            date_filter = "AND e.lore_date >= ? AND e.lore_date <= ?"
+            date_params = [date_range[0], date_range[1]]
+
+        # Initialize result structure
+        groups = []
+        assigned_event_ids = set()
+
+        # Process each tag in order
+        for tag_name in tag_order:
+            # Get events for this tag
+            query = f"""
+                SELECT e.*
+                FROM events e
+                INNER JOIN event_tags et ON e.id = et.event_id
+                INNER JOIN tags t ON et.tag_id = t.id
+                WHERE t.name = ?
+                {date_filter}
+                ORDER BY e.lore_date
+            """
+            params = [tag_name.strip()] + date_params
+
+            cursor = self._connection.execute(query, params)
+            rows = cursor.fetchall()
+
+            # Convert rows to Event objects
+            events = []
+            for row in rows:
+                data = dict(row)
+                if data.get("attributes"):
+                    data["attributes"] = json.loads(data["attributes"])
+                event = Event.from_dict(data)
+
+                # In FIRST_MATCH mode, skip if already assigned
+                if mode == "FIRST_MATCH" and event.id in assigned_event_ids:
+                    continue
+
+                events.append(event)
+                assigned_event_ids.add(event.id)
+
+            # Add group even if empty (to maintain tag_order)
+            groups.append({"tag_name": tag_name, "events": events})
+
+        # Get remaining events (those not in any group)
+        remaining_query = f"""
+            SELECT e.*
+            FROM events e
+            WHERE e.id NOT IN (
+                SELECT DISTINCT et.event_id
+                FROM event_tags et
+                INNER JOIN tags t ON et.tag_id = t.id
+                WHERE t.name IN ({",".join("?" * len(tag_order))})
+            )
+            {date_filter}
+            ORDER BY e.lore_date
+        """
+
+        # Handle case where tag_order is empty
+        if not tag_order:
+            remaining_query = f"""
+                SELECT e.*
+                FROM events e
+                WHERE 1=1
+                {date_filter}
+                ORDER BY e.lore_date
+            """
+            remaining_params = date_params
+        else:
+            remaining_params = [t.strip() for t in tag_order] + date_params
+
+        cursor = self._connection.execute(remaining_query, remaining_params)
+        rows = cursor.fetchall()
+
+        remaining = []
+        for row in rows:
+            data = dict(row)
+            if data.get("attributes"):
+                data["attributes"] = json.loads(data["attributes"])
+            remaining.append(Event.from_dict(data))
+
+        return {"groups": groups, "remaining": remaining}
+
+    def get_group_counts(
+        self,
+        tag_order: List[str],
+        date_range: Optional[tuple] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Returns count and metadata for each tag group.
+
+        Args:
+            tag_order: List of tag names to get counts for.
+            date_range: Optional tuple (start_date, end_date) to filter events.
+
+        Returns:
+            List of dicts with tag_name, count, earliest_date, latest_date.
+        """
+        if not self._connection:
+            self.connect()
+
+        # Build date filter clause
+        date_filter = ""
+        date_params = []
+        if date_range:
+            date_filter = "AND e.lore_date >= ? AND e.lore_date <= ?"
+            date_params = [date_range[0], date_range[1]]
+
+        counts = []
+        for tag_name in tag_order:
+            query = f"""
+                SELECT
+                    COUNT(DISTINCT e.id) as count,
+                    MIN(e.lore_date) as earliest_date,
+                    MAX(e.lore_date) as latest_date
+                FROM events e
+                INNER JOIN event_tags et ON e.id = et.event_id
+                INNER JOIN tags t ON et.tag_id = t.id
+                WHERE t.name = ?
+                {date_filter}
+            """
+            params = [tag_name.strip()] + date_params
+
+            cursor = self._connection.execute(query, params)
+            row = cursor.fetchone()
+
+            counts.append(
+                {
+                    "tag_name": tag_name,
+                    "count": row["count"] if row else 0,
+                    "earliest_date": row["earliest_date"] if row else None,
+                    "latest_date": row["latest_date"] if row else None,
+                }
+            )
+
+        return counts
+
+    # --------------------------------------------------------------------------
+    # Timeline Grouping Service Methods (Milestone 2)
+    # --------------------------------------------------------------------------
+
+    def get_group_metadata(
+        self,
+        tag_order: List[str],
+        date_range: Optional[tuple] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Returns metadata for each tag group including color, count, and date span.
+
+        Args:
+            tag_order: List of tag names to get metadata for.
+            date_range: Optional tuple (start_date, end_date) to filter events.
+
+        Returns:
+            List of dicts with tag_name, color, count, earliest_date, latest_date.
+        """
+        metadata = []
+
+        # Separate "All events" from regular tags
+        ALL_EVENTS_TAG = "All events"
+        regular_tags = [tag for tag in tag_order if tag != ALL_EVENTS_TAG]
+        has_all_events = ALL_EVENTS_TAG in tag_order
+
+        # Get counts for regular tags
+        if regular_tags:
+            counts = self.get_group_counts(
+                tag_order=regular_tags, date_range=date_range
+            )
+
+            # Add color to each metadata entry
+            for count_info in counts:
+                tag_name = count_info["tag_name"]
+                color = self.get_tag_color(tag_name)
+
+                metadata.append(
+                    {
+                        "tag_name": tag_name,
+                        "color": color,
+                        "count": count_info["count"],
+                        "earliest_date": count_info["earliest_date"],
+                        "latest_date": count_info["latest_date"],
+                    }
+                )
+
+        # Add "All events" metadata if requested
+        if has_all_events:
+            # Count ALL events in database
+            all_events = self.get_all_events()
+            count = len(all_events)
+
+            # Get min/max dates
+            earliest = min((e.lore_date for e in all_events), default=0.0)
+            latest = max((e.lore_date for e in all_events), default=0.0)
+
+            metadata.append(
+                {
+                    "tag_name": ALL_EVENTS_TAG,
+                    "color": "#808080",  # Neutral gray
+                    "count": count,
+                    "earliest_date": earliest,
+                    "latest_date": latest,
+                }
+            )
+
+        return metadata
+
+    def get_events_for_group(
+        self,
+        tag_name: str,
+        date_range: Optional[tuple] = None,
+    ) -> List[Event]:
+        """
+        Returns all events for a specific tag group.
+
+        This is a convenience wrapper around get_events_by_tag with date filtering.
+
+        Args:
+            tag_name: The tag name to filter events by.
+            date_range: Optional tuple (start_date, end_date) to filter events.
+
+        Returns:
+            List[Event]: Events with the specified tag, sorted by lore_date.
+        """
+        if not self._connection:
+            self.connect()
+
+        # Build date filter clause
+        date_filter = ""
+        params = [tag_name.strip()]
+
+        if date_range:
+            date_filter = "AND e.lore_date >= ? AND e.lore_date <= ?"
+            params.extend([date_range[0], date_range[1]])
+
+        cursor = self._connection.execute(
+            f"""
+            SELECT e.*
+            FROM events e
+            INNER JOIN event_tags et ON e.id = et.event_id
+            INNER JOIN tags t ON et.tag_id = t.id
+            WHERE t.name = ?
+            {date_filter}
+            ORDER BY e.lore_date
+            """,
+            tuple(params),
+        )
+        rows = cursor.fetchall()
+
+        events = []
+        for row in rows:
+            data = dict(row)
+            if data.get("attributes"):
+                data["attributes"] = json.loads(data["attributes"])
+            events.append(Event.from_dict(data))
+        return events
+
+    def set_tag_color(self, tag_name: str, color: str) -> None:
+        """
+        Sets the color for a tag.
+
+        Args:
+            tag_name: The name of the tag.
+            color: Hex color string (e.g., "#FF0000" or "#abc").
+
+        Raises:
+            ValueError: If color format is invalid.
+        """
+        import re
+
+        # Validate hex color format
+        if not re.match(r"^#[0-9A-Fa-f]{3}$|^#[0-9A-Fa-f]{6}$", color):
+            raise ValueError(f"Invalid hex color format: {color}")
+
+        # Normalize short form to long form
+        if len(color) == 4:
+            color = f"#{color[1]}{color[1]}{color[2]}{color[2]}{color[3]}{color[3]}"
+
+        # Get or create tag
+        tag_id = self.create_tag(tag_name)
+
+        # Update color
+        with self.transaction() as conn:
+            conn.execute(
+                "UPDATE tags SET color = ? WHERE id = ?",
+                (color, tag_id),
+            )
+
+        logger.debug(f"Set color {color} for tag '{tag_name}'")
+
+    def get_tag_color(self, tag_name: str) -> str:
+        """
+        Gets the color for a tag, generating one if not set.
+
+        Args:
+            tag_name: The name of the tag.
+
+        Returns:
+            str: Hex color string (e.g., "#FF0000").
+        """
+        if not self._connection:
+            self.connect()
+
+        # Get tag
+        cursor = self._connection.execute(
+            "SELECT id, color FROM tags WHERE name = ?", (tag_name.strip(),)
+        )
+        result = cursor.fetchone()
+
+        if not result:
+            # Tag doesn't exist, create it and generate color
+            self.create_tag(tag_name)
+            return self._generate_tag_color(tag_name)
+
+        if result["color"]:
+            return result["color"]
+
+        # Generate deterministic color
+        return self._generate_tag_color(tag_name)
+
+    def _generate_tag_color(self, tag_name: str) -> str:
+        """
+        Generates a deterministic color for a tag based on its name.
+
+        Args:
+            tag_name: The name of the tag.
+
+        Returns:
+            str: Hex color string (e.g., "#FF0000").
+        """
+        import hashlib
+
+        # Use hash of tag name for deterministic color
+        hash_value = int(hashlib.md5(tag_name.encode()).hexdigest()[:6], 16)
+
+        # Generate RGB values that are reasonably visible
+        r = (hash_value >> 16) & 0xFF
+        g = (hash_value >> 8) & 0xFF
+        b = hash_value & 0xFF
+
+        # Ensure colors are not too dark (min 50 per channel)
+        r = max(r, 80)
+        g = max(g, 80)
+        b = max(b, 80)
+
+        return f"#{r:02X}{g:02X}{b:02X}"
+
+    def get_tag_by_name(self, tag_name: str) -> Optional[Dict[str, Any]]:
+        """
+        Retrieves a tag by its name.
+
+        Args:
+            tag_name: The name of the tag.
+
+        Returns:
+            Optional[Dict[str, Any]]: Tag dictionary with id, name, color, created_at
+                                      or None if not found.
+        """
+        if not self._connection:
+            self.connect()
+
+        cursor = self._connection.execute(
+            "SELECT id, name, color, created_at FROM tags WHERE name = ?",
+            (tag_name.strip(),),
+        )
+        result = cursor.fetchone()
+
+        if result:
+            return dict(result)
+        return None
+
+    def set_timeline_grouping_config(
+        self,
+        tag_order: List[str],
+        mode: str = "DUPLICATE",
+    ) -> None:
+        """
+        Stores timeline grouping configuration.
+
+        Args:
+            tag_order: List of tag names defining groups and their order.
+            mode: Grouping mode - "DUPLICATE" or "FIRST_MATCH".
+
+        Raises:
+            ValueError: If mode is invalid.
+        """
+        if mode not in ("DUPLICATE", "FIRST_MATCH"):
+            raise ValueError(f"Invalid mode: {mode}. Must be DUPLICATE or FIRST_MATCH")
+
+        config = {"tag_order": tag_order, "mode": mode}
+        config_json = json.dumps(config)
+
+        with self.transaction() as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO system_meta (key, value)
+                VALUES ('timeline_grouping_config', ?)
+                """,
+                (config_json,),
+            )
+
+        logger.debug(
+            f"Saved timeline grouping config: {len(tag_order)} tags, mode={mode}"
+        )
+
+    def get_timeline_grouping_config(self) -> Optional[Dict[str, Any]]:
+        """
+        Retrieves timeline grouping configuration.
+
+        Returns:
+            Optional[Dict[str, Any]]: Config dict with tag_order and mode,
+                                      or None if not set.
+        """
+        if not self._connection:
+            self.connect()
+
+        cursor = self._connection.execute(
+            "SELECT value FROM system_meta WHERE key = 'timeline_grouping_config'"
+        )
+        result = cursor.fetchone()
+
+        if result and result["value"]:
+            return json.loads(result["value"])
+        return None
+
+    def clear_timeline_grouping_config(self) -> None:
+        """
+        Clears timeline grouping configuration.
+        """
+        with self.transaction() as conn:
+            conn.execute(
+                "DELETE FROM system_meta WHERE key = 'timeline_grouping_config'"
+            )
+
+        logger.debug("Cleared timeline grouping config")

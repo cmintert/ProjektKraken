@@ -81,6 +81,15 @@ class ConnectionManager:
         timeline.playhead_time_changed.connect(self.window.update_playhead_time_label)
         timeline.event_date_changed.connect(self.window._on_event_date_changed)
 
+        # Band manager signals (for timeline grouping)
+        if hasattr(timeline, "_band_manager") and timeline._band_manager:
+            timeline._band_manager.tag_color_change_requested.connect(
+                self.window._on_tag_color_change_requested
+            )
+            timeline._band_manager.remove_from_grouping_requested.connect(
+                self.window._on_remove_from_grouping_requested
+            )
+
     def connect_longform_editor(self):
         """Connect signals from the longform editor widget."""
         longform = self.window.longform_editor

@@ -193,7 +193,7 @@ class TestTagsService:
 
     def test_tag_name_whitespace_trimmed(self, db_service):
         """Test that tag names have leading/trailing whitespace trimmed."""
-        tag_id1 = db_service.create_tag("  test-tag  ")
+        db_service.create_tag("  test-tag  ")
         tags = db_service.get_all_tags()
         assert len(tags) == 1
         assert tags[0]["name"] == "test-tag"

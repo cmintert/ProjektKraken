@@ -2,7 +2,6 @@
 Unit tests for tag migration from JSON attributes to normalized tables.
 """
 
-import json
 import pytest
 
 from src.core.entities import Entity
@@ -16,11 +15,7 @@ class TestTagMigration:
     def test_extract_tags_from_event_attributes(self, db_service):
         """Test extracting tags from event attributes JSON."""
         # Create event with tags in attributes
-        event = Event(
-            name="Test Event",
-            lore_date=100.0,
-            description="Event with tags"
-        )
+        event = Event(name="Test Event", lore_date=100.0, description="Event with tags")
         event.tags = ["important", "battle", "main-plot"]
         db_service.insert_event(event)
 
@@ -33,9 +28,7 @@ class TestTagMigration:
         """Test extracting tags from entity attributes JSON."""
         # Create entity with tags in attributes
         entity = Entity(
-            name="Test Character",
-            type="character",
-            description="Character with tags"
+            name="Test Character", type="character", description="Character with tags"
         )
         entity.tags = ["protagonist", "warrior", "human"]
         db_service.insert_entity(entity)

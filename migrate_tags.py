@@ -19,7 +19,7 @@ import logging
 import time
 import uuid
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set
 
 from src.core.paths import get_user_data_path
 from src.services.db_service import DatabaseService
@@ -67,14 +67,16 @@ class TagMigration:
     def create_normalized_tables(self) -> None:
         """Create the normalized tag tables by executing the SQL migration."""
         logger.info("Creating normalized tag tables...")
-        
-        migration_path = Path(__file__).parent / "migrations" / "0004_normalize_tags.sql"
+
+        migration_path = (
+            Path(__file__).parent / "migrations" / "0004_normalize_tags.sql"
+        )
         if not migration_path.exists():
             raise FileNotFoundError(f"Migration file not found: {migration_path}")
-        
+
         with open(migration_path, "r") as f:
             sql = f.read()
-        
+
         # Execute the SQL migration
         self.conn.executescript(sql)
         self.conn.commit()
@@ -89,17 +91,17 @@ class TagMigration:
         """
         logger.info("Extracting tags from events...")
         event_tags_map = {}
-        
+
         cursor = self.conn.execute(
             "SELECT id, attributes FROM events WHERE attributes IS NOT NULL"
         )
-        
+
         for row in cursor.fetchall():
             event_id = row["id"]
             try:
                 attributes = json.loads(row["attributes"]) if row["attributes"] else {}
                 tags = attributes.get("_tags", [])
-                
+
                 if tags and isinstance(tags, list):
                     # Remove duplicates and whitespace
                     unique_tags = list(set(tag.strip() for tag in tags if tag.strip()))
@@ -109,7 +111,7 @@ class TagMigration:
             except json.JSONDecodeError as e:
                 logger.warning(f"Failed to parse attributes for event {event_id}: {e}")
                 continue
-        
+
         logger.info(f"Extracted tags from {self.stats['events_processed']} events")
         return event_tags_map
 
@@ -122,17 +124,17 @@ class TagMigration:
         """
         logger.info("Extracting tags from entities...")
         entity_tags_map = {}
-        
+
         cursor = self.conn.execute(
             "SELECT id, attributes FROM entities WHERE attributes IS NOT NULL"
         )
-        
+
         for row in cursor.fetchall():
             entity_id = row["id"]
             try:
                 attributes = json.loads(row["attributes"]) if row["attributes"] else {}
                 tags = attributes.get("_tags", [])
-                
+
                 if tags and isinstance(tags, list):
                     # Remove duplicates and whitespace
                     unique_tags = list(set(tag.strip() for tag in tags if tag.strip()))
@@ -140,16 +142,16 @@ class TagMigration:
                         entity_tags_map[entity_id] = unique_tags
                         self.stats["entities_processed"] += 1
             except json.JSONDecodeError as e:
-                logger.warning(f"Failed to parse attributes for entity {entity_id}: {e}")
+                logger.warning(
+                    f"Failed to parse attributes for entity {entity_id}: {e}"
+                )
                 continue
-        
+
         logger.info(f"Extracted tags from {self.stats['entities_processed']} entities")
         return entity_tags_map
 
     def collect_unique_tags(
-        self, 
-        event_tags: Dict[str, List[str]], 
-        entity_tags: Dict[str, List[str]]
+        self, event_tags: Dict[str, List[str]], entity_tags: Dict[str, List[str]]
     ) -> Set[str]:
         """
         Collect all unique tag names from events and entities.
@@ -162,13 +164,13 @@ class TagMigration:
             Set of unique tag names.
         """
         unique_tags = set()
-        
+
         for tags in event_tags.values():
             unique_tags.update(tags)
-        
+
         for tags in entity_tags.values():
             unique_tags.update(tags)
-        
+
         self.stats["unique_tags"] = len(unique_tags)
         logger.info(f"Found {len(unique_tags)} unique tags")
         return unique_tags
@@ -186,30 +188,28 @@ class TagMigration:
         logger.info(f"Inserting {len(tag_names)} tags into tags table...")
         tag_id_map = {}
         created_at = time.time()
-        
+
         for tag_name in sorted(tag_names):  # Sort for consistent ordering
             tag_id = str(uuid.uuid4())
-            
+
             # Use INSERT OR IGNORE to handle potential duplicates
             self.conn.execute(
                 "INSERT OR IGNORE INTO tags (id, name, created_at) VALUES (?, ?, ?)",
-                (tag_id, tag_name, created_at)
+                (tag_id, tag_name, created_at),
             )
-            
+
             # Retrieve the actual ID (in case tag already existed)
             cursor = self.conn.execute(
                 "SELECT id FROM tags WHERE name = ?", (tag_name,)
             )
             result = cursor.fetchone()
             tag_id_map[tag_name] = result["id"]
-        
+
         logger.info(f"Inserted {len(tag_id_map)} tags")
         return tag_id_map
 
     def insert_event_tag_associations(
-        self, 
-        event_tags: Dict[str, List[str]], 
-        tag_id_map: Dict[str, str]
+        self, event_tags: Dict[str, List[str]], tag_id_map: Dict[str, str]
     ) -> None:
         """
         Insert event-tag associations into event_tags table.
@@ -220,34 +220,32 @@ class TagMigration:
         """
         logger.info("Creating event-tag associations...")
         created_at = time.time()
-        
+
         for event_id, tags in event_tags.items():
             for tag_name in tags:
                 tag_id = tag_id_map.get(tag_name)
                 if not tag_id:
                     logger.warning(f"Tag ID not found for tag: {tag_name}")
                     continue
-                
+
                 # Use INSERT OR IGNORE to handle potential duplicates
                 cursor = self.conn.execute(
                     """
                     INSERT OR IGNORE INTO event_tags (event_id, tag_id, created_at)
                     VALUES (?, ?, ?)
                     """,
-                    (event_id, tag_id, created_at)
+                    (event_id, tag_id, created_at),
                 )
                 # Only count if a row was actually inserted (not ignored)
                 if cursor.rowcount > 0:
                     self.stats["event_tag_associations"] += 1
-        
+
         logger.info(
             f"Created {self.stats['event_tag_associations']} event-tag associations"
         )
 
     def insert_entity_tag_associations(
-        self, 
-        entity_tags: Dict[str, List[str]], 
-        tag_id_map: Dict[str, str]
+        self, entity_tags: Dict[str, List[str]], tag_id_map: Dict[str, str]
     ) -> None:
         """
         Insert entity-tag associations into entity_tags table.
@@ -258,26 +256,26 @@ class TagMigration:
         """
         logger.info("Creating entity-tag associations...")
         created_at = time.time()
-        
+
         for entity_id, tags in entity_tags.items():
             for tag_name in tags:
                 tag_id = tag_id_map.get(tag_name)
                 if not tag_id:
                     logger.warning(f"Tag ID not found for tag: {tag_name}")
                     continue
-                
+
                 # Use INSERT OR IGNORE to handle potential duplicates
                 cursor = self.conn.execute(
                     """
                     INSERT OR IGNORE INTO entity_tags (entity_id, tag_id, created_at)
                     VALUES (?, ?, ?)
                     """,
-                    (entity_id, tag_id, created_at)
+                    (entity_id, tag_id, created_at),
                 )
                 # Only count if a row was actually inserted (not ignored)
                 if cursor.rowcount > 0:
                     self.stats["entity_tag_associations"] += 1
-        
+
         logger.info(
             f"Created {self.stats['entity_tag_associations']} entity-tag associations"
         )
@@ -290,12 +288,12 @@ class TagMigration:
             bool: True if verification passes, False otherwise.
         """
         logger.info("Verifying migration...")
-        
+
         # Check that tables exist
         if not self.check_tables_exist():
             logger.error("Normalized tables do not exist after migration")
             return False
-        
+
         # Verify tag count
         cursor = self.conn.execute("SELECT COUNT(*) as count FROM tags")
         tag_count = cursor.fetchone()["count"]
@@ -305,17 +303,17 @@ class TagMigration:
                 f"got {tag_count}"
             )
             return False
-        
+
         # Verify event_tags count
         cursor = self.conn.execute("SELECT COUNT(*) as count FROM event_tags")
         event_tags_count = cursor.fetchone()["count"]
         logger.info(f"Event-tag associations in database: {event_tags_count}")
-        
+
         # Verify entity_tags count
         cursor = self.conn.execute("SELECT COUNT(*) as count FROM entity_tags")
         entity_tags_count = cursor.fetchone()["count"]
         logger.info(f"Entity-tag associations in database: {entity_tags_count}")
-        
+
         logger.info("Migration verification passed!")
         return True
 
@@ -337,25 +335,25 @@ class TagMigration:
             else:
                 # Create normalized tables
                 self.create_normalized_tables()
-            
+
             # Extract tags from events and entities
             event_tags = self.extract_tags_from_events()
             entity_tags = self.extract_tags_from_entities()
-            
+
             # Collect unique tags
             unique_tags = self.collect_unique_tags(event_tags, entity_tags)
-            
+
             if not unique_tags:
                 logger.info("No tags found to migrate.")
                 return True
-            
+
             # Insert tags
             tag_id_map = self.insert_tags(unique_tags)
-            
+
             # Insert associations
             self.insert_event_tag_associations(event_tags, tag_id_map)
             self.insert_entity_tag_associations(entity_tags, tag_id_map)
-            
+
             if dry_run:
                 logger.info("DRY RUN: Rolling back changes...")
                 self.conn.rollback()
@@ -363,24 +361,28 @@ class TagMigration:
                 # Commit changes
                 self.conn.commit()
                 logger.info("Changes committed successfully.")
-            
+
             # Verify migration
             if not dry_run and not self.verify_migration():
                 logger.error("Migration verification failed!")
                 return False
-            
+
             # Print statistics
             logger.info("=" * 60)
             logger.info("MIGRATION STATISTICS:")
             logger.info(f"  Events processed: {self.stats['events_processed']}")
             logger.info(f"  Entities processed: {self.stats['entities_processed']}")
             logger.info(f"  Unique tags: {self.stats['unique_tags']}")
-            logger.info(f"  Event-tag associations: {self.stats['event_tag_associations']}")
-            logger.info(f"  Entity-tag associations: {self.stats['entity_tag_associations']}")
+            logger.info(
+                f"  Event-tag associations: {self.stats['event_tag_associations']}"
+            )
+            logger.info(
+                f"  Entity-tag associations: {self.stats['entity_tag_associations']}"
+            )
             logger.info("=" * 60)
-            
+
             return True
-            
+
         except Exception as e:
             logger.error(f"Migration failed: {e}")
             self.conn.rollback()
@@ -393,27 +395,24 @@ def main():
         description="Migrate tags from JSON attributes to normalized tables"
     )
     parser.add_argument(
-        "--db-path",
-        type=str,
-        help="Path to the .kraken database file",
-        default=None
+        "--db-path", type=str, help="Path to the .kraken database file", default=None
     )
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Run migration without committing changes"
+        help="Run migration without committing changes",
     )
-    
+
     args = parser.parse_args()
-    
+
     # Determine database path
     if args.db_path:
         db_path = args.db_path
     else:
         db_path = get_user_data_path("world.kraken")
-    
+
     logger.info(f"Using database: {db_path}")
-    
+
     # Create backup recommendation
     if not args.dry_run:
         logger.warning("=" * 60)
@@ -424,21 +423,21 @@ def main():
         if response.lower() != "yes":
             logger.info("Migration cancelled by user.")
             return
-    
+
     # Connect to database
     db_service = DatabaseService(db_path)
     db_service.connect()
-    
+
     try:
         # Run migration
         migration = TagMigration(db_service)
         success = migration.run(dry_run=args.dry_run)
-        
+
         if success:
             logger.info("Migration completed successfully!")
         else:
             logger.error("Migration failed!")
-            
+
     finally:
         db_service.close()
 

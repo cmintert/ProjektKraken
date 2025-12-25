@@ -200,6 +200,19 @@ class TimelineWidget(QWidget):
         Delegates to the view.
         """
         self.view.update_event_preview(event_data)
+        self.view.update_event_preview(event_data)
+
+    def set_grouping_config(self, tag_order: list, mode: str = "DUPLICATE"):
+        """Sets the timeline grouping configuration."""
+        self.view.set_grouping_config(tag_order, mode)
+
+    def clear_grouping(self):
+        """Clears the timeline grouping."""
+        self.view.clear_grouping()
+
+    def set_db_service(self, db_service):
+        """Sets the database service for the timeline view."""
+        self.view.set_db_service(db_service)
 
 
 __all__ = [
