@@ -686,7 +686,25 @@ class TimelineView(QGraphicsView):
             band_height = band.get_height()
             current_y += band_height + 25
 
+            # If band is collapsed, hide events and skip space
+            if band.is_collapsed:
+                logger.debug(
+                    f"Band '{tag}' is COLLAPSED at Y={current_y}, "
+                    f"hiding {len(events_in_group)} events"
+                )
+                for event in events_in_group:
+                    if event.id in event_items:
+                        event_items[event.id].setVisible(False)
+                        if event.id in drop_lines:
+                            drop_lines[event.id].setVisible(False)
+                continue
+
+            # Band is expanded - pack and show events
             if events_in_group:
+                logger.debug(
+                    f"Band '{tag}' is EXPANDED at Y={current_y}, "
+                    f"showing {len(events_in_group)} events"
+                )
                 # Pack events for this group
                 layout_map, lane_heights = self._lane_packer.pack_events(
                     events_in_group
@@ -706,15 +724,13 @@ class TimelineView(QGraphicsView):
                         y_offset += lane_heights[i] + self._lane_packer.LANE_PADDING
 
                     item.setY(current_y + y_offset)
-                    logger.debug(
-                        f"Positioned '{event.name}' in group '{tag}' at Y={item.y()} (Lane {lane_idx})"
-                    )
                     item.setVisible(True)
                     item._initial_y = current_y + y_offset
 
                     # Update drop lines
                     if event.id in drop_lines:
                         line = drop_lines[event.id]
+                        line.setVisible(True)
                         line.setLine(item.x(), -self.RULER_HEIGHT, item.x(), item.y())
 
                 # Advance current_y by group height
@@ -763,47 +779,68 @@ class TimelineView(QGraphicsView):
             for event in groups[tag]:
                 grouped_event_ids.add(event.id)
 
-        # Pack ALL events for the "All events" section
-        layout_map, lane_heights = self._lane_packer.pack_events(self.events)
-
-        for event in self.events:
-            lane_idx = layout_map[event.id]
-            y_offset = 0
-            for i in range(lane_idx):
-                y_offset += lane_heights[i] + self._lane_packer.LANE_PADDING
-
-            target_y = current_y + y_offset
-
-            if event.id in grouped_event_ids:
-                # Event was already in a tag group - create a DUPLICATE
-                duplicate_item = EventItem(event, self.scale_factor)
-                # Use callback pattern (same as set_events)
-                duplicate_item.on_drag_complete = self._on_event_drag_complete
-
-                # Add to scene
-                self.scene.addItem(duplicate_item)
-                self._duplicate_event_items.append(duplicate_item)
-
-                duplicate_item.setY(target_y)
-                duplicate_item.setVisible(True)
-                duplicate_item._initial_y = target_y
-            else:
-                # Event was ungrouped - use its ORIGINAL item
-                if event.id in event_items:
-                    item = event_items[event.id]
-                    item.setY(target_y)
-                    item.setVisible(True)
-                    item._initial_y = target_y
-
-                    # Update drop line for original item
-                    if event.id in drop_lines:
-                        line = drop_lines[event.id]
-                        line.setLine(item.x(), -self.RULER_HEIGHT, item.x(), item.y())
-
-        if lane_heights:
-            current_y += sum(lane_heights) + (
-                len(lane_heights) * self._lane_packer.LANE_PADDING
+        # Check if "All events" band is collapsed - skip event positioning
+        if all_events_band and all_events_band.is_collapsed:
+            logger.debug(
+                f"Band '{self.ALL_EVENTS_GROUP_NAME}' is COLLAPSED, "
+                f"hiding all events in this section"
             )
+            # Hide ungrouped events (their original items)
+            for event in self.events:
+                if event.id not in grouped_event_ids:
+                    if event.id in event_items:
+                        event_items[event.id].setVisible(False)
+                        if event.id in drop_lines:
+                            drop_lines[event.id].setVisible(False)
+        else:
+            # Band is expanded - show all events
+            logger.debug(
+                f"Band '{self.ALL_EVENTS_GROUP_NAME}' is EXPANDED, "
+                f"showing {len(self.events)} events"
+            )
+
+            # Pack ALL events for the "All events" section
+            layout_map, lane_heights = self._lane_packer.pack_events(self.events)
+
+            for event in self.events:
+                lane_idx = layout_map[event.id]
+                y_offset = 0
+                for i in range(lane_idx):
+                    y_offset += lane_heights[i] + self._lane_packer.LANE_PADDING
+
+                target_y = current_y + y_offset
+
+                if event.id in grouped_event_ids:
+                    # Event was already in a tag group - create a DUPLICATE
+                    duplicate_item = EventItem(event, self.scale_factor)
+                    duplicate_item.on_drag_complete = self._on_event_drag_complete
+
+                    # Add to scene
+                    self.scene.addItem(duplicate_item)
+                    self._duplicate_event_items.append(duplicate_item)
+
+                    duplicate_item.setY(target_y)
+                    duplicate_item.setVisible(True)
+                    duplicate_item._initial_y = target_y
+                else:
+                    # Event was ungrouped - use its ORIGINAL item
+                    if event.id in event_items:
+                        item = event_items[event.id]
+                        item.setY(target_y)
+                        item.setVisible(True)
+                        item._initial_y = target_y
+
+                        # Update drop line for original item
+                        if event.id in drop_lines:
+                            line = drop_lines[event.id]
+                            line.setLine(
+                                item.x(), -self.RULER_HEIGHT, item.x(), item.y()
+                            )
+
+            if lane_heights:
+                current_y += sum(lane_heights) + (
+                    len(lane_heights) * self._lane_packer.LANE_PADDING
+                )
 
         # Update scene rect
         current_rect = self.scene.sceneRect()
@@ -1187,12 +1224,8 @@ class TimelineView(QGraphicsView):
         """
         logger.debug(f"Band expanded: {tag_name}")
 
-        # TODO: Load and display events for this tag group
-        # For now, just update metadata
-        self.update_band_metadata()
-
-        # Update label overlay to reflect new band heights
-        self._update_label_overlay()
+        # Repack events to update positions and show events in this group
+        self.repack_events()
 
     def _on_band_collapsed(self, tag_name: str):
         """
@@ -1203,12 +1236,8 @@ class TimelineView(QGraphicsView):
         """
         logger.debug(f"Band collapsed: {tag_name}")
 
-        # TODO: Hide events for this tag group (if showing grouped events separately)
-        # For now, just update metadata
-        self.update_band_metadata()
-
-        # Update label overlay to reflect new band heights
-        self._update_label_overlay()
+        # Repack events to update positions and hide events in this group
+        self.repack_events()
 
     def _update_label_overlay(self):
         """
@@ -1222,8 +1251,11 @@ class TimelineView(QGraphicsView):
             return
 
         # Collect label data from bands
+        # Include both user-selected tags and "All events"
         labels = []
-        for tag in self._grouping_tag_order:
+        all_tags = list(self._grouping_tag_order) + [self.ALL_EVENTS_GROUP_NAME]
+
+        for tag in all_tags:
             band = self._band_manager.get_band(tag)
             if band and band.isVisible():
                 # Convert scene Y to view Y
@@ -1242,7 +1274,12 @@ class TimelineView(QGraphicsView):
                         "is_collapsed": band.is_collapsed,
                     }
                 )
+                logger.debug(
+                    f"Label '{tag}': y={y_in_overlay:.1f}, "
+                    f"collapsed={band.is_collapsed}"
+                )
 
+        logger.debug(f"Setting {len(labels)} labels on overlay")
         self._label_overlay.set_labels(labels)
 
     def scrollContentsBy(self, dx, dy):
