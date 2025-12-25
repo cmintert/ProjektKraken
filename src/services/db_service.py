@@ -1536,22 +1536,51 @@ class DatabaseService:
         Returns:
             List of dicts with tag_name, color, count, earliest_date, latest_date.
         """
-        # Get counts from existing method
-        counts = self.get_group_counts(tag_order=tag_order, date_range=date_range)
-
-        # Add color to each metadata entry
         metadata = []
-        for count_info in counts:
-            tag_name = count_info["tag_name"]
-            color = self.get_tag_color(tag_name)
+
+        # Separate "All events" from regular tags
+        ALL_EVENTS_TAG = "All events"
+        regular_tags = [tag for tag in tag_order if tag != ALL_EVENTS_TAG]
+        has_all_events = ALL_EVENTS_TAG in tag_order
+
+        # Get counts for regular tags
+        if regular_tags:
+            counts = self.get_group_counts(
+                tag_order=regular_tags, date_range=date_range
+            )
+
+            # Add color to each metadata entry
+            for count_info in counts:
+                tag_name = count_info["tag_name"]
+                color = self.get_tag_color(tag_name)
+
+                metadata.append(
+                    {
+                        "tag_name": tag_name,
+                        "color": color,
+                        "count": count_info["count"],
+                        "earliest_date": count_info["earliest_date"],
+                        "latest_date": count_info["latest_date"],
+                    }
+                )
+
+        # Add "All events" metadata if requested
+        if has_all_events:
+            # Count ALL events in database
+            all_events = self.get_all_events()
+            count = len(all_events)
+
+            # Get min/max dates
+            earliest = min((e.lore_date for e in all_events), default=0.0)
+            latest = max((e.lore_date for e in all_events), default=0.0)
 
             metadata.append(
                 {
-                    "tag_name": tag_name,
-                    "color": color,
-                    "count": count_info["count"],
-                    "earliest_date": count_info["earliest_date"],
-                    "latest_date": count_info["latest_date"],
+                    "tag_name": ALL_EVENTS_TAG,
+                    "color": "#808080",  # Neutral gray
+                    "count": count,
+                    "earliest_date": earliest,
+                    "latest_date": latest,
                 }
             )
 

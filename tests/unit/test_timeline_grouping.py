@@ -483,3 +483,81 @@ class TestTimelineGrouping:
         assert remaining[0].lore_date == 100.0
         assert remaining[1].lore_date == 200.0
         assert remaining[2].lore_date == 300.0
+
+    def test_get_group_metadata_handles_all_events_tag(self, db_service):
+        """
+        Test that get_group_metadata returns correct data for 'All events' tag.
+
+        The 'All events' pseudo-tag should return count of ALL events and
+        the min/max date range across all events.
+        """
+        # Create events with various dates
+        event1 = Event(name="Early Event", lore_date=100.0)
+        event2 = Event(name="Middle Event", lore_date=500.0)
+        event3 = Event(name="Late Event", lore_date=900.0)
+
+        db_service.insert_event(event1)
+        db_service.insert_event(event2)
+        db_service.insert_event(event3)
+
+        # Request metadata including "All events"
+        tag_order = ["some-tag", "All events"]
+        metadata = db_service.get_group_metadata(tag_order=tag_order)
+
+        # Find "All events" metadata
+        all_events_meta = next(
+            (m for m in metadata if m["tag_name"] == "All events"), None
+        )
+
+        assert all_events_meta is not None
+        assert all_events_meta["count"] == 3
+        assert all_events_meta["earliest_date"] == 100.0
+        assert all_events_meta["latest_date"] == 900.0
+        assert all_events_meta["color"] == "#808080"  # Neutral gray
+
+    def test_get_group_metadata_all_events_includes_untagged(self, db_service):
+        """
+        Test that 'All events' count includes events without any tags.
+        """
+        # Create tagged and untagged events
+        event1 = Event(name="Tagged Event", lore_date=100.0)
+        event2 = Event(name="Untagged Event", lore_date=200.0)
+
+        db_service.insert_event(event1)
+        db_service.insert_event(event2)
+
+        # Only tag event1
+        db_service.assign_tag_to_event(event1.id, "some-tag")
+
+        # Request metadata including "All events"
+        tag_order = ["some-tag", "All events"]
+        metadata = db_service.get_group_metadata(tag_order=tag_order)
+
+        # "some-tag" should have 1 event
+        some_tag_meta = next((m for m in metadata if m["tag_name"] == "some-tag"), None)
+        assert some_tag_meta is not None
+        assert some_tag_meta["count"] == 1
+
+        # "All events" should have 2 events (both tagged and untagged)
+        all_events_meta = next(
+            (m for m in metadata if m["tag_name"] == "All events"), None
+        )
+        assert all_events_meta is not None
+        assert all_events_meta["count"] == 2
+
+    def test_get_group_metadata_all_events_at_end(self, db_service):
+        """
+        Test that 'All events' appears at the end of metadata list.
+        """
+        # Create event
+        event1 = Event(name="Event", lore_date=100.0)
+        db_service.insert_event(event1)
+        db_service.assign_tag_to_event(event1.id, "tag-a")
+
+        # Request metadata with "All events" at end
+        tag_order = ["tag-a", "tag-b", "All events"]
+        metadata = db_service.get_group_metadata(tag_order=tag_order)
+
+        # "All events" should be last
+        assert len(metadata) == 3
+        assert metadata[-1]["tag_name"] == "All events"
