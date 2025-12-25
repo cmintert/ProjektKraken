@@ -370,6 +370,9 @@ class TimelineView(QGraphicsView):
         - Sort events by start time.
         - Packs into first available lane.
         """
+        # Cleanup duplicates first to avoid pollution when scanning scene
+        self._clear_duplicates()
+
         # Sort by Date
         sorted_events = sorted(events, key=lambda e: e.lore_date)
         self.events = sorted_events
@@ -553,6 +556,9 @@ class TimelineView(QGraphicsView):
         if not self.events:
             return
 
+        # Cleanup duplicates before scanning scene for layout
+        self._clear_duplicates()
+
         # Calculate effective scale (Scene scale * View zoom)
         # Note: scale_factor is pixels/day in Scene coordinates.
         # current_zoom is the View transformation scale.
@@ -645,6 +651,19 @@ class TimelineView(QGraphicsView):
 
         return groups, ungrouped
 
+    def _clear_duplicates(self):
+        """Removes all duplicate event items from the scene."""
+        if (
+            not hasattr(self, "_duplicate_event_items")
+            or not self._duplicate_event_items
+        ):
+            return
+
+        for item in self._duplicate_event_items:
+            if item.scene() == self.scene:
+                self.scene.removeItem(item)
+        self._duplicate_event_items.clear()
+
     def _repack_grouped_events(self):
         """Repack events using swimlane layout (Band -> Events -> Band)."""
         logger.debug("Repacking with swimlane layout")
@@ -652,7 +671,7 @@ class TimelineView(QGraphicsView):
         # Sort events by date first for proper packing
         self.events.sort(key=lambda e: e.lore_date)
 
-        # Build map of existing items
+        # Build map of existing items (now clean of duplicates)
         event_items = {}
         drop_lines = {}
         for item in self.scene.items():
@@ -662,8 +681,11 @@ class TimelineView(QGraphicsView):
                 drop_lines[item.event_id] = item
 
         logger.debug(
-            f"_repack_grouped_events: Found {len(event_items)} EventItems, {len(self.events)} events"
+            f"_repack_grouped_events: Found {len(event_items)} EventItems, "
+            f"{len(self.events)} events"
         )
+
+        # (Cleanup already done by caller: repack_events)
 
         # 1. Partition events
         groups, ungrouped = self._partition_events(
@@ -671,6 +693,7 @@ class TimelineView(QGraphicsView):
         )
 
         current_y = 60  # Start below ruler
+        placed_event_ids = set()
 
         # 2. Iterate Groups
         for tag in self._grouping_tag_order:
@@ -715,7 +738,17 @@ class TimelineView(QGraphicsView):
                     if event.id not in event_items:
                         continue
 
-                    item = event_items[event.id]
+                    # Choose item: Original or Duplicate
+                    if event.id in placed_event_ids:
+                        # Duplicate for subsequent groups
+                        item = EventItem(event, self.scale_factor)
+                        item.on_drag_complete = self._on_event_drag_complete
+                        self.scene.addItem(item)
+                        self._duplicate_event_items.append(item)
+                    else:
+                        item = event_items[event.id]
+                        placed_event_ids.add(event.id)
+
                     lane_idx = layout_map[event.id]
 
                     # Calculate Y offset within group
@@ -727,8 +760,8 @@ class TimelineView(QGraphicsView):
                     item.setVisible(True)
                     item._initial_y = current_y + y_offset
 
-                    # Update drop lines
-                    if event.id in drop_lines:
+                    # Update drop lines - only for the item we are using now
+                    if event.id in drop_lines and item == event_items[event.id]:
                         line = drop_lines[event.id]
                         line.setVisible(True)
                         line.setLine(item.x(), -self.RULER_HEIGHT, item.x(), item.y())
@@ -763,21 +796,8 @@ class TimelineView(QGraphicsView):
             band_height = all_events_band.get_height()
             current_y += band_height + 25
 
-        # Ensure _duplicate_event_items exists (safety check)
-        if not hasattr(self, "_duplicate_event_items"):
-            self._duplicate_event_items = []
-
-        # Clean up previous duplicate event items
-        for item in self._duplicate_event_items:
-            if item.scene() == self.scene:
-                self.scene.removeItem(item)
-        self._duplicate_event_items.clear()
-
-        # Build set of event IDs that were positioned in tag groups
-        grouped_event_ids = set()
-        for tag in self._grouping_tag_order:
-            for event in groups[tag]:
-                grouped_event_ids.add(event.id)
+        # The "All events" group will use placed_event_ids to determine duplication
+        grouped_event_ids = placed_event_ids
 
         # Check if "All events" band is collapsed - skip event positioning
         if all_events_band and all_events_band.is_collapsed:
