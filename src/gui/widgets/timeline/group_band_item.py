@@ -8,9 +8,9 @@ above the timeline lanes.
 
 import logging
 
-from PySide6.QtCore import QPointF, QRectF, Qt, Signal
-from PySide6.QtGui import QBrush, QColor, QCursor, QFont, QPainter, QPainterPath, QPen
-from PySide6.QtWidgets import QGraphicsItem, QGraphicsObject, QMenu
+from PySide6.QtCore import QRectF, Qt, Signal
+from PySide6.QtGui import QBrush, QColor, QCursor, QFont, QPainter, QPen
+from PySide6.QtWidgets import QGraphicsObject
 
 from src.core.theme_manager import ThemeManager
 
@@ -86,7 +86,7 @@ class GroupBandItem(QGraphicsObject):
         # Theme
         self.theme = ThemeManager().get_theme()
         ThemeManager().theme_changed.connect(self._on_theme_changed)
-        
+
         # Tooltip
         self._update_tooltip()
 
@@ -118,7 +118,9 @@ class GroupBandItem(QGraphicsObject):
         (effectively infinite) and has a height based on collapsed state.
         """
         height = (
-            self.BAND_HEIGHT_COLLAPSED if self.is_collapsed else self.BAND_HEIGHT_EXPANDED
+            self.BAND_HEIGHT_COLLAPSED
+            if self.is_collapsed
+            else self.BAND_HEIGHT_EXPANDED
         )
         # Return a very wide rect to span the timeline
         return QRectF(-1e12, 0, 2e12, height)
@@ -135,16 +137,16 @@ class GroupBandItem(QGraphicsObject):
         painter.setRenderHint(QPainter.Antialiasing)
 
         height = (
-            self.BAND_HEIGHT_COLLAPSED if self.is_collapsed else self.BAND_HEIGHT_EXPANDED
+            self.BAND_HEIGHT_COLLAPSED
+            if self.is_collapsed
+            else self.BAND_HEIGHT_EXPANDED
         )
 
         # Get visible rect from the view
         if widget:
             view_rect = widget.rect()
             # Map to scene coordinates
-            scene_rect = painter.transform().inverted()[0].mapRect(
-                QRectF(view_rect)
-            )
+            scene_rect = painter.transform().inverted()[0].mapRect(QRectF(view_rect))
         else:
             # Fallback to a large rect
             scene_rect = QRectF(-10000, 0, 20000, height)
@@ -169,8 +171,10 @@ class GroupBandItem(QGraphicsObject):
         border_color = QColor(self._color).darker(120)
         painter.setPen(QPen(border_color, 1))
         painter.drawLine(
-            int(scene_rect.left()), int(height - 1),
-            int(scene_rect.right()), int(height - 1)
+            int(scene_rect.left()),
+            int(height - 1),
+            int(scene_rect.right()),
+            int(height - 1),
         )
 
         if not self.is_collapsed:
@@ -193,25 +197,22 @@ class GroupBandItem(QGraphicsObject):
             if self.event_dates:
                 # Get scale factor from parent if available
                 scale_factor = 20.0  # Default
-                if hasattr(self.scene(), 'views') and self.scene().views():
+                if hasattr(self.scene(), "views") and self.scene().views():
                     view = self.scene().views()[0]
-                    if hasattr(view, 'scale_factor'):
+                    if hasattr(view, "scale_factor"):
                         scale_factor = view.scale_factor
-                
+
                 # Draw vertical tick for each event
                 tick_color = QColor(self._color).lighter(150)
                 painter.setPen(QPen(tick_color, 1))
-                
+
                 for event_date in self.event_dates:
                     # Calculate X position
                     x_pos = event_date * scale_factor
-                    
+
                     # Only draw if in visible range
                     if scene_rect.left() <= x_pos <= scene_rect.right():
-                        painter.drawLine(
-                            int(x_pos), 0,
-                            int(x_pos), int(height)
-                        )
+                        painter.drawLine(int(x_pos), 0, int(x_pos), int(height))
 
     def mousePressEvent(self, event):
         """Handle mouse press."""
@@ -306,5 +307,7 @@ class GroupBandItem(QGraphicsObject):
             Height in pixels
         """
         return (
-            self.BAND_HEIGHT_COLLAPSED if self.is_collapsed else self.BAND_HEIGHT_EXPANDED
+            self.BAND_HEIGHT_COLLAPSED
+            if self.is_collapsed
+            else self.BAND_HEIGHT_EXPANDED
         )

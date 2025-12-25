@@ -8,7 +8,7 @@ ordering, collapse state, and interaction with the service layer.
 import logging
 from typing import Dict, List, Optional
 
-from PySide6.QtCore import QObject, QPointF, Signal
+from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QMenu
 
 from src.gui.widgets.timeline.group_band_item import GroupBandItem

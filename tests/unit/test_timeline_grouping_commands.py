@@ -8,11 +8,10 @@ including undo/redo support.
 import pytest
 
 from src.commands.timeline_grouping_commands import (
-    SetTimelineGroupingCommand,
     ClearTimelineGroupingCommand,
+    SetTimelineGroupingCommand,
     UpdateTagColorCommand,
 )
-from src.core.events import Event
 
 
 @pytest.mark.unit

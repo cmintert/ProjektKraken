@@ -10,7 +10,7 @@ All commands support undo/redo operations and return CommandResult objects.
 """
 
 import logging
-from typing import List, Optional
+from typing import List
 
 from src.commands.base_command import BaseCommand, CommandResult
 from src.services.db_service import DatabaseService

@@ -214,8 +214,7 @@ class TestTimelineGroupingIntegration:
         """
         # Create events across time range
         events = [
-            Event(name=f"Event {i}", lore_date=float(i * 100))
-            for i in range(1, 11)
+            Event(name=f"Event {i}", lore_date=float(i * 100)) for i in range(1, 11)
         ]
         for event in events:
             db_service.insert_event(event)
@@ -261,9 +260,7 @@ class TestTimelineGroupingIntegration:
             assert group["events"][0].id == event1.id
 
         # Metadata should show count of 1 for each group
-        metadata = db_service.get_group_metadata(
-            tag_order=["tag-a", "tag-b", "tag-c"]
-        )
+        metadata = db_service.get_group_metadata(tag_order=["tag-a", "tag-b", "tag-c"])
         for meta in metadata:
             assert meta["count"] == 1
 
