@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2025-12-26
-### Internal
-- Merge pull request #36 from cmintert/copilot/review-projektkraken-code
+### Changed
+- refactor: improve type hinting across core models, services, and GUI dialogs
 
 
 *This changelog was automatically generated.*
