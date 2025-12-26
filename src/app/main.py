@@ -81,6 +81,7 @@ from src.commands.wiki_commands import ProcessWikiLinksCommand
 from src.core.logging_config import get_logger, setup_logging
 from src.core.paths import get_resource_path, get_user_data_path
 from src.core.theme_manager import ThemeManager
+from src.gui.dialogs.ai_settings_dialog import AISettingsDialog
 from src.gui.widgets.ai_search_panel import AISearchPanelWidget
 from src.gui.widgets.entity_editor import EntityEditorWidget
 
@@ -154,6 +155,7 @@ class MainWindow(QMainWindow):
 
         # AI Search Panel
         self.ai_search_panel = AISearchPanelWidget()
+        self.ai_settings_dialog = None
 
         # Data Cache for Unified List
         self._cached_events = []
@@ -225,6 +227,9 @@ class MainWindow(QMainWindow):
 
         # Settings Menu (New)
         self.ui_manager.create_settings_menu(self.menuBar())
+
+        # AI Menu (New)
+        self.ui_manager.create_ai_menu(self.menuBar())
 
         # 5. Initialize Database (deferred to ensure event loop is running)
         QTimer.singleShot(
@@ -1661,8 +1666,31 @@ class MainWindow(QMainWindow):
                 self.status_bar.showMessage(f"Export failed: {e}", 5000)
 
     # =========================================================================
-    # AI Search Panel Methods
+    # AI Search Panel & Settings Methods
     # =========================================================================
+
+    @Slot()
+    def show_ai_settings_dialog(self):
+        """Shows the AI Settings dialog."""
+        if not self.ai_settings_dialog:
+            self.ai_settings_dialog = AISettingsDialog(self)
+            self.ai_settings_dialog.rebuild_index_requested.connect(
+                self._on_ai_settings_rebuild_requested
+            )
+            self.ai_settings_dialog.index_status_requested.connect(
+                self.refresh_search_index_status
+            )
+            # Initial status update
+            self.refresh_search_index_status()
+
+        self.ai_settings_dialog.show()
+        self.ai_settings_dialog.raise_()
+        self.ai_settings_dialog.activateWindow()
+
+    @Slot(str)
+    def _on_ai_settings_rebuild_requested(self, object_type: str):
+        """Handle rebuild request from dialog."""
+        self.rebuild_search_index(object_type)
 
     @Slot(str, str, int)
     def perform_semantic_search(self, query: str, object_type_filter: str, top_k: int):
@@ -1716,7 +1744,6 @@ class MainWindow(QMainWindow):
                 logger.warning("GUI DB Service not ready for rebuild.")
                 return
 
-            self.ai_search_panel.set_rebuilding(True)
             self.status_bar.showMessage(f"Rebuilding {object_type} index...", 0)
 
             # Import search service
@@ -1731,8 +1758,12 @@ class MainWindow(QMainWindow):
             else:
                 types = [object_type]
 
-            # Get excluded attributes from UI
-            excluded = self.ai_search_panel.get_excluded_attributes()
+            # Get excluded attributes from QSettings
+            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+            excluded_text = settings.value("ai_search_excluded_attrs", "", type=str)
+            excluded = [
+                attr.strip() for attr in excluded_text.split(",") if attr.strip()
+            ]
 
             # Rebuild index
             counts = search_service.rebuild_index(
@@ -1744,7 +1775,6 @@ class MainWindow(QMainWindow):
             msg = f"Rebuilt index: {total} objects indexed"
             self.status_bar.showMessage(msg, 5000)
             self.ai_search_panel.set_status(msg)
-            self.ai_search_panel.set_rebuilding(False)
 
             # Refresh index status
             self.refresh_search_index_status()
@@ -1753,7 +1783,6 @@ class MainWindow(QMainWindow):
             logger.error(f"Index rebuild failed: {e}")
             self.status_bar.showMessage(f"Rebuild failed: {e}", 5000)
             self.ai_search_panel.set_status(f"Rebuild failed: {e}")
-            self.ai_search_panel.set_rebuilding(False)
 
     @Slot(str, str)
     def _on_search_result_selected(self, object_type: str, object_id: str):
@@ -1806,11 +1835,13 @@ class MainWindow(QMainWindow):
                 last_indexed = "Never"
 
             # Update panel
-            self.ai_search_panel.set_index_status(
-                model=f"{provider}:{model}",
-                indexed_count=count,
-                last_indexed=last_indexed,
-            )
+            # Update dialog if visible
+            if self.ai_settings_dialog and self.ai_settings_dialog.isVisible():
+                self.ai_settings_dialog.update_status(
+                    model=f"{provider}:{model}",
+                    counts=str(count),
+                    last_updated=last_indexed,
+                )
 
         except Exception as e:
             logger.error(f"Failed to refresh index status: {e}")

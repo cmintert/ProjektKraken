@@ -100,9 +100,7 @@ class UIManager:
         self.docks["timeline"] = self._create_dock(
             DOCK_TITLE_TIMELINE, DOCK_OBJ_TIMELINE, widgets["timeline"]
         )
-        self.main_window.addDockWidget(
-            Qt.BottomDockWidgetArea, self.docks["timeline"]
-        )
+        self.main_window.addDockWidget(Qt.BottomDockWidgetArea, self.docks["timeline"])
 
         # 5. Longform Editor (Right)
         if "longform_editor" in widgets:
@@ -120,12 +118,8 @@ class UIManager:
             self.docks["map"] = self._create_dock(
                 DOCK_TITLE_MAP, DOCK_OBJ_MAP, widgets["map_widget"]
             )
-            self.main_window.addDockWidget(
-                Qt.BottomDockWidgetArea, self.docks["map"]
-            )
-            self.main_window.tabifyDockWidget(
-                self.docks["timeline"], self.docks["map"]
-            )
+            self.main_window.addDockWidget(Qt.BottomDockWidgetArea, self.docks["map"])
+            self.main_window.tabifyDockWidget(self.docks["timeline"], self.docks["map"])
 
         # 7. AI Search Panel (Right, tabbed with inspectors)
         if "ai_search_panel" in widgets:
@@ -314,3 +308,19 @@ class UIManager:
 
         dialog.config_saved.connect(on_config_saved)
         dialog.exec()
+
+    def create_ai_menu(self, menu_bar: QMenuBar):
+        """Creates the AI Settings menu."""
+        ai_menu = menu_bar.addMenu("AI Settings")
+
+        # AI Search Index and Settings
+        search_settings_action = ai_menu.addAction("AI Search Index and Settings...")
+        # Check if main_window has the method, or defer connection?
+        # Assuming main_window will have it.
+        if hasattr(self.main_window, "show_ai_settings_dialog"):
+            search_settings_action.triggered.connect(
+                self.main_window.show_ai_settings_dialog
+            )
+        else:
+            # Fallback or log if method not ready yet (during dev)
+            print("MainWindow missing show_ai_settings_dialog")

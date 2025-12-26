@@ -41,12 +41,22 @@ class WikiTextEdit(QTextEdit):
 
         # Enable mouse tracking for hover effects if desired
         self.setMouseTracking(True)
+        self.setAttribute(Qt.WA_StyledBackground, True)
 
         # Connect to theme changes and apply initial theme
         tm = ThemeManager()
         tm.theme_changed.connect(self._on_theme_changed)
+
+        # Ensure native frame doesn't interfere with CSS border-radius
+        self.setFrameShape(QTextEdit.NoFrame)
+
+        # Force viewport transparency via Palette to ensure CSS border-radius shows
+        p = self.viewport().palette()
+        p.setColor(self.viewport().backgroundRole(), Qt.transparent)
+        self.viewport().setPalette(p)
+
         self._apply_theme_stylesheet()
-        self._apply_scrollbar_style()
+        self._apply_widget_style()
 
     def set_link_resolver(self, link_resolver):
         """
@@ -183,11 +193,9 @@ class WikiTextEdit(QTextEdit):
         css = self._get_theme_css()
         self.document().setDefaultStyleSheet(css)
 
-    def _apply_scrollbar_style(self):
+    def _apply_widget_style(self):
         """
-        Apply theme-based scrollbar styling to the widget.
-
-        Sets QSS stylesheet on the widget itself for scrollbar colors.
+        Apply theme-based styling to the widget (borders, scrollbars).
         """
         tm = ThemeManager()
         theme = tm.get_theme()
@@ -195,10 +203,18 @@ class WikiTextEdit(QTextEdit):
         scrollbar_bg = theme.get("scrollbar_bg", theme.get("app_bg", "#2B2B2B"))
         scrollbar_handle = theme.get("scrollbar_handle", theme.get("border", "#454545"))
         primary = theme.get("primary", "#FF9900")
+        surface = theme.get("surface", "#323232")
+        border = theme.get("border", "#454545")
 
-        scrollbar_qss = f"""
-            QTextEdit {{
-                background-color: {theme.get("surface", "#323232")};
+        widget_qss = f"""
+            QTextEdit, WikiTextEdit {{
+                background-color: {surface};
+                border: 1px solid {border};
+                border-radius: 6px;
+                padding: 4px;
+            }}
+            QTextEdit > QWidget {{
+                background-color: transparent;
             }}
             QScrollBar:vertical {{
                 background: {scrollbar_bg};
@@ -241,7 +257,7 @@ class WikiTextEdit(QTextEdit):
                 background: {scrollbar_bg};
             }}
         """
-        self.setStyleSheet(scrollbar_qss)
+        self.setStyleSheet(widget_qss)
 
     def set_wiki_text(self, text: str):
         """
@@ -300,14 +316,14 @@ class WikiTextEdit(QTextEdit):
                     # Log a few valid targets to see if we possess data
                     sample = list(self._valid_targets_lower)[:10]
                     logger.debug(
-                        f"Sample valid targets (total {len(self._valid_targets_lower)}): {sample}"
+                        f"Sample valid targets (total {len(self._valid_targets_lower)}): "
+                        f"{sample}"
                     )
 
             if is_valid:
                 return f"[{label}]({target})"
             else:
                 # Render as raw HTML anchor with style for red color
-                # Markdown extension 'extra' supports raw HTML
                 return f'<a href="{target}" style="color: red;">{label}</a>'
 
         md_text = pattern.sub(replace_link_md, text)
@@ -588,8 +604,8 @@ class WikiTextEdit(QTextEdit):
                         as we fetch fresh from ThemeManager).
         """
         logger.debug("Theme changed, re-rendering content")
-        # Update scrollbar styling
-        self._apply_scrollbar_style()
+        # Update widget styling (scrollbars, borders)
+        self._apply_widget_style()
         # Re-render with stored text to apply new stylesheet
         if self._current_wiki_text:
             self.set_wiki_text(self._current_wiki_text)

@@ -158,6 +158,4 @@ class ConnectionManager:
 
         # Search and index operations
         panel.search_requested.connect(self.window.perform_semantic_search)
-        panel.rebuild_index_requested.connect(self.window.rebuild_search_index)
         panel.result_selected.connect(self.window._on_search_result_selected)
-        panel.index_status_requested.connect(self.window.refresh_search_index_status)

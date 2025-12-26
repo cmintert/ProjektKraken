@@ -5,7 +5,7 @@ Provides a dockable panel for semantic search with live results and index status
 Supports future content creation features.
 """
 
-from typing import List, Optional
+from typing import List
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
@@ -110,9 +110,7 @@ class AISearchPanelWidget(QWidget):
 
     # Signals for user actions
     search_requested = Signal(str, str, int)  # query_text, object_type_filter, top_k
-    rebuild_index_requested = Signal(str)  # object_type ('entity', 'event', 'all')
     result_selected = Signal(str, str)  # object_type, object_id
-    index_status_requested = Signal()  # Request to refresh index status
 
     def __init__(self, parent=None):
         """
@@ -192,116 +190,8 @@ class AISearchPanelWidget(QWidget):
 
         main_layout.addWidget(results_group)
 
-        # === Index Status Section ===
-        index_group = QGroupBox("Index Status")
-        index_layout = QVBoxLayout(index_group)
-        StyleHelper.apply_standard_list_spacing(index_layout)
-
-        # Status display
-        status_grid = QVBoxLayout()
-
-        self.lbl_model = QLabel("Model: --")
-        self.lbl_model.setStyleSheet("font-size: 10px;")
-        status_grid.addWidget(self.lbl_model)
-
-        self.lbl_indexed_count = QLabel("Indexed: --")
-        self.lbl_indexed_count.setStyleSheet("font-size: 10px;")
-        status_grid.addWidget(self.lbl_indexed_count)
-
-        self.lbl_last_indexed = QLabel("Last Updated: --")
-        self.lbl_last_indexed.setStyleSheet("font-size: 10px;")
-        status_grid.addWidget(self.lbl_last_indexed)
-
-        index_layout.addLayout(status_grid)
-
-        # Rebuild controls
-        rebuild_layout = QHBoxLayout()
-
-        self.rebuild_combo = QComboBox()
-        self.rebuild_combo.addItems(["All", "Entities", "Events"])
-        rebuild_layout.addWidget(self.rebuild_combo, stretch=1)
-
-        self.btn_rebuild = QPushButton("Rebuild Index")
-        self.btn_rebuild.clicked.connect(self._on_rebuild_clicked)
-        rebuild_layout.addWidget(self.btn_rebuild, stretch=1)
-
-        index_layout.addLayout(rebuild_layout)
-
-        # Refresh button
-        self.btn_refresh_status = QPushButton("Refresh Status")
-        self.btn_refresh_status.clicked.connect(self.index_status_requested.emit)
-        index_layout.addWidget(self.btn_refresh_status)
-
-        main_layout.addWidget(index_group)
-
-        # === Future: Content Creation Section (Placeholder) ===
-        # This section will be activated in future updates
-        # creation_group = QGroupBox("AI Content Creation (Coming Soon)")
-        # creation_layout = QVBoxLayout(creation_group)
-        # placeholder_label = QLabel(
-        #     "Future features:\n"
-        #     "• AI-assisted descriptions\n"
-        #     "• Related content suggestions\n"
-        #     "• Attribute generation"
-        # )
-        # placeholder_label.setStyleSheet("color: #95a5a6; font-size: 10px;")
-        # creation_layout.addWidget(placeholder_label)
-        # main_layout.addWidget(creation_group)
-
         # Add stretch to push everything to the top
         main_layout.addStretch()
-
-        # === Settings Section ===
-        settings_group = QGroupBox("Settings")
-        settings_layout = QVBoxLayout(settings_group)
-        StyleHelper.apply_standard_list_spacing(settings_layout)
-
-        settings_layout.addWidget(QLabel("Excluded Attributes (comma-separated):"))
-        self.excluded_attrs_input = QLineEdit()
-        self.excluded_attrs_input.setPlaceholderText("e.g. secret_notes, internal_id")
-        self.excluded_attrs_input.setToolTip(
-            "Attributes starting with '_' are automatically excluded."
-        )
-        self.excluded_attrs_input.editingFinished.connect(self.save_settings)
-        settings_layout.addWidget(self.excluded_attrs_input)
-
-        main_layout.addWidget(settings_group)
-
-        # Load settings
-        self.load_settings()
-
-    def get_excluded_attributes(self) -> List[str]:
-        """
-        Get list of attributes to exclude from indexing.
-
-        Returns:
-            List[str]: List of attribute keys.
-        """
-        text = self.excluded_attrs_input.text().strip()
-        if not text:
-            return []
-        return [attr.strip() for attr in text.split(",") if attr.strip()]
-
-    def save_settings(self):
-        """Save settings to QSettings."""
-        from PySide6.QtCore import QSettings
-
-        from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
-
-        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-        settings.setValue(
-            "ai_search_excluded_attrs", self.excluded_attrs_input.text().strip()
-        )
-
-    def load_settings(self):
-        """Load settings from QSettings."""
-        from PySide6.QtCore import QSettings
-
-        from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
-
-        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-        excluded = settings.value("ai_search_excluded_attrs", "", type=str)
-        self.excluded_attrs_input.setText(excluded)
 
     def _on_search_clicked(self):
         """Handle search button click."""
@@ -321,16 +211,6 @@ class AISearchPanelWidget(QWidget):
         top_k = self.top_k_spin.value()
 
         self.search_requested.emit(query, object_type_filter, top_k)
-
-    def _on_rebuild_clicked(self):
-        """Handle rebuild index button click."""
-        rebuild_type = self.rebuild_combo.currentText().lower()
-        if rebuild_type == "entities":
-            rebuild_type = "entity"
-        elif rebuild_type == "events":
-            rebuild_type = "event"
-
-        self.rebuild_index_requested.emit(rebuild_type)
 
     def set_results(self, results: List[dict]):
         """
@@ -384,35 +264,6 @@ class AISearchPanelWidget(QWidget):
         """
         self.status_label.setText(message)
 
-    def set_index_status(
-        self,
-        model: Optional[str] = None,
-        indexed_count: Optional[int] = None,
-        last_indexed: Optional[str] = None,
-    ):
-        """
-        Update the index status display.
-
-        Args:
-            model: Current model name.
-            indexed_count: Total number of indexed objects.
-            last_indexed: Last indexed timestamp (formatted string).
-        """
-        if model:
-            self.lbl_model.setText(f"Model: {model}")
-        else:
-            self.lbl_model.setText("Model: Not configured")
-
-        if indexed_count is not None:
-            self.lbl_indexed_count.setText(f"Indexed: {indexed_count} objects")
-        else:
-            self.lbl_indexed_count.setText("Indexed: --")
-
-        if last_indexed:
-            self.lbl_last_indexed.setText(f"Last Updated: {last_indexed}")
-        else:
-            self.lbl_last_indexed.setText("Last Updated: Never")
-
     def set_searching(self, searching: bool):
         """
         Update UI to show search in progress.
@@ -424,19 +275,6 @@ class AISearchPanelWidget(QWidget):
         self.search_input.setEnabled(not searching)
         if searching:
             self.set_status("Searching...")
-
-    def set_rebuilding(self, rebuilding: bool):
-        """
-        Update UI to show index rebuild in progress.
-
-        Args:
-            rebuilding: True if rebuild is in progress.
-        """
-        self.btn_rebuild.setEnabled(not rebuilding)
-        self.rebuild_combo.setEnabled(not rebuilding)
-        if rebuilding:
-            selected = self.rebuild_combo.currentText()
-            self.set_status(f"Rebuilding {selected} index...")
 
     def clear_results(self):
         """Clear the results list."""

@@ -357,3 +357,24 @@ class StyleHelper:
             layout: The QLayout to configure.
         """
         layout.setContentsMargins(0, 0, 0, 0)
+
+    @staticmethod
+    def get_input_field_style() -> str:
+        """
+        Returns QSS for input fields (QLineEdit, QTextEdit).
+
+        Provides consistent rounded corners and border styling.
+
+        Returns:
+            str: QSS stylesheet string for input fields.
+        """
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
+        return (
+            f"border: 1px solid {theme['border']}; "
+            f"border-radius: 6px; "  # High rounded corners as requested
+            f"background-color: {theme['surface']}; "
+            f"color: {theme['text_main']}; "
+            f"padding: 4px;"
+        )
