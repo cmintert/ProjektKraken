@@ -77,6 +77,13 @@ Description: <description>
 - Nested dicts/lists are JSON-serialized with `sort_keys=True`
 - Non-ASCII characters preserved (`ensure_ascii=False`)
 
+### Attribute Exclusion
+
+Attributes can be excluded from the search index to prevent internal metadata or sensitive information from affecting search results.
+
+1.  **Internal Attributes**: Any attribute key starting with an underscore (`_`) is automatically excluded (e.g., `_longform`, `_internal_id`).
+2.  **User-Configured Exclusions**: Users can specify a list of additional attribute keys to exclude via the "Excluded Attributes" field in the AI Search Panel.
+
 ### Embedding Providers
 
 #### LM Studio Provider (Primary)
