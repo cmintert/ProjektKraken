@@ -305,7 +305,7 @@ The `SearchService` is designed with a pluggable `VectorIndex` protocol to enabl
 
 **For Better Quality:**
 - `bge-base-en-v1.5` (768d): Larger but more accurate
-- `e5-large-v2` (1024d): State-of-art quality (slower)
+- `e5-large-v2` (1024d): State-of-the-art quality (slower)
 
 **Trade-offs:**
 - Larger dimensions = better quality, more storage, slower queries
