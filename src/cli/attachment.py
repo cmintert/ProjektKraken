@@ -163,6 +163,7 @@ def reorder_attachments(args) -> int:
 
 
 def main():
+    """Main entry point for the attachment CLI tool."""
     parser = argparse.ArgumentParser(description="Manage ProjektKraken attachments")
     parser.add_argument(
         "--verbose", "-v", action="store_true", help="Enable verbose logging"

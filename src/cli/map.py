@@ -340,6 +340,7 @@ def marker_list(args) -> int:
 
 
 def main():
+    """Main entry point for the map CLI tool."""
     parser = argparse.ArgumentParser(description="Manage ProjektKraken maps")
     parser.add_argument(
         "--verbose", "-v", action="store_true", help="Enable verbose logging"

@@ -231,6 +231,7 @@ def reindex_longform(args) -> int:
 
 
 def main():
+    """Main entry point for the longform document CLI tool."""
     parser = argparse.ArgumentParser(
         description="Manage ProjektKraken longform document"
     )

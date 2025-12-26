@@ -75,6 +75,7 @@ def scan_links(args) -> int:
 
 
 def main():
+    """Main entry point for the wiki content CLI tool."""
     parser = argparse.ArgumentParser(description="Manage ProjektKraken wiki content")
     parser.add_argument(
         "--verbose", "-v", action="store_true", help="Enable verbose logging"

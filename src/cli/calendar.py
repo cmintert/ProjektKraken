@@ -238,6 +238,7 @@ def delete_calendar(args) -> int:
 
 
 def main():
+    """Main entry point for the calendar CLI tool."""
     parser = argparse.ArgumentParser(description="Manage ProjektKraken calendars")
     parser.add_argument(
         "--verbose", "-v", action="store_true", help="Enable verbose logging"
