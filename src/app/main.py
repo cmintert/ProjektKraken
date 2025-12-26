@@ -6,6 +6,7 @@ Responsible for initializing the MainWindow, Workers, and UI components.
 import os
 import sys
 
+from dotenv import load_dotenv
 from PySide6.QtCore import (
     Q_ARG,
     QMetaObject,
@@ -21,6 +22,7 @@ from PySide6.QtCore import (
 )
 from PySide6.QtWidgets import (
     QApplication,
+    QDialog,
     QFileDialog,
     QInputDialog,
     QLabel,
@@ -38,6 +40,7 @@ from src.app.constants import (
     DEFAULT_WINDOW_HEIGHT,
     DEFAULT_WINDOW_WIDTH,
     IMAGE_FILE_FILTER,
+    SETTINGS_ACTIVE_DB_KEY,
     STATUS_DB_INIT_FAIL,
     STATUS_ERROR_PREFIX,
     WINDOW_SETTINGS_APP,
@@ -80,6 +83,9 @@ from src.commands.wiki_commands import ProcessWikiLinksCommand
 from src.core.logging_config import get_logger, setup_logging
 from src.core.paths import get_resource_path, get_user_data_path
 from src.core.theme_manager import ThemeManager
+from src.gui.dialogs.ai_settings_dialog import AISettingsDialog
+from src.gui.dialogs.database_manager_dialog import DatabaseManagerDialog
+from src.gui.widgets.ai_search_panel import AISearchPanelWidget
 from src.gui.widgets.entity_editor import EntityEditorWidget
 
 # UI Components
@@ -91,6 +97,9 @@ from src.gui.widgets.unified_list import UnifiedListWidget
 from src.services import longform_builder
 from src.services.db_service import DatabaseService
 from src.services.worker import DatabaseWorker
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Initialize Logging
 setup_logging(debug_mode=True)
@@ -123,7 +132,12 @@ class MainWindow(QMainWindow):
         - UI Signals.
         """
         super().__init__()
-        self.setWindowTitle(WINDOW_TITLE)
+
+        # Load active database for title
+        settings = QSettings()
+        active_db = settings.value(SETTINGS_ACTIVE_DB_KEY, "world.kraken")
+
+        self.setWindowTitle(f"{WINDOW_TITLE} - {active_db}")
         self.resize(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
 
         # 0. Initialize Data Handler (signals-based, no window reference)
@@ -146,6 +160,10 @@ class MainWindow(QMainWindow):
         )
         self.timeline = TimelineWidget()
         self.map_widget = MapWidget()
+
+        # AI Search Panel
+        self.ai_search_panel = AISearchPanelWidget()
+        self.ai_settings_dialog = None
 
         # Data Cache for Unified List
         self._cached_events = []
@@ -181,6 +199,7 @@ class MainWindow(QMainWindow):
                 "timeline": self.timeline,
                 "longform_editor": self.longform_editor,
                 "map_widget": self.map_widget,
+                "ai_search_panel": self.ai_search_panel,
             }
         )
 
@@ -211,11 +230,17 @@ class MainWindow(QMainWindow):
         )  # Red
         self.status_bar.addPermanentWidget(self.lbl_playhead_time)
 
+        # File Menu
+        self.ui_manager.create_file_menu(self.menuBar())
+
         # View Menu
         self.ui_manager.create_view_menu(self.menuBar())
 
         # Settings Menu (New)
         self.ui_manager.create_settings_menu(self.menuBar())
+
+        # AI Menu (New)
+        self.ui_manager.create_ai_menu(self.menuBar())
 
         # 5. Initialize Database (deferred to ensure event loop is running)
         QTimer.singleShot(
@@ -420,7 +445,14 @@ class MainWindow(QMainWindow):
         Connects all worker signals to MainWindow slots.
         """
         self.worker_thread = QThread()
-        db_path = get_user_data_path("world.kraken")
+
+        # Load active database from settings
+        settings = QSettings()
+        active_db = settings.value(SETTINGS_ACTIVE_DB_KEY, "world.kraken")
+
+        db_path = get_user_data_path(active_db)
+        logger.info(f"Initializing DatabaseWorker with: {db_path}")
+
         self.worker = DatabaseWorker(db_path)
         self.worker.moveToThread(self.worker_thread)
 
@@ -514,6 +546,9 @@ class MainWindow(QMainWindow):
             self._request_current_time()
             self._request_grouping_config()
             self.load_maps()
+
+            # Refresh AI search index status
+            QTimer.singleShot(100, self.refresh_search_index_status)
         else:
             self.status_bar.showMessage(STATUS_DB_INIT_FAIL)
 
@@ -1648,6 +1683,200 @@ class MainWindow(QMainWindow):
                 logger.error(f"Failed to export longform document: {e}")
                 self.status_bar.showMessage(f"Export failed: {e}", 5000)
 
+    # =========================================================================
+    # AI Search Panel & Settings Methods
+    # =========================================================================
+
+    @Slot()
+    def show_ai_settings_dialog(self):
+        """Shows the AI Settings dialog."""
+        if not self.ai_settings_dialog:
+            self.ai_settings_dialog = AISettingsDialog(self)
+            self.ai_settings_dialog.rebuild_index_requested.connect(
+                self._on_ai_settings_rebuild_requested
+            )
+            self.ai_settings_dialog.index_status_requested.connect(
+                self.refresh_search_index_status
+            )
+            # Initial status update
+            self.refresh_search_index_status()
+
+        self.ai_settings_dialog.show()
+        self.ai_settings_dialog.raise_()
+        self.ai_settings_dialog.activateWindow()
+
+    @Slot(str)
+    def _on_ai_settings_rebuild_requested(self, object_type: str):
+        """Handle rebuild request from dialog."""
+        self.rebuild_search_index(object_type)
+
+    @Slot(str, str, int)
+    def perform_semantic_search(self, query: str, object_type_filter: str, top_k: int):
+        """
+        Perform semantic search and display results.
+
+        Args:
+            query: Search query text.
+            object_type_filter: Filter by 'entity' or 'event', or empty for all.
+            top_k: Number of results to return.
+        """
+        try:
+            if not hasattr(self, "gui_db_service"):
+                logger.warning("GUI DB Service not ready for search.")
+                return
+
+            self.ai_search_panel.set_searching(True)
+
+            # Import search service
+            from src.services.search_service import create_search_service
+
+            # Create search service with GUI thread connection
+            search_service = create_search_service(self.gui_db_service._connection)
+
+            # Perform query
+            results = search_service.query(
+                text=query,
+                object_type=object_type_filter if object_type_filter else None,
+                top_k=top_k,
+            )
+
+            # Display results
+            self.ai_search_panel.set_results(results)
+            self.ai_search_panel.set_searching(False)
+
+        except Exception as e:
+            logger.error(f"Semantic search failed: {e}")
+            self.ai_search_panel.set_status(f"Search failed: {e}")
+            self.ai_search_panel.set_searching(False)
+
+    @Slot(str)
+    def rebuild_search_index(self, object_type: str):
+        """
+        Rebuild the semantic search index.
+
+        Args:
+            object_type: Type to rebuild ('all', 'entity', 'event').
+        """
+        try:
+            if not hasattr(self, "gui_db_service"):
+                logger.warning("GUI DB Service not ready for rebuild.")
+                return
+
+            self.status_bar.showMessage(f"Rebuilding {object_type} index...", 0)
+
+            # Import search service
+            from src.services.search_service import create_search_service
+
+            # Create search service with GUI thread connection
+            search_service = create_search_service(self.gui_db_service._connection)
+
+            # Determine object types to rebuild
+            if object_type == "all":
+                types = ["entity", "event"]
+            else:
+                types = [object_type]
+
+            # Get excluded attributes from QSettings
+            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+            excluded_text = settings.value("ai_search_excluded_attrs", "", type=str)
+            excluded = [
+                attr.strip() for attr in excluded_text.split(",") if attr.strip()
+            ]
+
+            # Rebuild index
+            counts = search_service.rebuild_index(
+                object_types=types, excluded_attributes=excluded
+            )
+
+            # Show results
+            total = sum(counts.values())
+            msg = f"Rebuilt index: {total} objects indexed"
+            self.status_bar.showMessage(msg, 5000)
+            self.ai_search_panel.set_status(msg)
+
+            # Refresh index status
+            self.refresh_search_index_status()
+
+        except Exception as e:
+            logger.error(f"Index rebuild failed: {e}")
+            self.status_bar.showMessage(f"Rebuild failed: {e}", 5000)
+            self.ai_search_panel.set_status(f"Rebuild failed: {e}")
+
+    @Slot(str, str)
+    def _on_search_result_selected(self, object_type: str, object_id: str):
+        """
+        Handle selection of a search result.
+
+        Args:
+            object_type: 'entity' or 'event'.
+            object_id: Object UUID.
+        """
+        # Navigate to the selected item
+        if object_type == "entity":
+            self.load_entity_details(object_id)
+            self._on_dock_raise_requested("entity")
+        elif object_type == "event":
+            self.load_event_details(object_id)
+            self._on_dock_raise_requested("event")
+
+    @Slot()
+    def show_database_manager(self):
+        """Shows the Database Manager dialog."""
+        dialog = DatabaseManagerDialog(self)
+        if dialog.exec() == QDialog.Accepted:
+            # If accepted, it means a restart is required (implied by select button)
+            # We can offer to restart immediately or just close.
+            # The dialog already warns user to restart.
+            # We could do auto-restart:
+            # qApp.quit()
+            # QProcess.startDetached(sys.executable, sys.argv)
+            pass
+
+    @Slot()
+    def refresh_search_index_status(self):
+        """Refresh the search index status display."""
+        try:
+            if not hasattr(self, "gui_db_service"):
+                return
+
+            import datetime
+            import os
+
+            # Get model configuration
+            provider = os.getenv("EMBED_PROVIDER", "lmstudio")
+            model = os.getenv("LMSTUDIO_MODEL", "Not configured")
+
+            # Count indexed objects
+            # Use gui_db_service connection (Main Thread)
+            cursor = self.gui_db_service._connection.execute(
+                "SELECT COUNT(*) FROM embeddings"
+            )
+            count = cursor.fetchone()[0]
+
+            # Get last indexed time
+            cursor = self.gui_db_service._connection.execute(
+                "SELECT MAX(created_at) FROM embeddings"
+            )
+            last_time = cursor.fetchone()[0]
+
+            if last_time:
+                dt = datetime.datetime.fromtimestamp(last_time)
+                last_indexed = dt.strftime("%Y-%m-%d %H:%M:%S")
+            else:
+                last_indexed = "Never"
+
+            # Update panel
+            # Update dialog if visible
+            if self.ai_settings_dialog and self.ai_settings_dialog.isVisible():
+                self.ai_settings_dialog.update_status(
+                    model=f"{provider}:{model}",
+                    counts=str(count),
+                    last_updated=last_indexed,
+                )
+
+        except Exception as e:
+            logger.error(f"Failed to refresh index status: {e}")
+
 
 def main():
     """
@@ -1662,6 +1891,8 @@ def main():
         )
 
         app = QApplication(sys.argv)
+        app.setOrganizationName(WINDOW_SETTINGS_KEY)
+        app.setApplicationName(WINDOW_SETTINGS_APP)
 
         # 2. Apply Theme
         tm = ThemeManager()

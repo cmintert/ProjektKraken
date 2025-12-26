@@ -42,7 +42,7 @@ def test_safe_json_loads_null():
 def test_get_longform_meta_exists():
     """Test extracting longform metadata when it exists."""
     attrs = {
-        "longform": {"default": {"position": 100.0, "depth": 0, "parent_id": None}}
+        "_longform": {"default": {"position": 100.0, "depth": 0, "parent_id": None}}
     }
     meta = longform_builder._get_longform_meta(attrs, "default")
     assert meta == {"position": 100.0, "depth": 0, "parent_id": None}
@@ -61,18 +61,18 @@ def test_set_longform_meta_new():
     meta = {"position": 100.0, "depth": 0}
     result = longform_builder._set_longform_meta(attrs, meta, "default")
 
-    assert "longform" in result
-    assert "default" in result["longform"]
-    assert result["longform"]["default"] == meta
+    assert "_longform" in result
+    assert "default" in result["_longform"]
+    assert result["_longform"]["default"] == meta
 
 
 def test_set_longform_meta_update():
     """Test updating existing longform metadata."""
-    attrs = {"longform": {"default": {"position": 100.0}}}
+    attrs = {"_longform": {"default": {"position": 100.0}}}
     meta = {"position": 200.0, "depth": 1}
     result = longform_builder._set_longform_meta(attrs, meta, "default")
 
-    assert result["longform"]["default"] == meta
+    assert result["_longform"]["default"] == meta
 
 
 # Helper to create dict-like row mocks
@@ -106,7 +106,7 @@ def test_read_all_longform_items_mixed(mock_connection):
                 "description": "Event content",
                 "attributes": json.dumps(
                     {
-                        "longform": {
+                        "_longform": {
                             "default": {
                                 "position": 100.0,
                                 "depth": 0,
@@ -128,7 +128,7 @@ def test_read_all_longform_items_mixed(mock_connection):
                 "description": "Entity content",
                 "attributes": json.dumps(
                     {
-                        "longform": {
+                        "_longform": {
                             "default": {
                                 "position": 200.0,
                                 "depth": 0,
@@ -203,7 +203,7 @@ def test_build_longform_sequence_ordering(mock_connection):
                 "description": "",
                 "attributes": json.dumps(
                     {
-                        "longform": {
+                        "_longform": {
                             "default": {
                                 "position": 300.0,
                                 "depth": 0,
@@ -221,7 +221,7 @@ def test_build_longform_sequence_ordering(mock_connection):
                 "description": "",
                 "attributes": json.dumps(
                     {
-                        "longform": {
+                        "_longform": {
                             "default": {
                                 "position": 100.0,
                                 "depth": 0,
@@ -239,7 +239,7 @@ def test_build_longform_sequence_ordering(mock_connection):
                 "description": "",
                 "attributes": json.dumps(
                     {
-                        "longform": {
+                        "_longform": {
                             "default": {
                                 "position": 200.0,
                                 "depth": 0,
@@ -280,7 +280,7 @@ def test_build_longform_sequence_nesting(mock_connection):
                 "description": "",
                 "attributes": json.dumps(
                     {
-                        "longform": {
+                        "_longform": {
                             "default": {
                                 "position": 100.0,
                                 "depth": 0,
@@ -298,7 +298,7 @@ def test_build_longform_sequence_nesting(mock_connection):
                 "description": "",
                 "attributes": json.dumps(
                     {
-                        "longform": {
+                        "_longform": {
                             "default": {
                                 "position": 110.0,
                                 "depth": 1,
@@ -316,7 +316,7 @@ def test_build_longform_sequence_nesting(mock_connection):
                 "description": "",
                 "attributes": json.dumps(
                     {
-                        "longform": {
+                        "_longform": {
                             "default": {
                                 "position": 120.0,
                                 "depth": 1,
@@ -360,7 +360,7 @@ def test_build_longform_sequence_heading_levels(mock_connection):
                 "description": "",
                 "attributes": json.dumps(
                     {
-                        "longform": {
+                        "_longform": {
                             "default": {
                                 "position": 100.0,
                                 "depth": 0,
@@ -378,7 +378,7 @@ def test_build_longform_sequence_heading_levels(mock_connection):
                 "description": "",
                 "attributes": json.dumps(
                     {
-                        "longform": {
+                        "_longform": {
                             "default": {
                                 "position": 200.0,
                                 "depth": 5,
@@ -396,7 +396,7 @@ def test_build_longform_sequence_heading_levels(mock_connection):
                 "description": "",
                 "attributes": json.dumps(
                     {
-                        "longform": {
+                        "_longform": {
                             "default": {
                                 "position": 300.0,
                                 "depth": 10,
@@ -628,7 +628,7 @@ def test_export_longform_to_markdown_with_content(mock_connection):
                 "description": "Event content here",
                 "attributes": json.dumps(
                     {
-                        "longform": {
+                        "_longform": {
                             "default": {
                                 "position": 100.0,
                                 "depth": 0,
@@ -669,7 +669,7 @@ def test_export_longform_to_markdown_title_override(mock_connection):
                 "description": "Content",
                 "attributes": json.dumps(
                     {
-                        "longform": {
+                        "_longform": {
                             "default": {
                                 "position": 100.0,
                                 "depth": 0,

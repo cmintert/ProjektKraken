@@ -8,6 +8,7 @@ The CLI tools provide headless access to all core ProjektKraken functionality:
 - Event management (create, list, show, update, delete)
 - Entity management (create, list, show, update, delete)
 - Relation management (add, list, delete)
+- Semantic search (rebuild index, query)
 - Longform document export
 
 ## Requirements
@@ -212,6 +213,90 @@ python -m src.cli.wiki scan \
   --source <entity-id> \
   --field description
 ```
+
+## Semantic Search Management
+
+### Rebuild Search Index
+
+Build or rebuild the semantic search index for entities and events.
+
+```bash
+# Rebuild entire index (all entities and events)
+python -m src.cli.index rebuild --database world.kraken
+
+# Rebuild only entities
+python -m src.cli.index rebuild --database world.kraken --type entity
+
+# Rebuild only events
+python -m src.cli.index rebuild --database world.kraken --type event
+
+# Use specific provider and model
+python -m src.cli.index rebuild \
+  --database world.kraken \
+  --provider lmstudio \
+  --model bge-small-en
+```
+
+**Environment Variables:**
+- `EMBED_PROVIDER`: Embedding provider (`lmstudio` or `sentence-transformers`)
+- `LMSTUDIO_EMBED_URL`: LM Studio API endpoint (default: `http://localhost:8080/v1/embeddings`)
+- `LMSTUDIO_MODEL`: Model name for embeddings
+- `LMSTUDIO_API_KEY`: Optional API key
+
+### Index a Single Object
+
+Index a specific entity or event for semantic search.
+
+```bash
+# Index an entity
+python -m src.cli.index index-object \
+  --database world.kraken \
+  --type entity \
+  --id <entity-id>
+
+# Index an event
+python -m src.cli.index index-object \
+  --database world.kraken \
+  --type event \
+  --id <event-id>
+```
+
+### Query the Search Index
+
+Perform semantic search queries to find similar entities and events.
+
+```bash
+# Basic query
+python -m src.cli.index query \
+  --database world.kraken \
+  --text "find the wizard king"
+
+# Filter by type
+python -m src.cli.index query \
+  --database world.kraken \
+  --text "ancient elven cities" \
+  --type entity
+
+# Limit results
+python -m src.cli.index query \
+  --database world.kraken \
+  --text "battles and conflicts" \
+  --top-k 5
+
+# JSON output
+python -m src.cli.index query \
+  --database world.kraken \
+  --text "magical artifacts" \
+  --json
+```
+
+**Query Options:**
+- `--text`: Query text (required)
+- `--type`: Filter by object type (`entity` or `event`)
+- `--top-k`: Number of results to return (default: 10)
+- `--provider`: Embedding provider to use
+- `--model`: Model name override
+- `--json`: Output as JSON
 
 ## Longform Management
 

@@ -7,12 +7,14 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QDockWidget, QMainWindow, QMenuBar, QTabWidget
 
 from src.app.constants import (
+    DOCK_OBJ_AI_SEARCH,
     DOCK_OBJ_ENTITY_INSPECTOR,
     DOCK_OBJ_EVENT_INSPECTOR,
     DOCK_OBJ_LONGFORM,
     DOCK_OBJ_MAP,
     DOCK_OBJ_PROJECT,
     DOCK_OBJ_TIMELINE,
+    DOCK_TITLE_AI_SEARCH,
     DOCK_TITLE_ENTITY_INSPECTOR,
     DOCK_TITLE_EVENT_INSPECTOR,
     DOCK_TITLE_LONGFORM,
@@ -53,6 +55,7 @@ class UIManager:
                 - 'timeline': TimelineWidget
                 - 'longform_editor': LongformEditorWidget
                 - 'map_widget': MapWidget
+                - 'ai_search_panel': AISearchPanelWidget (optional)
         """
         # Enable advanced docking
         self.main_window.setDockOptions(
@@ -118,6 +121,19 @@ class UIManager:
             self.main_window.addDockWidget(Qt.BottomDockWidgetArea, self.docks["map"])
             self.main_window.tabifyDockWidget(self.docks["timeline"], self.docks["map"])
 
+        # 7. AI Search Panel (Right, tabbed with inspectors)
+        if "ai_search_panel" in widgets:
+            self.docks["ai_search"] = self._create_dock(
+                DOCK_TITLE_AI_SEARCH, DOCK_OBJ_AI_SEARCH, widgets["ai_search_panel"]
+            )
+            self.main_window.addDockWidget(
+                Qt.RightDockWidgetArea, self.docks["ai_search"]
+            )
+            # Tabify with entity inspector
+            self.main_window.tabifyDockWidget(
+                self.docks["entity"], self.docks["ai_search"]
+            )
+
     def _create_dock(self, title: str, obj_name: str, widget) -> QDockWidget:
         """
         Helper to create a configured dock widget with size constraints.
@@ -156,6 +172,20 @@ class UIManager:
         dock.setSizePolicy(policy)
 
         return dock
+
+    def create_file_menu(self, menu_bar: QMenuBar):
+        """Creates the File menu."""
+        file_menu = menu_bar.addMenu("File")
+
+        # Open Database
+        db_action = file_menu.addAction("Manage Databases...")
+        db_action.triggered.connect(self.main_window.show_database_manager)
+
+        file_menu.addSeparator()
+
+        # Exit
+        exit_action = file_menu.addAction("Exit")
+        exit_action.triggered.connect(self.main_window.close)
 
     def create_view_menu(self, menu_bar: QMenuBar):
         """Creates the View menu for toggling docks."""
@@ -292,3 +322,19 @@ class UIManager:
 
         dialog.config_saved.connect(on_config_saved)
         dialog.exec()
+
+    def create_ai_menu(self, menu_bar: QMenuBar):
+        """Creates the AI Settings menu."""
+        ai_menu = menu_bar.addMenu("AI Settings")
+
+        # AI Search Index and Settings
+        search_settings_action = ai_menu.addAction("AI Search Index and Settings...")
+        # Check if main_window has the method, or defer connection?
+        # Assuming main_window will have it.
+        if hasattr(self.main_window, "show_ai_settings_dialog"):
+            search_settings_action.triggered.connect(
+                self.main_window.show_ai_settings_dialog
+            )
+        else:
+            # Fallback or log if method not ready yet (during dev)
+            print("MainWindow missing show_ai_settings_dialog")

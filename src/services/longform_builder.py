@@ -84,7 +84,7 @@ def _get_longform_meta(
     Returns:
         Optional[dict]: Longform metadata dict or None if not present.
     """
-    lf_data = attributes.get("longform")
+    lf_data = attributes.get("_longform")
     if not isinstance(lf_data, dict):
         return None
     return lf_data.get(doc_id)
@@ -104,9 +104,9 @@ def _set_longform_meta(
     Returns:
         dict: Updated attributes dictionary.
     """
-    if "longform" not in attributes or not isinstance(attributes["longform"], dict):
-        attributes["longform"] = {}
-    attributes["longform"][doc_id] = meta
+    if "_longform" not in attributes or not isinstance(attributes["_longform"], dict):
+        attributes["_longform"] = {}
+    attributes["_longform"][doc_id] = meta
     return attributes
 
 
@@ -647,11 +647,11 @@ def remove_from_longform(
         return
 
     attrs = _safe_json_loads(row["attributes"])
-    if "longform" in attrs and doc_id in attrs["longform"]:
-        del attrs["longform"][doc_id]
+    if "_longform" in attrs and doc_id in attrs["_longform"]:
+        del attrs["_longform"][doc_id]
         # Clean up empty longform dict
-        if not attrs["longform"]:
-            del attrs["longform"]
+        if not attrs["_longform"]:
+            del attrs["_longform"]
 
     # Security: table name validated above, values are parameterized
     conn.execute(

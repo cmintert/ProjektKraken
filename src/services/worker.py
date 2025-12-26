@@ -6,6 +6,7 @@ Handles asynchronous database operations to keep the UI responsive.
 import logging
 import traceback
 from pathlib import Path
+from typing import List
 
 from PySide6.QtCore import QObject, Signal, Slot
 
@@ -409,3 +410,50 @@ class DatabaseWorker(QObject):
                 f"Failed to load grouping dialog data: {traceback.format_exc()}"
             )
             self.error_occurred.emit("Failed to load grouping data.")
+
+    @Slot(str, str, str, str, list)
+    def index_object(
+        self,
+        object_type: str,
+        object_id: str,
+        provider: str = None,
+        model: str = None,
+        excluded_attributes: List[str] = None,
+    ):
+        """
+        Index a single object (entity or event) for semantic search.
+
+        Args:
+            object_type: 'entity' or 'event'.
+            object_id: UUID of the object to index.
+            provider: Optional embedding provider name.
+            model: Optional model name override.
+            excluded_attributes: Optional list of attribute keys to exclude.
+        """
+        if not self.db_service:
+            return
+
+        try:
+            self.operation_started.emit(f"Indexing {object_type} {object_id}...")
+
+            # Import search service
+            from src.services.search_service import create_search_service
+
+            # Create search service with provider and model
+            search_service = create_search_service(
+                self.db_service._connection, provider_name=provider, model=model
+            )
+
+            # Index the object
+            if object_type == "entity":
+                search_service.index_entity(object_id, excluded_attributes)
+            elif object_type == "event":
+                search_service.index_event(object_id, excluded_attributes)
+            else:
+                raise ValueError(f"Unknown object type: {object_type}")
+
+            self.operation_finished.emit(f"Indexed {object_type} {object_id}.")
+
+        except Exception:
+            logger.error(f"Failed to index {object_type}: {traceback.format_exc()}")
+            self.error_occurred.emit(f"Failed to index {object_type} {object_id}.")
