@@ -7,6 +7,7 @@ including creating, deleting, and switching between databases.
 
 import logging
 import os
+from typing import Optional
 
 from PySide6.QtCore import QSettings, Qt, Signal
 from PySide6.QtWidgets import (
@@ -36,7 +37,7 @@ class DatabaseManagerDialog(QDialog):
     # Signal to indicate a restart is requested (optional, handled by dialog msg)
     restart_required = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QDialog] = None) -> None:
         """
         Initialize the database manager dialog.
 
@@ -90,7 +91,7 @@ class DatabaseManagerDialog(QDialog):
         # Initial Refresh
         self._refresh_list()
 
-    def _refresh_list(self):
+    def _refresh_list(self) -> None:
         """Refresh the list of database files from the data directory."""
         self.db_list.clear()
         settings = QSettings()
@@ -114,7 +115,7 @@ class DatabaseManagerDialog(QDialog):
                 self.db_list.setCurrentItem(item)
             self.db_list.addItem(item)
 
-    def _create_db(self):
+    def _create_db(self) -> None:
         """Handle creation of a new database file."""
         name, ok = QInputDialog.getText(
             self, "Create New World", "Database Name (e.g. 'MyCampaign'):"
@@ -148,7 +149,7 @@ class DatabaseManagerDialog(QDialog):
                 logger.error(f"Failed to create database: {e}")
                 QMessageBox.critical(self, "Error", f"Failed to create database:\n{e}")
 
-    def _delete_db(self):
+    def _delete_db(self) -> None:
         """Handle deletion of a database file."""
         item = self.db_list.currentItem()
         if not item:
@@ -185,7 +186,7 @@ class DatabaseManagerDialog(QDialog):
                 logger.error(f"Failed to delete database: {e}")
                 QMessageBox.critical(self, "Error", f"Failed to delete database:\n{e}")
 
-    def _select_db(self):
+    def _select_db(self) -> None:
         """Handle selection of a database to make active (requires restart)."""
         item = self.db_list.currentItem()
         if not item:

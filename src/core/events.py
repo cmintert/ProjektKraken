@@ -71,23 +71,23 @@ class Event:
         return cls(**d)
 
     @property
-    def tags(self) -> list:
+    def tags(self) -> list[str]:
         """
         Returns the list of tags for this event.
 
         Tags are stored in the attributes dict under the "_tags" key.
 
         Returns:
-            list: List of tag strings.
+            list[str]: List of tag strings.
         """
         return self.attributes.get("_tags", [])
 
     @tags.setter
-    def tags(self, value: list) -> None:
+    def tags(self, value: list[str]) -> None:
         """
         Sets the tags for this event.
 
         Args:
-            value (list): List of tag strings.
+            value (list[str]): List of tag strings.
         """
         self.attributes["_tags"] = value

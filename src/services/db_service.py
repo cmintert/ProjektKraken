@@ -11,7 +11,7 @@ import json
 import logging
 import sqlite3
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 from src.core.calendar import CalendarConfig
 from src.core.entities import Entity
@@ -41,7 +41,7 @@ class DatabaseService:
     classes while maintaining schema management and connection handling.
     """
 
-    def __init__(self, db_path: str = ":memory:"):
+    def __init__(self, db_path: str = ":memory:") -> None:
         """
         Args:
             db_path: Path to the .kraken database file.
@@ -60,7 +60,7 @@ class DatabaseService:
 
         logger.info(f"DatabaseService initialized with path: {self.db_path}")
 
-    def connect(self):
+    def connect(self) -> None:
         """Establishes connection to the database."""
         try:
             self._connection = sqlite3.connect(self.db_path)
@@ -90,7 +90,7 @@ class DatabaseService:
             logger.critical(f"Failed to connect to database: {e}")
             raise
 
-    def close(self):
+    def close(self) -> None:
         """Closes the database connection."""
         if self._connection:
             self._connection.close()
@@ -98,7 +98,7 @@ class DatabaseService:
             logger.debug("Database connection closed.")
 
     @contextmanager
-    def transaction(self):
+    def transaction(self) -> Iterator[sqlite3.Connection]:
         """Safe context manager for transactions."""
         if not self._connection:
             self.connect()
@@ -110,7 +110,7 @@ class DatabaseService:
             logger.error(f"Transaction rolled back due to error: {e}")
             raise
 
-    def _init_schema(self):
+    def _init_schema(self) -> None:
         """Creates the core tables if they don't exist."""
         schema_sql = """
         CREATE TABLE IF NOT EXISTS system_meta (
@@ -291,7 +291,7 @@ class DatabaseService:
             logger.critical(f"Schema initialization failed: {e}")
             raise
 
-    def _run_migrations(self):
+    def _run_migrations(self) -> None:
         """Runs necessary schema migrations."""
         try:
             # Check for 'color' column in 'tags' table
@@ -358,7 +358,7 @@ class DatabaseService:
         """
         return self.get_events()
 
-    def get_events(self, event_type: str = None) -> List[Event]:
+    def get_events(self, event_type: Optional[str] = None) -> List[Event]:
         """
         Retrieves events, optionally filtered by type.
 
@@ -429,7 +429,7 @@ class DatabaseService:
         """
         return self.get_entities()
 
-    def get_entities(self, entity_type: str = None) -> List[Entity]:
+    def get_entities(self, entity_type: Optional[str] = None) -> List[Entity]:
         """
         Retrieves entities, optionally filtered by type.
 
@@ -468,7 +468,7 @@ class DatabaseService:
         source_id: str,
         target_id: str,
         rel_type: str,
-        attributes: Dict[str, Any] = None,
+        attributes: Optional[Dict[str, Any]] = None,
     ) -> str:
         """
         Creates a directed relationship between two objects.
@@ -563,7 +563,7 @@ class DatabaseService:
         rel_id: str,
         target_id: str,
         rel_type: str,
-        attributes: Dict[str, Any] = None,
+        attributes: Optional[Dict[str, Any]] = None,
     ) -> None:
         """
         Updates an existing relationship.
