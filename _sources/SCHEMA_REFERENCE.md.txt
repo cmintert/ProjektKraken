@@ -108,6 +108,19 @@ erDiagram
         REAL created_at
     }
 
+    embeddings {
+        TEXT id PK
+        TEXT object_type
+        TEXT object_id
+        TEXT model
+        BLOB vector
+        INTEGER vector_dim
+        TEXT text_snippet
+        TEXT text_hash
+        JSON metadata
+        REAL created_at
+    }
+
     markers }o--|| maps : "map_id"
     event_tags }o--|| events : "event_id"
     event_tags }o--|| tags : "tag_id"
@@ -250,3 +263,18 @@ erDiagram
 | `created_at` | REAL | NOT NULL |
 
 **Indexes:** `idx_entity_tags_entity`, `idx_entity_tags_tag`
+
+### `embeddings`
+
+| Column | Type | Constraints |
+|--------|------|-------------|
+| `id` | TEXT | PRIMARY KEY |
+| `object_type` | TEXT | NOT NULL |
+| `object_id` | TEXT | NOT NULL |
+| `model` | TEXT | NOT NULL |
+| `vector` | BLOB | NOT NULL |
+| `vector_dim` | INTEGER | NOT NULL |
+| `text_snippet` | TEXT |  |
+| `text_hash` | TEXT |  |
+| `metadata` | JSON | DEFAULT '{}' |
+| `created_at` | REAL | NOT NULL |

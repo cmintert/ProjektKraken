@@ -373,6 +373,19 @@
         REAL created_at
     }
 
+    embeddings {
+        TEXT id PK
+        TEXT object_type
+        TEXT object_id
+        TEXT model
+        BLOB vector
+        INTEGER vector_dim
+        TEXT text_snippet
+        TEXT text_hash
+        JSON metadata
+        REAL created_at
+    }
+
     markers }o--|| maps : &quot;map_id&quot;
     event_tags }o--|| events : &quot;event_id&quot;
     event_tags }o--|| tags : &quot;tag_id&quot;
@@ -822,6 +835,61 @@
 </div>
 <p><strong>Indexes:</strong> <code class="docutils literal notranslate"><span class="pre">idx_entity_tags_entity</span></code>, <code class="docutils literal notranslate"><span class="pre">idx_entity_tags_tag</span></code></p>
 </section>
+<section id="embeddings">
+<h3><code class="docutils literal notranslate"><span class="pre">embeddings</span></code><a class="headerlink" href="#embeddings" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Column</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Constraints</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">id</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>PRIMARY KEY</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">object_type</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>NOT NULL</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">object_id</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>NOT NULL</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">model</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>NOT NULL</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">vector</span></code></p></td>
+<td><p>BLOB</p></td>
+<td><p>NOT NULL</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">vector_dim</span></code></p></td>
+<td><p>INTEGER</p></td>
+<td><p>NOT NULL</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">text_snippet</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">text_hash</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">metadata</span></code></p></td>
+<td><p>JSON</p></td>
+<td><p>DEFAULT ‘{}’</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">created_at</span></code></p></td>
+<td><p>REAL</p></td>
+<td><p>NOT NULL</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
 </section>
 </section>
 
@@ -894,6 +962,7 @@
 <li><a class="reference internal" href="#tags"><code class="docutils literal notranslate"><span class="pre">tags</span></code></a></li>
 <li><a class="reference internal" href="#event-tags"><code class="docutils literal notranslate"><span class="pre">event_tags</span></code></a></li>
 <li><a class="reference internal" href="#entity-tags"><code class="docutils literal notranslate"><span class="pre">entity_tags</span></code></a></li>
+<li><a class="reference internal" href="#embeddings"><code class="docutils literal notranslate"><span class="pre">embeddings</span></code></a></li>
 </ul>
 </li>
 </ul>

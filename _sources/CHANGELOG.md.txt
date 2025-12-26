@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2025-12-26
 ### Internal
-- Style: Auto-sort imports in grouping config dialog
+- Merge pull request #35 from cmintert/copilot/add-local-embeddings-search
 
 
 *This changelog was automatically generated.*

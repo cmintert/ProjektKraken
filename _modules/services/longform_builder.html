@@ -346,7 +346,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        Optional[dict]: Longform metadata dict or None if not present.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">lf_data</span> <span class="o">=</span> <span class="n">attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;longform&quot;</span><span class="p">)</span>
+    <span class="n">lf_data</span> <span class="o">=</span> <span class="n">attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;_longform&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lf_data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="k">return</span> <span class="kc">None</span>
     <span class="k">return</span> <span class="n">lf_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">doc_id</span><span class="p">)</span>
@@ -366,9 +366,9 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        dict: Updated attributes dictionary.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="s2">&quot;longform&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">attributes</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="s2">&quot;longform&quot;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
-        <span class="n">attributes</span><span class="p">[</span><span class="s2">&quot;longform&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">attributes</span><span class="p">[</span><span class="s2">&quot;longform&quot;</span><span class="p">][</span><span class="n">doc_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">meta</span>
+    <span class="k">if</span> <span class="s2">&quot;_longform&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">attributes</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attributes</span><span class="p">[</span><span class="s2">&quot;_longform&quot;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">attributes</span><span class="p">[</span><span class="s2">&quot;_longform&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">attributes</span><span class="p">[</span><span class="s2">&quot;_longform&quot;</span><span class="p">][</span><span class="n">doc_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">meta</span>
     <span class="k">return</span> <span class="n">attributes</span>
 
 
@@ -935,11 +935,11 @@
         <span class="k">return</span>
 
     <span class="n">attrs</span> <span class="o">=</span> <span class="n">_safe_json_loads</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">])</span>
-    <span class="k">if</span> <span class="s2">&quot;longform&quot;</span> <span class="ow">in</span> <span class="n">attrs</span> <span class="ow">and</span> <span class="n">doc_id</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;longform&quot;</span><span class="p">]:</span>
-        <span class="k">del</span> <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;longform&quot;</span><span class="p">][</span><span class="n">doc_id</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s2">&quot;_longform&quot;</span> <span class="ow">in</span> <span class="n">attrs</span> <span class="ow">and</span> <span class="n">doc_id</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;_longform&quot;</span><span class="p">]:</span>
+        <span class="k">del</span> <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;_longform&quot;</span><span class="p">][</span><span class="n">doc_id</span><span class="p">]</span>
         <span class="c1"># Clean up empty longform dict</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;longform&quot;</span><span class="p">]:</span>
-            <span class="k">del</span> <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;longform&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;_longform&quot;</span><span class="p">]:</span>
+            <span class="k">del</span> <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;_longform&quot;</span><span class="p">]</span>
 
     <span class="c1"># Security: table name validated above, values are parameterized</span>
     <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>

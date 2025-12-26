@@ -529,6 +529,34 @@
 <span class="s2">        -- Create indexes for fast lookups</span>
 <span class="s2">        CREATE INDEX IF NOT EXISTS idx_entity_tags_entity ON entity_tags(entity_id);</span>
 <span class="s2">        CREATE INDEX IF NOT EXISTS idx_entity_tags_tag ON entity_tags(tag_id);</span>
+
+<span class="s2">        -- Embeddings Table (for semantic search)</span>
+<span class="s2">        CREATE TABLE IF NOT EXISTS embeddings (</span>
+<span class="s2">            id TEXT PRIMARY KEY,</span>
+<span class="s2">            object_type TEXT NOT NULL,</span>
+<span class="s2">            object_id TEXT NOT NULL,</span>
+<span class="s2">            model TEXT NOT NULL,</span>
+<span class="s2">            vector BLOB NOT NULL,</span>
+<span class="s2">            vector_dim INTEGER NOT NULL,</span>
+<span class="s2">            text_snippet TEXT,</span>
+<span class="s2">            text_hash TEXT,</span>
+<span class="s2">            metadata JSON DEFAULT &#39;</span><span class="si">{}</span><span class="s2">&#39;,</span>
+<span class="s2">            created_at REAL NOT NULL</span>
+<span class="s2">        );</span>
+
+<span class="s2">        -- Upsert-friendly unique constraint to avoid duplicate rows per object/model</span>
+<span class="s2">        CREATE UNIQUE INDEX IF NOT EXISTS uq_embeddings_obj_model</span>
+<span class="s2">            ON embeddings(object_type, object_id, model);</span>
+
+<span class="s2">        -- Useful indexes for query filtering and status</span>
+<span class="s2">        CREATE INDEX IF NOT EXISTS idx_embeddings_model_dim</span>
+<span class="s2">            ON embeddings(model, vector_dim);</span>
+
+<span class="s2">        CREATE INDEX IF NOT EXISTS idx_embeddings_object</span>
+<span class="s2">            ON embeddings(object_type, object_id);</span>
+
+<span class="s2">        CREATE INDEX IF NOT EXISTS idx_embeddings_created_at</span>
+<span class="s2">            ON embeddings(created_at);</span>
 <span class="s2">        &quot;&quot;&quot;</span>
 
         <span class="k">try</span><span class="p">:</span>
