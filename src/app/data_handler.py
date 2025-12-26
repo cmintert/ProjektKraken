@@ -38,13 +38,13 @@ class DataHandler(QObject):
     longform_sequence_ready = Signal(list)  # Emitted when longform data is processed
     maps_ready = Signal(list)  # Emitted when maps are processed
     markers_ready = Signal(str, list)  # (map_id, markers)
-    
+
     # Signals for UI actions
     status_message = Signal(str)  # Status bar message updates
     command_failed = Signal(str)  # Command failure message
     dock_raise_requested = Signal(str)  # Request to raise a dock ("event", "entity")
     selection_requested = Signal(str, str)  # (item_type, item_id)
-    
+
     # Signals for command-driven reloads
     reload_events = Signal()
     reload_entities = Signal()
@@ -208,16 +208,18 @@ class DataHandler(QObject):
                     label = event.name
 
             # Create marker data dict
-            processed_markers.append({
-                "id": marker.id,
-                "object_id": marker.object_id,
-                "object_type": marker.object_type,
-                "label": label,
-                "x": marker.x,
-                "y": marker.y,
-                "icon": marker.attributes.get("icon"),
-                "color": marker.attributes.get("color"),
-            })
+            processed_markers.append(
+                {
+                    "id": marker.id,
+                    "object_id": marker.object_id,
+                    "object_type": marker.object_type,
+                    "label": label,
+                    "x": marker.x,
+                    "y": marker.y,
+                    "icon": marker.attributes.get("icon"),
+                    "color": marker.attributes.get("color"),
+                }
+            )
 
         self.markers_ready.emit(map_id, processed_markers)
 

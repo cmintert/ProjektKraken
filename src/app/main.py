@@ -167,6 +167,10 @@ class MainWindow(QMainWindow):
 
         self.longform_editor = LongformEditorWidget()
 
+        # Status Bar
+        self.status_bar = QStatusBar()
+        self.setStatusBar(self.status_bar)
+
         # 3. Setup UI Layout via UIManager
         self.ui_manager = UIManager(self)
         self.ui_manager.setup_docks(
@@ -193,10 +197,6 @@ class MainWindow(QMainWindow):
         # Central Widget
         self.setCentralWidget(QWidget())
         self.centralWidget().hide()
-
-        # Status Bar
-        self.status_bar = QStatusBar()
-        self.setStatusBar(self.status_bar)
 
         # Status Bar Time Labels
         self.lbl_world_time = QLabel("World: --")
@@ -836,7 +836,7 @@ class MainWindow(QMainWindow):
             maps: List of Map objects.
         """
         self.map_widget.set_maps(maps)
-        
+
         # Auto-select first map if none selected
         if maps:
             current_id = self.map_widget.map_selector.currentData()

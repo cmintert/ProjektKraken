@@ -59,8 +59,9 @@ def test_create_entity_success_selects_item(main_window):
         mock_load.assert_called_once()
 
     # Check pending state
-    assert main_window._pending_select_id == "new-ent-id"
-    assert main_window._pending_select_type == "entity"
+    # Check pending state on DataHandler
+    assert main_window.data_handler._pending_select_id == "new-ent-id"
+    assert main_window.data_handler._pending_select_type == "entity"
 
     # 5. Simulate entities loaded - use real Entity class
     test_entity = Entity(id="new-ent-id", name="New Entity", type="Concept")
@@ -72,8 +73,9 @@ def test_create_entity_success_selects_item(main_window):
         mock_select.assert_called_once_with("entity", "new-ent-id")
 
     # Check pending state cleared
-    assert main_window._pending_select_id is None
-    assert main_window._pending_select_type is None
+    # Check pending state cleared
+    assert main_window.data_handler._pending_select_id is None
+    assert main_window.data_handler._pending_select_type is None
 
 
 def test_create_event_success_selects_item(main_window):
@@ -102,8 +104,8 @@ def test_create_event_success_selects_item(main_window):
         main_window.data_handler.on_command_finished(cmd_result)
         mock_load.assert_called_once()
 
-    assert main_window._pending_select_id == "new-evt-id"
-    assert main_window._pending_select_type == "event"
+    assert main_window.data_handler._pending_select_id == "new-evt-id"
+    assert main_window.data_handler._pending_select_type == "event"
 
     # 5. Simulate events loaded - use real Event class
     test_event = Event(id="new-evt-id", name="New Event", lore_date=0.0, type="generic")
@@ -114,7 +116,7 @@ def test_create_event_success_selects_item(main_window):
 
         mock_select.assert_called_once_with("event", "new-evt-id")
 
-    assert main_window._pending_select_id is None
+    assert main_window.data_handler._pending_select_id is None
 
 
 def test_create_cancel_does_nothing(main_window):

@@ -219,10 +219,6 @@ class TimelineWidget(QWidget):
         """Clears the timeline grouping."""
         self.view.clear_grouping()
 
-    def set_db_service(self, db_service):
-        """Sets the database service for the timeline view."""
-        self.view.set_db_service(db_service)
-
 
 __all__ = [
     "TimelineWidget",
