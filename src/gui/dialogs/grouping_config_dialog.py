@@ -59,6 +59,7 @@ class TagListItem(QWidget):
         super().__init__(parent)
         self.tag_name = tag_name
         self.tag_color = tag_color
+        self.event_count = event_count
 
         layout = QHBoxLayout()
         layout.setContentsMargins(4, 2, 4, 2)
@@ -289,25 +290,75 @@ class GroupingConfigDialog(QDialog):
         """Moves the selected item up in the list."""
         current_row = self.list_widget.currentRow()
         if current_row > 0:
-            item = self.list_widget.takeItem(current_row)
-            self.list_widget.insertItem(current_row - 1, item)
-            self.list_widget.setCurrentRow(current_row - 1)
-
-            # Re-set widget
-            widget = self.list_widget.itemWidget(item)
-            self.list_widget.setItemWidget(item, widget)
+            self._move_item(current_row, current_row - 1)
 
     def _move_down(self):
         """Moves the selected item down in the list."""
         current_row = self.list_widget.currentRow()
         if current_row < self.list_widget.count() - 1 and current_row >= 0:
-            item = self.list_widget.takeItem(current_row)
-            self.list_widget.insertItem(current_row + 1, item)
-            self.list_widget.setCurrentRow(current_row + 1)
+            self._move_item(current_row, current_row + 1)
 
-            # Re-set widget
-            widget = self.list_widget.itemWidget(item)
-            self.list_widget.setItemWidget(item, widget)
+    def _move_item(self, source_row: int, target_row: int):
+        """
+        Moves an item from source_row to target_row by cloning and re-inserting.
+        This avoids issues with takeItem causing widget destruction.
+        """
+        # 1. Get source item and widget
+        source_item = self.list_widget.item(source_row)
+        source_widget = self.list_widget.itemWidget(source_item)
+
+        if not isinstance(source_widget, TagListItem):
+            return
+
+        # 2. Extract state
+        tag_name = source_widget.tag_name
+        tag_color = source_widget.tag_color
+        event_count = source_widget.event_count
+        is_checked = source_widget.is_checked()
+
+        # 3. Insert New Item at Target
+        # If moving down, we insert at target_row + 1 because the insertion happens
+        # before the removal of the old item shifting indices?
+        # Actually:
+        # [A, B] -> Move A(0) to 1.
+        # Insert A' at 2 -> [A, B, A']
+        # Remove at 0 -> [B, A']
+        # So for down: target_row + 1?
+        # Let's use simple logic:
+        # If target < source: Insert at target (shifts source to source+1). Remove source+1.
+        # If target > source: Insert at target+1. Remove source.
+
+        insert_row = target_row
+        if target_row > source_row:
+            insert_row = target_row + 1
+
+        # Create new item/widget
+        new_widget = TagListItem(tag_name, tag_color, event_count)
+        new_widget.set_checked(is_checked)
+        new_widget.color_changed.connect(self._on_tag_color_changed)
+
+        new_item = QListWidgetItem()
+        new_item.setSizeHint(new_widget.sizeHint())
+
+        self.list_widget.insertItem(insert_row, new_item)
+        self.list_widget.setItemWidget(new_item, new_widget)
+
+        # Update tag_items mapping
+        self.tag_items[tag_name] = (new_item, new_widget)
+
+        # 4. Remove Old Item
+        # If we inserted before source, source index increased by 1
+        remove_row = source_row
+        if insert_row <= source_row:
+            remove_row += 1
+
+        self.list_widget.takeItem(remove_row)
+        # Old item/widget will be GC'd naturally
+
+        # 5. Restore selection
+        # Calculate new index of the moved item
+        new_index = target_row
+        self.list_widget.setCurrentRow(new_index)
 
     def _on_tag_color_changed(self, tag_name: str, color: str):
         """
