@@ -17,6 +17,7 @@
 
 ### Data & UI
 - **Hybrid Data Model**: Strict SQL schema for relationships + flexible JSON attributes
+- **Semantic Search**: Local embeddings with LM Studio for natural language queries
 - **Dockable Workspace**: Configurable panels with state persistence
 - **Theme Support**: Dark mode and custom themes via `ThemeManager`
 - **Image Gallery**: Attach images to events and entities
@@ -75,9 +76,32 @@ python -m src.cli.longform export --database world.kraken --output document.md
 
 # Wiki Link Scanning
 python -m src.cli.wiki scan --database world.kraken --text "The [[Hero]] met [[Villain]]"
+
+# Semantic Search
+python -m src.cli.index rebuild --database world.kraken
+python -m src.cli.index query --database world.kraken --text "find the wizard"
 ```
 
 See **[CLI Documentation](src/cli/README.md)** for complete reference.
+
+### Semantic Search
+
+ProjektKraken includes local semantic search powered by LM Studio:
+
+```bash
+# Configure (one time)
+export EMBED_PROVIDER=lmstudio
+export LMSTUDIO_EMBED_URL=http://localhost:8080/v1/embeddings
+export LMSTUDIO_MODEL=bge-small-en-v1.5
+
+# Build search index
+python -m src.cli.index rebuild --database world.kraken
+
+# Query your world
+python -m src.cli.index query --database world.kraken --text "ancient wizard"
+```
+
+See **[Semantic Search Documentation](docs/SEMANTIC_SEARCH.md)** for details.
 
 ## Testing
 
