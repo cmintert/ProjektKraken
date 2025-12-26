@@ -1193,7 +1193,7 @@ class TimelineView(QGraphicsView):
                 self.scene,
                 get_group_metadata_callback=provider.get_group_metadata,
                 get_events_for_group_callback=provider.get_events_for_group,
-                parent=self
+                parent=self,
             )
 
             # Connect band manager signals

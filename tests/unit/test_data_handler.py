@@ -6,7 +6,6 @@ instead of directly manipulating MainWindow.
 """
 
 import pytest
-from PySide6.QtCore import QObject, Signal
 
 from src.app.data_handler import DataHandler
 from src.commands.base_command import CommandResult
@@ -104,7 +103,7 @@ class TestDataHandlerSignals:
         # Check that the latest suggestions include both
         latest_suggestions = suggestions[-1]
         assert len(latest_suggestions) == 4
-        
+
         # Verify format: (id, name, type)
         ids = [item[0] for item in latest_suggestions]
         assert "event1" in ids
@@ -112,7 +111,9 @@ class TestDataHandlerSignals:
         assert "entity1" in ids
         assert "entity2" in ids
 
-    def test_event_details_loaded_emits_signals(self, data_handler, sample_events, qtbot):
+    def test_event_details_loaded_emits_signals(
+        self, data_handler, sample_events, qtbot
+    ):
         """Test that on_event_details_loaded emits the correct signals."""
         dock_raise_signal = []
         event_details_signal = []
@@ -144,7 +145,7 @@ class TestDataHandlerSignals:
             success=True,
             command_name="UpdateEventCommand",
             message="Event updated",
-            data={}
+            data={},
         )
 
         data_handler.on_command_finished(result)
@@ -162,7 +163,7 @@ class TestDataHandlerSignals:
             success=False,
             command_name="UpdateEventCommand",
             message="Update failed",
-            data={}
+            data={},
         )
 
         data_handler.on_command_finished(result)
@@ -183,7 +184,7 @@ class TestDataHandlerSignals:
             success=True,
             command_name="CreateEventCommand",
             message="Event created",
-            data={"id": "new_event_id"}
+            data={"id": "new_event_id"},
         )
         data_handler.on_command_finished(result)
 

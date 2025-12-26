@@ -5,8 +5,6 @@ Tests the Protocol interfaces defined in src/core/protocols.py to ensure
 they properly validate structural subtyping and enforce contracts.
 """
 
-import pytest
-
 from src.core.protocols import MainWindowProtocol, TimelineDataProvider
 
 
@@ -44,6 +42,7 @@ class TestMainWindowProtocol:
 
             def _on_configure_grouping_requested(self):
                 pass
+
             # Missing _on_clear_grouping_requested
 
         window = IncompleteWindow()

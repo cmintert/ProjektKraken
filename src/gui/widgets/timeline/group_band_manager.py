@@ -26,7 +26,7 @@ class GroupBandManager(QObject):
     - Handle band reordering
     - Request data via callback interface (no direct DB access)
     - Manage band context menus
-    
+
     Data Access:
     Instead of directly accessing DatabaseService, this class uses callback
     functions provided by the parent to request data. This decouples the UI
@@ -42,18 +42,18 @@ class GroupBandManager(QObject):
     remove_from_grouping_requested = Signal(str)  # tag_name
 
     def __init__(
-        self, 
-        scene, 
+        self,
+        scene,
         get_group_metadata_callback: Callable,
         get_events_for_group_callback: Callable,
-        parent=None
+        parent=None,
     ):
         """
         Initializes the GroupBandManager.
 
         Args:
             scene: The QGraphicsScene to add bands to
-            get_group_metadata_callback: Callable that takes (tag_order, date_range) 
+            get_group_metadata_callback: Callable that takes (tag_order, date_range)
                 and returns list of metadata dicts
             get_events_for_group_callback: Callable that takes (tag_name, date_range)
                 and returns list of Event objects

@@ -26,7 +26,7 @@ from src.core.protocols import MainWindowProtocol
 class UIManager:
     """
     Manages the UI components of the MainWindow, including Docks and Menus.
-    
+
     This class uses the MainWindowProtocol to define its expectations of the
     main window, making the interface explicit and verifiable.
     """
