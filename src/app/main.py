@@ -80,6 +80,7 @@ from src.commands.wiki_commands import ProcessWikiLinksCommand
 from src.core.logging_config import get_logger, setup_logging
 from src.core.paths import get_resource_path, get_user_data_path
 from src.core.theme_manager import ThemeManager
+from src.gui.widgets.ai_search_panel import AISearchPanelWidget
 from src.gui.widgets.entity_editor import EntityEditorWidget
 
 # UI Components
@@ -147,6 +148,9 @@ class MainWindow(QMainWindow):
         self.timeline = TimelineWidget()
         self.map_widget = MapWidget()
 
+        # AI Search Panel
+        self.ai_search_panel = AISearchPanelWidget()
+
         # Data Cache for Unified List
         self._cached_events = []
         self._cached_entities = []
@@ -181,6 +185,7 @@ class MainWindow(QMainWindow):
                 "timeline": self.timeline,
                 "longform_editor": self.longform_editor,
                 "map_widget": self.map_widget,
+                "ai_search_panel": self.ai_search_panel,
             }
         )
 
@@ -514,6 +519,9 @@ class MainWindow(QMainWindow):
             self._request_current_time()
             self._request_grouping_config()
             self.load_maps()
+
+            # Refresh AI search index status
+            QTimer.singleShot(100, self.refresh_search_index_status)
         else:
             self.status_bar.showMessage(STATUS_DB_INIT_FAIL)
 
@@ -1647,6 +1655,146 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 logger.error(f"Failed to export longform document: {e}")
                 self.status_bar.showMessage(f"Export failed: {e}", 5000)
+
+    # =========================================================================
+    # AI Search Panel Methods
+    # =========================================================================
+
+    @Slot(str, str, int)
+    def perform_semantic_search(self, query: str, object_type_filter: str, top_k: int):
+        """
+        Perform semantic search and display results.
+
+        Args:
+            query: Search query text.
+            object_type_filter: Filter by 'entity' or 'event', or empty for all.
+            top_k: Number of results to return.
+        """
+        try:
+            self.ai_search_panel.set_searching(True)
+
+            # Import search service
+            from src.services.search_service import create_search_service
+
+            # Create search service
+            search_service = create_search_service(
+                self.worker.db_service._connection
+            )
+
+            # Perform query
+            results = search_service.query(
+                text=query,
+                object_type=object_type_filter if object_type_filter else None,
+                top_k=top_k,
+            )
+
+            # Display results
+            self.ai_search_panel.set_results(results)
+            self.ai_search_panel.set_searching(False)
+
+        except Exception as e:
+            logger.error(f"Semantic search failed: {e}")
+            self.ai_search_panel.set_status(f"Search failed: {e}")
+            self.ai_search_panel.set_searching(False)
+
+    @Slot(str)
+    def rebuild_search_index(self, object_type: str):
+        """
+        Rebuild the semantic search index.
+
+        Args:
+            object_type: Type to rebuild ('all', 'entity', 'event').
+        """
+        try:
+            self.ai_search_panel.set_rebuilding(True)
+            self.status_bar.showMessage(f"Rebuilding {object_type} index...", 0)
+
+            # Import search service
+            from src.services.search_service import create_search_service
+
+            # Create search service
+            search_service = create_search_service(
+                self.worker.db_service._connection
+            )
+
+            # Determine object types to rebuild
+            if object_type == "all":
+                types = ["entity", "event"]
+            else:
+                types = [object_type]
+
+            # Rebuild index
+            counts = search_service.rebuild_index(object_types=types)
+
+            # Show results
+            total = sum(counts.values())
+            msg = f"Rebuilt index: {total} objects indexed"
+            self.status_bar.showMessage(msg, 5000)
+            self.ai_search_panel.set_status(msg)
+            self.ai_search_panel.set_rebuilding(False)
+
+            # Refresh index status
+            self.refresh_search_index_status()
+
+        except Exception as e:
+            logger.error(f"Index rebuild failed: {e}")
+            self.status_bar.showMessage(f"Rebuild failed: {e}", 5000)
+            self.ai_search_panel.set_status(f"Rebuild failed: {e}")
+            self.ai_search_panel.set_rebuilding(False)
+
+    @Slot(str, str)
+    def _on_search_result_selected(self, object_type: str, object_id: str):
+        """
+        Handle selection of a search result.
+
+        Args:
+            object_type: 'entity' or 'event'.
+            object_id: Object UUID.
+        """
+        # Navigate to the selected item
+        if object_type == "entity":
+            self.load_entity_details(object_id)
+            self._on_dock_raise_requested("entity")
+        elif object_type == "event":
+            self.load_event_details(object_id)
+            self._on_dock_raise_requested("event")
+
+    @Slot()
+    def refresh_search_index_status(self):
+        """Refresh the search index status display."""
+        try:
+            import datetime
+            import os
+
+            # Get model configuration
+            provider = os.getenv("EMBED_PROVIDER", "lmstudio")
+            model = os.getenv("LMSTUDIO_MODEL", "Not configured")
+
+            # Count indexed objects
+            cursor = self.worker.db_service._connection.execute(
+                "SELECT COUNT(*) FROM embeddings"
+            )
+            count = cursor.fetchone()[0]
+
+            # Get last indexed time
+            cursor = self.worker.db_service._connection.execute(
+                "SELECT MAX(created_at) FROM embeddings"
+            )
+            last_time = cursor.fetchone()[0]
+
+            if last_time:
+                dt = datetime.datetime.fromtimestamp(last_time)
+                last_indexed = dt.strftime("%Y-%m-%d %H:%M:%S")
+            else:
+                last_indexed = "Never"
+
+            # Update panel
+            self.ai_search_panel.set_index_status(
+                model=f"{provider}:{model}", indexed_count=count, last_indexed=last_indexed
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to refresh index status: {e}")
 
 
 def main():
