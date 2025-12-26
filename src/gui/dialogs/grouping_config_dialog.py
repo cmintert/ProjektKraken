@@ -9,7 +9,7 @@ and editing tag colors.
 import logging
 from typing import List
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QButtonGroup,
@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QColorDialog,
     QDialog,
     QDialogButtonBox,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QListWidget,
@@ -33,6 +34,35 @@ from src.commands.timeline_grouping_commands import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class ColorSwatch(QFrame):
+    """
+    Clickable color swatch widget.
+    Subclasses QFrame to avoid QPushButton styling issues.
+    """
+
+    clicked = Signal()
+
+    def __init__(self, color: str, size: int = 16, parent=None):
+        super().__init__(parent)
+        self.setFixedSize(size, size)
+        self.setCursor(Qt.PointingHandCursor)
+        self.setStyleSheet(
+            f"background-color: {color}; border: 1px solid #ccc; border-radius: 2px;"
+        )
+
+    def mouseReleaseEvent(self, event):
+        """Emits clicked signal on mouse release."""
+        if event.button() == Qt.LeftButton:
+            self.clicked.emit()
+        super().mouseReleaseEvent(event)
+
+    def set_color(self, color: str):
+        """Updates the swatch color."""
+        self.setStyleSheet(
+            f"background-color: {color}; border: 1px solid #ccc; border-radius: 2px;"
+        )
 
 
 class TagListItem(QWidget):
@@ -62,18 +92,14 @@ class TagListItem(QWidget):
         self.event_count = event_count
 
         layout = QHBoxLayout()
-        layout.setContentsMargins(4, 2, 4, 2)
+        layout.setContentsMargins(4, 4, 4, 4)
 
         # Checkbox
         self.checkbox = QCheckBox()
         layout.addWidget(self.checkbox)
 
-        # Color button
-        self.color_button = QPushButton()
-        self.color_button.setFixedSize(24, 24)
-        self.color_button.setStyleSheet(
-            f"background-color: {tag_color}; border: 1px solid #ccc;"
-        )
+        # Color button (using ColorSwatch)
+        self.color_button = ColorSwatch(tag_color, size=16)
         self.color_button.clicked.connect(self._on_color_button_clicked)
         layout.addWidget(self.color_button)
 
@@ -88,9 +114,7 @@ class TagListItem(QWidget):
         color = QColorDialog.getColor(QColor(self.tag_color), self)
         if color.isValid():
             self.tag_color = color.name()
-            self.color_button.setStyleSheet(
-                f"background-color: {self.tag_color}; border: 1px solid #ccc;"
-            )
+            self.color_button.set_color(self.tag_color)
             self.color_changed.emit(self.tag_name, self.tag_color)
 
     def is_checked(self) -> bool:
