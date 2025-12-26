@@ -48,7 +48,9 @@ def _stable_dump(val: Any) -> str:
 
 
 def build_text_for_entity(
-    entity, tags: Optional[List[Union[str, Dict[str, str]]]] = None
+    entity,
+    tags: Optional[List[Union[str, Dict[str, str]]]] = None,
+    excluded_attributes: Optional[List[str]] = None,
 ) -> str:
     """
     Build a deterministic text representation of an entity for embedding.
@@ -59,10 +61,14 @@ def build_text_for_entity(
     Args:
         entity: Entity object with name, type, description, attributes.
         tags: Optional list of tag names or tag dicts with "name" key.
+        excluded_attributes: Optional list of attribute keys to exclude.
 
     Returns:
         str: A multi-line text representation of the entity.
     """
+    if excluded_attributes is None:
+        excluded_attributes = []
+
     parts = [
         f"Name: {entity.name}",
         f"Type: {entity.type}",
@@ -76,17 +82,19 @@ def build_text_for_entity(
         parts.append("Description: " + entity.description)
 
     attrs = getattr(entity, "attributes", {}) or {}
-    # Filter out internal tags attribute if present
-    attrs = {k: v for k, v in attrs.items() if k != "_tags"}
-
     for key in sorted(attrs.keys()):
+        # Filter out internal tags or explicit exclusions
+        if key.startswith("_") or key in excluded_attributes:
+            continue
         parts.append(f"{key}: {_stable_dump(attrs[key])}")
 
     return "\n\n".join(parts)
 
 
 def build_text_for_event(
-    event, tags: Optional[List[Union[str, Dict[str, str]]]] = None
+    event,
+    tags: Optional[List[Union[str, Dict[str, str]]]] = None,
+    excluded_attributes: Optional[List[str]] = None,
 ) -> str:
     """
     Build a deterministic text representation of an event for embedding.
@@ -97,10 +105,14 @@ def build_text_for_event(
     Args:
         event: Event object with name, type, lore_date, lore_duration, etc.
         tags: Optional list of tag names or tag dicts with "name" key.
+        excluded_attributes: Optional list of attribute keys to exclude.
 
     Returns:
         str: A multi-line text representation of the event.
     """
+    if excluded_attributes is None:
+        excluded_attributes = []
+
     parts = [
         f"Name: {event.name}",
         f"Type: {event.type}",
@@ -116,10 +128,10 @@ def build_text_for_event(
         parts.append("Description: " + event.description)
 
     attrs = getattr(event, "attributes", {}) or {}
-    # Filter out internal tags attribute if present
-    attrs = {k: v for k, v in attrs.items() if k != "_tags"}
-
     for key in sorted(attrs.keys()):
+        # Filter out internal tags or explicit exclusions
+        if key.startswith("_") or key in excluded_attributes:
+            continue
         parts.append(f"{key}: {_stable_dump(attrs[key])}")
 
     return "\n\n".join(parts)
@@ -537,12 +549,15 @@ class SearchService:
         cursor = self.conn.execute(sql, (object_id,))
         return [{"name": row[0]} for row in cursor.fetchall()]
 
-    def index_entity(self, entity_id: str) -> None:
+    def index_entity(
+        self, entity_id: str, excluded_attributes: Optional[List[str]] = None
+    ) -> None:
         """
         Index a single entity.
 
         Args:
             entity_id: Entity UUID.
+            excluded_attributes: Optional list of attribute keys to exclude.
 
         Raises:
             ValueError: If entity not found.
@@ -567,7 +582,7 @@ class SearchService:
         tags = self._get_tags_for_object("entity", entity_id)
 
         # Build text
-        text = build_text_for_entity(entity, tags)
+        text = build_text_for_entity(entity, tags, excluded_attributes)
         text_hash_val = text_sha256(text)
 
         # Check if already indexed with same text
@@ -623,12 +638,15 @@ class SearchService:
 
         logger.info(f"Indexed entity {entity_id} ({entity.name})")
 
-    def index_event(self, event_id: str) -> None:
+    def index_event(
+        self, event_id: str, excluded_attributes: Optional[List[str]] = None
+    ) -> None:
         """
         Index a single event.
 
         Args:
             event_id: Event UUID.
+            excluded_attributes: Optional list of attribute keys to exclude.
 
         Raises:
             ValueError: If event not found.
@@ -653,7 +671,7 @@ class SearchService:
         tags = self._get_tags_for_object("event", event_id)
 
         # Build text
-        text = build_text_for_event(event, tags)
+        text = build_text_for_event(event, tags, excluded_attributes)
         text_hash_val = text_sha256(text)
 
         # Check if already indexed with same text
@@ -710,7 +728,10 @@ class SearchService:
         logger.info(f"Indexed event {event_id} ({event.name})")
 
     def rebuild_index(
-        self, object_types: Optional[List[str]] = None, model: Optional[str] = None
+        self,
+        object_types: Optional[List[str]] = None,
+        model: Optional[str] = None,
+        excluded_attributes: Optional[List[str]] = None,
     ) -> Dict[str, int]:
         """
         Rebuild embeddings index for specified object types.
@@ -719,6 +740,7 @@ class SearchService:
             object_types: List of object types to index ('entity', 'event').
                          If None, indexes all types.
             model: Optional model filter (not currently used, for future compatibility).
+            excluded_attributes: Optional list of attribute keys to exclude.
 
         Returns:
             Dict with counts of indexed objects per type.
@@ -734,7 +756,7 @@ class SearchService:
                 ids = [row[0] for row in cursor.fetchall()]
                 for entity_id in ids:
                     try:
-                        self.index_entity(entity_id)
+                        self.index_entity(entity_id, excluded_attributes)
                     except Exception as e:
                         logger.error(f"Failed to index entity {entity_id}: {e}")
                 counts["entity"] = len(ids)
@@ -744,7 +766,7 @@ class SearchService:
                 ids = [row[0] for row in cursor.fetchall()]
                 for event_id in ids:
                     try:
-                        self.index_event(event_id)
+                        self.index_event(event_id, excluded_attributes)
                     except Exception as e:
                         logger.error(f"Failed to index event {event_id}: {e}")
                 counts["event"] = len(ids)
@@ -833,9 +855,7 @@ class SearchService:
                 }
             )
 
-        logger.info(
-            f"Query returned {len(results)} results (requested top {top_k})"
-        )
+        logger.info(f"Query returned {len(results)} results (requested top {top_k})")
         return results
 
     def delete_index_for_object(

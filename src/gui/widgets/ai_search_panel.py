@@ -86,6 +86,12 @@ class SearchResultItem(QWidget):
         self.setStyleSheet(
             "SearchResultItem:hover { background-color: rgba(255, 255, 255, 0.1); }"
         )
+        self.setMinimumHeight(40)
+
+    def sizeHint(self):
+        """Ensure item has sufficient height."""
+        size = super().sizeHint()
+        return size.expandedTo(self.minimumSize())
 
     def mousePressEvent(self, event):
         """Handle mouse click to open the result."""
@@ -244,6 +250,58 @@ class AISearchPanelWidget(QWidget):
 
         # Add stretch to push everything to the top
         main_layout.addStretch()
+
+        # === Settings Section ===
+        settings_group = QGroupBox("Settings")
+        settings_layout = QVBoxLayout(settings_group)
+        StyleHelper.apply_standard_list_spacing(settings_layout)
+
+        settings_layout.addWidget(QLabel("Excluded Attributes (comma-separated):"))
+        self.excluded_attrs_input = QLineEdit()
+        self.excluded_attrs_input.setPlaceholderText("e.g. secret_notes, internal_id")
+        self.excluded_attrs_input.setToolTip(
+            "Attributes starting with '_' are automatically excluded."
+        )
+        self.excluded_attrs_input.editingFinished.connect(self.save_settings)
+        settings_layout.addWidget(self.excluded_attrs_input)
+
+        main_layout.addWidget(settings_group)
+
+        # Load settings
+        self.load_settings()
+
+    def get_excluded_attributes(self) -> List[str]:
+        """
+        Get list of attributes to exclude from indexing.
+
+        Returns:
+            List[str]: List of attribute keys.
+        """
+        text = self.excluded_attrs_input.text().strip()
+        if not text:
+            return []
+        return [attr.strip() for attr in text.split(",") if attr.strip()]
+
+    def save_settings(self):
+        """Save settings to QSettings."""
+        from PySide6.QtCore import QSettings
+
+        from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        settings.setValue(
+            "ai_search_excluded_attrs", self.excluded_attrs_input.text().strip()
+        )
+
+    def load_settings(self):
+        """Load settings from QSettings."""
+        from PySide6.QtCore import QSettings
+
+        from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        excluded = settings.value("ai_search_excluded_attrs", "", type=str)
+        self.excluded_attrs_input.setText(excluded)
 
     def _on_search_clicked(self):
         """Handle search button click."""

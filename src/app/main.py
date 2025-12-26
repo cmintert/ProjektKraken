@@ -6,6 +6,7 @@ Responsible for initializing the MainWindow, Workers, and UI components.
 import os
 import sys
 
+from dotenv import load_dotenv
 from PySide6.QtCore import (
     Q_ARG,
     QMetaObject,
@@ -92,6 +93,9 @@ from src.gui.widgets.unified_list import UnifiedListWidget
 from src.services import longform_builder
 from src.services.db_service import DatabaseService
 from src.services.worker import DatabaseWorker
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Initialize Logging
 setup_logging(debug_mode=True)
@@ -1671,15 +1675,17 @@ class MainWindow(QMainWindow):
             top_k: Number of results to return.
         """
         try:
+            if not hasattr(self, "gui_db_service"):
+                logger.warning("GUI DB Service not ready for search.")
+                return
+
             self.ai_search_panel.set_searching(True)
 
             # Import search service
             from src.services.search_service import create_search_service
 
-            # Create search service
-            search_service = create_search_service(
-                self.worker.db_service._connection
-            )
+            # Create search service with GUI thread connection
+            search_service = create_search_service(self.gui_db_service._connection)
 
             # Perform query
             results = search_service.query(
@@ -1706,16 +1712,18 @@ class MainWindow(QMainWindow):
             object_type: Type to rebuild ('all', 'entity', 'event').
         """
         try:
+            if not hasattr(self, "gui_db_service"):
+                logger.warning("GUI DB Service not ready for rebuild.")
+                return
+
             self.ai_search_panel.set_rebuilding(True)
             self.status_bar.showMessage(f"Rebuilding {object_type} index...", 0)
 
             # Import search service
             from src.services.search_service import create_search_service
 
-            # Create search service
-            search_service = create_search_service(
-                self.worker.db_service._connection
-            )
+            # Create search service with GUI thread connection
+            search_service = create_search_service(self.gui_db_service._connection)
 
             # Determine object types to rebuild
             if object_type == "all":
@@ -1723,8 +1731,13 @@ class MainWindow(QMainWindow):
             else:
                 types = [object_type]
 
+            # Get excluded attributes from UI
+            excluded = self.ai_search_panel.get_excluded_attributes()
+
             # Rebuild index
-            counts = search_service.rebuild_index(object_types=types)
+            counts = search_service.rebuild_index(
+                object_types=types, excluded_attributes=excluded
+            )
 
             # Show results
             total = sum(counts.values())
@@ -1763,6 +1776,9 @@ class MainWindow(QMainWindow):
     def refresh_search_index_status(self):
         """Refresh the search index status display."""
         try:
+            if not hasattr(self, "gui_db_service"):
+                return
+
             import datetime
             import os
 
@@ -1771,13 +1787,14 @@ class MainWindow(QMainWindow):
             model = os.getenv("LMSTUDIO_MODEL", "Not configured")
 
             # Count indexed objects
-            cursor = self.worker.db_service._connection.execute(
+            # Use gui_db_service connection (Main Thread)
+            cursor = self.gui_db_service._connection.execute(
                 "SELECT COUNT(*) FROM embeddings"
             )
             count = cursor.fetchone()[0]
 
             # Get last indexed time
-            cursor = self.worker.db_service._connection.execute(
+            cursor = self.gui_db_service._connection.execute(
                 "SELECT MAX(created_at) FROM embeddings"
             )
             last_time = cursor.fetchone()[0]
@@ -1790,7 +1807,9 @@ class MainWindow(QMainWindow):
 
             # Update panel
             self.ai_search_panel.set_index_status(
-                model=f"{provider}:{model}", indexed_count=count, last_indexed=last_indexed
+                model=f"{provider}:{model}",
+                indexed_count=count,
+                last_indexed=last_indexed,
             )
 
         except Exception as e:
