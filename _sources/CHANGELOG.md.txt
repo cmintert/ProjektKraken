@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2025-12-26
-### Internal
-- Merge pull request #34 from cmintert/copilot/refactor-datahandler-mainwindow-coupling
+### Fixed
+- Fix: Resolve visual crash when reordering timeline groups using clone-insert-delete pattern
 
 
 *This changelog was automatically generated.*
