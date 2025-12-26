@@ -7,12 +7,14 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QDockWidget, QMainWindow, QMenuBar, QTabWidget
 
 from src.app.constants import (
+    DOCK_OBJ_AI_SEARCH,
     DOCK_OBJ_ENTITY_INSPECTOR,
     DOCK_OBJ_EVENT_INSPECTOR,
     DOCK_OBJ_LONGFORM,
     DOCK_OBJ_MAP,
     DOCK_OBJ_PROJECT,
     DOCK_OBJ_TIMELINE,
+    DOCK_TITLE_AI_SEARCH,
     DOCK_TITLE_ENTITY_INSPECTOR,
     DOCK_TITLE_EVENT_INSPECTOR,
     DOCK_TITLE_LONGFORM,
@@ -53,6 +55,7 @@ class UIManager:
                 - 'timeline': TimelineWidget
                 - 'longform_editor': LongformEditorWidget
                 - 'map_widget': MapWidget
+                - 'ai_search_panel': AISearchPanelWidget (optional)
         """
         # Enable advanced docking
         self.main_window.setDockOptions(
@@ -97,7 +100,9 @@ class UIManager:
         self.docks["timeline"] = self._create_dock(
             DOCK_TITLE_TIMELINE, DOCK_OBJ_TIMELINE, widgets["timeline"]
         )
-        self.main_window.addDockWidget(Qt.BottomDockWidgetArea, self.docks["timeline"])
+        self.main_window.addDockWidget(
+            Qt.BottomDockWidgetArea, self.docks["timeline"]
+        )
 
         # 5. Longform Editor (Right)
         if "longform_editor" in widgets:
@@ -115,8 +120,25 @@ class UIManager:
             self.docks["map"] = self._create_dock(
                 DOCK_TITLE_MAP, DOCK_OBJ_MAP, widgets["map_widget"]
             )
-            self.main_window.addDockWidget(Qt.BottomDockWidgetArea, self.docks["map"])
-            self.main_window.tabifyDockWidget(self.docks["timeline"], self.docks["map"])
+            self.main_window.addDockWidget(
+                Qt.BottomDockWidgetArea, self.docks["map"]
+            )
+            self.main_window.tabifyDockWidget(
+                self.docks["timeline"], self.docks["map"]
+            )
+
+        # 7. AI Search Panel (Right, tabbed with inspectors)
+        if "ai_search_panel" in widgets:
+            self.docks["ai_search"] = self._create_dock(
+                DOCK_TITLE_AI_SEARCH, DOCK_OBJ_AI_SEARCH, widgets["ai_search_panel"]
+            )
+            self.main_window.addDockWidget(
+                Qt.RightDockWidgetArea, self.docks["ai_search"]
+            )
+            # Tabify with entity inspector
+            self.main_window.tabifyDockWidget(
+                self.docks["entity"], self.docks["ai_search"]
+            )
 
     def _create_dock(self, title: str, obj_name: str, widget) -> QDockWidget:
         """

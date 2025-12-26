@@ -36,6 +36,7 @@ class ConnectionManager:
         self.connect_timeline()
         self.connect_longform_editor()
         self.connect_map_widget()
+        self.connect_ai_search_panel()
         logger.debug("All signal/slot connections established")
 
     def connect_data_handler(self):
@@ -150,3 +151,13 @@ class ConnectionManager:
             self.window._on_marker_color_changed
         )
         map_widget.marker_drop_requested.connect(self.window._on_marker_dropped)
+
+    def connect_ai_search_panel(self):
+        """Connect signals from the AI search panel widget."""
+        panel = self.window.ai_search_panel
+
+        # Search and index operations
+        panel.search_requested.connect(self.window.perform_semantic_search)
+        panel.rebuild_index_requested.connect(self.window.rebuild_search_index)
+        panel.result_selected.connect(self.window._on_search_result_selected)
+        panel.index_status_requested.connect(self.window.refresh_search_index_status)
