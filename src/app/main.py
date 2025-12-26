@@ -22,6 +22,7 @@ from PySide6.QtCore import (
 )
 from PySide6.QtWidgets import (
     QApplication,
+    QDialog,
     QFileDialog,
     QInputDialog,
     QLabel,
@@ -39,6 +40,7 @@ from src.app.constants import (
     DEFAULT_WINDOW_HEIGHT,
     DEFAULT_WINDOW_WIDTH,
     IMAGE_FILE_FILTER,
+    SETTINGS_ACTIVE_DB_KEY,
     STATUS_DB_INIT_FAIL,
     STATUS_ERROR_PREFIX,
     WINDOW_SETTINGS_APP,
@@ -82,6 +84,7 @@ from src.core.logging_config import get_logger, setup_logging
 from src.core.paths import get_resource_path, get_user_data_path
 from src.core.theme_manager import ThemeManager
 from src.gui.dialogs.ai_settings_dialog import AISettingsDialog
+from src.gui.dialogs.database_manager_dialog import DatabaseManagerDialog
 from src.gui.widgets.ai_search_panel import AISearchPanelWidget
 from src.gui.widgets.entity_editor import EntityEditorWidget
 
@@ -129,7 +132,12 @@ class MainWindow(QMainWindow):
         - UI Signals.
         """
         super().__init__()
-        self.setWindowTitle(WINDOW_TITLE)
+
+        # Load active database for title
+        settings = QSettings()
+        active_db = settings.value(SETTINGS_ACTIVE_DB_KEY, "world.kraken")
+
+        self.setWindowTitle(f"{WINDOW_TITLE} - {active_db}")
         self.resize(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
 
         # 0. Initialize Data Handler (signals-based, no window reference)
@@ -221,6 +229,9 @@ class MainWindow(QMainWindow):
             "color: #e74c3c; font-weight: bold;"
         )  # Red
         self.status_bar.addPermanentWidget(self.lbl_playhead_time)
+
+        # File Menu
+        self.ui_manager.create_file_menu(self.menuBar())
 
         # View Menu
         self.ui_manager.create_view_menu(self.menuBar())
@@ -434,7 +445,14 @@ class MainWindow(QMainWindow):
         Connects all worker signals to MainWindow slots.
         """
         self.worker_thread = QThread()
-        db_path = get_user_data_path("world.kraken")
+
+        # Load active database from settings
+        settings = QSettings()
+        active_db = settings.value(SETTINGS_ACTIVE_DB_KEY, "world.kraken")
+
+        db_path = get_user_data_path(active_db)
+        logger.info(f"Initializing DatabaseWorker with: {db_path}")
+
         self.worker = DatabaseWorker(db_path)
         self.worker.moveToThread(self.worker_thread)
 
@@ -1802,6 +1820,19 @@ class MainWindow(QMainWindow):
             self._on_dock_raise_requested("event")
 
     @Slot()
+    def show_database_manager(self):
+        """Shows the Database Manager dialog."""
+        dialog = DatabaseManagerDialog(self)
+        if dialog.exec() == QDialog.Accepted:
+            # If accepted, it means a restart is required (implied by select button)
+            # We can offer to restart immediately or just close.
+            # The dialog already warns user to restart.
+            # We could do auto-restart:
+            # qApp.quit()
+            # QProcess.startDetached(sys.executable, sys.argv)
+            pass
+
+    @Slot()
     def refresh_search_index_status(self):
         """Refresh the search index status display."""
         try:
@@ -1860,6 +1891,8 @@ def main():
         )
 
         app = QApplication(sys.argv)
+        app.setOrganizationName(WINDOW_SETTINGS_KEY)
+        app.setApplicationName(WINDOW_SETTINGS_APP)
 
         # 2. Apply Theme
         tm = ThemeManager()

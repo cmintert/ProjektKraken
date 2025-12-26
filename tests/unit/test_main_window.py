@@ -27,7 +27,7 @@ def main_window(qtbot):
 
 
 def test_init_window(main_window):
-    assert main_window.windowTitle() == "Project Kraken - v0.4.0 (Alpha)"
+    assert main_window.windowTitle() == "Project Kraken - v0.4.0 (Alpha) - world.kraken"
     assert main_window.timeline is not None
 
 

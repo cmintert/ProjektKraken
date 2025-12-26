@@ -9,6 +9,7 @@ DEFAULT_WINDOW_WIDTH = 1280
 DEFAULT_WINDOW_HEIGHT = 720
 WINDOW_SETTINGS_KEY = "ChristianMintert"
 WINDOW_SETTINGS_APP = "ProjektKraken"
+SETTINGS_ACTIVE_DB_KEY = "active_database"
 
 
 # Dock Titles

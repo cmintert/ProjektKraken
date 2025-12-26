@@ -173,6 +173,20 @@ class UIManager:
 
         return dock
 
+    def create_file_menu(self, menu_bar: QMenuBar):
+        """Creates the File menu."""
+        file_menu = menu_bar.addMenu("File")
+
+        # Open Database
+        db_action = file_menu.addAction("Manage Databases...")
+        db_action.triggered.connect(self.main_window.show_database_manager)
+
+        file_menu.addSeparator()
+
+        # Exit
+        exit_action = file_menu.addAction("Exit")
+        exit_action.triggered.connect(self.main_window.close)
+
     def create_view_menu(self, menu_bar: QMenuBar):
         """Creates the View menu for toggling docks."""
         view_menu = menu_bar.addMenu("View")
