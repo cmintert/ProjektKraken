@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2025-12-26
-### Fixed
-- Fix: Resolve visual crash when reordering timeline groups using clone-insert-delete pattern
+### Internal
+- Style: Auto-sort imports in grouping config dialog
 
 
 *This changelog was automatically generated.*
