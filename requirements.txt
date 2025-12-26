@@ -24,3 +24,7 @@ Markdown==3.10
 
 # Packaging (optional, for building executables)
 pyinstaller==6.17.0
+
+# Semantic Search Dependencies
+numpy==2.2.1
+requests==2.32.3

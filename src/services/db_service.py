@@ -253,6 +253,34 @@ class DatabaseService:
         -- Create indexes for fast lookups
         CREATE INDEX IF NOT EXISTS idx_entity_tags_entity ON entity_tags(entity_id);
         CREATE INDEX IF NOT EXISTS idx_entity_tags_tag ON entity_tags(tag_id);
+
+        -- Embeddings Table (for semantic search)
+        CREATE TABLE IF NOT EXISTS embeddings (
+            id TEXT PRIMARY KEY,
+            object_type TEXT NOT NULL,
+            object_id TEXT NOT NULL,
+            model TEXT NOT NULL,
+            vector BLOB NOT NULL,
+            vector_dim INTEGER NOT NULL,
+            text_snippet TEXT,
+            text_hash TEXT,
+            metadata JSON DEFAULT '{}',
+            created_at REAL NOT NULL
+        );
+
+        -- Upsert-friendly unique constraint to avoid duplicate rows per object/model
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_embeddings_obj_model
+            ON embeddings(object_type, object_id, model);
+
+        -- Useful indexes for query filtering and status
+        CREATE INDEX IF NOT EXISTS idx_embeddings_model_dim
+            ON embeddings(model, vector_dim);
+
+        CREATE INDEX IF NOT EXISTS idx_embeddings_object
+            ON embeddings(object_type, object_id);
+
+        CREATE INDEX IF NOT EXISTS idx_embeddings_created_at
+            ON embeddings(created_at);
         """
 
         try:

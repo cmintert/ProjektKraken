@@ -409,3 +409,44 @@ class DatabaseWorker(QObject):
                 f"Failed to load grouping dialog data: {traceback.format_exc()}"
             )
             self.error_occurred.emit("Failed to load grouping data.")
+
+    @Slot(str, str, str, str)
+    def index_object(
+        self, object_type: str, object_id: str, provider: str = None, model: str = None
+    ):
+        """
+        Index a single object (entity or event) for semantic search.
+
+        Args:
+            object_type: 'entity' or 'event'.
+            object_id: UUID of the object to index.
+            provider: Optional embedding provider name ('lmstudio' or 'sentence-transformers').
+            model: Optional model name override.
+        """
+        if not self.db_service:
+            return
+
+        try:
+            self.operation_started.emit(f"Indexing {object_type} {object_id}...")
+
+            # Import search service
+            from src.services.search_service import create_search_service
+
+            # Create search service with provider and model
+            search_service = create_search_service(
+                self.db_service._connection, provider_name=provider, model=model
+            )
+
+            # Index the object
+            if object_type == "entity":
+                search_service.index_entity(object_id)
+            elif object_type == "event":
+                search_service.index_event(object_id)
+            else:
+                raise ValueError(f"Unknown object type: {object_type}")
+
+            self.operation_finished.emit(f"Indexed {object_type} {object_id}.")
+
+        except Exception:
+            logger.error(f"Failed to index {object_type}: {traceback.format_exc()}")
+            self.error_occurred.emit(f"Failed to index {object_type} {object_id}.")
