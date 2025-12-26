@@ -1,3 +1,10 @@
+"""
+Image Viewer Dialog Module.
+
+Provides a full-screen image viewer with navigation controls
+for browsing through image attachments.
+"""
+
 import logging
 from pathlib import Path
 from typing import List
@@ -30,6 +37,14 @@ class ImageViewerDialog(QDialog):
         attachments: List[ImageAttachment] = None,
         current_index: int = 0,
     ):
+        """
+        Initialize the image viewer dialog.
+
+        Args:
+            parent: Parent widget.
+            attachments: List of ImageAttachment objects to display.
+            current_index: Index of the image to display first.
+        """
         super().__init__(parent)
         self.setWindowTitle("Image Viewer")
         # Self resize removed to allow adjustSize() to work optimally
@@ -41,6 +56,7 @@ class ImageViewerDialog(QDialog):
         self.load_current_image()
 
     def init_ui(self):
+        """Initialize the user interface components."""
         self.setStyleSheet("background-color: #2b2b2b; color: #e0e0e0;")
         # Main layout with zero margins to let image touch edges if desired
         layout = QVBoxLayout(self)
@@ -98,6 +114,7 @@ class ImageViewerDialog(QDialog):
         layout.addWidget(controls_widget)
 
     def load_current_image(self):
+        """Load and display the current image from the attachments list."""
         if not self.attachments:
             return
 
@@ -220,11 +237,13 @@ class ImageViewerDialog(QDialog):
         self._update_image()
 
     def show_prev(self):
+        """Show the previous image in the list."""
         if self.current_index > 0:
             self.current_index -= 1
             self.load_current_image()
 
     def show_next(self):
+        """Show the next image in the list."""
         if self.current_index < len(self.attachments) - 1:
             self.current_index += 1
             self.load_current_image()

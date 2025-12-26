@@ -1,3 +1,10 @@
+"""
+Database Manager Dialog Module.
+
+Provides a dialog for managing multiple database files (worlds),
+including creating, deleting, and switching between databases.
+"""
+
 import logging
 import os
 
@@ -30,6 +37,12 @@ class DatabaseManagerDialog(QDialog):
     restart_required = Signal()
 
     def __init__(self, parent=None):
+        """
+        Initialize the database manager dialog.
+
+        Args:
+            parent: Parent widget.
+        """
         super().__init__(parent)
         self.setWindowTitle("Database Manager")
         self.resize(500, 400)
@@ -78,6 +91,7 @@ class DatabaseManagerDialog(QDialog):
         self._refresh_list()
 
     def _refresh_list(self):
+        """Refresh the list of database files from the data directory."""
         self.db_list.clear()
         settings = QSettings()
         active_db = settings.value(SETTINGS_ACTIVE_DB_KEY, "world.kraken")
@@ -101,6 +115,7 @@ class DatabaseManagerDialog(QDialog):
             self.db_list.addItem(item)
 
     def _create_db(self):
+        """Handle creation of a new database file."""
         name, ok = QInputDialog.getText(
             self, "Create New World", "Database Name (e.g. 'MyCampaign'):"
         )
@@ -134,6 +149,7 @@ class DatabaseManagerDialog(QDialog):
                 QMessageBox.critical(self, "Error", f"Failed to create database:\n{e}")
 
     def _delete_db(self):
+        """Handle deletion of a database file."""
         item = self.db_list.currentItem()
         if not item:
             QMessageBox.information(self, "Info", "Please select a database to delete.")
@@ -170,6 +186,7 @@ class DatabaseManagerDialog(QDialog):
                 QMessageBox.critical(self, "Error", f"Failed to delete database:\n{e}")
 
     def _select_db(self):
+        """Handle selection of a database to make active (requires restart)."""
         item = self.db_list.currentItem()
         if not item:
             return

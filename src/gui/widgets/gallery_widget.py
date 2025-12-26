@@ -1,3 +1,10 @@
+"""
+Gallery Widget Module.
+
+Provides a visual gallery interface for managing image attachments
+associated with events and entities.
+"""
+
 import logging
 from pathlib import Path
 from typing import List, Optional
@@ -34,11 +41,18 @@ logger = logging.getLogger(__name__)
 class GalleryWidget(QWidget):
     """
     Widget for managing and displaying image attachments.
+    Supports drag-and-drop, thumbnails, and captions.
     """
 
     # Needs access to main_window to emit commands
 
     def __init__(self, main_window):
+        """
+        Initialize the gallery widget.
+
+        Args:
+            main_window: Reference to MainWindow for command emission.
+        """
         super().__init__()
         self.main_window = main_window
         self.owner_type: Optional[str] = None
@@ -50,6 +64,7 @@ class GalleryWidget(QWidget):
         self.connect_signals()
 
     def init_ui(self):
+        """Initialize the user interface components."""
         self.setAcceptDrops(True)
         layout = QVBoxLayout(self)
         from src.gui.utils.style_helper import StyleHelper
@@ -98,6 +113,7 @@ class GalleryWidget(QWidget):
         layout.addWidget(self.list_widget)
 
     def connect_signals(self):
+        """Connect widget signals to main window slots."""
         if hasattr(self.main_window, "worker"):
             self.main_window.worker.attachments_loaded.connect(
                 self.on_attachments_loaded
@@ -137,6 +153,7 @@ class GalleryWidget(QWidget):
         )
 
     def clear(self):
+        """Clear all displayed attachments from the gallery."""
         self.list_widget.clear()
         self.attachments = []
         self._update_button_states()
@@ -210,6 +227,7 @@ class GalleryWidget(QWidget):
             self.set_owner(self.owner_type, self.owner_id)
 
     def on_add_clicked(self):
+        """Handle add image button click - open file dialog and create command."""
         if not self.owner_id:
             return
 
@@ -224,6 +242,12 @@ class GalleryWidget(QWidget):
             # MainWindow doesn't auto-trigger 'load_attachments' on command finish.
 
     def on_item_double_clicked(self, item):
+        """
+        Handle double-click on gallery item - open image viewer.
+
+        Args:
+            item: The clicked QListWidgetItem.
+        """
         att_id = item.data(Qt.UserRole)
         # Find index in self.attachments
         try:
@@ -239,6 +263,12 @@ class GalleryWidget(QWidget):
             logger.error(f"GalleryWidget: Attachment {att_id} not found in data list")
 
     def show_context_menu(self, pos):
+        """
+        Show context menu for gallery items.
+
+        Args:
+            pos: The position where the menu was requested.
+        """
         item = self.list_widget.itemAt(pos)
         if not item:
             return
@@ -271,6 +301,12 @@ class GalleryWidget(QWidget):
             self.remove_item(item)
 
     def edit_caption(self, item):
+        """
+        Edit the caption for a gallery item.
+
+        Args:
+            item: The QListWidgetItem representing the attachment.
+        """
         att_id = item.data(Qt.UserRole)
         # Find current caption
         att = next((a for a in self.attachments if a.id == att_id), None)
@@ -283,6 +319,12 @@ class GalleryWidget(QWidget):
             self.main_window.command_requested.emit(cmd)
 
     def remove_item(self, item):
+        """
+        Remove an attachment from the gallery.
+
+        Args:
+            item: The QListWidgetItem representing the attachment.
+        """
         att_id = item.data(Qt.UserRole)
         confirm = QMessageBox.question(
             self,

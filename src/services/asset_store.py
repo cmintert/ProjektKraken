@@ -1,3 +1,10 @@
+"""
+Asset Store Module.
+
+Manages filesystem operations for project assets including images,
+thumbnails, and trash functionality for undo/redo support.
+"""
+
 import logging
 import shutil
 import uuid
@@ -16,6 +23,12 @@ class AssetStore:
     """
 
     def __init__(self, project_root: str):
+        """
+        Initialize the asset store.
+
+        Args:
+            project_root: Root directory of the project containing assets folder.
+        """
         self.project_root = Path(project_root)
         self.assets_dir = self.project_root / "assets"
         self.images_dir = self.assets_dir / "images"
