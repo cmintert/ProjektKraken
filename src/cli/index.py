@@ -8,8 +8,10 @@ the semantic search index.
 Usage:
     python -m src.cli.index rebuild --database world.kraken
     python -m src.cli.index rebuild --database world.kraken --type entity
-    python -m src.cli.index query --database world.kraken --text "find the wizard"
-    python -m src.cli.index index-object --database world.kraken --type entity --id <uuid>
+    python -m src.cli.index query --database world.kraken \
+        --text "find the wizard"
+    python -m src.cli.index index-object --database world.kraken \
+        --type entity --id <uuid>
 """
 
 import argparse

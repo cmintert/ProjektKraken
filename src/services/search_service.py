@@ -226,7 +226,8 @@ def top_k_streaming(scores_iter, k: int) -> List[Tuple[float, Any]]:
                 heapq.heapreplace(heap, (score, counter, item))
         counter += 1
     # Return sorted by descending score, extracting (score, item) tuples
-    return [(score, item) for score, _, item in sorted(heap, key=lambda x: x[0], reverse=True)]
+    sorted_heap = sorted(heap, key=lambda x: x[0], reverse=True)
+    return [(score, item) for score, _, item in sorted_heap]
 
 
 # =============================================================================
@@ -307,7 +308,8 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
         self.model = model or os.getenv("LMSTUDIO_MODEL")
         if not self.model:
             raise ValueError(
-                "Model name is required. Set LMSTUDIO_MODEL env variable or pass model parameter."
+                "Model name is required. Set LMSTUDIO_MODEL env variable "
+                "or pass model parameter."
             )
 
         self.api_key = api_key or os.getenv("LMSTUDIO_API_KEY")
@@ -370,7 +372,8 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
                 self._dimension = emb_array.shape[1]
 
             logger.debug(
-                f"Generated {len(embeddings)} embeddings with dimension {self._dimension}"
+                f"Generated {len(embeddings)} embeddings "
+                f"with dimension {self._dimension}"
             )
             return emb_array
 
@@ -378,7 +381,8 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
             logger.error(f"LM Studio API request failed: {e}")
             raise Exception(
                 f"Failed to connect to LM Studio at {self.url}. "
-                f"Ensure LM Studio is running and the embedding endpoint is available. Error: {e}"
+                f"Ensure LM Studio is running and the embedding endpoint "
+                f"is available. Error: {e}"
             )
         except (KeyError, ValueError) as e:
             logger.error(f"Failed to parse LM Studio response: {e}")
