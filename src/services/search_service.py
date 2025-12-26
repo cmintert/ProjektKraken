@@ -823,6 +823,11 @@ class SearchService:
 
         # Compute similarities and collect results
         def score_generator():
+            """
+            Generator function to compute similarity scores for query results.
+
+            Yields similarity scores for each embedding vector in the result set.
+            """
             for row in rows:
                 row_dict = dict(row)
                 vector_blob = row_dict["vector"]

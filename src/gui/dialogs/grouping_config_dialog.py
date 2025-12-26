@@ -45,6 +45,14 @@ class ColorSwatch(QFrame):
     clicked = Signal()
 
     def __init__(self, color: str, size: int = 16, parent=None):
+        """
+        Initialize the color swatch.
+
+        Args:
+            color: Hex color code (e.g., "#ff0000").
+            size: Size of the swatch in pixels (default: 16).
+            parent: Parent widget.
+        """
         super().__init__(parent)
         self.setFixedSize(size, size)
         self.setCursor(Qt.PointingHandCursor)

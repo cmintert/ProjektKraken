@@ -1,3 +1,10 @@
+"""
+Attachment Service Module.
+
+Orchestrates database and filesystem operations for image attachments,
+providing a high-level API for image management with undo/redo support.
+"""
+
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -14,6 +21,13 @@ class AttachmentService:
     """
 
     def __init__(self, repository: AttachmentRepository, asset_store: AssetStore):
+        """
+        Initialize the attachment service.
+
+        Args:
+            repository: Repository for database operations.
+            asset_store: Store for filesystem operations.
+        """
         self._repo = repository
         self._store = asset_store
 

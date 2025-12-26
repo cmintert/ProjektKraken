@@ -1,3 +1,10 @@
+"""
+Attachment Repository Module.
+
+Provides database persistence layer for image attachments
+using the repository pattern.
+"""
+
 import logging
 from typing import Any, List, Optional
 

@@ -453,6 +453,9 @@ class MainWindow(QMainWindow):
         db_path = get_user_data_path(active_db)
         logger.info(f"Initializing DatabaseWorker with: {db_path}")
 
+        # Store db_path for main thread usage (path calculations)
+        self.db_path = db_path
+
         self.worker = DatabaseWorker(db_path)
         self.worker.moveToThread(self.worker_thread)
 
@@ -1091,7 +1094,8 @@ class MainWindow(QMainWindow):
 
             image_path = selected_map.image_path
             if not Path(image_path).is_absolute():
-                project_dir = Path(self.worker.db_service.db_path).parent
+                # Use main thread's db_path for path calculations
+                project_dir = Path(self.db_path).parent
                 image_path = str(project_dir / image_path)
 
             self.map_widget.load_map(image_path)
@@ -1124,7 +1128,8 @@ class MainWindow(QMainWindow):
 
         # 3. Copy image to project assets folder
         source_path = Path(file_path)
-        project_dir = Path(self.worker.db_service.db_path).parent
+        # Use main thread's db_path for path calculations
+        project_dir = Path(self.db_path).parent
         assets_dir = project_dir / "assets" / "maps"
         assets_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1452,8 +1457,8 @@ class MainWindow(QMainWindow):
         """
         from src.commands.timeline_grouping_commands import SetTimelineGroupingCommand
 
-        # Get current config
-        current_config = self.worker.db_service.get_timeline_grouping_config()
+        # Get current config from GUI thread's db_service (thread-safe)
+        current_config = self.gui_db_service.get_timeline_grouping_config()
         if current_config:
             tag_order = current_config["tag_order"]
             if tag_name in tag_order:
