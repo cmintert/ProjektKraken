@@ -30,12 +30,42 @@ class ConnectionManager:
 
     def connect_all(self):
         """Connect all UI signals to their respective slots."""
+        self.connect_data_handler()
         self.connect_unified_list()
         self.connect_editors()
         self.connect_timeline()
         self.connect_longform_editor()
         self.connect_map_widget()
         logger.debug("All signal/slot connections established")
+
+    def connect_data_handler(self):
+        """Connect signals from the data handler."""
+        dh = self.window.data_handler
+
+        # Data ready signals
+        dh.events_ready.connect(self.window._on_events_ready)
+        dh.entities_ready.connect(self.window._on_entities_ready)
+        dh.suggestions_update_requested.connect(self.window._on_suggestions_update)
+        dh.event_details_ready.connect(self.window._on_event_details_ready)
+        dh.entity_details_ready.connect(self.window._on_entity_details_ready)
+        dh.longform_sequence_ready.connect(self.window._on_longform_sequence_ready)
+        dh.maps_ready.connect(self.window._on_maps_ready)
+        dh.markers_ready.connect(self.window._on_markers_ready)
+
+        # UI action signals
+        dh.status_message.connect(self.window.status_bar.showMessage)
+        dh.command_failed.connect(self.window._on_command_failed)
+        dh.dock_raise_requested.connect(self.window._on_dock_raise_requested)
+        dh.selection_requested.connect(self.window._on_selection_requested)
+
+        # Reload signals
+        dh.reload_events.connect(self.window.load_events)
+        dh.reload_entities.connect(self.window.load_entities)
+        dh.reload_maps.connect(self.window.load_maps)
+        dh.reload_longform.connect(self.window.load_longform_sequence)
+        dh.reload_active_editor_relations.connect(
+            self.window._on_reload_active_editor_relations
+        )
 
     def connect_unified_list(self):
         """Connect signals from the unified list widget."""

@@ -120,9 +120,9 @@ class TimelineView(QGraphicsView):
         self._playback_step = 1.0  # Default step: 1 day per tick
         self._playback_interval = 100  # Default: 100ms between ticks
 
-        # Group band manager (will be initialized when db_service is set)
+        # Group band manager (will be initialized when data provider is set)
         self._band_manager = None
-        self._db_service = None
+        self._data_provider = None
 
         # Group label overlay for fixed lane labels
         self._label_overlay = GroupLabelOverlay(self)
@@ -1174,18 +1174,27 @@ class TimelineView(QGraphicsView):
     # Timeline Grouping Methods (Milestone 3)
     # -------------------------------------------------------------------------
 
-    def set_db_service(self, db_service):
+    def set_data_provider(self, provider):
         """
-        Set the database service for timeline grouping features.
+        Set the data provider for timeline grouping features.
+
+        The provider should implement methods:
+        - get_group_metadata(tag_order, date_range) -> list of metadata dicts
+        - get_events_for_group(tag_name, date_range) -> list of Event objects
 
         Args:
-            db_service: DatabaseService instance
+            provider: Object implementing the data provider interface
         """
-        self._db_service = db_service
+        self._data_provider = provider
 
         # Initialize band manager if not already done
-        if self._band_manager is None and db_service is not None:
-            self._band_manager = GroupBandManager(self.scene, db_service, self)
+        if self._band_manager is None and provider is not None:
+            self._band_manager = GroupBandManager(
+                self.scene,
+                get_group_metadata_callback=provider.get_group_metadata,
+                get_events_for_group_callback=provider.get_events_for_group,
+                parent=self,
+            )
 
             # Connect band manager signals
             self._band_manager.band_expanded.connect(self._on_band_expanded)
@@ -1200,7 +1209,7 @@ class TimelineView(QGraphicsView):
                 self._on_remove_from_grouping_requested
             )
 
-            logger.info("Group band manager initialized")
+            logger.info("Group band manager initialized with data provider")
 
     def set_grouping_config(self, tag_order: list, mode: str = "DUPLICATE"):
         """

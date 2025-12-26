@@ -126,8 +126,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(WINDOW_TITLE)
         self.resize(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
 
-        # 0. Initialize Data Handler (needed by worker initialization)
-        self.data_handler = DataHandler(self)
+        # 0. Initialize Data Handler (signals-based, no window reference)
+        self.data_handler = DataHandler()
 
         # 1. Init Services (Worker Thread)
         self.init_worker()
@@ -167,6 +167,10 @@ class MainWindow(QMainWindow):
 
         self.longform_editor = LongformEditorWidget()
 
+        # Status Bar
+        self.status_bar = QStatusBar()
+        self.setStatusBar(self.status_bar)
+
         # 3. Setup UI Layout via UIManager
         self.ui_manager = UIManager(self)
         self.ui_manager.setup_docks(
@@ -193,10 +197,6 @@ class MainWindow(QMainWindow):
         # Central Widget
         self.setCentralWidget(QWidget())
         self.centralWidget().hide()
-
-        # Status Bar
-        self.status_bar = QStatusBar()
-        self.setStatusBar(self.status_bar)
 
         # Status Bar Time Labels
         self.lbl_world_time = QLabel("World: --")
@@ -499,12 +499,13 @@ class MainWindow(QMainWindow):
             success (bool): True if connection succeeded, False otherwise.
         """
         if success:
-            # Initialize GUI database connection for UI components
+            # Initialize GUI database connection for timeline data provider
             try:
                 db_path = get_user_data_path("world.kraken")
                 self.gui_db_service = DatabaseService(db_path)
                 self.gui_db_service.connect()
-                self.timeline.set_db_service(self.gui_db_service)
+                # Set MainWindow as data provider (implements the interface)
+                self.timeline.set_data_provider(self)
             except Exception as e:
                 logger.error(f"Failed to initialize GUI database service: {e}")
 
@@ -676,6 +677,49 @@ class MainWindow(QMainWindow):
         # a command. Ideally, we should have a 'CheckEmpty' command or similar.
         pass
 
+    # TimelineDataProvider interface implementation
+    def get_group_metadata(
+        self, tag_order: list[str], date_range: tuple[float, float] | None = None
+    ) -> list[dict]:
+        """
+        Get metadata for timeline grouping tags.
+
+        Implements TimelineDataProvider protocol for timeline grouping.
+
+        Args:
+            tag_order: List of tag names to get metadata for.
+            date_range: Optional (start_date, end_date) tuple for filtering.
+
+        Returns:
+            List of dicts containing tag metadata.
+        """
+        if hasattr(self, "gui_db_service"):
+            return self.gui_db_service.get_group_metadata(
+                tag_order=tag_order, date_range=date_range
+            )
+        return []
+
+    def get_events_for_group(
+        self, tag_name: str, date_range: tuple[float, float] | None = None
+    ) -> list:
+        """
+        Get events that belong to a specific tag group.
+
+        Implements TimelineDataProvider protocol for timeline grouping.
+
+        Args:
+            tag_name: Name of the tag to filter by.
+            date_range: Optional (start_date, end_date) tuple for filtering.
+
+        Returns:
+            List of Event objects with the specified tag.
+        """
+        if hasattr(self, "gui_db_service"):
+            return self.gui_db_service.get_events_for_group(
+                tag_name=tag_name, date_range=date_range
+            )
+        return []
+
     def load_events(self):
         """Requests loading of all events."""
         QMetaObject.invokeMethod(self.worker, "load_events", QtCore_Qt.QueuedConnection)
@@ -712,6 +756,168 @@ class MainWindow(QMainWindow):
             QtCore_Qt.QueuedConnection,
             Q_ARG(str, entity_id),
         )
+
+    # DataHandler signal handlers (loose coupling via signals)
+    @Slot(list)
+    def _on_events_ready(self, events):
+        """
+        Handle events ready signal from DataHandler.
+
+        Args:
+            events: List of Event objects.
+        """
+        self._cached_events = events
+        self.unified_list.set_data(self._cached_events, self._cached_entities)
+        self.timeline.set_events(events)
+
+    @Slot(list)
+    def _on_entities_ready(self, entities):
+        """
+        Handle entities ready signal from DataHandler.
+
+        Args:
+            entities: List of Entity objects.
+        """
+        self._cached_entities = entities
+        self.unified_list.set_data(self._cached_events, self._cached_entities)
+
+    @Slot(list)
+    def _on_suggestions_update(self, items):
+        """
+        Handle suggestions update request from DataHandler.
+
+        Args:
+            items: List of (id, name, type) tuples for completion.
+        """
+        self.event_editor.update_suggestions(items=items)
+        self.entity_editor.update_suggestions(items=items)
+
+    @Slot(object, list, list)
+    def _on_event_details_ready(self, event, relations, incoming):
+        """
+        Handle event details ready signal from DataHandler.
+
+        Args:
+            event: The Event object.
+            relations: List of outgoing relations.
+            incoming: List of incoming relations.
+        """
+        self.event_editor.load_event(event, relations, incoming)
+
+    @Slot(object, list, list)
+    def _on_entity_details_ready(self, entity, relations, incoming):
+        """
+        Handle entity details ready signal from DataHandler.
+
+        Args:
+            entity: The Entity object.
+            relations: List of outgoing relations.
+            incoming: List of incoming relations.
+        """
+        self.entity_editor.load_entity(entity, relations, incoming)
+
+    @Slot(list)
+    def _on_longform_sequence_ready(self, sequence):
+        """
+        Handle longform sequence ready signal from DataHandler.
+
+        Args:
+            sequence: List of longform items.
+        """
+        self._cached_longform_sequence = sequence
+        self.longform_editor.load_sequence(sequence)
+
+    @Slot(list)
+    def _on_maps_ready(self, maps):
+        """
+        Handle maps ready signal from DataHandler.
+
+        Args:
+            maps: List of Map objects.
+        """
+        self.map_widget.set_maps(maps)
+
+        # Auto-select first map if none selected
+        if maps:
+            current_id = self.map_widget.map_selector.currentData()
+            if not current_id:
+                self.map_widget.select_map(maps[0].id)
+
+    @Slot(str, list)
+    def _on_markers_ready(self, map_id, processed_markers):
+        """
+        Handle markers ready signal from DataHandler.
+
+        Args:
+            map_id: The map ID these markers belong to.
+            processed_markers: List of dicts with marker data.
+        """
+        # Verify we are still looking at this map
+        current_map_id = self.map_widget.map_selector.currentData()
+        if current_map_id != map_id:
+            return
+
+        self.map_widget.clear_markers()
+        self._marker_object_to_id.clear()  # Reset mapping
+
+        for marker_data in processed_markers:
+            # Add marker to map
+            self.map_widget.add_marker(
+                marker_id=marker_data["object_id"],
+                object_type=marker_data["object_type"],
+                label=marker_data["label"],
+                x=marker_data["x"],
+                y=marker_data["y"],
+                icon=marker_data["icon"],
+                color=marker_data["color"],
+            )
+
+            # Store mapping for later updates (object_id -> marker.id)
+            self._marker_object_to_id[marker_data["object_id"]] = marker_data["id"]
+
+    @Slot(str)
+    def _on_dock_raise_requested(self, dock_name):
+        """
+        Handle dock raise request from DataHandler.
+
+        Args:
+            dock_name: Name of the dock to raise ("event", "entity", etc).
+        """
+        if dock_name in self.ui_manager.docks:
+            self.ui_manager.docks[dock_name].raise_()
+
+    @Slot(str, str)
+    def _on_selection_requested(self, item_type, item_id):
+        """
+        Handle selection request from DataHandler.
+
+        Args:
+            item_type: Type of item ("event" or "entity").
+            item_id: ID of the item to select.
+        """
+        self.unified_list.select_item(item_type, item_id)
+
+    @Slot(str)
+    def _on_command_failed(self, message):
+        """
+        Handle command failure notification from DataHandler.
+
+        Args:
+            message: Error message from the failed command.
+        """
+        QMessageBox.warning(self, "Command Failed", message)
+
+    @Slot()
+    def _on_reload_active_editor_relations(self):
+        """
+        Reload relations for whichever editor is currently active.
+
+        This is called after relation or wiki link commands complete.
+        """
+        if self.event_editor._current_event_id:
+            self.load_event_details(self.event_editor._current_event_id)
+        if self.entity_editor._current_entity_id:
+            self.load_entity_details(self.entity_editor._current_entity_id)
 
     def delete_event(self, event_id):
         """
