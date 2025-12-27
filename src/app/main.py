@@ -39,6 +39,7 @@ from src.app.connection_manager import ConnectionManager
 from src.app.constants import (
     DEFAULT_WINDOW_HEIGHT,
     DEFAULT_WINDOW_WIDTH,
+    DEFAULT_DB_NAME,
     IMAGE_FILE_FILTER,
     SETTINGS_ACTIVE_DB_KEY,
     STATUS_DB_INIT_FAIL,
@@ -135,7 +136,7 @@ class MainWindow(QMainWindow):
 
         # Load active database for title
         settings = QSettings()
-        active_db = settings.value(SETTINGS_ACTIVE_DB_KEY, "world.kraken")
+        active_db = settings.value(SETTINGS_ACTIVE_DB_KEY, DEFAULT_DB_NAME)
 
         self.setWindowTitle(f"{WINDOW_TITLE} - {active_db}")
         self.resize(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
@@ -233,14 +234,14 @@ class MainWindow(QMainWindow):
         # File Menu
         self.ui_manager.create_file_menu(self.menuBar())
 
+        # Timeline Menu (New)
+        self.ui_manager.create_timeline_menu(self.menuBar())
+
         # View Menu
         self.ui_manager.create_view_menu(self.menuBar())
 
-        # Settings Menu (New)
+        # Settings Menu (Consolidated AI Search here)
         self.ui_manager.create_settings_menu(self.menuBar())
-
-        # AI Menu (New)
-        self.ui_manager.create_ai_menu(self.menuBar())
 
         # 5. Initialize Database (deferred to ensure event loop is running)
         QTimer.singleShot(
@@ -448,7 +449,7 @@ class MainWindow(QMainWindow):
 
         # Load active database from settings
         settings = QSettings()
-        active_db = settings.value(SETTINGS_ACTIVE_DB_KEY, "world.kraken")
+        active_db = settings.value(SETTINGS_ACTIVE_DB_KEY, DEFAULT_DB_NAME)
 
         db_path = get_user_data_path(active_db)
         logger.info(f"Initializing DatabaseWorker with: {db_path}")
@@ -536,8 +537,8 @@ class MainWindow(QMainWindow):
         if success:
             # Initialize GUI database connection for timeline data provider
             try:
-                db_path = get_user_data_path("world.kraken")
-                self.gui_db_service = DatabaseService(db_path)
+                # Use the same db_path as the worker
+                self.gui_db_service = DatabaseService(self.db_path)
                 self.gui_db_service.connect()
                 # Set MainWindow as data provider (implements the interface)
                 self.timeline.set_data_provider(self)
