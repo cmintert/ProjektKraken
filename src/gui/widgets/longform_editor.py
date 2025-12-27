@@ -441,8 +441,10 @@ class LongformEditorWidget(QWidget):
         # Toolbar
         toolbar = QToolBar()
         toolbar.setIconSize(QSize(16, 16))
-        # Reduce toolbar height padding if possible, though QStyle controls it mostly
-        toolbar.setStyleSheet("QToolBar { spacing: 10px; margin-top: 5px; }")
+        toolbar.setStyleSheet(
+            "QToolBar { spacing: 10px; margin-top: 5px; margin-bottom: 5px; "
+            "padding: 2px 0px; }"
+        )
 
         # Refresh Button
         btn_refresh = QPushButton("Refresh")
