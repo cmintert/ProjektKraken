@@ -17,48 +17,9 @@ import numpy as np
 import requests
 
 from src.services.llm_provider import Provider
+from src.services.resilience import CircuitBreaker
 
 logger = logging.getLogger(__name__)
-
-
-class CircuitBreaker:
-    """Simple circuit breaker implementation for fault tolerance."""
-
-    def __init__(self, failure_threshold: int = 5, timeout: float = 60.0):
-        """Initialize circuit breaker."""
-        self.failure_threshold = failure_threshold
-        self.timeout = timeout
-        self.failures = 0
-        self.last_failure_time = 0.0
-        self.state = "closed"
-
-    def call(self, func, *args, **kwargs):
-        """Execute function with circuit breaker protection."""
-        if self.state == "open":
-            if time.time() - self.last_failure_time >= self.timeout:
-                logger.info("Circuit breaker entering half-open state")
-                self.state = "half-open"
-            else:
-                raise Exception("Circuit breaker is OPEN - too many recent failures")
-
-        try:
-            result = func(*args, **kwargs)
-            if self.state == "half-open":
-                logger.info("Circuit breaker closing after successful call")
-                self.state = "closed"
-                self.failures = 0
-            return result
-        except Exception as e:
-            self.failures += 1
-            self.last_failure_time = time.time()
-
-            if self.failures >= self.failure_threshold:
-                logger.error(
-                    f"Circuit breaker OPENING after {self.failures} failures"
-                )
-                self.state = "open"
-
-            raise e
 
 
 class GoogleProvider(Provider):
@@ -323,6 +284,8 @@ class GoogleProvider(Provider):
                 text = str(prediction)
 
             # Vertex AI doesn't always provide detailed usage stats
+            # Note: This is a rough estimate. For accurate token counts, consider
+            # using a tokenizer library like tiktoken or the model's specific tokenizer.
             usage = {
                 "prompt_tokens": len(prompt.split()),  # Rough estimate
                 "completion_tokens": len(text.split()),  # Rough estimate
