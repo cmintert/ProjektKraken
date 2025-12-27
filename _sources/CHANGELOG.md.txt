@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2025-12-27
-### Internal
-- ui: Simplify toolbar styling with 5px padding
+### Added
+- feat: Add configurable LLM settings to AI Search dialog
 
 
 *This changelog was automatically generated.*
