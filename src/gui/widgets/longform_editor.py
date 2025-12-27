@@ -289,12 +289,7 @@ class LongformOutlineWidget(QTreeWidget):
         pass
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        """
-        Handle keyboard shortcuts for promote/demote operations.
-
-        Ctrl+[ : Promote (decrease indent)
-        Ctrl+] : Demote (increase indent)
-        """
+        """Handle keyboard shortcuts for promote/demote operations."""
         # Check for Ctrl+[ (promote)
         if (
             event.key() == Qt.Key_BracketLeft
