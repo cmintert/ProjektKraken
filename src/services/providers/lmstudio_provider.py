@@ -265,6 +265,11 @@ class LMStudioProvider(Provider):
         """
         Generate text completion with streaming output.
 
+        Note: This implementation uses blocking I/O wrapped in run_in_executor
+        for the initial request, but iter_lines() still blocks the event loop.
+        For production use with high concurrency, consider using an async HTTP
+        client like aiohttp or httpx.
+
         Args:
             prompt: Input prompt text.
             max_tokens: Maximum tokens to generate.

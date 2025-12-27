@@ -7,7 +7,6 @@ Tests the Provider interface, factory, and individual provider implementations.
 import asyncio
 import json
 import os
-from typing import List
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import numpy as np
