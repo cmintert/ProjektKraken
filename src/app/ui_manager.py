@@ -3,8 +3,16 @@ UIManager Module.
 Handles the creation and layout of dock widgets and menus for the MainWindow.
 """
 
+from typing import Any, Dict, Optional
+
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QDockWidget, QMainWindow, QMenuBar, QTabWidget
+from PySide6.QtWidgets import (
+    QDockWidget,
+    QMainWindow,
+    QMenuBar,
+    QTabWidget,
+    QWidget,
+)
 
 from src.app.constants import (
     DOCK_OBJ_AI_SEARCH,
@@ -33,7 +41,7 @@ class UIManager:
     main window, making the interface explicit and verifiable.
     """
 
-    def __init__(self, main_window: MainWindowProtocol):
+    def __init__(self, main_window: MainWindowProtocol) -> None:
         """
         Initializes the UIManager.
 
@@ -43,7 +51,7 @@ class UIManager:
         self.main_window = main_window
         self.docks = {}
 
-    def setup_docks(self, widgets: dict):
+    def setup_docks(self, widgets: Dict[str, QWidget]) -> None:
         """
         Creates and arranges all dock widgets.
 
@@ -134,7 +142,7 @@ class UIManager:
                 self.docks["entity"], self.docks["ai_search"]
             )
 
-    def _create_dock(self, title: str, obj_name: str, widget) -> QDockWidget:
+    def _create_dock(self, title: str, obj_name: str, widget: QWidget) -> QDockWidget:
         """
         Helper to create a configured dock widget with size constraints.
 
@@ -173,7 +181,7 @@ class UIManager:
 
         return dock
 
-    def create_file_menu(self, menu_bar: QMenuBar):
+    def create_file_menu(self, menu_bar: QMenuBar) -> None:
         """Creates the File menu."""
         file_menu = menu_bar.addMenu("File")
 
@@ -187,31 +195,63 @@ class UIManager:
         exit_action = file_menu.addAction("Exit")
         exit_action.triggered.connect(self.main_window.close)
 
-    def create_view_menu(self, menu_bar: QMenuBar):
+    def create_view_menu(self, menu_bar: QMenuBar) -> None:
         """Creates the View menu for toggling docks."""
         view_menu = menu_bar.addMenu("View")
         for dock in self.docks.values():
             view_menu.addAction(dock.toggleViewAction())
 
         view_menu.addSeparator()
+
+        # Theme Submenu (moved from Settings)
+        from src.core.theme_manager import ThemeManager
+
+        theme_menu = view_menu.addMenu("Theme")
+        tm = ThemeManager()
+        available_themes = tm.get_available_themes()
+
+        # Create action group for exclusivity
+        from PySide6.QtGui import QActionGroup
+
+        action_group = QActionGroup(self.main_window)
+
+        for theme_name in available_themes:
+            action = theme_menu.addAction(theme_name.replace("_", " ").title())
+            action.setCheckable(True)
+            if theme_name == tm.current_theme_name:
+                action.setChecked(True)
+
+            action.triggered.connect(
+                lambda checked=False, name=theme_name: tm.set_theme(name)
+            )
+            action_group.addAction(action)
+
+        view_menu.addSeparator()
         reset_action = view_menu.addAction("Reset Layout")
         reset_action.triggered.connect(self.reset_layout)
 
-        # Timeline Grouping
-        view_menu.addSeparator()
-        self.grouping_config_action = view_menu.addAction(
-            "Configure Timeline Grouping..."
-        )
+    def create_timeline_menu(self, menu_bar: QMenuBar) -> None:
+        """Creates the Timeline menu for grouping and calendar."""
+        timeline_menu = menu_bar.addMenu("Timeline")
+
+        # Grouping
+        self.grouping_config_action = timeline_menu.addAction("Configure Grouping...")
         self.grouping_config_action.triggered.connect(
             self.main_window._on_configure_grouping_requested
         )
 
-        self.grouping_clear_action = view_menu.addAction("Clear Timeline Grouping")
+        self.grouping_clear_action = timeline_menu.addAction("Clear Grouping")
         self.grouping_clear_action.triggered.connect(
             self.main_window._on_clear_grouping_requested
         )
 
-    def reset_layout(self):
+        timeline_menu.addSeparator()
+
+        # Calendar Configuration
+        calendar_action = timeline_menu.addAction("Calendar Configuration...")
+        calendar_action.triggered.connect(self._open_calendar_config)
+
+    def reset_layout(self) -> None:
         """Restores the default docking layout."""
         if "list" in self.docks:
             self.main_window.addDockWidget(Qt.LeftDockWidgetArea, self.docks["list"])
@@ -233,42 +273,23 @@ class UIManager:
                 )
                 self.docks["map"].show()
 
-    def create_settings_menu(self, menu_bar: QMenuBar):
-        """Creates the Settings menu."""
-        from src.core.theme_manager import ThemeManager
-
+    def create_settings_menu(self, menu_bar: QMenuBar) -> None:
+        """Creates the Settings menu (AI and other system settings)."""
         settings_menu = menu_bar.addMenu("Settings")
 
-        # Theme Submenu
-        theme_menu = settings_menu.addMenu("Theme")
-        tm = ThemeManager()
-        available_themes = tm.get_available_themes()
-
-        # Create action group for exclusivity
-        from PySide6.QtGui import QActionGroup
-
-        action_group = QActionGroup(self.main_window)
-
-        for theme_name in available_themes:
-            action = theme_menu.addAction(theme_name.replace("_", " ").title())
-            action.setCheckable(True)
-            if theme_name == tm.current_theme_name:
-                action.setChecked(True)
-
-            action.triggered.connect(
-                lambda checked=False, name=theme_name: tm.set_theme(name)
+        # AI Search Index and Settings (moved from AI menu)
+        search_settings_action = settings_menu.addAction(
+            "AI Search Index and Settings..."
+        )
+        if hasattr(self.main_window, "show_ai_settings_dialog"):
+            search_settings_action.triggered.connect(
+                self.main_window.show_ai_settings_dialog
             )
-            action_group.addAction(action)
-
-        # Calendar Configuration
-        settings_menu.addSeparator()
-        calendar_action = settings_menu.addAction("Calendar Configuration...")
-        calendar_action.triggered.connect(self._open_calendar_config)
 
         # Track pending dialog state
         self._calendar_dialog_pending = False
 
-    def _open_calendar_config(self):
+    def _open_calendar_config(self) -> None:
         """Requests loading of calendar config to open dialog."""
         from PySide6.QtCore import QMetaObject
         from PySide6.QtCore import Qt as QtCore_Qt
@@ -279,7 +300,7 @@ class UIManager:
             self.main_window.worker, "load_calendar_config", QtCore_Qt.QueuedConnection
         )
 
-    def show_calendar_dialog(self, current_config):
+    def show_calendar_dialog(self, current_config: Optional[Any]) -> None:
         """
         Shows the calendar configuration dialog.
 
@@ -299,7 +320,7 @@ class UIManager:
 
         dialog = CalendarConfigDialog(self.main_window, config=current_config)
 
-        def on_config_saved(config):
+        def on_config_saved(config: Any) -> None:
             """
             Handles calendar config save by creating appropriate commands.
 
@@ -322,19 +343,3 @@ class UIManager:
 
         dialog.config_saved.connect(on_config_saved)
         dialog.exec()
-
-    def create_ai_menu(self, menu_bar: QMenuBar):
-        """Creates the AI Settings menu."""
-        ai_menu = menu_bar.addMenu("AI Settings")
-
-        # AI Search Index and Settings
-        search_settings_action = ai_menu.addAction("AI Search Index and Settings...")
-        # Check if main_window has the method, or defer connection?
-        # Assuming main_window will have it.
-        if hasattr(self.main_window, "show_ai_settings_dialog"):
-            search_settings_action.triggered.connect(
-                self.main_window.show_ai_settings_dialog
-            )
-        else:
-            # Fallback or log if method not ready yet (during dev)
-            print("MainWindow missing show_ai_settings_dialog")
