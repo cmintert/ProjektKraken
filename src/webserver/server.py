@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
@@ -50,20 +51,21 @@ def create_app(config: ServerConfig) -> FastAPI:
     # -------------------------------------------------------------------------
 
     @app.get("/api/longform")
-    def get_longform(doc_id: str = "default"):
+    def get_longform(doc_id: str = "default") -> dict[str, Any]:
         """
         Get the structured longform sequence as JSON.
         Includes rendered HTML content for each section.
         """
         db = get_db_service()
         try:
-            # We reuse the logic from WikiTextEdit but we need a headless version or similar logic
-            # Since WikiTextEdit is a QWidget, we can't easily run it in a headless
-            # thread safely without QApplication.
-            # However, looking at WikiTextEdit code, the rendering logic is mostly
-            # string manipulation using the `markdown` library.
-            # Let's reproduce the rendering pipeline here to avoid GUI dependencies
-            # in the web thread.
+            # We reuse the logic from WikiTextEdit but we need a headless
+            # version or similar logic.
+            # Since WikiTextEdit is a QWidget, we can't easily run it in a
+            # headless thread safely without QApplication.
+            # However, looking at WikiTextEdit code, the rendering logic is
+            # mostly string manipulation using the `markdown` library.
+            # Let's reproduce the rendering pipeline here to avoid GUI
+            # dependencies in the web thread.
 
             sequence = build_longform_sequence(db._connection, doc_id=doc_id)
 
@@ -125,7 +127,7 @@ def create_app(config: ServerConfig) -> FastAPI:
             db.close()
 
     @app.get("/api/toc")
-    def get_toc(doc_id: str = "default"):
+    def get_toc(doc_id: str = "default") -> list[dict[str, Any]]:
         """
         Get just the Table of Contents structure.
         """
@@ -150,11 +152,11 @@ def create_app(config: ServerConfig) -> FastAPI:
     # -------------------------------------------------------------------------
 
     @app.get("/longform", response_class=HTMLResponse)
-    def view_longform(request: Request):
+    def view_longform(request: Request) -> HTMLResponse:
         return templates.TemplateResponse("index.html", {"request": request})
 
     @app.get("/health")
-    def health_check():
+    def health_check() -> dict[str, str]:
         return {"status": "ok"}
 
     return app

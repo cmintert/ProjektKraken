@@ -14,7 +14,15 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from PySide6.QtCore import QPoint, QSize, Qt, Signal
-from PySide6.QtGui import QAction, QBrush, QColor, QDrag, QDropEvent, QKeyEvent
+from PySide6.QtGui import (
+    QAction,
+    QBrush,
+    QCloseEvent,
+    QColor,
+    QDrag,
+    QDropEvent,
+    QKeyEvent,
+)
 from PySide6.QtWidgets import (
     QLabel,
     QSplitter,
@@ -425,7 +433,7 @@ class LongformEditorWidget(QWidget):
         # Setup UI
         self._setup_ui()
 
-    def closeEvent(self, event):
+    def closeEvent(self, event: QCloseEvent) -> None:
         """Stop server on close."""
         self.web_manager.stop_server()
         super().closeEvent(event)
@@ -462,7 +470,8 @@ class LongformEditorWidget(QWidget):
             "color: #FF9900; margin-left: 10px; font-weight: bold;"
         )
         self.url_label.setOpenExternalLinks(True)
-        # Make it clickable manually since QLabel link handling can be tricky without HTML
+        # Make it clickable manually since QLabel link handling can be
+        # tricky without HTML
         toolbar.addWidget(self.url_label)
 
         toolbar.addSeparator()
