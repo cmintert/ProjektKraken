@@ -469,11 +469,6 @@ class LongformEditorWidget(QWidget):
         # tricky without HTML
         toolbar.addWidget(self.url_label)
 
-        toolbar.addSeparator()
-
-        help_label = QLabel("  Ctrl+[: Promote | Ctrl+]: Demote")
-        toolbar.addWidget(help_label)
-
         layout.addWidget(toolbar)
 
         # Splitter with outline and content
