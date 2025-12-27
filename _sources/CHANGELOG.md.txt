@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2025-12-27
-### Internal
-- style: Fix ruff linting errors in webserver files
+### Documentation
+- docs: Remove keyboard shortcut hint from longform editor
 
 
 *This changelog was automatically generated.*
