@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from src.app.constants import SETTINGS_ACTIVE_DB_KEY
+from src.app.constants import DEFAULT_DB_NAME, SETTINGS_ACTIVE_DB_KEY
 from src.core.paths import get_user_data_path
 
 logger = logging.getLogger(__name__)
@@ -95,7 +95,7 @@ class DatabaseManagerDialog(QDialog):
         """Refresh the list of database files from the data directory."""
         self.db_list.clear()
         settings = QSettings()
-        active_db = settings.value(SETTINGS_ACTIVE_DB_KEY, "world.kraken")
+        active_db = settings.value(SETTINGS_ACTIVE_DB_KEY, DEFAULT_DB_NAME)
 
         if not os.path.exists(self.data_dir):
             os.makedirs(self.data_dir, exist_ok=True)
@@ -160,7 +160,7 @@ class DatabaseManagerDialog(QDialog):
 
         # Check if active
         settings = QSettings()
-        active_db = settings.value(SETTINGS_ACTIVE_DB_KEY, "world.kraken")
+        active_db = settings.value(SETTINGS_ACTIVE_DB_KEY, DEFAULT_DB_NAME)
 
         if filename == active_db:
             QMessageBox.warning(
@@ -194,7 +194,7 @@ class DatabaseManagerDialog(QDialog):
 
         filename = item.text().replace(" (Active)", "")
         settings = QSettings()
-        active_db = settings.value(SETTINGS_ACTIVE_DB_KEY, "world.kraken")
+        active_db = settings.value(SETTINGS_ACTIVE_DB_KEY, DEFAULT_DB_NAME)
 
         if filename == active_db:
             QMessageBox.information(self, "Info", "This database is already active.")

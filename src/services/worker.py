@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import List
 
 from PySide6.QtCore import QObject, Signal, Slot
-
+from src.app.constants import DEFAULT_DB_NAME
 from src.commands.base_command import BaseCommand, CommandResult
 from src.services import longform_builder
 from src.services.asset_store import AssetStore
@@ -49,7 +49,7 @@ class DatabaseWorker(QObject):
     operation_started = Signal(str)
     operation_finished = Signal(str)
 
-    def __init__(self, db_path: str = "world.kraken"):
+    def __init__(self, db_path: str = DEFAULT_DB_NAME):
         """
         Initializes the worker.
 
