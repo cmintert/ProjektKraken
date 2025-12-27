@@ -13,8 +13,8 @@ import json
 import logging
 from typing import Any, Dict, List, Optional
 
-from PySide6.QtCore import QMimeData, Qt, Signal
-from PySide6.QtGui import QAction, QBrush, QColor, QDrag
+from PySide6.QtCore import QPoint, QSize, Qt, Signal
+from PySide6.QtGui import QAction, QBrush, QColor, QDrag, QDropEvent, QKeyEvent
 from PySide6.QtWidgets import (
     QLabel,
     QSplitter,
@@ -47,7 +47,7 @@ class LongformOutlineWidget(QTreeWidget):
     COLOR_EVENT = QColor("#0078D4")
     COLOR_ENTITY = QColor("#FF9900")
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the outline widget."""
         super().__init__(parent)
         self.setHeaderLabel("Document Outline")
@@ -62,7 +62,7 @@ class LongformOutlineWidget(QTreeWidget):
         self.itemSelectionChanged.connect(self._on_selection_changed)
         self.customContextMenuRequested.connect(self._show_context_menu)
 
-    def startDrag(self, supportedActions):
+    def startDrag(self, supportedActions: Qt.DropActions) -> None:
         """
         Override to provide custom MIME data for external drags.
 
@@ -90,7 +90,8 @@ class LongformOutlineWidget(QTreeWidget):
         # Build MIME data
         data = {"id": row_id, "type": item_type, "name": item_name}
 
-        mime_data = QMimeData()
+        # Use base class mime data to preserve internal move functionality
+        mime_data = self.mimeData([item])
         mime_data.setData(KRAKEN_ITEM_MIME_TYPE, json.dumps(data).encode("utf-8"))
         # Also set plain text for debugging
         mime_data.setText(f"{item_type}:{row_id}")
@@ -102,7 +103,7 @@ class LongformOutlineWidget(QTreeWidget):
         # Execute drag - CopyAction for external, MoveAction for internal
         drag.exec(Qt.CopyAction | Qt.MoveAction)
 
-    def dropEvent(self, event):
+    def dropEvent(self, event: QDropEvent) -> None:
         """
         Handle drop event to reorder items.
         Calculates new parent, depth, and position.
@@ -263,7 +264,7 @@ class LongformOutlineWidget(QTreeWidget):
             item_to_select = item_map[selected_item_id]
             self.setCurrentItem(item_to_select)
 
-    def _on_selection_changed(self):
+    def _on_selection_changed(self) -> None:
         """Handle selection change."""
         items = self.selectedItems()
         if items:
@@ -273,12 +274,12 @@ class LongformOutlineWidget(QTreeWidget):
                 table, row_id, _ = meta
                 self.item_selected.emit(table, row_id)
 
-    def _show_context_menu(self, pos):
+    def _show_context_menu(self, pos: QPoint) -> None:
         """Show context menu for outline items."""
         # TODO: Implement context menu with promote/demote/remove options
         pass
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event: QKeyEvent) -> None:
         """
         Handle keyboard shortcuts for promote/demote operations.
 
@@ -302,7 +303,7 @@ class LongformOutlineWidget(QTreeWidget):
         else:
             super().keyPressEvent(event)
 
-    def _promote_selected(self):
+    def _promote_selected(self) -> None:
         """Promote the selected item."""
         items = self.selectedItems()
         if not items:
@@ -314,7 +315,7 @@ class LongformOutlineWidget(QTreeWidget):
             table, row_id, old_meta = meta_data
             self.item_promoted.emit(table, row_id, old_meta.copy())
 
-    def _demote_selected(self):
+    def _demote_selected(self) -> None:
         """Demote the selected item."""
         items = self.selectedItems()
         if not items:
@@ -335,7 +336,7 @@ class LongformContentWidget(WikiTextEdit):
     inherits from WikiTextEdit to support WikiLink rendering and navigation.
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the content widget."""
         super().__init__(parent)
         self.setReadOnly(True)
@@ -399,7 +400,7 @@ class LongformEditorWidget(QWidget):
     item_moved = Signal(str, str, dict, dict)  # table, id, old_meta, new_meta
     link_clicked = Signal(str)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the longform editor."""
         super().__init__(parent)
         self.setAttribute(Qt.WA_StyledBackground, True)
@@ -415,7 +416,7 @@ class LongformEditorWidget(QWidget):
         # Setup UI
         self._setup_ui()
 
-    def _setup_ui(self):
+    def _setup_ui(self) -> None:
         """Setup the user interface."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -480,7 +481,7 @@ class LongformEditorWidget(QWidget):
         count = len(sequence)
         self.status_label.setText(f"{count} item(s) in document")
 
-    def _on_item_selected(self, table: str, row_id: str):
+    def _on_item_selected(self, table: str, row_id: str) -> None:
         """
         Handle item selection in outline.
 
@@ -513,24 +514,20 @@ class LongformEditorWidget(QWidget):
                 return (table, row_id)
         return None
 
-    def minimumSizeHint(self):
+    def minimumSizeHint(self) -> QSize:
         """
         Override to prevent dock collapse.
 
         Returns:
             QSize: Minimum size for usable longform editor.
         """
-        from PySide6.QtCore import QSize
-
         return QSize(400, 300)  # Width for split view, height for toolbar + content
 
-    def sizeHint(self):
+    def sizeHint(self) -> QSize:
         """
         Preferred size for the longform editor.
 
         Returns:
             QSize: Comfortable working size for editing longform documents.
         """
-        from PySide6.QtCore import QSize
-
         return QSize(600, 700)  # Comfortable size for split view
