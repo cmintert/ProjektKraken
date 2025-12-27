@@ -15,7 +15,6 @@ from typing import Any, Dict, List, Optional
 
 from PySide6.QtCore import QPoint, QSize, Qt, Signal
 from PySide6.QtGui import (
-    QAction,
     QBrush,
     QCloseEvent,
     QColor,
@@ -25,6 +24,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import (
     QLabel,
+    QPushButton,
     QSplitter,
     QToolBar,
     QTreeWidget,
@@ -442,23 +442,23 @@ class LongformEditorWidget(QWidget):
         toolbar = QToolBar()
         toolbar.setIconSize(QSize(16, 16))
         # Reduce toolbar height padding if possible, though QStyle controls it mostly
-        toolbar.setStyleSheet("QToolBar { spacing: 10px; }")
+        toolbar.setStyleSheet("QToolBar { spacing: 10px; margin-top: 5px; }")
 
-        refresh_action = QAction("Refresh", self)
-        refresh_action.triggered.connect(self.refresh_requested.emit)
-        toolbar.addAction(refresh_action)
+        # Refresh Button
+        btn_refresh = QPushButton("Refresh")
+        btn_refresh.clicked.connect(self.refresh_requested.emit)
+        toolbar.addWidget(btn_refresh)
 
-        export_action = QAction("Export to Markdown", self)
-        export_action.triggered.connect(self.export_requested.emit)
-        toolbar.addAction(export_action)
+        # Export Button
+        btn_export = QPushButton("Export to Markdown")
+        btn_export.clicked.connect(self.export_requested.emit)
+        toolbar.addWidget(btn_export)
 
-        toolbar.addSeparator()
-
-        # Publish Action
-        self.publish_action = QAction("Publish to Web", self)
-        self.publish_action.setCheckable(True)
-        self.publish_action.triggered.connect(self._toggle_publish)
-        toolbar.addAction(self.publish_action)
+        # Publish Button
+        self.btn_publish = QPushButton("Publish to Web")
+        self.btn_publish.setCheckable(True)
+        self.btn_publish.clicked.connect(self._toggle_publish)
+        toolbar.addWidget(self.btn_publish)
 
         self.url_label = QLabel("")
         self.url_label.setStyleSheet(
@@ -572,9 +572,9 @@ class LongformEditorWidget(QWidget):
 
     def _on_server_status_changed(self, is_running: bool, url: str) -> None:
         """Update UI based on server status."""
-        self.publish_action.setChecked(is_running)
+        self.btn_publish.setChecked(is_running)
         if is_running:
-            self.publish_action.setText("Stop Publishing")
+            self.btn_publish.setText("Stop Publishing")
             # Create a clickable link
             self.url_label.setText(
                 f'<a href="{url}" style="color: #FF9900; text-decoration: none;">'
@@ -582,7 +582,7 @@ class LongformEditorWidget(QWidget):
             )
             self.url_label.setToolTip("Click to open in browser")
         else:
-            self.publish_action.setText("Publish to Web")
+            self.btn_publish.setText("Publish to Web")
             self.url_label.setText("")
 
     def _on_server_error(self, msg: str) -> None:
