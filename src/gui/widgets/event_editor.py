@@ -120,6 +120,14 @@ class EventEditorWidget(QWidget):
         self.form_layout.addRow("Description:", self.desc_edit)
 
         details_layout.addLayout(self.form_layout)
+
+        # Add LLM Generation Widget below description
+        from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
+
+        self.llm_generator = LLMGenerationWidget(self)
+        self.llm_generator.text_generated.connect(self._on_text_generated)
+        details_layout.addWidget(self.llm_generator)
+
         # Set minimum height on details tab to ensure it doesn't collapse
         self.tab_details.setMinimumHeight(400)
         self.inspector.add_tab(self.tab_details, "Details")
@@ -598,6 +606,33 @@ class EventEditorWidget(QWidget):
         if not self._is_loading:
             self._is_dirty = True
             self.dirty_changed.emit(True)
+
+    def _on_text_generated(self, text: str):
+        """
+        Handle text generated from LLM.
+
+        Appends generated text to the description field.
+
+        Args:
+            text: Generated text from LLM.
+        """
+        if not text:
+            return
+
+        # Get current description
+        current = self.desc_edit.toPlainText()
+
+        # Append generated text with newline separator if there's existing content
+        if current.strip():
+            new_text = current + "\n\n" + text
+        else:
+            new_text = text
+
+        # Update description
+        self.desc_edit.setPlainText(new_text)
+
+        # Mark as dirty
+        self._mark_dirty()
 
     def minimumSizeHint(self):
         """
