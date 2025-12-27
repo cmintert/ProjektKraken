@@ -14,7 +14,7 @@ import sqlite3
 import time
 import uuid
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -216,7 +216,9 @@ def dot_scores(q_vec: np.ndarray, V: np.ndarray) -> np.ndarray:
     return V.dot(q_vec)
 
 
-def top_k_streaming(scores_iter, k: int) -> List[Tuple[float, Any]]:
+def top_k_streaming(
+    scores_iter: Iterator[Tuple[float, Any]], k: int
+) -> List[Tuple[float, Any]]:
     """
     Select top-k items from an iterator using a min-heap (streaming approach).
 
@@ -891,25 +893,66 @@ class SearchService:
                 (object_type, object_id),
             )
         self.conn.commit()
-
         logger.info(f"Deleted embeddings for {object_type} {object_id}")
 
 
 # =============================================================================
-# Factory Functions
+# Provider Factory
 # =============================================================================
 
 
+def get_llm_settings_from_qsettings() -> Dict[str, Any]:
+    """
+    Load LLM settings from QSettings.
+
+    Returns:
+        Dict with keys: provider, lm_url, lm_model, lm_api_key, lm_timeout, st_model
+    """
+    try:
+        from PySide6.QtCore import QSettings
+        from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+
+        return {
+            "provider": settings.value("ai_embedding_provider", "lmstudio"),
+            "lm_url": settings.value("ai_lmstudio_url", ""),
+            "lm_model": settings.value("ai_lmstudio_model", ""),
+            "lm_api_key": settings.value("ai_lmstudio_api_key", ""),
+            "lm_timeout": int(settings.value("ai_lmstudio_timeout", 30)),
+            "st_model": settings.value("ai_st_model", ""),
+        }
+    except Exception as e:
+        logger.warning(f"Failed to load LLM settings from QSettings: {e}")
+        return {
+            "provider": "lmstudio",
+            "lm_url": "",
+            "lm_model": "",
+            "lm_api_key": "",
+            "lm_timeout": 30,
+            "st_model": "",
+        }
+
+
 def create_provider(
-    provider_name: Optional[str] = None, model: Optional[str] = None
+    provider_name: Optional[str] = None,
+    model: Optional[str] = None,
+    url: Optional[str] = None,
+    api_key: Optional[str] = None,
+    timeout: Optional[int] = None,
 ) -> EmbeddingProvider:
     """
     Create an embedding provider based on configuration.
 
+    Loads settings from QSettings, with environment variable fallbacks.
+
     Args:
         provider_name: 'lmstudio' or 'sentence-transformers'.
-                       If None, uses EMBED_PROVIDER env var (default 'lmstudio').
+                       If None, uses QSettings then EMBED_PROVIDER env var.
         model: Model name override.
+        url: LM Studio URL override.
+        api_key: LM Studio API key override.
+        timeout: LM Studio timeout override.
 
     Returns:
         EmbeddingProvider: Configured provider instance.
@@ -917,12 +960,32 @@ def create_provider(
     Raises:
         ValueError: If provider is unknown or configuration is invalid.
     """
-    provider_name = provider_name or os.getenv("EMBED_PROVIDER", "lmstudio")
+    # Load settings from QSettings
+    qsettings = get_llm_settings_from_qsettings()
+
+    # Determine provider (explicit > QSettings > env var)
+    provider_name = (
+        provider_name
+        or qsettings["provider"]
+        or os.getenv("EMBED_PROVIDER", "lmstudio")
+    )
 
     if provider_name == "lmstudio":
-        return LMStudioEmbeddingProvider(model=model)
+        # Use explicit params > QSettings > env vars > defaults
+        lm_url = url or qsettings["lm_url"] or None
+        lm_model = model or qsettings["lm_model"] or None
+        lm_api_key = api_key or qsettings["lm_api_key"] or None
+        lm_timeout = timeout or qsettings["lm_timeout"] or 30
+
+        return LMStudioEmbeddingProvider(
+            url=lm_url if lm_url else None,
+            model=lm_model if lm_model else None,
+            api_key=lm_api_key if lm_api_key else None,
+            timeout=lm_timeout,
+        )
     elif provider_name == "sentence-transformers":
-        return SentenceTransformersProvider(model=model)
+        st_model = model or qsettings["st_model"] or None
+        return SentenceTransformersProvider(model=st_model if st_model else None)
     else:
         raise ValueError(
             f"Unknown embedding provider: {provider_name}. "
