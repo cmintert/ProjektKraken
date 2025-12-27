@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
+from src.services.web_service_manager import WebServiceManager
 
 logger = logging.getLogger(__name__)
 
@@ -400,9 +401,12 @@ class LongformEditorWidget(QWidget):
     item_moved = Signal(str, str, dict, dict)  # table, id, old_meta, new_meta
     link_clicked = Signal(str)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(
+        self, parent: Optional[QWidget] = None, db_path: Optional[str] = None
+    ) -> None:
         """Initialize the longform editor."""
         super().__init__(parent)
+        self.db_path = db_path
         self.setAttribute(Qt.WA_StyledBackground, True)
 
         # Set size policy to prevent dock collapse
@@ -413,8 +417,18 @@ class LongformEditorWidget(QWidget):
         # Store current sequence
         self._sequence = []
 
+        # Web Service Manager
+        self.web_manager = WebServiceManager(self)
+        self.web_manager.status_changed.connect(self._on_server_status_changed)
+        self.web_manager.error_occurred.connect(self._on_server_error)
+
         # Setup UI
         self._setup_ui()
+
+    def closeEvent(self, event):
+        """Stop server on close."""
+        self.web_manager.stop_server()
+        super().closeEvent(event)
 
     def _setup_ui(self) -> None:
         """Setup the user interface."""
@@ -423,7 +437,9 @@ class LongformEditorWidget(QWidget):
 
         # Toolbar
         toolbar = QToolBar()
-        toolbar.setMovable(False)
+        toolbar.setIconSize(QSize(16, 16))
+        # Reduce toolbar height padding if possible, though QStyle controls it mostly
+        toolbar.setStyleSheet("QToolBar { spacing: 10px; }")
 
         refresh_action = QAction("Refresh", self)
         refresh_action.triggered.connect(self.refresh_requested.emit)
@@ -432,6 +448,22 @@ class LongformEditorWidget(QWidget):
         export_action = QAction("Export to Markdown", self)
         export_action.triggered.connect(self.export_requested.emit)
         toolbar.addAction(export_action)
+
+        toolbar.addSeparator()
+
+        # Publish Action
+        self.publish_action = QAction("Publish to Web", self)
+        self.publish_action.setCheckable(True)
+        self.publish_action.triggered.connect(self._toggle_publish)
+        toolbar.addAction(self.publish_action)
+
+        self.url_label = QLabel("")
+        self.url_label.setStyleSheet(
+            "color: #FF9900; margin-left: 10px; font-weight: bold;"
+        )
+        self.url_label.setOpenExternalLinks(True)
+        # Make it clickable manually since QLabel link handling can be tricky without HTML
+        toolbar.addWidget(self.url_label)
 
         toolbar.addSeparator()
 
@@ -531,3 +563,33 @@ class LongformEditorWidget(QWidget):
             QSize: Comfortable working size for editing longform documents.
         """
         return QSize(600, 700)  # Comfortable size for split view
+
+    def _toggle_publish(self, checked: bool) -> None:
+        """Handle publish toggle."""
+        if checked:
+            self.web_manager.start_server(db_path=self.db_path)
+        else:
+            self.web_manager.stop_server()
+
+    def _on_server_status_changed(self, is_running: bool, url: str) -> None:
+        """Update UI based on server status."""
+        self.publish_action.setChecked(is_running)
+        if is_running:
+            self.publish_action.setText("Stop Publishing")
+            # Create a clickable link
+            self.url_label.setText(
+                f'<a href="{url}" style="color: #FF9900; text-decoration: none;">'
+                f"{url}</a>"
+            )
+            self.url_label.setToolTip("Click to open in browser")
+        else:
+            self.publish_action.setText("Publish to Web")
+            self.url_label.setText("")
+
+    def _on_server_error(self, msg: str) -> None:
+        """Handle server error manually."""
+        from PySide6.QtWidgets import QMessageBox
+
+        self.publish_action.setChecked(False)
+        self.url_label.setText("Error starting server")
+        QMessageBox.warning(self, "Web Server Error", msg)

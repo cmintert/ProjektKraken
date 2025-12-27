@@ -37,9 +37,9 @@ from src.app.connection_manager import ConnectionManager
 
 # Refactor Imports
 from src.app.constants import (
+    DEFAULT_DB_NAME,
     DEFAULT_WINDOW_HEIGHT,
     DEFAULT_WINDOW_WIDTH,
-    DEFAULT_DB_NAME,
     IMAGE_FILE_FILTER,
     SETTINGS_ACTIVE_DB_KEY,
     STATUS_DB_INIT_FAIL,
@@ -184,7 +184,7 @@ class MainWindow(QMainWindow):
         # Mapping from object_id to marker.id for position updates
         self._marker_object_to_id = {}
 
-        self.longform_editor = LongformEditorWidget()
+        self.longform_editor = LongformEditorWidget(db_path=self.db_path)
 
         # Status Bar
         self.status_bar = QStatusBar()
