@@ -2,7 +2,6 @@ from unittest.mock import patch
 
 import pytest
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QAction
 
 from src.gui.widgets.longform_editor import (
     LongformContentWidget,
@@ -202,15 +201,15 @@ def test_editor_initialization(editor_widget):
 
 
 def test_editor_refresh_signal(editor_widget, qtbot):
-    # Find refresh action (it's in toolbar)
-    # We can trigger it via signal spy on the widget's signal if we can't easily find the action
-    # Triggering the action via code:
-    actions = editor_widget.findChildren(QAction)
-    refresh_action = next((a for a in actions if a.text() == "Refresh"), None)
-    assert refresh_action is not None
+    # Find refresh button (it's in toolbar)
+    from PySide6.QtWidgets import QPushButton
+
+    buttons = editor_widget.findChildren(QPushButton)
+    refresh_button = next((b for b in buttons if b.text() == "Refresh"), None)
+    assert refresh_button is not None
 
     with qtbot.waitSignal(editor_widget.refresh_requested):
-        refresh_action.trigger()
+        refresh_button.click()
 
 
 def test_editor_selection_sync(editor_widget, qtbot):
