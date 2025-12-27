@@ -34,7 +34,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def create_entity(args) -> int:
+def create_entity(args: argparse.Namespace) -> int:
     """Create a new entity."""
     db_service = None
     try:
@@ -49,6 +49,11 @@ def create_entity(args) -> int:
         if args.description:
             entity_data["description"] = args.description
 
+        if args.tags:
+            tags_list = [t.strip() for t in args.tags.split(",") if t.strip()]
+            # Tags are stored in attributes under _tags
+            entity_data["attributes"] = {"_tags": tags_list}
+
         cmd = CreateEntityCommand(entity_data)
         result = cmd.execute(db_service)
 
@@ -56,6 +61,8 @@ def create_entity(args) -> int:
             print(f"✓ Created entity: {result.data['id']}")
             print(f"  Name: {args.name}")
             print(f"  Type: {args.type}")
+            if args.tags:
+                print(f"  Tags: {args.tags}")
             return 0
         else:
             print(f"✗ Error: {result.message}")
@@ -71,7 +78,7 @@ def create_entity(args) -> int:
             db_service.close()
 
 
-def list_entities(args) -> int:
+def list_entities(args: argparse.Namespace) -> int:
     """List all entities."""
     db_service = None
     try:
@@ -111,6 +118,8 @@ def list_entities(args) -> int:
                         else entity.description
                     )
                     print(f"  Description: {desc_preview}")
+                if entity.tags:
+                    print(f"  Tags: {', '.join(entity.tags)}")
                 print()
 
         return 0
@@ -125,7 +134,7 @@ def list_entities(args) -> int:
             db_service.close()
 
 
-def show_entity(args) -> int:
+def show_entity(args: argparse.Namespace) -> int:
     """Show detailed information about a specific entity."""
     db_service = None
     try:
@@ -148,6 +157,8 @@ def show_entity(args) -> int:
             print(f"ID: {entity.id}")
             print(f"Name: {entity.name}")
             print(f"Type: {entity.type}")
+            if entity.tags:
+                print(f"Tags: {', '.join(entity.tags)}")
             print("\nDescription:")
             print(entity.description if entity.description else "(none)")
             print("\nAttributes:")
@@ -201,7 +212,7 @@ def show_entity(args) -> int:
             db_service.close()
 
 
-def update_entity(args) -> int:
+def update_entity(args: argparse.Namespace) -> int:
     """Update an existing entity."""
     db_service = None
     try:
@@ -223,8 +234,15 @@ def update_entity(args) -> int:
         if args.description is not None:
             update_data["description"] = args.description
 
+        if args.tags is not None:
+            tags_list = [t.strip() for t in args.tags.split(",") if t.strip()]
+            # Merge with existing attributes to avoid data loss
+            new_attrs = entity.attributes.copy() if entity.attributes else {}
+            new_attrs["_tags"] = tags_list
+            update_data["attributes"] = new_attrs
+
         if not update_data:
-            print("✗ No updates specified. Use --name, --type, --description")
+            print("✗ No updates specified. Use --name, --type, --description, --tags")
             return 1
 
         cmd = UpdateEntityCommand(args.id, update_data)
@@ -249,7 +267,7 @@ def update_entity(args) -> int:
             db_service.close()
 
 
-def delete_entity(args) -> int:
+def delete_entity(args: argparse.Namespace) -> int:
     """Delete an entity."""
     db_service = None
     try:
@@ -290,7 +308,7 @@ def delete_entity(args) -> int:
             db_service.close()
 
 
-def main():
+def main() -> None:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
         description="Manage ProjektKraken entities",
@@ -316,6 +334,7 @@ def main():
         help="Entity type (e.g., character, location, faction)",
     )
     create_parser.add_argument("--description", help="Entity description")
+    create_parser.add_argument("--tags", help="Comma-separated list of tags")
     create_parser.set_defaults(func=create_entity)
 
     # List command
@@ -348,6 +367,7 @@ def main():
     update_parser.add_argument("--name", "-n", help="New entity name")
     update_parser.add_argument("--type", "-t", help="New entity type")
     update_parser.add_argument("--description", help="New description")
+    update_parser.add_argument("--tags", help="Comma-separated list of tags")
     update_parser.set_defaults(func=update_entity)
 
     # Delete command

@@ -110,14 +110,15 @@ python -m src.cli.entity show --database world.kraken --id <entity-id> --relatio
 python -m src.cli.entity show --database world.kraken --id <entity-id> --json
 ```
 
-### Update an Entity
+### Update Entity
 
 ```bash
-python -m src.cli.entity update \
-  --database world.kraken \
-  --id <entity-id> \
-  --name "New Name" \
-  --type location
+python -m src.cli.entity update --database <path> \
+    --id <uuid> \
+    [--name <name>] \
+    [--type <type>] \
+    [--description <desc>] \
+    [--tags <tags>]
 ```
 
 ### Delete an Entity
@@ -168,7 +169,106 @@ python -m src.cli.relation list --database world.kraken --source <source-id> --j
 python -m src.cli.relation delete --database world.kraken --id <relation-id>
 
 # Force delete (no confirmation)
-python -m src.cli.relation delete --database world.kraken --id <relation-id> --force
+python -m src.cli.relation delete -d world.kraken --id <relation_uuid>
+```
+
+## Attachment Management
+
+Manage image attachments for entities and events.
+
+### Add Attachment
+
+```bash
+python -m src.cli.attachment add --database <path> \
+    --owner-id <uuid> \
+    --file <path_to_image> \
+    [--caption <caption>]
+```
+
+### List Attachments
+
+```bash
+python -m src.cli.attachment list --database <path> --owner-id <uuid>
+```
+
+### Remove Attachment
+
+```bash
+python -m src.cli.attachment remove --database <path> --id <attachment_uuid>
+```
+
+### Update Caption
+
+```bash
+python -m src.cli.attachment caption --database <path> \
+    --id <attachment_uuid> \
+    --caption "New caption"
+```
+
+### Reorder Attachments
+
+```bash
+python -m src.cli.attachment reorder --database <path> \
+    --owner-id <uuid> \
+    --order <uuid1,uuid2,uuid3>
+```
+
+## Calendar Management
+
+Manage calendar configurations.
+
+### Create Calendar
+
+```bash
+python -m src.cli.calendar create --database <path> \
+    --name <name> \
+    --months "Jan:31,Feb:28,Mar:31" \
+    --week "Mon,Tue,Wed,Thu,Fri,Sat,Sun" \
+    [--leap-rule "every 4 years skip 100"]
+```
+
+### List Calendars
+
+```bash
+python -m src.cli.calendar list --database <path>
+```
+
+### Set Active Calendar
+
+```bash
+python -m src.cli.calendar set-active --database <path> --id <uuid>
+```
+
+## Timeline Management
+
+Manage timeline grouping and display settings.
+
+### Set Grouping
+
+Configure how events are grouped on the timeline sidebar.
+
+```bash
+python -m src.cli.timeline group --database <path> \
+    --tags "Type,Faction" \
+    [--mode DUPLICATE]
+```
+
+### Clear Grouping
+
+Remove grouping configuration.
+
+```bash
+python -m src.cli.timeline clear --database <path>
+```
+
+### Set Tag Color
+
+Set the display color for a specific tag.
+
+```bash
+python -m src.cli.timeline tag-color --database <path> \
+    --tag "Faction" \
+    --color "#FF0000"
 ```
 
 ## Map Management
@@ -216,25 +316,16 @@ python -m src.cli.wiki scan \
 
 ## Semantic Search Management
 
-### Rebuild Search Index
+### Rebuild Index
 
-Build or rebuild the semantic search index for entities and events.
+Rebuild the entire semantic search index or for a specific type.
 
 ```bash
-# Rebuild entire index (all entities and events)
-python -m src.cli.index rebuild --database world.kraken
-
-# Rebuild only entities
-python -m src.cli.index rebuild --database world.kraken --type entity
-
-# Rebuild only events
-python -m src.cli.index rebuild --database world.kraken --type event
-
-# Use specific provider and model
-python -m src.cli.index rebuild \
-  --database world.kraken \
-  --provider lmstudio \
-  --model bge-small-en
+python -m src.cli.index rebuild --database <path> \
+    [--type <all|entity|event>] \
+    [--provider <lmstudio|sentence-transformers>] \
+    [--model <model_name>] \
+    [--excluded-attributes <attr1,attr2>]
 ```
 
 **Environment Variables:**
@@ -243,25 +334,29 @@ python -m src.cli.index rebuild \
 - `LMSTUDIO_MODEL`: Model name for embeddings
 - `LMSTUDIO_API_KEY`: Optional API key
 
-### Index a Single Object
+### Index Object
 
-Index a specific entity or event for semantic search.
+Index a single object.
 
 ```bash
-# Index an entity
-python -m src.cli.index index-object \
-  --database world.kraken \
-  --type entity \
-  --id <entity-id>
-
-# Index an event
-python -m src.cli.index index-object \
-  --database world.kraken \
-  --type event \
-  --id <event-id>
+python -m src.cli.index index-object --database <path> \
+    --type <entity|event> \
+    --id <uuid> \
+    [--provider <lmstudio|sentence-transformers>] \
+    [--excluded-attributes <attr1,attr2>]
 ```
 
-### Query the Search Index
+### Delete Object Index
+
+Delete embeddings for a single object.
+
+```bash
+python -m src.cli.index delete-object --database <path> \
+    --type <entity|event> \
+    --id <uuid>
+```
+
+### Query Index Search Index
 
 Perform semantic search queries to find similar entities and events.
 
