@@ -106,8 +106,11 @@ def test_preview_fetches_rag(qtbot, widget, monkeypatch):
         "src.gui.widgets.llm_generation_widget.perform_rag_search", mock_search
     )
 
-    # Mock QDialog to avoid blocking
-    class MockDialog:
+    # Mock UI components to prevent actual window creation (headless)
+    class MockWidgetObj:
+        def __init__(self, *args, **kwargs):
+            pass
+
         def setWindowTitle(self, t):
             pass
 
@@ -126,12 +129,45 @@ def test_preview_fetches_rag(qtbot, widget, monkeypatch):
         def setLayout(self, layout):
             pass
 
-    monkeypatch.setattr("PySide6.QtWidgets.QDialog", MockDialog)
-    # Mock QVBoxLayout/QLabel/etc if strictly needed.
-    # Current code passes `self` or `dlg` as parent.
-    # With mocked QDialog, children instantiations might fail if C++ binding checks types.
-    # But usually PySide6 mocks allow this if not strictly typed in C++.
-    monkeypatch.setattr("PySide6.QtWidgets.QDialog.exec", lambda self: None)
+        def setPlainText(self, t):
+            pass
+
+        def setReadOnly(self, b):
+            pass
+
+        def addWidget(self, w):
+            pass
+
+        def addLayout(self, layout):
+            pass
+
+        def addStretch(self):
+            pass
+
+        # Mock signal for button
+        @property
+        def clicked(self):
+            class Signal:
+                def connect(self, slot):
+                    pass
+
+            return Signal()
+
+    # Patch the classes imported in the module, NOT PySide6 directly
+    monkeypatch.setattr("src.gui.widgets.llm_generation_widget.QDialog", MockWidgetObj)
+    monkeypatch.setattr(
+        "src.gui.widgets.llm_generation_widget.QVBoxLayout", MockWidgetObj
+    )
+    monkeypatch.setattr(
+        "src.gui.widgets.llm_generation_widget.QHBoxLayout", MockWidgetObj
+    )
+    monkeypatch.setattr("src.gui.widgets.llm_generation_widget.QLabel", MockWidgetObj)
+    monkeypatch.setattr(
+        "src.gui.widgets.llm_generation_widget.QPlainTextEdit", MockWidgetObj
+    )
+    monkeypatch.setattr(
+        "src.gui.widgets.llm_generation_widget.QPushButton", MockWidgetObj
+    )
 
     widget.rag_cb.setChecked(True)
     widget._on_preview_clicked()
