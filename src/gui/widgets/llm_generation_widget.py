@@ -13,8 +13,10 @@ from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
+    QDialog,
     QHBoxLayout,
     QLabel,
+    QMessageBox,
     QPlainTextEdit,
     QPushButton,
     QSpinBox,
@@ -25,6 +27,79 @@ from PySide6.QtWidgets import (
 from src.gui.utils.style_helper import StyleHelper
 
 logger = logging.getLogger(__name__)
+
+
+def perform_rag_search(prompt: str, db_path: Optional[str]) -> str:
+    """
+    Perform RAG search using search service.
+
+    Args:
+        prompt: The prompt text to query with.
+        db_path: Path to the database.
+
+    Returns:
+        str: Formatted context string or empty string.
+    """
+    if not db_path:
+        logger.debug("RAG skipped: No db_path provided.")
+        return ""
+
+    try:
+        logger.debug(f"Starting RAG search in {db_path} for prompt: {prompt[:50]}...")
+        import sqlite3
+
+        from src.services.search_service import create_search_service
+
+        # Create strictly local read connection
+        conn = sqlite3.connect(
+            db_path,
+            check_same_thread=False,  # Can be called from any thread
+        )
+        conn.row_factory = sqlite3.Row
+
+        # Create search service - reuses the provider config logic
+        # Use 'lmstudio' or configured provider - ideally we use the same as current
+        # but search service factory can handle defaults
+        search_service = create_search_service(conn)
+
+        # Query
+        # Extract main topic from prompt? Or just use full prompt
+        # For now, use first 100 chars or full prompt
+        query_text = prompt[:200]
+        results = search_service.query(query_text, top_k=3)
+
+        conn.close()
+
+        if not results:
+            logger.debug("RAG search returned no results.")
+            return ""
+
+        logger.info(f"RAG search found {len(results)} relevant items.")
+
+        # Format results
+        context_parts = ["### World Knowledge (RAG Data):"]
+        for r in results:
+            name = r.get("name", "Unknown")
+            rtype = r.get("type", "Unknown")
+            # Use text_content from DB (the full indexed text)
+            snippet = r.get("text_content", "")
+            if not snippet:
+                # Fallback to metadata description if text_content missing (legacy)
+                snippet = r.get("metadata", {}).get("description", "")
+
+            if not snippet:
+                # Last resort fallback
+                snippet = str(r.get("metadata", {}))
+
+            context_parts.append(
+                f"**{name}** ({rtype}):\n{snippet[:4000]}..."
+            )  # Increased context length
+
+        return "\n\n".join(context_parts) + "\n\n"
+
+    except Exception as e:
+        logger.error(f"RAG search failed: {e}", exc_info=True)
+        return ""
 
 
 class GenerationWorker(QThread):
@@ -69,79 +144,23 @@ class GenerationWorker(QThread):
         Perform RAG search if db_path is set.
         Returns formatted context string or empty string.
         """
-        if not self.db_path:
-            logger.debug("RAG skipped: No db_path provided.")
-            return ""
-
-        try:
-            logger.debug(
-                f"Starting RAG search in {self.db_path} for prompt: "
-                f"{self.prompt[:50]}..."
-            )
-            import sqlite3
-
-            from src.services.search_service import create_search_service
-
-            # Create strictly local read connection
-            conn = sqlite3.connect(
-                self.db_path,
-                check_same_thread=True,  # We are in a thread, but it's new
-            )
-            conn.row_factory = sqlite3.Row
-
-            # Create search service - reuses the provider config logic
-            # Use 'lmstudio' or configured provider - ideally we use the same as current
-            # but search service factory can handle defaults
-            search_service = create_search_service(conn)
-
-            # Query
-            # Extract main topic from prompt? Or just use full prompt
-            # For now, use first 100 chars or full prompt
-            query_text = self.prompt[:200]
-            results = search_service.query(query_text, top_k=3)
-
-            conn.close()
-
-            if not results:
-                logger.debug("RAG search returned no results.")
-                return ""
-
-            logger.info(f"RAG search found {len(results)} relevant items.")
-
-            # Format results
-            context_parts = ["### World Knowledge (RAG Data):"]
-            for r in results:
-                name = r.get("name", "Unknown")
-                rtype = r.get("type", "Unknown")
-                # Use text_content from DB (the full indexed text)
-                snippet = r.get("text_content", "")
-                if not snippet:
-                    # Fallback to metadata description if text_content missing (legacy)
-                    snippet = r.get("metadata", {}).get("description", "")
-
-                if not snippet:
-                    # Last resort fallback
-                    snippet = str(r.get("metadata", {}))
-
-                context_parts.append(
-                    f"**{name}** ({rtype}):\n{snippet[:500]}..."
-                )  # Increased context length
-
-            return "\n\n".join(context_parts) + "\n\n"
-
-        except Exception as e:
-            logger.error(f"RAG search failed: {e}", exc_info=True)
-            return ""
+        return perform_rag_search(self.prompt, self.db_path)
 
     def run(self) -> None:
         """Run generation in background thread."""
         try:
             # 1. Perform RAG if enabled (synchronous in this thread)
             rag_context = self._perform_rag_search()
-            if rag_context:
-                logger.info("RAG Context found and injected.")
+
+            # Replace placeholder if present
+            if "{{RAG_CONTEXT}}" in self.prompt:
+                self.prompt = self.prompt.replace("{{RAG_CONTEXT}}", rag_context)
+            elif rag_context:
+                # Fallback for legacy behavior (prepend)
+                logger.info("RAG Context found but no placeholder. Prepending.")
                 self.prompt = rag_context + self.prompt
-                # Log final prompt for debugging
+
+            if rag_context:
                 logger.debug(f"Final Prompt with RAG:\n{self.prompt}")
 
             # Check if provider supports streaming
@@ -277,6 +296,12 @@ class LLMGenerationWidget(QWidget):
         self.cancel_btn.setToolTip("Cancel generation")
         self.cancel_btn.clicked.connect(self._on_cancel_clicked)
         controls_layout.addWidget(self.cancel_btn)
+
+        # Preview button
+        self.preview_btn = QPushButton("Preview")
+        self.preview_btn.setToolTip("Preview the prompt before generating")
+        self.preview_btn.clicked.connect(self._on_preview_clicked)
+        controls_layout.addWidget(self.preview_btn)
 
         controls_layout.addStretch()
 
@@ -426,11 +451,25 @@ class LLMGenerationWidget(QWidget):
 
             context_str = "\n".join(context_lines)
 
-            prompt = f"Context:\n{context_str}\n\nTask: {user_prompt}"
+            system_persona = (
+                "You are an expert fantasy world-builder assisting a user in creating a "
+                "rich and immersive setting. Your tone is descriptive, evocative, and "
+                "consistent with high-fantasy literature."
+            )
+
+            # Insert placeholder for RAG
+            rag_placeholder = "{{RAG_CONTEXT}}" if self.rag_cb.isChecked() else ""
+
+            prompt = (
+                f"{system_persona}\n\n"
+                f"{rag_placeholder}"
+                f"Context:\n{context_str}\n\n"
+                f"Task: {user_prompt}"
+            )
             self.status_label.setText("Using custom prompt with context...")
         else:
             # Create auto-generated prompt
-            prompt = self._build_prompt(context)
+            prompt = self._build_prompt(context, self.rag_cb.isChecked())
             self.status_label.setText("Using auto-generated prompt...")
 
         # Get temperature as float (0.0-2.0)
@@ -531,12 +570,13 @@ class LLMGenerationWidget(QWidget):
 
         return context if found_editor else None
 
-    def _build_prompt(self, context: dict) -> str:
+    def _build_prompt(self, context: dict, use_rag: bool = False) -> str:
         """
         Build generation prompt from context.
 
         Args:
             context: Context dictionary with name, type, description, etc.
+            use_rag: Whether to include RAG placeholder.
 
         Returns:
             str: Generated prompt.
@@ -551,11 +591,14 @@ class LLMGenerationWidget(QWidget):
             "consistent with high-fantasy literature."
         )
 
+        rag_placeholder = "{{RAG_CONTEXT}}" if use_rag else ""
+
         base_context = f"### Item Context\n**Name:** {name}\n**Type:** {item_type}\n"
 
         if existing:
             prompt = (
                 f"{system_persona}\n\n"
+                f"{rag_placeholder}"
                 f"{base_context}"
                 f"**Current Description:**\n{existing}\n\n"
                 f"### Task\n"
@@ -566,6 +609,7 @@ class LLMGenerationWidget(QWidget):
         else:
             prompt = (
                 f"{system_persona}\n\n"
+                f"{rag_placeholder}"
                 f"{base_context}\n"
                 f"### Task\n"
                 f"Write a comprehensive description for this {item_type}. "
@@ -646,6 +690,107 @@ class LLMGenerationWidget(QWidget):
         self.generate_btn.setEnabled(True)
         self.cancel_btn.setEnabled(False)
 
-    # def get_preview_text(self) -> str:
-    #     """Get current preview text."""
-    #     return ""
+    def _on_preview_clicked(self) -> None:
+        """Show prompt preview dialog."""
+        context = self._get_generation_context()
+        if not context:
+            QMessageBox.warning(self, "Preview Error", "Could not get context.")
+            return
+
+        # Reuse same logic as generate to ensure accuracy
+        if self.use_custom_prompt_cb.isChecked():
+            user_prompt = self.custom_prompt_edit.toPlainText().strip()
+            # Logic duplicated for now to ensure consistency - ideally refactor
+            # ... (Copied logic from above or refactored into helper)
+            # For compactness, let's refactor the prompt build part into a method?
+            # Or just duplicate the lightweight construction logic here.
+
+            context_lines = []
+            if "name" in context:
+                context_lines.append(f"Name: {context['name']}")
+            if "type" in context:
+                context_lines.append(f"Type: {context['type']}")
+            if "lore_date" in context:
+                context_lines.append(f"Lore Date: {context['lore_date']}")
+            if "existing_description" in context:
+                context_lines.append(f"Description: {context['existing_description']}")
+            for k, v in context.items():
+                if k not in [
+                    "name",
+                    "type",
+                    "lore_date",
+                    "existing_description",
+                    "description",
+                ]:
+                    context_lines.append(f"{k.replace('_', ' ').title()}: {v}")
+            context_str = "\n".join(context_lines)
+
+            system_persona = (
+                "You are an expert fantasy world-builder assisting a user in creating a "
+                "rich and immersive setting. Your tone is descriptive, evocative, and "
+                "consistent with high-fantasy literature."
+            )
+            rag_placeholder = "{{RAG_CONTEXT}}" if self.rag_cb.isChecked() else ""
+            prompt = (
+                f"{system_persona}\n\n"
+                f"{rag_placeholder}"
+                f"Context:\n{context_str}\n\n"
+                f"Task: {user_prompt}"
+            )
+        else:
+            prompt = self._build_prompt(context, self.rag_cb.isChecked())
+
+        # Show dialog
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Prompt Preview")
+        dlg.resize(600, 400)
+
+        # Apply theme
+        dlg.setStyleSheet(StyleHelper.get_dialog_base_style())
+
+        layout = QVBoxLayout(dlg)
+
+        # Determine DB path for RAG if enabled
+        db_path = None
+        if self.rag_cb.isChecked():
+            window = self.window()
+            if hasattr(window, "db_path"):
+                db_path = window.db_path
+
+        # Perform RAG search for preview
+        rag_context = ""
+        if db_path and "{{RAG_CONTEXT}}" in prompt:
+            # Show loading status (simple blocking for now as requested)
+            rag_context = perform_rag_search(prompt, db_path)
+            prompt = prompt.replace("{{RAG_CONTEXT}}", rag_context)
+            if not rag_context:
+                # Remove placeholder clean
+                prompt = prompt.replace("{{RAG_CONTEXT}}", "")
+
+        info = QLabel(
+            "This is the prompt structure that will be sent to the LLM.\n"
+            "Real RAG context has been fetched and included below."
+        )
+        # Re-apply text dim color manually or use a helper if available,
+        # but StyleHelper.get_preview_label_style() looks appropriate or similar.
+        info.setStyleSheet(StyleHelper.get_preview_label_style())
+        layout.addWidget(info)
+
+        text_edit = QPlainTextEdit()
+        text_edit.setPlainText(prompt)
+        text_edit.setReadOnly(True)
+        text_edit.setStyleSheet(
+            StyleHelper.get_input_field_style() + "font-family: Consolas, monospace;"
+        )
+        layout.addWidget(text_edit)
+
+        btn_layout = QHBoxLayout()
+        close_btn = QPushButton("Close")
+        close_btn.clicked.connect(dlg.accept)
+        close_btn.setStyleSheet(StyleHelper.get_primary_button_style())
+
+        btn_layout.addStretch()
+        btn_layout.addWidget(close_btn)
+        layout.addLayout(btn_layout)
+
+        dlg.exec()
