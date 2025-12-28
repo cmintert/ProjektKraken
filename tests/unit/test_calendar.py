@@ -259,6 +259,7 @@ class TestCalendarConfigYearLength:
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.qt_no_exception_capture
 class TestCalendarConverterRoundTrip:
     """Critical round-trip tests: from_float(to_float(date)) == date."""
 

@@ -4,19 +4,17 @@ Unit tests for LLM provider abstraction and implementations.
 Tests the Provider interface, factory, and individual provider implementations.
 """
 
-import asyncio
-import json
 import os
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import patch
 
 import numpy as np
 import pytest
+import requests
 
-from src.services.llm_provider import Provider, create_provider
+from src.services.llm_provider import create_provider
 from src.services.providers.anthropic_provider import AnthropicProvider
 from src.services.providers.lmstudio_provider import LMStudioProvider
 from src.services.providers.openai_provider import OpenAIProvider
-
 
 # =============================================================================
 # Mock HTTP Responses
@@ -30,6 +28,10 @@ class MockResponse:
         self.json_data = json_data
         self.status_code = status_code
         self._stream = stream
+
+    @property
+    def ok(self):
+        return self.status_code < 400
 
     def json(self):
         return self.json_data
@@ -62,6 +64,8 @@ class MockResponse:
 def mock_requests():
     """Fixture to mock requests module."""
     with patch("src.services.providers.lmstudio_provider.requests") as mock:
+        mock.exceptions.RequestException = requests.exceptions.RequestException
+        mock.exceptions.Timeout = requests.exceptions.Timeout
         yield mock
 
 
@@ -183,6 +187,7 @@ def test_lmstudio_metadata():
 def mock_openai_requests():
     """Fixture to mock requests module for OpenAI."""
     with patch("src.services.providers.openai_provider.requests") as mock:
+        mock.exceptions.RequestException = requests.exceptions.RequestException
         yield mock
 
 
@@ -280,6 +285,7 @@ def test_openai_metadata():
 def mock_anthropic_requests():
     """Fixture to mock requests module for Anthropic."""
     with patch("src.services.providers.anthropic_provider.requests") as mock:
+        mock.exceptions.RequestException = requests.exceptions.RequestException
         yield mock
 
 
@@ -381,9 +387,7 @@ def test_create_provider_unknown():
 
 def test_create_provider_with_overrides():
     """Test factory applies parameter overrides."""
-    provider = create_provider(
-        "lmstudio", model="override-model", timeout=60
-    )
+    provider = create_provider("lmstudio", model="override-model", timeout=60)
     assert isinstance(provider, LMStudioProvider)
     assert provider.model == "override-model"
     assert provider.timeout == 60

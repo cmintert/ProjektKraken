@@ -48,7 +48,7 @@ def _stable_dump(val: Any) -> str:
 
 
 def build_text_for_entity(
-    entity,
+    entity: Dict[str, Any],
     tags: Optional[List[Union[str, Dict[str, str]]]] = None,
     excluded_attributes: Optional[List[str]] = None,
 ) -> str:
@@ -92,7 +92,7 @@ def build_text_for_entity(
 
 
 def build_text_for_event(
-    event,
+    event: Dict[str, Any],
     tags: Optional[List[Union[str, Dict[str, str]]]] = None,
     excluded_attributes: Optional[List[str]] = None,
 ) -> str:
@@ -303,12 +303,13 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
         model: Optional[str] = None,
         api_key: Optional[str] = None,
         timeout: int = 30,
-    ):
+    ) -> None:
         """
         Initialize LM Studio embedding provider.
 
         Args:
-            url: API endpoint URL (default from env or http://localhost:8080/v1/embeddings).
+            url: API endpoint URL (default from env or
+                 http://localhost:8080/v1/embeddings).
             model: Model name (default from env or required).
             api_key: Optional API key.
             timeout: Request timeout in seconds.
@@ -432,7 +433,7 @@ class SentenceTransformersProvider(EmbeddingProvider):
     Requires sentence-transformers to be installed.
     """
 
-    def __init__(self, model: Optional[str] = None):
+    def __init__(self, model: Optional[str] = None) -> None:
         """
         Initialize sentence-transformers provider.
 
@@ -505,7 +506,9 @@ class SearchService:
     for entities and events.
     """
 
-    def __init__(self, db_connection: sqlite3.Connection, provider: EmbeddingProvider):
+    def __init__(
+        self, db_connection: sqlite3.Connection, provider: EmbeddingProvider
+    ) -> None:
         """
         Initialize search service.
 
@@ -805,7 +808,8 @@ class SearchService:
 
         # Build SQL filter
         sql = """
-            SELECT id, object_type, object_id, vector, vector_dim, metadata
+            SELECT id, object_type, object_id, vector, vector_dim, metadata,
+                   text_snippet
             FROM embeddings
             WHERE model = ? AND vector_dim = ?
         """
@@ -824,7 +828,7 @@ class SearchService:
             return []
 
         # Compute similarities and collect results
-        def score_generator():
+        def score_generator() -> Iterator[Tuple[float, str, str, Dict[str, Any]]]:
             """
             Generator function to compute similarity scores for query results.
 
@@ -859,6 +863,7 @@ class SearchService:
                     "name": metadata.get("name", ""),
                     "type": metadata.get("type", ""),
                     "metadata": metadata,
+                    "text_content": row_dict.get("text_snippet", ""),
                 }
             )
 
@@ -910,6 +915,7 @@ def get_llm_settings_from_qsettings() -> Dict[str, Any]:
     """
     try:
         from PySide6.QtCore import QSettings
+
         from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)

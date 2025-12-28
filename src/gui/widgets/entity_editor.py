@@ -5,7 +5,9 @@ Provides a GUI form for creating and editing Entity objects with support
 for wiki-style text editing, custom attributes, tags, and relationship management.
 """
 
-from PySide6.QtCore import QSize, Qt, Signal
+from typing import Optional
+
+from PySide6.QtCore import QPoint, QSize, Qt, Signal
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
@@ -43,7 +45,7 @@ class EntityEditorWidget(QWidget):
     navigate_to_relation = Signal(str)  # target_id for Go to button
     dirty_changed = Signal(bool)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initializes the EntityEditorWidget.
 
@@ -179,15 +181,15 @@ class EntityEditorWidget(QWidget):
         # Start disabled
         self.setEnabled(False)
 
-    def _connect_dirty_signals(self):
-        """Connects inputs to dirty state."""
+    def _connect_dirty_signals(self) -> None:
+        """Connects signals that should trigger dirty state."""
         self.name_edit.textChanged.connect(lambda: self.set_dirty(True))
         self.type_edit.currentTextChanged.connect(lambda: self.set_dirty(True))
         self.desc_edit.textChanged.connect(lambda: self.set_dirty(True))
         self.tag_editor.tags_changed.connect(lambda: self.set_dirty(True))
         self.attribute_editor.attributes_changed.connect(lambda: self.set_dirty(True))
 
-    def set_dirty(self, dirty: bool):
+    def set_dirty(self, dirty: bool) -> None:
         """Sets dirty state and updates UI."""
         if self._current_entity_id is None and dirty:
             return
@@ -208,7 +210,7 @@ class EntityEditorWidget(QWidget):
 
     def update_suggestions(
         self, items: list[tuple[str, str, str]] = None, names: list[str] = None
-    ):
+    ) -> None:
         """
         Updates the autocomplete suggestions for the description field.
 
@@ -234,7 +236,7 @@ class EntityEditorWidget(QWidget):
 
     def load_entity(
         self, entity: Entity, relations: list = None, incoming_relations: list = None
-    ):
+    ) -> None:
         """
         Populates the form with entity data and relations.
         """
@@ -313,7 +315,7 @@ class EntityEditorWidget(QWidget):
         self.desc_edit.blockSignals(False)
         self.set_dirty(False)
 
-    def _on_save(self):
+    def _on_save(self) -> None:
         """
         Collects data and emits save signal.
         """
@@ -336,7 +338,7 @@ class EntityEditorWidget(QWidget):
         self.save_requested.emit(entity_data)
         self.set_dirty(False)
 
-    def _on_discard(self):
+    def _on_discard(self) -> None:
         """
         Discards changes by emitting signal to reload the current entity.
         """
@@ -345,7 +347,7 @@ class EntityEditorWidget(QWidget):
 
         self.discard_requested.emit(self._current_entity_id)
 
-    def clear(self):
+    def clear(self) -> None:
         """Clears the editor."""
         self._current_entity_id = None
         self.name_edit.clear()
@@ -353,7 +355,7 @@ class EntityEditorWidget(QWidget):
         self.rel_list.clear()  # Clear relations
         self.setEnabled(False)
 
-    def _on_add_relation(self):
+    def _on_add_relation(self) -> None:
         """
         Handles adding a new relation.
         Uses RelationEditDialog with autocompletion.
@@ -374,7 +376,7 @@ class EntityEditorWidget(QWidget):
                     self._current_entity_id, target_id, rel_type, is_bidirectional
                 )
 
-    def _show_rel_menu(self, pos):
+    def _show_rel_menu(self, pos: QPoint) -> None:
         """
         Shows a context menu for relation items.
 
@@ -393,7 +395,7 @@ class EntityEditorWidget(QWidget):
         elif action == edit_action:
             self._on_edit_relation(item)
 
-    def _on_remove_relation_item(self, item):
+    def _on_remove_relation_item(self, item: QListWidgetItem) -> None:
         """
         Handles removing a relation item.
 
@@ -413,7 +415,7 @@ class EntityEditorWidget(QWidget):
         if confirm == QMessageBox.Yes:
             self.remove_relation_requested.emit(rel_data["id"])
 
-    def _on_edit_relation(self, item):
+    def _on_edit_relation(self, item: QListWidgetItem) -> None:
         """
         Handles editing a relation item.
 
@@ -442,7 +444,7 @@ class EntityEditorWidget(QWidget):
             if target_id:
                 self.update_relation_requested.emit(rel_data["id"], target_id, rel_type)
 
-    def _on_edit_selected_relation(self):
+    def _on_edit_selected_relation(self) -> None:
         """
         Handles editing the currently selected relation.
         """
@@ -450,7 +452,7 @@ class EntityEditorWidget(QWidget):
         if item:
             self._on_edit_relation(item)
 
-    def _on_remove_selected_relation(self):
+    def _on_remove_selected_relation(self) -> None:
         """
         Handles removing the currently selected relation.
         """
@@ -458,7 +460,7 @@ class EntityEditorWidget(QWidget):
         if item:
             self._on_remove_relation_item(item)
 
-    def _on_text_generated(self, text: str):
+    def _on_text_generated(self, text: str) -> None:
         """
         Handle text generated from LLM.
 
@@ -483,9 +485,9 @@ class EntityEditorWidget(QWidget):
         self.desc_edit.setPlainText(new_text)
 
         # Mark as dirty
-        self._mark_dirty()
+        self.set_dirty(True)
 
-    def minimumSizeHint(self):
+    def minimumSizeHint(self) -> QSize:
         """
         Override to prevent dock collapse.
 
@@ -496,7 +498,7 @@ class EntityEditorWidget(QWidget):
 
         return QSize(300, 200)  # Width for form labels, height for controls
 
-    def sizeHint(self):
+    def sizeHint(self) -> QSize:
         """
         Preferred size for the entity editor.
 

@@ -37,7 +37,7 @@ class LMStudioProvider(Provider):
         generate_url: Optional[str] = None,
         timeout: int = 30,
         max_retries: int = 3,
-    ):
+    ) -> None:
         """
         Initialize LM Studio provider.
 
@@ -83,7 +83,7 @@ class LMStudioProvider(Provider):
             headers["Authorization"] = f"Bearer {self.api_key}"
         return headers
 
-    def _retry_request(self, func, *args, **kwargs):
+    def _retry_request(self, func: Any, *args: Any, **kwargs: Any) -> Any:
         """
         Execute request with retry logic.
 
@@ -134,7 +134,7 @@ class LMStudioProvider(Provider):
         if not texts:
             return np.array([])
 
-        def _embed_impl():
+        def _embed_impl() -> np.ndarray:
             """Inner implementation for retry wrapper."""
             payload = {"input": texts, "model": self.model}
             response = requests.post(
@@ -143,6 +143,13 @@ class LMStudioProvider(Provider):
                 headers=self._make_headers(),
                 timeout=self.timeout,
             )
+
+            if not response.ok:
+                logger.error(
+                    f"LM Studio API Error (Embed): {response.status_code} - "
+                    f"{response.text}"
+                )
+
             response.raise_for_status()
 
             data = response.json()
@@ -158,7 +165,8 @@ class LMStudioProvider(Provider):
                 self._dimension = emb_array.shape[1]
 
             logger.debug(
-                f"Generated {len(embeddings)} embeddings with dimension {self._dimension}"
+                f"Generated {len(embeddings)} embeddings "
+                f"with dimension {self._dimension}"
             )
             return emb_array
 
@@ -200,7 +208,7 @@ class LMStudioProvider(Provider):
             Exception: If generation fails.
         """
 
-        def _generate_impl():
+        def _generate_impl() -> Dict[str, Any]:
             """Inner implementation for retry wrapper."""
             payload = {
                 "prompt": prompt,
@@ -213,12 +221,21 @@ class LMStudioProvider(Provider):
             if stop:
                 payload["stop"] = stop
 
+            logger.debug(f"LM Studio generate payload: {json.dumps(payload, indent=2)}")
+
             response = requests.post(
                 self.generate_url,
                 json=payload,
                 headers=self._make_headers(),
                 timeout=self.timeout,
             )
+
+            if not response.ok:
+                logger.error(
+                    f"LM Studio API Error (Generate): {response.status_code} - "
+                    f"{response.text}"
+                )
+
             response.raise_for_status()
 
             data = response.json()
@@ -234,12 +251,14 @@ class LMStudioProvider(Provider):
             # Extract usage statistics
             usage = data.get("usage", {})
 
-            return {
+            result = {
                 "text": text,
                 "model": self.model,
                 "usage": usage,
                 "finish_reason": finish_reason,
             }
+            logger.debug(f"LM Studio generate response: {result}")
+            return result
 
         try:
             return self._retry_request(_generate_impl)
@@ -298,7 +317,9 @@ class LMStudioProvider(Provider):
             # Use asyncio to run blocking requests in executor
             loop = asyncio.get_event_loop()
 
-            def _make_request():
+            logger.debug(f"LM Studio stream payload: {json.dumps(payload, indent=2)}")
+
+            def _make_request() -> requests.Response:
                 return requests.post(
                     self.generate_url,
                     json=payload,
@@ -378,7 +399,12 @@ class LMStudioProvider(Provider):
                     "message": "LM Studio is responding normally",
                     "models": [self.model],
                 }
+
             else:
+                # If 400 (Bad Request), it might be "Model is not embedding"
+                # Raise exception to trigger safe fallback to generation check
+                response.raise_for_status()
+
                 return {
                     "status": "degraded",
                     "latency_ms": latency_ms,
@@ -393,6 +419,32 @@ class LMStudioProvider(Provider):
                 "message": "LM Studio health check timed out",
             }
         except requests.exceptions.RequestException as e:
+            # Fallback: Try generation endpoint if embedding endpoint fails
+            # This handles cases where:
+            # 1. User only configured generation (embed URL might be invalid)
+            # 2. Model is generation-only (embedding request might return 400)
+            try:
+                # Try a minimal generation request
+                response = requests.post(
+                    self.generate_url,
+                    json={"prompt": "test", "model": self.model, "max_tokens": 1},
+                    headers=self._make_headers(),
+                    timeout=5,
+                )
+
+                latency_ms = (time.time() - start_time) * 1000
+
+                if response.status_code == 200:
+                    return {
+                        "status": "healthy",
+                        "latency_ms": latency_ms,
+                        "message": "LM Studio (Generation) is responding normally",
+                        "models": [self.model],
+                    }
+            except Exception:
+                # If fallback also fails, return original error
+                pass
+
             return {
                 "status": "unhealthy",
                 "latency_ms": 0,

@@ -183,6 +183,11 @@ def get_provider_settings_from_qsettings(
 
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 
+        # Log identifying info for debugging
+        logger.debug(
+            f"Loading settings for provider: {provider_id} (World: {world_id})"
+        )
+
         # Build settings key prefix
         prefix = f"ai_{provider_id}_"
         if world_id:
@@ -196,16 +201,24 @@ def get_provider_settings_from_qsettings(
 
         # Provider-specific settings
         if provider_id == "lmstudio":
+            # Map keys from AISettingsDialog
+            # ai_lmstudio_url -> Embedding URL in dialog
+            # ai_gen_lmstudio_url -> Generation URL in dialog
             result.update(
                 {
                     "url": settings.value(f"{prefix}url", ""),
-                    "model": settings.value(f"{prefix}model", ""),
+                    "model": settings.value(
+                        f"ai_gen_{provider_id}_model",
+                        settings.value(f"{prefix}model", ""),
+                    ),
                     "api_key": settings.value(f"{prefix}api_key", ""),
                     "embed_url": settings.value(
-                        f"{prefix}embed_url", "http://localhost:8080/v1/embeddings"
+                        f"{prefix}url",  # Dialog saves embedding URL as ai_lmstudio_url
+                        "http://localhost:8080/v1/embeddings",
                     ),
                     "generate_url": settings.value(
-                        f"{prefix}generate_url", "http://localhost:8080/v1/completions"
+                        f"ai_gen_{provider_id}_url",
+                        "http://localhost:8080/v1/completions",
                     ),
                 }
             )
@@ -238,7 +251,9 @@ def get_provider_settings_from_qsettings(
             result.update(
                 {
                     "api_key": settings.value(f"{prefix}api_key", ""),
-                    "model": settings.value(f"{prefix}model", "claude-3-haiku-20240307"),
+                    "model": settings.value(
+                        f"{prefix}model", "claude-3-haiku-20240307"
+                    ),
                     "base_url": settings.value(
                         f"{prefix}base_url", "https://api.anthropic.com/v1"
                     ),
@@ -246,7 +261,6 @@ def get_provider_settings_from_qsettings(
             )
 
         return result
-
     except Exception as e:
         logger.warning(
             f"Failed to load {provider_id} settings from QSettings: {e}", exc_info=True
@@ -255,7 +269,7 @@ def get_provider_settings_from_qsettings(
 
 
 def create_provider(
-    provider_id: str, world_id: Optional[str] = None, **overrides
+    provider_id: str, world_id: Optional[str] = None, **overrides: Any
 ) -> Provider:
     """
     Create a provider instance based on configuration.
@@ -278,8 +292,12 @@ def create_provider(
     # Load settings from QSettings
     settings = get_provider_settings_from_qsettings(provider_id, world_id)
 
+    logger.info(f"Loaded QSettings for {provider_id}: {settings}")
+
     # Apply overrides
-    settings.update(overrides)
+    if overrides:
+        logger.info(f"Applying overrides for {provider_id}: {overrides.keys()}")
+        settings.update(overrides)
 
     # Fallback to environment variables if not in settings
     if provider_id == "lmstudio":

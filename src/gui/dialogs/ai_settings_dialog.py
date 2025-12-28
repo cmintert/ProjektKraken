@@ -5,9 +5,10 @@ Provides configuration for AI features, including Search Index status and
 attribute exclusion.
 """
 
+import logging
 from typing import Optional
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -17,6 +18,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QPushButton,
     QSpinBox,
     QStackedWidget,
@@ -26,6 +28,8 @@ from PySide6.QtWidgets import (
 )
 
 from src.gui.utils.style_helper import StyleHelper
+
+logger = logging.getLogger(__name__)
 
 
 class AISettingsDialog(QDialog):
@@ -47,26 +51,46 @@ class AISettingsDialog(QDialog):
         self.setWindowTitle("AI Settings")
         self.setMinimumWidth(500)
         self.setMinimumHeight(600)
-        self.setAttribute(Qt.WA_DeleteOnClose, True)
+        # self.setAttribute(
+        #     Qt.WA_DeleteOnClose, True
+        # )  # Removed to prevent RuntimeError on re-open
+
+        logger.info("Initializing AI Settings Dialog")
 
         # Main layout
         main_layout = QVBoxLayout(self)
-        
+
         # Tab widget for organizing settings
         self.tabs = QTabWidget()
         main_layout.addWidget(self.tabs)
-        
+
         # Create tabs
         self._create_embeddings_tab()
         self._create_generation_tab()
-        
-        # Close button
-        close_btn = QPushButton("Close")
-        close_btn.clicked.connect(self.accept)
-        main_layout.addWidget(close_btn)
+
+        # Button box
+        btn_box = QHBoxLayout()
+        btn_box.addStretch()
+
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(self.reject)
+        btn_box.addWidget(cancel_btn)
+
+        ok_btn = QPushButton("OK")
+        ok_btn.setObjectName("primary_btn")  # For styling if needed
+        ok_btn.setStyleSheet(StyleHelper.get_primary_button_style())
+        ok_btn.clicked.connect(self._on_ok_clicked)
+        btn_box.addWidget(ok_btn)
+
+        main_layout.addLayout(btn_box)
 
         # Load settings
         self.load_settings()
+
+    def _on_ok_clicked(self) -> None:
+        """Handle OK button click."""
+        self.save_settings()
+        self.accept()
 
     def _create_embeddings_tab(self) -> None:
         """Create the embeddings/search configuration tab."""
@@ -148,6 +172,14 @@ class AISettingsDialog(QDialog):
         self.lm_api_key_input.setEchoMode(QLineEdit.Password)
         lm_studio_form.addRow("API Key:", self.lm_api_key_input)
 
+        # Test connection button
+        self.btn_test_lm_embed = QPushButton("Test Connection")
+        self.btn_test_lm_embed.setFixedWidth(120)
+        self.btn_test_lm_embed.clicked.connect(
+            lambda: self._test_connection("lmstudio", "embed")
+        )
+        lm_studio_form.addRow("", self.btn_test_lm_embed)
+
         self.lm_timeout_input = QSpinBox()
         self.lm_timeout_input.setRange(5, 300)
         self.lm_timeout_input.setValue(30)
@@ -191,7 +223,7 @@ class AISettingsDialog(QDialog):
         settings_layout.addWidget(self.excluded_attrs_input)
 
         main_layout.addWidget(settings_group)
-        
+
         # Add to tabs
         self.tabs.addTab(embeddings_widget, "Embeddings & Search")
 
@@ -234,6 +266,14 @@ class AISettingsDialog(QDialog):
         self.lm_gen_url_input = QLineEdit()
         self.lm_gen_url_input.setPlaceholderText("http://localhost:8080/v1/completions")
         lm_gen_form.addRow("API URL:", self.lm_gen_url_input)
+
+        # Test connection button
+        self.btn_test_lm_gen = QPushButton("Test Connection")
+        self.btn_test_lm_gen.setFixedWidth(120)
+        self.btn_test_lm_gen.clicked.connect(
+            lambda: self._test_connection("lmstudio", "generate")
+        )
+        lm_gen_form.addRow("", self.btn_test_lm_gen)
 
         self.lm_gen_model_input = QLineEdit()
         self.lm_gen_model_input.setPlaceholderText("e.g. mistral-7b-instruct")
@@ -348,36 +388,36 @@ class AISettingsDialog(QDialog):
         main_layout.addWidget(clear_btn)
 
         main_layout.addStretch()
-        
+
         # Add to tabs
         self.tabs.addTab(generation_widget, "Text Generation")
 
     def _on_provider_changed(self, index: int) -> None:
         """Handle embeddings provider selection change."""
         self.provider_stack.setCurrentIndex(index)
-    
+
     def _on_gen_provider_changed(self, index: int) -> None:
         """Handle generation provider selection change."""
         self.gen_provider_stack.setCurrentIndex(index)
-    
+
     def _on_clear_generation_settings(self) -> None:
         """Clear all generation provider settings."""
         from PySide6.QtCore import QSettings
-        from PySide6.QtWidgets import QMessageBox
 
         from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 
         reply = QMessageBox.question(
             self,
             "Clear Settings",
-            "Are you sure you want to clear all generation provider settings including API keys?",
+            "Are you sure you want to clear all generation provider settings "
+            "including API keys?",
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
         )
 
         if reply == QMessageBox.Yes:
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-            
+
             # Clear generation settings for all providers
             for provider in ["lmstudio", "openai", "google", "anthropic"]:
                 settings.remove(f"ai_gen_{provider}_enabled")
@@ -387,15 +427,15 @@ class AISettingsDialog(QDialog):
                 settings.remove(f"ai_gen_{provider}_project_id")
                 settings.remove(f"ai_gen_{provider}_location")
                 settings.remove(f"ai_gen_{provider}_credentials_path")
-            
+
             # Clear generation options
             settings.remove("ai_gen_audit_log")
             settings.remove("ai_gen_max_tokens")
             settings.remove("ai_gen_temperature")
-            
+
             # Reload settings to update UI
             self.load_settings()
-            
+
             QMessageBox.information(
                 self, "Settings Cleared", "All generation settings have been cleared."
             )
@@ -407,7 +447,61 @@ class AISettingsDialog(QDialog):
         )  # entities->entity
         if obj_type == "all":
             obj_type = "all"
+
+        logger.info(f"Rebuild index requested for type: {obj_type}")
         self.rebuild_index_requested.emit(obj_type)
+
+    def _test_connection(self, provider_id: str, mode: str) -> None:
+        """
+        Test connection to the specified provider.
+
+        Args:
+            provider_id: Provider ID (e.g. 'lmstudio')
+            mode: 'embed' or 'generate' to determine which URL to test
+        """
+        try:
+            from src.services.llm_provider import create_provider
+
+            # Create a temporary provider instance with current UI values
+            overrides = {}
+            if provider_id == "lmstudio":
+                overrides["timeout"] = self.lm_timeout_input.value()
+                overrides["api_key"] = self.lm_api_key_input.text().strip()
+                if mode == "embed":
+                    overrides["embed_url"] = self.lm_url_input.text().strip()
+                    overrides["model"] = self.lm_model_input.text().strip()
+                else:  # generate
+                    overrides["generate_url"] = self.lm_gen_url_input.text().strip()
+                    overrides["model"] = self.lm_gen_model_input.text().strip()
+
+            logger.info(
+                f"Testing connection for {provider_id} ({mode}) "
+                f"with overrides: {overrides}"
+            )
+
+            # Create provider and check health
+            provider = create_provider(provider_id, **overrides)
+            health = provider.health_check()
+
+            if health["status"] == "healthy":
+                QMessageBox.information(
+                    self,
+                    "Connection Successful",
+                    f"Successfully connected to {provider_id}!\n\n"
+                    f"Latency: {health.get('latency_ms', 0):.2f}ms",
+                )
+            else:
+                QMessageBox.warning(
+                    self,
+                    "Connection Failed",
+                    f"Connection failed:\n{health.get('message', 'Unknown error')}",
+                )
+
+        except Exception as e:
+            logger.error(f"Test connection error: {e}", exc_info=True)
+            QMessageBox.critical(
+                self, "Error", f"An error occurred while testing connection:\n{str(e)}"
+            )
 
     def save_settings(self) -> None:
         """Save settings to QSettings."""
@@ -443,29 +537,50 @@ class AISettingsDialog(QDialog):
         # LM Studio generation
         settings.setValue("ai_gen_lmstudio_enabled", self.lm_gen_enabled.isChecked())
         settings.setValue("ai_gen_lmstudio_url", self.lm_gen_url_input.text().strip())
-        settings.setValue("ai_gen_lmstudio_model", self.lm_gen_model_input.text().strip())
+        settings.setValue(
+            "ai_gen_lmstudio_model", self.lm_gen_model_input.text().strip()
+        )
 
         # OpenAI
         settings.setValue("ai_gen_openai_enabled", self.openai_gen_enabled.isChecked())
-        settings.setValue("ai_gen_openai_api_key", self.openai_api_key_input.text().strip())
+        settings.setValue(
+            "ai_gen_openai_api_key", self.openai_api_key_input.text().strip()
+        )
         settings.setValue("ai_gen_openai_model", self.openai_model_input.text().strip())
 
         # Google Vertex AI
         settings.setValue("ai_gen_google_enabled", self.google_gen_enabled.isChecked())
-        settings.setValue("ai_gen_google_project_id", self.google_project_input.text().strip())
-        settings.setValue("ai_gen_google_location", self.google_location_input.text().strip())
+        settings.setValue(
+            "ai_gen_google_project_id", self.google_project_input.text().strip()
+        )
+        settings.setValue(
+            "ai_gen_google_location", self.google_location_input.text().strip()
+        )
         settings.setValue("ai_gen_google_model", self.google_model_input.text().strip())
-        settings.setValue("ai_gen_google_credentials_path", self.google_creds_input.text().strip())
+        settings.setValue(
+            "ai_gen_google_credentials_path", self.google_creds_input.text().strip()
+        )
 
         # Anthropic
-        settings.setValue("ai_gen_anthropic_enabled", self.anthropic_gen_enabled.isChecked())
-        settings.setValue("ai_gen_anthropic_api_key", self.anthropic_api_key_input.text().strip())
-        settings.setValue("ai_gen_anthropic_model", self.anthropic_model_input.text().strip())
+        settings.setValue(
+            "ai_gen_anthropic_enabled", self.anthropic_gen_enabled.isChecked()
+        )
+        settings.setValue(
+            "ai_gen_anthropic_api_key", self.anthropic_api_key_input.text().strip()
+        )
+        settings.setValue(
+            "ai_gen_anthropic_model", self.anthropic_model_input.text().strip()
+        )
 
         # Generation options
         settings.setValue("ai_gen_audit_log", self.enable_audit_log.isChecked())
         settings.setValue("ai_gen_max_tokens", self.max_tokens_input.value())
         settings.setValue("ai_gen_temperature", self.temperature_input.value())
+
+        logger.info(
+            f"AI Settings saved. Embedding provider: {provider}, "
+            f"Excluded attrs: {self.excluded_attrs_input.text()}"
+        )
 
     def load_settings(self) -> None:
         """Load settings from QSettings."""
@@ -496,33 +611,57 @@ class AISettingsDialog(QDialog):
 
         # Load generation provider settings
         # LM Studio generation
-        self.lm_gen_enabled.setChecked(settings.value("ai_gen_lmstudio_enabled", True, type=bool))
+        self.lm_gen_enabled.setChecked(
+            settings.value("ai_gen_lmstudio_enabled", True, type=bool)
+        )
         self.lm_gen_url_input.setText(
-            settings.value("ai_gen_lmstudio_url", "http://localhost:8080/v1/completions")
+            settings.value(
+                "ai_gen_lmstudio_url", "http://localhost:8080/v1/completions"
+            )
         )
         self.lm_gen_model_input.setText(settings.value("ai_gen_lmstudio_model", ""))
 
         # OpenAI
-        self.openai_gen_enabled.setChecked(settings.value("ai_gen_openai_enabled", False, type=bool))
+        self.openai_gen_enabled.setChecked(
+            settings.value("ai_gen_openai_enabled", False, type=bool)
+        )
         self.openai_api_key_input.setText(settings.value("ai_gen_openai_api_key", ""))
-        self.openai_model_input.setText(settings.value("ai_gen_openai_model", "gpt-3.5-turbo"))
+        self.openai_model_input.setText(
+            settings.value("ai_gen_openai_model", "gpt-3.5-turbo")
+        )
 
         # Google Vertex AI
-        self.google_gen_enabled.setChecked(settings.value("ai_gen_google_enabled", False, type=bool))
-        self.google_project_input.setText(settings.value("ai_gen_google_project_id", ""))
-        self.google_location_input.setText(settings.value("ai_gen_google_location", "us-central1"))
-        self.google_model_input.setText(settings.value("ai_gen_google_model", "text-bison@001"))
-        self.google_creds_input.setText(settings.value("ai_gen_google_credentials_path", ""))
+        self.google_gen_enabled.setChecked(
+            settings.value("ai_gen_google_enabled", False, type=bool)
+        )
+        self.google_project_input.setText(
+            settings.value("ai_gen_google_project_id", "")
+        )
+        self.google_location_input.setText(
+            settings.value("ai_gen_google_location", "us-central1")
+        )
+        self.google_model_input.setText(
+            settings.value("ai_gen_google_model", "text-bison@001")
+        )
+        self.google_creds_input.setText(
+            settings.value("ai_gen_google_credentials_path", "")
+        )
 
         # Anthropic
-        self.anthropic_gen_enabled.setChecked(settings.value("ai_gen_anthropic_enabled", False, type=bool))
-        self.anthropic_api_key_input.setText(settings.value("ai_gen_anthropic_api_key", ""))
+        self.anthropic_gen_enabled.setChecked(
+            settings.value("ai_gen_anthropic_enabled", False, type=bool)
+        )
+        self.anthropic_api_key_input.setText(
+            settings.value("ai_gen_anthropic_api_key", "")
+        )
         self.anthropic_model_input.setText(
             settings.value("ai_gen_anthropic_model", "claude-3-haiku-20240307")
         )
 
         # Generation options
-        self.enable_audit_log.setChecked(settings.value("ai_gen_audit_log", False, type=bool))
+        self.enable_audit_log.setChecked(
+            settings.value("ai_gen_audit_log", False, type=bool)
+        )
         self.max_tokens_input.setValue(int(settings.value("ai_gen_max_tokens", 512)))
         self.temperature_input.setValue(int(settings.value("ai_gen_temperature", 70)))
 
