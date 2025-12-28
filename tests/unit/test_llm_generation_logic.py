@@ -127,20 +127,10 @@ def test_preview_fetches_rag(qtbot, widget, monkeypatch):
             pass
 
     monkeypatch.setattr("PySide6.QtWidgets.QDialog", MockDialog)
-    # We need to mock QVBoxLayout, QLabel, etc if they are instantiated with the mock dialog parent
-    # The code passes `self` or `dlg` as parent.
-    # Since QDialog is mocked, `QDialog(self)` returns a MockDialog instance.
-    # `QVBoxLayout(dlg)` receives the mock instance.
-    # This might require mocking layout and widgets too if strict types are checked or if C++ part fails.
-    # Simple workaround: mock exec only on the instance?
-    # Hard to patch instance method of local variable.
-
-    # Strategy: Just verify perform_rag_search is called.
-    # We can rely on python's dynamic nature.
-    # But QDialog(self) will create a real QDialog if we don't patch the class.
-    # If we patch the class, we break standard widget behaviors used inside.
-
-    # Better: Patch `QDialog.exec` globally?
+    # Mock QVBoxLayout/QLabel/etc if strictly needed.
+    # Current code passes `self` or `dlg` as parent.
+    # With mocked QDialog, children instantiations might fail if C++ binding checks types.
+    # But usually PySide6 mocks allow this if not strictly typed in C++.
     monkeypatch.setattr("PySide6.QtWidgets.QDialog.exec", lambda self: None)
 
     widget.rag_cb.setChecked(True)

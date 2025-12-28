@@ -88,12 +88,27 @@ def perform_rag_search(prompt: str, db_path: Optional[str]) -> str:
                 snippet = r.get("metadata", {}).get("description", "")
 
             if not snippet:
-                # Last resort fallback
-                snippet = str(r.get("metadata", {}))
+                # Avoid dumping raw JSON/dict structures
+                meta = r.get("metadata", {})
+                for v in meta.values():
+                    if isinstance(v, str) and len(v) > 20:
+                        snippet = v
+                        break
 
-            context_parts.append(
-                f"**{name}** ({rtype}):\n{snippet[:4000]}..."
-            )  # Increased context length
+            if not snippet:
+                # If still nothing, skip this item to avoid noise
+                continue
+
+            # Clean up newlines to save tokens/space (optional, maybe keep newlines?)
+            # Keeping newlines is usually better for structure.
+            # snippet = snippet.replace("\n", " ").strip()
+            snippet = snippet.strip()
+
+            truncated_snippet = snippet[:4000]
+            if len(snippet) > 4000:
+                truncated_snippet += "..."
+
+            context_parts.append(f"**{name}** ({rtype}):\n{truncated_snippet}")
 
         return "\n\n".join(context_parts) + "\n\n"
 
@@ -654,6 +669,7 @@ class LLMGenerationWidget(QWidget):
     def _on_generation_complete(self, text: str) -> None:
         """Handle generation completion."""
         logger.info(f"Generation complete. Received {len(text)} characters.")
+        logger.debug(f"Generated Text:\n{text}")
         self.status_label.setText(f"Generated {len(text)} characters")
         self.generate_btn.setEnabled(True)
         self.cancel_btn.setEnabled(False)
