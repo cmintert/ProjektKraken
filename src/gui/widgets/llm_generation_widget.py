@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDialog,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -307,6 +308,13 @@ class LLMGenerationWidget(QWidget):
         main_layout = QVBoxLayout(self)
         StyleHelper.apply_compact_spacing(main_layout)
 
+        # Main Separator line (Top)
+        top_sep = QFrame()
+        top_sep.setFrameShape(QFrame.HLine)
+        top_sep.setFrameShadow(QFrame.Sunken)
+        top_sep.setStyleSheet("color: #444444; margin-bottom: 4px;")
+        main_layout.addWidget(top_sep)
+
         # Controls row
         controls_layout = QHBoxLayout()
 
@@ -363,6 +371,13 @@ class LLMGenerationWidget(QWidget):
 
         main_layout.addLayout(controls_layout)
 
+        # Header for prompt section
+        lbl_instruction = QLabel("Prompt Instructions")
+        lbl_instruction.setStyleSheet(
+            "font-weight: bold; font-size: 10px; color: #888888; margin-top: 4px;"
+        )
+        main_layout.addWidget(lbl_instruction)
+
         # Custom prompt input
         self.custom_prompt_edit = QPlainTextEdit()
         self.custom_prompt_edit.setStyleSheet(StyleHelper.get_input_field_style())
@@ -374,6 +389,13 @@ class LLMGenerationWidget(QWidget):
         self.custom_prompt_edit.setMaximumHeight(80)
         self.custom_prompt_edit.setVisible(True)  # Always visible
         main_layout.addWidget(self.custom_prompt_edit)
+
+        # Separator line before buttons
+        sep2 = QFrame()
+        sep2.setFrameShape(QFrame.HLine)
+        sep2.setFrameShadow(QFrame.Sunken)
+        sep2.setStyleSheet("color: #444444; margin-top: 8px;")
+        main_layout.addWidget(sep2)
 
         # Action Buttons Layout (Below text field)
         buttons_layout = QHBoxLayout()
