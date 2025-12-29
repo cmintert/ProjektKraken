@@ -138,8 +138,8 @@ class AISettingsDialog(QDialog):
 
         main_layout.addWidget(index_group)
 
-        # === LLM Configuration Section ===
-        llm_group = QGroupBox("LLM Configuration")
+        # === Embedding Configuration Section ===
+        llm_group = QGroupBox("Embedding Configuration")
         llm_layout = QVBoxLayout(llm_group)
         StyleHelper.apply_standard_list_spacing(llm_layout)
 
@@ -166,7 +166,7 @@ class AISettingsDialog(QDialog):
 
         self.lm_model_input = QLineEdit()
         self.lm_model_input.setPlaceholderText("e.g. nomic-embed-text-v1.5")
-        lm_studio_form.addRow("Model:", self.lm_model_input)
+        lm_studio_form.addRow("Embedding Model:", self.lm_model_input)
 
         self.lm_api_key_input = QLineEdit()
         self.lm_api_key_input.setPlaceholderText("Optional")

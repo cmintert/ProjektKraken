@@ -10,12 +10,14 @@ import logging
 from typing import Any, Optional
 
 from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtGui import QIntValidator
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDialog,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
@@ -43,13 +45,14 @@ DEFAULT_SYSTEM_PROMPT = (
 )
 
 
-def perform_rag_search(prompt: str, db_path: Optional[str]) -> str:
+def perform_rag_search(prompt: str, db_path: Optional[str], top_k: int = 3) -> str:
     """
     Perform RAG search using search service.
 
     Args:
         prompt: The prompt text to query with.
         db_path: Path to the database.
+        top_k: Number of context items to retrieve.
 
     Returns:
         str: Formatted context string or empty string.
@@ -80,7 +83,7 @@ def perform_rag_search(prompt: str, db_path: Optional[str]) -> str:
         # Extract main topic from prompt? Or just use full prompt
         # For now, use first 100 chars or full prompt
         query_text = prompt[:200]
-        results = search_service.query(query_text, top_k=3)
+        results = search_service.query(query_text, top_k=top_k)
 
         conn.close()
 
@@ -153,6 +156,7 @@ class GenerationWorker(QThread):
         max_tokens: int,
         temperature: float,
         db_path: Optional[str] = None,
+        rag_limit: int = 3,
     ) -> None:
         """
         Initialize generation worker.
@@ -163,6 +167,7 @@ class GenerationWorker(QThread):
             max_tokens: Maximum tokens to generate.
             temperature: Temperature parameter (0.0-2.0).
             db_path: Optional path to database for RAG context.
+            rag_limit: Number of RAG items to retrieve.
         """
         super().__init__()
         self.provider = provider
@@ -170,6 +175,7 @@ class GenerationWorker(QThread):
         self.max_tokens = max_tokens
         self.temperature = temperature
         self.db_path = db_path
+        self.rag_limit = rag_limit
         self._cancelled = False
 
     def _perform_rag_search(self) -> str:
@@ -177,7 +183,7 @@ class GenerationWorker(QThread):
         Perform RAG search if db_path is set.
         Returns formatted context string or empty string.
         """
-        return perform_rag_search(self.prompt, self.db_path)
+        return perform_rag_search(self.prompt, self.db_path, self.rag_limit)
 
     def run(self) -> None:
         """Run generation in background thread."""
@@ -359,6 +365,20 @@ class LLMGenerationWidget(QWidget):
         self.rag_cb.setToolTip("Include relevant context from database (RAG)")
         prompt_layout.addWidget(self.rag_cb)
 
+        # RAG Limit Input
+        self.rag_limit_input = QLineEdit()
+        self.rag_limit_input.setPlaceholderText("3")
+        self.rag_limit_input.setToolTip("Number of context items to retrieve (1-20)")
+        self.rag_limit_input.setFixedWidth(50)
+        self.rag_limit_input.setValidator(QIntValidator(1, 20))
+        self.rag_limit_input.setText("3")
+
+        # Handle toggling with check box
+        self.rag_cb.toggled.connect(self.rag_limit_input.setVisible)
+        self.rag_cb.toggled.connect(self._save_settings)
+        self.rag_limit_input.editingFinished.connect(self._save_settings)
+        prompt_layout.addWidget(self.rag_limit_input)
+
         prompt_layout.addStretch()  # Added stretch to prompt_layout
         main_layout.addLayout(prompt_layout)  # Added prompt_layout to main_layout
 
@@ -407,6 +427,14 @@ class LLMGenerationWidget(QWidget):
                 int(settings.value("ai_gen_temperature", 70))
             )
 
+            # Load RAG settings
+            self.rag_cb.setChecked(
+                settings.value("ai_gen_rag_enabled", True, type=bool)
+            )
+            limit = str(settings.value("ai_gen_rag_limit", 3))
+            self.rag_limit_input.setText(limit)
+            self.rag_limit_input.setVisible(self.rag_cb.isChecked())
+
         except Exception as e:
             logger.warning(f"Failed to load generation settings: {e}")
 
@@ -421,6 +449,14 @@ class LLMGenerationWidget(QWidget):
             settings.setValue("ai_gen_last_provider", self.provider_combo.currentText())
             settings.setValue("ai_gen_max_tokens", self.max_tokens_spin.value())
             settings.setValue("ai_gen_temperature", self.temperature_spin.value())
+            settings.setValue("ai_gen_rag_enabled", self.rag_cb.isChecked())
+
+            # Make sure to save a valid integer
+            try:
+                limit_val = int(self.rag_limit_input.text())
+            except ValueError:
+                limit_val = 3
+            settings.setValue("ai_gen_rag_limit", limit_val)
 
         except Exception as e:
             logger.warning(f"Failed to save generation settings: {e}")
@@ -687,6 +723,11 @@ class LLMGenerationWidget(QWidget):
             self.max_tokens_spin.value(),
             temperature,
             db_path,
+            (
+                int(self.rag_limit_input.text())
+                if self.rag_limit_input.text().isdigit()
+                else 3
+            ),
         )
 
         # Connect signals
