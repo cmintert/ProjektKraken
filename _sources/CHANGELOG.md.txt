@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2025-12-27
-### Added
-- feat: Add configurable LLM settings to AI Search dialog
+## [Development] - 2025-12-29
+### Internal
+- Merge pull request #37 from cmintert/copilot/add-llm-provider-support
 
 
 *This changelog was automatically generated.*
