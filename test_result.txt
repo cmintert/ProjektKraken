@@ -1,0 +1,93 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+PySide6 6.10.1 -- Qt runtime 6.10.1 -- Qt compiled 6.10.1
+rootdir: C:\Users\chris\Antigravity Projects\ProjektKraken
+configfile: pytest.ini
+plugins: anyio-4.12.0, cov-7.0.0, qt-4.5.0
+collecting ... collected 6 items
+
+tests/unit/test_llm_generation_widget.py::test_initial_state PASSED      [ 16%]
+tests/unit/test_llm_generation_widget.py::test_custom_prompt_toggle FAILED [ 33%]
+tests/unit/test_llm_generation_widget.py::test_generation_flow_custom_prompt FAILED [ 50%]
+tests/unit/test_llm_generation_widget.py::test_generation_flow_auto_prompt FAILED [ 66%]
+tests/unit/test_llm_generation_widget.py::test_empty_custom_prompt_error PASSED [ 83%]
+tests/unit/test_llm_generation_widget.py::test_settings_usage PASSED     [100%]
+
+================================== FAILURES ===================================
+__________________________ test_custom_prompt_toggle __________________________
+
+widget = <src.gui.widgets.llm_generation_widget.LLMGenerationWidget(0x28610188530) at 0x0000028613F03240>
+
+    def test_custom_prompt_toggle(widget):
+        """Test toggling the custom prompt checkbox."""
+        widget.use_custom_prompt_cb.setChecked(True)
+>       assert widget.custom_prompt_edit.isVisible() is True
+E       assert False is True
+E        +  where False = <built-in method isVisible of PySide6.QtWidgets.QPlainTextEdit object at 0x0000028613F10040>()
+E        +    where <built-in method isVisible of PySide6.QtWidgets.QPlainTextEdit object at 0x0000028613F10040> = <PySide6.QtWidgets.QPlainTextEdit(0x28610aba980) at 0x0000028613F10040>.isVisible
+E        +      where <PySide6.QtWidgets.QPlainTextEdit(0x28610aba980) at 0x0000028613F10040> = <src.gui.widgets.llm_generation_widget.LLMGenerationWidget(0x28610188530) at 0x0000028613F03240>.custom_prompt_edit
+
+tests\unit\test_llm_generation_widget.py:35: AssertionError
+_____________________ test_generation_flow_custom_prompt ______________________
+
+mock_create_provider = <MagicMock name='create_provider' id='2774883065808'>
+widget = <src.gui.widgets.llm_generation_widget.LLMGenerationWidget(0x28610188870) at 0x0000028613F83F00>
+qtbot = <pytestqt.qtbot.QtBot object at 0x0000028613E8B890>
+
+    @patch("src.services.llm_provider.create_provider")
+    def test_generation_flow_custom_prompt(mock_create_provider, widget, qtbot):
+        """Test generation with a custom prompt."""
+        # Setup mock provider
+        mock_provider = MagicMock()
+        mock_provider.health_check.return_value = {"status": "healthy"}
+    
+        # Mock stream_generate as async generator
+        async def mock_stream():
+            yield {"delta": "Generated text"}
+    
+        mock_provider.stream_generate.return_value = mock_stream()
+        mock_create_provider.return_value = mock_provider
+    
+        # Configure widget
+        widget.use_custom_prompt_cb.setChecked(True)
+        widget.custom_prompt_edit.setPlainText("Custom prompt")
+    
+        # Trigger generation
+        # Trigger generation
+        with qtbot.waitSignal(widget.text_generated, timeout=5000):
+            widget.generate_btn.click()
+    
+        # Verify provider was called
+        # Note: separate thread execution makes direct assertion hard without wait logic
+        # But generation starting sets cancel button enabled
+>       assert widget.cancel_btn.isEnabled()
+E       assert False
+E        +  where False = <built-in method isEnabled of PySide6.QtWidgets.QPushButton object at 0x0000028613F03A80>()
+E        +    where <built-in method isEnabled of PySide6.QtWidgets.QPushButton object at 0x0000028613F03A80> = <PySide6.QtWidgets.QPushButton(0x286146f3ad0) at 0x0000028613F03A80>.isEnabled
+E        +      where <PySide6.QtWidgets.QPushButton(0x286146f3ad0) at 0x0000028613F03A80> = <src.gui.widgets.llm_generation_widget.LLMGenerationWidget(0x28610188870) at 0x0000028613F83F00>.cancel_btn
+
+tests\unit\test_llm_generation_widget.py:68: AssertionError
+______________________ test_generation_flow_auto_prompt _______________________
+
+mock_create_provider = <MagicMock name='create_provider' id='2775729260256'>
+widget = <src.gui.widgets.llm_generation_widget.LLMGenerationWidget(0x28614762390) at 0x0000028646514C80>
+
+    @patch("src.services.llm_provider.create_provider")
+    def test_generation_flow_auto_prompt(mock_create_provider, widget):
+        """Test generation without custom prompt (auto context)."""
+        mock_provider = MagicMock()
+        mock_provider.health_check.return_value = {"status": "healthy"}
+        mock_create_provider.return_value = mock_provider
+    
+        # Set context
+>       widget.set_context("Test Entity", "Person", "A test description.")
+        ^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'LLMGenerationWidget' object has no attribute 'set_context'
+
+tests\unit\test_llm_generation_widget.py:80: AttributeError
+=========================== short test summary info ===========================
+FAILED tests/unit/test_llm_generation_widget.py::test_custom_prompt_toggle - ...
+FAILED tests/unit/test_llm_generation_widget.py::test_generation_flow_custom_prompt
+FAILED tests/unit/test_llm_generation_widget.py::test_generation_flow_auto_prompt
+========================= 3 failed, 3 passed in 0.17s =========================

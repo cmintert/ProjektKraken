@@ -5,7 +5,9 @@ Provides a form interface for editing event details including name, date,
 description, attributes, and relations.
 """
 
-from PySide6.QtCore import QSize, Qt, Signal
+from typing import Any, Optional
+
+from PySide6.QtCore import QPoint, QSize, Qt, Signal
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
@@ -49,7 +51,7 @@ class EventEditorWidget(QWidget):
     dirty_changed = Signal(bool)
     current_data_changed = Signal(dict)  # Emits current event data for preview
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initializes the editor widget with form fields.
 
@@ -57,6 +59,7 @@ class EventEditorWidget(QWidget):
             parent: The parent widget, if any.
         """
         super().__init__(parent)
+
         self.setAttribute(Qt.WA_StyledBackground, True)
 
         # Set size policy to prevent dock collapse
@@ -120,6 +123,14 @@ class EventEditorWidget(QWidget):
         self.form_layout.addRow("Description:", self.desc_edit)
 
         details_layout.addLayout(self.form_layout)
+
+        # Add LLM Generation Widget below description
+        from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
+
+        self.llm_generator = LLMGenerationWidget(self, context_provider=self)
+        self.llm_generator.text_generated.connect(self._on_text_generated)
+        details_layout.addWidget(self.llm_generator)
+
         # Set minimum height on details tab to ensure it doesn't collapse
         self.tab_details.setMinimumHeight(400)
         self.inspector.add_tab(self.tab_details, "Details")
@@ -221,7 +232,7 @@ class EventEditorWidget(QWidget):
         # Start disabled until specific event loaded
         self.setEnabled(False)
 
-    def _connect_dirty_signals(self):
+    def _connect_dirty_signals(self) -> None:
         """Connects input widget signals to set_dirty(True)."""
         self.name_edit.textChanged.connect(lambda: self.set_dirty(True))
         self.date_edit.value_changed.connect(lambda: self.set_dirty(True))
@@ -233,7 +244,7 @@ class EventEditorWidget(QWidget):
         self.tag_editor.tags_changed.connect(lambda: self.set_dirty(True))
         self.attribute_editor.attributes_changed.connect(lambda: self.set_dirty(True))
 
-    def set_dirty(self, dirty: bool):
+    def set_dirty(self, dirty: bool) -> None:
         """
         Sets the dirty state of the editor.
 
@@ -258,21 +269,21 @@ class EventEditorWidget(QWidget):
         """Returns True if the editor has unsaved changes."""
         return self._is_dirty
 
-    def _on_start_date_changed(self, new_start: float):
+    def _on_start_date_changed(self, new_start: float) -> None:
         """Updates duration widget context and recalculates end date."""
         self.duration_widget.set_start_date(new_start)
         # Re-calc End Date based on current duration (preserved)
         current_duration = self.duration_widget.get_value()
         self.end_date_edit.set_value(new_start + current_duration)
 
-    def _on_duration_changed(self, duration: float):
+    def _on_duration_changed(self, duration: float) -> None:
         """Syncs End Date when Duration changes."""
         start = self.date_edit.get_value()
         self.end_date_edit.blockSignals(True)
         self.end_date_edit.set_value(start + duration)
         self.end_date_edit.blockSignals(False)
 
-    def _on_end_date_changed(self, end_date: float):
+    def _on_end_date_changed(self, end_date: float) -> None:
         """Syncs Duration when End Date changes."""
         start = self.date_edit.get_value()
         duration = max(0.0, end_date - start)
@@ -280,7 +291,7 @@ class EventEditorWidget(QWidget):
         self.duration_widget.set_value(duration)
         self.duration_widget.blockSignals(False)
 
-    def set_calendar_converter(self, converter):
+    def set_calendar_converter(self, converter: Any) -> None:
         """
         Sets the calendar converter for date formatting.
 
@@ -295,7 +306,7 @@ class EventEditorWidget(QWidget):
 
     def update_suggestions(
         self, items: list[tuple[str, str, str]] = None, names: list[str] = None
-    ):
+    ) -> None:
         """
         Updates the autocomplete suggestions for the description field.
 
@@ -321,7 +332,7 @@ class EventEditorWidget(QWidget):
 
     def load_event(
         self, event: Event, relations: list = None, incoming_relations: list = None
-    ):
+    ) -> None:
         """
         Populates the form with event data and relationships.
 
@@ -438,7 +449,7 @@ class EventEditorWidget(QWidget):
         finally:
             self._is_loading = False
 
-    def _on_save(self):
+    def _on_save(self) -> None:
         """
         Collects data from form fields and emits the `save_requested` signal.
         Emits a dictionary with the updated properties and the ID.
@@ -464,7 +475,7 @@ class EventEditorWidget(QWidget):
         self.save_requested.emit(event_data)
         self.set_dirty(False)
 
-    def _on_discard(self):
+    def _on_discard(self) -> None:
         """
         Discards changes by emitting signal to reload the current event.
         """
@@ -473,7 +484,7 @@ class EventEditorWidget(QWidget):
 
         self.discard_requested.emit(self._current_event_id)
 
-    def _on_add_relation(self):
+    def _on_add_relation(self) -> None:
         """
         Prompts user for relation details and emits signal.
         Uses RelationEditDialog with autocompletion.
@@ -494,7 +505,7 @@ class EventEditorWidget(QWidget):
                     self._current_event_id, target_id, rel_type, is_bidirectional
                 )
 
-    def _show_rel_menu(self, pos):
+    def _show_rel_menu(self, pos: QPoint) -> None:
         """Shows context menu for relation items."""
         item = self.rel_list.itemAt(pos)
         if not item:
@@ -510,7 +521,7 @@ class EventEditorWidget(QWidget):
         elif action == edit_action:
             self._on_edit_relation(item)
 
-    def _on_remove_relation_item(self, item):
+    def _on_remove_relation_item(self, item: QListWidgetItem) -> None:
         """Emits remove signal."""
         rel_data = item.data(Qt.UserRole)
         target_id = rel_data.get("target_id", "?")
@@ -525,7 +536,7 @@ class EventEditorWidget(QWidget):
         if confirm == QMessageBox.Yes:
             self.remove_relation_requested.emit(rel_data["id"])
 
-    def _on_edit_relation(self, item):
+    def _on_edit_relation(self, item: QListWidgetItem) -> None:
         """Emits update signal after dialogs."""
         rel_data = item.data(Qt.UserRole)
 
@@ -547,7 +558,7 @@ class EventEditorWidget(QWidget):
             if target_id:
                 self.update_relation_requested.emit(rel_data["id"], target_id, rel_type)
 
-    def _on_edit_selected_relation(self):
+    def _on_edit_selected_relation(self) -> None:
         """Edits the currently selected relation."""
         item = self.rel_list.currentItem()
         if item:
@@ -557,7 +568,7 @@ class EventEditorWidget(QWidget):
                 self, "Selection", "Please select a relation to edit."
             )
 
-    def _on_remove_selected_relation(self):
+    def _on_remove_selected_relation(self) -> None:
         """Removes the currently selected relation."""
         item = self.rel_list.currentItem()
         if item:
@@ -567,13 +578,34 @@ class EventEditorWidget(QWidget):
                 self, "Selection", "Please select a relation to remove."
             )
 
-    def _on_field_changed(self):
+    def get_generation_context(self) -> dict:
+        """
+        Get context for LLM generation.
+
+        Returns:
+            dict: Context dictionary with 'name', 'type', 'lore_date', etc.
+        """
+        context = {
+            "name": self.name_edit.text(),
+            "type": self.type_edit.currentText(),
+            "existing_description": self.desc_edit.toPlainText(),
+        }
+
+        # Add formatted date if available
+        if hasattr(self.date_edit, "lbl_preview"):
+            text = self.date_edit.lbl_preview.text()
+            if text:
+                context["lore_date"] = text
+
+        return context
+
+    def _on_field_changed(self) -> None:
         """Marks the editor as dirty and emits live preview signal."""
         if not self._is_loading:
             self.set_dirty(True)  # Use set_dirty to properly enable save button
             self._emit_current_data()
 
-    def _emit_current_data(self):
+    def _emit_current_data(self) -> None:
         """Emits the current form data for live preview."""
         if self._is_loading:
             return
@@ -593,13 +625,34 @@ class EventEditorWidget(QWidget):
         except Exception:
             pass  # Be safe against incomplete states
 
-    def _mark_dirty(self):
-        """Marks the editor as dirty."""
-        if not self._is_loading:
-            self._is_dirty = True
-            self.dirty_changed.emit(True)
+    def _on_text_generated(self, text: str) -> None:
+        """
+        Handle text generated from LLM.
 
-    def minimumSizeHint(self):
+        Appends generated text to the description field.
+
+        Args:
+            text: Generated text from LLM.
+        """
+        if not text:
+            return
+
+        # Get current description
+        current = self.desc_edit.toPlainText()
+
+        # Append generated text with newline separator if there's existing content
+        if current.strip():
+            new_text = current + "\n\n" + text
+        else:
+            new_text = text
+
+        # Update description
+        self.desc_edit.setPlainText(new_text)
+
+        # Mark as dirty
+        self.set_dirty(True)
+
+    def minimumSizeHint(self) -> QSize:
         """
         Override to prevent dock collapse.
 
@@ -608,7 +661,7 @@ class EventEditorWidget(QWidget):
         """
         return QSize(300, 200)  # Width for form labels, height for controls
 
-    def sizeHint(self):
+    def sizeHint(self) -> QSize:
         """
         Preferred size for the event editor.
 
