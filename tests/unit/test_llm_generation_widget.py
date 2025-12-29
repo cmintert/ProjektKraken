@@ -43,7 +43,7 @@ def test_custom_prompt_toggle(widget):
     assert widget.custom_prompt_edit.isVisible() is False
 
 
-@patch("src.services.llm_provider.create_provider")
+@patch("src.gui.widgets.llm_generation_widget.create_provider")
 def test_generation_flow_custom_prompt(mock_create_provider, widget, qtbot):
     """Test generation with a custom prompt."""
     # Setup mock provider
@@ -81,7 +81,7 @@ def test_generation_flow_custom_prompt(mock_create_provider, widget, qtbot):
     assert widget.generate_btn.isEnabled()
 
 
-@patch("src.services.llm_provider.create_provider")
+@patch("src.gui.widgets.llm_generation_widget.create_provider")
 def test_generation_flow_auto_prompt(mock_create_provider, widget, qtbot):
     """Test generation without custom prompt (auto context)."""
     mock_provider = MagicMock()
@@ -105,7 +105,8 @@ def test_generation_flow_auto_prompt(mock_create_provider, widget, qtbot):
         }
 
         # Trigger generation
-        # Manually disable RAG to avoid db lookup in test (or mock it if we wanted to test RAG)
+        # Manually disable RAG to avoid db lookup in test
+        # (or mock it if we wanted to test RAG)
         widget.rag_cb.setChecked(False)
         with qtbot.waitSignal(widget.text_generated, timeout=5000):
             widget.generate_btn.click()

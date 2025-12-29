@@ -7,9 +7,10 @@ Supports streaming output and appending to existing text.
 
 import asyncio
 import logging
+import sqlite3
 from typing import Any, Optional, Protocol, runtime_checkable
 
-from PySide6.QtCore import Qt, QThread, Signal
+from PySide6.QtCore import QSettings, Qt, QThread, Signal
 from PySide6.QtGui import QIntValidator
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -26,7 +27,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 from src.gui.utils.style_helper import StyleHelper
+from src.services.llm_provider import create_provider
+from src.services.search_service import create_search_service
 
 logger = logging.getLogger(__name__)
 
@@ -72,9 +76,6 @@ def perform_rag_search(prompt: str, db_path: Optional[str], top_k: int = 3) -> s
 
     try:
         logger.debug(f"Starting RAG search in {db_path} for prompt: {prompt[:50]}...")
-        import sqlite3
-
-        from src.services.search_service import create_search_service
 
         # Create strictly local read connection
         conn = sqlite3.connect(
@@ -424,10 +425,6 @@ class LLMGenerationWidget(QWidget):
     def _load_settings(self) -> None:
         """Load provider settings from QSettings."""
         try:
-            from PySide6.QtCore import QSettings
-
-            from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
-
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 
             # Load last used provider
@@ -469,10 +466,6 @@ class LLMGenerationWidget(QWidget):
     def _save_settings(self) -> None:
         """Save current settings to QSettings."""
         try:
-            from PySide6.QtCore import QSettings
-
-            from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
-
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
             settings.setValue("ai_gen_last_provider", self.provider_combo.currentText())
             settings.setValue("ai_gen_max_tokens", self.max_tokens_spin.value())
@@ -586,8 +579,6 @@ class LLMGenerationWidget(QWidget):
 
         try:
             # Create provider
-            from src.services.llm_provider import create_provider
-
             provider_id = self._get_provider_id()
             logger.info(f"Creating LLM provider: {provider_id}")
             self._current_provider = create_provider(provider_id)
@@ -629,10 +620,6 @@ class LLMGenerationWidget(QWidget):
             str: The configured system prompt, or default if not set.
         """
         try:
-            from PySide6.QtCore import QSettings
-
-            from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
-
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
             return settings.value("ai_gen_system_prompt", DEFAULT_SYSTEM_PROMPT)
         except Exception as e:

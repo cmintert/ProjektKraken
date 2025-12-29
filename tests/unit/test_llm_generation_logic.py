@@ -49,7 +49,8 @@ def test_custom_prompt_structure(qtbot, widget, monkeypatch):
     widget.custom_prompt_edit.setPlainText("My custom instruction")
 
     # We need to access the logic inside _on_preview_clicked or _on_generate_clicked.
-    # Since we duplicated logic in _on_preview_clicked, let's verify _on_generate_clicked logic
+    # Since we duplicated logic in _on_preview_clicked,
+    # let's verify _on_generate_clicked logic
     # by mocking _start_generation to capture the prompt.
 
     captured_prompt = []
@@ -66,7 +67,8 @@ def test_custom_prompt_structure(qtbot, widget, monkeypatch):
             return {"status": "healthy"}
 
     monkeypatch.setattr(
-        "src.services.llm_provider.create_provider", lambda pid: MockProvider()
+        "src.gui.widgets.llm_generation_widget.create_provider",
+        lambda pid: MockProvider(),
     )
 
     widget._on_generate_clicked()
@@ -193,7 +195,7 @@ def test_custom_system_prompt_from_settings(qtbot, widget, monkeypatch):
             return default
 
     monkeypatch.setattr(
-        "PySide6.QtCore.QSettings",
+        "src.gui.widgets.llm_generation_widget.QSettings",
         lambda org, app: MockSettings(),
     )
 
@@ -222,7 +224,7 @@ def test_default_system_prompt_fallback(qtbot, widget, monkeypatch):
             return default  # Always return default
 
     monkeypatch.setattr(
-        "PySide6.QtCore.QSettings",
+        "src.gui.widgets.llm_generation_widget.QSettings",
         lambda org, app: MockSettings(),
     )
 
