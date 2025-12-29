@@ -28,6 +28,20 @@ from src.gui.utils.style_helper import StyleHelper
 
 logger = logging.getLogger(__name__)
 
+# Default system prompt used for LLM content generation
+# This defines the LLM's role, tone, and behavior for worldbuilding tasks.
+# Can be customized via Settings → AI Settings → Text Generation tab.
+# Stored in QSettings under key 'ai_gen_system_prompt'.
+DEFAULT_SYSTEM_PROMPT = (
+    "You are an expert fantasy world-builder assisting a user in creating a "
+    "rich and immersive setting. Your tone is descriptive, evocative, and "
+    "consistent with high-fantasy literature.\n\n"
+    "IMPORTANT: Time in this world is represented as floating-point numbers "
+    "where 1.0 = 1 day. The decimal portion represents time within the day "
+    "(e.g., 0.5 = noon). When referencing dates or durations, understand "
+    "that event dates and durations use this numeric format."
+)
+
 
 def perform_rag_search(prompt: str, db_path: Optional[str]) -> str:
     """
@@ -76,39 +90,43 @@ def perform_rag_search(prompt: str, db_path: Optional[str]) -> str:
 
         logger.info(f"RAG search found {len(results)} relevant items.")
 
-        # Format results
+        # Format results - exclude tags and attributes, only include core info
+        # This keeps prompts focused on narrative descriptions rather than
+        # technical metadata, reducing token usage and improving relevance.
         context_parts = ["### World Knowledge (RAG Data):"]
         for r in results:
             name = r.get("name", "Unknown")
             rtype = r.get("type", "Unknown")
-            # Use text_content from DB (the full indexed text)
-            snippet = r.get("text_content", "")
-            if not snippet:
-                # Fallback to metadata description if text_content missing (legacy)
-                snippet = r.get("metadata", {}).get("description", "")
 
-            if not snippet:
-                # Avoid dumping raw JSON/dict structures
-                meta = r.get("metadata", {})
-                for v in meta.values():
-                    if isinstance(v, str) and len(v) > 20:
-                        snippet = v
+            # Extract description from the indexed text
+            # Format: "Name: X\nType: Y\nTags: ...\nDescription: ..."
+            # We parse to extract ONLY the description for cleaner context
+            full_text = r.get("text_content", "")
+
+            # Parse to extract only description
+            description = ""
+            if full_text:
+                lines = full_text.split("\n\n")
+                for line in lines:
+                    if line.startswith("Description: "):
+                        description = line.replace("Description: ", "", 1).strip()
                         break
 
-            if not snippet:
-                # If still nothing, skip this item to avoid noise
+            # Fallback to metadata if no description found
+            if not description:
+                description = r.get("metadata", {}).get("description", "")
+
+            # Skip if still no meaningful content
+            if not description or len(description) < 20:
                 continue
 
-            # Clean up newlines to save tokens/space (optional, maybe keep newlines?)
-            # Keeping newlines is usually better for structure.
-            # snippet = snippet.replace("\n", " ").strip()
-            snippet = snippet.strip()
+            # Truncate long descriptions
+            truncated_description = description[:2000]
+            if len(description) > 2000:
+                truncated_description += "..."
 
-            truncated_snippet = snippet[:4000]
-            if len(snippet) > 4000:
-                truncated_snippet += "..."
-
-            context_parts.append(f"**{name}** ({rtype}):\n{truncated_snippet}")
+            # Format: Name (Type): Description only
+            context_parts.append(f"**{name}** ({rtype}):\\n{truncated_description}")
 
         return "\n\n".join(context_parts) + "\n\n"
 
@@ -466,11 +484,7 @@ class LLMGenerationWidget(QWidget):
 
             context_str = "\n".join(context_lines)
 
-            system_persona = (
-                "You are an expert fantasy world-builder assisting a user in creating a "
-                "rich and immersive setting. Your tone is descriptive, evocative, and "
-                "consistent with high-fantasy literature."
-            )
+            system_persona = self._get_system_prompt()
 
             # Insert placeholder for RAG
             rag_placeholder = "{{RAG_CONTEXT}}" if self.rag_cb.isChecked() else ""
@@ -536,6 +550,31 @@ class LLMGenerationWidget(QWidget):
         if checked:
             self.custom_prompt_edit.setFocus()
 
+    def _get_system_prompt(self) -> str:
+        """
+        Get the system prompt from settings.
+
+        Loads the user's custom system prompt from QSettings if available,
+        otherwise falls back to DEFAULT_SYSTEM_PROMPT. The system prompt
+        defines the LLM's role, tone, and behavior.
+
+        The prompt can be customized via:
+        Settings → AI Settings → Text Generation tab → System Prompt field
+
+        Returns:
+            str: The configured system prompt, or default if not set.
+        """
+        try:
+            from PySide6.QtCore import QSettings
+
+            from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+
+            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+            return settings.value("ai_gen_system_prompt", DEFAULT_SYSTEM_PROMPT)
+        except Exception as e:
+            logger.warning(f"Failed to load system prompt: {e}")
+            return DEFAULT_SYSTEM_PROMPT
+
     def _get_generation_context(self) -> Optional[dict]:
         """
         Get context from parent editor for prompt construction.
@@ -600,11 +639,7 @@ class LLMGenerationWidget(QWidget):
         item_type = context.get("type", "item")
         existing = context.get("existing_description", "")
 
-        system_persona = (
-            "You are an expert fantasy world-builder assisting a user in creating a "
-            "rich and immersive setting. Your tone is descriptive, evocative, and "
-            "consistent with high-fantasy literature."
-        )
+        system_persona = self._get_system_prompt()
 
         rag_placeholder = "{{RAG_CONTEXT}}" if use_rag else ""
 
@@ -741,11 +776,7 @@ class LLMGenerationWidget(QWidget):
                     context_lines.append(f"{k.replace('_', ' ').title()}: {v}")
             context_str = "\n".join(context_lines)
 
-            system_persona = (
-                "You are an expert fantasy world-builder assisting a user in creating a "
-                "rich and immersive setting. Your tone is descriptive, evocative, and "
-                "consistent with high-fantasy literature."
-            )
+            system_persona = self._get_system_prompt()
             rag_placeholder = "{{RAG_CONTEXT}}" if self.rag_cb.isChecked() else ""
             prompt = (
                 f"{system_persona}\n\n"

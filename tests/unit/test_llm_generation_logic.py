@@ -176,3 +176,59 @@ def test_preview_fetches_rag(qtbot, widget, monkeypatch):
     assert rag_called[0][1] == "test.db"
     # Prompt passed to search should be the template before replacement
     assert "{{RAG_CONTEXT}}" in rag_called[0][0]
+
+
+def test_custom_system_prompt_from_settings(qtbot, widget, monkeypatch):
+    """Test that custom system prompt is loaded from QSettings and used."""
+    custom_prompt = (
+        "You are a sci-fi world designer creating futuristic settings. "
+        "Be technical and precise."
+    )
+
+    # Mock QSettings to return custom prompt
+    class MockSettings:
+        def value(self, key, default):
+            if key == "ai_gen_system_prompt":
+                return custom_prompt
+            return default
+
+    monkeypatch.setattr(
+        "PySide6.QtCore.QSettings",
+        lambda org, app: MockSettings(),
+    )
+
+    # Call _get_system_prompt and verify it returns custom prompt
+    result = widget._get_system_prompt()
+    assert result == custom_prompt
+
+    # Mock context for prompt building
+    def mock_context():
+        return {"name": "Starship", "type": "Vehicle"}
+
+    monkeypatch.setattr(widget, "_get_generation_context", mock_context)
+
+    # Test that custom prompt is used in _build_prompt
+    prompt = widget._build_prompt(mock_context(), use_rag=False)
+    assert custom_prompt in prompt
+    assert "fantasy world-builder" not in prompt.lower()
+
+
+def test_default_system_prompt_fallback(qtbot, widget, monkeypatch):
+    """Test that default system prompt is used when settings are empty."""
+
+    # Mock QSettings to return None (not set)
+    class MockSettings:
+        def value(self, key, default):
+            return default  # Always return default
+
+    monkeypatch.setattr(
+        "PySide6.QtCore.QSettings",
+        lambda org, app: MockSettings(),
+    )
+
+    # Call _get_system_prompt and verify it returns default
+    result = widget._get_system_prompt()
+    from src.gui.widgets.llm_generation_widget import DEFAULT_SYSTEM_PROMPT
+
+    assert result == DEFAULT_SYSTEM_PROMPT
+    assert "fantasy world-builder" in result

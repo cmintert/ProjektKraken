@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMessageBox,
+    QPlainTextEdit,
     QPushButton,
     QSpinBox,
     QStackedWidget,
@@ -378,6 +379,31 @@ class AISettingsDialog(QDialog):
         self.temperature_input.setToolTip("Temperature (0-200%, where 100% = 1.0)")
         options_layout.addRow("Temperature:", self.temperature_input)
 
+        # System Prompt
+        system_prompt_label = QLabel("System Prompt:")
+        options_layout.addRow(system_prompt_label, QWidget())  # Spacer
+
+        self.system_prompt_edit = QPlainTextEdit()
+        self.system_prompt_edit.setStyleSheet(StyleHelper.get_input_field_style())
+        self.system_prompt_edit.setPlaceholderText(
+            "Enter the system prompt that defines the LLM's role and behavior..."
+        )
+        self.system_prompt_edit.setMaximumHeight(120)
+        self.system_prompt_edit.setToolTip(
+            "The system prompt defines how the LLM should behave and respond. "
+            "This will be prepended to all generation requests."
+        )
+        options_layout.addRow("", self.system_prompt_edit)
+
+        # Restore default button
+        restore_btn = QPushButton("Restore Default")
+        restore_btn.setMaximumWidth(120)
+        restore_btn.setToolTip(
+            "Restore the default fantasy world-builder system prompt"
+        )
+        restore_btn.clicked.connect(self._on_restore_default_prompt)
+        options_layout.addRow("", restore_btn)
+
         main_layout.addWidget(options_group)
 
         # Clear all settings button
@@ -450,6 +476,19 @@ class AISettingsDialog(QDialog):
 
         logger.info(f"Rebuild index requested for type: {obj_type}")
         self.rebuild_index_requested.emit(obj_type)
+
+    def _on_restore_default_prompt(self) -> None:
+        """Restore the default system prompt."""
+        default_prompt = (
+            "You are an expert fantasy world-builder assisting a user in creating a "
+            "rich and immersive setting. Your tone is descriptive, evocative, and "
+            "consistent with high-fantasy literature.\n\n"
+            "IMPORTANT: Time in this world is represented as floating-point numbers "
+            "where 1.0 = 1 day. The decimal portion represents time within the day "
+            "(e.g., 0.5 = noon). When referencing dates or durations, understand "
+            "that event dates and durations use this numeric format."
+        )
+        self.system_prompt_edit.setPlainText(default_prompt)
 
     def _test_connection(self, provider_id: str, mode: str) -> None:
         """
@@ -576,6 +615,7 @@ class AISettingsDialog(QDialog):
         settings.setValue("ai_gen_audit_log", self.enable_audit_log.isChecked())
         settings.setValue("ai_gen_max_tokens", self.max_tokens_input.value())
         settings.setValue("ai_gen_temperature", self.temperature_input.value())
+        settings.setValue("ai_gen_system_prompt", self.system_prompt_edit.toPlainText())
 
         logger.info(
             f"AI Settings saved. Embedding provider: {provider}, "
@@ -664,6 +704,20 @@ class AISettingsDialog(QDialog):
         )
         self.max_tokens_input.setValue(int(settings.value("ai_gen_max_tokens", 512)))
         self.temperature_input.setValue(int(settings.value("ai_gen_temperature", 70)))
+
+        # System prompt with default fallback
+        default_prompt = (
+            "You are an expert fantasy world-builder assisting a user in creating a "
+            "rich and immersive setting. Your tone is descriptive, evocative, and "
+            "consistent with high-fantasy literature.\n\n"
+            "IMPORTANT: Time in this world is represented as floating-point numbers "
+            "where 1.0 = 1 day. The decimal portion represents time within the day "
+            "(e.g., 0.5 = noon). When referencing dates or durations, understand "
+            "that event dates and durations use this numeric format."
+        )
+        self.system_prompt_edit.setPlainText(
+            settings.value("ai_gen_system_prompt", default_prompt)
+        )
 
     def update_status(self, model: str, counts: str, last_updated: str) -> None:
         """Update the status labels."""
