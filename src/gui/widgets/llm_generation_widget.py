@@ -339,47 +339,11 @@ class LLMGenerationWidget(QWidget):
         self.temperature_spin.valueChanged.connect(self._save_settings)
         controls_layout.addWidget(self.temperature_spin)
 
-        # Generate button
-        self.generate_btn = QPushButton("Generate")
-        self.generate_btn.setToolTip("Generate text and append to description")
-        self.generate_btn.clicked.connect(self._on_generate_clicked)
-        controls_layout.addWidget(self.generate_btn)
-
-        # Cancel button
-        self.cancel_btn = QPushButton("Cancel")
-        self.cancel_btn.setEnabled(False)
-        self.cancel_btn.setToolTip("Cancel generation")
-        self.cancel_btn.clicked.connect(self._on_cancel_clicked)
-        controls_layout.addWidget(self.cancel_btn)
-
-        # Preview button
-        self.preview_btn = QPushButton("Preview")
-        self.preview_btn.setToolTip("Preview the prompt before generating")
-        self.preview_btn.clicked.connect(self._on_preview_clicked)
-        controls_layout.addWidget(self.preview_btn)
-
-        controls_layout.addStretch()
-
-        main_layout.addLayout(controls_layout)
-
-        # Custom prompt section
-        prompt_layout = (
-            QHBoxLayout()
-        )  # Renamed from prompt_header_layout to prompt_layout
-        self.use_custom_prompt_cb = QCheckBox("Use Custom Prompt")
-        self.use_custom_prompt_cb.setToolTip(
-            "Check to use a custom prompt instead of auto-generated one"
-        )
-        self.use_custom_prompt_cb.stateChanged.connect(
-            self._on_custom_prompt_toggled
-        )  # Changed signal to stateChanged
-        prompt_layout.addWidget(self.use_custom_prompt_cb)
-
         # RAG Context Checkbox
         self.rag_cb = QCheckBox("Use RAG Context")
         self.rag_cb.setChecked(True)
         self.rag_cb.setToolTip("Include relevant context from database (RAG)")
-        prompt_layout.addWidget(self.rag_cb)
+        controls_layout.addWidget(self.rag_cb)
 
         # RAG Limit Input
         self.rag_limit_input = QLineEdit()
@@ -393,10 +357,11 @@ class LLMGenerationWidget(QWidget):
         self.rag_cb.toggled.connect(self.rag_limit_input.setVisible)
         self.rag_cb.toggled.connect(self._save_settings)
         self.rag_limit_input.editingFinished.connect(self._save_settings)
-        prompt_layout.addWidget(self.rag_limit_input)
+        controls_layout.addWidget(self.rag_limit_input)
 
-        prompt_layout.addStretch()  # Added stretch to prompt_layout
-        main_layout.addLayout(prompt_layout)  # Added prompt_layout to main_layout
+        controls_layout.addStretch()
+
+        main_layout.addLayout(controls_layout)
 
         # Custom prompt input
         self.custom_prompt_edit = QPlainTextEdit()
@@ -407,8 +372,35 @@ class LLMGenerationWidget(QWidget):
             "'Describe this location in vivid detail'"
         )
         self.custom_prompt_edit.setMaximumHeight(80)
-        self.custom_prompt_edit.setVisible(False)  # Hidden by default
+        self.custom_prompt_edit.setVisible(True)  # Always visible
         main_layout.addWidget(self.custom_prompt_edit)
+
+        # Action Buttons Layout (Below text field)
+        buttons_layout = QHBoxLayout()
+        buttons_layout.addStretch()  # Right align buttons
+
+        # Cancel button (Left of Generate/Preview cluster? Or right aligned?
+        # User said Generate Cancel Preview right aligned)
+        # Usually Cancel is on the left of affirmative actions.
+        self.cancel_btn = QPushButton("Cancel")
+        self.cancel_btn.setEnabled(False)
+        self.cancel_btn.setToolTip("Cancel generation")
+        self.cancel_btn.clicked.connect(self._on_cancel_clicked)
+        buttons_layout.addWidget(self.cancel_btn)
+
+        # Preview button
+        self.preview_btn = QPushButton("Preview")
+        self.preview_btn.setToolTip("Preview the prompt before generating")
+        self.preview_btn.clicked.connect(self._on_preview_clicked)
+        buttons_layout.addWidget(self.preview_btn)
+
+        # Generate button
+        self.generate_btn = QPushButton("Generate")
+        self.generate_btn.setToolTip("Generate text and append to description")
+        self.generate_btn.clicked.connect(self._on_generate_clicked)
+        buttons_layout.addWidget(self.generate_btn)
+
+        main_layout.addLayout(buttons_layout)
 
         # Status label
         self.status_label = QLabel("")
@@ -507,56 +499,51 @@ class LLMGenerationWidget(QWidget):
 
         logger.debug(f"Generation context retrieved: {context.keys()}")
 
-        # Check if using custom prompt
-        if self.use_custom_prompt_cb.isChecked():
-            user_prompt = self.custom_prompt_edit.toPlainText().strip()
-            if not user_prompt:
-                self.status_label.setText("Error: Custom prompt is empty")
-                return
+        # Validate custom prompt
+        user_prompt = self.custom_prompt_edit.toPlainText().strip()
+        if not user_prompt:
+            self.status_label.setText("Error: Custom prompt is empty")
+            return
 
-            # Construct composite prompt with context + user instruction
-            # Build context string dynamically from available fields
-            context_lines = []
+        # Construct composite prompt with context + user instruction
+        # Build context string dynamically from available fields
+        context_lines = []
 
-            # Order matters for readability
-            if "name" in context:
-                context_lines.append(f"Name: {context['name']}")
-            if "type" in context:
-                context_lines.append(f"Type: {context['type']}")
-            if "lore_date" in context:
-                context_lines.append(f"Lore Date: {context['lore_date']}")
-            if "existing_description" in context:
-                context_lines.append(f"Description: {context['existing_description']}")
+        # Order matters for readability
+        if "name" in context:
+            context_lines.append(f"Name: {context['name']}")
+        if "type" in context:
+            context_lines.append(f"Type: {context['type']}")
+        if "lore_date" in context:
+            context_lines.append(f"Lore Date: {context['lore_date']}")
+        if "existing_description" in context:
+            context_lines.append(f"Description: {context['existing_description']}")
 
-            # Fallback for any other keys
-            for k, v in context.items():
-                if k not in [
-                    "name",
-                    "type",
-                    "lore_date",
-                    "existing_description",
-                    "description",
-                ]:
-                    context_lines.append(f"{k.replace('_', ' ').title()}: {v}")
+        # Fallback for any other keys
+        for k, v in context.items():
+            if k not in [
+                "name",
+                "type",
+                "lore_date",
+                "existing_description",
+                "description",
+            ]:
+                context_lines.append(f"{k.replace('_', ' ').title()}: {v}")
 
-            context_str = "\n".join(context_lines)
+        context_str = "\n".join(context_lines)
 
-            system_persona = self._get_system_prompt()
+        system_persona = self._get_system_prompt()
 
-            # Insert placeholder for RAG
-            rag_placeholder = "{{RAG_CONTEXT}}" if self.rag_cb.isChecked() else ""
+        # Insert placeholder for RAG
+        rag_placeholder = "{{RAG_CONTEXT}}" if self.rag_cb.isChecked() else ""
 
-            prompt = (
-                f"{system_persona}\n\n"
-                f"{rag_placeholder}"
-                f"Context:\n{context_str}\n\n"
-                f"Task: {user_prompt}"
-            )
-            self.status_label.setText("Using custom prompt with context...")
-        else:
-            # Create auto-generated prompt
-            prompt = self._build_prompt(context, self.rag_cb.isChecked())
-            self.status_label.setText("Using auto-generated prompt...")
+        prompt = (
+            f"{system_persona}\n\n"
+            f"{rag_placeholder}"
+            f"Context:\n{context_str}\n\n"
+            f"Task: {user_prompt}"
+        )
+        self.status_label.setText("Generating with context...")
 
         # Get temperature as float (0.0-2.0)
         temperature = self.temperature_spin.value() / 100.0
@@ -598,12 +585,6 @@ class LLMGenerationWidget(QWidget):
         except Exception as e:
             logger.error(f"Failed to create provider: {e}", exc_info=True)
             self.status_label.setText(f"Error: {str(e)}")
-
-    def _on_custom_prompt_toggled(self, checked: bool) -> None:
-        """Handle custom prompt checkbox toggle."""
-        self.custom_prompt_edit.setVisible(checked)
-        if checked:
-            self.custom_prompt_edit.setFocus()
 
     def _get_system_prompt(self) -> str:
         """
@@ -675,51 +656,6 @@ class LLMGenerationWidget(QWidget):
             depth += 1
 
         return context if found_editor else None
-
-    def _build_prompt(self, context: dict, use_rag: bool = False) -> str:
-        """
-        Build generation prompt from context.
-
-        Args:
-            context: Context dictionary with name, type, description, etc.
-            use_rag: Whether to include RAG placeholder.
-
-        Returns:
-            str: Generated prompt.
-        """
-        name = context.get("name", "this item")
-        item_type = context.get("type", "item")
-        existing = context.get("existing_description", "")
-
-        system_persona = self._get_system_prompt()
-
-        rag_placeholder = "{{RAG_CONTEXT}}" if use_rag else ""
-
-        base_context = f"### Item Context\n**Name:** {name}\n**Type:** {item_type}\n"
-
-        if existing:
-            prompt = (
-                f"{system_persona}\n\n"
-                f"{rag_placeholder}"
-                f"{base_context}"
-                f"**Current Description:**\n{existing}\n\n"
-                f"### Task\n"
-                f"Continue the description above. Add depth, sensory details, and "
-                f"narrative significance. Do NOT repeat what is already written. "
-                f"Maintain the existing style and flow."
-            )
-        else:
-            prompt = (
-                f"{system_persona}\n\n"
-                f"{rag_placeholder}"
-                f"{base_context}\n"
-                f"### Task\n"
-                f"Write a comprehensive description for this {item_type}. "
-                f"Include vivid details about its appearance, history, purpose, "
-                f"and significance to the world. Make it feel alive and grounded."
-            )
-
-        return prompt
 
     def _start_generation(
         self, prompt: str, temperature: float, db_path: Optional[str] = None
@@ -806,43 +742,43 @@ class LLMGenerationWidget(QWidget):
             return
 
         # Reuse same logic as generate to ensure accuracy
-        if self.use_custom_prompt_cb.isChecked():
-            user_prompt = self.custom_prompt_edit.toPlainText().strip()
-            # Logic duplicated for now to ensure consistency - ideally refactor
-            # ... (Copied logic from above or refactored into helper)
-            # For compactness, let's refactor the prompt build part into a method?
-            # Or just duplicate the lightweight construction logic here.
+        # Validate custom prompt
+        user_prompt = self.custom_prompt_edit.toPlainText().strip()
+        if not user_prompt:
+            QMessageBox.warning(self, "Preview Error", "Please enter a prompt first.")
+            return
 
-            context_lines = []
-            if "name" in context:
-                context_lines.append(f"Name: {context['name']}")
-            if "type" in context:
-                context_lines.append(f"Type: {context['type']}")
-            if "lore_date" in context:
-                context_lines.append(f"Lore Date: {context['lore_date']}")
-            if "existing_description" in context:
-                context_lines.append(f"Description: {context['existing_description']}")
-            for k, v in context.items():
-                if k not in [
-                    "name",
-                    "type",
-                    "lore_date",
-                    "existing_description",
-                    "description",
-                ]:
-                    context_lines.append(f"{k.replace('_', ' ').title()}: {v}")
-            context_str = "\n".join(context_lines)
+        # Build context string dynamically
+        context_lines = []
+        if "name" in context:
+            context_lines.append(f"Name: {context['name']}")
+        if "type" in context:
+            context_lines.append(f"Type: {context['type']}")
+        if "lore_date" in context:
+            context_lines.append(f"Lore Date: {context['lore_date']}")
+        if "existing_description" in context:
+            context_lines.append(f"Description: {context['existing_description']}")
 
-            system_persona = self._get_system_prompt()
-            rag_placeholder = "{{RAG_CONTEXT}}" if self.rag_cb.isChecked() else ""
-            prompt = (
-                f"{system_persona}\n\n"
-                f"{rag_placeholder}"
-                f"Context:\n{context_str}\n\n"
-                f"Task: {user_prompt}"
-            )
-        else:
-            prompt = self._build_prompt(context, self.rag_cb.isChecked())
+        for k, v in context.items():
+            if k not in [
+                "name",
+                "type",
+                "lore_date",
+                "existing_description",
+                "description",
+            ]:
+                context_lines.append(f"{k.replace('_', ' ').title()}: {v}")
+
+        context_str = "\n".join(context_lines)
+        system_persona = self._get_system_prompt()
+        rag_placeholder = "{{RAG_CONTEXT}}" if self.rag_cb.isChecked() else ""
+
+        prompt = (
+            f"{system_persona}\n\n"
+            f"{rag_placeholder}"
+            f"Context:\n{context_str}\n\n"
+            f"Task: {user_prompt}"
+        )
 
         # Show dialog
         dlg = QDialog(self)
