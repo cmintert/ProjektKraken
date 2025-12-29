@@ -91,7 +91,7 @@ class EntityEditorWidget(QWidget):
         # Add LLM Generation Widget below description
         from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
 
-        self.llm_generator = LLMGenerationWidget(self)
+        self.llm_generator = LLMGenerationWidget(self, context_provider=self)
         self.llm_generator.text_generated.connect(self._on_text_generated)
         details_layout.addWidget(self.llm_generator)
 
@@ -459,6 +459,20 @@ class EntityEditorWidget(QWidget):
         item = self.rel_list.currentItem()
         if item:
             self._on_remove_relation_item(item)
+
+    def get_generation_context(self) -> dict:
+        """
+        Get context for LLM generation.
+
+        Returns:
+            dict: Context dictionary with 'name', 'type', etc.
+        """
+        context = {
+            "name": self.name_edit.text(),
+            "type": self.type_edit.currentText(),
+            "existing_description": self.desc_edit.toPlainText(),
+        }
+        return context
 
     def _on_text_generated(self, text: str) -> None:
         """

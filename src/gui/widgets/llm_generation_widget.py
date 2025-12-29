@@ -7,7 +7,7 @@ Supports streaming output and appending to existing text.
 
 import asyncio
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Protocol, runtime_checkable
 
 from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QIntValidator
@@ -43,6 +43,15 @@ DEFAULT_SYSTEM_PROMPT = (
     "(e.g., 0.5 = noon). When referencing dates or durations, understand "
     "that event dates and durations use this numeric format."
 )
+
+
+@runtime_checkable
+class ContextProvider(Protocol):
+    """Protocol for widgets that provide context for LLM generation."""
+
+    def get_generation_context(self) -> dict:
+        """Return context dictionary for generation."""
+        ...
 
 
 def perform_rag_search(prompt: str, db_path: Optional[str], top_k: int = 3) -> str:
@@ -274,18 +283,24 @@ class LLMGenerationWidget(QWidget):
 
     text_generated = Signal(str)  # Emitted when generation completes
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(
+        self,
+        parent: Optional[QWidget] = None,
+        context_provider: Optional[ContextProvider] = None,
+    ) -> None:
         """
         Initialize LLM generation widget.
 
         Args:
             parent: Parent widget.
+            context_provider: Optional provider for generation context.
         """
         super().__init__(parent)
         self.setAttribute(Qt.WA_StyledBackground, True)
 
         self._worker: Optional[GenerationWorker] = None
         self._current_provider = None
+        self._context_provider = context_provider
 
         # Main layout
         main_layout = QVBoxLayout(self)
@@ -416,24 +431,37 @@ class LLMGenerationWidget(QWidget):
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 
             # Load last used provider
+            self.provider_combo.blockSignals(True)
             provider = settings.value("ai_gen_last_provider", "LM Studio")
             index = self.provider_combo.findText(provider)
             if index >= 0:
                 self.provider_combo.setCurrentIndex(index)
+            self.provider_combo.blockSignals(False)
 
             # Load generation options
+            self.max_tokens_spin.blockSignals(True)
             self.max_tokens_spin.setValue(int(settings.value("ai_gen_max_tokens", 512)))
+            self.max_tokens_spin.blockSignals(False)
+
+            self.temperature_spin.blockSignals(True)
             self.temperature_spin.setValue(
                 int(settings.value("ai_gen_temperature", 70))
             )
+            self.temperature_spin.blockSignals(False)
 
             # Load RAG settings
+            self.rag_cb.blockSignals(True)
             self.rag_cb.setChecked(
                 settings.value("ai_gen_rag_enabled", True, type=bool)
             )
+            self.rag_cb.blockSignals(False)
+
+            # rag_limit_input only saves on editingFinished, but for consistency:
+            self.rag_limit_input.blockSignals(True)
             limit = str(settings.value("ai_gen_rag_limit", 3))
             self.rag_limit_input.setText(limit)
             self.rag_limit_input.setVisible(self.rag_cb.isChecked())
+            self.rag_limit_input.blockSignals(False)
 
         except Exception as e:
             logger.warning(f"Failed to load generation settings: {e}")
@@ -613,19 +641,20 @@ class LLMGenerationWidget(QWidget):
 
     def _get_generation_context(self) -> Optional[dict]:
         """
-        Get context from parent editor for prompt construction.
-        Traverses up the widget hierarchy to find an editor.
+        Get context from provider or parent editor for prompt construction.
 
         Returns:
             dict: Context with name, type, description, etc.
         """
-        context = {}
+        # 1. Try explicit provider
+        if self._context_provider:
+            return self._context_provider.get_generation_context()
 
-        # Traverse up starting from parent
+        # 2. Fallback: Traverse up hierarchy (Legacy support)
+        context = {}
         current = self.parent()
         max_depth = 10  # Prevent infinite loops
         depth = 0
-
         found_editor = False
 
         while current and depth < max_depth:

@@ -127,7 +127,7 @@ class EventEditorWidget(QWidget):
         # Add LLM Generation Widget below description
         from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
 
-        self.llm_generator = LLMGenerationWidget(self)
+        self.llm_generator = LLMGenerationWidget(self, context_provider=self)
         self.llm_generator.text_generated.connect(self._on_text_generated)
         details_layout.addWidget(self.llm_generator)
 
@@ -577,6 +577,27 @@ class EventEditorWidget(QWidget):
             QMessageBox.information(
                 self, "Selection", "Please select a relation to remove."
             )
+
+    def get_generation_context(self) -> dict:
+        """
+        Get context for LLM generation.
+
+        Returns:
+            dict: Context dictionary with 'name', 'type', 'lore_date', etc.
+        """
+        context = {
+            "name": self.name_edit.text(),
+            "type": self.type_edit.currentText(),
+            "existing_description": self.desc_edit.toPlainText(),
+        }
+
+        # Add formatted date if available
+        if hasattr(self.date_edit, "lbl_preview"):
+            text = self.date_edit.lbl_preview.text()
+            if text:
+                context["lore_date"] = text
+
+        return context
 
     def _on_field_changed(self) -> None:
         """Marks the editor as dirty and emits live preview signal."""
