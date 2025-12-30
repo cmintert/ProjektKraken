@@ -1,4 +1,3 @@
-import os
 import pathlib
 import sys
 
@@ -39,13 +38,15 @@ def init_theme_manager():
     if QApplication is None:
         return
 
-    # Change to repository root to ensure themes.json can be found
-    os.chdir(repo_root)
+    # Remove aggressive os.chdir that changes global state
+    # os.chdir(repo_root)
 
     from src.core.theme_manager import ThemeManager
 
-    # Initialize the singleton - will load themes.json or use defaults
-    tm = ThemeManager()
+    # Initialize the singleton with absolute path to themes.json
+    # This works because os.path.join (used in paths.py) respects absolute paths
+    theme_path = repo_root / "themes.json"
+    tm = ThemeManager(str(theme_path))
 
     # Verify theme was loaded successfully
     theme = tm.get_theme()
