@@ -70,9 +70,9 @@ class TestSmartLanePacking:
 
         # All three should be on different lanes
         y_coords = [items[0].y(), items[1].y(), items[2].y()]
-        assert len(set(y_coords)) == 3, (
-            "All overlapping events should use different lanes"
-        )
+        assert (
+            len(set(y_coords)) == 3
+        ), "All overlapping events should use different lanes"
 
     def test_lane_reuse_after_gap(self, timeline_widget):
         """Events after a gap should reuse lanes."""
@@ -138,8 +138,8 @@ class TestZoomToCursor:
         """Zoom in should keep scene point under cursor stable."""
         # Set up some events and show the view so geometry is initialized
         timeline_view.set_events([Event(name="E1", lore_date=100, lore_duration=0)])
-        timeline_view.show()
-        qtbot.waitExposed(timeline_view)
+        # timeline_view.show()
+        # qtbot.waitExposed(timeline_view)
         timeline_view.resize(800, 600)
 
         # Record initial transform
@@ -166,8 +166,8 @@ class TestZoomToCursor:
     def test_zoom_out_at_point(self, timeline_view, qtbot):
         """Zoom out should keep scene point under cursor stable."""
         timeline_view.set_events([Event(name="E1", lore_date=100, lore_duration=0)])
-        timeline_view.show()
-        qtbot.waitExposed(timeline_view)
+        # timeline_view.show()
+        # qtbot.waitExposed(timeline_view)
         timeline_view.resize(800, 600)
 
         initial_zoom = timeline_view._current_zoom

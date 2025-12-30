@@ -289,7 +289,7 @@ class TestCompactDateWidgetCalendarPopup:
         widget = CompactDateWidget()
         widget.set_calendar_converter(standard_calendar)
         qtbot.addWidget(widget)
-        widget.show()
+        # widget.show()
 
         assert hasattr(widget, "btn_calendar")
         # Button exists and is part of widget

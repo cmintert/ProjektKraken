@@ -24,7 +24,7 @@ def main_window(qtbot):
             mock_worker.db_service.get_all_events.return_value = []
 
             window = MainWindow()
-            window.show()  # needed for visibility checks often
+            # window.show()  # needed for visibility checks often
             qtbot.addWidget(window)
             yield window
 

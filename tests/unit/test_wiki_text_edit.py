@@ -16,7 +16,7 @@ def test_ctrl_click_emits_signal(qtbot):
     widget = WikiTextEdit()
     # We use HTML anchor for the test context
     widget.setHtml('Jump to <a href="The Shire">The Shire</a>.')
-    widget.show()
+    # widget.show()
     qtbot.addWidget(widget)
 
     # Mock anchorAt to return a valid href

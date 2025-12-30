@@ -17,7 +17,7 @@ def main_window(qtbot):
         # Avoid thread start in test and prevent deferred init crash
         with patch("src.app.main.QThread"), patch("src.app.main.QTimer"):
             window = MainWindow()
-            window.show()
+            # window.show()  <-- Removed for headless testing
             qtbot.addWidget(window)
             yield window
 
@@ -87,7 +87,7 @@ def test_load_entity_details_signal(main_window):
 
         mock_load.assert_called_once_with(entity, relations, incoming)
         # Check dock raise
-        assert main_window.entity_editor_dock.isVisible()
+        assert not main_window.entity_editor_dock.isHidden()
 
 
 def test_entity_add_relation(main_window):

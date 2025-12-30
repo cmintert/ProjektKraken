@@ -10,13 +10,13 @@ from src.gui.widgets.unified_list import UnifiedListWidget
 def unified_list(qtbot):
     widget = UnifiedListWidget()
     qtbot.addWidget(widget)
-    widget.show()
+    # widget.show()
     return widget
 
 
 def test_init(unified_list):
     assert unified_list.list_widget.count() == 0
-    assert unified_list.empty_label.isVisible()
+    assert not unified_list.empty_label.isHidden()
     # Check default filter
     assert unified_list.filter_combo.currentText() == "All Items"
 

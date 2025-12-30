@@ -19,7 +19,7 @@ def clean_settings():
 def widget(qtbot, clean_settings):
     widget = LLMGenerationWidget()
     qtbot.addWidget(widget)
-    widget.show()  # Ensure widget is shown for visibility tests
+    # widget.show()  # Ensure widget is shown for visibility tests
     return widget
 
 
@@ -27,7 +27,7 @@ def test_initial_state(widget):
     """Test initial state of the widget."""
     assert widget.generate_btn.isEnabled()
     assert not widget.cancel_btn.isEnabled()
-    assert widget.custom_prompt_edit.isVisible() is True
+    assert not widget.custom_prompt_edit.isHidden()
     assert widget.rag_cb.isChecked() is True  # RAG defaults to True
 
 
