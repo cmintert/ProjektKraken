@@ -266,7 +266,6 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Set</span>
 
@@ -293,7 +292,9 @@
 
 <div class="viewcode-block" id="ProcessWikiLinksCommand.__init__">
 <a class="viewcode-back" href="../../commands.html#commands.wiki_commands.ProcessWikiLinksCommand.__init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">text_content</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;description&quot;</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">source_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">text_content</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;description&quot;</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initializes the command.</span>
 
@@ -375,9 +376,10 @@
                             <span class="n">existing_keys</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">rel</span><span class="p">[</span><span class="s2">&quot;target_id&quot;</span><span class="p">],</span> <span class="n">start_offset</span><span class="p">))</span>
 
             <span class="c1"># 4. Process each candidate</span>
-            <span class="n">created_count</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">created_count</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># Now represents &quot;valid links found&quot;</span>
             <span class="n">skipped_ambiguous</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="n">skipped_missing</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">valid_links</span> <span class="o">=</span> <span class="p">[]</span>
 
             <span class="k">for</span> <span class="n">candidate</span> <span class="ow">in</span> <span class="n">candidates</span><span class="p">:</span>
                 <span class="n">target_obj</span> <span class="o">=</span> <span class="kc">None</span>
@@ -437,72 +439,43 @@
 
                 <span class="c1"># At this point we have a valid target_obj</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">target_obj</span><span class="p">:</span>
-                    <span class="c1"># Should be covered above, but safety check</span>
                     <span class="k">continue</span>
 
                 <span class="c1"># Skip self-references</span>
                 <span class="k">if</span> <span class="n">target_obj</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_id</span><span class="p">:</span>
                     <span class="k">continue</span>
 
-                <span class="c1"># Check for duplicate by (target_id, start_offset)</span>
-                <span class="n">dedup_key</span> <span class="o">=</span> <span class="p">(</span><span class="n">target_obj</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">candidate</span><span class="o">.</span><span class="n">span</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-                <span class="k">if</span> <span class="n">dedup_key</span> <span class="ow">in</span> <span class="n">existing_keys</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Skipping duplicate mention to </span><span class="si">{</span><span class="n">target_obj</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> &quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">target_type_str</span><span class="si">}</span><span class="s2">) at offset </span><span class="si">{</span><span class="n">candidate</span><span class="o">.</span><span class="n">span</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
-                    <span class="p">)</span>
-                    <span class="k">continue</span>
-
-                <span class="c1"># Create snippet (40 chars of context around the link)</span>
-                <span class="n">snippet</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_snippet</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">text_content</span><span class="p">,</span> <span class="n">candidate</span><span class="o">.</span><span class="n">span</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">candidate</span><span class="o">.</span><span class="n">span</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-                <span class="p">)</span>
-
-                <span class="c1"># Build relation attributes</span>
-                <span class="n">attributes</span> <span class="o">=</span> <span class="p">{</span>
-                    <span class="s2">&quot;field&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">,</span>
-                    <span class="s2">&quot;snippet&quot;</span><span class="p">:</span> <span class="n">snippet</span><span class="p">,</span>
-                    <span class="s2">&quot;start_offset&quot;</span><span class="p">:</span> <span class="n">candidate</span><span class="o">.</span><span class="n">span</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                    <span class="s2">&quot;end_offset&quot;</span><span class="p">:</span> <span class="n">candidate</span><span class="o">.</span><span class="n">span</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-                    <span class="s2">&quot;created_by&quot;</span><span class="p">:</span> <span class="s2">&quot;ProcessWikiLinksCommand&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;created_at&quot;</span><span class="p">:</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
-                    <span class="s2">&quot;is_id_based&quot;</span><span class="p">:</span> <span class="n">candidate</span><span class="o">.</span><span class="n">is_id_based</span><span class="p">,</span>
-                    <span class="s2">&quot;target_type&quot;</span><span class="p">:</span> <span class="n">target_type_str</span><span class="p">,</span>
-                <span class="p">}</span>
-
-                <span class="c1"># Insert relation</span>
-                <span class="n">rel_id</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">insert_relation</span><span class="p">(</span>
-                    <span class="n">source_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">source_id</span><span class="p">,</span>
-                    <span class="n">target_id</span><span class="o">=</span><span class="n">target_obj</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
-                    <span class="n">rel_type</span><span class="o">=</span><span class="s2">&quot;mentions&quot;</span><span class="p">,</span>
-                    <span class="n">attributes</span><span class="o">=</span><span class="n">attributes</span><span class="p">,</span>
-                <span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_created_relations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rel_id</span><span class="p">)</span>
+                <span class="c1"># It&#39;s a valid link</span>
+                <span class="n">valid_links</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">target_obj</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">target_type_str</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
                 <span class="n">created_count</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Created mention: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">source_id</span><span class="si">}</span><span class="s2"> -&gt; &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Found valid link: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">source_id</span><span class="si">}</span><span class="s2"> -&gt; &quot;</span>
                     <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">target_obj</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">target_type_str</span><span class="si">}</span><span class="s2">) &quot;</span>
                     <span class="sa">f</span><span class="s2">&quot;at offset </span><span class="si">{</span><span class="n">candidate</span><span class="o">.</span><span class="n">span</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> &quot;</span>
                     <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="s1">&#39;ID-based&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">candidate</span><span class="o">.</span><span class="n">is_id_based</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;name-based&#39;</span><span class="si">}</span><span class="s2">)&quot;</span>
                 <span class="p">)</span>
 
             <span class="c1"># 5. Build result message</span>
-            <span class="n">mention_word</span> <span class="o">=</span> <span class="s2">&quot;mention&quot;</span> <span class="k">if</span> <span class="n">created_count</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">&quot;mentions&quot;</span>
-            <span class="n">message_parts</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;Created </span><span class="si">{</span><span class="n">created_count</span><span class="si">}</span><span class="s2"> new </span><span class="si">{</span><span class="n">mention_word</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">]</span>
+            <span class="n">link_word</span> <span class="o">=</span> <span class="s2">&quot;link&quot;</span> <span class="k">if</span> <span class="n">created_count</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">&quot;links&quot;</span>
+            <span class="n">message_parts</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="n">created_count</span><span class="si">}</span><span class="s2"> valid </span><span class="si">{</span><span class="n">link_word</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">skipped_ambiguous</span><span class="p">:</span>
                 <span class="n">message_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Skipped </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">skipped_ambiguous</span><span class="p">)</span><span class="si">}</span><span class="s2"> ambiguous link(s).&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">skipped_ambiguous</span><span class="p">)</span><span class="si">}</span><span class="s2"> ambiguous link(s).&quot;</span>
                 <span class="p">)</span>
             <span class="k">if</span> <span class="n">skipped_missing</span><span class="p">:</span>
-                <span class="n">message_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Skipped </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">skipped_missing</span><span class="p">)</span><span class="si">}</span><span class="s2"> unresolved link(s).&quot;</span>
-                <span class="p">)</span>
+                <span class="n">message_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">skipped_missing</span><span class="p">)</span><span class="si">}</span><span class="s2"> broken link(s).&quot;</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">return</span> <span class="n">CommandResult</span><span class="p">(</span>
                 <span class="n">success</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                 <span class="n">message</span><span class="o">=</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">message_parts</span><span class="p">),</span>
                 <span class="n">command_name</span><span class="o">=</span><span class="s2">&quot;ProcessWikiLinksCommand&quot;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;valid_count&quot;</span><span class="p">:</span> <span class="n">created_count</span><span class="p">,</span>
+                    <span class="s2">&quot;ambiguous_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">skipped_ambiguous</span><span class="p">),</span>
+                    <span class="s2">&quot;broken_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">skipped_missing</span><span class="p">),</span>
+                    <span class="s2">&quot;valid_links&quot;</span><span class="p">:</span> <span class="n">valid_links</span><span class="p">,</span>
+                <span class="p">},</span>
             <span class="p">)</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
@@ -518,14 +491,9 @@
 <a class="viewcode-back" href="../../commands.html#commands.wiki_commands.ProcessWikiLinksCommand.undo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Undoes the relation creation by deleting all created relations.</span>
+<span class="sd">        Undo operation is not applicable for read-only validation.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_created_relations</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Undoing WikiLink processing for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">source_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">rel_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_created_relations</span><span class="p">:</span>
-                <span class="n">db_service</span><span class="o">.</span><span class="n">delete_relation</span><span class="p">(</span><span class="n">rel_id</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_created_relations</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span> <span class="o">=</span> <span class="kc">False</span></div>
+        <span class="k">pass</span></div>
 
 
     <span class="nd">@staticmethod</span>

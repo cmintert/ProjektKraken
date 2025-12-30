@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2025-12-30
-### Internal
-- test: Mock QSettings in layout and persistence tests
+### Added
+- Feat: Implement Auto-Create Relations from Wikilinks
 
 
 *This changelog was automatically generated.*
