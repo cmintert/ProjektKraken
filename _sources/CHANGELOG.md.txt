@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2025-12-30
-### Documentation
-- docs: Update testing rules
+### Internal
+- style: Add hover effect to dock resizing handles
 
 
 *This changelog was automatically generated.*
