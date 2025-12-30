@@ -42,6 +42,8 @@ from src.app.constants import (
     DEFAULT_WINDOW_WIDTH,
     IMAGE_FILE_FILTER,
     SETTINGS_ACTIVE_DB_KEY,
+    SETTINGS_LAST_ITEM_ID_KEY,
+    SETTINGS_LAST_ITEM_TYPE_KEY,
     STATUS_DB_INIT_FAIL,
     STATUS_ERROR_PREFIX,
     WINDOW_SETTINGS_APP,
@@ -369,6 +371,12 @@ class MainWindow(QMainWindow):
             self._last_selected_id = item_id
             self._last_selected_type = "entity"
 
+        # Save selection for persistence
+        if self._last_selected_id and self._last_selected_type:
+            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+            settings.setValue(SETTINGS_LAST_ITEM_ID_KEY, self._last_selected_id)
+            settings.setValue(SETTINGS_LAST_ITEM_TYPE_KEY, self._last_selected_type)
+
     def check_unsaved_changes(self, editor) -> bool:
         """
         Checks if the editor has unsaved changes and prompts the user.
@@ -553,6 +561,9 @@ class MainWindow(QMainWindow):
 
             # Refresh AI search index status
             QTimer.singleShot(100, self.refresh_search_index_status)
+
+            # Restore last selected item (delayed to ensure data loaded)
+            QTimer.singleShot(200, self._restore_last_selection)
         else:
             self.status_bar.showMessage(STATUS_DB_INIT_FAIL)
 
@@ -641,6 +652,26 @@ class MainWindow(QMainWindow):
         """Updates the red playhead time label."""
         text = self._format_time_string(time_val)
         self.lbl_playhead_time.setText(f"Playhead: {text}")
+
+    def _restore_last_selection(self):
+        """Restores the last selected item from settings."""
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        last_id = settings.value(SETTINGS_LAST_ITEM_ID_KEY)
+        last_type = settings.value(SETTINGS_LAST_ITEM_TYPE_KEY)
+
+        if last_id and last_type:
+            logger.info(f"Restoring last selection: {last_type} {last_id}")
+            # Load details (this opens the editor)
+            if last_type == "event":
+                self.load_event_details(last_id)
+                self.ui_manager.docks["event"].raise_()
+            elif last_type == "entity":
+                self.load_entity_details(last_id)
+                self.ui_manager.docks["entity"].raise_()
+
+            # Try to select in list
+            # (might fail if list populate is slow, but editor is key)
+            self.unified_list.select_item(last_type, last_id)
 
     def _format_time_string(self, time_val: float) -> str:
         """Formats time using calendar converter if available."""
