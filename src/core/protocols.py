@@ -28,6 +28,22 @@ class MainWindowProtocol(Protocol):
         """Handle timeline grouping clear request."""
         ...
 
+    def saveState(self, version: int = 0) -> bytes:
+        """Save the current window state (docks/toolbars)."""
+        ...
+
+    def restoreState(self, state: bytes, version: int = 0) -> bool:
+        """Restore the window state."""
+        ...
+
+    def saveGeometry(self) -> bytes:
+        """Save the current window geometry."""
+        ...
+
+    def restoreGeometry(self, geometry: bytes) -> bool:
+        """Restore the window geometry."""
+        ...
+
     worker: object  # Worker instance for background operations
     command_requested: object  # Signal for emitting commands
 

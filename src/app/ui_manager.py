@@ -5,11 +5,13 @@ Handles the creation and layout of dock widgets and menus for the MainWindow.
 
 from typing import Any, Dict, Optional
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QSettings, Qt
 from PySide6.QtWidgets import (
     QDockWidget,
+    QInputDialog,
     QMainWindow,
     QMenuBar,
+    QMessageBox,
     QTabWidget,
     QWidget,
 )
@@ -29,6 +31,9 @@ from src.app.constants import (
     DOCK_TITLE_MAP,
     DOCK_TITLE_PROJECT,
     DOCK_TITLE_TIMELINE,
+    SETTINGS_LAYOUTS_KEY,
+    WINDOW_SETTINGS_APP,
+    WINDOW_SETTINGS_KEY,
 )
 from src.core.protocols import MainWindowProtocol
 
@@ -229,6 +234,151 @@ class UIManager:
         view_menu.addSeparator()
         reset_action = view_menu.addAction("Reset Layout")
         reset_action.triggered.connect(self.reset_layout)
+
+        # Layouts Menu
+        self.create_layouts_menu(menu_bar)
+
+    def create_layouts_menu(self, menu_bar: QMenuBar) -> None:
+        """Creates the Layouts menu for saving/restoring window layouts."""
+        self.layouts_menu = menu_bar.addMenu("Layouts")
+        self._refresh_layouts_menu()
+
+    def _refresh_layouts_menu(self) -> None:
+        """Refreshes the Layouts menu items."""
+        if not hasattr(self, "layouts_menu"):
+            return
+
+        self.layouts_menu.clear()
+
+        # Save Layout Action
+        save_action = self.layouts_menu.addAction("Save Current Layout...")
+        save_action.triggered.connect(self.prompt_save_layout)
+
+        self.layouts_menu.addSeparator()
+
+        # Existing Layouts
+        layouts = self.get_saved_layouts()
+        if not layouts:
+            no_layouts = self.layouts_menu.addAction("No Saved Layouts")
+            no_layouts.setEnabled(False)
+        else:
+            for name in layouts:
+                # Add a submenu or just click to restore?
+                # Let's do: Name -> Restore
+                # And a separate "Manage Layouts" or Delete in submenu?
+                # Simplest: Click to restore.
+                # To delete, maybe a "Manage..." or "Delete..." submenu.
+
+                # Let's try a submenu for each layout:
+                # Layout Name >
+                #   Restore
+                #   Delete
+
+                layout_menu = self.layouts_menu.addMenu(name)
+
+                restore_action = layout_menu.addAction("Restore")
+                restore_action.triggered.connect(
+                    lambda checked=False, n=name: self.restore_layout(n)
+                )
+
+                delete_action = layout_menu.addAction("Delete")
+                delete_action.triggered.connect(
+                    lambda checked=False, n=name: self.delete_layout(n)
+                )
+
+    def prompt_save_layout(self) -> None:
+        """Prompts user for a layout name and saves it."""
+        name, ok = QInputDialog.getText(self.main_window, "Save Layout", "Layout Name:")
+        if ok and name:
+            if name in self.get_saved_layouts():
+                reply = QMessageBox.question(
+                    self.main_window,
+                    "Overwrite Layout?",
+                    f"Layout '{name}' already exists. Overwrite?",
+                    QMessageBox.Yes | QMessageBox.No,
+                )
+                if reply != QMessageBox.Yes:
+                    return
+            self.save_layout(name)
+
+    def save_layout(self, name: str) -> None:
+        """
+        Saves the current window layout (state and geometry).
+
+        Args:
+            name: The name of the layout.
+        """
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        layouts = settings.value(SETTINGS_LAYOUTS_KEY, {})
+
+        # We need to explicitly convert to dict if it's not
+        # (first run might return something else or None)
+        if not isinstance(layouts, dict):
+            layouts = {}
+
+        layouts[name] = {
+            "state": self.main_window.saveState(),
+            "geometry": self.main_window.saveGeometry(),
+        }
+
+        settings.setValue(SETTINGS_LAYOUTS_KEY, layouts)
+        self._refresh_layouts_menu()
+
+    def restore_layout(self, name: str) -> None:
+        """
+        Restores a saved window layout.
+
+        Args:
+            name: The name of the layout to restore.
+        """
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        layouts = settings.value(SETTINGS_LAYOUTS_KEY, {})
+
+        if not isinstance(layouts, dict) or name not in layouts:
+            return
+
+        layout_data = layouts[name]
+
+        # Restore geometry first, then state
+        if "geometry" in layout_data:
+            self.main_window.restoreGeometry(layout_data["geometry"])
+        if "state" in layout_data:
+            self.main_window.restoreState(layout_data["state"])
+
+    def delete_layout(self, name: str) -> None:
+        """
+        Deletes a saved layout.
+
+        Args:
+            name: The name of the layout to delete.
+        """
+        reply = QMessageBox.question(
+            self.main_window,
+            "Delete Layout",
+            f"Are you sure you want to delete layout '{name}'?",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+        if reply == QMessageBox.Yes:
+            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+            layouts = settings.value(SETTINGS_LAYOUTS_KEY, {})
+
+            if isinstance(layouts, dict) and name in layouts:
+                del layouts[name]
+                settings.setValue(SETTINGS_LAYOUTS_KEY, layouts)
+                self._refresh_layouts_menu()
+
+    def get_saved_layouts(self) -> list[str]:
+        """
+        Returns a list of saved layout names.
+
+        Returns:
+            List[str]: Sorted list of layout names.
+        """
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        layouts = settings.value(SETTINGS_LAYOUTS_KEY, {})
+        if isinstance(layouts, dict):
+            return sorted(layouts.keys())
+        return []
 
     def create_timeline_menu(self, menu_bar: QMenuBar) -> None:
         """Creates the Timeline menu for grouping and calendar."""

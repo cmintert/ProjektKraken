@@ -27,6 +27,18 @@ class TestMainWindowProtocol:
             def _on_clear_grouping_requested(self):
                 pass
 
+            def saveState(self, version: int = 0) -> bytes:
+                return b""
+
+            def restoreState(self, state: bytes, version: int = 0) -> bool:
+                return True
+
+            def saveGeometry(self) -> bytes:
+                return b""
+
+            def restoreGeometry(self, geometry: bytes) -> bool:
+                return True
+
         window = ValidMainWindow()
         assert isinstance(window, MainWindowProtocol)
 
