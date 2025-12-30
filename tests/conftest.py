@@ -83,3 +83,63 @@ def mock_invoke_method():
             yield mock
     except (ImportError, AttributeError):
         yield None
+
+
+class MockQSettings:
+    """
+    In-memory mock for QSettings to prevent tests from overwriting real config.
+    """
+
+    _storage = {}  # Class-level storage to persist across instances if needed
+
+    def __init__(self, *args, **kwargs):
+        self.organization = args[0] if len(args) > 0 else "MockOrg"
+        self.application = args[1] if len(args) > 1 else "MockApp"
+
+    def setValue(self, key, value):
+        full_key = f"{self.organization}/{self.application}/{key}"
+        self._storage[full_key] = value
+
+    def value(self, key, default=None, type=None):
+        full_key = f"{self.organization}/{self.application}/{key}"
+        val = self._storage.get(full_key, default)
+        if type is not None and val is not None:
+            try:
+                if type == bool and isinstance(val, str):
+                    return val.lower() == "true"
+                return type(val)
+            except (ValueError, TypeError):
+                return default
+        return val
+
+    def remove(self, key):
+        full_key = f"{self.organization}/{self.application}/{key}"
+        if full_key in self._storage:
+            del self._storage[full_key]
+
+    def contains(self, key):
+        full_key = f"{self.organization}/{self.application}/{key}"
+        return full_key in self._storage
+
+    def sync(self):
+        pass
+
+
+@pytest.fixture(autouse=True, scope="session")
+def mock_qsettings_global():
+    """
+    Globally patches QSettings for the entire test session.
+    Protects user's real settings from being overwritten by tests.
+    """
+    from unittest.mock import patch
+
+    # Patch PySide6.QtCore.QSettings
+    # We use a string reference so imports inside functions pick it up.
+    # Note: If modules import QSettings at top-level, they might need reload,
+    # but in this codebase most import inside functions or use standard imports.
+    patcher = patch("PySide6.QtCore.QSettings", MockQSettings)
+    mock_class = patcher.start()
+
+    yield mock_class
+
+    patcher.stop()
