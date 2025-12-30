@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2025-12-30
 ### Internal
-- style: Apply linting fixes to persistence test
+- test: Fix non-headless persistence test properly
 
 
 *This changelog was automatically generated.*
