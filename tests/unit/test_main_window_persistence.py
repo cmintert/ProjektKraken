@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from PySide6.QtCore import QSettings
+from PySide6.QtWidgets import QMessageBox
 
 from src.app.constants import (
     SETTINGS_LAST_ITEM_ID_KEY,
@@ -24,6 +25,8 @@ def main_window(qapp, qtbot):
         patch("src.app.main.UIManager"),
         patch("src.app.main.DataHandler"),
         patch("src.app.main.ConnectionManager"),
+        patch("src.app.main.QMessageBox.question", return_value=QMessageBox.Discard),
+        patch("src.app.main.QMessageBox.warning", return_value=QMessageBox.Discard),
     ):
         window = MainWindow()
         qtbot.addWidget(window)
@@ -33,7 +36,9 @@ def main_window(qapp, qtbot):
         window.ui_manager.docks = {"event": MagicMock(), "entity": MagicMock()}
         window.unified_list = MagicMock()
         window.event_editor = MagicMock()
+        window.event_editor.has_unsaved_changes.return_value = False
         window.entity_editor = MagicMock()
+        window.entity_editor.has_unsaved_changes.return_value = False
 
         # Mock load methods to prevent actual DB calls
         window.load_event_details = MagicMock()
