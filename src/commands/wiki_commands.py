@@ -4,7 +4,6 @@ Commands for processing WikiLinks and updating relations.
 """
 
 import logging
-import time
 from collections import defaultdict
 from typing import Dict, List, Set
 
@@ -27,7 +26,9 @@ class ProcessWikiLinksCommand(BaseCommand):
     - Deduplicates by (target_id, start_offset)
     """
 
-    def __init__(self, source_id: str, text_content: str, field: str = "description"):
+    def __init__(
+        self, source_id: str, text_content: str, field: str = "description"
+    ) -> None:
         """
         Initializes the command.
 
@@ -106,9 +107,10 @@ class ProcessWikiLinksCommand(BaseCommand):
                             existing_keys.add((rel["target_id"], start_offset))
 
             # 4. Process each candidate
-            created_count = 0
+            created_count = 0  # Now represents "valid links found"
             skipped_ambiguous = []
             skipped_missing = []
+            valid_links = []
 
             for candidate in candidates:
                 target_obj = None
@@ -168,72 +170,43 @@ class ProcessWikiLinksCommand(BaseCommand):
 
                 # At this point we have a valid target_obj
                 if not target_obj:
-                    # Should be covered above, but safety check
                     continue
 
                 # Skip self-references
                 if target_obj.id == self.source_id:
                     continue
 
-                # Check for duplicate by (target_id, start_offset)
-                dedup_key = (target_obj.id, candidate.span[0])
-                if dedup_key in existing_keys:
-                    logger.debug(
-                        f"Skipping duplicate mention to {target_obj.name} "
-                        f"({target_type_str}) at offset {candidate.span[0]}"
-                    )
-                    continue
-
-                # Create snippet (40 chars of context around the link)
-                snippet = self._extract_snippet(
-                    self.text_content, candidate.span[0], candidate.span[1]
-                )
-
-                # Build relation attributes
-                attributes = {
-                    "field": self.field,
-                    "snippet": snippet,
-                    "start_offset": candidate.span[0],
-                    "end_offset": candidate.span[1],
-                    "created_by": "ProcessWikiLinksCommand",
-                    "created_at": time.time(),
-                    "is_id_based": candidate.is_id_based,
-                    "target_type": target_type_str,
-                }
-
-                # Insert relation
-                rel_id = db_service.insert_relation(
-                    source_id=self.source_id,
-                    target_id=target_obj.id,
-                    rel_type="mentions",
-                    attributes=attributes,
-                )
-                self._created_relations.append(rel_id)
+                # It's a valid link
+                valid_links.append(f"{target_obj.name} ({target_type_str})")
                 created_count += 1
                 logger.info(
-                    f"Created mention: {self.source_id} -> "
+                    f"Found valid link: {self.source_id} -> "
                     f"{target_obj.name} ({target_type_str}) "
                     f"at offset {candidate.span[0]} "
                     f"({'ID-based' if candidate.is_id_based else 'name-based'})"
                 )
 
             # 5. Build result message
-            mention_word = "mention" if created_count == 1 else "mentions"
-            message_parts = [f"Created {created_count} new {mention_word}."]
+            link_word = "link" if created_count == 1 else "links"
+            message_parts = [f"Found {created_count} valid {link_word}."]
             if skipped_ambiguous:
                 message_parts.append(
-                    f"Skipped {len(skipped_ambiguous)} ambiguous link(s)."
+                    f"Found {len(skipped_ambiguous)} ambiguous link(s)."
                 )
             if skipped_missing:
-                message_parts.append(
-                    f"Skipped {len(skipped_missing)} unresolved link(s)."
-                )
+                message_parts.append(f"Found {len(skipped_missing)} broken link(s).")
 
             self._is_executed = True
             return CommandResult(
                 success=True,
                 message=" ".join(message_parts),
                 command_name="ProcessWikiLinksCommand",
+                data={
+                    "valid_count": created_count,
+                    "ambiguous_count": len(skipped_ambiguous),
+                    "broken_count": len(skipped_missing),
+                    "valid_links": valid_links,
+                },
             )
 
         except Exception as e:
@@ -246,14 +219,9 @@ class ProcessWikiLinksCommand(BaseCommand):
 
     def undo(self, db_service: DatabaseService) -> None:
         """
-        Undoes the relation creation by deleting all created relations.
+        Undo operation is not applicable for read-only validation.
         """
-        if self._is_executed and self._created_relations:
-            logger.info(f"Undoing WikiLink processing for {self.source_id}")
-            for rel_id in self._created_relations:
-                db_service.delete_relation(rel_id)
-            self._created_relations.clear()
-            self._is_executed = False
+        pass
 
     @staticmethod
     def _extract_snippet(

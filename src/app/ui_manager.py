@@ -436,6 +436,26 @@ class UIManager:
                 self.main_window.show_ai_settings_dialog
             )
 
+        settings_menu.addSeparator()
+
+        # Wiki Auto-Relation Setting
+        from src.app.constants import SETTINGS_AUTO_RELATION_KEY
+
+        self.auto_relation_action = settings_menu.addAction(
+            "Auto-Create Relations from Wikilinks"
+        )
+        self.auto_relation_action.setCheckable(True)
+        # Connect to MainWindow slot (to be created)
+        if hasattr(self.main_window, "toggle_auto_relation_setting"):
+            self.auto_relation_action.triggered.connect(
+                self.main_window.toggle_auto_relation_setting
+            )
+
+            # Init state
+            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+            is_checked = settings.value(SETTINGS_AUTO_RELATION_KEY, False, type=bool)
+            self.auto_relation_action.setChecked(is_checked)
+
         # Track pending dialog state
         self._calendar_dialog_pending = False
 

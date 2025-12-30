@@ -103,6 +103,7 @@ class EventEditorWidget(QWidget):
 
         self.desc_edit = WikiTextEdit()
         self.desc_edit.link_clicked.connect(self.link_clicked.emit)
+        self.desc_edit.link_added.connect(self._on_wikilink_added)
 
         self.form_layout.addRow("Name:", self.name_edit)
         self.form_layout.addRow("Lore Date:", self.date_edit)
@@ -669,3 +670,37 @@ class EventEditorWidget(QWidget):
             QSize: Comfortable working size for editing events.
         """
         return QSize(400, 600)  # Ideal size for editing
+
+    def _on_wikilink_added(self, target_id: str, target_name: str) -> None:
+        """
+        Handles a new wikilink addition.
+        Checks setting and prompts for relation creation if enabled.
+        """
+        from PySide6.QtCore import QSettings
+
+        from src.app.constants import (
+            SETTINGS_AUTO_RELATION_KEY,
+            WINDOW_SETTINGS_APP,
+            WINDOW_SETTINGS_KEY,
+        )
+        from src.gui.dialogs.relation_dialog import RelationEditDialog
+
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        if not settings.value(SETTINGS_AUTO_RELATION_KEY, False, type=bool):
+            return
+
+        if not self._current_event_id:
+            return  # Can't add relation if we don't exist yet
+
+        # Open Dialog
+        dialog = RelationEditDialog(
+            self, target_id=target_id, rel_type="mentions", is_bidirectional=False
+        )
+        # Lock target field since it comes from the link
+        dialog.target_edit.setEnabled(False)
+
+        if dialog.exec():
+            _, rel_type, is_bidirectional = dialog.get_data()
+            self.add_relation_requested.emit(
+                self._current_event_id, target_id, rel_type, is_bidirectional
+            )

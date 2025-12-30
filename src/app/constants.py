@@ -13,6 +13,7 @@ SETTINGS_ACTIVE_DB_KEY = "active_database"
 SETTINGS_LAYOUTS_KEY = "saved_layouts"
 SETTINGS_LAST_ITEM_ID_KEY = "last_selected_item_id"
 SETTINGS_LAST_ITEM_TYPE_KEY = "last_selected_item_type"
+SETTINGS_AUTO_RELATION_KEY = "wiki/auto_create_relations"
 DEFAULT_DB_NAME = "world.kraken"
 
 

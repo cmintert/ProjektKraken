@@ -24,6 +24,7 @@ class WikiTextEdit(QTextEdit):
     """
 
     link_clicked = Signal(str)  # Emits the target name (e.g. "Gandalf")
+    link_added = Signal(str, str)  # Emits (target_id_or_name, display_name) on creation
 
     def __init__(self, parent=None):
         """
@@ -236,7 +237,7 @@ class WikiTextEdit(QTextEdit):
             QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
                 background: {scrollbar_bg};
             }}
-            QScrollBar:horizontal {{
+            QScrollBar::horizontal {{
                 background: {scrollbar_bg};
                 height: 10px;
                 border: none;
@@ -313,12 +314,7 @@ class WikiTextEdit(QTextEdit):
                     f"Completer set? {hasattr(self, '_valid_targets_lower')}"
                 )
                 if hasattr(self, "_valid_targets_lower"):
-                    # Log a few valid targets to see if we possess data
-                    sample = list(self._valid_targets_lower)[:10]
-                    logger.debug(
-                        f"Sample valid targets (total {len(self._valid_targets_lower)}): "
-                        f"{sample}"
-                    )
+                    pass
 
             if is_valid:
                 return f"[{label}]({target})"
@@ -410,6 +406,9 @@ class WikiTextEdit(QTextEdit):
         tc.insertHtml(f'<a href="{target}">{label}</a>&nbsp;')
         self.setTextCursor(tc)
 
+        # Emit signal
+        self.link_added.emit(target, label)
+
     def keyPressEvent(self, event):
         """
         Handles key press events for wiki link completion.
@@ -497,6 +496,13 @@ class WikiTextEdit(QTextEdit):
 
         cursor.insertHtml(html)
         self.setTextCursor(cursor)
+
+        # Emit Signal if valid linked
+        if is_valid:
+            # If we know the ID, resolve it?
+            # For now just send what we have. If it's a name, receiver tries to find it.
+            # If it's ID, it's already ID.
+            self.link_added.emit(target, label)
 
     def _validate_link_target(self, target: str) -> bool:
         """
@@ -593,7 +599,7 @@ class WikiTextEdit(QTextEdit):
                 return
         super().mouseReleaseEvent(event)
 
-    def _on_theme_changed(self, theme_data):
+    def _on_theme_changed(self, theme_data: dict) -> None:
         """
         Updates link color and text style when theme changes.
 

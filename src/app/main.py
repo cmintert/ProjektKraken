@@ -1720,6 +1720,19 @@ class MainWindow(QMainWindow):
                 logger.error(f"Failed to export longform document: {e}")
                 self.status_bar.showMessage(f"Export failed: {e}", 5000)
 
+    def toggle_auto_relation_setting(self, checked: bool) -> None:
+        """
+        Toggles the auto-create relations setting.
+
+        Args:
+            checked (bool): The new state of the setting.
+        """
+        from src.app.constants import SETTINGS_AUTO_RELATION_KEY
+
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        settings.setValue(SETTINGS_AUTO_RELATION_KEY, checked)
+        logger.info(f"Auto-Create Relations setting set to: {checked}")
+
     # =========================================================================
     # AI Search Panel & Settings Methods
     # =========================================================================

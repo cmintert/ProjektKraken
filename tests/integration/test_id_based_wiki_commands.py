@@ -2,6 +2,8 @@
 Integration tests for ID-based wiki links with commands.
 
 Tests the complete flow of creating ID-based links and processing them.
+NOTE: ProcessWikiLinksCommand is now read-only and does NOT create relations.
+These tests verify detection logic and ensure NO relations are created.
 """
 
 from src.commands.wiki_commands import ProcessWikiLinksCommand
@@ -11,7 +13,7 @@ from src.services.text_parser import WikiLinkParser
 
 
 def test_id_based_link_processing(db_service):
-    """Test that ID-based links are processed correctly."""
+    """Test that ID-based links are processed correctly (found but not created as relations)."""
     # Create entities
     gandalf = Entity(name="Gandalf", type="character")
     frodo = Entity(name="Frodo", type="character")
@@ -22,7 +24,7 @@ def test_id_based_link_processing(db_service):
     event = Event(
         name="Test Event",
         lore_date=1000.0,
-        description=f"[[id:{gandalf.id}|Gandalf]] met [[id:{frodo.id}|Frodo]].",
+        description=(f"[[id:{gandalf.id}|Gandalf]] met [[id:{frodo.id}|Frodo]]."),
     )
     db_service.insert_event(event)
 
@@ -31,21 +33,11 @@ def test_id_based_link_processing(db_service):
     result = cmd.execute(db_service)
 
     assert result.success is True
-    assert "2 new mentions" in result.message
+    assert "Found 2 valid links" in result.message
 
-    # Verify relations were created
+    # Verify NO relations were created (Command is read-only)
     relations = db_service.get_relations(event.id)
-    assert len(relations) == 2
-
-    # Check that relations have correct targets
-    target_ids = {rel["target_id"] for rel in relations}
-    assert gandalf.id in target_ids
-    assert frodo.id in target_ids
-
-    # Verify is_id_based flag is set
-    for rel in relations:
-        attrs = rel.get("attributes", {})
-        assert attrs.get("is_id_based") is True
+    assert len(relations) == 0
 
 
 def test_mixed_links_processing(db_service):
@@ -69,19 +61,11 @@ def test_mixed_links_processing(db_service):
     result = cmd.execute(db_service)
 
     assert result.success is True
-    assert "2 new mentions" in result.message
+    assert "Found 2 valid links" in result.message
 
-    # Verify both relations were created
+    # Verify NO relations created
     relations = db_service.get_relations(event.id)
-    assert len(relations) == 2
-
-    # Check is_id_based flag
-    for rel in relations:
-        attrs = rel.get("attributes", {})
-        if rel["target_id"] == aragorn.id:
-            assert attrs.get("is_id_based") is True
-        elif rel["target_id"] == legolas.id:
-            assert attrs.get("is_id_based") is False
+    assert len(relations) == 0
 
 
 def test_broken_id_link_skipped(db_service):
@@ -100,8 +84,8 @@ def test_broken_id_link_skipped(db_service):
     result = cmd.execute(db_service)
 
     assert result.success is True
-    assert "0 new mentions" in result.message
-    assert "1 unresolved" in result.message
+    assert "Found 0 valid links" in result.message
+    assert "broken link(s)" in result.message
 
     # Verify no relations were created
     relations = db_service.get_relations(event.id)
@@ -109,7 +93,7 @@ def test_broken_id_link_skipped(db_service):
 
 
 def test_id_link_with_display_name(db_service):
-    """Test that ID-based links preserve display names in relations."""
+    """Test that ID-based links are correctly identified."""
     sauron = Entity(name="Sauron the Great", type="character")
     db_service.insert_entity(sauron)
 
@@ -126,14 +110,14 @@ def test_id_link_with_display_name(db_service):
 
     assert result.success is True
 
-    # Verify relation was created
-    relations = db_service.get_relations(event.id)
-    assert len(relations) == 1
+    # Check result data
+    assert result.data["valid_count"] == 1
+    # Check string representation in valid_links
+    assert any("Sauron the Great" in link for link in result.data["valid_links"])
 
-    # Check snippet contains display name
-    attrs = relations[0].get("attributes", {})
-    snippet = attrs.get("snippet", "")
-    assert "Dark Lord" in snippet  # Display name should be in snippet
+    # Verify NO relations created
+    relations = db_service.get_relations(event.id)
+    assert len(relations) == 0
 
 
 def test_id_link_self_reference_skipped(db_service):
@@ -149,9 +133,10 @@ def test_id_link_self_reference_skipped(db_service):
     cmd = ProcessWikiLinksCommand(entity.id, entity.description)
     result = cmd.execute(db_service)
 
-    # Should succeed but create no relations
+    # Should succeed but find no valid external links
     assert result.success is True
-    assert "0 new mentions" in result.message
+    # Self-reference is skipped, so 0 valid links
+    assert "Found 0 valid links" in result.message
 
     # Verify no relations
     relations = db_service.get_relations(entity.id)
@@ -159,7 +144,7 @@ def test_id_link_self_reference_skipped(db_service):
 
 
 def test_id_link_undo(db_service):
-    """Test that ID-based link processing can be undone."""
+    """Test that undo is a no-op for read-only command."""
     gandalf = Entity(name="Gandalf", type="character")
     db_service.insert_entity(gandalf)
 
@@ -175,14 +160,10 @@ def test_id_link_undo(db_service):
     result = cmd.execute(db_service)
     assert result.success is True
 
-    # Verify relation created
-    relations = db_service.get_relations(event.id)
-    assert len(relations) == 1
-
     # Undo
     cmd.undo(db_service)
 
-    # Verify relation removed
+    # Verify still 0 relations (nothing changed)
     relations = db_service.get_relations(event.id)
     assert len(relations) == 0
 
