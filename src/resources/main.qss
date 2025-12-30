@@ -4,6 +4,16 @@ QMainWindow, QDialog, QMessageBox {{
     color: {text_main};
 }}
 
+/* Main Window Separator (Dock Resize Handle) */
+QMainWindow::separator {{
+    background-color: {app_bg};
+    width: 6px;
+    height: 6px;
+}}
+QMainWindow::separator:hover {{
+    background-color: {accent_secondary};
+}}
+
 /* Modals Text */
 QDialog QLabel, QMessageBox QLabel {{
     color: {text_main};
