@@ -4,8 +4,8 @@ Unit tests for MainWindow session persistence.
 
 from unittest.mock import MagicMock, patch
 
+import PySide6.QtCore
 import pytest
-from PySide6.QtCore import QSettings
 from PySide6.QtWidgets import QMessageBox
 
 from src.app.constants import (
@@ -18,7 +18,38 @@ from src.app.main import MainWindow
 
 
 @pytest.fixture
-def main_window(qapp, qtbot):
+def mock_settings():
+    """Mock QSettings to prevent real persistence usage."""
+    with patch("src.app.main.QSettings") as MockSettings:
+        storage = {}
+
+        def mock_init(*args):
+            mock = MagicMock()
+
+            def setValue(key, value):
+                storage[key] = value
+
+            def value(key, default=None):
+                return storage.get(key, default)
+
+            def remove(key):
+                if key in storage:
+                    del storage[key]
+
+            mock.setValue.side_effect = setValue
+            mock.value.side_effect = value
+            mock.remove.side_effect = remove
+            return mock
+
+        MockSettings.side_effect = mock_init
+
+        # Also patch QtCore.QSettings for the test functions themselves
+        with patch("PySide6.QtCore.QSettings", new=MockSettings):
+            yield
+
+
+@pytest.fixture
+def main_window(qapp, qtbot, mock_settings):
     """Fixture to create a MainWindow instance."""
     # Patch UIManager and DataHandler to avoid complex init
     with (
@@ -56,7 +87,7 @@ def test_on_item_selected_saves_settings(main_window):
     main_window.check_unsaved_changes = MagicMock(return_value=True)
 
     # Clear settings first
-    settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+    settings = PySide6.QtCore.QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
     settings.remove(SETTINGS_LAST_ITEM_ID_KEY)
     settings.remove(SETTINGS_LAST_ITEM_TYPE_KEY)
 
@@ -78,7 +109,7 @@ def test_restore_last_selection_event(main_window):
     test_type = "event"
 
     # Setup settings
-    settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+    settings = PySide6.QtCore.QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
     settings.setValue(SETTINGS_LAST_ITEM_ID_KEY, test_id)
     settings.setValue(SETTINGS_LAST_ITEM_TYPE_KEY, test_type)
 
@@ -98,7 +129,7 @@ def test_restore_last_selection_entity(main_window):
     test_type = "entity"
 
     # Setup settings
-    settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+    settings = PySide6.QtCore.QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
     settings.setValue(SETTINGS_LAST_ITEM_ID_KEY, test_id)
     settings.setValue(SETTINGS_LAST_ITEM_TYPE_KEY, test_type)
 
@@ -115,7 +146,7 @@ def test_restore_last_selection_entity(main_window):
 def test_restore_last_selection_none(main_window):
     """Test restore does nothing if no settings exist."""
     # Clear settings
-    settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+    settings = PySide6.QtCore.QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
     settings.remove(SETTINGS_LAST_ITEM_ID_KEY)
     settings.remove(SETTINGS_LAST_ITEM_TYPE_KEY)
 

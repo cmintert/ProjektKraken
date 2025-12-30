@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, patch
 
+import PySide6.QtCore
 import pytest
-from PySide6.QtCore import QSettings
 
 from src.app.constants import (
     SETTINGS_LAYOUTS_KEY,
@@ -26,17 +26,42 @@ def ui_manager(mock_main_window):
 
 @pytest.fixture
 def clean_settings():
-    """Ensure settings are clean before and after tests."""
-    settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-    settings.remove(SETTINGS_LAYOUTS_KEY)
-    yield
-    settings.remove(SETTINGS_LAYOUTS_KEY)
+    """Ensure settings are clean and mocked before and after tests."""
+    with patch("src.app.ui_manager.QSettings") as MockSettings:
+        # Create a real dict to act as backing store
+        storage = {}
+
+        def mock_settings_init(*args):
+            mock = MagicMock()
+
+            def setValue(key, value):
+                storage[key] = value
+
+            def value(key, default=None):
+                return storage.get(key, default)
+
+            def remove(key):
+                if key in storage:
+                    del storage[key]
+
+            mock.setValue.side_effect = setValue
+            mock.value.side_effect = value
+            mock.remove.side_effect = remove
+            mock.allKeys.side_effect = lambda: list(storage.keys())
+            return mock
+
+        MockSettings.side_effect = mock_settings_init
+
+        # Also ensure our test functions that instantiate QSettings see the mock
+        with patch("PySide6.QtCore.QSettings", new=MockSettings):
+            yield
 
 
 def test_save_layout_stores_data(ui_manager, mock_main_window, clean_settings):
     ui_manager.save_layout("Test Layout")
 
-    settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+    # Access the backing store via a new QSettings (which is mocked)
+    settings = PySide6.QtCore.QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
     layouts = settings.value(SETTINGS_LAYOUTS_KEY)
 
     assert "Test Layout" in layouts
