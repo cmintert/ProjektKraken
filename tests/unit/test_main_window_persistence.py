@@ -2,17 +2,18 @@
 Unit tests for MainWindow session persistence.
 """
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 from PySide6.QtCore import QSettings
 
-from src.app.main import MainWindow
 from src.app.constants import (
     SETTINGS_LAST_ITEM_ID_KEY,
     SETTINGS_LAST_ITEM_TYPE_KEY,
     WINDOW_SETTINGS_APP,
     WINDOW_SETTINGS_KEY,
 )
+from src.app.main import MainWindow
 
 
 @pytest.fixture
