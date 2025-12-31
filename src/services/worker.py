@@ -222,21 +222,47 @@ class DatabaseWorker(QObject):
             logger.error(f"Failed to load attachments: {traceback.format_exc()}")
             self.error_occurred.emit(f"Failed to load attachments for {owner_id}")
 
-    @Slot(str)
-    def load_longform_sequence(self, doc_id: str) -> None:
+    @Slot(str, str)
+    def load_longform_sequence(self, doc_id: str, filter_json: str = None) -> None:
         """
         Loads the longform document sequence.
 
         Args:
             doc_id (str): Document ID to load.
+            filter_json (str): Optional JSON serialization of filter configuration.
         """
         if not self.db_service:
             return
 
         try:
             self.operation_started.emit("Loading longform document...")
+
+            allowed_ids = None
+            if filter_json:
+                try:
+                    import json
+
+                    filter_config = json.loads(filter_json)
+                    if filter_config:
+                        # Use DRY compliance: Reuse existing filter logic
+                        # filter_ids_by_tags returns List[tuple[str, str]] of (type, id)
+                        result_tuples = self.db_service.filter_ids_by_tags(
+                            object_type=filter_config.get("object_type"),
+                            include=filter_config.get("include"),
+                            include_mode=filter_config.get("include_mode", "any"),
+                            exclude=filter_config.get("exclude"),
+                            exclude_mode=filter_config.get("exclude_mode", "any"),
+                            case_sensitive=filter_config.get("case_sensitive", False),
+                        )
+                        # Extract just the IDs (second element of each tuple)
+                        allowed_ids = {item_id for _, item_id in result_tuples}
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Failed to decode filter JSON: {e}")
+                except Exception as e:
+                    logger.error(f"Error applying filter in worker: {e}")
+
             sequence = longform_builder.build_longform_sequence(
-                self.db_service._connection, doc_id=doc_id
+                self.db_service._connection, doc_id=doc_id, allowed_ids=allowed_ids
             )
             self.longform_sequence_loaded.emit(sequence)
             self.operation_finished.emit(f"Loaded {len(sequence)} longform items")

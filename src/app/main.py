@@ -100,7 +100,6 @@ from src.gui.widgets.longform_editor import LongformEditorWidget
 from src.gui.widgets.map_widget import MapWidget
 from src.gui.widgets.timeline import TimelineWidget
 from src.gui.widgets.unified_list import UnifiedListWidget
-from src.services import longform_builder
 from src.services.db_service import DatabaseService
 from src.services.worker import DatabaseWorker
 
@@ -174,7 +173,8 @@ class MainWindow(QMainWindow):
         self.cached_event_count: Optional[int] = None
 
         # Filter Configuration
-        self.filter_config: dict = {}
+        self.filter_config: dict = {}  # For Project Explorer
+        self.longform_filter_config: dict = {}  # For Longform editor
 
         # Data Cache for Unified List
         self._cached_events = []
@@ -350,6 +350,35 @@ class MainWindow(QMainWindow):
         self.load_events()
         self.load_entities()
         self.load_longform_sequence()
+
+    def load_longform_sequence(self) -> None:
+        """
+        Loads the longform sequence, applying active filters if any.
+        """
+        import json
+
+        # PySide6 cross-thread signal/slot type issues.
+        filter_json = (
+            json.dumps(self.longform_filter_config)
+            if self.longform_filter_config
+            else ""
+        )
+
+        QMetaObject.invokeMethod(
+            self.worker,
+            "load_longform_sequence",
+            QtCore_Qt.QueuedConnection,
+            Q_ARG(str, "default"),
+            Q_ARG(str, filter_json),
+        )
+
+    @Slot(list)
+    def _on_longform_sequence_loaded(self, sequence: list) -> None:
+        """
+        Handler for when longform sequence is loaded.
+        """
+        self.longform_editor.load_sequence(sequence)
+        self._cached_longform_sequence = sequence
 
     def _on_item_selected(self, item_type: str, item_id: str):
         """Handles selection from unified list or longform editor."""
@@ -1578,6 +1607,34 @@ class MainWindow(QMainWindow):
         # Reload full data
         self.load_data()
 
+    @Slot()
+    def show_longform_filter_dialog(self):
+        """Shows filter dialog for the Longform editor (independent state)."""
+        from src.gui.dialogs.filter_dialog import FilterDialog
+
+        tags = []
+        if self.gui_db_service:
+            tag_dicts = self.gui_db_service.get_all_tags()
+            tags = [t["name"] for t in tag_dicts]
+
+        dialog = FilterDialog(
+            self, available_tags=tags, current_config=self.longform_filter_config
+        )
+        if dialog.exec() == QDialog.Accepted:
+            config = dialog.get_filter_config()
+            self.longform_filter_config = config
+
+            logger.info(f"Applying longform filter: {config}")
+            # Refresh longform view with new filter
+            self.load_longform_sequence()
+
+    @Slot()
+    def clear_longform_filter(self):
+        """Clears the longform filter and reloads the longform view."""
+        logger.info("Clearing longform filters")
+        self.longform_filter_config = {}
+        self.load_longform_sequence()
+
     @Slot(list, list)
     def _on_filter_results_ready(self, events, entities):
         """
@@ -1721,15 +1778,6 @@ class MainWindow(QMainWindow):
 
             cmd = CreateEventCommand({"name": target_name, "lore_date": 0.0})
             self.command_requested.emit(cmd)
-
-    def load_longform_sequence(self, doc_id: str = longform_builder.DOC_ID_DEFAULT):
-        """Requests loading of the longform document sequence."""
-        QMetaObject.invokeMethod(
-            self.worker,
-            "load_longform_sequence",
-            QtCore_Qt.QueuedConnection,
-            Q_ARG(str, doc_id),
-        )
 
     def promote_longform_entry(self, table: str, row_id: str, old_meta: dict):
         """

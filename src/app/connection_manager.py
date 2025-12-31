@@ -135,6 +135,10 @@ class ConnectionManager:
         longform.item_selected.connect(self.window._on_item_selected)
         longform.item_moved.connect(self.window.move_longform_entry)
         longform.link_clicked.connect(self.window.navigate_to_entity)
+        longform.show_filter_dialog_requested.connect(
+            self.window.show_longform_filter_dialog
+        )
+        longform.clear_filters_requested.connect(self.window.clear_longform_filter)
 
     def connect_map_widget(self):
         """Connect signals from the map widget."""
