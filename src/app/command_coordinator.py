@@ -6,8 +6,13 @@ and communication with the database worker thread.
 """
 
 import logging
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QObject, Signal, Slot
+
+if TYPE_CHECKING:
+    from src.commands.base_command import BaseCommand, CommandResult
+    from src.core.protocols import MainWindowProtocol
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +33,7 @@ class CommandCoordinator(QObject):
     # Signal to send commands to worker thread
     command_requested = Signal(object)
 
-    def __init__(self, main_window):
+    def __init__(self, main_window: "MainWindowProtocol") -> None:
         """
         Initialize the command coordinator.
 
@@ -39,7 +44,7 @@ class CommandCoordinator(QObject):
         self.window = main_window
         logger.debug("CommandCoordinator initialized")
 
-    def execute_command(self, command):
+    def execute_command(self, command: "BaseCommand") -> None:
         """
         Execute a command via the worker thread.
 
@@ -50,7 +55,7 @@ class CommandCoordinator(QObject):
         self.command_requested.emit(command)
 
     @Slot(object)
-    def on_command_result(self, result):
+    def on_command_result(self, result: "CommandResult") -> None:
         """
         Handle command execution result from worker thread.
 
@@ -65,7 +70,7 @@ class CommandCoordinator(QObject):
             logger.error(f"Command failed: {result.message}")
             self._show_error(result.message)
 
-    def _refresh_after_command(self, result):
+    def _refresh_after_command(self, result: "CommandResult") -> None:
         """
         Refresh UI data after successful command execution.
 
@@ -77,7 +82,7 @@ class CommandCoordinator(QObject):
         if hasattr(self.window, "load_data"):
             self.window.load_data()
 
-    def _show_error(self, message: str):
+    def _show_error(self, message: str) -> None:
         """
         Display error message to user.
 

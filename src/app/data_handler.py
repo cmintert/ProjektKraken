@@ -6,10 +6,13 @@ Separates data management logic from the main window class.
 """
 
 import logging
+from typing import Any, List, Optional, Tuple
 
 from PySide6.QtCore import QObject, Signal, Slot
 
 from src.commands.base_command import CommandResult
+from src.core.entities import Entity
+from src.core.events import Event
 
 logger = logging.getLogger(__name__)
 
@@ -55,21 +58,21 @@ class DataHandler(QObject):
     reload_longform = Signal()
     reload_active_editor_relations = Signal()  # Reload relations for active editor
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Initialize the data handler.
 
         Note: No longer requires MainWindow reference - uses signals instead.
         """
         super().__init__()
-        self._cached_events = []
-        self._cached_entities = []
-        self._pending_select_type = None
-        self._pending_select_id = None
+        self._cached_events: List[Event] = []
+        self._cached_entities: List[Entity] = []
+        self._pending_select_type: Optional[str] = None
+        self._pending_select_id: Optional[str] = None
         logger.debug("DataHandler initialized")
 
     @Slot(list)
-    def on_events_loaded(self, events):
+    def on_events_loaded(self, events: List[Event]) -> None:
         """
         Processes loaded events and emits signals for UI updates.
 
@@ -87,7 +90,7 @@ class DataHandler(QObject):
             self._pending_select_id = None
 
     @Slot(list)
-    def on_entities_loaded(self, entities):
+    def on_entities_loaded(self, entities: List[Entity]) -> None:
         """
         Processes loaded entities and emits signals for UI updates.
 
@@ -104,7 +107,7 @@ class DataHandler(QObject):
             self._pending_select_type = None
             self._pending_select_id = None
 
-    def _update_editor_suggestions(self):
+    def _update_editor_suggestions(self) -> None:
         """
         Update editor completers with Event and Entity names.
 
@@ -112,7 +115,7 @@ class DataHandler(QObject):
         signal for the editors' completers to be updated.
         Provides ID-based completion for robust wiki-linking.
         """
-        items = []
+        items: List[Tuple[str, str, str]] = []
 
         # Add entities: (id, name, type)
         if self._cached_entities:
@@ -131,7 +134,9 @@ class DataHandler(QObject):
         self.suggestions_update_requested.emit(items)
 
     @Slot(object, list, list)
-    def on_event_details_loaded(self, event, relations, incoming):
+    def on_event_details_loaded(
+        self, event: Event, relations: List[Any], incoming: List[Any]
+    ) -> None:
         """
         Emits signals for Event Editor to be populated with detailed event data.
 
@@ -144,7 +149,9 @@ class DataHandler(QObject):
         self.event_details_ready.emit(event, relations, incoming)
 
     @Slot(object, list, list)
-    def on_entity_details_loaded(self, entity, relations, incoming):
+    def on_entity_details_loaded(
+        self, entity: Entity, relations: List[Any], incoming: List[Any]
+    ) -> None:
         """
         Emits signals for Entity Editor to be populated with detailed entity data.
 
@@ -157,7 +164,7 @@ class DataHandler(QObject):
         self.entity_details_ready.emit(entity, relations, incoming)
 
     @Slot(list)
-    def on_longform_sequence_loaded(self, sequence):
+    def on_longform_sequence_loaded(self, sequence: List[Any]) -> None:
         """
         Emits signal for longform editor to be updated with the loaded sequence.
 
@@ -168,7 +175,7 @@ class DataHandler(QObject):
         self.status_message.emit(f"Loaded {len(sequence)} longform items.")
 
     @Slot(list)
-    def on_maps_loaded(self, maps):
+    def on_maps_loaded(self, maps: List[Any]) -> None:
         """
         Emits signal for map widget to be updated with the loaded maps.
 
@@ -179,7 +186,7 @@ class DataHandler(QObject):
         self.status_message.emit(f"Loaded {len(maps)} maps.")
 
     @Slot(str, list)
-    def on_markers_loaded(self, map_id, markers):
+    def on_markers_loaded(self, map_id: str, markers: List[Any]) -> None:
         """
         Emits signal for map widget to be updated with markers for a specific map.
 
@@ -224,7 +231,7 @@ class DataHandler(QObject):
         self.markers_ready.emit(map_id, processed_markers)
 
     @Slot(object)
-    def on_command_finished(self, result):
+    def on_command_finished(self, result: CommandResult) -> None:
         """
         Handles completion of async commands, emitting signals for necessary UI refreshes.
 
