@@ -5,6 +5,8 @@ Provides a table-based interface for editing key-value attribute pairs
 with support for different data types.
 """
 
+from typing import Any, Dict, Optional, Union
+
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QComboBox,
@@ -29,7 +31,7 @@ class AttributeEditorWidget(QWidget):
 
     attributes_changed = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initializes the AttributeEditorWidget.
 
@@ -71,7 +73,7 @@ class AttributeEditorWidget(QWidget):
 
         self._block_signals = False
 
-    def load_attributes(self, attributes: dict):
+    def load_attributes(self, attributes: Dict[str, Any]) -> None:
         """Populates the table with the given attributes dictionary."""
         self._block_signals = True
         self.table.setRowCount(0)
@@ -81,7 +83,7 @@ class AttributeEditorWidget(QWidget):
 
         self._block_signals = False
 
-    def get_attributes(self) -> dict:
+    def get_attributes(self) -> Dict[str, Any]:
         """Returns a dictionary representing the current table state."""
         attrs = {}
         for row in range(self.table.rowCount()):
@@ -104,7 +106,7 @@ class AttributeEditorWidget(QWidget):
 
         return attrs
 
-    def _add_row(self, key="", value=None):
+    def _add_row(self, key: str = "", value: Optional[Any] = None) -> None:
         """
         Adds a new row to the attribute table.
 
@@ -139,7 +141,7 @@ class AttributeEditorWidget(QWidget):
         combo.currentTextChanged.connect(lambda: self._on_type_changed(row))
         self.table.setCellWidget(row, 2, combo)
 
-    def _on_add(self):
+    def _on_add(self) -> None:
         """
         Handles adding a new attribute.
 
@@ -158,7 +160,7 @@ class AttributeEditorWidget(QWidget):
             self._block_signals = False
             self.attributes_changed.emit()
 
-    def _on_remove(self):
+    def _on_remove(self) -> None:
         """
         Handles removing the selected attribute.
         """
@@ -167,7 +169,7 @@ class AttributeEditorWidget(QWidget):
             self.table.removeRow(current_row)
             self.attributes_changed.emit()
 
-    def _on_item_changed(self, item):
+    def _on_item_changed(self, item: QTableWidgetItem) -> None:
         """
         Handles table item changes.
 
@@ -177,7 +179,7 @@ class AttributeEditorWidget(QWidget):
         if not self._block_signals:
             self.attributes_changed.emit()
 
-    def _on_type_changed(self, row):
+    def _on_type_changed(self, row: int) -> None:
         """
         Handles attribute type changes.
 
@@ -187,7 +189,7 @@ class AttributeEditorWidget(QWidget):
         if not self._block_signals:
             self.attributes_changed.emit()
 
-    def _parse_value(self, raw_val, val_type):
+    def _parse_value(self, raw_val: str, val_type: str) -> Union[str, int, float, bool]:
         """
         Parses a raw string value to the specified type.
 
