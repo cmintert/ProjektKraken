@@ -6,9 +6,9 @@ Handles asynchronous database operations to keep the UI responsive.
 import logging
 import traceback
 from pathlib import Path
-from typing import List
 
 from PySide6.QtCore import QObject, Signal, Slot
+
 from src.app.constants import DEFAULT_DB_NAME
 from src.commands.base_command import BaseCommand, CommandResult
 from src.services import longform_builder
@@ -42,6 +42,8 @@ class DatabaseWorker(QObject):
         str, str, list
     )  # owner_type, owner_id, List[ImageAttachment]
 
+    filter_results_ready = Signal(list, list)  # List[Event], List[Entity]
+
     command_finished = Signal(object)  # CommandResult object
     error_occurred = Signal(str)
 
@@ -49,7 +51,7 @@ class DatabaseWorker(QObject):
     operation_started = Signal(str)
     operation_finished = Signal(str)
 
-    def __init__(self, db_path: str = DEFAULT_DB_NAME):
+    def __init__(self, db_path: str = DEFAULT_DB_NAME) -> None:
         """
         Initializes the worker.
 
@@ -63,7 +65,7 @@ class DatabaseWorker(QObject):
         self.attachment_service = None
 
     @Slot()
-    def initialize_db(self):
+    def initialize_db(self) -> None:
         """Initializes the database connection and services."""
         try:
             self.operation_started.emit("Connecting to Database...")
@@ -94,7 +96,7 @@ class DatabaseWorker(QObject):
             self.initialized.emit(False)
 
     @Slot()
-    def load_events(self):
+    def load_events(self) -> None:
         """Loads all events."""
         if not self.db_service:
             return
@@ -109,7 +111,7 @@ class DatabaseWorker(QObject):
             self.error_occurred.emit("Failed to load events.")
 
     @Slot()
-    def load_entities(self):
+    def load_entities(self) -> None:
         """Loads all entities."""
         if not self.db_service:
             return
@@ -124,7 +126,7 @@ class DatabaseWorker(QObject):
             self.error_occurred.emit("Failed to load entities.")
 
     @Slot()
-    def load_maps(self):
+    def load_maps(self) -> None:
         """Loads all maps."""
         if not self.db_service:
             return
@@ -139,7 +141,7 @@ class DatabaseWorker(QObject):
             self.error_occurred.emit("Failed to load maps.")
 
     @Slot(str)
-    def load_markers(self, map_id: str):
+    def load_markers(self, map_id: str) -> None:
         """Loads markers for a specific map."""
         if not self.db_service:
             return
@@ -154,7 +156,7 @@ class DatabaseWorker(QObject):
             self.error_occurred.emit(f"Failed to load markers for map {map_id}.")
 
     @Slot(str)
-    def load_event_details(self, event_id: str):
+    def load_event_details(self, event_id: str) -> None:
         """Loads event details and sends them back."""
         if not self.db_service:
             return
@@ -179,7 +181,7 @@ class DatabaseWorker(QObject):
             self.error_occurred.emit(f"Failed to load event {event_id}")
 
     @Slot(str)
-    def load_entity_details(self, entity_id: str):
+    def load_entity_details(self, entity_id: str) -> None:
         """Loads entity details and sends them back."""
         if not self.db_service:
             return
@@ -203,7 +205,7 @@ class DatabaseWorker(QObject):
             self.error_occurred.emit(f"Failed to load entity {entity_id}")
 
     @Slot(str, str)
-    def load_attachments(self, owner_type: str, owner_id: str):
+    def load_attachments(self, owner_type: str, owner_id: str) -> None:
         """
         Loads attachments for a specific owner.
         """
@@ -221,7 +223,7 @@ class DatabaseWorker(QObject):
             self.error_occurred.emit(f"Failed to load attachments for {owner_id}")
 
     @Slot(str)
-    def load_longform_sequence(self, doc_id: str):
+    def load_longform_sequence(self, doc_id: str) -> None:
         """
         Loads the longform document sequence.
 
@@ -243,7 +245,7 @@ class DatabaseWorker(QObject):
             self.error_occurred.emit(str(e))
 
     @Slot()
-    def load_calendar_config(self):
+    def load_calendar_config(self) -> None:
         """
         Loads the active calendar configuration.
 
@@ -263,7 +265,7 @@ class DatabaseWorker(QObject):
     @Slot(
         object, object
     )  # Command, Optional[args] - simplified mainly for command objects
-    def run_command(self, command: BaseCommand):
+    def run_command(self, command: BaseCommand) -> None:
         """
         Executes a command object.
         IMPORTANT: The command must NOT already have the db_service injected.
@@ -331,7 +333,7 @@ class DatabaseWorker(QObject):
             self.command_finished.emit(fail_res)
 
     @Slot()
-    def load_current_time(self):
+    def load_current_time(self) -> None:
         """
         Loads the current time from the database.
 
@@ -352,7 +354,7 @@ class DatabaseWorker(QObject):
             self.current_time_loaded.emit(0.0)
 
     @Slot(float)
-    def save_current_time(self, time: float):
+    def save_current_time(self, time: float) -> None:
         """
         Saves the current time to the database.
 
@@ -370,7 +372,7 @@ class DatabaseWorker(QObject):
             self.error_occurred.emit("Failed to save current time.")
 
     @Slot()
-    def load_grouping_dialog_data(self):
+    def load_grouping_dialog_data(self) -> None:
         """
         Loads all necessary data for the grouping configuration dialog.
 
@@ -416,10 +418,10 @@ class DatabaseWorker(QObject):
         self,
         object_type: str,
         object_id: str,
-        provider: str = None,
-        model: str = None,
-        excluded_attributes: List[str] = None,
-    ):
+        name: str,
+        content: str,
+        excluded_attributes: list = None,
+    ) -> None:
         """
         Index a single object (entity or event) for semantic search.
 
@@ -439,10 +441,8 @@ class DatabaseWorker(QObject):
             # Import search service
             from src.services.search_service import create_search_service
 
-            # Create search service with provider and model
-            search_service = create_search_service(
-                self.db_service._connection, provider_name=provider, model=model
-            )
+            # Create search service (uses settings/defaults)
+            search_service = create_search_service(self.db_service._connection)
 
             # Index the object
             if object_type == "entity":
@@ -457,3 +457,49 @@ class DatabaseWorker(QObject):
         except Exception:
             logger.error(f"Failed to index {object_type}: {traceback.format_exc()}")
             self.error_occurred.emit(f"Failed to index {object_type} {object_id}.")
+
+    @Slot(dict)
+    def apply_filter(self, filter_config: dict) -> None:
+        """
+        Applies a tag filter and loads the matching objects.
+
+        Args:
+            filter_config: Dictionary containing 'include', 'include_mode',
+                           'exclude', 'exclude_mode', etc.
+        """
+        if not self.db_service:
+            return
+
+        try:
+            self.operation_started.emit("Filtering items...")
+
+            # Extract params with defaults
+            include = filter_config.get("include")
+            include_mode = filter_config.get("include_mode", "any")
+            exclude = filter_config.get("exclude")
+            exclude_mode = filter_config.get("exclude_mode", "any")
+            case_sensitive = filter_config.get("case_sensitive", False)
+            object_type = filter_config.get("object_type")  # Optional
+
+            # 1. Get filtered IDs
+            filtered_ids = self.db_service.filter_ids_by_tags(
+                object_type=object_type,
+                include=include,
+                include_mode=include_mode,
+                exclude=exclude,
+                exclude_mode=exclude_mode,
+                case_sensitive=case_sensitive,
+            )
+
+            # 2. Hydrate Objects
+            events, entities = self.db_service.get_objects_by_ids(filtered_ids)
+
+            # 3. Emit Results
+            self.filter_results_ready.emit(events, entities)
+
+            count = len(events) + len(entities)
+            self.operation_finished.emit(f"Filtered {count} items.")
+
+        except Exception:
+            logger.error(f"Failed to apply filter: {traceback.format_exc()}")
+            self.error_occurred.emit("Failed to apply filter.")

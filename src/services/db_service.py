@@ -1847,6 +1847,66 @@ class DatabaseService:
             case_sensitive=case_sensitive,
         )
 
+    def get_objects_by_ids(
+        self, object_ids: List[tuple[str, str]]
+    ) -> tuple[List[Event], List[Entity]]:
+        """
+        Retrieves full object instances for a list of (type, id) tuples.
+
+        This method is used to hydrate results from `filter_ids_by_tags`.
+        Results are returned sorted by their natural order:
+        - Events: by lore_date
+        - Entities: by name
+
+        Args:
+            object_ids: List of (object_type, object_id) tuples.
+
+        Returns:
+            Tuple containing (List[Event], List[Entity]).
+        """
+        if not self._connection:
+            self.connect()
+
+        event_ids = [oid for otype, oid in object_ids if otype == "event"]
+        entity_ids = [oid for otype, oid in object_ids if otype == "entity"]
+
+        events = []
+        entities = []
+
+        # Fetch Events
+        if event_ids:
+            placeholders = ",".join(["?"] * len(event_ids))
+            query = f"""
+                SELECT * FROM events
+                WHERE id IN ({placeholders})
+                ORDER BY lore_date
+            """
+            cursor = self._connection.execute(query, event_ids)
+            rows = cursor.fetchall()
+            for row in rows:
+                data = dict(row)
+                if data.get("attributes"):
+                    data["attributes"] = json.loads(data["attributes"])
+                events.append(Event.from_dict(data))
+
+        # Fetch Entities
+        if entity_ids:
+            placeholders = ",".join(["?"] * len(entity_ids))
+            query = f"""
+                SELECT * FROM entities
+                WHERE id IN ({placeholders})
+                ORDER BY name
+            """
+            cursor = self._connection.execute(query, entity_ids)
+            rows = cursor.fetchall()
+            for row in rows:
+                data = dict(row)
+                if data.get("attributes"):
+                    data["attributes"] = json.loads(data["attributes"])
+                entities.append(Entity.from_dict(data))
+
+        return events, entities
+
     def set_timeline_grouping_config(
         self,
         tag_order: List[str],

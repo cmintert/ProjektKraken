@@ -5,6 +5,7 @@ Responsible for initializing the MainWindow, Workers, and UI components.
 
 import os
 import sys
+from typing import Optional
 
 from dotenv import load_dotenv
 from PySide6.QtCore import (
@@ -42,6 +43,7 @@ from src.app.constants import (
     DEFAULT_WINDOW_WIDTH,
     IMAGE_FILE_FILTER,
     SETTINGS_ACTIVE_DB_KEY,
+    SETTINGS_FILTER_CONFIG_KEY,
     SETTINGS_LAST_ITEM_ID_KEY,
     SETTINGS_LAST_ITEM_TYPE_KEY,
     STATUS_DB_INIT_FAIL,
@@ -88,6 +90,7 @@ from src.core.paths import get_resource_path, get_user_data_path
 from src.core.theme_manager import ThemeManager
 from src.gui.dialogs.ai_settings_dialog import AISettingsDialog
 from src.gui.dialogs.database_manager_dialog import DatabaseManagerDialog
+from src.gui.dialogs.filter_dialog import FilterDialog
 from src.gui.widgets.ai_search_panel import AISearchPanelWidget
 from src.gui.widgets.entity_editor import EntityEditorWidget
 
@@ -123,6 +126,8 @@ class MainWindow(QMainWindow):
 
     # Signal to send commands to worker thread
     command_requested = Signal(object)
+    # Signal to request filtering
+    filter_requested = Signal(dict)
 
     def __init__(self):
         """
@@ -166,7 +171,10 @@ class MainWindow(QMainWindow):
 
         # AI Search Panel
         self.ai_search_panel = AISearchPanelWidget()
-        self.ai_settings_dialog = None
+        self.cached_event_count: Optional[int] = None
+
+        # Filter Configuration
+        self.filter_config: dict = {}
 
         # Data Cache for Unified List
         self._cached_events = []
@@ -492,6 +500,9 @@ class MainWindow(QMainWindow):
         )
         self.worker.maps_loaded.connect(self.data_handler.on_maps_loaded)
         self.worker.markers_loaded.connect(self.data_handler.on_markers_loaded)
+        self.worker.filter_results_ready.connect(self._on_filter_results_ready)
+        # Connect filtering request
+        self.filter_requested.connect(self.worker.apply_filter)
 
         # Connect MainWindow signal for sending commands to worker thread
         self.command_requested.connect(self.worker.run_command)
@@ -561,6 +572,21 @@ class MainWindow(QMainWindow):
 
             # Refresh AI search index status
             QTimer.singleShot(100, self.refresh_search_index_status)
+
+            # Restore filter configuration
+            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+            filter_config = settings.value(SETTINGS_FILTER_CONFIG_KEY)
+            if filter_config:
+                self.filter_config = filter_config
+                # Apply restored filter
+                logger.info(f"Restoring filter config: {self.filter_config}")
+                self.filter_requested.emit(self.filter_config)
+                # Update UI state
+                has_filter = bool(
+                    self.filter_config.get("include")
+                    or self.filter_config.get("exclude")
+                )
+                self.unified_list.set_filter_active(has_filter)
 
             # Restore last selected item (delayed to ensure data loaded)
             QTimer.singleShot(200, self._restore_last_selection)
@@ -1499,6 +1525,64 @@ class MainWindow(QMainWindow):
                 self.command_requested.emit(cmd)
                 self.timeline.set_grouping_config(tag_order, current_config["mode"])
                 logger.info(f"Removed '{tag_name}' from grouping")
+
+    @Slot()
+    def show_filter_dialog(self):
+        """Shows the advanced filter dialog."""
+        # Get all tags from DB (Synchronous read from GUI DB Service is fine for metadata)
+        tags = []
+        if hasattr(self, "gui_db_service"):
+            # db_service.get_all_tags returns list of dicts: need to extract names
+            tag_dicts = self.gui_db_service.get_all_tags()
+            tags = [t["name"] for t in tag_dicts]
+
+        dialog = FilterDialog(
+            self, available_tags=tags, current_config=self.filter_config
+        )
+        if dialog.exec() == QDialog.Accepted:
+            config = dialog.get_filter_config()
+            self.filter_config = config  # Update local state
+
+            # Save to settings
+            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+            settings.setValue(SETTINGS_FILTER_CONFIG_KEY, config)
+
+            logger.info(f"Applying filter: {config}")
+            # Send to worker via signal (safer than invokeMethod for dicts)
+            self.filter_requested.emit(config)
+
+            # Update UI state
+            has_filter = bool(config.get("include") or config.get("exclude"))
+            self.unified_list.set_filter_active(has_filter)
+
+    @Slot()
+    def clear_filter(self):
+        """
+        Clears the current filter configuration and reloads data.
+        """
+        logger.info("Clearing filters")
+        self.filter_config = {}
+
+        # Clear settings
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        settings.remove(SETTINGS_FILTER_CONFIG_KEY)
+
+        # Update UI state
+        self.unified_list.set_filter_active(False)
+        self.status_bar.showMessage("Filters cleared.")
+
+        # Reload full data
+        self.load_data()
+
+    @Slot(list, list)
+    def _on_filter_results_ready(self, events, entities):
+        """
+        Handler for filter results.
+        Updates the Unified List with filtered data.
+        """
+        self.unified_list.set_data(events, entities)
+        count = len(events) + len(entities)
+        self.status_bar.showMessage(f"Filter applied. Found {count} items.")
 
     def remove_relation(self, rel_id):
         """

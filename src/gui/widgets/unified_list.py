@@ -9,7 +9,7 @@ import json
 from typing import List
 
 from PySide6.QtCore import QMimeData, Qt, Signal
-from PySide6.QtGui import QAction, QBrush, QColor, QDrag
+from PySide6.QtGui import QBrush, QColor, QDrag
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -91,6 +91,8 @@ class UnifiedListWidget(QWidget):
     delete_requested = Signal(str, str)  # type, id
     create_event_requested = Signal()
     create_entity_requested = Signal()
+    show_filter_dialog_requested = Signal()  # Request to open filter dialog
+    clear_filter_requested = Signal()  # Request to clear filters
 
     def __init__(self, parent=None):
         """
@@ -152,21 +154,17 @@ class UnifiedListWidget(QWidget):
         self.filter_combo.currentTextChanged.connect(self._on_filter_changed)
         filter_row.addWidget(self.filter_combo)
 
-        # Types filter button with checkable menu
-        self.btn_types = QPushButton("Types")
-        self.types_menu = QMenu(self)
-        self.btn_types.setMenu(self.types_menu)
-        filter_row.addWidget(self.btn_types)
+        # Advanced Filter Button
+        self.btn_filter = QPushButton("Filter...")
+        self.btn_filter.clicked.connect(self.show_filter_dialog_requested.emit)
+        filter_row.addWidget(self.btn_filter)
 
-        # Tags filter button with checkable menu
-        self.btn_tags = QPushButton("Tags")
-        self.tags_menu = QMenu(self)
-        self.btn_tags.setMenu(self.tags_menu)
-        filter_row.addWidget(self.btn_tags)
-
-        # Clear Filters button
+        # Clear Filters button - keeps concept but might need to signal to clear backend filter
+        # For now, we'll keep it to clear the backend filter via signal if needed,
+        # or just reload all.
+        # Actually, "Clear Filters" usually implicitly means "Show All".
         self.btn_clear_filters = QPushButton("Clear Filters")
-        self.btn_clear_filters.clicked.connect(self._clear_filters)
+        self.btn_clear_filters.clicked.connect(self._request_clear_filters)
         filter_row.addWidget(self.btn_clear_filters)
 
         self.layout.addLayout(filter_row)
@@ -189,10 +187,8 @@ class UnifiedListWidget(QWidget):
         self._search_term = ""  # Track current search term
 
         # Filter State
-        self._available_types: set = set()  # All types found in data
-        self._available_tags: set = set()  # All tags found in data
-        self._active_types: set = set()  # Selected types for filtering
-        self._active_tags: set = set()  # Selected tags for filtering
+        # self._active_types: set = set()  # Removed: Backend handled
+        # self._active_tags: set = set()   # Removed: Backend handled
 
         # Colors - use ThemeManager for theme-aware colors
         # TODO: Migrate to fully dynamic theme updates with
@@ -209,9 +205,6 @@ class UnifiedListWidget(QWidget):
         """
         Sets the data to display in the list.
 
-        Extracts available types and tags from the data and rebuilds
-        the filter menus dynamically.
-
         Args:
             events (List[Event]): List of events to display.
             entities (List[Entity]): List of entities to display.
@@ -219,117 +212,33 @@ class UnifiedListWidget(QWidget):
         self._events = events
         self._entities = entities
 
-        # Extract available types and tags
-        self._extract_types_and_tags()
-
-        # Rebuild filter menus
-        self._rebuild_filter_menus()
-
         self._render_list()
 
-    def _extract_types_and_tags(self):
+    def _request_clear_filters(self):
         """
-        Scans events and entities to extract all unique types and tags.
+        Requests clearing backend filters.
         """
-        self._available_types = set()
-        self._available_tags = set()
+        self.clear_filter_requested.emit()
 
-        for entity in self._entities:
-            self._available_types.add(entity.type)
-            for tag in entity.tags:
-                self._available_tags.add(tag)
-
-        for event in self._events:
-            self._available_types.add(event.type)
-            for tag in event.tags:
-                self._available_tags.add(tag)
-
-    def _rebuild_filter_menus(self):
+    def set_filter_active(self, active: bool):
         """
-        Rebuilds the Types and Tags filter menus based on available data.
-
-        Preserves currently active selections where possible.
-        """
-        # Rebuild Types menu
-        self.types_menu.clear()
-        for type_name in sorted(self._available_types):
-            action = QAction(type_name, self)
-            action.setCheckable(True)
-            action.setChecked(type_name in self._active_types)
-            action.triggered.connect(
-                lambda checked, t=type_name: self._on_type_toggled(t, checked)
-            )
-            self.types_menu.addAction(action)
-
-        # Rebuild Tags menu
-        self.tags_menu.clear()
-        for tag_name in sorted(self._available_tags):
-            action = QAction(tag_name, self)
-            action.setCheckable(True)
-            action.setChecked(tag_name in self._active_tags)
-            action.triggered.connect(
-                lambda checked, t=tag_name: self._on_tag_toggled(t, checked)
-            )
-            self.tags_menu.addAction(action)
-
-        # Update button labels to show active count
-        self._update_filter_button_labels()
-
-    def _on_type_toggled(self, type_name: str, checked: bool):
-        """
-        Handles type filter toggle.
+        Updates the filter button appearance to indicate active filter.
 
         Args:
-            type_name: The type that was toggled.
-            checked: Whether it's now checked.
+            active: True if a filter is currently applied.
         """
-        if checked:
-            self._active_types.add(type_name)
+        if active:
+            # Use theme-aware styling or a distinct color
+            # For now, a simple border/background tint
+            self.btn_filter.setStyleSheet(
+                "background-color: #2c3e50; border: 2px solid #3498db; font-weight: bold;"
+            )
+            self.btn_filter.setText("Filter (Active)")
         else:
-            self._active_types.discard(type_name)
-        self._update_filter_button_labels()
-        self._render_list()
+            self.btn_filter.setStyleSheet("")
+            self.btn_filter.setText("Filter...")
 
-    def _on_tag_toggled(self, tag_name: str, checked: bool):
-        """
-        Handles tag filter toggle.
-
-        Args:
-            tag_name: The tag that was toggled.
-            checked: Whether it's now checked.
-        """
-        if checked:
-            self._active_tags.add(tag_name)
-        else:
-            self._active_tags.discard(tag_name)
-        self._update_filter_button_labels()
-        self._render_list()
-
-    def _update_filter_button_labels(self):
-        """
-        Updates filter button labels to show active filter count.
-        """
-        type_count = len(self._active_types)
-        tag_count = len(self._active_tags)
-
-        if type_count > 0:
-            self.btn_types.setText(f"Types ({type_count})")
-        else:
-            self.btn_types.setText("Types")
-
-        if tag_count > 0:
-            self.btn_tags.setText(f"Tags ({tag_count})")
-        else:
-            self.btn_tags.setText("Tags")
-
-    def _clear_filters(self):
-        """
-        Clears all active type and tag filters.
-        """
-        self._active_types.clear()
-        self._active_tags.clear()
-        self._rebuild_filter_menus()
-        self._render_list()
+    # _clear_filters removed as it's replaced by backend refresh
 
     def _render_list(self):
         """
@@ -482,7 +391,10 @@ class UnifiedListWidget(QWidget):
 
     def _passes_filters(self, obj) -> bool:
         """
-        Checks if an object passes all active filters (search, type, tag).
+        Checks if an object passes all active filters (search).
+
+        Note: Backend filtering (tags/types) is already applied to self._events/_entities.
+        This only checks local text search.
 
         Args:
             obj: Event or Entity object.
@@ -490,20 +402,9 @@ class UnifiedListWidget(QWidget):
         Returns:
             bool: True if passes all filters.
         """
-        # First check search term
+        # Only check search term
         if not self._matches_search(obj):
             return False
-
-        # Check type filter (if any types selected)
-        if self._active_types:
-            if obj.type not in self._active_types:
-                return False
-
-        # Check tag filter (if any tags selected, item must have at least one)
-        if self._active_tags:
-            item_tags = set(obj.tags)
-            if not item_tags.intersection(self._active_tags):
-                return False
 
         return True
 
