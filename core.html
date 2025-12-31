@@ -1245,95 +1245,8 @@ and optional console handler.</p>
 </dd></dl>
 
 </section>
-<section id="module-core.theme_manager">
-<span id="core-theme-manager-module"></span><h2>core.theme_manager module<a class="headerlink" href="#module-core.theme_manager" title="Link to this heading">¶</a></h2>
-<p>Theme Manager Module.</p>
-<p>Manages loading and applying UI themes (Dark/Light) for the application.
-Implements a singleton pattern to ensure consistent theming across the app.</p>
-<p>This is the Qt-specific implementation that extends BaseThemeManager.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="core.theme_manager.ThemeManager">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.theme_manager.</span></span><span class="sig-name descname"><span class="pre">ThemeManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/theme_manager.html#ThemeManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.theme_manager.ThemeManager" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QObject</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseThemeManager</span></code></p>
-<p>Qt-specific theme manager that extends BaseThemeManager.</p>
-<p>Manages loading and applying UI themes (Dark/Light) with Qt signal support.
-Reads ‘themes.json’ and applies values to a QSS template.
-Implements Singleton pattern.</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="core.theme_manager.ThemeManager.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theme_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'themes.json'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/theme_manager.html#ThemeManager.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.theme_manager.ThemeManager.__init__" title="Link to this definition">¶</a></dt>
-<dd><p>Initializes the ThemeManager.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>theme_file</strong> – Path to the themes JSON file.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="core.theme_manager.ThemeManager.__new__">
-<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__new__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/theme_manager.html#ThemeManager.__new__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.theme_manager.ThemeManager.__new__" title="Link to this definition">¶</a></dt>
-<dd><p>Create or return the singleton instance of ThemeManager.</p>
-<p>Implements the singleton pattern to ensure only one ThemeManager
-instance exists throughout the application lifecycle. This is
-critical for maintaining consistent theming across all UI components.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>*args</strong> – Variable length argument list (unused).</p></li>
-<li><p><strong>**kwargs</strong> – Arbitrary keyword arguments (unused).</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The singleton instance.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#core.theme_manager.ThemeManager" title="core.theme_manager.ThemeManager">ThemeManager</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="core.theme_manager.ThemeManager.apply_theme">
-<span class="sig-name descname"><span class="pre">apply_theme</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qss_template</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/theme_manager.html#ThemeManager.apply_theme"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.theme_manager.ThemeManager.apply_theme" title="Link to this definition">¶</a></dt>
-<dd><p>Formats the QSS template with current theme values
-and applies it to the QApplication.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>app</strong> – QApplication instance.</p></li>
-<li><p><strong>qss_template</strong> – Optional QSS template string.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="core.theme_manager.ThemeManager.set_theme">
-<span class="sig-name descname"><span class="pre">set_theme</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theme_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">app</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/theme_manager.html#ThemeManager.set_theme"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.theme_manager.ThemeManager.set_theme" title="Link to this definition">¶</a></dt>
-<dd><p>Switches the current theme and updates the application.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>theme_name</strong> – The key of the theme to switch to.</p></li>
-<li><p><strong>app</strong> – The QApplication instance to apply the stylesheet to (optional).</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="core.theme_manager.ThemeManager.staticMetaObject">
-<span class="sig-name descname"><span class="pre">staticMetaObject</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">PySide6.QtCore.QMetaObject(&quot;ThemeManager&quot;</span> <span class="pre">inherits</span> <span class="pre">&quot;QObject&quot;:</span> <span class="pre">Methods:</span>&#160;&#160; <span class="pre">#4</span> <span class="pre">type=Signal,</span> <span class="pre">signature=theme_changed(QVariantMap),</span> <span class="pre">parameters=QVariantMap</span> <span class="pre">)</span></em><a class="headerlink" href="#core.theme_manager.ThemeManager.staticMetaObject" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="core.theme_manager.ThemeManager.theme_changed">
-<span class="sig-name descname"><span class="pre">theme_changed</span></span><a class="headerlink" href="#core.theme_manager.ThemeManager.theme_changed" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
+<section id="core-theme-manager-module">
+<h2>core.theme_manager module<a class="headerlink" href="#core-theme-manager-module" title="Link to this heading">¶</a></h2>
 </section>
 <section id="module-core">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-core" title="Link to this heading">¶</a></h2>
@@ -1522,18 +1435,7 @@ logging configuration, and theme management.</p>
 <li><a class="reference internal" href="#core.logging_config.setup_logging"><code class="docutils literal notranslate"><span class="pre">setup_logging()</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#module-core.theme_manager">core.theme_manager module</a><ul>
-<li><a class="reference internal" href="#core.theme_manager.ThemeManager"><code class="docutils literal notranslate"><span class="pre">ThemeManager</span></code></a><ul>
-<li><a class="reference internal" href="#core.theme_manager.ThemeManager.__init__"><code class="docutils literal notranslate"><span class="pre">ThemeManager.__init__()</span></code></a></li>
-<li><a class="reference internal" href="#core.theme_manager.ThemeManager.__new__"><code class="docutils literal notranslate"><span class="pre">ThemeManager.__new__()</span></code></a></li>
-<li><a class="reference internal" href="#core.theme_manager.ThemeManager.apply_theme"><code class="docutils literal notranslate"><span class="pre">ThemeManager.apply_theme()</span></code></a></li>
-<li><a class="reference internal" href="#core.theme_manager.ThemeManager.set_theme"><code class="docutils literal notranslate"><span class="pre">ThemeManager.set_theme()</span></code></a></li>
-<li><a class="reference internal" href="#core.theme_manager.ThemeManager.staticMetaObject"><code class="docutils literal notranslate"><span class="pre">ThemeManager.staticMetaObject</span></code></a></li>
-<li><a class="reference internal" href="#core.theme_manager.ThemeManager.theme_changed"><code class="docutils literal notranslate"><span class="pre">ThemeManager.theme_changed</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
+<li><a class="reference internal" href="#core-theme-manager-module">core.theme_manager module</a></li>
 <li><a class="reference internal" href="#module-core">Module contents</a></li>
 </ul>
 </li>
