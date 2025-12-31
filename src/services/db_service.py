@@ -1778,6 +1778,75 @@ class DatabaseService:
             return dict(result)
         return None
 
+    def filter_ids_by_tags(
+        self,
+        object_type: Optional[str] = None,
+        include: Optional[List[str]] = None,
+        include_mode: str = "any",
+        exclude: Optional[List[str]] = None,
+        exclude_mode: str = "any",
+        case_sensitive: bool = False,
+    ) -> List[tuple[str, str]]:
+        """
+        Convenience wrapper for tag-based filtering of entities and events.
+
+        Filters objects by tags using include/exclude lists with 'any' or 'all'
+        semantics. Returns lightweight (object_type, object_id) tuples.
+
+        Args:
+            object_type: Optional filter for 'entity' or 'event'. If None, both.
+            include: List of tag names to include. Empty or None means all objects.
+            include_mode: 'any' (default) or 'all'. Whether object must have
+                         any or all include tags.
+            exclude: List of tag names to exclude. Empty or None means no exclusions.
+            exclude_mode: 'any' (default) or 'all'. Whether to exclude if object
+                         has any or all exclude tags.
+            case_sensitive: If True, use exact case matching. If False (default),
+                           case-insensitive.
+
+        Returns:
+            List[tuple[str, str]]: List of (object_type, object_id) tuples where
+                object_type is 'entity' or 'event'.
+
+        Raises:
+            ValueError: If object_type is invalid or modes are invalid.
+
+        Examples:
+            # Get all entities with tag "important"
+            >>> db.filter_ids_by_tags(object_type='entity', include=['important'])
+            [('entity', 'uuid-1'), ('entity', 'uuid-2')]
+
+            # Get events with ALL of ['battle', 'victory']
+            >>> db.filter_ids_by_tags(
+            ...     object_type='event',
+            ...     include=['battle', 'victory'],
+            ...     include_mode='all'
+            ... )
+            [('event', 'uuid-3')]
+
+            # Get all objects with 'important' but not 'archived'
+            >>> db.filter_ids_by_tags(
+            ...     include=['important'],
+            ...     exclude=['archived']
+            ... )
+            [('entity', 'uuid-1'), ('event', 'uuid-4')]
+        """
+        if not self._connection:
+            self.connect()
+
+        # Import locally to avoid circular imports
+        from src.services import tag_filter
+
+        return tag_filter.filter_object_ids(
+            self._connection,
+            object_type=object_type,
+            include=include,
+            include_mode=include_mode,
+            exclude=exclude,
+            exclude_mode=exclude_mode,
+            case_sensitive=case_sensitive,
+        )
+
     def set_timeline_grouping_config(
         self,
         tag_order: List[str],
