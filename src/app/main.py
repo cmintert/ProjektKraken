@@ -2005,7 +2005,11 @@ class MainWindow(QMainWindow):
 
             # Update panel
             # Update dialog if visible
-            if self.ai_settings_dialog and self.ai_settings_dialog.isVisible():
+            if (
+                hasattr(self, "ai_settings_dialog")
+                and self.ai_settings_dialog
+                and self.ai_settings_dialog.isVisible()
+            ):
                 self.ai_settings_dialog.update_status(
                     model=f"{provider}:{model}",
                     counts=str(count),
@@ -2022,6 +2026,14 @@ def main():
     Configures High DPI scaling, Theme, and launches MainWindow.
     """
     try:
+        # Check for reset settings flag
+        if "--reset-settings" in sys.argv:
+            print("Resetting Application Settings...")
+            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+            settings.clear()
+            settings.sync()
+            print("Settings cleared. Starting in default state.")
+
         logger.info("Starting Application...")
         # 1. High DPI Scaling
         QApplication.setHighDpiScaleFactorRoundingPolicy(

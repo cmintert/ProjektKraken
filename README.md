@@ -103,6 +103,19 @@ python -m src.cli.index query --database world.kraken --text "ancient wizard"
 
 See **[Semantic Search Documentation](docs/SEMANTIC_SEARCH.md)** for details.
 
+See **[Semantic Search Documentation](docs/SEMANTIC_SEARCH.md)** for details.
+
+## Troubleshooting
+
+### Startup Crashes
+If the application crashes immediately upon launch (even after updating versions), your local configuration settings might be corrupted. You can reset the window layout and preferences by running:
+
+```bash
+python launcher.py --reset-settings
+```
+
+This will clear the saved window state and reset the active database, allowing the application to launch with default settings. Use this with caution as it resets your workspace layout customization.
+
 ## Testing
 
 Run the test suite:
