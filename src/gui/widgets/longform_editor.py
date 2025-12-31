@@ -403,6 +403,8 @@ class LongformEditorWidget(QWidget):
     item_selected = Signal(str, str)  # table, id
     item_moved = Signal(str, str, dict, dict)  # table, id, old_meta, new_meta
     link_clicked = Signal(str)
+    show_filter_dialog_requested = Signal()
+    clear_filters_requested = Signal()
 
     def __init__(
         self, parent: Optional[QWidget] = None, db_path: Optional[str] = None
@@ -447,6 +449,16 @@ class LongformEditorWidget(QWidget):
         btn_refresh = QPushButton("Refresh")
         btn_refresh.clicked.connect(self.refresh_requested.emit)
         toolbar.addWidget(btn_refresh)
+
+        # Filter Button
+        btn_filter = QPushButton("Filter...")
+        btn_filter.clicked.connect(self.show_filter_dialog_requested.emit)
+        toolbar.addWidget(btn_filter)
+
+        # Clear Filters Button
+        btn_clear_filters = QPushButton("Clear Filters")
+        btn_clear_filters.clicked.connect(self.clear_filters_requested.emit)
+        toolbar.addWidget(btn_clear_filters)
 
         # Export Button
         btn_export = QPushButton("Export to Markdown")

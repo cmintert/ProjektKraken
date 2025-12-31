@@ -111,7 +111,7 @@ def _set_longform_meta(
 
 
 def read_all_longform_items(
-    conn: Connection, doc_id: str = DOC_ID_DEFAULT
+    conn: Connection, doc_id: str = DOC_ID_DEFAULT, allowed_ids: set = None
 ) -> List[Dict[str, Any]]:
     """
     Read all events and entities that have longform metadata.
@@ -133,6 +133,10 @@ def read_all_longform_items(
         attrs = _safe_json_loads(row_dict.get("attributes", "{}"))
         meta = _get_longform_meta(attrs, doc_id)
         if meta:
+            # Filter check
+            if allowed_ids is not None and row_dict["id"] not in allowed_ids:
+                continue
+
             items.append(
                 {
                     "table": "events",
@@ -151,6 +155,10 @@ def read_all_longform_items(
         attrs = _safe_json_loads(row_dict.get("attributes", "{}"))
         meta = _get_longform_meta(attrs, doc_id)
         if meta:
+            # Filter check
+            if allowed_ids is not None and row_dict["id"] not in allowed_ids:
+                continue
+
             items.append(
                 {
                     "table": "entities",
@@ -238,7 +246,7 @@ def ensure_all_items_indexed(conn: Connection, doc_id: str = DOC_ID_DEFAULT) -> 
 
 
 def build_longform_sequence(
-    conn: Connection, doc_id: str = DOC_ID_DEFAULT
+    conn: Connection, doc_id: str = DOC_ID_DEFAULT, allowed_ids: set = None
 ) -> List[Dict[str, Any]]:
     """
     Build an ordered sequence of longform items for rendering.
@@ -257,9 +265,11 @@ def build_longform_sequence(
                     Each item includes: table, id, name, content, meta, heading_level.
     """
     # 0. Sync check: ensure everything is in the doc
-    ensure_all_items_indexed(conn, doc_id)
+    # Skip this if we are filtering, as we don't want to auto-add items
+    if allowed_ids is None:
+        ensure_all_items_indexed(conn, doc_id)
 
-    items = read_all_longform_items(conn, doc_id)
+    items = read_all_longform_items(conn, doc_id, allowed_ids=allowed_ids)
 
     # Build parent-child map
     children_map: Dict[Optional[str], List[Dict]] = {}

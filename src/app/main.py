@@ -5,6 +5,7 @@ Responsible for initializing the MainWindow, Workers, and UI components.
 
 import os
 import sys
+from typing import Optional
 
 from dotenv import load_dotenv
 from PySide6.QtCore import (
@@ -42,6 +43,7 @@ from src.app.constants import (
     DEFAULT_WINDOW_WIDTH,
     IMAGE_FILE_FILTER,
     SETTINGS_ACTIVE_DB_KEY,
+    SETTINGS_FILTER_CONFIG_KEY,
     SETTINGS_LAST_ITEM_ID_KEY,
     SETTINGS_LAST_ITEM_TYPE_KEY,
     STATUS_DB_INIT_FAIL,
@@ -88,6 +90,7 @@ from src.core.paths import get_resource_path, get_user_data_path
 from src.core.theme_manager import ThemeManager
 from src.gui.dialogs.ai_settings_dialog import AISettingsDialog
 from src.gui.dialogs.database_manager_dialog import DatabaseManagerDialog
+from src.gui.dialogs.filter_dialog import FilterDialog
 from src.gui.widgets.ai_search_panel import AISearchPanelWidget
 from src.gui.widgets.entity_editor import EntityEditorWidget
 
@@ -97,7 +100,6 @@ from src.gui.widgets.longform_editor import LongformEditorWidget
 from src.gui.widgets.map_widget import MapWidget
 from src.gui.widgets.timeline import TimelineWidget
 from src.gui.widgets.unified_list import UnifiedListWidget
-from src.services import longform_builder
 from src.services.db_service import DatabaseService
 from src.services.worker import DatabaseWorker
 
@@ -123,6 +125,8 @@ class MainWindow(QMainWindow):
 
     # Signal to send commands to worker thread
     command_requested = Signal(object)
+    # Signal to request filtering
+    filter_requested = Signal(dict)
 
     def __init__(self):
         """
@@ -166,7 +170,11 @@ class MainWindow(QMainWindow):
 
         # AI Search Panel
         self.ai_search_panel = AISearchPanelWidget()
-        self.ai_settings_dialog = None
+        self.cached_event_count: Optional[int] = None
+
+        # Filter Configuration
+        self.filter_config: dict = {}  # For Project Explorer
+        self.longform_filter_config: dict = {}  # For Longform editor
 
         # Data Cache for Unified List
         self._cached_events = []
@@ -343,6 +351,35 @@ class MainWindow(QMainWindow):
         self.load_entities()
         self.load_longform_sequence()
 
+    def load_longform_sequence(self) -> None:
+        """
+        Loads the longform sequence, applying active filters if any.
+        """
+        import json
+
+        # PySide6 cross-thread signal/slot type issues.
+        filter_json = (
+            json.dumps(self.longform_filter_config)
+            if self.longform_filter_config
+            else ""
+        )
+
+        QMetaObject.invokeMethod(
+            self.worker,
+            "load_longform_sequence",
+            QtCore_Qt.QueuedConnection,
+            Q_ARG(str, "default"),
+            Q_ARG(str, filter_json),
+        )
+
+    @Slot(list)
+    def _on_longform_sequence_loaded(self, sequence: list) -> None:
+        """
+        Handler for when longform sequence is loaded.
+        """
+        self.longform_editor.load_sequence(sequence)
+        self._cached_longform_sequence = sequence
+
     def _on_item_selected(self, item_type: str, item_id: str):
         """Handles selection from unified list or longform editor."""
         # Handle plural table names from longform editor
@@ -350,6 +387,10 @@ class MainWindow(QMainWindow):
             item_type = "event"
         elif item_type == "entities":
             item_type = "entity"
+
+        # Avoid redundant reloading and unsaved changes checks if selecting the same item
+        if item_id == self._last_selected_id and item_type == self._last_selected_type:
+            return
 
         if item_type == "event":
             if not self.check_unsaved_changes(self.event_editor):
@@ -492,6 +533,9 @@ class MainWindow(QMainWindow):
         )
         self.worker.maps_loaded.connect(self.data_handler.on_maps_loaded)
         self.worker.markers_loaded.connect(self.data_handler.on_markers_loaded)
+        self.worker.filter_results_ready.connect(self._on_filter_results_ready)
+        # Connect filtering request
+        self.filter_requested.connect(self.worker.apply_filter)
 
         # Connect MainWindow signal for sending commands to worker thread
         self.command_requested.connect(self.worker.run_command)
@@ -561,6 +605,21 @@ class MainWindow(QMainWindow):
 
             # Refresh AI search index status
             QTimer.singleShot(100, self.refresh_search_index_status)
+
+            # Restore filter configuration
+            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+            filter_config = settings.value(SETTINGS_FILTER_CONFIG_KEY)
+            if filter_config:
+                self.filter_config = filter_config
+                # Apply restored filter
+                logger.info(f"Restoring filter config: {self.filter_config}")
+                self.filter_requested.emit(self.filter_config)
+                # Update UI state
+                has_filter = bool(
+                    self.filter_config.get("include")
+                    or self.filter_config.get("exclude")
+                )
+                self.unified_list.set_filter_active(has_filter)
 
             # Restore last selected item (delayed to ensure data loaded)
             QTimer.singleShot(200, self._restore_last_selection)
@@ -1500,6 +1559,92 @@ class MainWindow(QMainWindow):
                 self.timeline.set_grouping_config(tag_order, current_config["mode"])
                 logger.info(f"Removed '{tag_name}' from grouping")
 
+    @Slot()
+    def show_filter_dialog(self):
+        """Shows the advanced filter dialog."""
+        # Get all tags from DB (Synchronous read from GUI DB Service is fine for metadata)
+        tags = []
+        if hasattr(self, "gui_db_service"):
+            # db_service.get_all_tags returns list of dicts: need to extract names
+            tag_dicts = self.gui_db_service.get_all_tags()
+            tags = [t["name"] for t in tag_dicts]
+
+        dialog = FilterDialog(
+            self, available_tags=tags, current_config=self.filter_config
+        )
+        if dialog.exec() == QDialog.Accepted:
+            config = dialog.get_filter_config()
+            self.filter_config = config  # Update local state
+
+            # Save to settings
+            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+            settings.setValue(SETTINGS_FILTER_CONFIG_KEY, config)
+
+            logger.info(f"Applying filter: {config}")
+            # Send to worker via signal (safer than invokeMethod for dicts)
+            self.filter_requested.emit(config)
+
+            # Update UI state
+            has_filter = bool(config.get("include") or config.get("exclude"))
+            self.unified_list.set_filter_active(has_filter)
+
+    @Slot()
+    def clear_filter(self):
+        """
+        Clears the current filter configuration and reloads data.
+        """
+        logger.info("Clearing filters")
+        self.filter_config = {}
+
+        # Clear settings
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        settings.remove(SETTINGS_FILTER_CONFIG_KEY)
+
+        # Update UI state
+        self.unified_list.set_filter_active(False)
+        self.status_bar.showMessage("Filters cleared.")
+
+        # Reload full data
+        self.load_data()
+
+    @Slot()
+    def show_longform_filter_dialog(self):
+        """Shows filter dialog for the Longform editor (independent state)."""
+        from src.gui.dialogs.filter_dialog import FilterDialog
+
+        tags = []
+        if self.gui_db_service:
+            tag_dicts = self.gui_db_service.get_all_tags()
+            tags = [t["name"] for t in tag_dicts]
+
+        dialog = FilterDialog(
+            self, available_tags=tags, current_config=self.longform_filter_config
+        )
+        if dialog.exec() == QDialog.Accepted:
+            config = dialog.get_filter_config()
+            self.longform_filter_config = config
+
+            logger.info(f"Applying longform filter: {config}")
+            # Refresh longform view with new filter
+            self.load_longform_sequence()
+
+    @Slot()
+    def clear_longform_filter(self):
+        """Clears the longform filter and reloads the longform view."""
+        logger.info("Clearing longform filters")
+        self.longform_filter_config = {}
+        self.load_longform_sequence()
+
+    @Slot(list, list)
+    def _on_filter_results_ready(self, events, entities):
+        """
+        Handler for filter results.
+        Updates the Unified List with filtered data.
+        """
+        self.unified_list.set_data(events, entities)
+        count = len(events) + len(entities)
+        self.status_bar.showMessage(f"Filter applied. Found {count} items.")
+
     def remove_relation(self, rel_id):
         """
         Removes a relation by its ID.
@@ -1633,15 +1778,6 @@ class MainWindow(QMainWindow):
 
             cmd = CreateEventCommand({"name": target_name, "lore_date": 0.0})
             self.command_requested.emit(cmd)
-
-    def load_longform_sequence(self, doc_id: str = longform_builder.DOC_ID_DEFAULT):
-        """Requests loading of the longform document sequence."""
-        QMetaObject.invokeMethod(
-            self.worker,
-            "load_longform_sequence",
-            QtCore_Qt.QueuedConnection,
-            Q_ARG(str, doc_id),
-        )
 
     def promote_longform_entry(self, table: str, row_id: str, old_meta: dict):
         """
@@ -1917,7 +2053,11 @@ class MainWindow(QMainWindow):
 
             # Update panel
             # Update dialog if visible
-            if self.ai_settings_dialog and self.ai_settings_dialog.isVisible():
+            if (
+                hasattr(self, "ai_settings_dialog")
+                and self.ai_settings_dialog
+                and self.ai_settings_dialog.isVisible()
+            ):
                 self.ai_settings_dialog.update_status(
                     model=f"{provider}:{model}",
                     counts=str(count),
@@ -1934,6 +2074,14 @@ def main():
     Configures High DPI scaling, Theme, and launches MainWindow.
     """
     try:
+        # Check for reset settings flag
+        if "--reset-settings" in sys.argv:
+            print("Resetting Application Settings...")
+            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+            settings.clear()
+            settings.sync()
+            print("Settings cleared. Starting in default state.")
+
         logger.info("Starting Application...")
         # 1. High DPI Scaling
         QApplication.setHighDpiScaleFactorRoundingPolicy(
