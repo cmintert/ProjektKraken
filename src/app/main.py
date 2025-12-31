@@ -359,6 +359,10 @@ class MainWindow(QMainWindow):
         elif item_type == "entities":
             item_type = "entity"
 
+        # Avoid redundant reloading and unsaved changes checks if selecting the same item
+        if item_id == self._last_selected_id and item_type == self._last_selected_type:
+            return
+
         if item_type == "event":
             if not self.check_unsaved_changes(self.event_editor):
                 # Attempt to revert - simplified for now, strictly just return
