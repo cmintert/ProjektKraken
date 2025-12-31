@@ -8,7 +8,7 @@ This allows the theme system to work in headless environments.
 import json
 import logging
 import os
-from typing import Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
 from src.core.paths import get_resource_path
 
@@ -23,9 +23,9 @@ class BaseThemeManager:
     Implements a singleton pattern to ensure consistent theming across the app.
     """
 
-    _instance = None
+    _instance: Optional["BaseThemeManager"] = None
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args: Any, **kwargs: Any) -> "BaseThemeManager":
         """
         Create or return the singleton instance of BaseThemeManager.
 
@@ -44,7 +44,7 @@ class BaseThemeManager:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self, theme_file: str = "themes.json"):
+    def __init__(self, theme_file: str = "themes.json") -> None:
         """
         Initializes the BaseThemeManager.
 
@@ -57,13 +57,13 @@ class BaseThemeManager:
         self.theme_file = get_resource_path(theme_file)
         self.themes: Dict[str, Dict[str, str]] = {}
         self.current_theme_name: str = "dark_mode"
-        self._theme_changed_callbacks: List[Callable[[Dict], None]] = []
+        self._theme_changed_callbacks: List[Callable[[Dict[str, Any]], None]] = []
         self._qss_template: str = ""
 
         self._load_themes()
         self._initialized = True
 
-    def _load_themes(self):
+    def _load_themes(self) -> None:
         """Loads the JSON theme definition."""
         logger.debug(f"Attempting to load themes from: {self.theme_file}")
         logger.debug(f"File exists: {os.path.exists(self.theme_file)}")
@@ -121,7 +121,7 @@ class BaseThemeManager:
         except Exception as e:
             logger.error(f"Error loading themes: {e}")
 
-    def load_stylesheet(self, path: str):
+    def load_stylesheet(self, path: str) -> None:
         """
         Loads and caches the stylesheet template.
 
@@ -154,7 +154,7 @@ class BaseThemeManager:
             self.current_theme_name, self.themes.get("dark_mode", {})
         )
 
-    def set_theme(self, theme_name: str):
+    def set_theme(self, theme_name: str) -> None:
         """
         Switches the current theme.
 
@@ -173,7 +173,7 @@ class BaseThemeManager:
 
         logger.info(f"Theme switched to: {theme_name}")
 
-    def on_theme_changed(self, callback: Callable[[Dict], None]):
+    def on_theme_changed(self, callback: Callable[[Dict[str, Any]], None]) -> None:
         """
         Register a callback to be called when the theme changes.
 
@@ -182,7 +182,7 @@ class BaseThemeManager:
         """
         self._theme_changed_callbacks.append(callback)
 
-    def _notify_theme_changed(self, theme_data: Dict):
+    def _notify_theme_changed(self, theme_data: Dict[str, Any]) -> None:
         """
         Notify all registered callbacks of theme change.
 

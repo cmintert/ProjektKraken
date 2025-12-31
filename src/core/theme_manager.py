@@ -8,9 +8,10 @@ This is the Qt-specific implementation that extends BaseThemeManager.
 """
 
 import logging
-from typing import Dict
+from typing import Any, Dict, Optional
 
 from PySide6.QtCore import QObject, Signal
+from PySide6.QtWidgets import QApplication
 
 from src.core.base_theme_manager import BaseThemeManager
 
@@ -26,10 +27,10 @@ class ThemeManager(QObject, BaseThemeManager):
     Implements Singleton pattern.
     """
 
-    _instance = None
+    _instance: Optional["ThemeManager"] = None
     theme_changed = Signal(dict)  # Emits new theme data
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args: Any, **kwargs: Any) -> "ThemeManager":
         """
         Create or return the singleton instance of ThemeManager.
 
@@ -51,7 +52,7 @@ class ThemeManager(QObject, BaseThemeManager):
             QObject.__init__(cls._instance)
         return cls._instance
 
-    def __init__(self, theme_file: str = "themes.json"):
+    def __init__(self, theme_file: str = "themes.json") -> None:
         """
         Initializes the ThemeManager.
 
@@ -72,7 +73,7 @@ class ThemeManager(QObject, BaseThemeManager):
         if saved_theme in self.themes:
             self.current_theme_name = saved_theme
 
-    def _notify_theme_changed(self, theme_data: Dict):
+    def _notify_theme_changed(self, theme_data: Dict[str, Any]) -> None:
         """
         Override to emit Qt signal in addition to calling callbacks.
 
@@ -85,7 +86,7 @@ class ThemeManager(QObject, BaseThemeManager):
         # Emit Qt signal
         self.theme_changed.emit(theme_data)
 
-    def set_theme(self, theme_name: str, app=None):
+    def set_theme(self, theme_name: str, app: Optional[QApplication] = None) -> None:
         """
         Switches the current theme and updates the application.
 
@@ -102,8 +103,6 @@ class ThemeManager(QObject, BaseThemeManager):
 
         # Apply to app if provided (re-applies stylesheet)
         if not app:
-            from PySide6.QtWidgets import QApplication
-
             app = QApplication.instance()
 
         if app and self._qss_template:
@@ -120,7 +119,9 @@ class ThemeManager(QObject, BaseThemeManager):
 
         logger.info(f"Theme switched to: {theme_name}")
 
-    def apply_theme(self, app, qss_template: str = None):
+    def apply_theme(
+        self, app: QApplication, qss_template: Optional[str] = None
+    ) -> None:
         """
         Formats the QSS template with current theme values
         and applies it to the QApplication.
