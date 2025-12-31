@@ -6,6 +6,10 @@ organizing them by component for better maintainability.
 """
 
 import logging
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.core.protocols import MainWindowProtocol
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +22,7 @@ class ConnectionManager:
     maintainability and reduce coupling.
     """
 
-    def __init__(self, main_window):
+    def __init__(self, main_window: "MainWindowProtocol") -> None:
         """
         Initialize the connection manager.
 
@@ -28,7 +32,7 @@ class ConnectionManager:
         self.window = main_window
         logger.debug("ConnectionManager initialized")
 
-    def connect_all(self):
+    def connect_all(self) -> None:
         """Connect all UI signals to their respective slots."""
         self.connect_data_handler()
         self.connect_unified_list()
@@ -39,7 +43,7 @@ class ConnectionManager:
         self.connect_ai_search_panel()
         logger.debug("All signal/slot connections established")
 
-    def connect_data_handler(self):
+    def connect_data_handler(self) -> None:
         """Connect signals from the data handler."""
         dh = self.window.data_handler
 
@@ -68,7 +72,7 @@ class ConnectionManager:
             self.window._on_reload_active_editor_relations
         )
 
-    def connect_unified_list(self):
+    def connect_unified_list(self) -> None:
         """Connect signals from the unified list widget."""
         ul = self.window.unified_list
         ul.refresh_requested.connect(self.window.load_data)
@@ -81,7 +85,7 @@ class ConnectionManager:
         if hasattr(ul, "clear_filter_requested"):
             ul.clear_filter_requested.connect(self.window.clear_filter)
 
-    def connect_editors(self):
+    def connect_editors(self) -> None:
         """Connect signals from event and entity editors."""
         # Generic connections for both editors
         for editor in [self.window.event_editor, self.window.entity_editor]:
@@ -108,7 +112,7 @@ class ConnectionManager:
             self.window.load_entity_details
         )
 
-    def connect_timeline(self):
+    def connect_timeline(self) -> None:
         """Connect signals from the timeline widget."""
         timeline = self.window.timeline
         timeline.event_selected.connect(self.window.load_event_details)
@@ -125,7 +129,7 @@ class ConnectionManager:
                 self.window._on_remove_from_grouping_requested
             )
 
-    def connect_longform_editor(self):
+    def connect_longform_editor(self) -> None:
         """Connect signals from the longform editor widget."""
         longform = self.window.longform_editor
         longform.promote_requested.connect(self.window.promote_longform_entry)
@@ -140,7 +144,7 @@ class ConnectionManager:
         )
         longform.clear_filters_requested.connect(self.window.clear_longform_filter)
 
-    def connect_map_widget(self):
+    def connect_map_widget(self) -> None:
         """Connect signals from the map widget."""
         map_widget = self.window.map_widget
         map_widget.marker_position_changed.connect(
@@ -160,7 +164,7 @@ class ConnectionManager:
         )
         map_widget.marker_drop_requested.connect(self.window._on_marker_dropped)
 
-    def connect_ai_search_panel(self):
+    def connect_ai_search_panel(self) -> None:
         """Connect signals from the AI search panel widget."""
         panel = self.window.ai_search_panel
 

@@ -193,10 +193,10 @@ class AnthropicProvider(Provider):
             logger.error(f"Anthropic generation request failed: {e}")
             raise Exception(
                 f"Failed to generate completion from Anthropic API. Error: {e}"
-            )
+            ) from e
         except (KeyError, ValueError) as e:
             logger.error(f"Failed to parse Anthropic generation response: {e}")
-            raise Exception(f"Invalid response from Anthropic API: {e}")
+            raise Exception(f"Invalid response from Anthropic API: {e}") from e
 
     async def stream_generate(
         self,
@@ -289,7 +289,7 @@ class AnthropicProvider(Provider):
             logger.error(f"Anthropic streaming request failed: {e}")
             raise Exception(
                 f"Failed to stream completion from Anthropic API. Error: {e}"
-            )
+            ) from e
 
     def health_check(self) -> Dict[str, Any]:
         """

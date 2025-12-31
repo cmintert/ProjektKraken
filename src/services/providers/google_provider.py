@@ -59,11 +59,11 @@ class GoogleProvider(Provider):
             from google.auth import default
             from google.auth.transport.requests import Request
             from google.oauth2 import service_account
-        except ImportError:
+        except ImportError as e:
             raise ImportError(
                 "google-cloud-aiplatform is not installed. "
                 "Install it with: pip install google-cloud-aiplatform"
-            )
+            ) from e
 
         self.project_id = project_id
         if not self.project_id:
@@ -214,10 +214,10 @@ class GoogleProvider(Provider):
             return self._retry_request(_embed_impl)
         except requests.exceptions.RequestException as e:
             logger.error(f"Vertex AI embedding request failed: {e}")
-            raise Exception(f"Failed to connect to Vertex AI API. Error: {e}")
+            raise Exception(f"Failed to connect to Vertex AI API. Error: {e}") from e
         except (KeyError, ValueError) as e:
             logger.error(f"Failed to parse Vertex AI embedding response: {e}")
-            raise Exception(f"Invalid response from Vertex AI API: {e}")
+            raise Exception(f"Invalid response from Vertex AI API: {e}") from e
 
     def generate(
         self,
@@ -305,10 +305,10 @@ class GoogleProvider(Provider):
             logger.error(f"Vertex AI generation request failed: {e}")
             raise Exception(
                 f"Failed to generate completion from Vertex AI API. Error: {e}"
-            )
+            ) from e
         except (KeyError, ValueError) as e:
             logger.error(f"Failed to parse Vertex AI generation response: {e}")
-            raise Exception(f"Invalid response from Vertex AI API: {e}")
+            raise Exception(f"Invalid response from Vertex AI API: {e}") from e
 
     async def stream_generate(
         self,

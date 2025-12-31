@@ -1,3 +1,10 @@
+"""
+Web Server Module for ProjektKraken.
+
+Provides FastAPI-based REST API for serving longform documents and health checks.
+This server is designed to run embedded within the main application via QThread.
+"""
+
 import logging
 import os
 from typing import Any
@@ -75,6 +82,14 @@ def create_app(config: ServerConfig) -> FastAPI:
 
             # Simple link resolver for server-side
             def resolve_links(text: str) -> str:
+                """Convert wiki-style links to plain text or HTML anchors.
+                
+                Args:
+                    text: Text containing wiki-style [[links]].
+                    
+                Returns:
+                    Text with links resolved/stripped for display.
+                """
                 # Basic [[Link]] -> [Link](Link) or similar logic
                 # For the web view, we might want [[Link]] to jump to anchors or
                 # just be plain text.
@@ -122,7 +137,7 @@ def create_app(config: ServerConfig) -> FastAPI:
 
         except Exception as e:
             logger.error(f"Error fetching longform: {e}", exc_info=True)
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
         finally:
             db.close()
 
@@ -153,10 +168,23 @@ def create_app(config: ServerConfig) -> FastAPI:
 
     @app.get("/longform", response_class=HTMLResponse)
     def view_longform(request: Request) -> HTMLResponse:
+        """Render the longform viewer page.
+        
+        Args:
+            request: The FastAPI request object.
+            
+        Returns:
+            HTML response with the longform viewer interface.
+        """
         return templates.TemplateResponse("index.html", {"request": request})
 
     @app.get("/health")
     def health_check() -> dict[str, str]:
+        """Health check endpoint for monitoring server status.
+        
+        Returns:
+            Dictionary with status indicator.
+        """
         return {"status": "ok"}
 
     return app

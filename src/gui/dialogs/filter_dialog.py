@@ -1,3 +1,10 @@
+"""
+Filter Dialog Module.
+
+Provides a dialog for configuring filters for events and entities
+based on various criteria like date ranges, tags, and types.
+"""
+
 from typing import Any, Dict, List, Optional
 
 from PySide6.QtCore import Qt
@@ -28,6 +35,13 @@ class FilterDialog(QDialog):
         available_tags: List[str] = None,
         current_config: Dict[str, Any] = None,
     ) -> None:
+        """Initialize the filter dialog.
+        
+        Args:
+            parent: Optional parent widget.
+            available_tags: List of available tags to filter by.
+            current_config: Current filter configuration to restore.
+        """
         super().__init__(parent)
         self.setWindowTitle("Advanced Filter")
         self.resize(500, 600)

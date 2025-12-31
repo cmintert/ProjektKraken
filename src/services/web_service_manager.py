@@ -25,6 +25,12 @@ class WebServerThread(QThread):
     error_occurred = Signal(str)
 
     def __init__(self, config: ServerConfig, parent: Optional[QObject] = None) -> None:
+        """Initialize the web server thread.
+        
+        Args:
+            config: Server configuration (host, port, db_path).
+            parent: Optional parent QObject for Qt parent-child relationship.
+        """
         super().__init__(parent)
         self.config = config
         self._server: Optional[uvicorn.Server] = None
@@ -81,12 +87,22 @@ class WebServiceManager(QObject):
     error_occurred = Signal(str)
 
     def __init__(self, parent: Optional[QObject] = None) -> None:
+        """Initialize the web service manager.
+        
+        Args:
+            parent: Optional parent QObject for Qt parent-child relationship.
+        """
         super().__init__(parent)
         self._thread: Optional[WebServerThread] = None
         self._config = ServerConfig()  # Default config
 
     @property
     def is_running(self) -> bool:
+        """Check if the web server is currently running.
+        
+        Returns:
+            True if server thread is active and running, False otherwise.
+        """
         return self._thread is not None and self._thread.isRunning()
 
     def get_local_ip(self) -> str:
@@ -140,16 +156,30 @@ class WebServiceManager(QObject):
             self.status_changed.emit(False, "")
 
     def toggle_server(self) -> None:
+        """Toggle the web server on or off.
+        
+        If server is running, stops it. If not running, starts it.
+        Emits status_changed signal with the new status.
+        """
         if self.is_running:
             self.stop_server()
         else:
             self.start_server()
 
     def _on_thread_error(self, msg: str) -> None:
+        """Handle errors from the server thread.
+        
+        Args:
+            msg: The error message from the server thread.
+        """
         self.error_occurred.emit(msg)
         self.stop_server()
 
     def _on_thread_finished(self) -> None:
+        """Handle server thread completion.
+        
+        Emits status_changed signal if thread finished unexpectedly.
+        """
         if self._thread:  # If finished unexpectedly
             self.status_changed.emit(False, "")
             self._thread = None

@@ -144,10 +144,10 @@ class OpenAIProvider(Provider):
             logger.error(f"OpenAI embedding request failed: {e}")
             raise Exception(
                 f"Failed to connect to OpenAI API. Error: {e}"
-            )
+            ) from e
         except (KeyError, ValueError) as e:
             logger.error(f"Failed to parse OpenAI embedding response: {e}")
-            raise Exception(f"Invalid response from OpenAI API: {e}")
+            raise Exception(f"Invalid response from OpenAI API: {e}") from e
 
     def generate(
         self,
@@ -222,10 +222,10 @@ class OpenAIProvider(Provider):
             logger.error(f"OpenAI generation request failed: {e}")
             raise Exception(
                 f"Failed to generate completion from OpenAI API. Error: {e}"
-            )
+            ) from e
         except (KeyError, ValueError) as e:
             logger.error(f"Failed to parse OpenAI generation response: {e}")
-            raise Exception(f"Invalid response from OpenAI API: {e}")
+            raise Exception(f"Invalid response from OpenAI API: {e}") from e
 
     async def stream_generate(
         self,
@@ -320,7 +320,7 @@ class OpenAIProvider(Provider):
 
         except requests.exceptions.RequestException as e:
             logger.error(f"OpenAI streaming request failed: {e}")
-            raise Exception(f"Failed to stream completion from OpenAI API. Error: {e}")
+            raise Exception(f"Failed to stream completion from OpenAI API. Error: {e}") from e
 
     def health_check(self) -> Dict[str, Any]:
         """
