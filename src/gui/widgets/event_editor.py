@@ -5,9 +5,12 @@ Provides a form interface for editing event details including name, date,
 description, attributes, and relations.
 """
 
+import logging
 from typing import Any, Optional
 
 from PySide6.QtCore import QPoint, QSize, Qt, Signal
+
+logger = logging.getLogger(__name__)
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
@@ -623,8 +626,9 @@ class EventEditorWidget(QWidget):
                 # (e.g. attributes not yet)
             }
             self.current_data_changed.emit(data)
-        except Exception:
-            pass  # Be safe against incomplete states
+        except (AttributeError, RuntimeError) as e:
+            # Widgets may not be fully initialized during loading or partial state
+            logger.debug(f"Could not emit current data: {e}")
 
     def _on_text_generated(self, text: str) -> None:
         """

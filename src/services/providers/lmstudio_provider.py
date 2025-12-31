@@ -441,9 +441,12 @@ class LMStudioProvider(Provider):
                         "message": "LM Studio (Generation) is responding normally",
                         "models": [self.model],
                     }
-            except Exception:
-                # If fallback also fails, return original error
-                pass
+            except (requests.RequestException, ValueError, KeyError) as fallback_err:
+                # If fallback also fails, log and return original error
+                logger.warning(
+                    f"Health check fallback also failed: {fallback_err}, "
+                    f"original error: {e}"
+                )
 
             return {
                 "status": "unhealthy",

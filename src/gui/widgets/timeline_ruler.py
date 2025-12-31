@@ -383,8 +383,9 @@ class TimelineRuler:
                         )
                         abbrev = week_config.day_abbreviations[day_idx]
                         return f"{day_str} {abbrev}"
-                except Exception:
-                    pass
+                except (AttributeError, ValueError, IndexError) as e:
+                    # Week config may be unavailable or misconfigured
+                    logger.debug(f"Day abbreviation lookup failed: {e}")
                 return day_str
             elif level == TickLevel.HOUR:
                 hours = int(date.time_fraction * 24)
@@ -539,8 +540,9 @@ class TimelineRuler:
             try:
                 date = self._calendar.from_float(start_date)
                 return f"Year {date.year}"
-            except Exception:
-                pass
+            except (AttributeError, ValueError) as e:
+                # Calendar conversion may fail for extreme dates
+                logger.debug(f"Calendar context formatting failed: {e}")
 
         # Numeric fallback
         if abs(start_date) >= 1e6:
