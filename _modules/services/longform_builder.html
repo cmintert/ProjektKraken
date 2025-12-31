@@ -375,7 +375,7 @@
 <div class="viewcode-block" id="read_all_longform_items">
 <a class="viewcode-back" href="../../services.html#services.longform_builder.read_all_longform_items">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">read_all_longform_items</span><span class="p">(</span>
-    <span class="n">conn</span><span class="p">:</span> <span class="n">Connection</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DOC_ID_DEFAULT</span>
+    <span class="n">conn</span><span class="p">:</span> <span class="n">Connection</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DOC_ID_DEFAULT</span><span class="p">,</span> <span class="n">allowed_ids</span><span class="p">:</span> <span class="nb">set</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Read all events and entities that have longform metadata.</span>
@@ -397,6 +397,10 @@
         <span class="n">attrs</span> <span class="o">=</span> <span class="n">_safe_json_loads</span><span class="p">(</span><span class="n">row_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attributes&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">))</span>
         <span class="n">meta</span> <span class="o">=</span> <span class="n">_get_longform_meta</span><span class="p">(</span><span class="n">attrs</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">meta</span><span class="p">:</span>
+            <span class="c1"># Filter check</span>
+            <span class="k">if</span> <span class="n">allowed_ids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">row_dict</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">allowed_ids</span><span class="p">:</span>
+                <span class="k">continue</span>
+
             <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="p">{</span>
                     <span class="s2">&quot;table&quot;</span><span class="p">:</span> <span class="s2">&quot;events&quot;</span><span class="p">,</span>
@@ -415,6 +419,10 @@
         <span class="n">attrs</span> <span class="o">=</span> <span class="n">_safe_json_loads</span><span class="p">(</span><span class="n">row_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attributes&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">))</span>
         <span class="n">meta</span> <span class="o">=</span> <span class="n">_get_longform_meta</span><span class="p">(</span><span class="n">attrs</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">meta</span><span class="p">:</span>
+            <span class="c1"># Filter check</span>
+            <span class="k">if</span> <span class="n">allowed_ids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">row_dict</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">allowed_ids</span><span class="p">:</span>
+                <span class="k">continue</span>
+
             <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="p">{</span>
                     <span class="s2">&quot;table&quot;</span><span class="p">:</span> <span class="s2">&quot;entities&quot;</span><span class="p">,</span>
@@ -508,7 +516,7 @@
 <div class="viewcode-block" id="build_longform_sequence">
 <a class="viewcode-back" href="../../services.html#services.longform_builder.build_longform_sequence">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">build_longform_sequence</span><span class="p">(</span>
-    <span class="n">conn</span><span class="p">:</span> <span class="n">Connection</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DOC_ID_DEFAULT</span>
+    <span class="n">conn</span><span class="p">:</span> <span class="n">Connection</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DOC_ID_DEFAULT</span><span class="p">,</span> <span class="n">allowed_ids</span><span class="p">:</span> <span class="nb">set</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Build an ordered sequence of longform items for rendering.</span>
@@ -527,9 +535,11 @@
 <span class="sd">                    Each item includes: table, id, name, content, meta, heading_level.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># 0. Sync check: ensure everything is in the doc</span>
-    <span class="n">ensure_all_items_indexed</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">)</span>
+    <span class="c1"># Skip this if we are filtering, as we don&#39;t want to auto-add items</span>
+    <span class="k">if</span> <span class="n">allowed_ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ensure_all_items_indexed</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">)</span>
 
-    <span class="n">items</span> <span class="o">=</span> <span class="n">read_all_longform_items</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">)</span>
+    <span class="n">items</span> <span class="o">=</span> <span class="n">read_all_longform_items</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">,</span> <span class="n">allowed_ids</span><span class="o">=</span><span class="n">allowed_ids</span><span class="p">)</span>
 
     <span class="c1"># Build parent-child map</span>
     <span class="n">children_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>

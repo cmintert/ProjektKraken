@@ -2222,6 +2222,141 @@
         <span class="k">return</span> <span class="kc">None</span></div>
 
 
+<div class="viewcode-block" id="DatabaseService.filter_ids_by_tags">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.filter_ids_by_tags">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">filter_ids_by_tags</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">object_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">include</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">include_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;any&quot;</span><span class="p">,</span>
+        <span class="n">exclude</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">exclude_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;any&quot;</span><span class="p">,</span>
+        <span class="n">case_sensitive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convenience wrapper for tag-based filtering of entities and events.</span>
+
+<span class="sd">        Filters objects by tags using include/exclude lists with &#39;any&#39; or &#39;all&#39;</span>
+<span class="sd">        semantics. Returns lightweight (object_type, object_id) tuples.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            object_type: Optional filter for &#39;entity&#39; or &#39;event&#39;. If None, both.</span>
+<span class="sd">            include: List of tag names to include. Empty or None means all objects.</span>
+<span class="sd">            include_mode: &#39;any&#39; (default) or &#39;all&#39;. Whether object must have</span>
+<span class="sd">                         any or all include tags.</span>
+<span class="sd">            exclude: List of tag names to exclude. Empty or None means no exclusions.</span>
+<span class="sd">            exclude_mode: &#39;any&#39; (default) or &#39;all&#39;. Whether to exclude if object</span>
+<span class="sd">                         has any or all exclude tags.</span>
+<span class="sd">            case_sensitive: If True, use exact case matching. If False (default),</span>
+<span class="sd">                           case-insensitive.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[tuple[str, str]]: List of (object_type, object_id) tuples where</span>
+<span class="sd">                object_type is &#39;entity&#39; or &#39;event&#39;.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If object_type is invalid or modes are invalid.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            # Get all entities with tag &quot;important&quot;</span>
+<span class="sd">            &gt;&gt;&gt; db.filter_ids_by_tags(object_type=&#39;entity&#39;, include=[&#39;important&#39;])</span>
+<span class="sd">            [(&#39;entity&#39;, &#39;uuid-1&#39;), (&#39;entity&#39;, &#39;uuid-2&#39;)]</span>
+
+<span class="sd">            # Get events with ALL of [&#39;battle&#39;, &#39;victory&#39;]</span>
+<span class="sd">            &gt;&gt;&gt; db.filter_ids_by_tags(</span>
+<span class="sd">            ...     object_type=&#39;event&#39;,</span>
+<span class="sd">            ...     include=[&#39;battle&#39;, &#39;victory&#39;],</span>
+<span class="sd">            ...     include_mode=&#39;all&#39;</span>
+<span class="sd">            ... )</span>
+<span class="sd">            [(&#39;event&#39;, &#39;uuid-3&#39;)]</span>
+
+<span class="sd">            # Get all objects with &#39;important&#39; but not &#39;archived&#39;</span>
+<span class="sd">            &gt;&gt;&gt; db.filter_ids_by_tags(</span>
+<span class="sd">            ...     include=[&#39;important&#39;],</span>
+<span class="sd">            ...     exclude=[&#39;archived&#39;]</span>
+<span class="sd">            ... )</span>
+<span class="sd">            [(&#39;entity&#39;, &#39;uuid-1&#39;), (&#39;event&#39;, &#39;uuid-4&#39;)]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+
+        <span class="c1"># Import locally to avoid circular imports</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">src.services</span><span class="w"> </span><span class="kn">import</span> <span class="n">tag_filter</span>
+
+        <span class="k">return</span> <span class="n">tag_filter</span><span class="o">.</span><span class="n">filter_object_ids</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">,</span>
+            <span class="n">object_type</span><span class="o">=</span><span class="n">object_type</span><span class="p">,</span>
+            <span class="n">include</span><span class="o">=</span><span class="n">include</span><span class="p">,</span>
+            <span class="n">include_mode</span><span class="o">=</span><span class="n">include_mode</span><span class="p">,</span>
+            <span class="n">exclude</span><span class="o">=</span><span class="n">exclude</span><span class="p">,</span>
+            <span class="n">exclude_mode</span><span class="o">=</span><span class="n">exclude_mode</span><span class="p">,</span>
+            <span class="n">case_sensitive</span><span class="o">=</span><span class="n">case_sensitive</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.get_objects_by_ids">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_objects_by_ids">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_objects_by_ids</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">object_ids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Event</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">Entity</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves full object instances for a list of (type, id) tuples.</span>
+
+<span class="sd">        This method is used to hydrate results from `filter_ids_by_tags`.</span>
+<span class="sd">        Results are returned sorted by their natural order:</span>
+<span class="sd">        - Events: by lore_date</span>
+<span class="sd">        - Entities: by name</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            object_ids: List of (object_type, object_id) tuples.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple containing (List[Event], List[Entity]).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+
+        <span class="n">event_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">oid</span> <span class="k">for</span> <span class="n">otype</span><span class="p">,</span> <span class="n">oid</span> <span class="ow">in</span> <span class="n">object_ids</span> <span class="k">if</span> <span class="n">otype</span> <span class="o">==</span> <span class="s2">&quot;event&quot;</span><span class="p">]</span>
+        <span class="n">entity_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">oid</span> <span class="k">for</span> <span class="n">otype</span><span class="p">,</span> <span class="n">oid</span> <span class="ow">in</span> <span class="n">object_ids</span> <span class="k">if</span> <span class="n">otype</span> <span class="o">==</span> <span class="s2">&quot;entity&quot;</span><span class="p">]</span>
+
+        <span class="n">events</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">entities</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Fetch Events</span>
+        <span class="k">if</span> <span class="n">event_ids</span><span class="p">:</span>
+            <span class="n">placeholders</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;?&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">event_ids</span><span class="p">))</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                SELECT * FROM events</span>
+<span class="s2">                WHERE id IN (</span><span class="si">{</span><span class="n">placeholders</span><span class="si">}</span><span class="s2">)</span>
+<span class="s2">                ORDER BY lore_date</span>
+<span class="s2">            &quot;&quot;&quot;</span>
+            <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">event_ids</span><span class="p">)</span>
+            <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attributes&quot;</span><span class="p">):</span>
+                    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">])</span>
+                <span class="n">events</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Event</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+
+        <span class="c1"># Fetch Entities</span>
+        <span class="k">if</span> <span class="n">entity_ids</span><span class="p">:</span>
+            <span class="n">placeholders</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;?&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">entity_ids</span><span class="p">))</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                SELECT * FROM entities</span>
+<span class="s2">                WHERE id IN (</span><span class="si">{</span><span class="n">placeholders</span><span class="si">}</span><span class="s2">)</span>
+<span class="s2">                ORDER BY name</span>
+<span class="s2">            &quot;&quot;&quot;</span>
+            <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">entity_ids</span><span class="p">)</span>
+            <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attributes&quot;</span><span class="p">):</span>
+                    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">])</span>
+                <span class="n">entities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Entity</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">events</span><span class="p">,</span> <span class="n">entities</span></div>
+
+
 <div class="viewcode-block" id="DatabaseService.set_timeline_grouping_config">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.set_timeline_grouping_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_timeline_grouping_config</span><span class="p">(</span>
