@@ -178,10 +178,10 @@ class LMStudioProvider(Provider):
                 f"Failed to connect to LM Studio at {self.embed_url}. "
                 f"Ensure LM Studio is running and the embedding endpoint "
                 f"is available. Error: {e}"
-            )
+            ) from e
         except (KeyError, ValueError) as e:
             logger.error(f"Failed to parse LM Studio embedding response: {e}")
-            raise Exception(f"Invalid response from LM Studio API: {e}")
+            raise Exception(f"Invalid response from LM Studio API: {e}") from e
 
     def generate(
         self,
@@ -268,10 +268,10 @@ class LMStudioProvider(Provider):
                 f"Failed to generate completion from LM Studio at {self.generate_url}. "
                 f"Ensure LM Studio is running and the completions endpoint "
                 f"is available. Error: {e}"
-            )
+            ) from e
         except (KeyError, ValueError) as e:
             logger.error(f"Failed to parse LM Studio generation response: {e}")
-            raise Exception(f"Invalid response from LM Studio API: {e}")
+            raise Exception(f"Invalid response from LM Studio API: {e}") from e
 
     async def stream_generate(
         self,
@@ -370,7 +370,7 @@ class LMStudioProvider(Provider):
             raise Exception(
                 f"Failed to stream completion from LM Studio at {self.generate_url}. "
                 f"Error: {e}"
-            )
+            ) from e
 
     def health_check(self) -> Dict[str, Any]:
         """

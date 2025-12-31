@@ -137,7 +137,7 @@ def create_app(config: ServerConfig) -> FastAPI:
 
         except Exception as e:
             logger.error(f"Error fetching longform: {e}", exc_info=True)
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
         finally:
             db.close()
 

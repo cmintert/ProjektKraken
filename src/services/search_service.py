@@ -398,10 +398,10 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
                 f"Failed to connect to LM Studio at {self.url}. "
                 f"Ensure LM Studio is running and the embedding endpoint "
                 f"is available. Error: {e}"
-            )
+            ) from e
         except (KeyError, ValueError) as e:
             logger.error(f"Failed to parse LM Studio response: {e}")
-            raise Exception(f"Invalid response from LM Studio API: {e}")
+            raise Exception(f"Invalid response from LM Studio API: {e}") from e
 
     def get_dimension(self) -> int:
         """
@@ -442,11 +442,11 @@ class SentenceTransformersProvider(EmbeddingProvider):
         """
         try:
             from sentence_transformers import SentenceTransformer
-        except ImportError:
+        except ImportError as e:
             raise ImportError(
                 "sentence-transformers is not installed. "
                 "Install it with: pip install sentence-transformers"
-            )
+            ) from e
 
         self.model_name = model or os.getenv(
             "LMSTUDIO_MODEL", "all-MiniLM-L6-v2"
