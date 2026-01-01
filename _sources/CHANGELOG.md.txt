@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-01
-### Added
-- feat(cli): add filtering and tagging support to event and entity commands
+### Fixed
+- fix(lint): Resolve 135 ruff errors in main.py
 
 
 *This changelog was automatically generated.*

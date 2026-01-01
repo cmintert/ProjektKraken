@@ -541,6 +541,20 @@ case-insensitive.</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_active_tags">
+<span class="sig-name descname"><span class="pre">get_active_tags</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_active_tags"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_active_tags" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves tags that are associated with at least one event OR entity.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of distinct tag dictionaries.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List[Dict[str, Any]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.get_all_calendar_configs">
 <span class="sig-name descname"><span class="pre">get_all_calendar_configs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">CalendarConfig</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_all_calendar_configs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_all_calendar_configs" title="Link to this definition">¶</a></dt>
 <dd><p>Retrieves all calendar configurations.</p>
@@ -2231,6 +2245,7 @@ text parsing, and background workers.</p>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.delete_tag"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_tag()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.filter_ids_by_tags"><code class="docutils literal notranslate"><span class="pre">DatabaseService.filter_ids_by_tags()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_active_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_active_calendar_config()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_active_tags"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_active_tags()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_all_calendar_configs"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_all_calendar_configs()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_all_entities"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_all_entities()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_all_events"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_all_events()</span></code></a></li>
