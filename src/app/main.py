@@ -1585,8 +1585,8 @@ class MainWindow(QMainWindow):
         # Get all tags from DB (Synchronous read from GUI DB Service is fine for metadata)
         tags = []
         if hasattr(self, "gui_db_service"):
-            # db_service.get_all_tags returns list of dicts: need to extract names
-            tag_dicts = self.gui_db_service.get_all_tags()
+            # db_service.get_active_tags returns list of dicts: need to extract names
+            tag_dicts = self.gui_db_service.get_active_tags()
             tags = [t["name"] for t in tag_dicts]
 
         dialog = FilterDialog(
@@ -1634,7 +1634,7 @@ class MainWindow(QMainWindow):
 
         tags = []
         if self.gui_db_service:
-            tag_dicts = self.gui_db_service.get_all_tags()
+            tag_dicts = self.gui_db_service.get_active_tags()
             tags = [t["name"] for t in tag_dicts]
 
         dialog = FilterDialog(

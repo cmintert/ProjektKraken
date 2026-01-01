@@ -21,6 +21,9 @@ from src.webserver.config import ServerConfig
 # Configure logging
 logger = logging.getLogger(__name__)
 
+# Suppress noisy markdown logs
+logging.getLogger("MARKDOWN").setLevel(logging.WARNING)
+
 # Global config (set on startup)
 _config: ServerConfig = ServerConfig()
 
@@ -57,31 +60,76 @@ def create_app(config: ServerConfig) -> FastAPI:
     # API Endpoints
     # -------------------------------------------------------------------------
 
-    @app.get("/api/longform")
-    def get_longform(doc_id: str = "default") -> dict[str, Any]:
+    @app.get("/api/tags")
+    def get_tags() -> dict[str, Any]:
         """
-        Get the structured longform sequence as JSON.
-        Includes rendered HTML content for each section.
+        Get all available tags.
+
+        Returns:
+            JSON object with "tags": list[str].
         """
         db = get_db_service()
         try:
-            # We reuse the logic from WikiTextEdit but we need a headless
-            # version or similar logic.
+            # db.get_active_tags() returns List[Dict] with 'id', 'name', etc.
+            # We want the human-readable names of tags that actually have content.
+            tags_data = db.get_active_tags()
+            # Extract 'name' for display.
+            tags = sorted([t["name"] for t in tags_data])
+            return {"tags": tags}
+        except Exception as e:
+            logger.error(f"Error fetching tags: {e}")
+            return {"tags": []}
+
+    @app.get("/api/longform")
+    def get_longform(
+        doc_id: str = "default", filter_json: str | None = None
+    ) -> dict[str, Any]:
+        """
+        Get the structured longform sequence as JSON.
+        Includes rendered HTML content for each section.
+
+        Args:
+            doc_id: Document ID.
+            filter_json: Optional JSON string configuring filters.
+        """
+        db = get_db_service()
+        try:
+            allowed_ids = None
+            if filter_json:
+                try:
+                    import json
+
+                    filter_config = json.loads(filter_json)
+                    if filter_config:
+                        # Use DRY compliance: Reuse existing filter logic
+                        # filter_ids_by_tags returns List[tuple[str, str]] of (type, id)
+                        result_tuples = db.filter_ids_by_tags(
+                            object_type=filter_config.get("object_type"),
+                            include=filter_config.get("include"),
+                            include_mode=filter_config.get("include_mode", "any"),
+                            exclude=filter_config.get("exclude"),
+                            exclude_mode=filter_config.get("exclude_mode", "any"),
+                            case_sensitive=filter_config.get("case_sensitive", False),
+                        )
+                        # Extract just the IDs (second element of each tuple)
+                        allowed_ids = {item_id for _, item_id in result_tuples}
+                except json.JSONDecodeError:
+                    logger.warning("Invalid JSON filter string provided to API")
+                except Exception as e:
+                    logger.error(f"Error applying filter in API: {e}")
+                    print(f"DEBUG EXCEPTION: {e}")
+
+            assert db._connection is not None, "Database not connected"
+            sequence = build_longform_sequence(
+                db._connection, doc_id=doc_id, allowed_ids=allowed_ids
+            )
+
             # Since WikiTextEdit is a QWidget, we can't easily run it in a
             # headless thread safely without QApplication.
             # However, looking at WikiTextEdit code, the rendering logic is
             # mostly string manipulation using the `markdown` library.
-            # Let's reproduce the rendering pipeline here to avoid GUI
-            # dependencies in the web thread.
-
-            assert db._connection is not None, "Database not connected"
-            sequence = build_longform_sequence(db._connection, doc_id=doc_id)
-
-            # Enrich items with rendered HTML
-            # We'll need a simple markdown-to-html converter that mimics WikiTextEdit
             import markdown
 
-            # Simple link resolver for server-side
             def resolve_links(text: str) -> str:
                 """Convert wiki-style links to plain text or HTML anchors.
 
