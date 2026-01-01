@@ -1,3 +1,10 @@
+---
+**Project:** ProjektKraken  
+**Document:** Design Specification  
+**Last Updated:** 2026-01-01  
+**Commit:** `373459f4`  
+---
+
 # Project Kraken: Comprehensive Design Specification
 
 Version: 0.4.0  

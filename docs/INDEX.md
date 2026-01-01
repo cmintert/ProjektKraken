@@ -156,8 +156,19 @@ docs/
 ├── index.rst                    # Sphinx index
 ├── conf.py                      # Sphinx configuration
 ├── generate_schema_docs.py      # Schema doc generator
+├── archive/                     # Historical reports
+│   ├── README.md                # Archive index
+│   ├── CODE_ANALYSIS_REPORT.md
+│   ├── CODE_IMPROVEMENTS_SUMMARY.md
+│   ├── PRODUCTION_READINESS_REPORT.md
+│   ├── REFACTORING_SUMMARY.md
+│   └── ARCHITECTURE_DIAGRAMS.md
 └── *.rst                        # Sphinx API documentation files
 ```
+
+## Archive
+
+Historical code analysis and review reports are preserved in **[docs/archive/](archive/)** for reference. These documents were created during major refactoring efforts but are no longer actively maintained.
 
 ## Contributing to Documentation
 

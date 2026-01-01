@@ -102,10 +102,10 @@ pytest --cov=src --cov-report=term-missing
 
 ## Documentation
 
-- **[CLI Tools](src/cli/README.md)** - Command-line interface reference
-- **[Database Architecture](docs/DATABASE.md)** - Schema and data model
-- **[Security Guidelines](docs/SECURITY.md)** - Security best practices
-- **[Wiki Linking](docs/WIKI_LINKING.md)** - Wiki syntax and navigation
+- **[CLI Tools](../src/cli/README.md)** - Command-line interface reference
+- **[Database Architecture](DATABASE.md)** - Schema and data model
+- **[Security Guidelines](SECURITY.md)** - Security best practices
+- **[Wiki Linking](WIKI_LINKING.md)** - Wiki syntax and navigation
 - **[Design Notes](Design.md)** - Architecture and design decisions
 
 ## Architecture
