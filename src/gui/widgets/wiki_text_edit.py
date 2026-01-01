@@ -5,10 +5,11 @@ A specialized QTextEdit that supports WikiLink navigation via Ctrl+Click.
 
 import logging
 import re
+from typing import Any, List, Optional
 
 from PySide6.QtCore import QStringListModel, Qt, Signal
-from PySide6.QtGui import QTextCursor
-from PySide6.QtWidgets import QCompleter, QTextEdit
+from PySide6.QtGui import QKeyEvent, QMouseEvent, QTextCursor
+from PySide6.QtWidgets import QCompleter, QTextEdit, QWidget
 
 from src.core.theme_manager import ThemeManager
 
@@ -26,7 +27,7 @@ class WikiTextEdit(QTextEdit):
     link_clicked = Signal(str)  # Emits the target name (e.g. "Gandalf")
     link_added = Signal(str, str)  # Emits (target_id_or_name, display_name) on creation
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget = None) -> None:
         """
         Initializes the WikiTextEdit.
 
@@ -59,7 +60,7 @@ class WikiTextEdit(QTextEdit):
         self._apply_theme_stylesheet()
         self._apply_widget_style()
 
-    def set_link_resolver(self, link_resolver):
+    def set_link_resolver(self, link_resolver: Any) -> None:
         """
         Sets the link resolver for checking broken links.
 
@@ -73,11 +74,11 @@ class WikiTextEdit(QTextEdit):
 
     def set_completer(
         self,
-        items_or_names=None,
+        items_or_names: Optional[List[str]] = None,
         *,
         items: list[tuple[str, str, str]] = None,
         names: list[str] = None,
-    ):
+    ) -> None:
         """
         Initializes or updates the completer with items.
 
@@ -184,7 +185,7 @@ class WikiTextEdit(QTextEdit):
         logger.debug(f"Generated CSS: {css}")
         return css
 
-    def _apply_theme_stylesheet(self):
+    def _apply_theme_stylesheet(self) -> None:
         """
         Apply theme-based stylesheet to the document.
 
@@ -194,7 +195,7 @@ class WikiTextEdit(QTextEdit):
         css = self._get_theme_css()
         self.document().setDefaultStyleSheet(css)
 
-    def _apply_widget_style(self):
+    def _apply_widget_style(self) -> None:
         """
         Apply theme-based styling to the widget (borders, scrollbars).
         """
@@ -260,7 +261,7 @@ class WikiTextEdit(QTextEdit):
         """
         self.setStyleSheet(widget_qss)
 
-    def set_wiki_text(self, text: str):
+    def set_wiki_text(self, text: str) -> None:
         """
         Sets the content using WikiLink syntax, converting it to HTML anchors.
         Uses the 'markdown' library for rich text rendering.
@@ -274,7 +275,7 @@ class WikiTextEdit(QTextEdit):
         # Markdown library processes standard links [Label](URL) naturally.
         pattern = re.compile(r"\[\[([^]|]+)(?:\|([^]]+))?\]\]")
 
-        def replace_link_md(match):
+        def replace_link_md(match: re.Match) -> str:
             """
             Convert WikiLink syntax to Markdown link syntax.
             Checks validity of target against known items.
@@ -371,11 +372,13 @@ class WikiTextEdit(QTextEdit):
 
         return "".join(result)
 
-    def insert_completion(self, completion: str):
+    def insert_completion(self, completion: str) -> None:
         """
         Inserts the selected completion as an HTML anchor.
         """
         tc = self.textCursor()
+        if not self._completer:
+            return
         prefix_len = len(self._completer.completionPrefix())
 
         # We need to remove the "[[" that triggered this + prefix
@@ -409,23 +412,26 @@ class WikiTextEdit(QTextEdit):
         # Emit signal
         self.link_added.emit(target, label)
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event: QKeyEvent) -> None:
         """
         Handles key press events for wiki link completion.
 
         Args:
             event: QKeyEvent from PySide6.
         """
-        if self._completer and self._completer.popup().isVisible():
-            if event.key() in (
-                Qt.Key_Enter,
-                Qt.Key_Return,
-                Qt.Key_Escape,
-                Qt.Key_Tab,
-                Qt.Key_Backtab,
-            ):
-                event.ignore()
-                return
+
+        if self._completer:
+            popup = self._completer.popup()
+            if popup and popup.isVisible():
+                if event.key() in (
+                    Qt.Key.Key_Enter,
+                    Qt.Key.Key_Return,
+                    Qt.Key.Key_Escape,
+                    Qt.Key.Key_Tab,
+                    Qt.Key.Key_Backtab,
+                ):
+                    event.ignore()
+                    return
 
         super().keyPressEvent(event)
 
@@ -436,7 +442,7 @@ class WikiTextEdit(QTextEdit):
         # Helper to trigger completer
         self._check_for_completion()
 
-    def _check_for_link_closure(self):
+    def _check_for_link_closure(self) -> None:
         """
         Check if user just completed a wiki link with ]].
         If so, validate and style the link immediately.
@@ -536,7 +542,7 @@ class WikiTextEdit(QTextEdit):
 
         return False
 
-    def _check_for_completion(self):
+    def _check_for_completion(self) -> None:
         """
         Checks if wiki link completion should be triggered.
 
@@ -555,17 +561,22 @@ class WikiTextEdit(QTextEdit):
         if last_open != -1 and last_open > last_close:
             prefix = text_before[last_open + 2 :]
             if "|" not in prefix and self._completer:
-                self._completer.setCompletionPrefix(prefix)
-                curr_rect = self.cursorRect()
-                curr_rect.setWidth(
-                    self._completer.popup().sizeHintForColumn(0)
-                    + self._completer.popup().verticalScrollBar().sizeHint().width()
-                )
-                self._completer.complete(curr_rect)
-        elif self._completer:
-            self._completer.popup().hide()
+                popup = self._completer.popup()
+                if popup:
+                    self._completer.setCompletionPrefix(prefix)
+                    curr_rect = self.cursorRect()
 
-    def mouseMoveEvent(self, event):
+                    scroll_bar = popup.verticalScrollBar()
+                    sb_width = scroll_bar.sizeHint().width() if scroll_bar else 0
+
+                    curr_rect.setWidth(popup.sizeHintForColumn(0) + sb_width)
+                    self._completer.complete(curr_rect)
+        elif self._completer:
+            popup = self._completer.popup()
+            if popup:
+                popup.hide()
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
         """
         Handles mouse move events to show pointer cursor over links.
 
@@ -580,7 +591,7 @@ class WikiTextEdit(QTextEdit):
         self.viewport().setCursor(Qt.IBeamCursor)
         super().mouseMoveEvent(event)
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """
         Handles mouse release events for Ctrl+Click navigation.
 

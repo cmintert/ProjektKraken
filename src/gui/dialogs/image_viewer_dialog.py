@@ -187,13 +187,21 @@ class ImageViewerDialog(QDialog):
         target_w = max(img_w, min_controls_w)
 
         # Estimate controls height via sizeHint of controls_widget
-        controls_widget = self.layout().itemAt(1).widget()
-        if controls_widget:
-            # Force layout update to get accurate hint if needed
-            controls_widget.adjustSize()
-            controls_h = controls_widget.sizeHint().height()
+        layout = self.layout()
+        if layout:
+            item = layout.itemAt(1)
+            if item:
+                controls_widget = item.widget()
+                if controls_widget:
+                    # Force layout update to get accurate hint if needed
+                    controls_widget.adjustSize()
+                    controls_h = controls_widget.sizeHint().height()
+                else:
+                    controls_h = 100
+            else:
+                controls_h = 100
         else:
-            controls_h = 100  # Fallback
+            controls_h = 100
 
         target_h = img_h + controls_h
 

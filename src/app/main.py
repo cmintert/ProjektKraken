@@ -1769,8 +1769,8 @@ class MainWindow(QMainWindow):
         msg.setText(f"Item '{target_name}' does not exist.")
         msg.setInformativeText("Would you like to create it?")
 
-        btn_entity = msg.addButton("Create Entity", QMessageBox.AcceptRole)
-        btn_event = msg.addButton("Create Event", QMessageBox.AcceptRole)
+        btn_entity = msg.addButton("Create Entity", QMessageBox.ButtonRole.AcceptRole)
+        btn_event = msg.addButton("Create Event", QMessageBox.ButtonRole.AcceptRole)
         msg.addButton(QMessageBox.StandardButton.Cancel)
 
         msg.exec()

@@ -1,0 +1,19 @@
+{
+    "include": [
+        "src"
+    ],
+    "exclude": [
+        "**/__pycache__",
+        ".venv",
+        "tests"
+    ],
+    "reportMissingImports": true,
+    "reportMissingTypeStubs": false,
+    "pythonVersion": "3.13",
+    "pythonPlatform": "Windows",
+    "executionEnvironments": [
+        {
+            "root": "."
+        }
+    ]
+}

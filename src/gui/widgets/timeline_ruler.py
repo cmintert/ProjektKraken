@@ -354,6 +354,9 @@ class TimelineRuler:
             Calendar-formatted label.
         """
         try:
+            if not self._calendar:
+                return self._format_numeric_label(position, level)
+
             date = self._calendar.from_float(position)
 
             if level <= TickLevel.DECADE:

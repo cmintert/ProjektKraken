@@ -100,6 +100,13 @@ class TimelineLanePacker:
         Returns:
             float: Visual duration in lore date units.
         """
+        if self.fm is None:
+            self._ensure_font_metrics()
+        # Double check after ensure
+        if self.fm is None:
+            # Should practically never happen if QApplication exists
+            return 0.0
+
         text_width = self.fm.horizontalAdvance(event.name)
 
         if event.lore_duration > 0:

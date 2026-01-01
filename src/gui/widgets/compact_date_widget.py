@@ -10,7 +10,9 @@ Provides a polished, calendar-aware date input widget with:
 - Live preview of formatted date
 """
 
-from PySide6.QtCore import Signal
+from typing import Optional
+
+from PySide6.QtCore import QSize, Signal
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -46,7 +48,7 @@ class CompactDateWidget(QWidget):
 
     value_changed = Signal(float)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget = None) -> None:
         """
         Initializes the compact date widget.
 
@@ -65,7 +67,7 @@ class CompactDateWidget(QWidget):
         self._setup_ui()
         self._connect_signals()
 
-    def _setup_ui(self):
+    def _setup_ui(self) -> None:
         """Sets up the widget UI."""
         outer_layout = QVBoxLayout(self)
         outer_layout.setContentsMargins(0, 0, 0, 0)
@@ -157,7 +159,7 @@ class CompactDateWidget(QWidget):
         self._populate_months()
         self._populate_days()
 
-    def _connect_signals(self):
+    def _connect_signals(self) -> None:
         """Connects internal signals."""
         self.spin_year.valueChanged.connect(self._on_input_changed)
         self.combo_month.currentIndexChanged.connect(self._on_month_changed)
@@ -166,7 +168,7 @@ class CompactDateWidget(QWidget):
         self.spin_minute.valueChanged.connect(self._on_input_changed)
         self.btn_calendar.clicked.connect(self._open_calendar_popup)
 
-    def set_calendar_converter(self, converter: CalendarConverter):
+    def set_calendar_converter(self, converter: CalendarConverter) -> None:
         """
         Sets the calendar converter for date calculations.
 
@@ -178,7 +180,7 @@ class CompactDateWidget(QWidget):
         self._populate_days()
         self._update_preview()
 
-    def _populate_months(self):
+    def _populate_months(self) -> None:
         """Populates month dropdown from calendar."""
         self._updating = True
         current_index = self.combo_month.currentIndex()
@@ -202,7 +204,7 @@ class CompactDateWidget(QWidget):
 
         self._updating = False
 
-    def _populate_days(self):
+    def _populate_days(self) -> None:
         """Populates day dropdown based on selected month."""
         self._updating = True
         current_day = self.combo_day.currentIndex()
@@ -229,12 +231,12 @@ class CompactDateWidget(QWidget):
         self.combo_month.blockSignals(False)
         self._updating = False
 
-    def _on_month_changed(self, index):
+    def _on_month_changed(self, index: int) -> None:
         """Handles month selection change."""
         self._populate_days()
         self._on_input_changed()
 
-    def _on_input_changed(self):
+    def _on_input_changed(self) -> None:
         """Handles any input change."""
         if self._updating:
             return
@@ -243,7 +245,7 @@ class CompactDateWidget(QWidget):
         value = self.get_value()
         self.value_changed.emit(value)
 
-    def _update_preview(self):
+    def _update_preview(self) -> None:
         """Updates the preview label."""
         if not self._converter:
             self.lbl_preview.setText("")
@@ -293,7 +295,7 @@ class CompactDateWidget(QWidget):
         )
         return self._converter.to_float(date)
 
-    def set_value(self, days_float: float):
+    def set_value(self, days_float: float) -> None:
         """
         Sets the date from a float value.
 
@@ -342,7 +344,7 @@ class CompactDateWidget(QWidget):
         finally:
             self._updating = False
 
-    def _open_calendar_popup(self):
+    def _open_calendar_popup(self) -> None:
         """Opens the calendar picker popup."""
         if not self._converter:
             return
@@ -361,7 +363,7 @@ class CompactDateWidget(QWidget):
             self._populate_days()
             self.combo_day.setCurrentIndex(day - 1)
 
-    def minimumSizeHint(self):
+    def minimumSizeHint(self) -> QSize:
         """
         Returns the minimum size hint to prevent vertical collapse.
 
@@ -372,7 +374,7 @@ class CompactDateWidget(QWidget):
 
         return QSize(250, 72)  # Two rows of controls + frame padding
 
-    def sizeHint(self):
+    def sizeHint(self) -> QSize:
         """
         Returns the preferred size hint.
 
@@ -393,12 +395,12 @@ class CalendarPopup(QDialog):
 
     def __init__(
         self,
-        parent,
+        parent: Optional[QWidget],
         converter: CalendarConverter,
         year: int,
         month: int,
         day: int,
-    ):
+    ) -> None:
         """
         Initializes the calendar popup.
 
@@ -418,7 +420,7 @@ class CalendarPopup(QDialog):
 
         self._setup_ui()
 
-    def _setup_ui(self):
+    def _setup_ui(self) -> None:
         """Sets up the popup UI."""
         # Set dialog-level stylesheet for day buttons using StyleHelper
         dialog_style = (
@@ -469,13 +471,13 @@ class CalendarPopup(QDialog):
         btn_layout.addWidget(btn_cancel)
         layout.addLayout(btn_layout)
 
-    def _refresh_grid(self):
+    def _refresh_grid(self) -> None:
         """Refreshes the day grid."""
         # Clear existing
         while self.grid_layout.count():
             item = self.grid_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+            if item and item.widget():
+                item.widget().deleteLater()  # type: ignore
 
         year = self.spin_year.value()
         month_idx = self.combo_month.currentIndex()
@@ -502,13 +504,13 @@ class CalendarPopup(QDialog):
             col = (d - 1) % 7
             self.grid_layout.addWidget(btn, row, col)
 
-    def _select_day(self, day: int):
+    def _select_day(self, day: int) -> None:
         """Selects a day and accepts."""
         self._selected_day = day
         self._year = self.spin_year.value()
         self._month = self.combo_month.currentIndex() + 1
         self.accept()
 
-    def get_selected_date(self):
+    def get_selected_date(self) -> tuple[int, int, int]:
         """Returns the selected date as (year, month, day)."""
         return self._year, self._month, self._selected_day

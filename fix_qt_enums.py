@@ -86,6 +86,16 @@ ENUM_REPLACEMENTS = {
     # QDialog.DialogCode
     "QDialog.Accepted": "QDialog.DialogCode.Accepted",
     "QDialog.Rejected": "QDialog.DialogCode.Rejected",
+    # QMessageBox.ButtonRole
+    "QMessageBox.AcceptRole": "QMessageBox.ButtonRole.AcceptRole",
+    "QMessageBox.RejectRole": "QMessageBox.ButtonRole.RejectRole",
+    "QMessageBox.DestructiveRole": "QMessageBox.ButtonRole.DestructiveRole",
+    "QMessageBox.ActionRole": "QMessageBox.ButtonRole.ActionRole",
+    "QMessageBox.HelpRole": "QMessageBox.ButtonRole.HelpRole",
+    "QMessageBox.YesRole": "QMessageBox.ButtonRole.YesRole",
+    "QMessageBox.NoRole": "QMessageBox.ButtonRole.NoRole",
+    "QMessageBox.ApplyRole": "QMessageBox.ButtonRole.ApplyRole",
+    "QMessageBox.ResetRole": "QMessageBox.ButtonRole.ResetRole",
     # NEW MAPPINGS
     # Qt.WidgetAttribute
     "Qt.WA_StyledBackground": "Qt.WidgetAttribute.WA_StyledBackground",

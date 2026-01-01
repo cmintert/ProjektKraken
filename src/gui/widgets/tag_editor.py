@@ -4,6 +4,8 @@ Tag Editor Widget Module.
 Provides a list-based interface for managing tags on entities and events.
 """
 
+from typing import List, Optional
+
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -13,7 +15,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from typing import List, Optional
 
 from src.gui.widgets.standard_buttons import StandardButton
 

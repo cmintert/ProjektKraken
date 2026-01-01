@@ -5,9 +5,19 @@ Provides the TimelineView class for rendering and interacting with the timeline.
 """
 
 import logging
+from typing import Any
 
-from PySide6.QtCore import QPointF, QRectF, Qt, QTimer, Signal
-from PySide6.QtGui import QColor, QFont, QPainter, QPen, QTransform
+from PySide6.QtCore import QPointF, QRectF, QSize, Qt, QTimer, Signal
+from PySide6.QtGui import (
+    QColor,
+    QFont,
+    QMouseEvent,
+    QPainter,
+    QPen,
+    QResizeEvent,
+    QTransform,
+    QWheelEvent,
+)
 from PySide6.QtWidgets import QGraphicsView, QWidget
 
 from src.core.theme_manager import ThemeManager
@@ -52,7 +62,7 @@ class TimelineView(QGraphicsView):
     ALL_EVENTS_GROUP_NAME = "All events"
     ALL_EVENTS_COLOR = "#808080"  # Neutral gray
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget = None) -> None:
         """
         Initializes the TimelineView.
 
@@ -141,7 +151,7 @@ class TimelineView(QGraphicsView):
         # Set corner widget for themed scrollbar corner
         self._update_corner_widget(ThemeManager().get_theme())
 
-    def minimumSizeHint(self):
+    def minimumSizeHint(self) -> QSize:
         """
         Override minimum size hint to allow vertical shrinking.
 
@@ -156,7 +166,7 @@ class TimelineView(QGraphicsView):
 
         return QSize(200, 100)
 
-    def _on_playhead_moved(self, x_pos):
+    def _on_playhead_moved(self, x_pos: float) -> None:
         """
         Called when playhead is dragged manually.
         Updates the internal time and emits signal.
@@ -165,7 +175,7 @@ class TimelineView(QGraphicsView):
         self._playhead._time = new_time  # Directly update internal state
         self.playhead_time_changed.emit(new_time)
 
-    def _on_event_drag_complete(self, event_id: str, new_lore_date: float):
+    def _on_event_drag_complete(self, event_id: str, new_lore_date: float) -> None:
         """
         Called when an event item is dragged to a new position.
         Emits the event_date_changed signal for persistence.
@@ -177,7 +187,7 @@ class TimelineView(QGraphicsView):
         logger.debug(f"Event {event_id} dragged to lore_date {new_lore_date}")
         self.event_date_changed.emit(event_id, new_lore_date)
 
-    def _update_corner_widget(self, theme):
+    def _update_corner_widget(self, theme: dict) -> None:
         """
         Updates the corner widget background to match the theme.
 
@@ -189,7 +199,7 @@ class TimelineView(QGraphicsView):
         corner.setStyleSheet(f"background-color: {scrollbar_bg};")
         self.setCornerWidget(corner)
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, event: QResizeEvent) -> None:
         """
         Handles resize events to ensure initial fit works correctly.
         """
@@ -215,7 +225,7 @@ class TimelineView(QGraphicsView):
     # Height allocated for sticky parent context tier
     CONTEXT_TIER_HEIGHT = 14
 
-    def drawForeground(self, painter, rect):
+    def drawForeground(self, painter: QPainter, rect: QRectF) -> None:
         """
         Draws a semantic zoom ruler at the top of the viewport.
 
@@ -352,7 +362,7 @@ class TimelineView(QGraphicsView):
 
         painter.restore()
 
-    def set_ruler_calendar(self, converter):
+    def set_ruler_calendar(self, converter: Any) -> None:
         """
         Configures the ruler with calendar-aware date divisions.
 
@@ -364,7 +374,7 @@ class TimelineView(QGraphicsView):
         self._ruler.set_calendar_converter(converter)
         self.viewport().update()
 
-    def set_events(self, events):
+    def set_events(self, events: list) -> None:
         """
         Updates the scene with event items using smart lane packing.
         Reuses existing EventItem instances where possible for performance.
@@ -560,7 +570,7 @@ class TimelineView(QGraphicsView):
                 else:
                     self._initial_fit_pending = True
 
-    def repack_events(self):
+    def repack_events(self) -> None:
         """
         Repacks events into lanes based on the current effective zoom level.
         This recalculates lane assignments to prevent overlaps as the timeline
@@ -657,7 +667,7 @@ class TimelineView(QGraphicsView):
                 current_rect.x(), current_rect.y(), current_rect.width(), max_y
             )
 
-    def _partition_events(self, events: list, tag_order: list, mode: str):
+    def _partition_events(self, events: list, tag_order: list, mode: str) -> dict:
         """Partition events into groups based on tags."""
         groups = {tag: [] for tag in tag_order}
         ungrouped = []
@@ -685,7 +695,7 @@ class TimelineView(QGraphicsView):
 
         return groups, ungrouped
 
-    def _clear_duplicates(self):
+    def _clear_duplicates(self) -> tuple[dict, list]:
         """Removes all duplicate event items from the scene."""
         if (
             not hasattr(self, "_duplicate_event_items")
@@ -698,7 +708,7 @@ class TimelineView(QGraphicsView):
                 self.scene.removeItem(item)
         self._duplicate_event_items.clear()
 
-    def _repack_grouped_events(self):
+    def _repack_grouped_events(self) -> None:
         """Repack events using swimlane layout (Band -> Events -> Band)."""
         logger.debug("Repacking with swimlane layout")
 
@@ -732,7 +742,10 @@ class TimelineView(QGraphicsView):
         # 2. Iterate Groups
         for tag in self._grouping_tag_order:
             events_in_group = groups[tag]
-            band = self._band_manager.get_band(tag)
+            if self._band_manager:
+                band = self._band_manager.get_band(tag)
+            else:
+                band = None
 
             if not band:
                 continue
@@ -820,7 +833,10 @@ class TimelineView(QGraphicsView):
         current_y += 20
 
         # Create/get "All events" band
-        all_events_band = self._band_manager.get_band(self.ALL_EVENTS_GROUP_NAME)
+        all_events_band = None
+        if self._band_manager:
+            all_events_band = self._band_manager.get_band(self.ALL_EVENTS_GROUP_NAME)
+
         if not all_events_band:
             logger.warning(f"Band for '{self.ALL_EVENTS_GROUP_NAME}' not found")
         else:
@@ -906,7 +922,7 @@ class TimelineView(QGraphicsView):
         # Update label overlay to reflect new band positions
         self._update_label_overlay()
 
-    def fit_all(self):
+    def fit_all(self) -> None:
         """
         Fits the view to encompass all event items, ignoring the infinite axis.
         Adds a 10% margin on the sides.
@@ -961,7 +977,7 @@ class TimelineView(QGraphicsView):
             # Explicitly ensure we are at the top (redundancy for safety)
             self.verticalScrollBar().setValue(self.verticalScrollBar().minimum())
 
-    def wheelEvent(self, event):
+    def wheelEvent(self, event: QWheelEvent) -> None:
         """
         Handles mouse wheel events for zooming with zoom-to-cursor behavior.
         Zooms in/out centered on the mouse position with min/max limits.
@@ -1001,7 +1017,7 @@ class TimelineView(QGraphicsView):
                 # Restore original anchor
                 self.setTransformationAnchor(old_anchor)
 
-    def update_event_preview(self, event_data: dict):
+    def update_event_preview(self, event_data: dict) -> None:
         """
         Updates the visual representation of an event in real-time.
 
@@ -1044,7 +1060,7 @@ class TimelineView(QGraphicsView):
         # Update view
         self.viewport().update()
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         """
         Handles mouse clicks. Emits 'event_selected' if an EventItem is clicked.
         Tracks playhead dragging.
@@ -1066,7 +1082,7 @@ class TimelineView(QGraphicsView):
             # Track that we're dragging the playhead
             self._dragging_playhead = True
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """
         Handles mouse release. Emits playhead_time_changed if playhead was dragged.
         """
@@ -1078,7 +1094,7 @@ class TimelineView(QGraphicsView):
             self.playhead_time_changed.emit(new_time)
             self._dragging_playhead = False
 
-    def focus_event(self, event_id: str):
+    def focus_event(self, event_id: str) -> None:
         """Centers the view on the specified event."""
         for item in self.scene.items():
             if isinstance(item, EventItem) and item.event.id == event_id:
@@ -1086,14 +1102,14 @@ class TimelineView(QGraphicsView):
                 item.setSelected(True)
                 return
 
-    def start_playback(self):
+    def start_playback(self) -> None:
         """
         Starts automatic playhead advancement.
         """
         if not self._playback_timer.isActive():
             self._playback_timer.start(self._playback_interval)
 
-    def stop_playback(self):
+    def stop_playback(self) -> None:
         """
         Stops automatic playhead advancement.
         """
@@ -1108,7 +1124,7 @@ class TimelineView(QGraphicsView):
         """
         return self._playback_timer.isActive()
 
-    def set_playhead_time(self, time: float):
+    def set_playhead_time(self, time: float) -> None:
         """
         Sets the playhead to a specific time position.
 
@@ -1127,7 +1143,7 @@ class TimelineView(QGraphicsView):
         """
         return self._playhead.get_time(self.scale_factor)
 
-    def step_forward(self):
+    def step_forward(self) -> None:
         """
         Steps the playhead forward by the playback step amount.
         """
@@ -1135,7 +1151,7 @@ class TimelineView(QGraphicsView):
         new_time = current_time + self._playback_step
         self.set_playhead_time(new_time)
 
-    def step_backward(self):
+    def step_backward(self) -> None:
         """
         Steps the playhead backward by the playback step amount.
         """
@@ -1143,13 +1159,13 @@ class TimelineView(QGraphicsView):
         new_time = current_time - self._playback_step
         self.set_playhead_time(new_time)
 
-    def _advance_playhead(self):
+    def _advance_playhead(self) -> None:
         """
         Internal method called by timer to advance playhead during playback.
         """
         self.step_forward()
 
-    def set_current_time(self, time: float):
+    def set_current_time(self, time: float) -> None:
         """
         Sets the current time line to a specific time position.
         This represents the "now" of the world, distinct from the playhead.
@@ -1174,7 +1190,7 @@ class TimelineView(QGraphicsView):
     # Timeline Grouping Methods (Milestone 3)
     # -------------------------------------------------------------------------
 
-    def set_data_provider(self, provider):
+    def set_data_provider(self, provider: Any) -> None:
         """
         Set the data provider for timeline grouping features.
 
@@ -1211,7 +1227,7 @@ class TimelineView(QGraphicsView):
 
             logger.info("Group band manager initialized with data provider")
 
-    def set_grouping_config(self, tag_order: list, mode: str = "DUPLICATE"):
+    def set_grouping_config(self, tag_order: list, mode: str = "DUPLICATE") -> None:
         """
         Set the timeline grouping configuration.
 
@@ -1246,7 +1262,7 @@ class TimelineView(QGraphicsView):
 
         logger.info(f"Grouping set: {len(tag_order)} tags, mode={mode}")
 
-    def clear_grouping(self):
+    def clear_grouping(self) -> None:
         """Clear all timeline grouping bands."""
         if self._band_manager is not None:
             self._band_manager.clear_bands()
@@ -1258,13 +1274,13 @@ class TimelineView(QGraphicsView):
         self.repack_events()
         logger.info("Grouping cleared")
 
-    def update_band_metadata(self):
+    def update_band_metadata(self) -> None:
         """Update metadata for all bands (counts, dates)."""
         if self._band_manager is not None:
             date_range = self._get_visible_date_range()
             self._band_manager.update_band_metadata(date_range)
 
-    def _get_visible_date_range(self):
+    def _get_visible_date_range(self) -> tuple | None:
         """
         Get the currently visible date range in the viewport.
 
@@ -1284,7 +1300,7 @@ class TimelineView(QGraphicsView):
             logger.warning(f"Could not calculate visible date range: {e}")
             return None
 
-    def _on_band_expanded(self, tag_name: str):
+    def _on_band_expanded(self, tag_name: str) -> None:
         """
         Handle band expansion.
 
@@ -1296,7 +1312,7 @@ class TimelineView(QGraphicsView):
         # Repack events to update positions and show events in this group
         self.repack_events()
 
-    def _on_band_collapsed(self, tag_name: str):
+    def _on_band_collapsed(self, tag_name: str) -> None:
         """
         Handle band collapse.
 
@@ -1351,7 +1367,7 @@ class TimelineView(QGraphicsView):
         logger.debug(f"Setting {len(labels)} labels on overlay")
         self._label_overlay.set_labels(labels)
 
-    def scrollContentsBy(self, dx, dy):
+    def scrollContentsBy(self, dx: int, dy: int) -> None:
         """Handle scroll events to update label positions."""
         super().scrollContentsBy(dx, dy)
 
@@ -1359,7 +1375,7 @@ class TimelineView(QGraphicsView):
         if dy != 0:
             self._update_label_overlay()
 
-    def _on_tag_color_change_requested(self, tag_name: str):
+    def _on_tag_color_change_requested(self, tag_name: str) -> None:
         """
         Handle tag color change request.
 
@@ -1373,7 +1389,7 @@ class TimelineView(QGraphicsView):
         # For now, just log
         pass
 
-    def _on_tag_rename_requested(self, tag_name: str):
+    def _on_tag_rename_requested(self, tag_name: str) -> None:
         """
         Handle tag rename request.
 
@@ -1386,7 +1402,7 @@ class TimelineView(QGraphicsView):
         # This should be handled by the main window/controller
         pass
 
-    def _on_remove_from_grouping_requested(self, tag_name: str):
+    def _on_remove_from_grouping_requested(self, tag_name: str) -> None:
         """
         Handle request to remove a tag from grouping.
 

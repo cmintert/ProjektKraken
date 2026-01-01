@@ -292,14 +292,14 @@ class LongformOutlineWidget(QTreeWidget):
         """Handle keyboard shortcuts for promote/demote operations."""
         # Check for Ctrl+[ (promote)
         if (
-            event.key() == Qt.Key_BracketLeft
+            event.key() == Qt.Key.Key_BracketLeft
             and event.modifiers() == Qt.KeyboardModifier.ControlModifier
         ):
             self._promote_selected()
             event.accept()
         # Check for Ctrl+] (demote)
         elif (
-            event.key() == Qt.Key_BracketRight
+            event.key() == Qt.Key.Key_BracketRight
             and event.modifiers() == Qt.KeyboardModifier.ControlModifier
         ):
             self._demote_selected()

@@ -6,9 +6,9 @@ filtering and color-coded differentiation.
 """
 
 import json
-from typing import List
+from typing import List, Union
 
-from PySide6.QtCore import QMimeData, Qt, Signal
+from PySide6.QtCore import QMimeData, QSize, Qt, Signal
 from PySide6.QtGui import QBrush, QColor, QDrag
 from PySide6.QtWidgets import (
     QComboBox,
@@ -39,13 +39,13 @@ class DraggableListWidget(QListWidget):
         {"id": "uuid", "type": "event|entity", "name": "Display Name"}
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget = None) -> None:
         """Initialize with drag enabled."""
         super().__init__(parent)
         self.setDragEnabled(True)
         self.setDragDropMode(QListWidget.DragOnly)
 
-    def startDrag(self, supportedActions):
+    def startDrag(self, supportedActions: Qt.DropAction) -> None:
         """
         Override to provide custom MIME data for dragged items.
 
@@ -94,7 +94,7 @@ class UnifiedListWidget(QWidget):
     show_filter_dialog_requested = Signal()  # Request to open filter dialog
     clear_filter_requested = Signal()  # Request to clear filters
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget = None) -> None:
         """
         Initializes the UnifiedListWidget.
 
@@ -159,10 +159,9 @@ class UnifiedListWidget(QWidget):
         self.btn_filter.clicked.connect(self.show_filter_dialog_requested.emit)
         filter_row.addWidget(self.btn_filter)
 
-        # Clear Filters button - keeps concept but might need to signal to clear backend filter
-        # For now, we'll keep it to clear the backend filter via signal if needed,
-        # or just reload all.
-        # Actually, "Clear Filters" usually implicitly means "Show All".
+        # Clear Filters button - keeps concept but might need to signal to clear backend
+        # filter. For now, we'll keep it to clear the backend filter via signal if needed,
+        # or just reload all. Actually, "Clear Filters" usually means "Show All".
         self.btn_clear_filters = QPushButton("Clear Filters")
         self.btn_clear_filters.clicked.connect(self._request_clear_filters)
         filter_row.addWidget(self.btn_clear_filters)
@@ -201,7 +200,7 @@ class UnifiedListWidget(QWidget):
 
         self._render_list()
 
-    def set_data(self, events: List[Event], entities: List[Entity]):
+    def set_data(self, events: List[Event], entities: List[Entity]) -> None:
         """
         Sets the data to display in the list.
 
@@ -214,13 +213,13 @@ class UnifiedListWidget(QWidget):
 
         self._render_list()
 
-    def _request_clear_filters(self):
+    def _request_clear_filters(self) -> None:
         """
         Requests clearing backend filters.
         """
         self.clear_filter_requested.emit()
 
-    def set_filter_active(self, active: bool):
+    def set_filter_active(self, active: bool) -> None:
         """
         Updates the filter button appearance to indicate active filter.
 
@@ -231,7 +230,8 @@ class UnifiedListWidget(QWidget):
             # Use theme-aware styling or a distinct color
             # For now, a simple border/background tint
             self.btn_filter.setStyleSheet(
-                "background-color: #2c3e50; border: 2px solid #3498db; font-weight: bold;"
+                "background-color: #2c3e50; border: 2px solid #3498db; "
+                "font-weight: bold;"
             )
             self.btn_filter.setText("Filter (Active)")
         else:
@@ -240,7 +240,7 @@ class UnifiedListWidget(QWidget):
 
     # _clear_filters removed as it's replaced by backend refresh
 
-    def _render_list(self):
+    def _render_list(self) -> None:
         """
         Renders the list based on current filter and data.
         Preserves selection during refresh.
@@ -337,7 +337,7 @@ class UnifiedListWidget(QWidget):
             self.list_widget.hide()
             self.empty_label.show()
 
-    def _on_search_text_changed(self, text: str):
+    def _on_search_text_changed(self, text: str) -> None:
         """
         Handles search bar text changes for live filtering.
 
@@ -347,7 +347,7 @@ class UnifiedListWidget(QWidget):
         self._search_term = text.lower().strip()
         self._render_list()
 
-    def _matches_search(self, obj) -> bool:
+    def _matches_search(self, obj: Union[Event, Entity]) -> bool:
         """
         Checks if an object matches the current search term.
         Performs full text search on name, type, description, tags, and attributes.
@@ -389,12 +389,12 @@ class UnifiedListWidget(QWidget):
 
         return False
 
-    def _passes_filters(self, obj) -> bool:
+    def _passes_filters(self, obj: Union[Event, Entity]) -> bool:
         """
         Checks if an object passes all active filters (search).
 
-        Note: Backend filtering (tags/types) is already applied to self._events/_entities.
-        This only checks local text search.
+        Note: Backend filtering (tags/types) is already applied to
+        self._events/_entities. This only checks local text search.
 
         Args:
             obj: Event or Entity object.
@@ -408,7 +408,7 @@ class UnifiedListWidget(QWidget):
 
         return True
 
-    def _on_filter_changed(self, text):
+    def _on_filter_changed(self, text: str) -> None:
         """
         Handles filter combo box changes.
 
@@ -417,7 +417,7 @@ class UnifiedListWidget(QWidget):
         """
         self._render_list()
 
-    def _on_selection_changed(self):
+    def _on_selection_changed(self) -> None:
         """
         Handles item selection changes in the list.
         """
@@ -431,7 +431,7 @@ class UnifiedListWidget(QWidget):
         else:
             self.btn_delete.setEnabled(False)
 
-    def _on_delete_clicked(self):
+    def _on_delete_clicked(self) -> None:
         """
         Handles delete button clicks.
         """
@@ -442,7 +442,7 @@ class UnifiedListWidget(QWidget):
             item_type = item.data(Qt.ItemDataRole.UserRole + 1)
             self.delete_requested.emit(item_type, item_id)
 
-    def select_item(self, item_type: str, item_id: str):
+    def select_item(self, item_type: str, item_id: str) -> None:
         """
         Programmatically selects an item in the list.
         Auto-switches filter if item not visible.
@@ -452,7 +452,7 @@ class UnifiedListWidget(QWidget):
             item_id (str): The ID of the item to select.
         """
 
-        def find_and_select():
+        def find_and_select() -> bool:
             """
             Inner function to search list and select matching item.
 
@@ -489,24 +489,20 @@ class UnifiedListWidget(QWidget):
             # Signal should trigger _render_list synchronously
             find_and_select()
 
-    def minimumSizeHint(self):
+    def minimumSizeHint(self) -> QSize:
         """
         Override to prevent dock collapse.
 
         Returns:
             QSize: Minimum size for usable project explorer.
         """
-        from PySide6.QtCore import QSize
-
         return QSize(250, 200)  # Width for list items, height for toolbar + items
 
-    def sizeHint(self):
+    def sizeHint(self) -> QSize:
         """
         Preferred size for the project explorer.
 
         Returns:
             QSize: Comfortable working size for browsing items.
         """
-        from PySide6.QtCore import QSize
-
         return QSize(350, 500)  # Comfortable browsing size

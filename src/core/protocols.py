@@ -76,6 +76,71 @@ class MainWindowProtocol(Protocol):
     worker: object  # Worker instance for background operations
     command_requested: object  # Signal for emitting commands
 
+    # Missing Attributes identified by Pyright (Typed as Any for flexibility)
+    _on_command_failed: Any
+    _on_dock_raise_requested: Any
+    _on_entities_ready: Any
+    _on_entity_details_ready: Any
+    _on_event_date_changed: Any
+    _on_event_details_ready: Any
+    _on_events_ready: Any
+    _on_item_delete_requested: Any
+    _on_item_selected: Any
+    _on_longform_sequence_ready: Any
+    _on_maps_ready: Any
+    _on_marker_clicked: Any
+    _on_marker_color_changed: Any
+    _on_marker_dropped: Any
+    _on_marker_icon_changed: Any
+    _on_marker_position_changed: Any
+    _on_markers_ready: Any
+    _on_reload_active_editor_relations: Any
+    _on_remove_from_grouping_requested: Any
+    _on_search_result_selected: Any
+    _on_selection_requested: Any
+    _on_suggestions_update: Any
+    _on_tag_color_change_requested: Any
+    add_relation: Any
+    ai_search_panel: Any
+    clear_filter: Any
+    clear_longform_filter: Any
+    create_entity: Any
+    create_event: Any
+    create_map: Any
+    create_marker: Any
+    data_handler: Any
+    delete_map: Any
+    delete_marker: Any
+    demote_longform_entry: Any
+    entity_editor: Any
+    event_editor: Any
+    export_longform_document: Any
+    load_data: Any
+    load_entities: Any
+    load_entity_details: Any
+    load_event_details: Any
+    load_events: Any
+    load_longform_sequence: Any
+    load_maps: Any
+    longform_editor: Any
+    map_widget: Any
+    move_longform_entry: Any
+    navigate_to_entity: Any
+    on_current_time_changed: Any
+    on_map_selected: Any
+    perform_semantic_search: Any
+    promote_longform_entry: Any
+    remove_relation: Any
+    show_filter_dialog: Any
+    show_longform_filter_dialog: Any
+    status_bar: Any
+    timeline: Any
+    unified_list: Any
+    update_entity: Any
+    update_event: Any
+    update_playhead_time_label: Any
+    update_relation: Any
+
 
 @runtime_checkable
 class TimelineDataProvider(Protocol):
