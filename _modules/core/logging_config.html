@@ -342,7 +342,6 @@
     <span class="c1"># 6. Initial Log</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Project Kraken Session Started at </span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Debug Mode: </span><span class="si">{</span><span class="n">debug_mode</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">60</span><span class="p">)</span></div>
 
 
@@ -360,6 +359,16 @@
 <span class="sd">        logging.Logger: The logger instance.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="shutdown_logging">
+<a class="viewcode-back" href="../../core.html#core.logging_config.shutdown_logging">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">shutdown_logging</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Explicitly closes all logging handlers to release file locks.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span></div>
 
 </pre></div>
         </article>

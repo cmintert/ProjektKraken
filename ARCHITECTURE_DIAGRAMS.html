@@ -3,10 +3,10 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="&lt;no title&gt;" href="LICENSE.html"><link rel="prev" title="services package" href="services.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
-        <title>Changelog - Project Kraken 0.4.0 documentation</title>
+        <title>Architecture Changes Diagram - Project Kraken 0.4.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -226,8 +226,8 @@
 </li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
-<ul class="current">
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Changelog</a></li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
 </ul>
 
 </div>
@@ -248,7 +248,7 @@
         </a>
         <div class="content-icon-container">
           <div class="view-this-page">
-  <a class="muted-link" href="_sources/CHANGELOG.md.txt" title="View this page">
+  <a class="muted-link" href="_sources/ARCHITECTURE_DIAGRAMS.md.txt" title="View this page">
     <svg><use href="#svg-eye"></use></svg>
     <span class="visually-hidden">View this page</span>
   </a>
@@ -266,18 +266,252 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="changelog">
-<h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">¶</a></h1>
-<p>All notable changes to this project will be documented in this file.</p>
-<section id="development-2026-01-01">
-<h2>[Development] - 2026-01-01<a class="headerlink" href="#development-2026-01-01" title="Link to this heading">¶</a></h2>
-<section id="internal">
-<h3>Internal<a class="headerlink" href="#internal" title="Link to this heading">¶</a></h3>
+          <section id="architecture-changes-diagram">
+<h1>Architecture Changes Diagram<a class="headerlink" href="#architecture-changes-diagram" title="Link to this heading">¶</a></h1>
+<section id="before-refactoring-tight-coupling">
+<h2>Before Refactoring - Tight Coupling<a class="headerlink" href="#before-refactoring-tight-coupling" title="Link to this heading">¶</a></h2>
+<div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>graph TD
+    subgraph &quot;Service Layer&quot;
+        DH[DataHandler]
+        DB[(DatabaseService)]
+    end
+    
+    subgraph &quot;UI Layer&quot;
+        MW[MainWindow]
+        UL[UnifiedList]
+        TL[Timeline]
+        EE[EventEditor]
+        UI[UIManager]
+        TV[TimelineView]
+        GBM[GroupBandManager]
+    end
+    
+    DH --&gt;|direct access| UL
+    DH --&gt;|direct access| TL
+    DH --&gt;|direct access| EE
+    DH --&gt;|direct access| MW
+    
+    TV --&gt;|direct access| DB
+    GBM --&gt;|direct access| DB
+    
+    UI --&gt;|implicit interface| MW
+    
+    style DH fill:#ff6b6b
+    style TV fill:#ff6b6b
+    style GBM fill:#ff6b6b
+    style UI fill:#ffd93d
+</pre></div>
+</div>
+<p><strong>Problems:</strong></p>
 <ul class="simple">
-<li><p>Implement safe application shutdown and resource cleanup</p></li>
+<li><p>❌ DataHandler directly manipulates MainWindow widgets</p></li>
+<li><p>❌ Timeline UI layer directly accesses DatabaseService (layer violation)</p></li>
+<li><p>❌ UIManager assumes methods exist on MainWindow (implicit interface)</p></li>
+<li><p>❌ Violates Law of Demeter</p></li>
+<li><p>❌ Tight coupling makes testing difficult</p></li>
 </ul>
-<p><em>This changelog was automatically generated.</em></p>
 </section>
+<section id="after-refactoring-loose-coupling">
+<h2>After Refactoring - Loose Coupling<a class="headerlink" href="#after-refactoring-loose-coupling" title="Link to this heading">¶</a></h2>
+<div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>graph TD
+    subgraph &quot;Service Layer&quot;
+        DH[DataHandler]
+        DB[(DatabaseService)]
+    end
+    
+    subgraph &quot;Controller Layer&quot;
+        MW[MainWindow&lt;br/&gt;implements:&lt;br/&gt;- TimelineDataProvider&lt;br/&gt;- MainWindowProtocol]
+        CM[ConnectionManager]
+    end
+    
+    subgraph &quot;UI Layer&quot;
+        UL[UnifiedList]
+        TL[Timeline]
+        EE[EventEditor]
+        UI[UIManager]
+        TV[TimelineView]
+        GBM[GroupBandManager]
+    end
+    
+    subgraph &quot;Interfaces&quot;
+        TDP[TimelineDataProvider&lt;br/&gt;Protocol]
+        MWP[MainWindowProtocol]
+    end
+    
+    DH --&gt;|emits signals| CM
+    CM --&gt;|connects to| MW
+    MW --&gt;|updates| UL
+    MW --&gt;|updates| TL
+    MW --&gt;|updates| EE
+    
+    MW -.implements.-&gt; TDP
+    MW -.implements.-&gt; MWP
+    
+    TV --&gt;|uses callbacks| MW
+    GBM --&gt;|uses callbacks| MW
+    MW --&gt;|queries| DB
+    
+    UI --&gt;|typed with| MWP
+    UI --&gt;|calls methods on| MW
+    
+    style DH fill:#51cf66
+    style MW fill:#51cf66
+    style TV fill:#51cf66
+    style GBM fill:#51cf66
+    style UI fill:#51cf66
+    style TDP fill:#a9e34b
+    style MWP fill:#a9e34b
+</pre></div>
+</div>
+<p><strong>Solutions:</strong></p>
+<ul class="simple">
+<li><p>✅ DataHandler emits signals instead of direct access</p></li>
+<li><p>✅ MainWindow acts as mediator between Timeline and Database</p></li>
+<li><p>✅ GroupBandManager uses callbacks (no direct DB access)</p></li>
+<li><p>✅ UIManager uses Protocol type hint (explicit interface)</p></li>
+<li><p>✅ Proper layer separation enforced</p></li>
+<li><p>✅ Components are loosely coupled and testable</p></li>
+</ul>
+</section>
+<section id="signal-flow-data-updates">
+<h2>Signal Flow - Data Updates<a class="headerlink" href="#signal-flow-data-updates" title="Link to this heading">¶</a></h2>
+<div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>sequenceDiagram
+    participant Worker
+    participant DataHandler
+    participant ConnectionManager
+    participant MainWindow
+    participant UI as UI Widgets
+    
+    Worker-&gt;&gt;DataHandler: on_events_loaded(events)
+    DataHandler-&gt;&gt;DataHandler: Cache events internally
+    DataHandler-&gt;&gt;ConnectionManager: emit events_ready(events)
+    ConnectionManager-&gt;&gt;MainWindow: _on_events_ready(events)
+    MainWindow-&gt;&gt;MainWindow: Update cache
+    MainWindow-&gt;&gt;UI: unified_list.set_data()
+    MainWindow-&gt;&gt;UI: timeline.set_events()
+    
+    DataHandler-&gt;&gt;ConnectionManager: emit status_message(&quot;Loaded...&quot;)
+    ConnectionManager-&gt;&gt;MainWindow: status_bar.showMessage()
+    
+    DataHandler-&gt;&gt;ConnectionManager: emit suggestions_update_requested(items)
+    ConnectionManager-&gt;&gt;MainWindow: _on_suggestions_update(items)
+    MainWindow-&gt;&gt;UI: event_editor.update_suggestions()
+    MainWindow-&gt;&gt;UI: entity_editor.update_suggestions()
+</pre></div>
+</div>
+</section>
+<section id="data-provider-pattern-timeline">
+<h2>Data Provider Pattern - Timeline<a class="headerlink" href="#data-provider-pattern-timeline" title="Link to this heading">¶</a></h2>
+<div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>sequenceDiagram
+    participant MainWindow
+    participant TimelineView
+    participant GroupBandManager
+    participant DB as DatabaseService
+    
+    Note over MainWindow: Initialization
+    MainWindow-&gt;&gt;TimelineView: set_data_provider(self)
+    TimelineView-&gt;&gt;GroupBandManager: new GroupBandManager(callbacks)
+    
+    Note over GroupBandManager: User requests grouping
+    GroupBandManager-&gt;&gt;GroupBandManager: call get_group_metadata(tags)
+    GroupBandManager-&gt;&gt;MainWindow: callback: get_group_metadata(tags)
+    MainWindow-&gt;&gt;DB: get_group_metadata(tags)
+    DB--&gt;&gt;MainWindow: metadata
+    MainWindow--&gt;&gt;GroupBandManager: metadata
+    GroupBandManager-&gt;&gt;GroupBandManager: Create bands
+    
+    GroupBandManager-&gt;&gt;GroupBandManager: call get_events_for_group(tag)
+    GroupBandManager-&gt;&gt;MainWindow: callback: get_events_for_group(tag)
+    MainWindow-&gt;&gt;DB: get_events_for_group(tag)
+    DB--&gt;&gt;MainWindow: events
+    MainWindow--&gt;&gt;GroupBandManager: events
+</pre></div>
+</div>
+</section>
+<section id="key-design-patterns">
+<h2>Key Design Patterns<a class="headerlink" href="#key-design-patterns" title="Link to this heading">¶</a></h2>
+<section id="observer-pattern-signals-slots">
+<h3>1. Observer Pattern (Signals/Slots)<a class="headerlink" href="#observer-pattern-signals-slots" title="Link to this heading">¶</a></h3>
+<div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>graph LR
+    Subject[DataHandler&lt;br/&gt;Subject] --&gt;|emits| Signal[Qt Signal]
+    Signal --&gt;|notifies| Observer1[MainWindow&lt;br/&gt;Observer 1]
+    Signal --&gt;|notifies| Observer2[Other Components&lt;br/&gt;Observer 2]
+    
+    style Subject fill:#4dabf7
+    style Signal fill:#ffd43b
+    style Observer1 fill:#51cf66
+    style Observer2 fill:#51cf66
+</pre></div>
+</div>
+</section>
+<section id="callback-pattern">
+<h3>2. Callback Pattern<a class="headerlink" href="#callback-pattern" title="Link to this heading">¶</a></h3>
+<div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>graph LR
+    UI[GroupBandManager&lt;br/&gt;UI Component] --&gt;|callback| Mediator[MainWindow&lt;br/&gt;Mediator]
+    Mediator --&gt;|query| Service[DatabaseService&lt;br/&gt;Data Layer]
+    Service --&gt;|return data| Mediator
+    Mediator --&gt;|return data| UI
+    
+    style UI fill:#ff6b6b
+    style Mediator fill:#51cf66
+    style Service fill:#4dabf7
+</pre></div>
+</div>
+</section>
+<section id="protocol-pattern-structural-typing">
+<h3>3. Protocol Pattern (Structural Typing)<a class="headerlink" href="#protocol-pattern-structural-typing" title="Link to this heading">¶</a></h3>
+<div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>graph TD
+    Protocol[Protocol Interface&lt;br/&gt;MainWindowProtocol] -.defines.-&gt; Methods[Required Methods:&lt;br/&gt;- _on_configure_grouping&lt;br/&gt;- _on_clear_grouping&lt;br/&gt;+ attributes]
+    
+    Implementer[MainWindow] -.implements.-&gt; Protocol
+    Consumer[UIManager] --&gt;|typed with| Protocol
+    Consumer --&gt;|uses| Implementer
+    
+    style Protocol fill:#a9e34b
+    style Implementer fill:#51cf66
+    style Consumer fill:#4dabf7
+</pre></div>
+</div>
+</section>
+</section>
+<section id="benefits-summary">
+<h2>Benefits Summary<a class="headerlink" href="#benefits-summary" title="Link to this heading">¶</a></h2>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Aspect</p></th>
+<th class="head"><p>Before</p></th>
+<th class="head"><p>After</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Coupling</strong></p></td>
+<td><p>Tight (direct references)</p></td>
+<td><p>Loose (signals &amp; callbacks)</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Testability</strong></p></td>
+<td><p>Hard (needs full UI)</p></td>
+<td><p>Easy (isolated components)</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Layer Separation</strong></p></td>
+<td><p>Violated</p></td>
+<td><p>Enforced</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Interface Clarity</strong></p></td>
+<td><p>Implicit</p></td>
+<td><p>Explicit (Protocols)</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Maintainability</strong></p></td>
+<td><p>Brittle</p></td>
+<td><p>Flexible</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Type Safety</strong></p></td>
+<td><p>Weak</p></td>
+<td><p>Strong (typed protocols)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
 </section>
 </section>
 
@@ -286,26 +520,8 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="LICENSE.html">
-              <div class="page-info">
-                <div class="context">
-                  <span>Next</span>
-                </div>
-                <div class="title">&lt;no title&gt;</div>
-              </div>
-              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
-            </a>
-          <a class="prev-page" href="services.html">
-              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
-              <div class="page-info">
-                <div class="context">
-                  <span>Previous</span>
-                </div>
-                
-                <div class="title">services package</div>
-                
-              </div>
-            </a>
+          
+          
         </div>
         <div class="bottom-of-page">
           <div class="left-details">
@@ -336,11 +552,18 @@
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Changelog</a><ul>
-<li><a class="reference internal" href="#development-2026-01-01">[Development] - 2026-01-01</a><ul>
-<li><a class="reference internal" href="#internal">Internal</a></li>
+<li><a class="reference internal" href="#">Architecture Changes Diagram</a><ul>
+<li><a class="reference internal" href="#before-refactoring-tight-coupling">Before Refactoring - Tight Coupling</a></li>
+<li><a class="reference internal" href="#after-refactoring-loose-coupling">After Refactoring - Loose Coupling</a></li>
+<li><a class="reference internal" href="#signal-flow-data-updates">Signal Flow - Data Updates</a></li>
+<li><a class="reference internal" href="#data-provider-pattern-timeline">Data Provider Pattern - Timeline</a></li>
+<li><a class="reference internal" href="#key-design-patterns">Key Design Patterns</a><ul>
+<li><a class="reference internal" href="#observer-pattern-signals-slots">1. Observer Pattern (Signals/Slots)</a></li>
+<li><a class="reference internal" href="#callback-pattern">2. Callback Pattern</a></li>
+<li><a class="reference internal" href="#protocol-pattern-structural-typing">3. Protocol Pattern (Structural Typing)</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#benefits-summary">Benefits Summary</a></li>
 </ul>
 </li>
 </ul>

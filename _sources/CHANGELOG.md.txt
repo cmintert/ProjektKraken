@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-01
 ### Internal
-- Update schema documentation via sphinx build
+- Implement safe application shutdown and resource cleanup
 
 
 *This changelog was automatically generated.*
