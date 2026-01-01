@@ -1,3 +1,10 @@
+---
+**Project:** ProjektKraken  
+**Document:** ID-Based Wiki Linking Guide  
+**Last Updated:** 2026-01-01  
+**Commit:** `373459f4`  
+---
+
 # ID-Based Wiki Linking Implementation Guide
 
 ## Overview
@@ -263,6 +270,61 @@ Users can manually convert links:
 3. Type `[[` and select from autocomplete
 4. New ID-based link is inserted automatically
 
+## Quick Start Demo
+
+### 1. Generate Sample Data
+
+Create a test database with Middle Earth data to explore wiki linking features:
+
+```bash
+python tests/populate_middle_earth.py /tmp/middle_earth.kraken
+```
+
+This creates:
+- 8 entities (Gandalf, Frodo, Aragorn, Sauron, locations, artifacts)
+- 3 events (Council of Elrond, Fellowship formation, Fall of Sauron)
+- 15 relations with ID-based wiki links
+
+### 2. Explore Key Features
+
+**ID-Based Links Example:**
+```
+Gandalf's description contains:
+"He played a crucial role in defeating [[id:UUID|Sauron]] during the War of the Ring."
+```
+
+**Key Features to Try:**
+
+1. **Autocomplete**: Type `[[` in any description field
+   - Shows all entities and events
+   - Selecting inserts `[[id:UUID|Name]]` automatically
+
+2. **Broken Link Detection**: Links to deleted items show as red strikethrough
+
+3. **Navigation**: Ctrl+Click any link to jump to target
+
+4. **Name Changes**: Rename an entity - all ID-based links update automatically
+
+### 3. Link Format Comparison
+
+**Legacy Name-Based:**
+```
+[[Gandalf]] met [[Frodo]] in [[The Shire]].
+```
+
+**New ID-Based:**
+```
+[[id:550e8400-e29b-41d4-a716-446655440000|Gandalf]] met 
+[[id:a1b2c3d4-e5f6-4789-0abc-def123456789|Frodo]] in 
+[[id:9876543a-bcde-f012-3456-789abcdef012|The Shire]].
+```
+
+**Benefits of ID-Based:**
+- ✅ Survives name changes
+- ✅ Unambiguous references
+- ✅ Broken link detection
+- ✅ Auto-inserted by autocomplete
+
 ## Testing
 
 ### Unit Tests
@@ -288,17 +350,7 @@ pytest tests/integration/test_link_resolver_integration.py
 pytest tests/ -k "wiki or link or text_parser"
 ```
 
-### Sample Data
-
-Create test database with Middle Earth data:
-```bash
-python tests/populate_middle_earth.py /tmp/test.kraken
-```
-
-This creates:
-- 8 entities (characters, locations, artifacts)
-- 3 events with ID-based links
-- 15 relations demonstrating the system
+Expected: **74 tests passing** ✅
 
 ## Database Schema
 

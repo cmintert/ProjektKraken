@@ -1,3 +1,10 @@
+---
+**Project:** ProjektKraken  
+**Document:** Development Guide  
+**Last Updated:** 2026-01-01  
+**Commit:** `373459f4`  
+---
+
 # Development Guide
 
 ## Environment Setup
