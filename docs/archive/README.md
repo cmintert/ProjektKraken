@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Archive Documentation Index  
 **Last Updated:** 2026-01-01  
-**Commit:** `373459f4`  
+**Commit:** `d9e3f83`  
 ---
 
 # Archive Documentation
@@ -61,7 +61,7 @@ These documents were valuable during the development and refactoring phase but a
 For up-to-date documentation, see:
 
 - **[docs/INDEX.md](../INDEX.md)** - Main documentation index
-- **[docs/Design.md](../Design.md)** - Current architecture specification
+- **[Design.md](../../Design.md)** - Current architecture specification
 - **[docs/DEVELOPMENT.md](../DEVELOPMENT.md)** - Development guide
 - **[docs/DATABASE.md](../DATABASE.md)** - Database architecture
 - **[README.md](../../README.md)** - Main project README

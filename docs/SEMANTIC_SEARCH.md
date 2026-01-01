@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Semantic Search Implementation Guide  
 **Last Updated:** 2026-01-01  
-**Commit:** `373459f4`  
+**Commit:** `d9e3f83`  
 ---
 
 # Semantic Search in ProjektKraken
