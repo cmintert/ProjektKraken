@@ -3,10 +3,10 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="&lt;no title&gt;" href="LICENSE.html"><link rel="prev" title="services package" href="services.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
-        <title>Changelog - Project Kraken 0.4.0 documentation</title>
+        <title>Summary of Type Error Fixes Applied - Project Kraken 0.4.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -226,8 +226,8 @@
 </li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
-<ul class="current">
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Changelog</a></li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
 </ul>
 
 </div>
@@ -248,7 +248,7 @@
         </a>
         <div class="content-icon-container">
           <div class="view-this-page">
-  <a class="muted-link" href="_sources/CHANGELOG.md.txt" title="View this page">
+  <a class="muted-link" href="_sources/TYPE_FIX_SUMMARY.md.txt" title="View this page">
     <svg><use href="#svg-eye"></use></svg>
     <span class="visually-hidden">View this page</span>
   </a>
@@ -266,18 +266,62 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="changelog">
-<h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">¶</a></h1>
-<p>All notable changes to this project will be documented in this file.</p>
-<section id="development-2026-01-01">
-<h2>[Development] - 2026-01-01<a class="headerlink" href="#development-2026-01-01" title="Link to this heading">¶</a></h2>
-<section id="fixed">
-<h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading">¶</a></h3>
+          <section id="summary-of-type-error-fixes-applied">
+<h1>Summary of Type Error Fixes Applied<a class="headerlink" href="#summary-of-type-error-fixes-applied" title="Link to this heading">¶</a></h1>
+<section id="progress">
+<h2>Progress<a class="headerlink" href="#progress" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p>Fix startup crash and resolve GUI linting errors</p></li>
+<li><p><strong>Initial</strong>: 741 errors</p></li>
+<li><p><strong>After Qt enum fixes</strong>: 581 errors</p></li>
+<li><p><strong>After main.py _connection fixes</strong>: 579 errors (estimated)</p></li>
+<li><p><strong>Target</strong>: &lt;100 errors (only unfixable PySide6 stub issues)</p></li>
 </ul>
-<p><em>This changelog was automatically generated.</em></p>
 </section>
+<section id="fixes-applied">
+<h2>Fixes Applied<a class="headerlink" href="#fixes-applied" title="Link to this heading">¶</a></h2>
+<section id="qt-enum-fully-qualified-paths-160-errors-fixed">
+<h3>1. Qt Enum Fully Qualified Paths (160 errors fixed)<a class="headerlink" href="#qt-enum-fully-qualified-paths-160-errors-fixed" title="Link to this heading">¶</a></h3>
+<p>Applied the official PySide6 6.4+ solution:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Qt.LeftButton</span></code> → <code class="docutils literal notranslate"><span class="pre">Qt.MouseButton.LeftButton</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Qt.AlignCenter</span></code> → <code class="docutils literal notranslate"><span class="pre">Qt.AlignmentFlag.AlignCenter</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Qt.QueuedConnection</span></code> → <code class="docutils literal notranslate"><span class="pre">Qt.ConnectionType.QueuedConnection</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">QMessageBox.Yes</span></code> → <code class="docutils literal notranslate"><span class="pre">QMessageBox.StandardButton.Yes</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">QDialog.Accepted</span></code> → <code class="docutils literal notranslate"><span class="pre">QDialog.DialogCode.Accepted</span></code></p></li>
+</ul>
+</section>
+<section id="optional-member-access-2-errors-fixed-in-main-py">
+<h3>2. Optional Member Access (2 errors fixed in main.py)<a class="headerlink" href="#optional-member-access-2-errors-fixed-in-main-py" title="Link to this heading">¶</a></h3>
+<p>Added assertions for <code class="docutils literal notranslate"><span class="pre">_connection</span></code> being non-None:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">gui_db_service</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+<span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gui_db_service</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="remaining-errors-579">
+<h2>Remaining Errors (~579)<a class="headerlink" href="#remaining-errors-579" title="Link to this heading">¶</a></h2>
+<section id="unfixable-pyside6-stub-issues-453">
+<h3>Unfixable PySide6 Stub Issues (~453)<a class="headerlink" href="#unfixable-pyside6-stub-issues-453" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Qt enum access for classes not yet updated</p></li>
+<li><p>QMetaObject.invokeMethod argument types (15 errors)</p></li>
+<li><p>These will be resolved when PySide6-stubs are updated</p></li>
+</ul>
+</section>
+<section id="real-fixable-errors-126">
+<h3>Real Fixable Errors (~126)<a class="headerlink" href="#real-fixable-errors-126" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>OptionalMemberAccess: 14 remaining (in gui widgets)</p></li>
+<li><p>ArgumentType: ~94 (mix of real and stub issues)</p></li>
+<li><p>CallIssue: 15 (mostly invokeMethod)</p></li>
+<li><p>Other: 3</p></li>
+</ul>
+</section>
+</section>
+<section id="next-steps">
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading">¶</a></h2>
+<p>Continue fixing the remaining 14 OptionalMemberAccess errors in GUI widgets.</p>
 </section>
 </section>
 
@@ -286,26 +330,8 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="LICENSE.html">
-              <div class="page-info">
-                <div class="context">
-                  <span>Next</span>
-                </div>
-                <div class="title">&lt;no title&gt;</div>
-              </div>
-              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
-            </a>
-          <a class="prev-page" href="services.html">
-              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
-              <div class="page-info">
-                <div class="context">
-                  <span>Previous</span>
-                </div>
-                
-                <div class="title">services package</div>
-                
-              </div>
-            </a>
+          
+          
         </div>
         <div class="bottom-of-page">
           <div class="left-details">
@@ -336,11 +362,19 @@
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Changelog</a><ul>
-<li><a class="reference internal" href="#development-2026-01-01">[Development] - 2026-01-01</a><ul>
-<li><a class="reference internal" href="#fixed">Fixed</a></li>
+<li><a class="reference internal" href="#">Summary of Type Error Fixes Applied</a><ul>
+<li><a class="reference internal" href="#progress">Progress</a></li>
+<li><a class="reference internal" href="#fixes-applied">Fixes Applied</a><ul>
+<li><a class="reference internal" href="#qt-enum-fully-qualified-paths-160-errors-fixed">1. Qt Enum Fully Qualified Paths (160 errors fixed)</a></li>
+<li><a class="reference internal" href="#optional-member-access-2-errors-fixed-in-main-py">2. Optional Member Access (2 errors fixed in main.py)</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#remaining-errors-579">Remaining Errors (~579)</a><ul>
+<li><a class="reference internal" href="#unfixable-pyside6-stub-issues-453">Unfixable PySide6 Stub Issues (~453)</a></li>
+<li><a class="reference internal" href="#real-fixable-errors-126">Real Fixable Errors (~126)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#next-steps">Next Steps</a></li>
 </ul>
 </li>
 </ul>

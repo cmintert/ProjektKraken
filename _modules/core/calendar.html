@@ -737,7 +737,7 @@
 
 <div class="viewcode-block" id="CalendarConverter.__init__">
 <a class="viewcode-back" href="../../core.html#core.calendar.CalendarConverter.__init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">CalendarConfig</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">CalendarConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initializes the converter with a calendar configuration.</span>
 
@@ -962,7 +962,7 @@
 
 <div class="viewcode-block" id="CalendarConverter.format_date">
 <a class="viewcode-back" href="../../core.html#core.calendar.CalendarConverter.format_date">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">format_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">absolute_day</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">format_str</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">format_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">absolute_day</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">format_str</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Formats a float date as a human-readable string.</span>
 

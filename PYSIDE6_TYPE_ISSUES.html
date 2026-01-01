@@ -3,10 +3,10 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="&lt;no title&gt;" href="LICENSE.html"><link rel="prev" title="services package" href="services.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
-        <title>Changelog - Project Kraken 0.4.0 documentation</title>
+        <title>PySide6 Type Checking Known Issues - Project Kraken 0.4.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -226,8 +226,8 @@
 </li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
-<ul class="current">
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Changelog</a></li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
 </ul>
 
 </div>
@@ -248,7 +248,7 @@
         </a>
         <div class="content-icon-container">
           <div class="view-this-page">
-  <a class="muted-link" href="_sources/CHANGELOG.md.txt" title="View this page">
+  <a class="muted-link" href="_sources/PYSIDE6_TYPE_ISSUES.md.txt" title="View this page">
     <svg><use href="#svg-eye"></use></svg>
     <span class="visually-hidden">View this page</span>
   </a>
@@ -266,17 +266,99 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="changelog">
-<h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">¶</a></h1>
-<p>All notable changes to this project will be documented in this file.</p>
-<section id="development-2026-01-01">
-<h2>[Development] - 2026-01-01<a class="headerlink" href="#development-2026-01-01" title="Link to this heading">¶</a></h2>
-<section id="fixed">
-<h3>Fixed<a class="headerlink" href="#fixed" title="Link to this heading">¶</a></h3>
+          <section id="pyside6-type-checking-known-issues">
+<h1>PySide6 Type Checking Known Issues<a class="headerlink" href="#pyside6-type-checking-known-issues" title="Link to this heading">¶</a></h1>
+<p>This document tracks known type checking false positives in the codebase due to incomplete PySide6 type stubs.</p>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p>Fix startup crash and resolve GUI linting errors</p></li>
+<li><p><strong>Affected Files</strong>: <code class="docutils literal notranslate"><span class="pre">src/app/main.py</span></code>, <code class="docutils literal notranslate"><span class="pre">src/app/ui_manager.py</span></code></p></li>
+<li><p><strong>Total False Positives</strong>: ~212 errors</p></li>
+<li><p><strong>Status</strong>: Accepted as known limitations (not fixable without upstream PySide6-stubs updates)</p></li>
 </ul>
-<p><em>This changelog was automatically generated.</em></p>
+</section>
+<section id="issue-categories">
+<h2>Issue Categories<a class="headerlink" href="#issue-categories" title="Link to this heading">¶</a></h2>
+<section id="qt-enum-access-150-errors">
+<h3>1. Qt Enum Access (~150 errors)<a class="headerlink" href="#qt-enum-access-150-errors" title="Link to this heading">¶</a></h3>
+<p><strong>Problem</strong>: Pyright cannot resolve Qt enum attributes like <code class="docutils literal notranslate"><span class="pre">Qt.BottomDockWidgetArea</span></code>, <code class="docutils literal notranslate"><span class="pre">Qt.QueuedConnection</span></code>, etc.</p>
+<p><strong>Example</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">main_window</span><span class="o">.</span><span class="n">setCorner</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">TopLeftCorner</span><span class="p">,</span> <span class="n">Qt</span><span class="o">.</span><span class="n">LeftDockWidgetArea</span><span class="p">)</span>
+<span class="c1"># Error: Cannot access attribute &quot;TopLeftCorner&quot; for class &quot;type[Qt]&quot;</span>
+</pre></div>
+</div>
+<p><strong>Root Cause</strong>: PySide6-stubs don’t properly expose Qt namespace enums.</p>
+<p><strong>Runtime Behavior</strong>: ✅ Works correctly - these enums exist and are accessible.</p>
+<p><strong>Workaround</strong>: None needed - code works as intended.</p>
+</section>
+<hr class="docutils" />
+<section id="qmetaobject-invokemethod-50-errors">
+<h3>2. QMetaObject.invokeMethod (~50 errors)<a class="headerlink" href="#qmetaobject-invokemethod-50-errors" title="Link to this heading">¶</a></h3>
+<p><strong>Problem</strong>: Pyright expects specific types for method names, but PySide6 accepts string literals.</p>
+<p><strong>Example</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">QMetaObject</span><span class="o">.</span><span class="n">invokeMethod</span><span class="p">(</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="p">,</span> <span class="s2">&quot;load_current_time&quot;</span><span class="p">,</span> <span class="n">Qt</span><span class="o">.</span><span class="n">QueuedConnection</span>
+<span class="p">)</span>
+<span class="c1"># Error: Argument of type &quot;Literal[&#39;load_current_time&#39;]&quot; cannot be assigned</span>
+</pre></div>
+</div>
+<p><strong>Root Cause</strong>: PySide6-stubs type signature doesn’t match actual implementation.</p>
+<p><strong>Runtime Behavior</strong>: ✅ Works correctly - string method names are the standard PySide6 pattern.</p>
+<p><strong>Workaround</strong>: None needed - this is the correct PySide6 API usage.</p>
+</section>
+<hr class="docutils" />
+<section id="signal-emit-on-protocol-12-errors">
+<h3>3. Signal.emit() on Protocol (~12 errors)<a class="headerlink" href="#signal-emit-on-protocol-12-errors" title="Link to this heading">¶</a></h3>
+<p><strong>Problem</strong>: <code class="docutils literal notranslate"><span class="pre">MainWindowProtocol</span></code> types <code class="docutils literal notranslate"><span class="pre">command_requested</span></code> as <code class="docutils literal notranslate"><span class="pre">object</span></code>, which doesn’t have <code class="docutils literal notranslate"><span class="pre">.emit()</span></code>.</p>
+<p><strong>Example</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">main_window</span><span class="o">.</span><span class="n">command_requested</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+<span class="c1"># Error: Cannot access attribute &quot;emit&quot; for class &quot;object&quot;</span>
+</pre></div>
+</div>
+<p><strong>Root Cause</strong>: Protocol can’t properly type PySide6 Signals without circular imports.</p>
+<p><strong>Runtime Behavior</strong>: ✅ Works correctly - actual MainWindow has properly typed Signal.</p>
+<p><strong>Workaround</strong>: Could use <code class="docutils literal notranslate"><span class="pre">cast()</span></code> but adds noise. Accepted as-is.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="decision">
+<h2>Decision<a class="headerlink" href="#decision" title="Link to this heading">¶</a></h2>
+<p>We <strong>accept these 212 errors</strong> as known PySide6-stubs limitations rather than:</p>
+<ol class="arabic simple">
+<li><p>Adding hundreds of <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">type:</span> <span class="pre">ignore</span></code> comments (obscures real issues)</p></li>
+<li><p>Creating custom stub overrides (high maintenance burden)</p></li>
+<li><p>Waiting for upstream fixes (blocks progress)</p></li>
+</ol>
+</section>
+<section id="tracking">
+<h2>Tracking<a class="headerlink" href="#tracking" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>PySide6-stubs Issues</strong>: https://github.com/python-qt-tools/PySide6-stubs/issues</p></li>
+<li><p><strong>Last Checked</strong>: 2026-01-01</p></li>
+<li><p><strong>PySide6 Version</strong>: 6.x</p></li>
+<li><p><strong>Pyright Version</strong>: 1.1.407</p></li>
+</ul>
+</section>
+<section id="future-action">
+<h2>Future Action<a class="headerlink" href="#future-action" title="Link to this heading">¶</a></h2>
+<p>When PySide6-stubs are updated:</p>
+<ol class="arabic simple">
+<li><p>Remove this document</p></li>
+<li><p>Remove inline comments in <code class="docutils literal notranslate"><span class="pre">main.py</span></code> and <code class="docutils literal notranslate"><span class="pre">ui_manager.py</span></code></p></li>
+<li><p>Re-run <code class="docutils literal notranslate"><span class="pre">pyright</span> <span class="pre">src/app</span></code> to verify fixes</p></li>
+</ol>
+</section>
+<section id="official-recommendation-for-remaining-errors">
+<h2>Official Recommendation for Remaining Errors<a class="headerlink" href="#official-recommendation-for-remaining-errors" title="Link to this heading">¶</a></h2>
+<p>As of late 2024 (PySide6 6.8+), the official Qt for Python stance on missing type stubs is:</p>
+<ol class="arabic simple">
+<li><p><strong>Wait for Upstream Fixes</strong>: The Qt Company is actively improving <code class="docutils literal notranslate"><span class="pre">shiboken6</span></code> (the generator), but coverage gaps remain for nested enums and complex variable arguments.</p></li>
+<li><p><strong>Use <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">type:</span> <span class="pre">ignore</span></code></strong>: For attributes that definitely exist at runtime but are missing in stubs (e.g., <code class="docutils literal notranslate"><span class="pre">Qt.WidgetAttribute.WA_StyledBackground</span></code>), this is the cleanest, most “correct” approach.</p></li>
+<li><p><strong>Use <code class="docutils literal notranslate"><span class="pre">typing.cast</span></code> or <code class="docutils literal notranslate"><span class="pre">Any</span></code></strong>: For complex missing methods, casting the object to <code class="docutils literal notranslate"><span class="pre">Any</span></code> temporarily or using a Protocol with <code class="docutils literal notranslate"><span class="pre">Any</span></code> (as we did for <code class="docutils literal notranslate"><span class="pre">MainWindowProtocol</span></code>) is recommended over suppressing entire blocks of code.</p></li>
+</ol>
+<section id="specific-pitfall-recursive-enum-replacement">
+<h3>Specific Pitfall: Recursive Enum Replacement<a class="headerlink" href="#specific-pitfall-recursive-enum-replacement" title="Link to this heading">¶</a></h3>
+<p><strong>Do NOT</strong> blindly replace all <code class="docutils literal notranslate"><span class="pre">Qt.\w+</span></code> patterns. This can lead to invalid paths like <code class="docutils literal notranslate"><span class="pre">Qt.WindowType.WidgetAttribute</span></code>. Always verify the parent class structure. <code class="docutils literal notranslate"><span class="pre">WidgetAttribute</span></code> is a direct child of <code class="docutils literal notranslate"><span class="pre">Qt</span></code>, not <code class="docutils literal notranslate"><span class="pre">WindowType</span></code>.</p>
 </section>
 </section>
 </section>
@@ -286,26 +368,8 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="LICENSE.html">
-              <div class="page-info">
-                <div class="context">
-                  <span>Next</span>
-                </div>
-                <div class="title">&lt;no title&gt;</div>
-              </div>
-              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
-            </a>
-          <a class="prev-page" href="services.html">
-              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
-              <div class="page-info">
-                <div class="context">
-                  <span>Previous</span>
-                </div>
-                
-                <div class="title">services package</div>
-                
-              </div>
-            </a>
+          
+          
         </div>
         <div class="bottom-of-page">
           <div class="left-details">
@@ -336,9 +400,19 @@
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Changelog</a><ul>
-<li><a class="reference internal" href="#development-2026-01-01">[Development] - 2026-01-01</a><ul>
-<li><a class="reference internal" href="#fixed">Fixed</a></li>
+<li><a class="reference internal" href="#">PySide6 Type Checking Known Issues</a><ul>
+<li><a class="reference internal" href="#summary">Summary</a></li>
+<li><a class="reference internal" href="#issue-categories">Issue Categories</a><ul>
+<li><a class="reference internal" href="#qt-enum-access-150-errors">1. Qt Enum Access (~150 errors)</a></li>
+<li><a class="reference internal" href="#qmetaobject-invokemethod-50-errors">2. QMetaObject.invokeMethod (~50 errors)</a></li>
+<li><a class="reference internal" href="#signal-emit-on-protocol-12-errors">3. Signal.emit() on Protocol (~12 errors)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#decision">Decision</a></li>
+<li><a class="reference internal" href="#tracking">Tracking</a></li>
+<li><a class="reference internal" href="#future-action">Future Action</a></li>
+<li><a class="reference internal" href="#official-recommendation-for-remaining-errors">Official Recommendation for Remaining Errors</a><ul>
+<li><a class="reference internal" href="#specific-pitfall-recursive-enum-replacement">Specific Pitfall: Recursive Enum Replacement</a></li>
 </ul>
 </li>
 </ul>

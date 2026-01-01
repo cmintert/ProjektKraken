@@ -334,6 +334,7 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
                 <span class="n">db_service</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+            <span class="k">assert</span> <span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Executing MoveLongformEntry: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">row_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">longform_builder</span><span class="o">.</span><span class="n">insert_or_update_longform_meta</span><span class="p">(</span>
@@ -375,6 +376,7 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="n">db_service</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Undoing MoveLongformEntry: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">row_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">longform_builder</span><span class="o">.</span><span class="n">insert_or_update_longform_meta</span><span class="p">(</span>
@@ -441,6 +443,7 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
                 <span class="n">db_service</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+            <span class="k">assert</span> <span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Executing PromoteLongformEntry: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">row_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">longform_builder</span><span class="o">.</span><span class="n">promote_item</span><span class="p">(</span>
@@ -478,6 +481,7 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="n">db_service</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Undoing PromoteLongformEntry: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">row_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">longform_builder</span><span class="o">.</span><span class="n">insert_or_update_longform_meta</span><span class="p">(</span>
@@ -544,6 +548,7 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
                 <span class="n">db_service</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+            <span class="k">assert</span> <span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Executing DemoteLongformEntry: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">row_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">longform_builder</span><span class="o">.</span><span class="n">demote_item</span><span class="p">(</span>
@@ -581,6 +586,7 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="n">db_service</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Undoing DemoteLongformEntry: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">row_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">longform_builder</span><span class="o">.</span><span class="n">insert_or_update_longform_meta</span><span class="p">(</span>
@@ -647,6 +653,7 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
                 <span class="n">db_service</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+            <span class="k">assert</span> <span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Executing RemoveLongformEntry: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">row_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">longform_builder</span><span class="o">.</span><span class="n">remove_from_longform</span><span class="p">(</span>
@@ -684,6 +691,7 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="n">db_service</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Undoing RemoveLongformEntry: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">row_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">longform_builder</span><span class="o">.</span><span class="n">insert_or_update_longform_meta</span><span class="p">(</span>

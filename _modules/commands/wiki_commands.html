@@ -389,6 +389,7 @@
                 <span class="k">if</span> <span class="n">candidate</span><span class="o">.</span><span class="n">is_id_based</span><span class="p">:</span>
                     <span class="c1"># Direct lookup by ID</span>
                     <span class="c1"># Try Entity first</span>
+                    <span class="k">assert</span> <span class="n">candidate</span><span class="o">.</span><span class="n">target_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># Guaranteed by parser</span>
                     <span class="n">target_obj</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">get_entity</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">target_id</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">target_obj</span><span class="p">:</span>
                         <span class="n">target_type_str</span> <span class="o">=</span> <span class="s2">&quot;Entity&quot;</span>
@@ -408,6 +409,7 @@
 
                 <span class="c1"># Handle name-based links (legacy)</span>
                 <span class="k">else</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="n">candidate</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># Guaranteed by parser</span>
                     <span class="n">name_key</span> <span class="o">=</span> <span class="n">candidate</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span>
                     <span class="n">matching_targets</span> <span class="o">=</span> <span class="n">name_to_targets</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name_key</span><span class="p">,</span> <span class="p">[])</span>
 
