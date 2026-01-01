@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-01
-### Fixed
-- fix(lint): Resolve 135 ruff errors in main.py
+### Internal
+- Update schema documentation via sphinx build
 
 
 *This changelog was automatically generated.*
