@@ -5,17 +5,21 @@ Moves existing world.kraken and assets from project root to the AppData director
 
 import logging
 import shutil
+import sys
 from pathlib import Path
 
-from src.core.paths import get_user_data_path
+# Add project root to path for imports
+sys.path.append(str(Path(__file__).parent.parent))
+
+from src.core.paths import get_user_data_path  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def migrate():
+def migrate() -> None:
     # 1. Define Paths
-    project_root = Path(__file__).parent.resolve()
+    project_root = Path(__file__).parent.parent.resolve()
 
     # Source Paths
     old_db = project_root / "world.kraken"

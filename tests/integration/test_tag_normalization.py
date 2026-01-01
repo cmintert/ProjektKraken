@@ -4,7 +4,7 @@ Integration tests for tag normalization and migration.
 
 import pytest
 
-from migrate_tags import TagMigration
+from scripts.migrate_tags import TagMigration
 from src.commands.entity_commands import CreateEntityCommand, UpdateEntityCommand
 from src.commands.event_commands import CreateEventCommand, UpdateEventCommand
 from src.core.entities import Entity

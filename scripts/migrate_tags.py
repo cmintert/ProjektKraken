@@ -16,13 +16,17 @@ Options:
 import argparse
 import json
 import logging
+import sys
 import time
 import uuid
 from pathlib import Path
 from typing import Dict, List, Set
 
-from src.core.paths import get_user_data_path
-from src.services.db_service import DatabaseService
+# Add project root to path for imports
+sys.path.append(str(Path(__file__).parent.parent))
+
+from src.core.paths import get_user_data_path  # noqa: E402
+from src.services.db_service import DatabaseService  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -31,7 +35,7 @@ logger = logging.getLogger(__name__)
 class TagMigration:
     """Handles migration of tags from JSON to normalized tables."""
 
-    def __init__(self, db_service: DatabaseService):
+    def __init__(self, db_service: DatabaseService) -> None:
         """
         Initialize the migration.
 
@@ -57,7 +61,7 @@ class TagMigration:
         """
         cursor = self.conn.execute(
             """
-            SELECT COUNT(*) as count FROM sqlite_master 
+            SELECT COUNT(*) as count FROM sqlite_master
             WHERE type='table' AND name IN ('tags', 'event_tags', 'entity_tags')
             """
         )
@@ -69,7 +73,7 @@ class TagMigration:
         logger.info("Creating normalized tag tables...")
 
         migration_path = (
-            Path(__file__).parent / "migrations" / "0004_normalize_tags.sql"
+            Path(__file__).parent.parent / "migrations" / "0004_normalize_tags.sql"
         )
         if not migration_path.exists():
             raise FileNotFoundError(f"Migration file not found: {migration_path}")
@@ -389,7 +393,7 @@ class TagMigration:
             raise
 
 
-def main():
+def main() -> None:
     """Main entry point for the migration script."""
     parser = argparse.ArgumentParser(
         description="Migrate tags from JSON attributes to normalized tables"

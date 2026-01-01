@@ -100,7 +100,7 @@ from src.commands.relation_commands import (
     UpdateRelationCommand,
 )
 from src.commands.wiki_commands import ProcessWikiLinksCommand
-from src.core.logging_config import get_logger, setup_logging
+from src.core.logging_config import get_logger, setup_logging, shutdown_logging
 from src.core.paths import get_resource_path, get_user_data_path
 from src.core.theme_manager import ThemeManager
 from src.gui.dialogs.ai_settings_dialog import AISettingsDialog
@@ -2150,10 +2150,18 @@ def main() -> None:
         window.show()
 
         logger.info("Entering Event Loop...")
-        sys.exit(app.exec())
+        exit_code = app.exec()
+        cleanup_app()
+        sys.exit(exit_code)
     except Exception:
         logger.exception("CRITICAL: Unhandled exception in main application loop")
         sys.exit(1)
+
+
+def cleanup_app() -> None:
+    """Performs global cleanup operations before exit."""
+    logger.info("Shimmying down the drain pipe...")
+    shutdown_logging()
 
 
 if __name__ == "__main__":

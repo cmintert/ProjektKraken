@@ -1,9 +1,10 @@
 import ast
 import os
 import sys
+from typing import List, Tuple
 
 
-def check_docstrings(root_dir):
+def check_docstrings(root_dir: str) -> Tuple[List[str], int, int]:
     missing_docs = []
     total_items = 0
     documented_items = 0
@@ -34,7 +35,8 @@ def check_docstrings(root_dir):
                 if isinstance(
                     node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
                 ):
-                    # Skip private methods/classes if desired, but user said "Always create google docstrings"
+                    # Skip private methods/classes if desired, but user said:
+                    # "Always create google docstrings"
                     # We will flag everything for now.
                     name = node.name
                     total_items += 1
@@ -52,7 +54,7 @@ def check_docstrings(root_dir):
 
 
 if __name__ == "__main__":
-    src_dir = "src"
+    src_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "src")
     if len(sys.argv) > 1:
         src_dir = sys.argv[1]
 

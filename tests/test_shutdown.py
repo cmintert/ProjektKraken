@@ -83,8 +83,12 @@ def test_mainwindow_close_calls_worker_cleanup_logic(qapp):
         patch("src.app.main.DatabaseWorker"),
         patch("src.app.main.QThread"),
         patch("src.app.main.QMetaObject.invokeMethod") as mock_invoke,
-        patch("src.app.main.QSettings"),
+        patch("src.app.main.QSettings") as MockSettings,
     ):
+        # Configure QSettings mock to return None to avoid restoreGeometry TypeError
+        mock_settings_instance = MockSettings.return_value
+        mock_settings_instance.value.return_value = None
+
         window = MainWindow()
         window.check_unsaved_changes = MagicMock(return_value=True)
 
