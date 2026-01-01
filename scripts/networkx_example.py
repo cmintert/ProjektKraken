@@ -111,8 +111,8 @@ def export_to_networkx(db_service: DatabaseService):
     G = nx.DiGraph()
 
     # Add all entities as nodes
-    entities = db_service.get_all_entities()
-    for entity in entities:
+    all_entities = db_service.get_all_entities()
+    for entity in all_entities:
         # entity is an Entity dataclass
         G.add_node(
             entity.id,
@@ -121,7 +121,6 @@ def export_to_networkx(db_service: DatabaseService):
         )
 
     # Add all relations as edges
-    all_entities = db_service.get_all_entities()
     for entity in all_entities:
         relations = db_service.get_relations(entity.id)
         for rel in relations:
