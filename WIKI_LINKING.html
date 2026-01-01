@@ -201,13 +201,24 @@
 <li class="toctree-l1"><a class="reference internal" href="README.html">Projekt Kraken</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">ID-Based Wiki Linking Implementation Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="MAP_USAGE_EXAMPLES.html">Map System Usage Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="LONGFORM.html">Longform Document Feature</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="Design.html">Project Kraken: Comprehensive Design Specification</a></li>
 <li class="toctree-l1"><a class="reference internal" href="DATABASE.html">Database Architecture and Best Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DEVELOPMENT.html">Development Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security Best Practices</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
+<li class="toctree-l1"><a class="reference internal" href="LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html">Tag Normalization Migration Guide</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -543,6 +554,62 @@
 </ol>
 </section>
 </section>
+<section id="quick-start-demo">
+<h2>Quick Start Demo<a class="headerlink" href="#quick-start-demo" title="Link to this heading">¶</a></h2>
+<section id="generate-sample-data">
+<h3>1. Generate Sample Data<a class="headerlink" href="#generate-sample-data" title="Link to this heading">¶</a></h3>
+<p>Create a test database with Middle Earth data to explore wiki linking features:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>tests/populate_middle_earth.py<span class="w"> </span>/tmp/middle_earth.kraken
+</pre></div>
+</div>
+<p>This creates:</p>
+<ul class="simple">
+<li><p>8 entities (Gandalf, Frodo, Aragorn, Sauron, locations, artifacts)</p></li>
+<li><p>3 events (Council of Elrond, Fellowship formation, Fall of Sauron)</p></li>
+<li><p>15 relations with ID-based wiki links</p></li>
+</ul>
+</section>
+<section id="explore-key-features">
+<h3>2. Explore Key Features<a class="headerlink" href="#explore-key-features" title="Link to this heading">¶</a></h3>
+<p><strong>ID-Based Links Example:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Gandalf</span><span class="s1">&#39;s description contains:</span>
+<span class="s2">&quot;He played a crucial role in defeating [[id:UUID|Sauron]] during the War of the Ring.&quot;</span>
+</pre></div>
+</div>
+<p><strong>Key Features to Try:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Autocomplete</strong>: Type <code class="docutils literal notranslate"><span class="pre">[[</span></code> in any description field</p>
+<ul class="simple">
+<li><p>Shows all entities and events</p></li>
+<li><p>Selecting inserts <code class="docutils literal notranslate"><span class="pre">[[id:UUID|Name]]</span></code> automatically</p></li>
+</ul>
+</li>
+<li><p><strong>Broken Link Detection</strong>: Links to deleted items show as red strikethrough</p></li>
+<li><p><strong>Navigation</strong>: Ctrl+Click any link to jump to target</p></li>
+<li><p><strong>Name Changes</strong>: Rename an entity - all ID-based links update automatically</p></li>
+</ol>
+</section>
+<section id="link-format-comparison">
+<h3>3. Link Format Comparison<a class="headerlink" href="#link-format-comparison" title="Link to this heading">¶</a></h3>
+<p><strong>Legacy Name-Based:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[[</span><span class="n">Gandalf</span><span class="p">]]</span> <span class="n">met</span> <span class="p">[[</span><span class="n">Frodo</span><span class="p">]]</span> <span class="ow">in</span> <span class="p">[[</span><span class="n">The</span> <span class="n">Shire</span><span class="p">]]</span><span class="o">.</span>
+</pre></div>
+</div>
+<p><strong>New ID-Based:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[[</span><span class="nb">id</span><span class="p">:</span><span class="mf">550e8400</span><span class="o">-</span><span class="n">e29b</span><span class="o">-</span><span class="mi">41</span><span class="n">d4</span><span class="o">-</span><span class="n">a716</span><span class="o">-</span><span class="mi">446655440000</span><span class="o">|</span><span class="n">Gandalf</span><span class="p">]]</span> <span class="n">met</span> 
+<span class="p">[[</span><span class="nb">id</span><span class="p">:</span><span class="n">a1b2c3d4</span><span class="o">-</span><span class="n">e5f6</span><span class="o">-</span><span class="mi">4789</span><span class="o">-</span><span class="mi">0</span><span class="n">abc</span><span class="o">-</span><span class="n">def123456789</span><span class="o">|</span><span class="n">Frodo</span><span class="p">]]</span> <span class="ow">in</span> 
+<span class="p">[[</span><span class="nb">id</span><span class="p">:</span><span class="mi">9876543</span><span class="n">a</span><span class="o">-</span><span class="n">bcde</span><span class="o">-</span><span class="n">f012</span><span class="o">-</span><span class="mi">3456</span><span class="o">-</span><span class="mi">789</span><span class="n">abcdef012</span><span class="o">|</span><span class="n">The</span> <span class="n">Shire</span><span class="p">]]</span><span class="o">.</span>
+</pre></div>
+</div>
+<p><strong>Benefits of ID-Based:</strong></p>
+<ul class="simple">
+<li><p>✅ Survives name changes</p></li>
+<li><p>✅ Unambiguous references</p></li>
+<li><p>✅ Broken link detection</p></li>
+<li><p>✅ Auto-inserted by autocomplete</p></li>
+</ul>
+</section>
+</section>
 <section id="testing">
 <h2>Testing<a class="headerlink" href="#testing" title="Link to this heading">¶</a></h2>
 <section id="unit-tests">
@@ -567,19 +634,7 @@ pytest<span class="w"> </span>tests/integration/test_link_resolver_integration.p
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>tests/<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;wiki or link or text_parser&quot;</span>
 </pre></div>
 </div>
-</section>
-<section id="sample-data">
-<h3>Sample Data<a class="headerlink" href="#sample-data" title="Link to this heading">¶</a></h3>
-<p>Create test database with Middle Earth data:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>tests/populate_middle_earth.py<span class="w"> </span>/tmp/test.kraken
-</pre></div>
-</div>
-<p>This creates:</p>
-<ul class="simple">
-<li><p>8 entities (characters, locations, artifacts)</p></li>
-<li><p>3 events with ID-based links</p></li>
-<li><p>15 relations demonstrating the system</p></li>
-</ul>
+<p>Expected: <strong>74 tests passing</strong> ✅</p>
 </section>
 </section>
 <section id="database-schema">
@@ -814,11 +869,16 @@ pytest<span class="w"> </span>tests/integration/test_link_resolver_integration.p
 <li><a class="reference internal" href="#manual-migration">Manual Migration</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#quick-start-demo">Quick Start Demo</a><ul>
+<li><a class="reference internal" href="#generate-sample-data">1. Generate Sample Data</a></li>
+<li><a class="reference internal" href="#explore-key-features">2. Explore Key Features</a></li>
+<li><a class="reference internal" href="#link-format-comparison">3. Link Format Comparison</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#testing">Testing</a><ul>
 <li><a class="reference internal" href="#unit-tests">Unit Tests</a></li>
 <li><a class="reference internal" href="#integration-tests">Integration Tests</a></li>
 <li><a class="reference internal" href="#all-wiki-tests">All Wiki Tests</a></li>
-<li><a class="reference internal" href="#sample-data">Sample Data</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#database-schema">Database Schema</a><ul>

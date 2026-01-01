@@ -201,13 +201,24 @@
 <li class="toctree-l1"><a class="reference internal" href="README.html">Projekt Kraken</a></li>
 <li class="toctree-l1"><a class="reference internal" href="WIKI_LINKING.html">ID-Based Wiki Linking Implementation Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="MAP_USAGE_EXAMPLES.html">Map System Usage Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="LONGFORM.html">Longform Document Feature</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="Design.html">Project Kraken: Comprehensive Design Specification</a></li>
 <li class="toctree-l1"><a class="reference internal" href="DATABASE.html">Database Architecture and Best Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DEVELOPMENT.html">Development Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security Best Practices</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
+<li class="toctree-l1"><a class="reference internal" href="LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html">Tag Normalization Migration Guide</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -290,6 +301,7 @@
 <li class="toctree-l2"><a class="reference internal" href="WIKI_LINKING.html#architecture">Architecture</a></li>
 <li class="toctree-l2"><a class="reference internal" href="WIKI_LINKING.html#usage-examples">Usage Examples</a></li>
 <li class="toctree-l2"><a class="reference internal" href="WIKI_LINKING.html#migration-from-name-based-links">Migration from Name-Based Links</a></li>
+<li class="toctree-l2"><a class="reference internal" href="WIKI_LINKING.html#quick-start-demo">Quick Start Demo</a></li>
 <li class="toctree-l2"><a class="reference internal" href="WIKI_LINKING.html#testing">Testing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="WIKI_LINKING.html#database-schema">Database Schema</a></li>
 <li class="toctree-l2"><a class="reference internal" href="WIKI_LINKING.html#performance-considerations">Performance Considerations</a></li>
@@ -310,6 +322,19 @@
 <li class="toctree-l2"><a class="reference internal" href="MAP_USAGE_EXAMPLES.html#best-practices">Best Practices</a></li>
 <li class="toctree-l2"><a class="reference internal" href="MAP_USAGE_EXAMPLES.html#troubleshooting">Troubleshooting</a></li>
 <li class="toctree-l2"><a class="reference internal" href="MAP_USAGE_EXAMPLES.html#related-documentation">Related Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="LONGFORM.html">Longform Document Feature</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="LONGFORM.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LONGFORM.html#attributes-json-format">Attributes JSON Format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LONGFORM.html#usage">Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LONGFORM.html#cli-export-tool">CLI Export Tool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LONGFORM.html#migration-and-database-safety">Migration and Database Safety</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LONGFORM.html#command-pattern-undo-redo">Command Pattern (Undo/Redo)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LONGFORM.html#best-practices">Best Practices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LONGFORM.html#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LONGFORM.html#future-enhancements">Future Enhancements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LONGFORM.html#see-also">See Also</a></li>
 </ul>
 </li>
 </ul>
@@ -338,6 +363,11 @@
 <li class="toctree-l2"><a class="reference internal" href="DATABASE.html#references">References</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="DEVELOPMENT.html">Development Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DEVELOPMENT.html#environment-setup">Environment Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DEVELOPMENT.html#pre-commit-hooks">Pre-commit Hooks</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="SCHEMA_REFERENCE.html">Database Schema Reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="SCHEMA_REFERENCE.html#entity-relationship-diagram">Entity Relationship Diagram</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SCHEMA_REFERENCE.html#table-definitions">Table Definitions</a></li>
@@ -358,6 +388,63 @@
 <li class="toctree-l2"><a class="reference internal" href="SECURITY.html#reporting-security-issues">Reporting Security Issues</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SECURITY.html#additional-resources">Additional Resources</a></li>
 <li class="toctree-l2"><a class="reference internal" href="SECURITY.html#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Advanced Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="SEMANTIC_SEARCH.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SEMANTIC_SEARCH.html#features">Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SEMANTIC_SEARCH.html#architecture">Architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SEMANTIC_SEARCH.html#usage">Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SEMANTIC_SEARCH.html#performance-considerations">Performance Considerations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SEMANTIC_SEARCH.html#best-practices">Best Practices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SEMANTIC_SEARCH.html#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SEMANTIC_SEARCH.html#security-considerations">Security Considerations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SEMANTIC_SEARCH.html#migration-guide">Migration Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SEMANTIC_SEARCH.html#future-enhancements">Future Enhancements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SEMANTIC_SEARCH.html#references">References</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SEMANTIC_SEARCH.html#contributing">Contributing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="LLM_INTEGRATION.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LLM_INTEGRATION.html#supported-providers">Supported Providers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LLM_INTEGRATION.html#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LLM_INTEGRATION.html#architecture">Architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LLM_INTEGRATION.html#error-handling-resilience">Error Handling &amp; Resilience</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LLM_INTEGRATION.html#index-management">Index Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LLM_INTEGRATION.html#security-best-practices">Security Best Practices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LLM_INTEGRATION.html#usage-examples">Usage Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LLM_INTEGRATION.html#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LLM_INTEGRATION.html#performance-optimization">Performance Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LLM_INTEGRATION.html#migration-from-legacy-search">Migration from Legacy Search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LLM_INTEGRATION.html#support">Support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LLM_INTEGRATION.html#api-reference">API Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LLM_INTEGRATION.html#license">License</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html">Tag Normalization Migration Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html#what-changed">What Changed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html#database-schema">Database Schema</a></li>
+<li class="toctree-l2"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html#migration-process">Migration Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html#rollback-plan">Rollback Plan</a></li>
+<li class="toctree-l2"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html#api-changes">API Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html#performance-benefits">Performance Benefits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html#backward-compatibility">Backward Compatibility</a></li>
+<li class="toctree-l2"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html#testing">Testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html#support">Support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html#future-plans">Future Plans</a></li>
 </ul>
 </li>
 </ul>
