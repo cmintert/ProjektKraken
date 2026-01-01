@@ -178,6 +178,31 @@ erDiagram
 
 **Indexes:** `idx_relations_source`, `idx_relations_target`
 
+**Recommended `attributes` keys:**
+
+Relations support flexible JSON metadata through the `attributes` column. Common attribute keys include:
+
+- `weight` (float): Numeric strength of the relationship for graph analysis (typically 0.0-1.0)
+- `start_date` (float): When the relationship began (lore_date format, 1.0 = 1 day)
+- `end_date` (float): When the relationship ended (lore_date format)
+- `confidence` (float): Certainty/reliability of the relationship (0.0 = uncertain, 1.0 = certain)
+- `source` (str): Citation, reference, or evidence for the relationship
+- `notes` (str): Additional context or description
+
+**Example attributes:**
+```json
+{
+  "weight": 0.85,
+  "confidence": 0.9,
+  "start_date": 1066.0,
+  "end_date": 1087.0,
+  "source": "Chronicle of Events, Vol. 3",
+  "notes": "Alliance formed after the Battle of Westfall"
+}
+```
+
+**Note:** The relations table supports multi-edges (multiple relations between the same source and target with different types or attributes).
+
 ### `calendar_config`
 
 | Column | Type | Constraints |
