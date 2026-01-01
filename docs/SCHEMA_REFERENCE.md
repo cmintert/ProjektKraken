@@ -92,6 +92,7 @@ erDiagram
     tags {
         TEXT id PK
         TEXT name
+        TEXT color
         REAL created_at
     }
 
@@ -104,6 +105,19 @@ erDiagram
     entity_tags {
         TEXT entity_id
         TEXT tag_id
+        REAL created_at
+    }
+
+    embeddings {
+        TEXT id PK
+        TEXT object_type
+        TEXT object_id
+        TEXT model
+        BLOB vector
+        INTEGER vector_dim
+        TEXT text_snippet
+        TEXT text_hash
+        JSON metadata
         REAL created_at
     }
 
@@ -225,6 +239,7 @@ erDiagram
 |--------|------|-------------|
 | `id` | TEXT | PRIMARY KEY |
 | `name` | TEXT | NOT NULL UNIQUE |
+| `color` | TEXT |  |
 | `created_at` | REAL | NOT NULL |
 
 **Indexes:** `idx_tags_name`
@@ -248,3 +263,18 @@ erDiagram
 | `created_at` | REAL | NOT NULL |
 
 **Indexes:** `idx_entity_tags_entity`, `idx_entity_tags_tag`
+
+### `embeddings`
+
+| Column | Type | Constraints |
+|--------|------|-------------|
+| `id` | TEXT | PRIMARY KEY |
+| `object_type` | TEXT | NOT NULL |
+| `object_id` | TEXT | NOT NULL |
+| `model` | TEXT | NOT NULL |
+| `vector` | BLOB | NOT NULL |
+| `vector_dim` | INTEGER | NOT NULL |
+| `text_snippet` | TEXT |  |
+| `text_hash` | TEXT |  |
+| `metadata` | JSON | DEFAULT '{}' |
+| `created_at` | REAL | NOT NULL |
