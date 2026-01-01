@@ -521,6 +521,8 @@ class DatabaseService:
         """
         if not self._connection:
             self.connect()
+        assert self._connection is not None
+
         return self._relation_repo.get_by_source(source_id)
 
     def get_incoming_relations(self, target_id: str) -> List[Dict[str, Any]]:
@@ -1051,7 +1053,8 @@ class DatabaseService:
             "SELECT id, name, created_at FROM tags ORDER BY name"
         )
         rows = cursor.fetchall()
-        return [dict(row) for row in rows]
+        # Convert sqlite3.Row to dict
+        return [dict(zip(["id", "name", "created_at"], row)) for row in rows]
 
     def get_tags_with_events(self) -> List[Dict[str, Any]]:
         """
@@ -1074,6 +1077,28 @@ class DatabaseService:
         )
         rows = cursor.fetchall()
         return [dict(row) for row in rows]
+
+    def get_active_tags(self) -> List[Dict[str, Any]]:
+        """
+        Retrieves tags that are associated with at least one event OR entity.
+
+        Returns:
+            List[Dict[str, Any]]: List of distinct tag dictionaries.
+        """
+        if not self._connection:
+            self.connect()
+        assert self._connection is not None
+
+        query = """
+        SELECT DISTINCT t.id, t.name, t.created_at
+        FROM tags t
+        WHERE t.id IN (SELECT tag_id FROM event_tags)
+           OR t.id IN (SELECT tag_id FROM entity_tags)
+        ORDER BY t.name
+        """
+        cursor = self._connection.execute(query)
+        rows = cursor.fetchall()
+        return [dict(zip(["id", "name", "created_at"], row)) for row in rows]
 
     def create_tag(self, tag_name: str) -> str:
         """

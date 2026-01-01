@@ -34,9 +34,11 @@ from PySide6.QtCore import (
     Signal,
     Slot,
 )
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QApplication,
     QDialog,
+    QDockWidget,
     QFileDialog,
     QInputDialog,
     QLabel,
@@ -141,7 +143,7 @@ class MainWindow(QMainWindow):
     # Signal to request filtering
     filter_requested = Signal(dict)
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Initializes the MainWindow.
 
@@ -278,7 +280,7 @@ class MainWindow(QMainWindow):
         self._restore_window_state()
 
     @property
-    def list_dock(self):
+    def list_dock(self) -> QDockWidget:
         """
         Gets the project list dock widget.
 
@@ -288,7 +290,7 @@ class MainWindow(QMainWindow):
         return self.ui_manager.docks.get("list")
 
     @property
-    def editor_dock(self):
+    def editor_dock(self) -> QDockWidget:
         """
         Gets the event editor dock widget.
 
@@ -298,7 +300,7 @@ class MainWindow(QMainWindow):
         return self.ui_manager.docks.get("event")
 
     @property
-    def entity_editor_dock(self):
+    def entity_editor_dock(self) -> QDockWidget:
         """
         Gets the entity editor dock widget.
 
@@ -308,7 +310,7 @@ class MainWindow(QMainWindow):
         return self.ui_manager.docks.get("entity")
 
     @property
-    def timeline_dock(self):
+    def timeline_dock(self) -> QDockWidget:
         """
         Gets the timeline dock widget.
 
@@ -318,7 +320,7 @@ class MainWindow(QMainWindow):
         return self.ui_manager.docks.get("timeline")
 
     @property
-    def longform_dock(self):
+    def longform_dock(self) -> QDockWidget:
         """
         Gets the longform editor dock widget.
 
@@ -328,7 +330,7 @@ class MainWindow(QMainWindow):
         return self.ui_manager.docks.get("longform")
 
     @property
-    def map_dock(self):
+    def map_dock(self) -> QDockWidget:
         """
         Gets the map dock widget.
 
@@ -337,7 +339,7 @@ class MainWindow(QMainWindow):
         """
         return self.ui_manager.docks.get("map")
 
-    def _restore_window_state(self):
+    def _restore_window_state(self) -> None:
         """Restores window geometry and state from settings."""
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         geometry = settings.value("geometry")
@@ -350,7 +352,7 @@ class MainWindow(QMainWindow):
         else:
             self.ui_manager.reset_layout()
 
-    def update_item(self, data):
+    def update_item(self, data: dict) -> None:
         """
         Placeholder for generalized update.
 
@@ -358,7 +360,7 @@ class MainWindow(QMainWindow):
         """
         pass
 
-    def load_data(self):
+    def load_data(self) -> None:
         """Refreshes both events and entities."""
         self.load_events()
         self.load_entities()
@@ -393,7 +395,7 @@ class MainWindow(QMainWindow):
         self.longform_editor.load_sequence(sequence)
         self._cached_longform_sequence = sequence
 
-    def _on_item_selected(self, item_type: str, item_id: str):
+    def _on_item_selected(self, item_type: str, item_id: str) -> None:
         """Handles selection from unified list or longform editor."""
         # Handle plural table names from longform editor
         if item_type == "events":
@@ -431,7 +433,7 @@ class MainWindow(QMainWindow):
             settings.setValue(SETTINGS_LAST_ITEM_ID_KEY, self._last_selected_id)
             settings.setValue(SETTINGS_LAST_ITEM_TYPE_KEY, self._last_selected_type)
 
-    def check_unsaved_changes(self, editor) -> bool:
+    def check_unsaved_changes(self, editor: QWidget) -> bool:
         """
         Checks if the editor has unsaved changes and prompts the user.
 
@@ -476,7 +478,7 @@ class MainWindow(QMainWindow):
         else:  # Cancel
             return False
 
-    def _on_editor_dirty_changed(self, editor, dirty):
+    def _on_editor_dirty_changed(self, editor: QWidget, dirty: bool) -> None:
         """Updates the dock title with an asterisk if dirty."""
         dock_key = None
         base_title = ""
@@ -498,14 +500,14 @@ class MainWindow(QMainWindow):
                 dock.setWindowTitle(new_title)
 
     @Slot(str, str)
-    def _on_item_delete_requested(self, item_type: str, item_id: str):
+    def _on_item_delete_requested(self, item_type: str, item_id: str) -> None:
         """Handles deletion request from unified list."""
         if item_type == "event":
             self.delete_event(item_id)
         elif item_type == "entity":
             self.delete_entity(item_id)
 
-    def init_worker(self):
+    def init_worker(self) -> None:
         """
         Initializes the DatabaseWorker and moves it to a separate thread.
         Connects all worker signals to MainWindow slots.
@@ -560,7 +562,7 @@ class MainWindow(QMainWindow):
         self.worker_thread.start()
 
     @Slot(str)
-    def update_status_message(self, message: str):
+    def update_status_message(self, message: str) -> None:
         """
         Updates the status bar message and sets cursor to Wait.
 
@@ -572,7 +574,7 @@ class MainWindow(QMainWindow):
         QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
 
     @Slot(str)
-    def clear_status_message(self, message: str):
+    def clear_status_message(self, message: str) -> None:
         """
         Clears the status bar message after a delay and restores cursor.
 
@@ -583,7 +585,7 @@ class MainWindow(QMainWindow):
         QApplication.restoreOverrideCursor()
 
     @Slot(str)
-    def show_error_message(self, message: str):
+    def show_error_message(self, message: str) -> None:
         """
         Displays an error message in the status bar and logs it.
 
@@ -595,7 +597,7 @@ class MainWindow(QMainWindow):
         logger.error(message)
 
     @Slot(bool)
-    def on_db_initialized(self, success):
+    def on_db_initialized(self, success: bool) -> None:
         """
         Handler for database initialization result.
 
@@ -642,14 +644,14 @@ class MainWindow(QMainWindow):
         else:
             self.status_bar.showMessage(STATUS_DB_INIT_FAIL)
 
-    def _request_calendar_config(self):
+    def _request_calendar_config(self) -> None:
         """Requests loading of the active calendar config from the worker."""
         QMetaObject.invokeMethod(
             self.worker, "load_calendar_config", Qt.ConnectionType.QueuedConnection
         )
 
     @Slot(object)
-    def on_calendar_config_loaded(self, config):
+    def on_calendar_config_loaded(self, config: object) -> None:
         """
         Handler for calendar config loaded from worker.
 
@@ -683,14 +685,14 @@ class MainWindow(QMainWindow):
         except Exception as e:
             logger.warning(f"Failed to initialize calendar converter: {e}")
 
-    def _request_current_time(self):
+    def _request_current_time(self) -> None:
         """Requests loading of the current time from the worker."""
         QMetaObject.invokeMethod(
             self.worker, "load_current_time", Qt.ConnectionType.QueuedConnection
         )
 
     @Slot(float)
-    def on_current_time_loaded(self, time: float):
+    def on_current_time_loaded(self, time: float) -> None:
         """
         Handler for current time loaded from worker.
 
@@ -701,7 +703,7 @@ class MainWindow(QMainWindow):
         logger.debug(f"Current time loaded: {time}")
 
     @Slot(float)
-    def on_current_time_changed(self, time: float):
+    def on_current_time_changed(self, time: float) -> None:
         """
         Handler for when current time is changed in the timeline.
         Saves the new value to the database.
@@ -718,17 +720,17 @@ class MainWindow(QMainWindow):
         logger.debug(f"Current time changed to: {time}")
         self.update_world_time_label(time)
 
-    def update_world_time_label(self, time_val: float):
+    def update_world_time_label(self, time_val: float) -> None:
         """Updates the blue world time label."""
         text = self._format_time_string(time_val)
         self.lbl_world_time.setText(f"World: {text}")
 
-    def update_playhead_time_label(self, time_val: float):
+    def update_playhead_time_label(self, time_val: float) -> None:
         """Updates the red playhead time label."""
         text = self._format_time_string(time_val)
         self.lbl_playhead_time.setText(f"Playhead: {text}")
 
-    def _restore_last_selection(self):
+    def _restore_last_selection(self) -> None:
         """Restores the last selected item from settings."""
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         last_id = settings.value(SETTINGS_LAST_ITEM_ID_KEY)
@@ -754,11 +756,11 @@ class MainWindow(QMainWindow):
             return self.calendar_converter.format_date(time_val)
         return f"{time_val:.2f}"
 
-    def on_command_finished_reload_longform(self):
+    def on_command_finished_reload_longform(self) -> None:
         """Handler to reload longform sequence after command completion."""
         self.load_longform_sequence()
 
-    def _request_grouping_config(self):
+    def _request_grouping_config(self) -> None:
         """Requests loading of the timeline grouping configuration."""
         try:
             # Load from GUI db_service (thread-safe main thread usage)
@@ -768,7 +770,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             logger.warning(f"Failed to load grouping config: {e}")
 
-    def on_grouping_config_loaded(self, config):
+    def on_grouping_config_loaded(self, config: dict) -> None:
         """
         Handler for grouping config loaded.
 
@@ -787,7 +789,7 @@ class MainWindow(QMainWindow):
         else:
             logger.debug("No grouping configuration found")
 
-    def closeEvent(self, event):
+    def closeEvent(self, event: QCloseEvent) -> None:
         """
         Handles application close event.
         Saves window geometry/state and strictly cleans up worker thread.
@@ -812,7 +814,7 @@ class MainWindow(QMainWindow):
     # Methods that request data from Worker
     # ----------------------------------------------------------------------
 
-    def seed_data(self):
+    def seed_data(self) -> None:
         """
         Populate the database with initial data (Deprecated).
         Current implementation is a placeholder.
@@ -865,19 +867,19 @@ class MainWindow(QMainWindow):
             )
         return []
 
-    def load_events(self):
+    def load_events(self) -> None:
         """Requests loading of all events."""
         QMetaObject.invokeMethod(
             self.worker, "load_events", Qt.ConnectionType.QueuedConnection
         )
 
-    def load_entities(self):
+    def load_entities(self) -> None:
         """Requests loading of all entities."""
         QMetaObject.invokeMethod(
             self.worker, "load_entities", Qt.ConnectionType.QueuedConnection
         )
 
-    def load_event_details(self, event_id: str):
+    def load_event_details(self, event_id: str) -> None:
         """Requests loading details for a specific event."""
         # Note: If called from selection, we already checked.
         # But if called programmatically, we might want to check here too?
@@ -895,7 +897,7 @@ class MainWindow(QMainWindow):
             Q_ARG(str, event_id),
         )
 
-    def load_entity_details(self, entity_id: str):
+    def load_entity_details(self, entity_id: str) -> None:
         """Requests loading details for a specific entity."""
         QMetaObject.invokeMethod(
             self.worker,
@@ -906,7 +908,7 @@ class MainWindow(QMainWindow):
 
     # DataHandler signal handlers (loose coupling via signals)
     @Slot(list)
-    def _on_events_ready(self, events):
+    def _on_events_ready(self, events: list) -> None:
         """
         Handle events ready signal from DataHandler.
 
@@ -918,7 +920,7 @@ class MainWindow(QMainWindow):
         self.timeline.set_events(events)
 
     @Slot(list)
-    def _on_entities_ready(self, entities):
+    def _on_entities_ready(self, entities: list) -> None:
         """
         Handle entities ready signal from DataHandler.
 
@@ -929,7 +931,7 @@ class MainWindow(QMainWindow):
         self.unified_list.set_data(self._cached_events, self._cached_entities)
 
     @Slot(list)
-    def _on_suggestions_update(self, items):
+    def _on_suggestions_update(self, items: list) -> None:
         """
         Handle suggestions update request from DataHandler.
 
@@ -940,7 +942,9 @@ class MainWindow(QMainWindow):
         self.entity_editor.update_suggestions(items=items)
 
     @Slot(object, list, list)
-    def _on_event_details_ready(self, event, relations, incoming):
+    def _on_event_details_ready(
+        self, event: object, relations: list, incoming: list
+    ) -> None:
         """
         Handle event details ready signal from DataHandler.
 
@@ -952,7 +956,9 @@ class MainWindow(QMainWindow):
         self.event_editor.load_event(event, relations, incoming)
 
     @Slot(object, list, list)
-    def _on_entity_details_ready(self, entity, relations, incoming):
+    def _on_entity_details_ready(
+        self, entity: object, relations: list, incoming: list
+    ) -> None:
         """
         Handle entity details ready signal from DataHandler.
 
@@ -964,7 +970,7 @@ class MainWindow(QMainWindow):
         self.entity_editor.load_entity(entity, relations, incoming)
 
     @Slot(list)
-    def _on_longform_sequence_ready(self, sequence):
+    def _on_longform_sequence_ready(self, sequence: list) -> None:
         """
         Handle longform sequence ready signal from DataHandler.
 
@@ -975,7 +981,7 @@ class MainWindow(QMainWindow):
         self.longform_editor.load_sequence(sequence)
 
     @Slot(list)
-    def _on_maps_ready(self, maps):
+    def _on_maps_ready(self, maps: list) -> None:
         """
         Handle maps ready signal from DataHandler.
 
@@ -991,7 +997,7 @@ class MainWindow(QMainWindow):
                 self.map_widget.select_map(maps[0].id)
 
     @Slot(str, list)
-    def _on_markers_ready(self, map_id, processed_markers):
+    def _on_markers_ready(self, map_id: str, processed_markers: list) -> None:
         """
         Handle markers ready signal from DataHandler.
 
@@ -1023,7 +1029,7 @@ class MainWindow(QMainWindow):
             self._marker_object_to_id[marker_data["object_id"]] = marker_data["id"]
 
     @Slot(str)
-    def _on_dock_raise_requested(self, dock_name):
+    def _on_dock_raise_requested(self, dock_name: str) -> None:
         """
         Handle dock raise request from DataHandler.
 
@@ -1034,7 +1040,7 @@ class MainWindow(QMainWindow):
             self.ui_manager.docks[dock_name].raise_()
 
     @Slot(str, str)
-    def _on_selection_requested(self, item_type, item_id):
+    def _on_selection_requested(self, item_type: str, item_id: str) -> None:
         """
         Handle selection request from DataHandler.
 
@@ -1045,7 +1051,7 @@ class MainWindow(QMainWindow):
         self.unified_list.select_item(item_type, item_id)
 
     @Slot(str)
-    def _on_command_failed(self, message):
+    def _on_command_failed(self, message: str) -> None:
         """
         Handle command failure notification from DataHandler.
 
@@ -1055,7 +1061,7 @@ class MainWindow(QMainWindow):
         QMessageBox.warning(self, "Command Failed", message)
 
     @Slot()
-    def _on_reload_active_editor_relations(self):
+    def _on_reload_active_editor_relations(self) -> None:
         """
         Reload relations for whichever editor is currently active.
 
@@ -1066,7 +1072,7 @@ class MainWindow(QMainWindow):
         if self.entity_editor._current_entity_id:
             self.load_entity_details(self.entity_editor._current_entity_id)
 
-    def delete_event(self, event_id):
+    def delete_event(self, event_id: str) -> None:
         """
         Deletes an event by emitting a delete command.
 
@@ -1076,7 +1082,7 @@ class MainWindow(QMainWindow):
         cmd = DeleteEventCommand(event_id)
         self.command_requested.emit(cmd)
 
-    def update_event(self, event_data: dict):
+    def update_event(self, event_data: dict) -> None:
         """
         Updates an event with the provided data.
 
@@ -1097,7 +1103,7 @@ class MainWindow(QMainWindow):
             self.command_requested.emit(wiki_cmd)
 
     @Slot(str, float)
-    def _on_event_date_changed(self, event_id: str, new_lore_date: float):
+    def _on_event_date_changed(self, event_id: str, new_lore_date: float) -> None:
         """
         Handles event date changes from timeline dragging.
         Persists the new lore_date via UpdateEventCommand.
@@ -1110,7 +1116,7 @@ class MainWindow(QMainWindow):
         cmd = UpdateEventCommand(event_id, {"lore_date": new_lore_date})
         self.command_requested.emit(cmd)
 
-    def create_entity(self):
+    def create_entity(self) -> None:
         """
         Creates a new entity by emitting a create command.
         """
@@ -1124,7 +1130,7 @@ class MainWindow(QMainWindow):
         cmd = CreateEntityCommand({"name": name.strip(), "type": "Concept"})
         self.command_requested.emit(cmd)
 
-    def create_event(self):
+    def create_event(self) -> None:
         """
         Creates a new event by emitting a create command.
         """
@@ -1138,7 +1144,7 @@ class MainWindow(QMainWindow):
         cmd = CreateEventCommand({"name": name.strip(), "lore_date": 0.0})
         self.command_requested.emit(cmd)
 
-    def delete_entity(self, entity_id):
+    def delete_entity(self, entity_id: str) -> None:
         """
         Deletes an entity by emitting a delete command.
 
@@ -1148,7 +1154,7 @@ class MainWindow(QMainWindow):
         cmd = DeleteEntityCommand(entity_id)
         self.command_requested.emit(cmd)
 
-    def update_entity(self, entity_data: dict):
+    def update_entity(self, entity_data: dict) -> None:
         """
         Updates an entity with the provided data.
 
@@ -1168,7 +1174,9 @@ class MainWindow(QMainWindow):
             wiki_cmd = ProcessWikiLinksCommand(entity_id, entity_data["description"])
             self.command_requested.emit(wiki_cmd)
 
-    def add_relation(self, source_id, target_id, rel_type, bidirectional: bool = False):
+    def add_relation(
+        self, source_id: str, target_id: str, rel_type: str, bidirectional: bool = False
+    ) -> None:
         """
         Adds a relation between entities.
 
@@ -1184,14 +1192,14 @@ class MainWindow(QMainWindow):
         )
         self.command_requested.emit(cmd)
 
-    def load_maps(self):
+    def load_maps(self) -> None:
         """Requests loading of all maps."""
         QMetaObject.invokeMethod(
             self.worker, "load_maps", Qt.ConnectionType.QueuedConnection
         )
 
     @Slot(str)
-    def on_map_selected(self, map_id):
+    def on_map_selected(self, map_id: str) -> None:
         """
         Handler for when a map is selected in the widget.
         Loads the map image and requests markers.
@@ -1219,7 +1227,7 @@ class MainWindow(QMainWindow):
                 Q_ARG(str, map_id),
             )
 
-    def create_map(self):
+    def create_map(self) -> None:
         """Creates a new map via dialogs."""
         import shutil
         import uuid
@@ -1262,7 +1270,7 @@ class MainWindow(QMainWindow):
         cmd = CreateMapCommand({"name": name.strip(), "image_path": relative_path})
         self.command_requested.emit(cmd)
 
-    def delete_map(self):
+    def delete_map(self) -> None:
         """Deletes the currently selected map."""
         map_id = self.map_widget.map_selector.currentData()
         if not map_id:
@@ -1278,7 +1286,7 @@ class MainWindow(QMainWindow):
             cmd = DeleteMapCommand(map_id)
             self.command_requested.emit(cmd)
 
-    def create_marker(self, x, y):
+    def create_marker(self, x: float, y: float) -> None:
         """
         Creates a new marker at the given normalized coordinates.
         Prompts user to select an Entity or Event.
@@ -1339,7 +1347,7 @@ class MainWindow(QMainWindow):
 
     def _on_marker_dropped(
         self, item_id: str, item_type: str, item_name: str, x: float, y: float
-    ):
+    ) -> None:
         """
         Handle marker creation from drag-drop.
 
@@ -1368,7 +1376,7 @@ class MainWindow(QMainWindow):
         self.command_requested.emit(cmd)
         logger.info(f"Creating marker for {item_type} '{item_name}' via drag-drop")
 
-    def delete_marker(self, marker_id):
+    def delete_marker(self, marker_id: str) -> None:
         """
         Deletes a marker.
 
@@ -1397,7 +1405,7 @@ class MainWindow(QMainWindow):
             self.command_requested.emit(cmd)
 
     @Slot(str, str)
-    def _on_marker_clicked(self, marker_id: str, object_type: str):
+    def _on_marker_clicked(self, marker_id: str, object_type: str) -> None:
         """
         Handle marker click from MapWidget.
 
@@ -1426,7 +1434,7 @@ class MainWindow(QMainWindow):
             self.ui_manager.docks["entity"].raise_()
 
     @Slot(str, str)
-    def _on_marker_icon_changed(self, marker_id: str, icon: str):
+    def _on_marker_icon_changed(self, marker_id: str, icon: str) -> None:
         """
         Handle marker icon change from MapWidget.
 
@@ -1443,7 +1451,7 @@ class MainWindow(QMainWindow):
         self.command_requested.emit(cmd)
 
     @Slot(str, str)
-    def _on_marker_color_changed(self, marker_id: str, color: str):
+    def _on_marker_color_changed(self, marker_id: str, color: str) -> None:
         """
         Handle marker color change from MapWidget.
 
@@ -1460,7 +1468,7 @@ class MainWindow(QMainWindow):
         self.command_requested.emit(cmd)
 
     @Slot(str, float, float)
-    def _on_marker_position_changed(self, marker_id: str, x: float, y: float):
+    def _on_marker_position_changed(self, marker_id: str, x: float, y: float) -> None:
         """
         Handle marker position change from MapWidget.
 
@@ -1484,7 +1492,7 @@ class MainWindow(QMainWindow):
     # Timeline Grouping Methods
     # ----------------------------------------------------------------------
 
-    def _on_configure_grouping_requested(self):
+    def _on_configure_grouping_requested(self) -> None:
         """Opens grouping configuration dialog by requesting data from worker thread."""
         # Request data from worker thread (thread-safe)
         QMetaObject.invokeMethod(
@@ -1492,7 +1500,9 @@ class MainWindow(QMainWindow):
         )
 
     @Slot(list, object)
-    def on_grouping_dialog_data_loaded(self, tags_data, current_config):
+    def on_grouping_dialog_data_loaded(
+        self, tags_data: list, current_config: dict
+    ) -> None:
         """
         Handler for grouping dialog data loaded from worker.
 
@@ -1518,7 +1528,7 @@ class MainWindow(QMainWindow):
             self.show_error_message(f"Failed to open grouping dialog: {e}")
 
     @Slot(list, str)
-    def _on_grouping_applied(self, tag_order: list, mode: str):
+    def _on_grouping_applied(self, tag_order: list, mode: str) -> None:
         """
         Handle grouping applied from dialog.
 
@@ -1530,7 +1540,7 @@ class MainWindow(QMainWindow):
         self.timeline.set_grouping_config(tag_order, mode)
         logger.info(f"Grouping applied: {len(tag_order)} tags in {mode} mode")
 
-    def _on_clear_grouping_requested(self):
+    def _on_clear_grouping_requested(self) -> None:
         """Clears timeline grouping."""
         from src.commands.timeline_grouping_commands import ClearTimelineGroupingCommand
 
@@ -1541,7 +1551,7 @@ class MainWindow(QMainWindow):
         logger.info("Timeline grouping cleared")
 
     @Slot(str)
-    def _on_tag_color_change_requested(self, tag_name: str):
+    def _on_tag_color_change_requested(self, tag_name: str) -> None:
         """
         Handle tag color change from band context menu.
 
@@ -1559,7 +1569,7 @@ class MainWindow(QMainWindow):
             logger.debug(f"Tag color changed: {tag_name} -> {color.name()}")
 
     @Slot(str)
-    def _on_remove_from_grouping_requested(self, tag_name: str):
+    def _on_remove_from_grouping_requested(self, tag_name: str) -> None:
         """
         Remove a tag from current grouping.
 
@@ -1580,7 +1590,7 @@ class MainWindow(QMainWindow):
                 logger.info(f"Removed '{tag_name}' from grouping")
 
     @Slot()
-    def show_filter_dialog(self):
+    def show_filter_dialog(self) -> None:
         """Shows the advanced filter dialog."""
         # Get all tags from DB (Synchronous read from GUI DB Service is fine for metadata)
         tags = []
@@ -1609,7 +1619,7 @@ class MainWindow(QMainWindow):
             self.unified_list.set_filter_active(has_filter)
 
     @Slot()
-    def clear_filter(self):
+    def clear_filter(self) -> None:
         """
         Clears the current filter configuration and reloads data.
         """
@@ -1628,7 +1638,7 @@ class MainWindow(QMainWindow):
         self.load_data()
 
     @Slot()
-    def show_longform_filter_dialog(self):
+    def show_longform_filter_dialog(self) -> None:
         """Shows filter dialog for the Longform editor (independent state)."""
         from src.gui.dialogs.filter_dialog import FilterDialog
 
@@ -1649,14 +1659,14 @@ class MainWindow(QMainWindow):
             self.load_longform_sequence()
 
     @Slot()
-    def clear_longform_filter(self):
+    def clear_longform_filter(self) -> None:
         """Clears the longform filter and reloads the longform view."""
         logger.info("Clearing longform filters")
         self.longform_filter_config = {}
         self.load_longform_sequence()
 
     @Slot(list, list)
-    def _on_filter_results_ready(self, events, entities):
+    def _on_filter_results_ready(self, events: list, entities: list) -> None:
         """
         Handler for filter results.
         Updates the Unified List with filtered data.
@@ -1665,7 +1675,7 @@ class MainWindow(QMainWindow):
         count = len(events) + len(entities)
         self.status_bar.showMessage(f"Filter applied. Found {count} items.")
 
-    def remove_relation(self, rel_id):
+    def remove_relation(self, rel_id: str) -> None:
         """
         Removes a relation by its ID.
 
@@ -1675,7 +1685,7 @@ class MainWindow(QMainWindow):
         cmd = RemoveRelationCommand(rel_id)
         self.command_requested.emit(cmd)
 
-    def update_relation(self, rel_id, target_id, rel_type):
+    def update_relation(self, rel_id: str, target_id: str, rel_type: str) -> None:
         """
         Updates an existing relation.
 
@@ -1687,7 +1697,7 @@ class MainWindow(QMainWindow):
         cmd = UpdateRelationCommand(rel_id, target_id, rel_type)
         self.command_requested.emit(cmd)
 
-    def navigate_to_entity(self, target: str):
+    def navigate_to_entity(self, target: str) -> None:
         """
         Navigates to the entity or event with the given name or ID.
 
@@ -1758,7 +1768,7 @@ class MainWindow(QMainWindow):
             # Name not found - Prompt for Creation
             self._prompt_create_missing_target(target)
 
-    def _prompt_create_missing_target(self, target_name: str):
+    def _prompt_create_missing_target(self, target_name: str) -> None:
         """
         Prompts the user to create a missing entity or event from a broken link.
 
@@ -1799,7 +1809,7 @@ class MainWindow(QMainWindow):
             cmd = CreateEventCommand({"name": target_name, "lore_date": 0.0})
             self.command_requested.emit(cmd)
 
-    def promote_longform_entry(self, table: str, row_id: str, old_meta: dict):
+    def promote_longform_entry(self, table: str, row_id: str, old_meta: dict) -> None:
         """
         Promotes a longform entry by reducing its depth.
 
@@ -1811,7 +1821,7 @@ class MainWindow(QMainWindow):
         cmd = PromoteLongformEntryCommand(table, row_id, old_meta)
         self.command_requested.emit(cmd)
 
-    def demote_longform_entry(self, table: str, row_id: str, old_meta: dict):
+    def demote_longform_entry(self, table: str, row_id: str, old_meta: dict) -> None:
         """
         Demotes a longform entry by increasing its depth.
 
@@ -1825,7 +1835,7 @@ class MainWindow(QMainWindow):
 
     def move_longform_entry(
         self, table: str, row_id: str, old_meta: dict, new_meta: dict
-    ):
+    ) -> None:
         """
         Moves a longform entry to a new position.
 
@@ -1838,7 +1848,7 @@ class MainWindow(QMainWindow):
         cmd = MoveLongformEntryCommand(table, row_id, old_meta, new_meta)
         self.command_requested.emit(cmd)
 
-    def export_longform_document(self):
+    def export_longform_document(self) -> None:
         """
         Exports the current longform document to Markdown.
         Opens a file dialog for the user to choose save location.
@@ -1894,7 +1904,7 @@ class MainWindow(QMainWindow):
     # =========================================================================
 
     @Slot()
-    def show_ai_settings_dialog(self):
+    def show_ai_settings_dialog(self) -> None:
         """Shows the AI Settings dialog."""
         if not self.ai_settings_dialog:
             self.ai_settings_dialog = AISettingsDialog(self)
@@ -1912,12 +1922,14 @@ class MainWindow(QMainWindow):
         self.ai_settings_dialog.activateWindow()
 
     @Slot(str)
-    def _on_ai_settings_rebuild_requested(self, object_type: str):
+    def _on_ai_settings_rebuild_requested(self, object_type: str) -> None:
         """Handle rebuild request from dialog."""
         self.rebuild_search_index(object_type)
 
     @Slot(str, str, int)
-    def perform_semantic_search(self, query: str, object_type_filter: str, top_k: int):
+    def perform_semantic_search(
+        self, query: str, object_type_filter: str, top_k: int
+    ) -> None:
         """
         Perform semantic search and display results.
 
@@ -1957,7 +1969,7 @@ class MainWindow(QMainWindow):
             self.ai_search_panel.set_searching(False)
 
     @Slot(str)
-    def rebuild_search_index(self, object_type: str):
+    def rebuild_search_index(self, object_type: str) -> None:
         """
         Rebuild the semantic search index.
 
@@ -2011,7 +2023,7 @@ class MainWindow(QMainWindow):
             self.ai_search_panel.set_status(f"Rebuild failed: {e}")
 
     @Slot(str, str)
-    def _on_search_result_selected(self, object_type: str, object_id: str):
+    def _on_search_result_selected(self, object_type: str, object_id: str) -> None:
         """
         Handle selection of a search result.
 
@@ -2028,7 +2040,7 @@ class MainWindow(QMainWindow):
             self._on_dock_raise_requested("event")
 
     @Slot()
-    def show_database_manager(self):
+    def show_database_manager(self) -> None:
         """Shows the Database Manager dialog."""
         dialog = DatabaseManagerDialog(self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
@@ -2041,7 +2053,7 @@ class MainWindow(QMainWindow):
             pass
 
     @Slot()
-    def refresh_search_index_status(self):
+    def refresh_search_index_status(self) -> None:
         """Refresh the search index status display."""
         try:
             if not hasattr(self, "gui_db_service"):
@@ -2092,7 +2104,7 @@ class MainWindow(QMainWindow):
             logger.error(f"Failed to refresh index status: {e}")
 
 
-def main():
+def main() -> None:
     """
     Main entry point.
     Configures High DPI scaling, Theme, and launches MainWindow.
