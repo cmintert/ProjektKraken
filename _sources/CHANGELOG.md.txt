@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-01
 ### Fixed
-- Fix 82 Pyright type errors: layout shadowing, connection assertions, unbound vars
+- Fix test_protocols.py: Check protocol attributes with hasattr
 
 
 *This changelog was automatically generated.*
