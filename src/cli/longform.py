@@ -36,6 +36,7 @@ def export_longform(args) -> int:
         db_service = DatabaseService(args.database)
         db_service.connect()
 
+        assert db_service._connection is not None, "Database not connected"
         markdown = longform_builder.export_longform_to_markdown(
             db_service._connection, args.doc_id
         )
@@ -219,6 +220,7 @@ def reindex_longform(args) -> int:
         db_service = DatabaseService(args.database)
         db_service.connect()
 
+        assert db_service._connection is not None, "Database not connected"
         longform_builder.reindex_document_positions(db_service._connection, args.doc_id)
         print("✓ Reindexed longform document positions.")
         return 0

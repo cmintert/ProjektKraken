@@ -197,9 +197,9 @@ class SplitterTabInspector(QWidget):
     def __init__(self, parent=None):
         """Initialize the splitter tab inspector."""
         super().__init__(parent)
-        self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setSpacing(0)
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
 
         self.splitter = QSplitter(Qt.Orientation.Vertical)
 
@@ -207,7 +207,7 @@ class SplitterTabInspector(QWidget):
         self.splitter.setChildrenCollapsible(False)  # Prevent full collapse
         self.splitter.setHandleWidth(4)  # Make handle easier to grab
 
-        self.layout.addWidget(self.splitter)
+        main_layout.addWidget(self.splitter)
 
         # Initial tab widget
         self.main_tabs = DraggableTabWidget()

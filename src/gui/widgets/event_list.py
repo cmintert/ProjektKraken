@@ -44,8 +44,8 @@ class EventListWidget(QWidget):
         if parent:
             self.setParent(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.layout = QVBoxLayout(self)
-        StyleHelper.apply_standard_list_spacing(self.layout)
+        main_layout = QVBoxLayout(self)
+        StyleHelper.apply_standard_list_spacing(main_layout)
 
         # Controls
         self.btn_refresh = QPushButton("Refresh List")
@@ -58,18 +58,18 @@ class EventListWidget(QWidget):
         top_bar = QHBoxLayout()
         top_bar.addWidget(self.btn_refresh)
         top_bar.addWidget(self.btn_delete)
-        self.layout.addLayout(top_bar)
+        main_layout.addLayout(top_bar)
 
         # List View
         self.list_widget = QListWidget()
         self.list_widget.itemSelectionChanged.connect(self._on_selection_changed)
-        self.layout.addWidget(self.list_widget)
+        main_layout.addWidget(self.list_widget)
 
         # Empty State (Spec 7.2)
         self.empty_label = QLabel("No Events Loaded")
         self.empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.empty_label.setStyleSheet(StyleHelper.get_empty_state_style())
-        self.layout.addWidget(self.empty_label)
+        main_layout.addWidget(self.empty_label)
         self.empty_label.hide()
 
     def set_events(self, events: List[Event]) -> None:

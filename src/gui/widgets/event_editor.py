@@ -70,10 +70,10 @@ class EventEditorWidget(QWidget):
 
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
-        self.layout = QVBoxLayout(self)
+        main_layout = QVBoxLayout(self)
         from src.gui.utils.style_helper import StyleHelper
 
-        StyleHelper.apply_form_spacing(self.layout)
+        StyleHelper.apply_form_spacing(main_layout)
 
         self._is_loading = False
         self._is_dirty = False
@@ -81,7 +81,7 @@ class EventEditorWidget(QWidget):
 
         # Splitter-based tab inspector for vertical stacking
         self.inspector = SplitterTabInspector()
-        self.layout.addWidget(self.inspector)
+        main_layout.addWidget(self.inspector)
 
         # --- Tab 1: Details ---
         self.tab_details = QWidget()
@@ -223,7 +223,7 @@ class EventEditorWidget(QWidget):
         btn_layout.addWidget(self.btn_discard)
         btn_layout.addWidget(self.btn_save)
 
-        self.layout.addLayout(btn_layout)
+        main_layout.addLayout(btn_layout)
 
         # Internal State
         self._current_event_id = None

@@ -61,6 +61,7 @@ def rebuild_index(args: argparse.Namespace) -> int:
             print(f"Model: {args.model}")
 
         # Create search service
+        assert db_service._connection is not None, "Database not connected"
         search_service = create_search_service(
             db_service._connection, provider_name=args.provider, model=args.model
         )
@@ -106,6 +107,7 @@ def delete_object(args: argparse.Namespace) -> int:
             print(f"Model: {args.model}")
 
         # Create search service
+        assert db_service._connection is not None, "Database not connected"
         search_service = create_search_service(
             db_service._connection, provider_name="lmstudio", model=args.model
         )
@@ -148,6 +150,7 @@ def index_object(args: argparse.Namespace) -> int:
             print(f"Model: {args.model}")
 
         # Create search service
+        assert db_service._connection is not None, "Database not connected"
         search_service = create_search_service(
             db_service._connection, provider_name=args.provider, model=args.model
         )
@@ -205,6 +208,7 @@ def query_index(args: argparse.Namespace) -> int:
             print()
 
         # Create search service
+        assert db_service._connection is not None, "Database not connected"
         search_service = create_search_service(
             db_service._connection, provider_name=args.provider, model=args.model
         )

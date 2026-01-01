@@ -109,8 +109,8 @@ class UnifiedListWidget(QWidget):
 
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
-        self.layout = QVBoxLayout(self)
-        StyleHelper.apply_standard_list_spacing(self.layout)
+        main_layout = QVBoxLayout(self)
+        StyleHelper.apply_standard_list_spacing(main_layout)
 
         # Toolbar
         top_bar = QHBoxLayout()
@@ -136,14 +136,14 @@ class UnifiedListWidget(QWidget):
         self.btn_delete.setEnabled(False)
         top_bar.addWidget(self.btn_delete)
 
-        self.layout.addLayout(top_bar)
+        main_layout.addLayout(top_bar)
 
         # Search Bar (Live filtering)
         self.search_bar = QLineEdit()
         self.search_bar.setPlaceholderText("Search names, descriptions, tags...")
         self.search_bar.setClearButtonEnabled(True)
         self.search_bar.textChanged.connect(self._on_search_text_changed)
-        self.layout.addWidget(self.search_bar)
+        main_layout.addWidget(self.search_bar)
 
         # Filter Row (Dynamic Types and Tags)
         filter_row = QHBoxLayout()
@@ -166,18 +166,18 @@ class UnifiedListWidget(QWidget):
         self.btn_clear_filters.clicked.connect(self._request_clear_filters)
         filter_row.addWidget(self.btn_clear_filters)
 
-        self.layout.addLayout(filter_row)
+        main_layout.addLayout(filter_row)
 
         # List (with drag support)
         self.list_widget = DraggableListWidget()
         self.list_widget.itemSelectionChanged.connect(self._on_selection_changed)
-        self.layout.addWidget(self.list_widget)
+        main_layout.addWidget(self.list_widget)
 
         # Empty State
         self.empty_label = QLabel("No Items Loaded")
         self.empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.empty_label.setStyleSheet(StyleHelper.get_empty_state_style())
-        self.layout.addWidget(self.empty_label)
+        main_layout.addWidget(self.empty_label)
         self.empty_label.hide()
 
         # Data Cache

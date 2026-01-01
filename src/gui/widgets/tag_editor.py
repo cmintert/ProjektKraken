@@ -39,10 +39,10 @@ class TagEditorWidget(QWidget):
             parent (QWidget, optional): The parent widget. Defaults to None.
         """
         super().__init__(parent)
-        self.layout = QVBoxLayout(self)
+        main_layout = QVBoxLayout(self)
         from src.gui.utils.style_helper import StyleHelper
 
-        StyleHelper.apply_compact_spacing(self.layout)
+        StyleHelper.apply_compact_spacing(main_layout)
 
         # Toolbar with action buttons
         toolbar_layout = QHBoxLayout()
@@ -56,7 +56,7 @@ class TagEditorWidget(QWidget):
         toolbar_layout.addWidget(self.btn_remove)
 
         toolbar_layout.addStretch()
-        self.layout.addLayout(toolbar_layout)
+        main_layout.addLayout(toolbar_layout)
 
         # Input row
         input_layout = QHBoxLayout()
@@ -64,12 +64,12 @@ class TagEditorWidget(QWidget):
         self.tag_input.setPlaceholderText("Enter tag and press Enter...")
         self.tag_input.returnPressed.connect(self._on_add)
         input_layout.addWidget(self.tag_input)
-        self.layout.addLayout(input_layout)
+        main_layout.addLayout(input_layout)
 
         # Tag list
         self.tag_list = QListWidget()
         self.tag_list.setSelectionMode(QListWidget.SingleSelection)
-        self.layout.addWidget(self.tag_list)
+        main_layout.addWidget(self.tag_list)
 
     def load_tags(self, tags: List[str]) -> None:
         """

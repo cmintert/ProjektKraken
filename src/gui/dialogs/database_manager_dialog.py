@@ -47,25 +47,25 @@ class DatabaseManagerDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Database Manager")
         self.resize(500, 400)
-        self.layout = QVBoxLayout(self)
+        main_layout = QVBoxLayout(self)
 
         self.data_dir = get_user_data_path()
 
         # Header
         header = QLabel("Manage Your Worlds")
         header.setStyleSheet("font-size: 16px; font-weight: bold; margin-bottom: 10px;")
-        self.layout.addWidget(header)
+        main_layout.addWidget(header)
 
         # Info
         info = QLabel(f"Database Location:\n{self.data_dir}")
         info.setWordWrap(True)
         info.setStyleSheet("color: gray; margin-bottom: 10px;")
-        self.layout.addWidget(info)
+        main_layout.addWidget(info)
 
         # List
         self.db_list = QListWidget()
         self.db_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-        self.layout.addWidget(self.db_list)
+        main_layout.addWidget(self.db_list)
 
         # Buttons
         btn_layout = QHBoxLayout()
@@ -80,7 +80,7 @@ class DatabaseManagerDialog(QDialog):
         btn_layout.addStretch()
         btn_layout.addWidget(self.btn_close)
 
-        self.layout.addLayout(btn_layout)
+        main_layout.addLayout(btn_layout)
 
         # Connections
         self.btn_create.clicked.connect(self._create_db)

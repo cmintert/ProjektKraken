@@ -49,7 +49,7 @@ class RelationEditDialog(QDialog):
         self.setWindowTitle("Edit Relation")
         self.setMinimumWidth(400)
 
-        self.layout = QVBoxLayout(self)
+        main_layout = QVBoxLayout(self)
 
         # Form
         self.form_layout = QFormLayout()
@@ -99,7 +99,7 @@ class RelationEditDialog(QDialog):
         self.bi_check.setChecked(is_bidirectional)
         self.form_layout.addRow("", self.bi_check)
 
-        self.layout.addLayout(self.form_layout)
+        main_layout.addLayout(self.form_layout)
 
         # Buttons
         self.button_box = QDialogButtonBox(
@@ -107,7 +107,7 @@ class RelationEditDialog(QDialog):
         )
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
-        self.layout.addWidget(self.button_box)
+        main_layout.addWidget(self.button_box)
 
         # Initial focus
         self.target_edit.setFocus()

@@ -81,9 +81,9 @@ class CalendarConfigDialog(QDialog):
 
     def _setup_ui(self) -> None:
         """Sets up the dialog UI components."""
-        self.layout = QVBoxLayout(self)
-        self.layout.setSpacing(12)
-        self.layout.setContentsMargins(16, 16, 16, 16)
+        main_layout = QVBoxLayout(self)
+        main_layout.setSpacing(12)
+        main_layout.setContentsMargins(16, 16, 16, 16)
 
         # --- Header Section ---
         header_group = QGroupBox("Calendar Details")
@@ -99,11 +99,11 @@ class CalendarConfigDialog(QDialog):
         header_layout.addRow("Epoch Designation:", self.epoch_edit)
 
         header_group.setLayout(header_layout)
-        self.layout.addWidget(header_group)
+        main_layout.addWidget(header_group)
 
         # --- Tabs for Months and Week ---
         self.tabs = QTabWidget()
-        self.layout.addWidget(self.tabs)
+        main_layout.addWidget(self.tabs)
 
         # Tab 1: Months
         self.month_tab = QWidget()
@@ -180,14 +180,14 @@ class CalendarConfigDialog(QDialog):
         preview_layout.addStretch()
 
         preview_group.setLayout(preview_layout)
-        self.layout.addWidget(preview_group)
+        main_layout.addWidget(preview_group)
 
         # --- Validation Errors ---
         self.error_label = QLabel()
         self.error_label.setStyleSheet(StyleHelper.get_error_label_style())
         self.error_label.setWordWrap(True)
         self.error_label.hide()
-        self.layout.addWidget(self.error_label)
+        main_layout.addWidget(self.error_label)
 
         # --- Buttons ---
         self.button_box = QDialogButtonBox(
@@ -196,7 +196,7 @@ class CalendarConfigDialog(QDialog):
         )
         self.button_box.accepted.connect(self._on_save)
         self.button_box.rejected.connect(self.reject)
-        self.layout.addWidget(self.button_box)
+        main_layout.addWidget(self.button_box)
 
     def _load_config(self) -> None:
         """Loads the current config into the UI."""

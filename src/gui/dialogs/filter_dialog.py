@@ -48,13 +48,13 @@ class FilterDialog(QDialog):
         self.tags = sorted(available_tags or [])
         self.current_config = current_config or {}
 
-        self.layout = QVBoxLayout(self)
+        main_layout = QVBoxLayout(self)
 
         # --- Include Section ---
-        self.layout.addWidget(QLabel("<b>Include Tags:</b>"))
+        main_layout.addWidget(QLabel("<b>Include Tags:</b>"))
         self.list_include = QListWidget()
         self._populate_list(self.list_include)
-        self.layout.addWidget(self.list_include)
+        main_layout.addWidget(self.list_include)
 
         # Include Mode
         mode_layout_in = QHBoxLayout()
@@ -70,15 +70,15 @@ class FilterDialog(QDialog):
         mode_layout_in.addWidget(self.radio_include_any)
         mode_layout_in.addWidget(self.radio_include_all)
         mode_layout_in.addStretch()
-        self.layout.addLayout(mode_layout_in)
+        main_layout.addLayout(mode_layout_in)
 
-        self.layout.addSpacing(10)
+        main_layout.addSpacing(10)
 
         # --- Exclude Section ---
-        self.layout.addWidget(QLabel("<b>Exclude Tags:</b>"))
+        main_layout.addWidget(QLabel("<b>Exclude Tags:</b>"))
         self.list_exclude = QListWidget()
         self._populate_list(self.list_exclude)
-        self.layout.addWidget(self.list_exclude)
+        main_layout.addWidget(self.list_exclude)
 
         # Exclude Mode
         mode_layout_ex = QHBoxLayout()
@@ -94,13 +94,13 @@ class FilterDialog(QDialog):
         mode_layout_ex.addWidget(self.radio_exclude_any)
         mode_layout_ex.addWidget(self.radio_exclude_all)
         mode_layout_ex.addStretch()
-        self.layout.addLayout(mode_layout_ex)
+        main_layout.addLayout(mode_layout_ex)
 
-        self.layout.addSpacing(10)
+        main_layout.addSpacing(10)
 
         # --- Options (Case Sensitivity) ---
         self.check_case = QCheckBox("Case Sensitive")
-        self.layout.addWidget(self.check_case)
+        main_layout.addWidget(self.check_case)
 
         # --- Dialog Buttons ---
         self.buttons = QDialogButtonBox(
@@ -108,7 +108,7 @@ class FilterDialog(QDialog):
         )
         self.buttons.accepted.connect(self.accept)
         self.buttons.rejected.connect(self.reject)
-        self.layout.addWidget(self.buttons)
+        main_layout.addWidget(self.buttons)
 
         # Restore State
         self._load_config()

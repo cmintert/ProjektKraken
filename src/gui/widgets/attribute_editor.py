@@ -39,10 +39,10 @@ class AttributeEditorWidget(QWidget):
             parent (QWidget, optional): The parent widget. Defaults to None.
         """
         super().__init__(parent)
-        self.layout = QVBoxLayout(self)
+        main_layout = QVBoxLayout(self)
         from src.gui.utils.style_helper import StyleHelper
 
-        StyleHelper.apply_compact_spacing(self.layout)
+        StyleHelper.apply_compact_spacing(main_layout)
 
         # Toolbar
         self.toolbar_layout = QHBoxLayout()
@@ -55,7 +55,7 @@ class AttributeEditorWidget(QWidget):
         self.toolbar_layout.addWidget(self.btn_add)
         self.toolbar_layout.addWidget(self.btn_remove)
         self.toolbar_layout.addStretch()
-        self.layout.addLayout(self.toolbar_layout)
+        main_layout.addLayout(self.toolbar_layout)
 
         # Table
         self.table = QTableWidget()
@@ -73,7 +73,7 @@ class AttributeEditorWidget(QWidget):
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.itemChanged.connect(self._on_item_changed)
 
-        self.layout.addWidget(self.table)
+        main_layout.addWidget(self.table)
 
         self._block_signals = False
 

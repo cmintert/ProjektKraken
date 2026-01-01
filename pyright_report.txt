@@ -1,0 +1,850 @@
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\command_coordinator.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\command_coordinator.py:95:13 - error: Argument of type "MainWindowProtocol" cannot be assigned to parameter "parent" of type "QWidget | None" in function "critical"
+    Type "MainWindowProtocol" is not assignable to type "QWidget | None"
+      "MainWindowProtocol" is not assignable to "QWidget"
+      "MainWindowProtocol" is not assignable to "None" (reportArgumentType)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:217:37 - error: Argument of type "Self@MainWindow" cannot be assigned to parameter "main_window" of type "MainWindowProtocol" in function "__init__"
+    "MainWindow*" is incompatible with protocol "MainWindowProtocol"
+      "toggle_auto_relation_setting" is an incompatible type
+        Type "(checked: bool) -> None" is not assignable to type "() -> None"
+          Extra parameter "checked"
+      "setDockOptions" is an incompatible type
+        Type "(options: DockOption, /) -> None" is not assignable to type "(options: Any) -> None"
+          Missing keyword parameter "options"
+            Position-only parameter mismatch; parameter "options" is not position-only
+    ... (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:272:21 - error: No overloads for "invokeMethod" match the provided arguments (reportCallIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:273:30 - error: Argument of type "Literal['initialize_db']" cannot be assigned to parameter "member" of type "bytes | bytearray | memoryview[int]" in function "invokeMethod"
+    Type "Literal['initialize_db']" is not assignable to type "bytes | bytearray | memoryview[int]"
+      "Literal['initialize_db']" is not assignable to "bytes"
+      "Literal['initialize_db']" is not assignable to "bytearray"
+      "Literal['initialize_db']" is not assignable to "memoryview[int]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:380:9 - error: No overloads for "invokeMethod" match the provided arguments (reportCallIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:382:13 - error: Argument of type "Literal['load_longform_sequence']" cannot be assigned to parameter "member" of type "bytes | bytearray | memoryview[int]" in function "invokeMethod"
+    Type "Literal['load_longform_sequence']" is not assignable to type "bytes | bytearray | memoryview[int]"
+      "Literal['load_longform_sequence']" is not assignable to "bytes"
+      "Literal['load_longform_sequence']" is not assignable to "bytearray"
+      "Literal['load_longform_sequence']" is not assignable to "memoryview[int]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:496:29 - error: Operator "+" not supported for types "Unbound | Literal['Event Inspector', 'Entity Inspector']" and "Literal[' *', '']"
+    Operator "+" not supported for types "Unbound" and "Literal[' *']"
+    Operator "+" not supported for types "Unbound" and "Literal['']" (reportOperatorIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:496:29 - error: "base_title" is possibly unbound (reportPossiblyUnboundVariable)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:518:38 - error: Argument of type "object" cannot be assigned to parameter "filename" of type "str" in function "get_user_data_path"
+    "object" is not assignable to "str" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:646:9 - error: No overloads for "invokeMethod" match the provided arguments (reportCallIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:647:26 - error: Argument of type "Literal['load_calendar_config']" cannot be assigned to parameter "member" of type "bytes | bytearray | memoryview[int]" in function "invokeMethod"
+    Type "Literal['load_calendar_config']" is not assignable to type "bytes | bytearray | memoryview[int]"
+      "Literal['load_calendar_config']" is not assignable to "bytes"
+      "Literal['load_calendar_config']" is not assignable to "bytearray"
+      "Literal['load_calendar_config']" is not assignable to "memoryview[int]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:687:9 - error: No overloads for "invokeMethod" match the provided arguments (reportCallIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:688:26 - error: Argument of type "Literal['load_current_time']" cannot be assigned to parameter "member" of type "bytes | bytearray | memoryview[int]" in function "invokeMethod"
+    Type "Literal['load_current_time']" is not assignable to type "bytes | bytearray | memoryview[int]"
+      "Literal['load_current_time']" is not assignable to "bytes"
+      "Literal['load_current_time']" is not assignable to "bytearray"
+      "Literal['load_current_time']" is not assignable to "memoryview[int]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:711:9 - error: No overloads for "invokeMethod" match the provided arguments (reportCallIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:713:13 - error: Argument of type "Literal['save_current_time']" cannot be assigned to parameter "member" of type "bytes | bytearray | memoryview[int]" in function "invokeMethod"
+    Type "Literal['save_current_time']" is not assignable to type "bytes | bytearray | memoryview[int]"
+      "Literal['save_current_time']" is not assignable to "bytes"
+      "Literal['save_current_time']" is not assignable to "bytearray"
+      "Literal['save_current_time']" is not assignable to "memoryview[int]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:869:9 - error: No overloads for "invokeMethod" match the provided arguments (reportCallIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:870:26 - error: Argument of type "Literal['load_events']" cannot be assigned to parameter "member" of type "bytes | bytearray | memoryview[int]" in function "invokeMethod"
+    Type "Literal['load_events']" is not assignable to type "bytes | bytearray | memoryview[int]"
+      "Literal['load_events']" is not assignable to "bytes"
+      "Literal['load_events']" is not assignable to "bytearray"
+      "Literal['load_events']" is not assignable to "memoryview[int]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:875:9 - error: No overloads for "invokeMethod" match the provided arguments (reportCallIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:876:26 - error: Argument of type "Literal['load_entities']" cannot be assigned to parameter "member" of type "bytes | bytearray | memoryview[int]" in function "invokeMethod"
+    Type "Literal['load_entities']" is not assignable to type "bytes | bytearray | memoryview[int]"
+      "Literal['load_entities']" is not assignable to "bytes"
+      "Literal['load_entities']" is not assignable to "bytearray"
+      "Literal['load_entities']" is not assignable to "memoryview[int]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:890:9 - error: No overloads for "invokeMethod" match the provided arguments (reportCallIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:892:13 - error: Argument of type "Literal['load_event_details']" cannot be assigned to parameter "member" of type "bytes | bytearray | memoryview[int]" in function "invokeMethod"
+    Type "Literal['load_event_details']" is not assignable to type "bytes | bytearray | memoryview[int]"
+      "Literal['load_event_details']" is not assignable to "bytes"
+      "Literal['load_event_details']" is not assignable to "bytearray"
+      "Literal['load_event_details']" is not assignable to "memoryview[int]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:899:9 - error: No overloads for "invokeMethod" match the provided arguments (reportCallIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:901:13 - error: Argument of type "Literal['load_entity_details']" cannot be assigned to parameter "member" of type "bytes | bytearray | memoryview[int]" in function "invokeMethod"
+    Type "Literal['load_entity_details']" is not assignable to type "bytes | bytearray | memoryview[int]"
+      "Literal['load_entity_details']" is not assignable to "bytes"
+      "Literal['load_entity_details']" is not assignable to "bytearray"
+      "Literal['load_entity_details']" is not assignable to "memoryview[int]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:1188:9 - error: No overloads for "invokeMethod" match the provided arguments (reportCallIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:1189:26 - error: Argument of type "Literal['load_maps']" cannot be assigned to parameter "member" of type "bytes | bytearray | memoryview[int]" in function "invokeMethod"
+    Type "Literal['load_maps']" is not assignable to type "bytes | bytearray | memoryview[int]"
+      "Literal['load_maps']" is not assignable to "bytes"
+      "Literal['load_maps']" is not assignable to "bytearray"
+      "Literal['load_maps']" is not assignable to "memoryview[int]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:1214:13 - error: No overloads for "invokeMethod" match the provided arguments (reportCallIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:1216:17 - error: Argument of type "Literal['load_markers']" cannot be assigned to parameter "member" of type "bytes | bytearray | memoryview[int]" in function "invokeMethod"
+    Type "Literal['load_markers']" is not assignable to type "bytes | bytearray | memoryview[int]"
+      "Literal['load_markers']" is not assignable to "bytes"
+      "Literal['load_markers']" is not assignable to "bytearray"
+      "Literal['load_markers']" is not assignable to "memoryview[int]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:1477:47 - error: "UpdateMarkerPositionCommand" is unknown import symbol (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:1489:9 - error: No overloads for "invokeMethod" match the provided arguments (reportCallIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:1490:26 - error: Argument of type "Literal['load_grouping_dialog_data']" cannot be assigned to parameter "member" of type "bytes | bytearray | memoryview[int]" in function "invokeMethod"
+    Type "Literal['load_grouping_dialog_data']" is not assignable to type "bytes | bytearray | memoryview[int]"
+      "Literal['load_grouping_dialog_data']" is not assignable to "bytes"
+      "Literal['load_grouping_dialog_data']" is not assignable to "bytearray"
+      "Literal['load_grouping_dialog_data']" is not assignable to "memoryview[int]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:1939:52 - error: Argument of type "Connection | None" cannot be assigned to parameter "db_connection" of type "Connection" in function "create_search_service"
+    Type "Connection | None" is not assignable to type "Connection"
+      "None" is not assignable to "Connection" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:1976:52 - error: Argument of type "Connection | None" cannot be assigned to parameter "db_connection" of type "Connection" in function "create_search_service"
+    Type "Connection | None" is not assignable to type "Connection"
+      "None" is not assignable to "Connection" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:1988:56 - error: Cannot access attribute "split" for class "object"
+    Attribute "split" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main.py:2030:40 - error: Argument of type "Self@MainWindow" cannot be assigned to parameter "parent" of type "QDialog | None" in function "__init__"
+    Type "Self@MainWindow" is not assignable to type "QDialog | None"
+      "MainWindow*" is not assignable to "QDialog"
+      "MainWindow*" is not assignable to "None" (reportArgumentType)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\ui_manager.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\ui_manager.py:190:16 - error: No overloads for "__init__" match the provided arguments (reportCallIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\ui_manager.py:190:35 - error: Argument of type "MainWindowProtocol" cannot be assigned to parameter "parent" of type "QWidget | None" in function "__init__"
+    Type "MainWindowProtocol" is not assignable to type "QWidget | None"
+      "MainWindowProtocol" is not assignable to "QWidget"
+      "MainWindowProtocol" is not assignable to "None" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\ui_manager.py:245:37 - error: Argument of type "MainWindowProtocol" cannot be assigned to parameter "parent" of type "QObject" in function "__init__"
+    "MainWindowProtocol" is not assignable to "QObject" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\ui_manager.py:315:41 - error: Argument of type "MainWindowProtocol" cannot be assigned to parameter "parent" of type "QWidget | None" in function "getText"
+    Type "MainWindowProtocol" is not assignable to type "QWidget | None"
+      "MainWindowProtocol" is not assignable to "QWidget"
+      "MainWindowProtocol" is not assignable to "None" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\ui_manager.py:319:21 - error: Argument of type "MainWindowProtocol" cannot be assigned to parameter "parent" of type "QWidget | None" in function "question"
+    Type "MainWindowProtocol" is not assignable to type "QWidget | None"
+      "MainWindowProtocol" is not assignable to "QWidget"
+      "MainWindowProtocol" is not assignable to "None" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\ui_manager.py:380:13 - error: Argument of type "MainWindowProtocol" cannot be assigned to parameter "parent" of type "QWidget | None" in function "question"
+    Type "MainWindowProtocol" is not assignable to type "QWidget | None"
+      "MainWindowProtocol" is not assignable to "QWidget"
+      "MainWindowProtocol" is not assignable to "None" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\ui_manager.py:487:50 - error: Argument of type "object" cannot be assigned to parameter "arg__1" of type "bool" in function "setChecked"
+    "object" is not assignable to "bool" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\ui_manager.py:498:9 - error: No overloads for "invokeMethod" match the provided arguments (reportCallIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\ui_manager.py:499:13 - error: Argument of type "object" cannot be assigned to parameter "object" of type "QObject" in function "invokeMethod"
+    "object" is not assignable to "QObject" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\ui_manager.py:500:13 - error: Argument of type "Literal['load_calendar_config']" cannot be assigned to parameter "member" of type "bytes | bytearray | memoryview[int]" in function "invokeMethod"
+    Type "Literal['load_calendar_config']" is not assignable to type "bytes | bytearray | memoryview[int]"
+      "Literal['load_calendar_config']" is not assignable to "bytes"
+      "Literal['load_calendar_config']" is not assignable to "bytearray"
+      "Literal['load_calendar_config']" is not assignable to "memoryview[int]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\ui_manager.py:536:48 - error: Cannot access attribute "emit" for class "object"
+    Attribute "emit" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\app\ui_manager.py:540:48 - error: Cannot access attribute "emit" for class "object"
+    Attribute "emit" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\cli\attachment.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\cli\attachment.py:87:53 - error: "get_attachments" is not a known attribute of "None" (reportOptionalMemberAccess)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\cli\attachment.py:99:40 - error: Cannot access attribute "filename" for class "ImageAttachment"
+    Attribute "filename" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\cli\attachment.py:102:40 - error: Cannot access attribute "position" for class "ImageAttachment"
+    Attribute "position" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\cli\index.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\cli\index.py:65:13 - error: Argument of type "Connection | None" cannot be assigned to parameter "db_connection" of type "Connection" in function "create_search_service"
+    Type "Connection | None" is not assignable to type "Connection"
+      "None" is not assignable to "Connection" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\cli\index.py:110:13 - error: Argument of type "Connection | None" cannot be assigned to parameter "db_connection" of type "Connection" in function "create_search_service"
+    Type "Connection | None" is not assignable to type "Connection"
+      "None" is not assignable to "Connection" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\cli\index.py:152:13 - error: Argument of type "Connection | None" cannot be assigned to parameter "db_connection" of type "Connection" in function "create_search_service"
+    Type "Connection | None" is not assignable to type "Connection"
+      "None" is not assignable to "Connection" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\cli\index.py:209:13 - error: Argument of type "Connection | None" cannot be assigned to parameter "db_connection" of type "Connection" in function "create_search_service"
+    Type "Connection | None" is not assignable to type "Connection"
+      "None" is not assignable to "Connection" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\cli\index.py:381:16 - error: Type "Literal[1]" is not assignable to return type "None"
+    "Literal[1]" is not assignable to "None" (reportReturnType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\cli\index.py:385:16 - error: Type "int" is not assignable to return type "None"
+    "int" is not assignable to "None" (reportReturnType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\cli\index.py:387:16 - error: Type "int" is not assignable to return type "None"
+    "int" is not assignable to "None" (reportReturnType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\cli\index.py:389:16 - error: Type "int" is not assignable to return type "None"
+    "int" is not assignable to "None" (reportReturnType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\cli\index.py:391:16 - error: Type "int" is not assignable to return type "None"
+    "int" is not assignable to "None" (reportReturnType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\cli\index.py:394:16 - error: Type "Literal[1]" is not assignable to return type "None"
+    "Literal[1]" is not assignable to "None" (reportReturnType)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\cli\longform.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\cli\longform.py:40:13 - error: Argument of type "Connection | None" cannot be assigned to parameter "conn" of type "Connection" in function "export_longform_to_markdown"
+    Type "Connection | None" is not assignable to type "Connection"
+      "None" is not assignable to "Connection" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\cli\longform.py:222:53 - error: Argument of type "Connection | None" cannot be assigned to parameter "conn" of type "Connection" in function "reindex_document_positions"
+    Type "Connection | None" is not assignable to type "Connection"
+      "None" is not assignable to "Connection" (reportArgumentType)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:635:43 - error: Argument of type "object" cannot be assigned to parameter "arg__1" of type "str | None" in function "setText"
+    Type "object" is not assignable to type "str | None"
+      "object" is not assignable to "str"
+      "object" is not assignable to "None" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:643:13 - error: Argument of type "object" cannot be assigned to parameter "arg__1" of type "str | None" in function "setText"
+    Type "object" is not assignable to type "str | None"
+      "object" is not assignable to "str"
+      "object" is not assignable to "None" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:645:37 - error: Argument of type "object" cannot be assigned to parameter "arg__1" of type "str | None" in function "setText"
+    Type "object" is not assignable to type "str | None"
+      "object" is not assignable to "str"
+      "object" is not assignable to "None" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:646:39 - error: Argument of type "object" cannot be assigned to parameter "arg__1" of type "str | None" in function "setText"
+    Type "object" is not assignable to type "str | None"
+      "object" is not assignable to "str"
+      "object" is not assignable to "None" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:647:44 - error: Argument of type "object" cannot be assigned to parameter "x" of type "ConvertibleToInt" in function "__new__"
+    Type "object" is not assignable to type "ConvertibleToInt"
+      "object" is not assignable to "str"
+      "object" is incompatible with protocol "Buffer"
+        "__buffer__" is not present
+      "object" is incompatible with protocol "SupportsInt"
+        "__int__" is not present
+      "object" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present
+    ... (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:647:44 - error: Argument of type "object" cannot be assigned to parameter "x" of type "ConvertibleToInt" in function "__new__"
+    Type "object" is not assignable to type "ConvertibleToInt"
+      "object" is not assignable to "str"
+      "object" is incompatible with protocol "Buffer"
+        "__buffer__" is not present
+      "object" is incompatible with protocol "SupportsInt"
+        "__int__" is not present
+      "object" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:650:37 - error: Argument of type "object" cannot be assigned to parameter "arg__1" of type "str | None" in function "setText"
+    Type "object" is not assignable to type "str | None"
+      "object" is not assignable to "str"
+      "object" is not assignable to "None" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:655:13 - error: Argument of type "object" cannot be assigned to parameter "arg__1" of type "bool" in function "setChecked"
+    "object" is not assignable to "bool" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:658:13 - error: Argument of type "object" cannot be assigned to parameter "arg__1" of type "str | None" in function "setText"
+    Type "object" is not assignable to type "str | None"
+      "object" is not assignable to "str"
+      "object" is not assignable to "None" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:662:41 - error: Argument of type "object" cannot be assigned to parameter "arg__1" of type "str | None" in function "setText"
+    Type "object" is not assignable to type "str | None"
+      "object" is not assignable to "str"
+      "object" is not assignable to "None" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:666:13 - error: Argument of type "object" cannot be assigned to parameter "arg__1" of type "bool" in function "setChecked"
+    "object" is not assignable to "bool" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:668:43 - error: Argument of type "object" cannot be assigned to parameter "arg__1" of type "str | None" in function "setText"
+    Type "object" is not assignable to type "str | None"
+      "object" is not assignable to "str"
+      "object" is not assignable to "None" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:670:13 - error: Argument of type "object" cannot be assigned to parameter "arg__1" of type "str | None" in function "setText"
+    Type "object" is not assignable to type "str | None"
+      "object" is not assignable to "str"
+      "object" is not assignable to "None" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:675:13 - error: Argument of type "object" cannot be assigned to parameter "arg__1" of type "bool" in function "setChecked"
+    "object" is not assignable to "bool" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:678:13 - error: Argument of type "object" cannot be assigned to parameter "arg__1" of type "str | None" in function "setText"
+    Type "object" is not assignable to type "str | None"
+      "object" is not assignable to "str"
+      "object" is not assignable to "None" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:681:13 - error: Argument of type "object" cannot be assigned to parameter "arg__1" of type "str | None" in function "setText"
+    Type "object" is not assignable to type "str | None"
+      "object" is not assignable to "str"
+      "object" is not assignable to "None" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:684:13 - error: Argument of type "object" cannot be assigned to parameter "arg__1" of type "str | None" in function "setText"
+    Type "object" is not assignable to type "str | None"
+      "object" is not assignable to "str"
+      "object" is not assignable to "None" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:687:13 - error: Argument of type "object" cannot be assigned to parameter "arg__1" of type "str | None" in function "setText"
+    Type "object" is not assignable to type "str | None"
+      "object" is not assignable to "str"
+      "object" is not assignable to "None" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:692:13 - error: Argument of type "object" cannot be assigned to parameter "arg__1" of type "bool" in function "setChecked"
+    "object" is not assignable to "bool" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:695:13 - error: Argument of type "object" cannot be assigned to parameter "arg__1" of type "str | None" in function "setText"
+    Type "object" is not assignable to type "str | None"
+      "object" is not assignable to "str"
+      "object" is not assignable to "None" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:698:13 - error: Argument of type "object" cannot be assigned to parameter "arg__1" of type "str | None" in function "setText"
+    Type "object" is not assignable to type "str | None"
+      "object" is not assignable to "str"
+      "object" is not assignable to "None" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:703:13 - error: Argument of type "object" cannot be assigned to parameter "arg__1" of type "bool" in function "setChecked"
+    "object" is not assignable to "bool" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:705:44 - error: Argument of type "object" cannot be assigned to parameter "x" of type "ConvertibleToInt" in function "__new__"
+    Type "object" is not assignable to type "ConvertibleToInt"
+      "object" is not assignable to "str"
+      "object" is incompatible with protocol "Buffer"
+        "__buffer__" is not present
+      "object" is incompatible with protocol "SupportsInt"
+        "__int__" is not present
+      "object" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present
+    ... (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:705:44 - error: Argument of type "object" cannot be assigned to parameter "x" of type "ConvertibleToInt" in function "__new__"
+    Type "object" is not assignable to type "ConvertibleToInt"
+      "object" is not assignable to "str"
+      "object" is incompatible with protocol "Buffer"
+        "__buffer__" is not present
+      "object" is incompatible with protocol "SupportsInt"
+        "__int__" is not present
+      "object" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:706:45 - error: Argument of type "object" cannot be assigned to parameter "x" of type "ConvertibleToInt" in function "__new__"
+    Type "object" is not assignable to type "ConvertibleToInt"
+      "object" is not assignable to "str"
+      "object" is incompatible with protocol "Buffer"
+        "__buffer__" is not present
+      "object" is incompatible with protocol "SupportsInt"
+        "__int__" is not present
+      "object" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present
+    ... (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:706:45 - error: Argument of type "object" cannot be assigned to parameter "x" of type "ConvertibleToInt" in function "__new__"
+    Type "object" is not assignable to type "ConvertibleToInt"
+      "object" is not assignable to "str"
+      "object" is incompatible with protocol "Buffer"
+        "__buffer__" is not present
+      "object" is incompatible with protocol "SupportsInt"
+        "__int__" is not present
+      "object" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\ai_settings_dialog.py:719:13 - error: Argument of type "object" cannot be assigned to parameter "text" of type "str" in function "setPlainText"
+    "object" is not assignable to "str" (reportArgumentType)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\calendar_config_dialog.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\calendar_config_dialog.py:84:23 - error: Cannot assign to attribute "layout" for class "CalendarConfigDialog*"
+    Type "QVBoxLayout" is not assignable to type "() -> (QLayout | None)" (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\calendar_config_dialog.py:85:21 - error: Cannot access attribute "setSpacing" for class "MethodType"
+    Attribute "setSpacing" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\calendar_config_dialog.py:86:21 - error: Cannot access attribute "setContentsMargins" for class "MethodType"
+    Attribute "setContentsMargins" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\calendar_config_dialog.py:102:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\calendar_config_dialog.py:106:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\calendar_config_dialog.py:125:60 - error: Cannot access attribute "SelectRows" for class "type[QTableWidget]"
+    Attribute "SelectRows" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\calendar_config_dialog.py:183:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\calendar_config_dialog.py:190:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\calendar_config_dialog.py:199:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\database_manager_dialog.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\database_manager_dialog.py:50:23 - error: Cannot assign to attribute "layout" for class "DatabaseManagerDialog*"
+    Type "QVBoxLayout" is not assignable to type "() -> (QLayout | None)" (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\database_manager_dialog.py:57:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\database_manager_dialog.py:63:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\database_manager_dialog.py:68:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\database_manager_dialog.py:83:21 - error: Cannot access attribute "addLayout" for class "MethodType"
+    Attribute "addLayout" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\database_manager_dialog.py:144:61 - error: Cannot access attribute "MatchExactly" for class "type[Qt]"
+    Attribute "MatchExactly" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\filter_dialog.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\filter_dialog.py:35:37 - error: Expression of type "None" cannot be assigned to parameter of type "List[str]"
+    "None" is not assignable to "List[str]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\filter_dialog.py:36:42 - error: Expression of type "None" cannot be assigned to parameter of type "Dict[str, Any]"
+    "None" is not assignable to "Dict[str, Any]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\filter_dialog.py:51:23 - error: Cannot assign to attribute "layout" for class "FilterDialog*"
+    Type "QVBoxLayout" is not assignable to type "() -> (QLayout | None)" (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\filter_dialog.py:54:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\filter_dialog.py:57:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\filter_dialog.py:73:21 - error: Cannot access attribute "addLayout" for class "MethodType"
+    Attribute "addLayout" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\filter_dialog.py:75:21 - error: Cannot access attribute "addSpacing" for class "MethodType"
+    Attribute "addSpacing" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\filter_dialog.py:78:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\filter_dialog.py:81:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\filter_dialog.py:97:21 - error: Cannot access attribute "addLayout" for class "MethodType"
+    Attribute "addLayout" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\filter_dialog.py:99:21 - error: Cannot access attribute "addSpacing" for class "MethodType"
+    Attribute "addSpacing" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\filter_dialog.py:103:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\filter_dialog.py:111:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\filter_dialog.py:146:45 - error: Cannot access attribute "ItemIsUserCheckable" for class "type[Qt]"
+    Attribute "ItemIsUserCheckable" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\image_viewer_dialog.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\image_viewer_dialog.py:37:46 - error: Expression of type "None" cannot be assigned to parameter of type "List[ImageAttachment]"
+    "None" is not assignable to "List[ImageAttachment]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\image_viewer_dialog.py:76:52 - error: Cannot access attribute "NoFrame" for class "type[QScrollArea]"
+    Attribute "NoFrame" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\relation_dialog.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\relation_dialog.py:36:56 - error: Expression of type "None" cannot be assigned to parameter of type "list[tuple[str, str, str]]"
+    "None" is not assignable to "list[tuple[str, str, str]]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\relation_dialog.py:52:23 - error: Cannot assign to attribute "layout" for class "RelationEditDialog*"
+    Type "QVBoxLayout" is not assignable to type "() -> (QLayout | None)" (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\relation_dialog.py:77:36 - error: Cannot access attribute "MatchContains" for class "type[Qt]"
+    Attribute "MatchContains" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\relation_dialog.py:102:21 - error: Cannot access attribute "addLayout" for class "MethodType"
+    Attribute "addLayout" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\dialogs\relation_dialog.py:110:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\ai_search_panel.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\ai_search_panel.py:177:56 - error: Cannot access attribute "NoSelection" for class "type[QListWidget]"
+    Attribute "NoSelection" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\attribute_editor.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\attribute_editor.py:42:23 - error: Cannot assign to attribute "layout" for class "AttributeEditorWidget*"
+    Type "QVBoxLayout" is not assignable to type "() -> (QLayout | None)" (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\attribute_editor.py:45:43 - error: Argument of type "() -> (QLayout | None)" cannot be assigned to parameter "layout" of type "QLayout" in function "apply_compact_spacing"
+    "MethodType" is not assignable to "QLayout" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\attribute_editor.py:58:21 - error: Cannot access attribute "addLayout" for class "MethodType"
+    Attribute "addLayout" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\attribute_editor.py:73:54 - error: Cannot access attribute "SelectRows" for class "type[QTableWidget]"
+    Attribute "SelectRows" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\attribute_editor.py:76:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\attribute_editor.py:106:36 - error: Cannot access attribute "currentText" for class "QWidget"
+    Attribute "currentText" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\compact_date_widget.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\compact_date_widget.py:51:42 - error: Expression of type "None" cannot be assigned to parameter of type "QWidget"
+    "None" is not assignable to "QWidget" (reportArgumentType)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\entity_editor.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\entity_editor.py:63:23 - error: Cannot assign to attribute "layout" for class "EntityEditorWidget*"
+    Type "QVBoxLayout" is not assignable to type "() -> (QLayout | None)" (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\entity_editor.py:66:40 - error: Argument of type "() -> (QLayout | None)" cannot be assigned to parameter "layout" of type "QLayout" in function "apply_form_spacing"
+    "MethodType" is not assignable to "QLayout" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\entity_editor.py:70:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\entity_editor.py:173:21 - error: Cannot access attribute "addLayout" for class "MethodType"
+    Attribute "addLayout" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\entity_editor.py:213:51 - error: Expression of type "None" cannot be assigned to parameter of type "list[tuple[str, str, str]]"
+    "None" is not assignable to "list[tuple[str, str, str]]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\entity_editor.py:213:76 - error: Expression of type "None" cannot be assigned to parameter of type "list[str]"
+    "None" is not assignable to "list[str]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\entity_editor.py:239:49 - error: Expression of type "None" cannot be assigned to parameter of type "list[Unknown]"
+    "None" is not assignable to "list[Unknown]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\entity_editor.py:239:82 - error: Expression of type "None" cannot be assigned to parameter of type "list[Unknown]"
+    "None" is not assignable to "list[Unknown]" (reportArgumentType)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\entity_list.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\entity_list.py:47:23 - error: Cannot assign to attribute "layout" for class "EntityListWidget*"
+    Type "QVBoxLayout" is not assignable to type "() -> (QLayout | None)" (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\entity_list.py:48:49 - error: Argument of type "() -> (QLayout | None)" cannot be assigned to parameter "layout" of type "QLayout" in function "apply_standard_list_spacing"
+    "MethodType" is not assignable to "QLayout" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\entity_list.py:65:21 - error: Cannot access attribute "addLayout" for class "MethodType"
+    Attribute "addLayout" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\entity_list.py:70:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\entity_list.py:76:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\event_editor.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\event_editor.py:73:23 - error: Cannot assign to attribute "layout" for class "EventEditorWidget*"
+    Type "QVBoxLayout" is not assignable to type "() -> (QLayout | None)" (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\event_editor.py:76:40 - error: Argument of type "() -> (QLayout | None)" cannot be assigned to parameter "layout" of type "QLayout" in function "apply_form_spacing"
+    "MethodType" is not assignable to "QLayout" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\event_editor.py:84:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\event_editor.py:93:59 - error: Cannot access attribute "ExpandingFieldsGrow" for class "type[QFormLayout]"
+    Attribute "ExpandingFieldsGrow" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\event_editor.py:94:55 - error: Cannot access attribute "DontWrapRows" for class "type[QFormLayout]"
+    Attribute "DontWrapRows" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\event_editor.py:116:53 - error: Argument of type "None" cannot be assigned to parameter "converter" of type "CalendarConverter" in function "set_calendar_converter"
+    "None" is not assignable to "CalendarConverter" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\event_editor.py:120:51 - error: Argument of type "None" cannot be assigned to parameter "converter" of type "CalendarConverter" in function "set_calendar_converter"
+    "None" is not assignable to "CalendarConverter" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\event_editor.py:226:21 - error: Cannot access attribute "addLayout" for class "MethodType"
+    Attribute "addLayout" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\event_editor.py:312:51 - error: Expression of type "None" cannot be assigned to parameter of type "list[tuple[str, str, str]]"
+    "None" is not assignable to "list[tuple[str, str, str]]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\event_editor.py:312:76 - error: Expression of type "None" cannot be assigned to parameter of type "list[str]"
+    "None" is not assignable to "list[str]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\event_editor.py:338:47 - error: Expression of type "None" cannot be assigned to parameter of type "list[Unknown]"
+    "None" is not assignable to "list[Unknown]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\event_editor.py:338:80 - error: Expression of type "None" cannot be assigned to parameter of type "list[Unknown]"
+    "None" is not assignable to "list[Unknown]" (reportArgumentType)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\event_list.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\event_list.py:47:23 - error: Cannot assign to attribute "layout" for class "EventListWidget*"
+    Type "QVBoxLayout" is not assignable to type "() -> (QLayout | None)" (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\event_list.py:48:49 - error: Argument of type "() -> (QLayout | None)" cannot be assigned to parameter "layout" of type "QLayout" in function "apply_standard_list_spacing"
+    "MethodType" is not assignable to "QLayout" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\event_list.py:61:21 - error: Cannot access attribute "addLayout" for class "MethodType"
+    Attribute "addLayout" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\event_list.py:66:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\event_list.py:72:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\gallery_widget.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\gallery_widget.py:102:50 - error: Cannot access attribute "IconMode" for class "type[QListWidget]"
+    Attribute "IconMode" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\gallery_widget.py:104:52 - error: Cannot access attribute "Adjust" for class "type[QListWidget]"
+    Attribute "Adjust" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\gallery_widget.py:150:9 - error: No overloads for "invokeMethod" match the provided arguments (reportCallIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\gallery_widget.py:152:13 - error: Argument of type "Literal['load_attachments']" cannot be assigned to parameter "member" of type "bytes | bytearray | memoryview[int]" in function "invokeMethod"
+    Type "Literal['load_attachments']" is not assignable to type "bytes | bytearray | memoryview[int]"
+      "Literal['load_attachments']" is not assignable to "bytes"
+      "Literal['load_attachments']" is not assignable to "bytearray"
+      "Literal['load_attachments']" is not assignable to "memoryview[int]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\gallery_widget.py:207:23 - error: Cannot access attribute "success" for class "object"
+    Attribute "success" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\gallery_widget.py:213:33 - error: Cannot access attribute "data" for class "object"
+    Attribute "data" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\gallery_widget.py:213:65 - error: Cannot access attribute "data" for class "object"
+    Attribute "data" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\gallery_widget.py:215:24 - error: Cannot access attribute "data" for class "object"
+    Attribute "data" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\gallery_widget.py:216:28 - error: Cannot access attribute "data" for class "object"
+    Attribute "data" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\gallery_widget.py:221:61 - error: Cannot access attribute "data" for class "object"
+    Attribute "data" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\gallery_widget.py:222:29 - error: Cannot access attribute "data" for class "object"
+    Attribute "data" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\gallery_widget.py:229:68 - error: Cannot access attribute "command_name" for class "object"
+    Attribute "command_name" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\gallery_widget.py:232:28 - error: Argument of type "str | None" cannot be assigned to parameter "owner_type" of type "str" in function "set_owner"
+    Type "str | None" is not assignable to type "str"
+      "None" is not assignable to "str" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\gallery_widget.py:232:45 - error: Argument of type "str | None" cannot be assigned to parameter "owner_id" of type "str" in function "set_owner"
+    Type "str | None" is not assignable to type "str"
+      "None" is not assignable to "str" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\gallery_widget.py:244:36 - error: Argument of type "str | None" cannot be assigned to parameter "owner_type" of type "str" in function "__init__"
+    Type "str | None" is not assignable to type "str"
+      "None" is not assignable to "str" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\gallery_widget.py:320:80 - error: Argument of type "str | None" cannot be assigned to parameter "text" of type "str" in function "getText"
+    Type "str | None" is not assignable to type "str"
+      "None" is not assignable to "str" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\gallery_widget.py:377:40 - error: Argument of type "str | None" cannot be assigned to parameter "owner_type" of type "str" in function "__init__"
+    Type "str | None" is not assignable to type "str"
+      "None" is not assignable to "str" (reportArgumentType)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\llm_generation_widget.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\llm_generation_widget.py:447:50 - error: Argument of type "object" cannot be assigned to parameter "text" of type "str" in function "findText"
+    "object" is not assignable to "str" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\llm_generation_widget.py:454:47 - error: Argument of type "object" cannot be assigned to parameter "x" of type "ConvertibleToInt" in function "__new__"
+    Type "object" is not assignable to type "ConvertibleToInt"
+      "object" is not assignable to "str"
+      "object" is incompatible with protocol "Buffer"
+        "__buffer__" is not present
+      "object" is incompatible with protocol "SupportsInt"
+        "__int__" is not present
+      "object" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present
+    ... (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\llm_generation_widget.py:454:47 - error: Argument of type "object" cannot be assigned to parameter "x" of type "ConvertibleToInt" in function "__new__"
+    Type "object" is not assignable to type "ConvertibleToInt"
+      "object" is not assignable to "str"
+      "object" is incompatible with protocol "Buffer"
+        "__buffer__" is not present
+      "object" is incompatible with protocol "SupportsInt"
+        "__int__" is not present
+      "object" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\llm_generation_widget.py:459:21 - error: Argument of type "object" cannot be assigned to parameter "x" of type "ConvertibleToInt" in function "__new__"
+    Type "object" is not assignable to type "ConvertibleToInt"
+      "object" is not assignable to "str"
+      "object" is incompatible with protocol "Buffer"
+        "__buffer__" is not present
+      "object" is incompatible with protocol "SupportsInt"
+        "__int__" is not present
+      "object" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present
+    ... (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\llm_generation_widget.py:459:21 - error: Argument of type "object" cannot be assigned to parameter "x" of type "ConvertibleToInt" in function "__new__"
+    Type "object" is not assignable to type "ConvertibleToInt"
+      "object" is not assignable to "str"
+      "object" is incompatible with protocol "Buffer"
+        "__buffer__" is not present
+      "object" is incompatible with protocol "SupportsInt"
+        "__int__" is not present
+      "object" is incompatible with protocol "SupportsIndex"
+        "__index__" is not present (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\llm_generation_widget.py:466:17 - error: Argument of type "object" cannot be assigned to parameter "arg__1" of type "bool" in function "setChecked"
+    "object" is not assignable to "bool" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\llm_generation_widget.py:581:34 - error: Cannot access attribute "db_path" for class "QWidget"
+    Attribute "db_path" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\llm_generation_widget.py:627:20 - error: Type "object" is not assignable to return type "str"
+    "object" is not assignable to "str" (reportReturnType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\llm_generation_widget.py:654:43 - error: Cannot access attribute "name_edit" for class "QObject"
+    Attribute "name_edit" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\llm_generation_widget.py:657:43 - error: Cannot access attribute "type_edit" for class "QObject"
+    Attribute "type_edit" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\llm_generation_widget.py:658:51 - error: Cannot access attribute "type_edit" for class "QObject"
+    Attribute "type_edit" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\llm_generation_widget.py:660:51 - error: Cannot access attribute "type_edit" for class "QObject"
+    Attribute "type_edit" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\llm_generation_widget.py:663:63 - error: Cannot access attribute "desc_edit" for class "QObject"
+    Attribute "desc_edit" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\llm_generation_widget.py:668:40 - error: Cannot access attribute "date_edit" for class "QObject"
+    Attribute "date_edit" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\llm_generation_widget.py:669:40 - error: Cannot access attribute "date_edit" for class "QObject"
+    Attribute "date_edit" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\llm_generation_widget.py:820:34 - error: Cannot access attribute "db_path" for class "QWidget"
+    Attribute "db_path" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\longform_editor.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\longform_editor.py:63:42 - error: Cannot access attribute "InternalMove" for class "type[QTreeWidget]"
+    Attribute "InternalMove" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\longform_editor.py:64:43 - error: Cannot access attribute "SingleSelection" for class "type[QTreeWidget]"
+    Attribute "SingleSelection" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\longform_editor.py:74:46 - error: Cannot access attribute "DropActions" for class "type[Qt]"
+    Attribute "DropActions" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\longform_editor.py:113:22 - error: Cannot access attribute "CopyAction" for class "type[Qt]"
+    Attribute "CopyAction" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\longform_editor.py:113:38 - error: Cannot access attribute "MoveAction" for class "type[Qt]"
+    Attribute "MoveAction" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\longform_editor.py:345:26 - error: Argument of type "QWidget | None" cannot be assigned to parameter "parent" of type "QWidget" in function "__init__"
+    Type "QWidget | None" is not assignable to type "QWidget"
+      "None" is not assignable to "QWidget" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\longform_editor.py:603:14 - error: Cannot access attribute "publish_action" for class "LongformEditorWidget*"
+    Attribute "publish_action" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\lore_date_widget.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\lore_date_widget.py:54:46 - error: Cannot assign to attribute "_converter" for class "LoreDateWidget*"
+    "None" is not assignable to "CalendarConverter" (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\lore_duration_widget.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\lore_duration_widget.py:44:46 - error: Cannot assign to attribute "_converter" for class "LoreDurationWidget*"
+    "None" is not assignable to "CalendarConverter" (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\map\map_graphics_view.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\map\map_graphics_view.py:56:22 - error: Cannot assign to attribute "scene" for class "MapGraphicsView*"
+    Type "QGraphicsScene" is not assignable to type "() -> QGraphicsScene" (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\map\map_graphics_view.py:57:23 - error: Argument of type "() -> QGraphicsScene" cannot be assigned to parameter "scene" of type "QGraphicsScene | None" in function "setScene"
+    Type "() -> QGraphicsScene" is not assignable to type "QGraphicsScene | None"
+      "MethodType" is not assignable to "QGraphicsScene"
+      "MethodType" is not assignable to "None" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\map\map_graphics_view.py:60:37 - error: Cannot access attribute "Antialiasing" for class "type[QPainter]"
+    Attribute "Antialiasing" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\map\map_graphics_view.py:61:37 - error: Cannot access attribute "SmoothPixmapTransform" for class "type[QPainter]"
+    Attribute "SmoothPixmapTransform" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\map\map_graphics_view.py:94:20 - error: Cannot access attribute "setBackgroundBrush" for class "MethodType"
+    Attribute "setBackgroundBrush" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\map\map_graphics_view.py:114:28 - error: Cannot access attribute "removeItem" for class "MethodType"
+    Attribute "removeItem" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\map\map_graphics_view.py:119:24 - error: Cannot access attribute "addItem" for class "MethodType"
+    Attribute "addItem" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\map\map_graphics_view.py:123:24 - error: Cannot access attribute "setSceneRect" for class "MethodType"
+    Attribute "setSceneRect" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\map\map_graphics_view.py:195:24 - error: Cannot access attribute "removeItem" for class "MethodType"
+    Attribute "removeItem" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\map\map_graphics_view.py:208:20 - error: Cannot access attribute "addItem" for class "MethodType"
+    Attribute "addItem" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\map\map_graphics_view.py:246:24 - error: Cannot access attribute "removeItem" for class "MethodType"
+    Attribute "removeItem" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\map\map_graphics_view.py:253:24 - error: Cannot access attribute "removeItem" for class "MethodType"
+    Attribute "removeItem" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\map\marker_item.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\map\marker_item.py:99:36 - error: Cannot access attribute "ItemIgnoresTransformations" for class "type[QGraphicsItem]"
+    Attribute "ItemIgnoresTransformations" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\map\marker_item.py:191:40 - error: Cannot access attribute "Antialiasing" for class "type[QPainter]"
+    Attribute "Antialiasing" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\map\marker_item.py:208:47 - error: Cannot access attribute "CompositionMode_SourceIn" for class "type[QPainter]"
+    Attribute "CompositionMode_SourceIn" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\map\marker_item.py:232:37 - error: Cannot access attribute "NoBrush" for class "type[Qt]"
+    Attribute "NoBrush" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\map\marker_item.py:288:34 - error: Cannot access attribute "marker_moved" for class "QGraphicsView"
+    Attribute "marker_moved" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\splitter_tab_inspector.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\splitter_tab_inspector.py:55:22 - error: Cannot access attribute "MoveAction" for class "type[Qt]"
+    Attribute "MoveAction" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\splitter_tab_inspector.py:91:27 - error: Cannot access attribute "insertTab" for class "QObject"
+    Attribute "insertTab" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\splitter_tab_inspector.py:92:27 - error: Cannot access attribute "setCurrentIndex" for class "QObject"
+    Attribute "setCurrentIndex" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\splitter_tab_inspector.py:200:23 - error: Cannot assign to attribute "layout" for class "SplitterTabInspector*"
+    Type "QVBoxLayout" is not assignable to type "() -> (QLayout | None)" (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\splitter_tab_inspector.py:201:21 - error: Cannot access attribute "setContentsMargins" for class "MethodType"
+    Attribute "setContentsMargins" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\splitter_tab_inspector.py:202:21 - error: Cannot access attribute "setSpacing" for class "MethodType"
+    Attribute "setSpacing" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\splitter_tab_inspector.py:210:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\tag_editor.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\tag_editor.py:42:23 - error: Cannot assign to attribute "layout" for class "TagEditorWidget*"
+    Type "QVBoxLayout" is not assignable to type "() -> (QLayout | None)" (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\tag_editor.py:45:43 - error: Argument of type "() -> (QLayout | None)" cannot be assigned to parameter "layout" of type "QLayout" in function "apply_compact_spacing"
+    "MethodType" is not assignable to "QLayout" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\tag_editor.py:59:21 - error: Cannot access attribute "addLayout" for class "MethodType"
+    Attribute "addLayout" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\tag_editor.py:67:21 - error: Cannot access attribute "addLayout" for class "MethodType"
+    Attribute "addLayout" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\tag_editor.py:71:52 - error: Cannot access attribute "SingleSelection" for class "type[QListWidget]"
+    Attribute "SingleSelection" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\tag_editor.py:72:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\__init__.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\__init__.py:50:23 - error: Cannot assign to attribute "layout" for class "TimelineWidget*"
+    Type "QVBoxLayout" is not assignable to type "() -> (QLayout | None)" (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\__init__.py:51:21 - error: Cannot access attribute "setSpacing" for class "MethodType"
+    Attribute "setSpacing" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\__init__.py:52:21 - error: Cannot access attribute "setContentsMargins" for class "MethodType"
+    Attribute "setContentsMargins" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\__init__.py:97:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\__init__.py:105:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\event_item.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\event_item.py:93:29 - error: Cannot access attribute "ItemIgnoresTransformations" for class "type[QGraphicsItem]"
+    Attribute "ItemIgnoresTransformations" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\event_item.py:99:41 - error: Cannot access attribute "DeviceCoordinateCache" for class "type[QGraphicsItem]"
+    Attribute "DeviceCoordinateCache" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\event_item.py:200:36 - error: Cannot access attribute "ItemPositionChange" for class "type[QGraphicsItem]"
+    Attribute "ItemPositionChange" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\event_item.py:239:40 - error: Cannot access attribute "Antialiasing" for class "type[QPainter]"
+    Attribute "Antialiasing" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\group_band_item.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\group_band_item.py:137:40 - error: Cannot access attribute "Antialiasing" for class "type[QPainter]"
+    Attribute "Antialiasing" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\group_band_item.py:168:26 - error: Argument of type "float" cannot be assigned to parameter "x1" of type "int" in function "drawRect"
+    "float" is not assignable to "int" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\group_band_item.py:168:48 - error: Argument of type "float" cannot be assigned to parameter "w" of type "int" in function "drawRect"
+    "float" is not assignable to "int" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\group_band_item.py:191:45 - error: Cannot access attribute "scale_factor" for class "QGraphicsView"
+    Attribute "scale_factor" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\group_label_overlay.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\group_label_overlay.py:41:30 - error: Cannot access attribute "WA_TransparentForMouseEvents" for class "type[Qt]"
+    Attribute "WA_TransparentForMouseEvents" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\group_label_overlay.py:85:40 - error: Cannot access attribute "Antialiasing" for class "type[QPainter]"
+    Attribute "Antialiasing" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\group_label_overlay.py:147:38 - error: Cannot access attribute "ElideRight" for class "type[Qt]"
+    Attribute "ElideRight" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_scene.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_scene.py:66:35 - error: Cannot access attribute "SizeHorCursor" for class "type[Qt]"
+    Attribute "SizeHorCursor" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_scene.py:101:36 - error: Cannot access attribute "ItemPositionChange" for class "type[QGraphicsItem]"
+    Attribute "ItemPositionChange" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:65:42 - error: Expression of type "None" cannot be assigned to parameter of type "QWidget"
+    "None" is not assignable to "QWidget" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:73:22 - error: Cannot assign to attribute "scene" for class "TimelineView*"
+    Type "TimelineScene" is not assignable to type "() -> QGraphicsScene" (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:74:23 - error: Argument of type "() -> QGraphicsScene" cannot be assigned to parameter "scene" of type "QGraphicsScene | None" in function "setScene"
+    Type "() -> QGraphicsScene" is not assignable to type "QGraphicsScene | None"
+      "MethodType" is not assignable to "QGraphicsScene"
+      "MethodType" is not assignable to "None" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:94:37 - error: Cannot access attribute "Antialiasing" for class "type[QPainter]"
+    Attribute "Antialiasing" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:99:50 - error: Cannot access attribute "FullViewportUpdate" for class "type[QGraphicsView]"
+    Attribute "FullViewportUpdate" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:114:20 - error: Cannot access attribute "addItem" for class "MethodType"
+    Attribute "addItem" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:118:24 - error: Cannot assign to attribute "on_moved" for class "PlayheadItem"
+    Expression of type "(x_pos: float) -> None" cannot be assigned to attribute "on_moved" of class "PlayheadItem"
+      "MethodType" is not assignable to "None" (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:122:20 - error: Cannot access attribute "addItem" for class "MethodType"
+    Attribute "addItem" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:228:9 - error: Method "drawForeground" overrides class "QGraphicsView" in an incompatible manner
+    Parameter 3 type mismatch: base parameter is type "QRectF | QRect", override parameter is type "QRectF"
+      Type "QRectF | QRect" is not assignable to type "QRectF"
+        "QRect" is not assignable to "QRectF" (reportIncompatibleMethodOverride)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:401:32 - error: Cannot access attribute "items" for class "MethodType"
+    Attribute "items" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:413:36 - error: Cannot access attribute "items" for class "MethodType"
+    Attribute "items" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:418:24 - error: Cannot access attribute "addLine" for class "MethodType"
+    Attribute "addLine" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:446:22 - error: Cannot assign to attribute "on_drag_complete" for class "EventItem"
+    Expression of type "(event_id: str, new_lore_date: float) -> None" cannot be assigned to attribute "on_drag_complete" of class "EventItem"
+      "MethodType" is not assignable to "None" (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:447:28 - error: Cannot access attribute "addItem" for class "MethodType"
+    Attribute "addItem" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:456:35 - error: Cannot access attribute "addLine" for class "MethodType"
+    Attribute "addLine" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:469:43 - error: Cannot access attribute "items" for class "MethodType"
+    Attribute "items" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:487:28 - error: Cannot access attribute "removeItem" for class "MethodType"
+    Attribute "removeItem" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:492:28 - error: Cannot access attribute "removeItem" for class "MethodType"
+    Attribute "removeItem" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:542:36 - error: Cannot access attribute "items" for class "MethodType"
+    Attribute "items" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:551:24 - error: Cannot access attribute "setSceneRect" for class "MethodType"
+    Attribute "setSceneRect" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:628:32 - error: Cannot access attribute "items" for class "MethodType"
+    Attribute "items" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:662:35 - error: Cannot access attribute "sceneRect" for class "MethodType"
+    Attribute "sceneRect" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:666:24 - error: Cannot access attribute "setSceneRect" for class "MethodType"
+    Attribute "setSceneRect" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:696:16 - error: Type "tuple[dict[Unknown, list[Unknown]], list[Unknown]]" is not assignable to return type "dict[Unknown, Unknown]"
+    "tuple[dict[Unknown, list[Unknown]], list[Unknown]]" is not assignable to "dict[Unknown, Unknown]" (reportReturnType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:698:36 - error: Function with declared return type "tuple[dict[Unknown, Unknown], list[Unknown]]" must return value on all code paths
+    "None" is not assignable to "tuple[dict[Unknown, Unknown], list[Unknown]]" (reportReturnType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:704:13 - error: Type "None" is not assignable to return type "tuple[dict[Unknown, Unknown], list[Unknown]]"
+    "None" is not assignable to "tuple[dict[Unknown, Unknown], list[Unknown]]" (reportReturnType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:708:28 - error: Cannot access attribute "removeItem" for class "MethodType"
+    Attribute "removeItem" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:721:32 - error: Cannot access attribute "items" for class "MethodType"
+    Attribute "items" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:792:30 - error: Cannot assign to attribute "on_drag_complete" for class "EventItem"
+    Expression of type "(event_id: str, new_lore_date: float) -> None" cannot be assigned to attribute "on_drag_complete" of class "EventItem"
+      "MethodType" is not assignable to "None" (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:793:36 - error: Cannot access attribute "addItem" for class "MethodType"
+    Attribute "addItem" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:886:36 - error: Cannot assign to attribute "on_drag_complete" for class "EventItem"
+    Expression of type "(event_id: str, new_lore_date: float) -> None" cannot be assigned to attribute "on_drag_complete" of class "EventItem"
+      "MethodType" is not assignable to "None" (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:889:32 - error: Cannot access attribute "addItem" for class "MethodType"
+    Attribute "addItem" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:916:35 - error: Cannot access attribute "sceneRect" for class "MethodType"
+    Attribute "sceneRect" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:918:20 - error: Cannot access attribute "setSceneRect" for class "MethodType"
+    Attribute "setSceneRect" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:973:36 - error: Cannot access attribute "sceneRect" for class "MethodType"
+    Attribute "sceneRect" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:1033:32 - error: Cannot access attribute "items" for class "MethodType"
+    Attribute "items" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:1076:27 - error: Cannot access attribute "itemAt" for class "MethodType"
+    Attribute "itemAt" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\timeline\timeline_view.py:1099:32 - error: Cannot access attribute "items" for class "MethodType"
+    Attribute "items" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\unified_list.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\unified_list.py:42:42 - error: Expression of type "None" cannot be assigned to parameter of type "QWidget"
+    "None" is not assignable to "QWidget" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\unified_list.py:46:42 - error: Cannot access attribute "DragOnly" for class "type[QListWidget]"
+    Attribute "DragOnly" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\unified_list.py:79:22 - error: Cannot access attribute "CopyAction" for class "type[Qt]"
+    Attribute "CopyAction" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\unified_list.py:97:42 - error: Expression of type "None" cannot be assigned to parameter of type "QWidget"
+    "None" is not assignable to "QWidget" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\unified_list.py:112:23 - error: Cannot assign to attribute "layout" for class "UnifiedListWidget*"
+    Type "QVBoxLayout" is not assignable to type "() -> (QLayout | None)" (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\unified_list.py:113:49 - error: Argument of type "() -> (QLayout | None)" cannot be assigned to parameter "layout" of type "QLayout" in function "apply_standard_list_spacing"
+    "MethodType" is not assignable to "QLayout" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\unified_list.py:139:21 - error: Cannot access attribute "addLayout" for class "MethodType"
+    Attribute "addLayout" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\unified_list.py:146:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\unified_list.py:169:21 - error: Cannot access attribute "addLayout" for class "MethodType"
+    Attribute "addLayout" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\unified_list.py:174:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\unified_list.py:180:21 - error: Cannot access attribute "addWidget" for class "MethodType"
+    Attribute "addWidget" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\wiki_text_edit.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\wiki_text_edit.py:30:42 - error: Expression of type "None" cannot be assigned to parameter of type "QWidget"
+    "None" is not assignable to "QWidget" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\wiki_text_edit.py:53:38 - error: Cannot access attribute "NoFrame" for class "type[QTextEdit]"
+    Attribute "NoFrame" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\wiki_text_edit.py:79:45 - error: Expression of type "None" cannot be assigned to parameter of type "list[tuple[str, str, str]]"
+    "None" is not assignable to "list[tuple[str, str, str]]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\wiki_text_edit.py:80:28 - error: Expression of type "None" cannot be assigned to parameter of type "list[str]"
+    "None" is not assignable to "list[str]" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\wiki_text_edit.py:103:29 - error: Type "List[str]" is not assignable to declared type "list[tuple[str, str, str]]"
+    "List[str]" is not assignable to "list[tuple[str, str, str]]"
+      Type parameter "_T@list" is invariant, but "str" is not the same as "tuple[str, str, str]"
+      Consider switching from "list" to "Sequence" which is covariant (reportAssignmentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\wiki_text_edit.py:132:58 - error: Cannot access attribute "PopupCompletion" for class "type[QCompleter]"
+    Attribute "PopupCompletion" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\wiki_text_edit.py:387:37 - error: Cannot access attribute "Left" for class "type[QTextCursor]"
+    Attribute "Left" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\wiki_text_edit.py:387:55 - error: Cannot access attribute "KeepAnchor" for class "type[QTextCursor]"
+    Attribute "KeepAnchor" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\wiki_text_edit.py:391:37 - error: Cannot access attribute "Left" for class "type[QTextCursor]"
+    Attribute "Left" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\wiki_text_edit.py:391:55 - error: Cannot access attribute "KeepAnchor" for class "type[QTextCursor]"
+    Attribute "KeepAnchor" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\wiki_text_edit.py:398:41 - error: Cannot access attribute "Right" for class "type[QTextCursor]"
+    Attribute "Right" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\wiki_text_edit.py:398:60 - error: Cannot access attribute "MoveAnchor" for class "type[QTextCursor]"
+    Attribute "MoveAnchor" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\wiki_text_edit.py:495:49 - error: Cannot access attribute "KeepAnchor" for class "type[QTextCursor]"
+    Attribute "KeepAnchor" is unknown (reportAttributeAccessIssue)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\gui\widgets\wiki_text_edit.py:591:38 - error: Cannot access attribute "IBeamCursor" for class "type[Qt]"
+    Attribute "IBeamCursor" is unknown (reportAttributeAccessIssue)
+c:\Users\chris\Antigravity Projects\ProjektKraken\src\webserver\server.py
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\webserver\server.py:77:48 - error: Argument of type "Connection | None" cannot be assigned to parameter "conn" of type "Connection" in function "build_longform_sequence"
+    Type "Connection | None" is not assignable to type "Connection"
+      "None" is not assignable to "Connection" (reportArgumentType)
+  c:\Users\chris\Antigravity Projects\ProjektKraken\src\webserver\server.py:151:48 - error: Argument of type "Connection | None" cannot be assigned to parameter "conn" of type "Connection" in function "build_longform_sequence"
+    Type "Connection | None" is not assignable to type "Connection"
+      "None" is not assignable to "Connection" (reportArgumentType)
+317 errors, 0 warnings, 0 informations

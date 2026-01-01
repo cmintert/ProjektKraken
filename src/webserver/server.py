@@ -74,6 +74,7 @@ def create_app(config: ServerConfig) -> FastAPI:
             # Let's reproduce the rendering pipeline here to avoid GUI
             # dependencies in the web thread.
 
+            assert db._connection is not None, "Database not connected"
             sequence = build_longform_sequence(db._connection, doc_id=doc_id)
 
             # Enrich items with rendered HTML
@@ -83,10 +84,10 @@ def create_app(config: ServerConfig) -> FastAPI:
             # Simple link resolver for server-side
             def resolve_links(text: str) -> str:
                 """Convert wiki-style links to plain text or HTML anchors.
-                
+
                 Args:
                     text: Text containing wiki-style [[links]].
-                    
+
                 Returns:
                     Text with links resolved/stripped for display.
                 """
@@ -148,6 +149,7 @@ def create_app(config: ServerConfig) -> FastAPI:
         """
         db = get_db_service()
         try:
+            assert db._connection is not None, "Database not connected"
             sequence = build_longform_sequence(db._connection, doc_id=doc_id)
             toc = []
             for item in sequence:
@@ -169,10 +171,10 @@ def create_app(config: ServerConfig) -> FastAPI:
     @app.get("/longform", response_class=HTMLResponse)
     def view_longform(request: Request) -> HTMLResponse:
         """Render the longform viewer page.
-        
+
         Args:
             request: The FastAPI request object.
-            
+
         Returns:
             HTML response with the longform viewer interface.
         """
@@ -181,7 +183,7 @@ def create_app(config: ServerConfig) -> FastAPI:
     @app.get("/health")
     def health_check() -> dict[str, str]:
         """Health check endpoint for monitoring server status.
-        
+
         Returns:
             Dictionary with status indicator.
         """

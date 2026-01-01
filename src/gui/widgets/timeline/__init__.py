@@ -47,9 +47,9 @@ class TimelineWidget(QWidget):
         """
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.layout = QVBoxLayout(self)
-        self.layout.setSpacing(0)
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        main_layout = QVBoxLayout(self)
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0, 0, 0, 0)
 
         # Toolbar Container (Header)
         self.header_frame = QWidget()
@@ -94,7 +94,7 @@ class TimelineWidget(QWidget):
         self.btn_fit.clicked.connect(self.fit_view)
         self.toolbar_layout.addWidget(self.btn_fit)
 
-        self.layout.addWidget(self.header_frame)
+        main_layout.addWidget(self.header_frame)
 
         # View
         self.view = TimelineView()
@@ -102,7 +102,7 @@ class TimelineWidget(QWidget):
         self.view.playhead_time_changed.connect(self.playhead_time_changed.emit)
         self.view.current_time_changed.connect(self.current_time_changed.emit)
         self.view.event_date_changed.connect(self.event_date_changed.emit)
-        self.layout.addWidget(self.view)
+        main_layout.addWidget(self.view)
 
     def set_data_provider(self, provider):
         """

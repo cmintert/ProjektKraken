@@ -479,6 +479,7 @@ class MainWindow(QMainWindow):
     def _on_editor_dirty_changed(self, editor, dirty):
         """Updates the dock title with an asterisk if dirty."""
         dock_key = None
+        base_title = ""
 
         # Determine which dock
         if editor == self.event_editor:
@@ -1936,6 +1937,7 @@ class MainWindow(QMainWindow):
             from src.services.search_service import create_search_service
 
             # Create search service with GUI thread connection
+            assert self.gui_db_service._connection is not None
             search_service = create_search_service(self.gui_db_service._connection)
 
             # Perform query
@@ -1973,6 +1975,7 @@ class MainWindow(QMainWindow):
             from src.services.search_service import create_search_service
 
             # Create search service with GUI thread connection
+            assert self.gui_db_service._connection is not None
             search_service = create_search_service(self.gui_db_service._connection)
 
             # Determine object types to rebuild

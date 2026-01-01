@@ -44,8 +44,8 @@ class EntityListWidget(QWidget):
         if parent:
             self.setParent(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.layout = QVBoxLayout(self)
-        StyleHelper.apply_standard_list_spacing(self.layout)
+        main_layout = QVBoxLayout(self)
+        StyleHelper.apply_standard_list_spacing(main_layout)
 
         # Controls
         self.btn_create = QPushButton("New Entity")
@@ -62,18 +62,18 @@ class EntityListWidget(QWidget):
         top_bar.addWidget(self.btn_create)
         top_bar.addWidget(self.btn_refresh)
         top_bar.addWidget(self.btn_delete)
-        self.layout.addLayout(top_bar)
+        main_layout.addLayout(top_bar)
 
         # List View
         self.list_widget = QListWidget()
         self.list_widget.itemSelectionChanged.connect(self._on_selection_changed)
-        self.layout.addWidget(self.list_widget)
+        main_layout.addWidget(self.list_widget)
 
         # Empty State
         self.empty_label = QLabel("No Entities Loaded")
         self.empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.empty_label.setStyleSheet(StyleHelper.get_empty_state_style())
-        self.layout.addWidget(self.empty_label)
+        main_layout.addWidget(self.empty_label)
         self.empty_label.hide()
 
     def set_entities(self, entities: List[Entity]):
