@@ -1,3 +1,10 @@
+---
+**Project:** ProjektKraken  
+**Document:** Project Changelog  
+**Last Updated:** 2026-01-01  
+**Commit:** `373459f4`  
+---
+
 # Changelog
 
 All notable changes to this project will be documented in this file.

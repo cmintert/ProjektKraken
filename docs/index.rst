@@ -11,6 +11,7 @@ Welcome to Project Kraken's documentation!
    README
    WIKI_LINKING
    MAP_USAGE_EXAMPLES
+   LONGFORM
 
 .. toctree::
    :maxdepth: 2
@@ -18,8 +19,22 @@ Welcome to Project Kraken's documentation!
 
    Design
    DATABASE
+   DEVELOPMENT
    SCHEMA_REFERENCE
    SECURITY
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Advanced Features
+
+   SEMANTIC_SEARCH
+   LLM_INTEGRATION
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Migration Guides
+
+   TAG_MIGRATION_GUIDE
 
 .. toctree::
    :maxdepth: 2
