@@ -102,6 +102,19 @@ class DatabaseWorker(QObject):
             self.initialized.emit(False)
 
     @Slot()
+    def cleanup(self) -> None:
+        """
+        Cleanly closes database connections and other resources.
+        Should be called before the thread is terminated.
+        """
+        try:
+            if self.db_service:
+                self.db_service.close()
+                logger.info("Database connection closed in worker cleanup.")
+        except Exception:
+            logger.error(f"Error during worker cleanup: {traceback.format_exc()}")
+
+    @Slot()
     def load_events(self) -> None:
         """Loads all events."""
         if not self.db_service:

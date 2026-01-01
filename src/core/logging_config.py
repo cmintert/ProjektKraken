@@ -78,7 +78,6 @@ def setup_logging(debug_mode: bool = False, log_to_console: bool = True) -> None
     # 6. Initial Log
     logging.info("=" * 60)
     logging.info(f"Project Kraken Session Started at {datetime.now().isoformat()}")
-    logging.info(f"Debug Mode: {debug_mode}")
     logging.info("=" * 60)
 
 
@@ -93,3 +92,10 @@ def get_logger(name: str) -> logging.Logger:
         logging.Logger: The logger instance.
     """
     return logging.getLogger(name)
+
+
+def shutdown_logging() -> None:
+    """
+    Explicitly closes all logging handlers to release file locks.
+    """
+    logging.shutdown()

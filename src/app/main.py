@@ -806,8 +806,16 @@ class MainWindow(QMainWindow):
         settings.setValue("geometry", self.saveGeometry())
         settings.setValue("windowState", self.saveState())
 
+        # Cleanup Worker
+        QMetaObject.invokeMethod(
+            self.worker, "cleanup", Qt.ConnectionType.BlockingQueuedConnection
+        )
+
         self.worker_thread.quit()
-        self.worker_thread.wait()
+        if not self.worker_thread.wait(2000):  # 2000ms timeout
+            logger.warning("Worker thread did not quit in time. Terminating...")
+            self.worker_thread.terminate()
+
         event.accept()
 
     # ----------------------------------------------------------------------
