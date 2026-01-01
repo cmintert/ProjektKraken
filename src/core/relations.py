@@ -80,8 +80,8 @@ class Relation:
             Relation: A new Relation instance.
         """
         d = data.copy()
-        # Ensure attributes is a dict, not None
-        if d.get("attributes") is None:
+        # Handle explicit None from database (overrides default_factory)
+        if "attributes" in d and d["attributes"] is None:
             d["attributes"] = {}
         return cls(**d)
 
