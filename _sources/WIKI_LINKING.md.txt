@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** ID-Based Wiki Linking Guide  
 **Last Updated:** 2026-01-01  
-**Commit:** `373459f4`  
+**Commit:** `d9e3f83`  
 ---
 
 # ID-Based Wiki Linking Implementation Guide

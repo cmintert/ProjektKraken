@@ -198,14 +198,12 @@
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="README.html">Projekt Kraken</a></li>
 <li class="toctree-l1"><a class="reference internal" href="WIKI_LINKING.html">ID-Based Wiki Linking Implementation Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="MAP_USAGE_EXAMPLES.html">Map System Usage Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="LONGFORM.html">Longform Document Feature</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="Design.html">Project Kraken: Comprehensive Design Specification</a></li>
 <li class="toctree-l1"><a class="reference internal" href="DATABASE.html">Database Architecture and Best Practices</a></li>
 <li class="toctree-l1"><a class="reference internal" href="DEVELOPMENT.html">Development Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
@@ -283,14 +281,14 @@
 <section id="quick-start">
 <h2>Quick Start<a class="headerlink" href="#quick-start" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><strong><a class="reference internal" href="README.html"><span class="std std-doc">README.md</span></a></strong> - Project overview, installation, and basic usage</p></li>
+<li><p><strong><span class="xref myst">README.md</span></strong> - Project overview, installation, and basic usage</p></li>
 <li><p><strong><a class="reference internal" href="DEVELOPMENT.html"><span class="std std-doc">DEVELOPMENT.md</span></a></strong> - Development environment setup</p></li>
 </ul>
 </section>
 <section id="architecture-design">
 <h2>Architecture &amp; Design<a class="headerlink" href="#architecture-design" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><strong><a class="reference internal" href="Design.html"><span class="std std-doc">Design.md</span></a></strong> - Comprehensive design specification covering:</p>
+<li><p><strong><span class="xref myst">Design.md</span></strong> - Comprehensive design specification covering:</p>
 <ul>
 <li><p>Product vision and philosophy</p></li>
 <li><p>Technical architecture (SOA, Command Pattern)</p></li>
@@ -405,7 +403,7 @@
 <section id="project-information">
 <h2>Project Information<a class="headerlink" href="#project-information" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><strong><a class="reference internal" href="CHANGELOG.html"><span class="std std-doc">CHANGELOG.md</span></a></strong> - Version history and notable changes</p></li>
+<li><p><strong><span class="xref myst">CHANGELOG.md</span></strong> - Version history and notable changes</p></li>
 <li><p><strong><a class="reference internal" href="LICENSE.html"><span class="std std-doc">LICENSE.md</span></a></strong> - GNU Affero General Public License v3.0 (AGPLv3)</p></li>
 </ul>
 </section>
@@ -449,33 +447,34 @@ sphinx-build<span class="w"> </span>-b<span class="w"> </span>html<span class="w
 </section>
 <section id="file-organization">
 <h2>File Organization<a class="headerlink" href="#file-organization" title="Link to this heading">¶</a></h2>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>docs/
-├── INDEX.md                      # This file
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>ProjektKraken/
 ├── README.md                     # Main project overview
 ├── Design.md                     # Architecture specification
-├── DATABASE.md                   # Database architecture
-├── DEVELOPMENT.md                # Development setup
-├── SECURITY.md                   # Security practices
 ├── CHANGELOG.md                  # Version history
-├── WIKI_LINKING.md              # Wiki linking feature
-├── MAP_USAGE_EXAMPLES.md        # Map system feature
-├── LONGFORM.md                  # Longform document feature
-├── SEMANTIC_SEARCH.md           # Semantic search feature
-├── LLM_INTEGRATION.md           # LLM integration feature
-├── TAG_MIGRATION_GUIDE.md       # Tag migration guide
-├── SCHEMA_REFERENCE.md          # Auto-generated schema
-├── LICENSE.md                   # License text
-├── index.rst                    # Sphinx index
-├── conf.py                      # Sphinx configuration
-├── generate_schema_docs.py      # Schema doc generator
-├── archive/                     # Historical reports
-│   ├── README.md                # Archive index
-│   ├── CODE_ANALYSIS_REPORT.md
-│   ├── CODE_IMPROVEMENTS_SUMMARY.md
-│   ├── PRODUCTION_READINESS_REPORT.md
-│   ├── REFACTORING_SUMMARY.md
-│   └── ARCHITECTURE_DIAGRAMS.md
-└── *.rst                        # Sphinx API documentation files
+└── docs/
+    ├── INDEX.md                      # This file
+    ├── DATABASE.md                   # Database architecture
+    ├── DEVELOPMENT.md                # Development setup
+    ├── SECURITY.md                   # Security practices
+    ├── WIKI_LINKING.md              # Wiki linking feature
+    ├── MAP_USAGE_EXAMPLES.md        # Map system feature
+    ├── LONGFORM.md                  # Longform document feature
+    ├── SEMANTIC_SEARCH.md           # Semantic search feature
+    ├── LLM_INTEGRATION.md           # LLM integration feature
+    ├── TAG_MIGRATION_GUIDE.md       # Tag migration guide
+    ├── SCHEMA_REFERENCE.md          # Auto-generated schema
+    ├── LICENSE.md                   # License text
+    ├── index.rst                    # Sphinx index
+    ├── conf.py                      # Sphinx configuration
+    ├── generate_schema_docs.py      # Schema doc generator
+    ├── archive/                     # Historical reports
+    │   ├── README.md                # Archive index
+    │   ├── CODE_ANALYSIS_REPORT.md
+    │   ├── CODE_IMPROVEMENTS_SUMMARY.md
+    │   ├── PRODUCTION_READINESS_REPORT.md
+    │   ├── REFACTORING_SUMMARY.md
+    │   └── ARCHITECTURE_DIAGRAMS.md
+    └── *.rst                        # Sphinx API documentation files
 </pre></div>
 </div>
 </section>
@@ -513,7 +512,7 @@ sphinx-build<span class="w"> </span>-b<span class="w"> </span>html<span class="w
 <li><p>Check relevant documentation sections above</p></li>
 <li><p>Review inline code docstrings (Google Style)</p></li>
 <li><p>Run tests with <code class="docutils literal notranslate"><span class="pre">pytest</span></code> to verify functionality</p></li>
-<li><p>Check CHANGELOG.md for recent changes</p></li>
+<li><p>Check <span class="xref myst">CHANGELOG.md</span> for recent changes</p></li>
 </ul>
 </section>
 </section>

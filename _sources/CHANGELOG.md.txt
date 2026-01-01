@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-01
 ### Internal
-- Merge pull request #40 from cmintert/copilot/clean-up-docs-folder
+- Merge pull request #41 from cmintert/copilot/clean-up-docs-folder-again
 
 
 *This changelog was automatically generated.*

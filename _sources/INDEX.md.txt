@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Documentation Index  
 **Last Updated:** 2026-01-01  
-**Commit:** `373459f4`  
+**Commit:** `d9e3f83`  
 ---
 
 # Documentation Index
@@ -11,12 +11,12 @@ This document provides an organized overview of all ProjektKraken documentation.
 
 ## Quick Start
 
-- **[README.md](README.md)** - Project overview, installation, and basic usage
+- **[README.md](../README.md)** - Project overview, installation, and basic usage
 - **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development environment setup
 
 ## Architecture & Design
 
-- **[Design.md](Design.md)** - Comprehensive design specification covering:
+- **[Design.md](../Design.md)** - Comprehensive design specification covering:
   - Product vision and philosophy
   - Technical architecture (SOA, Command Pattern)
   - Data architecture (Hybrid SQLite model)
@@ -98,7 +98,7 @@ This document provides an organized overview of all ProjektKraken documentation.
 
 ## Project Information
 
-- **[CHANGELOG.md](CHANGELOG.md)** - Version history and notable changes
+- **[CHANGELOG.md](../CHANGELOG.md)** - Version history and notable changes
 - **[LICENSE.md](LICENSE.md)** - GNU Affero General Public License v3.0 (AGPLv3)
 
 ## API Documentation (Sphinx)
@@ -137,33 +137,34 @@ All documentation follows these standards:
 ## File Organization
 
 ```
-docs/
-├── INDEX.md                      # This file
+ProjektKraken/
 ├── README.md                     # Main project overview
 ├── Design.md                     # Architecture specification
-├── DATABASE.md                   # Database architecture
-├── DEVELOPMENT.md                # Development setup
-├── SECURITY.md                   # Security practices
 ├── CHANGELOG.md                  # Version history
-├── WIKI_LINKING.md              # Wiki linking feature
-├── MAP_USAGE_EXAMPLES.md        # Map system feature
-├── LONGFORM.md                  # Longform document feature
-├── SEMANTIC_SEARCH.md           # Semantic search feature
-├── LLM_INTEGRATION.md           # LLM integration feature
-├── TAG_MIGRATION_GUIDE.md       # Tag migration guide
-├── SCHEMA_REFERENCE.md          # Auto-generated schema
-├── LICENSE.md                   # License text
-├── index.rst                    # Sphinx index
-├── conf.py                      # Sphinx configuration
-├── generate_schema_docs.py      # Schema doc generator
-├── archive/                     # Historical reports
-│   ├── README.md                # Archive index
-│   ├── CODE_ANALYSIS_REPORT.md
-│   ├── CODE_IMPROVEMENTS_SUMMARY.md
-│   ├── PRODUCTION_READINESS_REPORT.md
-│   ├── REFACTORING_SUMMARY.md
-│   └── ARCHITECTURE_DIAGRAMS.md
-└── *.rst                        # Sphinx API documentation files
+└── docs/
+    ├── INDEX.md                      # This file
+    ├── DATABASE.md                   # Database architecture
+    ├── DEVELOPMENT.md                # Development setup
+    ├── SECURITY.md                   # Security practices
+    ├── WIKI_LINKING.md              # Wiki linking feature
+    ├── MAP_USAGE_EXAMPLES.md        # Map system feature
+    ├── LONGFORM.md                  # Longform document feature
+    ├── SEMANTIC_SEARCH.md           # Semantic search feature
+    ├── LLM_INTEGRATION.md           # LLM integration feature
+    ├── TAG_MIGRATION_GUIDE.md       # Tag migration guide
+    ├── SCHEMA_REFERENCE.md          # Auto-generated schema
+    ├── LICENSE.md                   # License text
+    ├── index.rst                    # Sphinx index
+    ├── conf.py                      # Sphinx configuration
+    ├── generate_schema_docs.py      # Schema doc generator
+    ├── archive/                     # Historical reports
+    │   ├── README.md                # Archive index
+    │   ├── CODE_ANALYSIS_REPORT.md
+    │   ├── CODE_IMPROVEMENTS_SUMMARY.md
+    │   ├── PRODUCTION_READINESS_REPORT.md
+    │   ├── REFACTORING_SUMMARY.md
+    │   └── ARCHITECTURE_DIAGRAMS.md
+    └── *.rst                        # Sphinx API documentation files
 ```
 
 ## Archive
@@ -196,4 +197,4 @@ For issues or questions:
 - Check relevant documentation sections above
 - Review inline code docstrings (Google Style)
 - Run tests with `pytest` to verify functionality
-- Check CHANGELOG.md for recent changes
+- Check [CHANGELOG.md](../CHANGELOG.md) for recent changes
