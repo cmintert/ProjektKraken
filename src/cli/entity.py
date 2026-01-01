@@ -94,6 +94,16 @@ def list_entities(args: argparse.Namespace) -> int:
         # Apply filters
         if args.type:
             entities = [e for e in entities if e.type == args.type]
+        if args.name_contains:
+            name_lower = args.name_contains.lower()
+            entities = [e for e in entities if name_lower in e.name.lower()]
+        if args.tags:
+            required_tags = {t.strip() for t in args.tags.split(",") if t.strip()}
+            entities = [
+                e
+                for e in entities
+                if required_tags.issubset(set(e.tags) if e.tags else set())
+            ]
 
         # Sort by name
         entities.sort(key=lambda e: e.name.lower())
@@ -343,6 +353,12 @@ def main() -> None:
         "--database", "-d", required=True, help="Path to .kraken database file"
     )
     list_parser.add_argument("--type", "-t", help="Filter by entity type")
+    list_parser.add_argument(
+        "--name-contains", help="Filter by name substring (case-insensitive)"
+    )
+    list_parser.add_argument(
+        "--tags", help="Comma-separated list of tags (must have all)"
+    )
     list_parser.add_argument("--json", action="store_true", help="Output as JSON")
     list_parser.set_defaults(func=list_entities)
 

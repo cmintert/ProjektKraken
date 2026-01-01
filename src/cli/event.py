@@ -34,7 +34,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def create_event(args) -> int:
+def create_event(args: argparse.Namespace) -> int:
     """Create a new event."""
     db_service = None
     try:
@@ -52,10 +52,12 @@ def create_event(args) -> int:
             event_data["description"] = args.description
         if args.duration:
             event_data["lore_duration"] = args.duration
+        if args.tags:
+            tags_list = [t.strip() for t in args.tags.split(",") if t.strip()]
+            event_data["attributes"] = {"_tags": tags_list}
 
         cmd = CreateEventCommand(event_data)
         result = cmd.execute(db_service)
-
         if result.success:
             print(f"✓ Created event: {result.data['id']}")
             print(f"  Name: {args.name}")
@@ -75,7 +77,7 @@ def create_event(args) -> int:
             db_service.close()
 
 
-def list_events(args) -> int:
+def list_events(args: argparse.Namespace) -> int:
     """List all events."""
     db_service = None
     try:
@@ -91,6 +93,22 @@ def list_events(args) -> int:
         # Apply filters
         if args.type:
             events = [e for e in events if e.type == args.type]
+        if args.name_contains:
+            name_lower = args.name_contains.lower()
+            events = [e for e in events if name_lower in e.name.lower()]
+        if args.date_min is not None:
+            events = [e for e in events if e.lore_date >= args.date_min]
+        if args.date_max is not None:
+            events = [e for e in events if e.lore_date <= args.date_max]
+        if args.tags:
+            required_tags = {t.strip() for t in args.tags.split(",") if t.strip()}
+            events = [
+                e
+                for e in events
+                if required_tags.issubset(
+                    set(e.attributes.get("_tags", [])) if e.attributes else set()
+                )
+            ]
 
         # Sort
         events.sort(key=lambda e: e.lore_date)
@@ -128,7 +146,7 @@ def list_events(args) -> int:
             db_service.close()
 
 
-def show_event(args) -> int:
+def show_event(args: argparse.Namespace) -> int:
     """Show detailed information about a specific event."""
     db_service = None
     try:
@@ -177,7 +195,7 @@ def show_event(args) -> int:
             db_service.close()
 
 
-def update_event(args) -> int:
+def update_event(args: argparse.Namespace) -> int:
     """Update an existing event."""
     db_service = None
     try:
@@ -202,6 +220,12 @@ def update_event(args) -> int:
             update_data["description"] = args.description
         if args.duration is not None:
             update_data["lore_duration"] = args.duration
+        if args.tags is not None:
+            tags_list = [t.strip() for t in args.tags.split(",") if t.strip()]
+            # Merge with existing attributes
+            new_attrs = event.attributes.copy() if event.attributes else {}
+            new_attrs["_tags"] = tags_list
+            update_data["attributes"] = new_attrs
 
         if not update_data:
             print("✗ No updates specified. Use --name, --date, --type, etc.")
@@ -229,7 +253,7 @@ def update_event(args) -> int:
             db_service.close()
 
 
-def delete_event(args) -> int:
+def delete_event(args: argparse.Namespace) -> int:
     """Delete an event."""
     db_service = None
     try:
@@ -270,7 +294,7 @@ def delete_event(args) -> int:
             db_service.close()
 
 
-def main():
+def main() -> None:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
         description="Manage ProjektKraken events",
@@ -295,6 +319,7 @@ def main():
     create_parser.add_argument("--type", "-t", help="Event type (e.g., historical)")
     create_parser.add_argument("--description", help="Event description")
     create_parser.add_argument("--duration", type=float, help="Event duration (float)")
+    create_parser.add_argument("--tags", help="Comma-separated list of tags")
     create_parser.set_defaults(func=create_event)
 
     # List command
@@ -303,6 +328,18 @@ def main():
         "--database", "-d", required=True, help="Path to .kraken database file"
     )
     list_parser.add_argument("--type", "-t", help="Filter by event type")
+    list_parser.add_argument(
+        "--name-contains", help="Filter by name substring (case-insensitive)"
+    )
+    list_parser.add_argument(
+        "--date-min", type=float, help="Filter events after or on this lore date"
+    )
+    list_parser.add_argument(
+        "--date-max", type=float, help="Filter events before or on this lore date"
+    )
+    list_parser.add_argument(
+        "--tags", help="Comma-separated list of tags (must have all)"
+    )
     list_parser.add_argument("--json", action="store_true", help="Output as JSON")
     list_parser.set_defaults(func=list_events)
 
@@ -326,6 +363,7 @@ def main():
     update_parser.add_argument("--type", "-t", help="New event type")
     update_parser.add_argument("--description", help="New description")
     update_parser.add_argument("--duration", type=float, help="New duration")
+    update_parser.add_argument("--tags", help="Comma-separated list of tags")
     update_parser.set_defaults(func=update_event)
 
     # Delete command
