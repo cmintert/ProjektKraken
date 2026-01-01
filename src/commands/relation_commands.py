@@ -10,7 +10,7 @@ All commands support undo/redo operations and return CommandResult objects.
 """
 
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from src.commands.base_command import BaseCommand
 from src.services.db_service import DatabaseService
@@ -28,7 +28,7 @@ class AddRelationCommand(BaseCommand):
         source_id: str,
         target_id: str,
         rel_type: str,
-        attributes: Dict[str, Any] = None,
+        attributes: Optional[Dict[str, Any]] = None,
         bidirectional: bool = False,
     ):
         """
@@ -144,7 +144,7 @@ class UpdateRelationCommand(BaseCommand):
         rel_id: str,
         target_id: str,
         rel_type: str,
-        attributes: Dict[str, Any] = None,
+        attributes: Optional[Dict[str, Any]] = None,
     ):
         """
         Initializes the UpdateRelation command.
@@ -161,7 +161,7 @@ class UpdateRelationCommand(BaseCommand):
         self.rel_type = rel_type
         self.attributes = attributes or {}
 
-        self._previous_state: Dict[str, Any] = None
+        self._previous_state: Optional[Dict[str, Any]] = None
 
     def execute(self, db_service: DatabaseService) -> bool:
         """

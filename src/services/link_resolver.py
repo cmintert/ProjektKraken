@@ -113,7 +113,7 @@ class LinkResolver:
         broken = []
 
         for candidate in candidates:
-            if candidate.is_id_based:
+            if candidate.is_id_based and candidate.target_id:
                 if self.resolve(candidate.target_id) is None:
                     broken.append(candidate.target_id)
 

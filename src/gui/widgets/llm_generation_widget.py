@@ -298,7 +298,7 @@ class LLMGenerationWidget(QWidget):
             context_provider: Optional provider for generation context.
         """
         super().__init__(parent)
-        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
         self._worker: Optional[GenerationWorker] = None
         self._current_provider = None
@@ -310,8 +310,8 @@ class LLMGenerationWidget(QWidget):
 
         # Main Separator line (Top)
         top_sep = QFrame()
-        top_sep.setFrameShape(QFrame.HLine)
-        top_sep.setFrameShadow(QFrame.Sunken)
+        top_sep.setFrameShape(QFrame.Shape.HLine)
+        top_sep.setFrameShadow(QFrame.Shadow.Sunken)
         top_sep.setStyleSheet("color: #444444; margin-bottom: 4px;")
         main_layout.addWidget(top_sep)
 
@@ -392,8 +392,8 @@ class LLMGenerationWidget(QWidget):
 
         # Separator line before buttons
         sep2 = QFrame()
-        sep2.setFrameShape(QFrame.HLine)
-        sep2.setFrameShadow(QFrame.Sunken)
+        sep2.setFrameShape(QFrame.Shape.HLine)
+        sep2.setFrameShadow(QFrame.Shadow.Sunken)
         sep2.setStyleSheet("color: #444444; margin-top: 8px;")
         main_layout.addWidget(sep2)
 

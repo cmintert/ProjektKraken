@@ -8,7 +8,7 @@ Protocols allow structural subtyping where any class that implements the require
 methods automatically satisfies the protocol without explicit inheritance.
 """
 
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 
 @runtime_checkable
@@ -27,6 +27,35 @@ class MainWindowProtocol(Protocol):
     def _on_clear_grouping_requested(self) -> None:
         """Handle timeline grouping clear request."""
         ...
+
+    def _request_calendar_config(self) -> None:
+        """Request loading of calendar configuration."""
+        ...
+
+    def show_database_manager(self) -> None:
+        """Show the database manager dialog."""
+        ...
+
+    def show_ai_settings_dialog(self) -> None:
+        """Show the AI settings dialog."""
+        ...
+
+    def toggle_auto_relation_setting(self) -> None:
+        """Toggle the auto-relation setting."""
+        ...
+
+    def close(self) -> bool:
+        """Close the window."""
+        ...
+
+    # QMainWindow methods
+    def setDockOptions(self, options: Any) -> None: ...
+    def setTabPosition(self, areas: Any, places: Any) -> None: ...
+    def setCorner(self, corner: Any, area: Any) -> None: ...
+    def addDockWidget(self, area: Any, dockwidget: Any) -> None: ...
+    def tabifyDockWidget(self, first: Any, second: Any) -> None: ...
+    def addToolBar(self, toolbar: Any) -> None: ...
+    def removeDockWidget(self, dockwidget: Any) -> None: ...
 
     def saveState(self, version: int = 0) -> bytes:
         """Save the current window state (docks/toolbars)."""

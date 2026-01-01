@@ -88,18 +88,18 @@ class EventItem(QGraphicsItem):
 
         # Flags: Movable and fixed size on screen
         self.setFlags(
-            QGraphicsItem.ItemIsSelectable
-            | QGraphicsItem.ItemIsFocusable
+            QGraphicsItem.GraphicsItemFlag.ItemIsSelectable
+            | QGraphicsItem.GraphicsItemFlag.ItemIsFocusable
             | QGraphicsItem.ItemIgnoresTransformations
-            | QGraphicsItem.ItemIsMovable
-            | QGraphicsItem.ItemSendsGeometryChanges
+            | QGraphicsItem.GraphicsItemFlag.ItemIsMovable
+            | QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges
         )
 
         # Enable caching for improved rendering performance
         self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
 
         # Set pointing hand cursor to indicate clickability
-        self.setCursor(QCursor(Qt.PointingHandCursor))
+        self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         # Store initial Y position for constraining vertical movement
         self._initial_y = 0.0
@@ -256,7 +256,7 @@ class EventItem(QGraphicsItem):
 
         painter.setBrush(brush)
 
-        pen = QPen(Qt.white if self.isSelected() else Qt.black)
+        pen = QPen(Qt.GlobalColor.white if self.isSelected() else Qt.GlobalColor.black)
         pen.setCosmetic(True)
         pen.setWidth(2 if self.isSelected() else 1)
         painter.setPen(pen)
@@ -265,7 +265,7 @@ class EventItem(QGraphicsItem):
         painter.drawRoundedRect(rect, 4, 4)
 
         # Draw Text Label BELOW the bar
-        painter.setPen(QPen(Qt.white))
+        painter.setPen(QPen(Qt.GlobalColor.white))
 
         font = painter.font()
         font.setBold(True)
@@ -313,7 +313,7 @@ class EventItem(QGraphicsItem):
         painter.setBrush(brush)
 
         # Border
-        pen = QPen(Qt.white if self.isSelected() else Qt.black)
+        pen = QPen(Qt.GlobalColor.white if self.isSelected() else Qt.GlobalColor.black)
         pen.setCosmetic(True)  # Keep border crisp
         pen.setWidth(2 if self.isSelected() else 1)
         painter.setPen(pen)
@@ -324,7 +324,7 @@ class EventItem(QGraphicsItem):
         text_x = self.ICON_SIZE / 2 + self.PADDING
 
         # Title
-        painter.setPen(QPen(Qt.white))
+        painter.setPen(QPen(Qt.GlobalColor.white))
         font = painter.font()
         font.setBold(True)
         painter.setFont(font)

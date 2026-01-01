@@ -6,8 +6,6 @@ Supports health checks, timeouts, retries, and circuit breaker pattern.
 Note: Streaming not fully supported by all Vertex AI models yet.
 """
 
-import asyncio
-import json
 import logging
 import os
 import time
@@ -56,9 +54,9 @@ class GoogleProvider(Provider):
             ImportError: If google-cloud-aiplatform is not installed.
         """
         try:
-            from google.auth import default
-            from google.auth.transport.requests import Request
-            from google.oauth2 import service_account
+            from google.auth import default  # type: ignore
+            from google.auth.transport.requests import Request  # type: ignore
+            from google.oauth2 import service_account  # type: ignore
         except ImportError as e:
             raise ImportError(
                 "google-cloud-aiplatform is not installed. "
@@ -116,7 +114,7 @@ class GoogleProvider(Provider):
         Returns:
             str: OAuth2 access token.
         """
-        from google.auth.transport.requests import Request
+        from google.auth.transport.requests import Request  # type: ignore
 
         if not self.credentials.valid:
             self.credentials.refresh(Request())
@@ -149,7 +147,9 @@ class GoogleProvider(Provider):
                         f"Request failed after {self.max_retries} attempts: {e}"
                     )
 
-        raise last_exception
+        if last_exception:
+            raise last_exception
+        raise Exception("Request failed with no exception captured")
 
     def embed(self, texts: List[str]) -> np.ndarray:
         """

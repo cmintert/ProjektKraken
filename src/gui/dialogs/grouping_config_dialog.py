@@ -55,14 +55,14 @@ class ColorSwatch(QFrame):
         """
         super().__init__(parent)
         self.setFixedSize(size, size)
-        self.setCursor(Qt.PointingHandCursor)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setStyleSheet(
             f"background-color: {color}; border: 1px solid #ccc; border-radius: 2px;"
         )
 
     def mouseReleaseEvent(self, event):
         """Emits clicked signal on mouse release."""
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit()
         super().mouseReleaseEvent(event)
 
@@ -237,11 +237,13 @@ class GroupingConfigDialog(QDialog):
 
         # Dialog buttons
         self.button_box = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Apply | QDialogButtonBox.Cancel
+            QDialogButtonBox.StandardButton.Ok
+            | QDialogButtonBox.StandardButton.Apply
+            | QDialogButtonBox.StandardButton.Cancel
         )
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
-        self.button_box.button(QDialogButtonBox.Apply).clicked.connect(
+        self.button_box.button(QDialogButtonBox.StandardButton.Apply).clicked.connect(
             self._on_apply_clicked
         )
         layout.addWidget(self.button_box)

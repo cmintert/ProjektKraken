@@ -17,7 +17,7 @@ class CreateEntityCommand(BaseCommand):
     Command to create a new entity.
     """
 
-    def __init__(self, entity_data: dict = None):
+    def __init__(self, entity_data: Optional[dict] = None):
         """
         Initializes the CreateEntityCommand.
 

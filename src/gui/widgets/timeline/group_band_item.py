@@ -76,7 +76,7 @@ class GroupBandItem(QGraphicsObject):
 
         # Visual settings
         self.setAcceptHoverEvents(True)
-        self.setCursor(QCursor(Qt.PointingHandCursor))
+        self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.setZValue(50)  # Above timeline content, below playhead
 
         # Interaction state
@@ -164,7 +164,7 @@ class GroupBandItem(QGraphicsObject):
 
         # Draw background
         painter.setBrush(QBrush(bg_color))
-        painter.setPen(Qt.NoPen)
+        painter.setPen(Qt.PenStyle.NoPen)
         painter.drawRect(scene_rect.left(), 0, scene_rect.width(), height)
 
         # Draw border
@@ -204,7 +204,7 @@ class GroupBandItem(QGraphicsObject):
 
     def mousePressEvent(self, event):
         """Handle mouse press."""
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             self._pressed = True
             event.accept()
         else:
@@ -212,7 +212,7 @@ class GroupBandItem(QGraphicsObject):
 
     def mouseReleaseEvent(self, event):
         """Handle mouse release to toggle collapse state."""
-        if event.button() == Qt.LeftButton and self._pressed:
+        if event.button() == Qt.MouseButton.LeftButton and self._pressed:
             self._pressed = False
             # Toggle collapse state
             if self.is_collapsed:

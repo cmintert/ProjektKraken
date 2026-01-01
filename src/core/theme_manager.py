@@ -8,7 +8,7 @@ This is the Qt-specific implementation that extends BaseThemeManager.
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, cast
 
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QApplication
@@ -27,7 +27,6 @@ class ThemeManager(QObject, BaseThemeManager):
     Implements Singleton pattern.
     """
 
-    _instance: Optional["ThemeManager"] = None
     theme_changed = Signal(dict)  # Emits new theme data
 
     def __new__(cls, *args: Any, **kwargs: Any) -> "ThemeManager":
@@ -47,10 +46,11 @@ class ThemeManager(QObject, BaseThemeManager):
         """
         if not cls._instance:
             # Use super() for proper MRO with multiple inheritance
-            cls._instance = super().__new__(cls)
+            cls._instance = cast("ThemeManager", super().__new__(cls))
             # Initialize QObject only once
-            QObject.__init__(cls._instance)
-        return cls._instance
+            if cls._instance:
+                QObject.__init__(cls._instance)
+        return cast("ThemeManager", cls._instance)
 
     def __init__(self, theme_file: str = "themes.json") -> None:
         """
@@ -69,7 +69,7 @@ class ThemeManager(QObject, BaseThemeManager):
         from PySide6.QtCore import QSettings
 
         settings = QSettings("ProjektKraken", "ThemeSettings")
-        saved_theme = settings.value("current_theme", "dark_mode")
+        saved_theme = str(settings.value("current_theme", "dark_mode"))
         if saved_theme in self.themes:
             self.current_theme_name = saved_theme
 
@@ -103,7 +103,7 @@ class ThemeManager(QObject, BaseThemeManager):
 
         # Apply to app if provided (re-applies stylesheet)
         if not app:
-            app = QApplication.instance()
+            app = cast(QApplication, QApplication.instance())
 
         if app and self._qss_template:
             self.apply_theme(app, self._qss_template)

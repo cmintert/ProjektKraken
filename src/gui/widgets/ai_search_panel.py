@@ -77,12 +77,14 @@ class SearchResultItem(QWidget):
         # Score label
         score_label = QLabel(f"{score:.3f}")
         score_label.setStyleSheet("color: #95a5a6; font-size: 10px;")
-        score_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        score_label.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
         layout.addWidget(score_label, stretch=1)
 
         # Make clickable
-        self.setCursor(Qt.PointingHandCursor)
-        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setStyleSheet(
             "SearchResultItem:hover { background-color: rgba(255, 255, 255, 0.1); }"
         )
@@ -95,7 +97,7 @@ class SearchResultItem(QWidget):
 
     def mousePressEvent(self, event):
         """Handle mouse click to open the result."""
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             self.open_requested.emit(self.object_type, self.object_id)
         super().mousePressEvent(event)
 
@@ -120,7 +122,7 @@ class AISearchPanelWidget(QWidget):
             parent: Parent widget.
         """
         super().__init__(parent)
-        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
         # Main layout
         main_layout = QVBoxLayout(self)
@@ -177,7 +179,7 @@ class AISearchPanelWidget(QWidget):
 
         # Empty state
         self.empty_label = QLabel("No results. Enter a query above.")
-        self.empty_label.setAlignment(Qt.AlignCenter)
+        self.empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.empty_label.setStyleSheet(StyleHelper.get_empty_state_style())
         results_layout.addWidget(self.empty_label)
         self.empty_label.show()
@@ -185,7 +187,7 @@ class AISearchPanelWidget(QWidget):
         # Status label
         self.status_label = QLabel("")
         self.status_label.setStyleSheet("color: #95a5a6; font-size: 10px;")
-        self.status_label.setAlignment(Qt.AlignCenter)
+        self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         results_layout.addWidget(self.status_label)
 
         main_layout.addWidget(results_group)

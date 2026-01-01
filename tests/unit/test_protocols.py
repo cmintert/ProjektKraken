@@ -27,6 +27,43 @@ class TestMainWindowProtocol:
             def _on_clear_grouping_requested(self):
                 pass
 
+            def _request_calendar_config(self):
+                pass
+
+            def show_database_manager(self):
+                pass
+
+            def show_ai_settings_dialog(self):
+                pass
+
+            def toggle_auto_relation_setting(self):
+                pass
+
+            def close(self) -> bool:
+                return True
+
+            # QMainWindow methods
+            def setDockOptions(self, options):
+                pass
+
+            def setTabPosition(self, areas, places):
+                pass
+
+            def setCorner(self, corner, area):
+                pass
+
+            def addDockWidget(self, area, dockwidget):
+                pass
+
+            def tabifyDockWidget(self, first, second):
+                pass
+
+            def addToolBar(self, toolbar):
+                pass
+
+            def removeDockWidget(self, dockwidget):
+                pass
+
             def saveState(self, version: int = 0) -> bytes:
                 return b""
 

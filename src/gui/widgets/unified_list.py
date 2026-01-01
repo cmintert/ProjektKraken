@@ -57,9 +57,9 @@ class DraggableListWidget(QListWidget):
             return
 
         # Extract item data (stored via setData in _render_list)
-        item_id = item.data(Qt.UserRole)
-        item_type = item.data(Qt.UserRole + 1)
-        item_name = item.data(Qt.UserRole + 2)  # We'll add this
+        item_id = item.data(Qt.ItemDataRole.UserRole)
+        item_type = item.data(Qt.ItemDataRole.UserRole + 1)
+        item_name = item.data(Qt.ItemDataRole.UserRole + 2)  # We'll add this
 
         if not item_id or not item_type:
             return
@@ -102,12 +102,12 @@ class UnifiedListWidget(QWidget):
             parent (QWidget, optional): The parent widget. Defaults to None.
         """
         super().__init__(parent)
-        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
         # Set size policy to prevent dock collapse
         from PySide6.QtWidgets import QSizePolicy
 
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         self.layout = QVBoxLayout(self)
         StyleHelper.apply_standard_list_spacing(self.layout)
@@ -176,7 +176,7 @@ class UnifiedListWidget(QWidget):
 
         # Empty State
         self.empty_label = QLabel("No Items Loaded")
-        self.empty_label.setAlignment(Qt.AlignCenter)
+        self.empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.empty_label.setStyleSheet(StyleHelper.get_empty_state_style())
         self.layout.addWidget(self.empty_label)
         self.empty_label.hide()
@@ -250,8 +250,8 @@ class UnifiedListWidget(QWidget):
         current_type = None
         selected_items = self.list_widget.selectedItems()
         if selected_items:
-            current_id = selected_items[0].data(Qt.UserRole)
-            current_type = selected_items[0].data(Qt.UserRole + 1)
+            current_id = selected_items[0].data(Qt.ItemDataRole.UserRole)
+            current_type = selected_items[0].data(Qt.ItemDataRole.UserRole + 1)
 
         self.list_widget.clear()
 
@@ -298,9 +298,9 @@ class UnifiedListWidget(QWidget):
                     continue
                 label = f"{entity.name} ({entity.type})"
                 item = QListWidgetItem(label)
-                item.setData(Qt.UserRole, entity.id)
-                item.setData(Qt.UserRole + 1, "entity")
-                item.setData(Qt.UserRole + 2, entity.name)  # For drag
+                item.setData(Qt.ItemDataRole.UserRole, entity.id)
+                item.setData(Qt.ItemDataRole.UserRole + 1, "entity")
+                item.setData(Qt.ItemDataRole.UserRole + 2, entity.name)  # For drag
                 item.setForeground(QBrush(self.color_entity))
                 self.list_widget.addItem(item)
                 has_items = True
@@ -312,9 +312,9 @@ class UnifiedListWidget(QWidget):
                     continue
                 label = f"[{event.lore_date}] {event.name}"
                 item = QListWidgetItem(label)
-                item.setData(Qt.UserRole, event.id)
-                item.setData(Qt.UserRole + 1, "event")
-                item.setData(Qt.UserRole + 2, event.name)  # For drag
+                item.setData(Qt.ItemDataRole.UserRole, event.id)
+                item.setData(Qt.ItemDataRole.UserRole + 1, "event")
+                item.setData(Qt.ItemDataRole.UserRole + 2, event.name)  # For drag
                 item.setForeground(QBrush(self.color_event))
                 self.list_widget.addItem(item)
                 has_items = True
@@ -328,8 +328,8 @@ class UnifiedListWidget(QWidget):
                 for index in range(self.list_widget.count()):
                     item = self.list_widget.item(index)
                     if (
-                        item.data(Qt.UserRole) == current_id
-                        and item.data(Qt.UserRole + 1) == current_type
+                        item.data(Qt.ItemDataRole.UserRole) == current_id
+                        and item.data(Qt.ItemDataRole.UserRole + 1) == current_type
                     ):
                         self.list_widget.setCurrentItem(item)
                         break
@@ -424,8 +424,8 @@ class UnifiedListWidget(QWidget):
         items = self.list_widget.selectedItems()
         if items:
             item = items[0]
-            item_id = item.data(Qt.UserRole)
-            item_type = item.data(Qt.UserRole + 1)
+            item_id = item.data(Qt.ItemDataRole.UserRole)
+            item_type = item.data(Qt.ItemDataRole.UserRole + 1)
             self.item_selected.emit(item_type, item_id)
             self.btn_delete.setEnabled(True)
         else:
@@ -438,8 +438,8 @@ class UnifiedListWidget(QWidget):
         items = self.list_widget.selectedItems()
         if items:
             item = items[0]
-            item_id = item.data(Qt.UserRole)
-            item_type = item.data(Qt.UserRole + 1)
+            item_id = item.data(Qt.ItemDataRole.UserRole)
+            item_type = item.data(Qt.ItemDataRole.UserRole + 1)
             self.delete_requested.emit(item_type, item_id)
 
     def select_item(self, item_type: str, item_id: str):
@@ -462,8 +462,8 @@ class UnifiedListWidget(QWidget):
             for index in range(self.list_widget.count()):
                 item = self.list_widget.item(index)
                 if (
-                    item.data(Qt.UserRole) == item_id
-                    and item.data(Qt.UserRole + 1) == item_type
+                    item.data(Qt.ItemDataRole.UserRole) == item_id
+                    and item.data(Qt.ItemDataRole.UserRole + 1) == item_type
                 ):
                     self.list_widget.setCurrentItem(item)
                     self.list_widget.scrollToItem(item)

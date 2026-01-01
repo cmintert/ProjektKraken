@@ -49,7 +49,7 @@ class CompactDurationWidget(QWidget):
         # Set size policy to prevent vertical squashing
         from PySide6.QtWidgets import QSizePolicy
 
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         self._converter = None
         self._start_date_float = 0.0
@@ -66,7 +66,7 @@ class CompactDurationWidget(QWidget):
 
         # Styled frame container
         self.frame = QFrame()
-        self.frame.setFrameStyle(QFrame.StyledPanel | QFrame.Raised)
+        self.frame.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Raised)
         self.frame.setStyleSheet(StyleHelper.get_frame_style())
         outer_layout.addWidget(self.frame)
 
@@ -85,7 +85,9 @@ class CompactDurationWidget(QWidget):
         self.spin_years.setRange(0, 9999)
         self.spin_years.setValue(0)
         self.spin_years.setSuffix(" Y")
-        self.spin_years.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.spin_years.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
         ymd_row.addWidget(self.spin_years, stretch=1)
 
         # Months - allow expanding with suffix
@@ -93,7 +95,9 @@ class CompactDurationWidget(QWidget):
         self.spin_months.setRange(0, 99)
         self.spin_months.setValue(0)
         self.spin_months.setSuffix(" M")
-        self.spin_months.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.spin_months.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
         ymd_row.addWidget(self.spin_months, stretch=1)
 
         # Days - allow expanding with suffix
@@ -101,7 +105,9 @@ class CompactDurationWidget(QWidget):
         self.spin_days.setRange(0, 999)
         self.spin_days.setValue(0)
         self.spin_days.setSuffix(" D")
-        self.spin_days.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.spin_days.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
         ymd_row.addWidget(self.spin_days, stretch=1)
 
         main_layout.addLayout(ymd_row)
@@ -115,7 +121,9 @@ class CompactDurationWidget(QWidget):
         self.spin_hours.setRange(0, 23)
         self.spin_hours.setValue(0)
         self.spin_hours.setSuffix(" h")
-        self.spin_hours.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.spin_hours.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
         hm_row.addWidget(self.spin_hours, stretch=1)
 
         # Minutes - allow expanding with suffix
@@ -123,13 +131,17 @@ class CompactDurationWidget(QWidget):
         self.spin_minutes.setRange(0, 59)
         self.spin_minutes.setValue(0)
         self.spin_minutes.setSuffix(" m")
-        self.spin_minutes.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.spin_minutes.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
         hm_row.addWidget(self.spin_minutes, stretch=1)
 
         # Preview - takes remaining space
         self.lbl_preview = QLabel()
         self.lbl_preview.setStyleSheet(StyleHelper.get_preview_label_style())
-        self.lbl_preview.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.lbl_preview.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
         hm_row.addWidget(self.lbl_preview, stretch=3)  # Wider for text
 
         main_layout.addLayout(hm_row)

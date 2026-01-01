@@ -39,7 +39,7 @@ class LoreDurationWidget(QWidget):
         # Set size policy to prevent vertical squashing
         from PySide6.QtWidgets import QSizePolicy
 
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         self._converter: CalendarConverter = None
         self._start_date_float: float = 1.0  # Default to Year 1 Day 1

@@ -64,7 +64,7 @@ class DatabaseManagerDialog(QDialog):
 
         # List
         self.db_list = QListWidget()
-        self.db_list.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.db_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.layout.addWidget(self.db_list)
 
         # Buttons
@@ -110,7 +110,7 @@ class DatabaseManagerDialog(QDialog):
                 font = item.font()
                 font.setBold(True)
                 item.setFont(font)
-                item.setForeground(Qt.green)  # Or theme color
+                item.setForeground(Qt.GlobalColor.green)  # Or theme color
                 # Pre-select active
                 self.db_list.setCurrentItem(item)
             self.db_list.addItem(item)
@@ -174,10 +174,10 @@ class DatabaseManagerDialog(QDialog):
             self,
             "Confirm Delete",
             f"Are you sure you want to delete '{filename}'?\n\nThis action cannot be undone and all data in this world will be lost.",
-            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
-        if confirm == QMessageBox.Yes:
+        if confirm == QMessageBox.StandardButton.Yes:
             try:
                 os.remove(os.path.join(self.data_dir, filename))
                 logger.info(f"Deleted database file: {filename}")

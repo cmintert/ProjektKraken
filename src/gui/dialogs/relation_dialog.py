@@ -5,6 +5,8 @@ Provides a consolidated dialog for adding or editing relations,
 featuring autocompletion for target entities/events.
 """
 
+from typing import Optional
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -15,6 +17,7 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QLineEdit,
     QVBoxLayout,
+    QWidget,
 )
 
 
@@ -26,12 +29,12 @@ class RelationEditDialog(QDialog):
 
     def __init__(
         self,
-        parent=None,
+        parent: Optional[QWidget] = None,
         target_id: str = "",
         rel_type: str = "involved",
         is_bidirectional: bool = False,
         suggestion_items: list[tuple[str, str, str]] = None,  # (id, name, type)
-    ):
+    ) -> None:
         """
         Initializes the dialog.
 
@@ -70,7 +73,7 @@ class RelationEditDialog(QDialog):
             display_names.sort(key=str.lower)
 
         completer = QCompleter(display_names, self)
-        completer.setCaseSensitivity(Qt.CaseInsensitive)
+        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         completer.setFilterMode(Qt.MatchContains)
         self.target_edit.setCompleter(completer)
 
@@ -100,7 +103,7 @@ class RelationEditDialog(QDialog):
 
         # Buttons
         self.button_box = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
@@ -109,7 +112,7 @@ class RelationEditDialog(QDialog):
         # Initial focus
         self.target_edit.setFocus()
 
-    def get_data(self):
+    def get_data(self) -> tuple[str, str, bool]:
         """
         Returns the dialog data.
 

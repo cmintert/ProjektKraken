@@ -42,7 +42,7 @@ class WikiTextEdit(QTextEdit):
 
         # Enable mouse tracking for hover effects if desired
         self.setMouseTracking(True)
-        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
         # Connect to theme changes and apply initial theme
         tm = ThemeManager()
@@ -53,7 +53,7 @@ class WikiTextEdit(QTextEdit):
 
         # Force viewport transparency via Palette to ensure CSS border-radius shows
         p = self.viewport().palette()
-        p.setColor(self.viewport().backgroundRole(), Qt.transparent)
+        p.setColor(self.viewport().backgroundRole(), Qt.GlobalColor.transparent)
         self.viewport().setPalette(p)
 
         self._apply_theme_stylesheet()
@@ -129,7 +129,7 @@ class WikiTextEdit(QTextEdit):
             self._completer = QCompleter(display_names, self)
             self._completer.setWidget(self)
             self._completer.setCompletionMode(QCompleter.PopupCompletion)
-            self._completer.setCaseSensitivity(Qt.CaseInsensitive)
+            self._completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
             self._completer.activated.connect(self.insert_completion)
         else:
             model = QStringListModel(display_names, self._completer)
@@ -572,10 +572,10 @@ class WikiTextEdit(QTextEdit):
         Args:
             event: QMouseEvent from PySide6.
         """
-        if event.modifiers() & Qt.ControlModifier:
+        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
             anchor = self.anchorAt(event.position().toPoint())
             if anchor:
-                self.viewport().setCursor(Qt.PointingHandCursor)
+                self.viewport().setCursor(Qt.CursorShape.PointingHandCursor)
                 return
         self.viewport().setCursor(Qt.IBeamCursor)
         super().mouseMoveEvent(event)
@@ -587,7 +587,9 @@ class WikiTextEdit(QTextEdit):
         Args:
             event: QMouseEvent from PySide6.
         """
-        if event.button() == Qt.LeftButton and (event.modifiers() & Qt.ControlModifier):
+        if event.button() == Qt.MouseButton.LeftButton and (
+            event.modifiers() & Qt.KeyboardModifier.ControlModifier
+        ):
             anchor = self.anchorAt(event.position().toPoint())
             if anchor:
                 # Handle ID checking

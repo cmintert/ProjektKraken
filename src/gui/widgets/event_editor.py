@@ -63,12 +63,12 @@ class EventEditorWidget(QWidget):
         """
         super().__init__(parent)
 
-        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
         # Set size policy to prevent dock collapse
         from PySide6.QtWidgets import QSizePolicy
 
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         self.layout = QVBoxLayout(self)
         from src.gui.utils.style_helper import StyleHelper
@@ -184,7 +184,7 @@ class EventEditorWidget(QWidget):
         # List second
         self.rel_list = QListWidget()
         self.rel_list.setSpacing(2)  # Add spacing between items
-        self.rel_list.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.rel_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.rel_list.customContextMenuRequested.connect(self._show_rel_menu)
         self.rel_list.itemDoubleClicked.connect(self._on_edit_relation)
         rel_tab_layout.addWidget(self.rel_list)
@@ -408,7 +408,7 @@ class EventEditorWidget(QWidget):
 
                     # Create list item with explicit size hint BEFORE adding
                     item = QListWidgetItem()
-                    item.setData(Qt.UserRole, rel)
+                    item.setData(Qt.ItemDataRole.UserRole, rel)
 
                     item.setSizeHint(QSize(200, 36))  # Explicit height for button
                     self.rel_list.addItem(item)
@@ -434,7 +434,7 @@ class EventEditorWidget(QWidget):
 
                     # Create list item with explicit size hint BEFORE adding
                     item = QListWidgetItem()
-                    item.setData(Qt.UserRole, rel)
+                    item.setData(Qt.ItemDataRole.UserRole, rel)
 
                     item.setSizeHint(QSize(200, 36))  # Explicit height for button
                     self.rel_list.addItem(item)
@@ -527,7 +527,7 @@ class EventEditorWidget(QWidget):
 
     def _on_remove_relation_item(self, item: QListWidgetItem) -> None:
         """Emits remove signal."""
-        rel_data = item.data(Qt.UserRole)
+        rel_data = item.data(Qt.ItemDataRole.UserRole)
         target_id = rel_data.get("target_id", "?")
         target_name = rel_data.get("target_name", target_id)
 
@@ -535,14 +535,14 @@ class EventEditorWidget(QWidget):
             self,
             "Confirm Remove",
             f"Remove relation to {target_name}?",
-            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
-        if confirm == QMessageBox.Yes:
+        if confirm == QMessageBox.StandardButton.Yes:
             self.remove_relation_requested.emit(rel_data["id"])
 
     def _on_edit_relation(self, item: QListWidgetItem) -> None:
         """Emits update signal after dialogs."""
-        rel_data = item.data(Qt.UserRole)
+        rel_data = item.data(Qt.ItemDataRole.UserRole)
 
         from src.gui.dialogs.relation_dialog import RelationEditDialog
 

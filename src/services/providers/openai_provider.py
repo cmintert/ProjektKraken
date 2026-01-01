@@ -92,7 +92,9 @@ class OpenAIProvider(Provider):
                         f"Request failed after {self.max_retries} attempts: {e}"
                     )
 
-        raise last_exception
+        if last_exception:
+            raise last_exception
+        raise Exception("Request failed with no exception captured")
 
     def embed(self, texts: List[str]) -> np.ndarray:
         """
@@ -142,9 +144,7 @@ class OpenAIProvider(Provider):
             return self._retry_request(_embed_impl)
         except requests.exceptions.RequestException as e:
             logger.error(f"OpenAI embedding request failed: {e}")
-            raise Exception(
-                f"Failed to connect to OpenAI API. Error: {e}"
-            ) from e
+            raise Exception(f"Failed to connect to OpenAI API. Error: {e}") from e
         except (KeyError, ValueError) as e:
             logger.error(f"Failed to parse OpenAI embedding response: {e}")
             raise Exception(f"Invalid response from OpenAI API: {e}") from e
@@ -320,7 +320,9 @@ class OpenAIProvider(Provider):
 
         except requests.exceptions.RequestException as e:
             logger.error(f"OpenAI streaming request failed: {e}")
-            raise Exception(f"Failed to stream completion from OpenAI API. Error: {e}") from e
+            raise Exception(
+                f"Failed to stream completion from OpenAI API. Error: {e}"
+            ) from e
 
     def health_check(self) -> Dict[str, Any]:
         """

@@ -103,14 +103,14 @@ class GroupLabelOverlay(QWidget):
             painter.fillRect(0, int(y_pos), 4, label_height, color)
 
             # Draw chevron indicator
-            painter.setPen(Qt.NoPen)
+            painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(QColor(self.theme["text_main"]))
 
             center_x = self.LABEL_PADDING + 4
             center_y = int(y_pos) + (label_height // 2)
 
-            from PySide6.QtGui import QPolygonF
             from PySide6.QtCore import QPointF
+            from PySide6.QtGui import QPolygonF
 
             if is_collapsed:
                 # Triangle pointing right (▶)
@@ -152,6 +152,6 @@ class GroupLabelOverlay(QWidget):
                 int(y_pos),
                 max_width,
                 label_height,
-                Qt.AlignVCenter | Qt.AlignLeft,
+                Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
                 display_name,
             )

@@ -80,16 +80,16 @@ class TimelineView(QGraphicsView):
             lambda t: self._update_corner_widget(t) if isValid(self) else None
         )
 
-        self.setDragMode(QGraphicsView.ScrollHandDrag)
+        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         self.setRenderHint(QPainter.Antialiasing)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
 
         # Force full viewport updates to prevent ruler distortion during panning
         self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
 
         # Viewport alignment
-        self.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        self.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
 
         self.events = []
         self.scale_factor = 20.0
@@ -247,7 +247,7 @@ class TimelineView(QGraphicsView):
 
         # 2. Draw context tier background (top band)
         painter.setBrush(QColor(theme["surface"]).darker(110))
-        painter.setPen(Qt.NoPen)
+        painter.setPen(Qt.PenStyle.NoPen)
         painter.drawRect(0, 0, w, context_h)
 
         # 3. Draw main ruler background
@@ -327,7 +327,7 @@ class TimelineView(QGraphicsView):
                 label_rect = QRectF(screen_x + 4, context_h + 2, 70, h - context_h - 14)
                 painter.drawText(
                     label_rect,
-                    Qt.AlignVCenter | Qt.AlignLeft,
+                    Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
                     tick.label,
                 )
 
@@ -346,7 +346,7 @@ class TimelineView(QGraphicsView):
             painter.setPen(QColor(theme["primary"]))
             painter.drawText(
                 QRectF(8, 2, w - 16, context_h - 4),
-                Qt.AlignVCenter | Qt.AlignLeft,
+                Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
                 context_label,
             )
 
@@ -448,7 +448,7 @@ class TimelineView(QGraphicsView):
                     drop_line_top,
                     item.x(),
                     80,  # Temp Y
-                    QPen(QColor(80, 80, 80), 1, Qt.DashLine),
+                    QPen(QColor(80, 80, 80), 1, Qt.PenStyle.DashLine),
                 )
                 line.setZValue(-1)
                 line.event_id = event.id  # Mark for tracking
@@ -988,7 +988,7 @@ class TimelineView(QGraphicsView):
         if factor != 1.0:
             # Set anchor to mouse position to zoom towards/away from it
             old_anchor = self.transformationAnchor()
-            self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+            self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
 
             try:
                 # Apply zoom
@@ -1308,7 +1308,7 @@ class TimelineView(QGraphicsView):
         # Repack events to update positions and hide events in this group
         self.repack_events()
 
-    def _update_label_overlay(self):
+    def _update_label_overlay(self) -> None:
         """
         Update the label overlay positions to match current band positions.
 

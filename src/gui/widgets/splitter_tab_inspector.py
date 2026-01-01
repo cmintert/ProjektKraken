@@ -32,13 +32,13 @@ class DraggableTabBar(QTabBar):
 
     def mousePressEvent(self, event):
         """Track drag start position."""
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             self._drag_start_pos = event.pos()
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
         """Initiate drag if moved far enough."""
-        if not (event.buttons() & Qt.LeftButton):
+        if not (event.buttons() & Qt.MouseButton.LeftButton):
             return super().mouseMoveEvent(event)
 
         if (event.pos() - self._drag_start_pos).manhattanLength() < 20:
@@ -201,7 +201,7 @@ class SplitterTabInspector(QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
 
-        self.splitter = QSplitter(Qt.Vertical)
+        self.splitter = QSplitter(Qt.Orientation.Vertical)
 
         # Set splitter constraints to prevent collapse
         self.splitter.setChildrenCollapsible(False)  # Prevent full collapse

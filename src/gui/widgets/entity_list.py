@@ -43,7 +43,7 @@ class EntityListWidget(QWidget):
         super().__init__(parent)
         if parent:
             self.setParent(parent)
-        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.layout = QVBoxLayout(self)
         StyleHelper.apply_standard_list_spacing(self.layout)
 
@@ -71,7 +71,7 @@ class EntityListWidget(QWidget):
 
         # Empty State
         self.empty_label = QLabel("No Entities Loaded")
-        self.empty_label.setAlignment(Qt.AlignCenter)
+        self.empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.empty_label.setStyleSheet(StyleHelper.get_empty_state_style())
         self.layout.addWidget(self.empty_label)
         self.empty_label.hide()
@@ -94,7 +94,7 @@ class EntityListWidget(QWidget):
             # Display: Name (Type)
             label = f"{entity.name} ({entity.type})"
             item = QListWidgetItem(label)
-            item.setData(Qt.UserRole, entity.id)
+            item.setData(Qt.ItemDataRole.UserRole, entity.id)
             self.list_widget.addItem(item)
 
     def _on_selection_changed(self):
@@ -105,7 +105,7 @@ class EntityListWidget(QWidget):
         """
         items = self.list_widget.selectedItems()
         if items:
-            entity_id = items[0].data(Qt.UserRole)
+            entity_id = items[0].data(Qt.ItemDataRole.UserRole)
             self.entity_selected.emit(entity_id)
             self.btn_delete.setEnabled(True)
         else:
@@ -119,7 +119,7 @@ class EntityListWidget(QWidget):
         """
         items = self.list_widget.selectedItems()
         if items:
-            entity_id = items[0].data(Qt.UserRole)
+            entity_id = items[0].data(Qt.ItemDataRole.UserRole)
             self.delete_requested.emit(entity_id)
 
     def minimumSizeHint(self):

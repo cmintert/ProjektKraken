@@ -59,8 +59,8 @@ class MapGraphicsView(QGraphicsView):
         # View settings
         self.setRenderHint(QPainter.Antialiasing)
         self.setRenderHint(QPainter.SmoothPixmapTransform)
-        self.setDragMode(QGraphicsView.ScrollHandDrag)
-        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+        self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
 
         # Map and markers
         self.pixmap_item: Optional[QGraphicsPixmapItem] = None
@@ -119,7 +119,7 @@ class MapGraphicsView(QGraphicsView):
             self.scene.addItem(self.pixmap_item)
 
             # Fit view to map
-            self.fitInView(self.pixmap_item, Qt.KeepAspectRatio)
+            self.fitInView(self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
             self.scene.setSceneRect(self.pixmap_item.boundingRect())
 
             logger.info(f"Loaded map: {image_path}")
@@ -139,7 +139,7 @@ class MapGraphicsView(QGraphicsView):
     def fit_to_view(self):
         """Fits the map to the current view size."""
         if self.pixmap_item:
-            self.fitInView(self.pixmap_item, Qt.KeepAspectRatio)
+            self.fitInView(self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
             logger.debug("Fit map to view.")
 
     def mousePressEvent(self, event):
@@ -153,17 +153,17 @@ class MapGraphicsView(QGraphicsView):
 
         if isinstance(item, MarkerItem):
             logger.debug(f"Click on Marker {item.marker_id}. Setting NoDrag.")
-            self.setDragMode(QGraphicsView.NoDrag)
+            self.setDragMode(QGraphicsView.DragMode.NoDrag)
         else:
             logger.debug("Click on background. Setting ScrollHandDrag.")
-            self.setDragMode(QGraphicsView.ScrollHandDrag)
+            self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event):
         """Reset drag mode on release."""
         logger.debug("Mouse Release. Resetting to ScrollHandDrag.")
         super().mouseReleaseEvent(event)
-        self.setDragMode(QGraphicsView.ScrollHandDrag)
+        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
 
     def add_marker(
         self,
@@ -442,7 +442,7 @@ class MapGraphicsView(QGraphicsView):
             marker_item: The marker to change the icon for.
         """
         dialog = IconPickerDialog(self)
-        if dialog.exec() == QDialog.Accepted:
+        if dialog.exec() == QDialog.DialogCode.Accepted:
             selected_icon = dialog.selected_icon
             if selected_icon:
                 marker_item.set_icon(selected_icon)

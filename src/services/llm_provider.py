@@ -8,7 +8,7 @@ and text generation with streaming capabilities.
 import logging
 import os
 from abc import ABC, abstractmethod
-from typing import Any, AsyncIterator, Dict, List, Optional
+from typing import Any, AsyncIterator, Dict, List, Optional, cast
 
 import numpy as np
 
@@ -71,7 +71,7 @@ class Provider(ABC):
         pass
 
     @abstractmethod
-    async def stream_generate(
+    def stream_generate(
         self,
         prompt: str,
         max_tokens: int = 512,
@@ -196,7 +196,7 @@ def get_provider_settings_from_qsettings(
         # Common settings
         result = {
             "enabled": settings.value(f"{prefix}enabled", True, type=bool),
-            "timeout": int(settings.value(f"{prefix}timeout", 30)),
+            "timeout": cast(int, settings.value(f"{prefix}timeout", 30, type=int)),
         }
 
         # Provider-specific settings
@@ -206,19 +206,25 @@ def get_provider_settings_from_qsettings(
             # ai_gen_lmstudio_url -> Generation URL in dialog
             result.update(
                 {
-                    "url": settings.value(f"{prefix}url", ""),
-                    "model": settings.value(
-                        f"ai_gen_{provider_id}_model",
-                        settings.value(f"{prefix}model", ""),
+                    "url": str(settings.value(f"{prefix}url", "")),
+                    "model": str(
+                        settings.value(
+                            f"ai_gen_{provider_id}_model",
+                            settings.value(f"{prefix}model", ""),
+                        )
                     ),
-                    "api_key": settings.value(f"{prefix}api_key", ""),
-                    "embed_url": settings.value(
-                        f"{prefix}url",  # Dialog saves embedding URL as ai_lmstudio_url
-                        "http://localhost:8080/v1/embeddings",
+                    "api_key": str(settings.value(f"{prefix}api_key", "")),
+                    "embed_url": str(
+                        settings.value(
+                            f"{prefix}url",  # Dialog saves embedding URL as ai_lmstudio_url
+                            "http://localhost:8080/v1/embeddings",
+                        )
                     ),
-                    "generate_url": settings.value(
-                        f"ai_gen_{provider_id}_url",
-                        "http://localhost:8080/v1/completions",
+                    "generate_url": str(
+                        settings.value(
+                            f"ai_gen_{provider_id}_url",
+                            "http://localhost:8080/v1/completions",
+                        )
                     ),
                 }
             )
@@ -250,12 +256,14 @@ def get_provider_settings_from_qsettings(
         elif provider_id == "anthropic":
             result.update(
                 {
-                    "api_key": settings.value(f"{prefix}api_key", ""),
-                    "model": settings.value(
-                        f"{prefix}model", "claude-3-haiku-20240307"
+                    "api_key": str(settings.value(f"{prefix}api_key", "")),
+                    "model": str(
+                        settings.value(f"{prefix}model", "claude-3-haiku-20240307")
                     ),
-                    "base_url": settings.value(
-                        f"{prefix}base_url", "https://api.anthropic.com/v1"
+                    "base_url": str(
+                        settings.value(
+                            f"{prefix}base_url", "https://api.anthropic.com/v1"
+                        )
                     ),
                 }
             )

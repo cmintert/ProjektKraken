@@ -94,12 +94,12 @@ class MarkerItem(QGraphicsObject):
         self.setToolTip(label)
 
         # Make draggable (but not selectable to avoid white frame)
-        self.setFlag(QGraphicsItem.ItemIsMovable, True)
-        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges, True)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
         self.setFlag(QGraphicsItem.ItemIgnoresTransformations, True)
 
         # Cursor hint
-        self.setCursor(QCursor(Qt.PointingHandCursor))
+        self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         # Z-value to appear on top of the map
         self.setZValue(10)
@@ -198,7 +198,7 @@ class MarkerItem(QGraphicsObject):
             if self._custom_color:
                 # Create a pixmap of the marker size
                 pixmap = QPixmap(int(self.MARKER_SIZE), int(self.MARKER_SIZE))
-                pixmap.fill(Qt.transparent)
+                pixmap.fill(Qt.GlobalColor.transparent)
 
                 # Render SVG into pixmap
                 p = QPainter(pixmap)
@@ -211,7 +211,7 @@ class MarkerItem(QGraphicsObject):
 
                 # Draw the tinted pixmap
                 # First draw a shadow/background to ensure visibility
-                painter.setPen(Qt.NoPen)
+                painter.setPen(Qt.PenStyle.NoPen)
                 painter.setBrush(QBrush(QColor(0, 0, 0, 50)))
                 painter.drawEllipse(rect.adjusted(2, 2, 2, 2))
 
@@ -219,7 +219,7 @@ class MarkerItem(QGraphicsObject):
             else:
                 # Standard SVG rendering (no tint)
                 # First draw a shadow/background
-                painter.setPen(Qt.NoPen)
+                painter.setPen(Qt.PenStyle.NoPen)
                 painter.setBrush(QBrush(QColor(0, 0, 0, 50)))
                 painter.drawEllipse(rect.adjusted(2, 2, 2, 2))
 
@@ -239,7 +239,7 @@ class MarkerItem(QGraphicsObject):
 
     def mousePressEvent(self, event):
         """Track drag start."""
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             self._is_dragging = True
             self._drag_start_pos = self.pos()
             logger.debug(
@@ -249,7 +249,7 @@ class MarkerItem(QGraphicsObject):
 
     def mouseReleaseEvent(self, event):
         """Emit position change on drag end, or clicked signal if distance small."""
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             # Check for click vs drag
             if self._drag_start_pos:
                 dist = (self.pos() - self._drag_start_pos).manhattanLength()

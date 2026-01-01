@@ -65,6 +65,7 @@ class MoveLongformEntryCommand(BaseCommand):
         try:
             if not db_service._connection:
                 db_service.connect()
+            assert db_service._connection is not None
 
             logger.info(f"Executing MoveLongformEntry: {self.table}.{self.row_id}")
             longform_builder.insert_or_update_longform_meta(
@@ -103,6 +104,7 @@ class MoveLongformEntryCommand(BaseCommand):
 
         if not db_service._connection:
             db_service.connect()
+        assert db_service._connection is not None
 
         logger.info(f"Undoing MoveLongformEntry: {self.table}.{self.row_id}")
         longform_builder.insert_or_update_longform_meta(
@@ -160,6 +162,7 @@ class PromoteLongformEntryCommand(BaseCommand):
         try:
             if not db_service._connection:
                 db_service.connect()
+            assert db_service._connection is not None
 
             logger.info(f"Executing PromoteLongformEntry: {self.table}.{self.row_id}")
             longform_builder.promote_item(
@@ -194,6 +197,7 @@ class PromoteLongformEntryCommand(BaseCommand):
 
         if not db_service._connection:
             db_service.connect()
+        assert db_service._connection is not None
 
         logger.info(f"Undoing PromoteLongformEntry: {self.table}.{self.row_id}")
         longform_builder.insert_or_update_longform_meta(
@@ -251,6 +255,7 @@ class DemoteLongformEntryCommand(BaseCommand):
         try:
             if not db_service._connection:
                 db_service.connect()
+            assert db_service._connection is not None
 
             logger.info(f"Executing DemoteLongformEntry: {self.table}.{self.row_id}")
             longform_builder.demote_item(
@@ -285,6 +290,7 @@ class DemoteLongformEntryCommand(BaseCommand):
 
         if not db_service._connection:
             db_service.connect()
+        assert db_service._connection is not None
 
         logger.info(f"Undoing DemoteLongformEntry: {self.table}.{self.row_id}")
         longform_builder.insert_or_update_longform_meta(
@@ -342,6 +348,7 @@ class RemoveLongformEntryCommand(BaseCommand):
         try:
             if not db_service._connection:
                 db_service.connect()
+            assert db_service._connection is not None
 
             logger.info(f"Executing RemoveLongformEntry: {self.table}.{self.row_id}")
             longform_builder.remove_from_longform(
@@ -376,6 +383,7 @@ class RemoveLongformEntryCommand(BaseCommand):
 
         if not db_service._connection:
             db_service.connect()
+        assert db_service._connection is not None
 
         logger.info(f"Undoing RemoveLongformEntry: {self.table}.{self.row_id}")
         longform_builder.insert_or_update_longform_meta(

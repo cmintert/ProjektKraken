@@ -20,7 +20,7 @@ in Python layer to maintain SQLite compatibility.
 import json
 import logging
 from sqlite3 import Connection
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +111,9 @@ def _set_longform_meta(
 
 
 def read_all_longform_items(
-    conn: Connection, doc_id: str = DOC_ID_DEFAULT, allowed_ids: set = None
+    conn: Connection,
+    doc_id: str = DOC_ID_DEFAULT,
+    allowed_ids: Optional[Set[str]] = None,
 ) -> List[Dict[str, Any]]:
     """
     Read all events and entities that have longform metadata.
@@ -246,7 +248,9 @@ def ensure_all_items_indexed(conn: Connection, doc_id: str = DOC_ID_DEFAULT) -> 
 
 
 def build_longform_sequence(
-    conn: Connection, doc_id: str = DOC_ID_DEFAULT, allowed_ids: set = None
+    conn: Connection,
+    doc_id: str = DOC_ID_DEFAULT,
+    allowed_ids: Optional[Set[str]] = None,
 ) -> List[Dict[str, Any]]:
     """
     Build an ordered sequence of longform items for rendering.
@@ -319,10 +323,10 @@ def insert_or_update_longform_meta(
     table: str,
     row_id: str,
     *,
-    position: Optional[float] = ...,  # Use Ellipsis as sentinel
-    parent_id: Optional[str] = ...,
-    depth: Optional[int] = ...,
-    title_override: Optional[str] = ...,
+    position: Any = ...,  # Use Ellipsis as sentinel
+    parent_id: Any = ...,
+    depth: Any = ...,
+    title_override: Any = ...,
     doc_id: str = DOC_ID_DEFAULT,
 ) -> None:
     """

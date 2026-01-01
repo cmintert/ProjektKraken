@@ -411,7 +411,7 @@ class CalendarConverter:
     Internal indexing is 0-based: 0.0 = start of Year 1, Month 1, Day 1.
     """
 
-    def __init__(self, config: CalendarConfig):
+    def __init__(self, config: CalendarConfig) -> None:
         """
         Initializes the converter with a calendar configuration.
 
@@ -627,7 +627,7 @@ class CalendarConverter:
             month_name=month_name,
         )
 
-    def format_date(self, absolute_day: float, format_str: str = None) -> str:
+    def format_date(self, absolute_day: float, format_str: Optional[str] = None) -> str:
         """
         Formats a float date as a human-readable string.
 

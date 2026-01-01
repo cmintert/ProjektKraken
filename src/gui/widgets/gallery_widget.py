@@ -9,8 +9,8 @@ import logging
 from pathlib import Path
 from typing import List, Optional
 
-from PySide6.QtCore import QSize, Qt, Slot
-from PySide6.QtGui import QIcon
+from PySide6.QtCore import QPoint, QSize, Qt, Signal, Slot
+from PySide6.QtGui import QDragEnterEvent, QDropEvent, QIcon
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QFileDialog,
@@ -35,6 +35,7 @@ from src.core.paths import get_user_data_path
 from src.gui.dialogs.image_viewer_dialog import ImageViewerDialog
 from src.gui.widgets.standard_buttons import StandardButton
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -46,7 +47,7 @@ class GalleryWidget(QWidget):
 
     # Needs access to main_window to emit commands
 
-    def __init__(self, main_window):
+    def __init__(self, main_window) -> None:
         """
         Initialize the gallery widget.
 
@@ -102,12 +103,14 @@ class GalleryWidget(QWidget):
         self.list_widget.setIconSize(QSize(128, 128))
         self.list_widget.setResizeMode(QListWidget.Adjust)
         self.list_widget.setSpacing(10)
-        self.list_widget.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.list_widget.setSelectionMode(
+            QAbstractItemView.SelectionMode.SingleSelection
+        )
         self.list_widget.itemDoubleClicked.connect(self.on_item_double_clicked)
         self.list_widget.itemSelectionChanged.connect(self._update_button_states)
 
         # Context Menu
-        self.list_widget.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.list_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.list_widget.customContextMenuRequested.connect(self.show_context_menu)
 
         layout.addWidget(self.list_widget)
@@ -147,7 +150,7 @@ class GalleryWidget(QWidget):
         QMetaObject.invokeMethod(
             self.main_window.worker,
             "load_attachments",
-            Qt.QueuedConnection,
+            Qt.ConnectionType.QueuedConnection,
             Q_ARG(str, self.owner_type),
             Q_ARG(str, self.owner_id),
         )
@@ -159,7 +162,9 @@ class GalleryWidget(QWidget):
         self._update_button_states()
 
     @Slot(str, str, list)
-    def on_attachments_loaded(self, owner_type, owner_id, attachments):
+    def on_attachments_loaded(
+        self, owner_type: str, owner_id: str, attachments: List[ImageAttachment]
+    ) -> None:
         """Callback when data is loaded from worker."""
         if owner_type != self.owner_type or owner_id != self.owner_id:
             logger.debug(
@@ -175,7 +180,7 @@ class GalleryWidget(QWidget):
         for att in attachments:
             item = QListWidgetItem()
             item.setText(att.caption if att.caption else "")
-            item.setData(Qt.UserRole, att.id)
+            item.setData(Qt.ItemDataRole.UserRole, att.id)
 
             # Load thumbnail
             # Try thumb path, else full path
@@ -195,7 +200,7 @@ class GalleryWidget(QWidget):
         self._update_button_states()
 
     @Slot(object)
-    def on_command_finished(self, result):
+    def on_command_finished(self, result: object) -> None:
         """
         Handles command completion signals to auto-refresh the gallery.
         """
@@ -226,7 +231,7 @@ class GalleryWidget(QWidget):
             # Re-fetch data
             self.set_owner(self.owner_type, self.owner_id)
 
-    def on_add_clicked(self):
+    def on_add_clicked(self) -> None:
         """Handle add image button click - open file dialog and create command."""
         if not self.owner_id:
             return
@@ -241,14 +246,14 @@ class GalleryWidget(QWidget):
             # Auto-refresh handled by listing to command_finished signal.
             # MainWindow doesn't auto-trigger 'load_attachments' on command finish.
 
-    def on_item_double_clicked(self, item):
+    def on_item_double_clicked(self, item: QListWidgetItem) -> None:
         """
         Handle double-click on gallery item - open image viewer.
 
         Args:
             item: The clicked QListWidgetItem.
         """
-        att_id = item.data(Qt.UserRole)
+        att_id = item.data(Qt.ItemDataRole.UserRole)
         # Find index in self.attachments
         try:
             target_index = next(
@@ -262,7 +267,7 @@ class GalleryWidget(QWidget):
         except StopIteration:
             logger.error(f"GalleryWidget: Attachment {att_id} not found in data list")
 
-    def show_context_menu(self, pos):
+    def show_context_menu(self, pos: "QPoint") -> None:
         """
         Show context menu for gallery items.
 
@@ -288,26 +293,26 @@ class GalleryWidget(QWidget):
         elif action == remove_action:
             self.remove_item(item)
 
-    def _on_edit_caption_clicked(self):
+    def _on_edit_caption_clicked(self) -> None:
         """Handles toolbar button click for editing caption."""
         item = self.list_widget.currentItem()
         if item:
             self.edit_caption(item)
 
-    def _on_remove_clicked(self):
+    def _on_remove_clicked(self) -> None:
         """Handles toolbar button click for removal."""
         item = self.list_widget.currentItem()
         if item:
             self.remove_item(item)
 
-    def edit_caption(self, item):
+    def edit_caption(self, item: QListWidgetItem) -> None:
         """
         Edit the caption for a gallery item.
 
         Args:
             item: The QListWidgetItem representing the attachment.
         """
-        att_id = item.data(Qt.UserRole)
+        att_id = item.data(Qt.ItemDataRole.UserRole)
         # Find current caption
         att = next((a for a in self.attachments if a.id == att_id), None)
         current = att.caption if att else ""
@@ -318,33 +323,33 @@ class GalleryWidget(QWidget):
             cmd = UpdateImageCaptionCommand(att_id, text)
             self.main_window.command_requested.emit(cmd)
 
-    def remove_item(self, item):
+    def remove_item(self, item: QListWidgetItem) -> None:
         """
         Remove an attachment from the gallery.
 
         Args:
             item: The QListWidgetItem representing the attachment.
         """
-        att_id = item.data(Qt.UserRole)
+        att_id = item.data(Qt.ItemDataRole.UserRole)
         confirm = QMessageBox.question(
             self,
             "Remove Image",
             "Are you sure you want to remove this image?",
-            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
-        if confirm == QMessageBox.Yes:
+        if confirm == QMessageBox.StandardButton.Yes:
             logger.info(f"GalleryWidget: Requesting removal of {att_id}")
             cmd = RemoveImageCommand(att_id)
             self.main_window.command_requested.emit(cmd)
 
-    def dragEnterEvent(self, event):
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """Handle drag enter event for files."""
         if event.mimeData().hasUrls():
             event.acceptProposedAction()
         else:
             event.ignore()
 
-    def dropEvent(self, event):
+    def dropEvent(self, event: QDropEvent) -> None:
         """Handle drop event for files."""
         if not self.owner_id:
             return
@@ -373,7 +378,7 @@ class GalleryWidget(QWidget):
                 self.main_window.command_requested.emit(cmd)
                 event.acceptProposedAction()
 
-    def minimumSizeHint(self):
+    def minimumSizeHint(self) -> QSize:
         """
         Override to prevent dock collapse.
 
@@ -384,7 +389,7 @@ class GalleryWidget(QWidget):
 
         return QSize(250, 150)
 
-    def sizeHint(self):
+    def sizeHint(self) -> QSize:
         """
         Preferred size for the gallery.
 

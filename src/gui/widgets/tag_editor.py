@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from typing import List, Optional
 
 from src.gui.widgets.standard_buttons import StandardButton
 
@@ -29,7 +30,7 @@ class TagEditorWidget(QWidget):
 
     tags_changed = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initializes the TagEditorWidget.
 
@@ -69,7 +70,7 @@ class TagEditorWidget(QWidget):
         self.tag_list.setSelectionMode(QListWidget.SingleSelection)
         self.layout.addWidget(self.tag_list)
 
-    def load_tags(self, tags: list):
+    def load_tags(self, tags: List[str]) -> None:
         """
         Populates the widget with the given list of tags.
 
@@ -79,10 +80,10 @@ class TagEditorWidget(QWidget):
         self.tag_list.clear()
         for tag in tags:
             item = QListWidgetItem(tag)
-            item.setData(Qt.UserRole, tag)
+            item.setData(Qt.ItemDataRole.UserRole, tag)
             self.tag_list.addItem(item)
 
-    def get_tags(self) -> list:
+    def get_tags(self) -> List[str]:
         """
         Returns the current list of tags.
 
@@ -92,10 +93,10 @@ class TagEditorWidget(QWidget):
         tags = []
         for i in range(self.tag_list.count()):
             item = self.tag_list.item(i)
-            tags.append(item.data(Qt.UserRole))
+            tags.append(item.data(Qt.ItemDataRole.UserRole))
         return tags
 
-    def _on_add(self):
+    def _on_add(self) -> None:
         """Handles adding a new tag."""
         raw_tag = self.tag_input.text().strip()
         if not raw_tag:
@@ -109,13 +110,13 @@ class TagEditorWidget(QWidget):
 
         # Add the tag
         item = QListWidgetItem(raw_tag)
-        item.setData(Qt.UserRole, raw_tag)
+        item.setData(Qt.ItemDataRole.UserRole, raw_tag)
         self.tag_list.addItem(item)
 
         self.tag_input.clear()
         self.tags_changed.emit()
 
-    def _on_remove(self):
+    def _on_remove(self) -> None:
         """Handles removing the selected tag."""
         current_item = self.tag_list.currentItem()
         if current_item:

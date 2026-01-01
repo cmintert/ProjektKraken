@@ -6,8 +6,9 @@ with Year/Month/Day dropdowns and fallback to raw float input.
 """
 
 import logging
+from typing import Optional
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QSize, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -37,7 +38,7 @@ class LoreDateWidget(QWidget):
 
     value_changed = Signal(float)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initializes the lore date widget.
 
@@ -48,14 +49,14 @@ class LoreDateWidget(QWidget):
         # Set size policy to prevent vertical squashing
         from PySide6.QtWidgets import QSizePolicy
 
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         self._converter: CalendarConverter = None
         self._updating = False  # Prevents signal loops during updates
 
         self._setup_ui()
 
-    def _setup_ui(self):
+    def _setup_ui(self) -> None:
         """Sets up the widget UI components."""
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -120,7 +121,7 @@ class LoreDateWidget(QWidget):
         # Initialize with disabled structured mode (no calendar)
         self._set_structured_enabled(False)
 
-    def _set_structured_enabled(self, enabled: bool):
+    def _set_structured_enabled(self, enabled: bool) -> None:
         """
         Enables or disables structured input mode.
 
@@ -169,7 +170,7 @@ class LoreDateWidget(QWidget):
 
         self._update_preview()
 
-    def _populate_month_combo(self):
+    def _populate_month_combo(self) -> None:
         """Populates the month dropdown from calendar config."""
         if not self._converter:
             return
@@ -185,7 +186,7 @@ class LoreDateWidget(QWidget):
 
         self._updating = False
 
-    def _update_day_combo(self):
+    def _update_day_combo(self) -> None:
         """Updates the day dropdown based on selected month."""
         if not self._converter:
             return
@@ -217,7 +218,7 @@ class LoreDateWidget(QWidget):
 
         self._updating = False
 
-    def _on_month_changed(self, index: int):
+    def _on_month_changed(self, index: int) -> None:
         """
         Handles month selection change.
 
@@ -230,7 +231,7 @@ class LoreDateWidget(QWidget):
         self._update_day_combo()
         self._on_structured_changed()
 
-    def _on_structured_changed(self):
+    def _on_structured_changed(self) -> None:
         """Handles changes to structured fields."""
         if self._updating:
             return
@@ -238,7 +239,7 @@ class LoreDateWidget(QWidget):
         self._update_preview()
         self.value_changed.emit(self.get_value())
 
-    def _on_raw_changed(self, value: float):
+    def _on_raw_changed(self, value: float) -> None:
         """
         Handles changes to raw float spinbox.
 
@@ -251,7 +252,7 @@ class LoreDateWidget(QWidget):
         self._update_preview()
         self.value_changed.emit(value)
 
-    def _on_raw_toggle(self, checked: bool):
+    def _on_raw_toggle(self, checked: bool) -> None:
         """
         Handles raw mode toggle.
 
@@ -337,7 +338,7 @@ class LoreDateWidget(QWidget):
 
         return self._converter.to_float(date)
 
-    def _update_preview(self):
+    def _update_preview(self) -> None:
         """Updates the formatted date preview label."""
         if self._converter:
             try:
@@ -364,7 +365,7 @@ class LoreDateWidget(QWidget):
 
         self._update_preview()
 
-    def _set_value_internal(self, float_value: float):
+    def _set_value_internal(self, float_value: float) -> None:
         """
         Updates structured fields from a float value.
 
@@ -455,7 +456,7 @@ class LoreDateWidget(QWidget):
 
         return self._converter.to_float(date)
 
-    def minimumSizeHint(self):
+    def minimumSizeHint(self) -> "QSize":
         """
         Returns the minimum size hint to prevent vertical collapse.
 
@@ -466,7 +467,7 @@ class LoreDateWidget(QWidget):
 
         return QSize(400, 40)  # Single row of controls
 
-    def sizeHint(self):
+    def sizeHint(self) -> "QSize":
         """
         Returns the preferred size hint.
 

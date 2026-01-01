@@ -116,7 +116,9 @@ class LMStudioProvider(Provider):
                         f"Request failed after {self.max_retries} attempts: {e}"
                     )
 
-        raise last_exception
+        if last_exception:
+            raise last_exception
+        raise Exception("Request failed with no exception captured")
 
     def embed(self, texts: List[str]) -> np.ndarray:
         """
@@ -379,6 +381,7 @@ class LMStudioProvider(Provider):
         Returns:
             Dict containing status, latency_ms, and message.
         """
+        start_time = 0.0
         try:
             start_time = time.time()
 

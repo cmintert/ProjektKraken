@@ -6,7 +6,7 @@ Provides the IconPickerDialog for selecting marker icons.
 
 import logging
 import os
-from typing import Optional
+from typing import List, Optional
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
@@ -27,7 +27,7 @@ MARKER_ICONS_PATH = os.path.join(
 )
 
 
-def get_available_icons():
+def get_available_icons() -> List[str]:
     """Returns a list of available marker icon filenames."""
     if not os.path.exists(MARKER_ICONS_PATH):
         return []
@@ -44,7 +44,7 @@ class IconPickerDialog(QDialog):
     Displays a grid of icon buttons that the user can click to select.
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initializes the IconPickerDialog.
 
@@ -65,7 +65,7 @@ class IconPickerDialog(QDialog):
         # Scroll area for icons
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
 
         # Container for icon grid
         container = QWidget()
@@ -93,7 +93,7 @@ class IconPickerDialog(QDialog):
             icon_path = os.path.join(MARKER_ICONS_PATH, icon_name)
             pixmap = QPixmap(icon_path)
             if not pixmap.isNull():
-                btn.setIcon(pixmap.scaled(32, 32, Qt.KeepAspectRatio))
+                btn.setIcon(pixmap.scaled(32, 32, Qt.AspectRatioMode.KeepAspectRatio))
                 btn.setIconSize(pixmap.size())
 
             # Connect click

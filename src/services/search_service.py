@@ -14,9 +14,24 @@ import sqlite3
 import time
 import uuid
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from src.core.entities import Entity
+    from src.core.events import Event
 
 logger = logging.getLogger(__name__)
 
@@ -48,8 +63,8 @@ def _stable_dump(val: Any) -> str:
 
 
 def build_text_for_entity(
-    entity: Dict[str, Any],
-    tags: Optional[List[Union[str, Dict[str, str]]]] = None,
+    entity: "Entity",
+    tags: Optional[Sequence[Union[str, Dict[str, str]]]] = None,
     excluded_attributes: Optional[List[str]] = None,
 ) -> str:
     """
@@ -92,8 +107,8 @@ def build_text_for_entity(
 
 
 def build_text_for_event(
-    event: Dict[str, Any],
-    tags: Optional[List[Union[str, Dict[str, str]]]] = None,
+    event: "Event",
+    tags: Optional[Sequence[Union[str, Dict[str, str]]]] = None,
     excluded_attributes: Optional[List[str]] = None,
 ) -> str:
     """
@@ -441,7 +456,7 @@ class SentenceTransformersProvider(EmbeddingProvider):
             model: Model name (default from env or 'all-MiniLM-L6-v2').
         """
         try:
-            from sentence_transformers import SentenceTransformer
+            from sentence_transformers import SentenceTransformer  # type: ignore
         except ImportError as e:
             raise ImportError(
                 "sentence-transformers is not installed. "
@@ -828,7 +843,7 @@ class SearchService:
             return []
 
         # Compute similarities and collect results
-        def score_generator() -> Iterator[Tuple[float, str, str, Dict[str, Any]]]:
+        def score_generator() -> Iterator[Tuple[float, Dict[str, Any]]]:
             """
             Generator function to compute similarity scores for query results.
 
@@ -921,12 +936,14 @@ def get_llm_settings_from_qsettings() -> Dict[str, Any]:
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 
         return {
-            "provider": settings.value("ai_embedding_provider", "lmstudio"),
-            "lm_url": settings.value("ai_lmstudio_url", ""),
-            "lm_model": settings.value("ai_lmstudio_model", ""),
-            "lm_api_key": settings.value("ai_lmstudio_api_key", ""),
-            "lm_timeout": int(settings.value("ai_lmstudio_timeout", 30)),
-            "st_model": settings.value("ai_st_model", ""),
+            "provider": str(settings.value("ai_embedding_provider", "lmstudio")),
+            "lm_url": str(settings.value("ai_lmstudio_url", "")),
+            "lm_model": str(settings.value("ai_lmstudio_model", "")),
+            "lm_api_key": str(settings.value("ai_lmstudio_api_key", "")),
+            "lm_timeout": cast(
+                int, settings.value("ai_lmstudio_timeout", 30, type=int)
+            ),
+            "st_model": str(settings.value("ai_st_model", "")),
         }
     except Exception as e:
         logger.warning(f"Failed to load LLM settings from QSettings: {e}")

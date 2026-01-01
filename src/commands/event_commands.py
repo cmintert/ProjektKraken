@@ -24,7 +24,7 @@ class CreateEventCommand(BaseCommand):
     Command to create a new event.
     """
 
-    def __init__(self, event_data: dict = None):
+    def __init__(self, event_data: Optional[dict] = None):
         """
         Initializes the CreateEventCommand.
 

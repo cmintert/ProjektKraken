@@ -90,7 +90,9 @@ class AnthropicProvider(Provider):
                         f"Request failed after {self.max_retries} attempts: {e}"
                     )
 
-        raise last_exception
+        if last_exception:
+            raise last_exception
+        raise Exception("Request failed with no exception captured")
 
     def embed(self, texts: List[str]) -> np.ndarray:
         """

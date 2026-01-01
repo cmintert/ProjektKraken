@@ -5,7 +5,10 @@ Provides command pattern implementations for image attachment operations
 including adding, removing, reordering, and updating captions.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
+if TYPE_CHECKING:
+    pass
 
 from src.commands.base_command import BaseCommand, CommandResult
 from src.services.db_service import DatabaseService
@@ -46,7 +49,7 @@ class AddImagesCommand(BaseCommand):
         Returns:
             CommandResult: Result containing success status and attachment IDs.
         """
-        if not hasattr(db_service, "attachment_service"):
+        if not db_service.attachment_service:
             return CommandResult(False, "AttachmentService not available")
 
         # If re-executing (Redo), and we previously Undid (which removed images),
@@ -82,7 +85,7 @@ class AddImagesCommand(BaseCommand):
         Args:
             db_service: The database service instance.
         """
-        if not hasattr(db_service, "attachment_service"):
+        if not db_service.attachment_service:
             return
 
         # Remove the images we added
@@ -126,7 +129,7 @@ class RemoveImageCommand(BaseCommand):
         Returns:
             CommandResult: Result containing success status.
         """
-        if not hasattr(db_service, "attachment_service"):
+        if not db_service.attachment_service:
             return CommandResult(False, "AttachmentService not available")
 
         try:
@@ -154,7 +157,7 @@ class RemoveImageCommand(BaseCommand):
         Args:
             db_service: The database service instance.
         """
-        if self._trash_info and hasattr(db_service, "attachment_service"):
+        if self._trash_info and db_service.attachment_service:
             db_service.attachment_service.restore_image(self._trash_info)
             self._is_executed = False
 
@@ -191,7 +194,7 @@ class ReorderImagesCommand(BaseCommand):
         Returns:
             CommandResult: Result containing success status.
         """
-        if not hasattr(db_service, "attachment_service"):
+        if not db_service.attachment_service:
             return CommandResult(False, "AttachmentService not available")
 
         # Capture current order for Undo
@@ -222,7 +225,7 @@ class ReorderImagesCommand(BaseCommand):
         Args:
             db_service: The database service instance.
         """
-        if hasattr(db_service, "attachment_service") and self._previous_order_ids:
+        if db_service.attachment_service and self._previous_order_ids:
             db_service.attachment_service.update_order(
                 self.owner_type, self.owner_id, self._previous_order_ids
             )
@@ -259,7 +262,7 @@ class UpdateImageCaptionCommand(BaseCommand):
         Returns:
             CommandResult: Result containing success status.
         """
-        if not hasattr(db_service, "attachment_service"):
+        if not db_service.attachment_service:
             return CommandResult(False, "AttachmentService not available")
 
         try:
@@ -287,7 +290,7 @@ class UpdateImageCaptionCommand(BaseCommand):
         Args:
             db_service: The database service instance.
         """
-        if hasattr(db_service, "attachment_service"):
+        if db_service.attachment_service:
             db_service.attachment_service.update_caption(
                 self.attachment_id, self._old_caption
             )

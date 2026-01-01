@@ -57,7 +57,7 @@ class CompactDateWidget(QWidget):
         # Set size policy to prevent vertical squashing
         from PySide6.QtWidgets import QSizePolicy
 
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         self._converter = None
         self._updating = False
@@ -73,7 +73,7 @@ class CompactDateWidget(QWidget):
 
         # Styled frame container
         self.frame = QFrame()
-        self.frame.setFrameStyle(QFrame.StyledPanel | QFrame.Raised)
+        self.frame.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Raised)
         self.frame.setStyleSheet(StyleHelper.get_frame_style())
         outer_layout.addWidget(self.frame)
 
@@ -92,17 +92,23 @@ class CompactDateWidget(QWidget):
         self.spin_year.setRange(-9999, 9999)
         self.spin_year.setValue(1)
         self.spin_year.setPrefix("Year ")
-        self.spin_year.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.spin_year.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
         date_row.addWidget(self.spin_year, stretch=2)  # Higher stretch factor
 
         # Month dropdown - widen stretch
         self.combo_month = QComboBox()
-        self.combo_month.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.combo_month.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
         date_row.addWidget(self.combo_month, stretch=3)  # Widest element
 
         # Day dropdown - moderate stretch
         self.combo_day = QComboBox()
-        self.combo_day.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self.combo_day.setSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed
+        )
         date_row.addWidget(self.combo_day, stretch=1)
 
         # Calendar button with icon
@@ -122,7 +128,9 @@ class CompactDateWidget(QWidget):
         self.spin_hour.setRange(0, 23)
         self.spin_hour.setValue(0)
         self.spin_hour.setSuffix("h")
-        self.spin_hour.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.spin_hour.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
         time_row.addWidget(self.spin_hour, stretch=1)
 
         # Minute - allow expanding
@@ -130,13 +138,17 @@ class CompactDateWidget(QWidget):
         self.spin_minute.setRange(0, 59)
         self.spin_minute.setValue(0)
         self.spin_minute.setSuffix("m")
-        self.spin_minute.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.spin_minute.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
         time_row.addWidget(self.spin_minute, stretch=1)
 
         # Preview label - takes remaining space
         self.lbl_preview = QLabel()
         self.lbl_preview.setStyleSheet(StyleHelper.get_preview_label_style())
-        self.lbl_preview.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.lbl_preview.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
         time_row.addWidget(self.lbl_preview, stretch=4)  # Wider for text
 
         main_layout.addLayout(time_row)
@@ -342,7 +354,7 @@ class CompactDateWidget(QWidget):
             self.combo_month.currentIndex() + 1,
             self.combo_day.currentIndex() + 1,
         )
-        if popup.exec() == QDialog.Accepted:
+        if popup.exec() == QDialog.DialogCode.Accepted:
             year, month, day = popup.get_selected_date()
             self.spin_year.setValue(year)
             self.combo_month.setCurrentIndex(month - 1)

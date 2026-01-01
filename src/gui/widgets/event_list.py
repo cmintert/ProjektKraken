@@ -4,9 +4,9 @@ Event List Widget Module.
 Displays a list of events with controls for refreshing and deleting.
 """
 
-from typing import List
+from typing import List, Optional
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -33,7 +33,7 @@ class EventListWidget(QWidget):
     refresh_requested = Signal()
     delete_requested = Signal(str)  # event_id
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initializes the EventListWidget.
 
@@ -43,7 +43,7 @@ class EventListWidget(QWidget):
         super().__init__(parent)
         if parent:
             self.setParent(parent)
-        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.layout = QVBoxLayout(self)
         StyleHelper.apply_standard_list_spacing(self.layout)
 
@@ -67,12 +67,12 @@ class EventListWidget(QWidget):
 
         # Empty State (Spec 7.2)
         self.empty_label = QLabel("No Events Loaded")
-        self.empty_label.setAlignment(Qt.AlignCenter)
+        self.empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.empty_label.setStyleSheet(StyleHelper.get_empty_state_style())
         self.layout.addWidget(self.empty_label)
         self.empty_label.hide()
 
-    def set_events(self, events: List[Event]):
+    def set_events(self, events: List[Event]) -> None:
         """
         Populates the list widget with the provided events.
 
@@ -96,7 +96,7 @@ class EventListWidget(QWidget):
             item.setData(100, event.id)  # Store ID in custom role
             self.list_widget.addItem(item)
 
-    def _on_selection_changed(self):
+    def _on_selection_changed(self) -> None:
         """
         Handles event selection changes.
 
@@ -110,7 +110,7 @@ class EventListWidget(QWidget):
         else:
             self.btn_delete.setEnabled(False)
 
-    def _on_delete_clicked(self):
+    def _on_delete_clicked(self) -> None:
         """
         Handles delete button clicks.
 
@@ -121,7 +121,7 @@ class EventListWidget(QWidget):
             event_id = items[0].data(100)
             self.delete_requested.emit(event_id)
 
-    def minimumSizeHint(self):
+    def minimumSizeHint(self) -> QSize:
         """
         Override to prevent dock collapse.
 
@@ -132,7 +132,7 @@ class EventListWidget(QWidget):
 
         return QSize(250, 200)
 
-    def sizeHint(self):
+    def sizeHint(self) -> QSize:
         """
         Preferred size for the event list.
 

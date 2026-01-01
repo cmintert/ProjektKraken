@@ -5,6 +5,10 @@ Handles the creation and layout of dock widgets and menus for the MainWindow.
 
 from typing import Any, Dict, Optional
 
+# NOTE: PySide6 Fully Qualified Enum Paths
+# =========================================
+# Uses fully qualified enum paths (e.g., Qt.DockWidgetArea.LeftDockWidgetArea)
+# per PySide6 6.4+ best practices. See src/app/main.py for full explanation.
 from PySide6.QtCore import QSettings, Qt
 from PySide6.QtWidgets import (
     QDockWidget,
@@ -72,23 +76,35 @@ class UIManager:
         """
         # Enable advanced docking
         self.main_window.setDockOptions(
-            QMainWindow.AnimatedDocks
-            | QMainWindow.AllowNestedDocks
-            | QMainWindow.AllowTabbedDocks
+            QMainWindow.DockOption.AnimatedDocks
+            | QMainWindow.DockOption.AllowNestedDocks
+            | QMainWindow.DockOption.AllowTabbedDocks
         )
-        self.main_window.setTabPosition(Qt.AllDockWidgetAreas, QTabWidget.North)
+        self.main_window.setTabPosition(
+            Qt.DockWidgetArea.AllDockWidgetAreas, QTabWidget.TabPosition.North
+        )
 
         # Configure Corners to prioritize Side Panels (Full Height)
-        self.main_window.setCorner(Qt.TopLeftCorner, Qt.LeftDockWidgetArea)
-        self.main_window.setCorner(Qt.TopRightCorner, Qt.RightDockWidgetArea)
-        self.main_window.setCorner(Qt.BottomLeftCorner, Qt.LeftDockWidgetArea)
-        self.main_window.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea)
+        self.main_window.setCorner(
+            Qt.Corner.TopLeftCorner, Qt.DockWidgetArea.LeftDockWidgetArea
+        )
+        self.main_window.setCorner(
+            Qt.Corner.TopRightCorner, Qt.DockWidgetArea.RightDockWidgetArea
+        )
+        self.main_window.setCorner(
+            Qt.Corner.BottomLeftCorner, Qt.DockWidgetArea.LeftDockWidgetArea
+        )
+        self.main_window.setCorner(
+            Qt.Corner.BottomRightCorner, Qt.DockWidgetArea.RightDockWidgetArea
+        )
 
         # 1. Project Explorer (Left)
         self.docks["list"] = self._create_dock(
             DOCK_TITLE_PROJECT, DOCK_OBJ_PROJECT, widgets["unified_list"]
         )
-        self.main_window.addDockWidget(Qt.LeftDockWidgetArea, self.docks["list"])
+        self.main_window.addDockWidget(
+            Qt.DockWidgetArea.LeftDockWidgetArea, self.docks["list"]
+        )
 
         # 2. Event Inspector (Right)
         self.docks["event"] = self._create_dock(
@@ -96,7 +112,9 @@ class UIManager:
             DOCK_OBJ_EVENT_INSPECTOR,
             widgets["event_editor"],
         )
-        self.main_window.addDockWidget(Qt.RightDockWidgetArea, self.docks["event"])
+        self.main_window.addDockWidget(
+            Qt.DockWidgetArea.RightDockWidgetArea, self.docks["event"]
+        )
 
         # 3. Entity Inspector (Right)
         self.docks["entity"] = self._create_dock(
@@ -104,7 +122,9 @@ class UIManager:
             DOCK_OBJ_ENTITY_INSPECTOR,
             widgets["entity_editor"],
         )
-        self.main_window.addDockWidget(Qt.RightDockWidgetArea, self.docks["entity"])
+        self.main_window.addDockWidget(
+            Qt.DockWidgetArea.RightDockWidgetArea, self.docks["entity"]
+        )
 
         # Tabify Inspectors
         self.main_window.tabifyDockWidget(self.docks["event"], self.docks["entity"])
@@ -113,7 +133,9 @@ class UIManager:
         self.docks["timeline"] = self._create_dock(
             DOCK_TITLE_TIMELINE, DOCK_OBJ_TIMELINE, widgets["timeline"]
         )
-        self.main_window.addDockWidget(Qt.BottomDockWidgetArea, self.docks["timeline"])
+        self.main_window.addDockWidget(
+            Qt.DockWidgetArea.BottomDockWidgetArea, self.docks["timeline"]
+        )
 
         # 5. Longform Editor (Right)
         if "longform_editor" in widgets:
@@ -121,17 +143,19 @@ class UIManager:
                 DOCK_TITLE_LONGFORM, DOCK_OBJ_LONGFORM, widgets["longform_editor"]
             )
             self.main_window.addDockWidget(
-                Qt.RightDockWidgetArea, self.docks["longform"]
+                Qt.DockWidgetArea.RightDockWidgetArea, self.docks["longform"]
             )
             # Tabify with inspectors if desired, or keep separate.
-            # Instructions say: addDockWidget(Qt.RightDockWidgetArea, ...)
+            # Instructions say: addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, ...)
 
         # 6. Map Widget (Bottom, tabbed with Timeline by default)
         if "map_widget" in widgets:
             self.docks["map"] = self._create_dock(
                 DOCK_TITLE_MAP, DOCK_OBJ_MAP, widgets["map_widget"]
             )
-            self.main_window.addDockWidget(Qt.BottomDockWidgetArea, self.docks["map"])
+            self.main_window.addDockWidget(
+                Qt.DockWidgetArea.BottomDockWidgetArea, self.docks["map"]
+            )
             self.main_window.tabifyDockWidget(self.docks["timeline"], self.docks["map"])
 
         # 7. AI Search Panel (Right, tabbed with inspectors)
@@ -140,7 +164,7 @@ class UIManager:
                 DOCK_TITLE_AI_SEARCH, DOCK_OBJ_AI_SEARCH, widgets["ai_search_panel"]
             )
             self.main_window.addDockWidget(
-                Qt.RightDockWidgetArea, self.docks["ai_search"]
+                Qt.DockWidgetArea.RightDockWidgetArea, self.docks["ai_search"]
             )
             # Tabify with entity inspector
             self.main_window.tabifyDockWidget(
@@ -166,11 +190,11 @@ class UIManager:
         dock = QDockWidget(title, self.main_window)
         dock.setObjectName(obj_name)
         dock.setWidget(widget)
-        dock.setAllowedAreas(Qt.AllDockWidgetAreas)
+        dock.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
         dock.setFeatures(
-            QDockWidget.DockWidgetMovable
-            | QDockWidget.DockWidgetFloatable
-            | QDockWidget.DockWidgetClosable
+            QDockWidget.DockWidgetFeature.DockWidgetMovable
+            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
+            | QDockWidget.DockWidgetFeature.DockWidgetClosable
         )
 
         # Set minimum sizes to prevent collapse
@@ -179,7 +203,7 @@ class UIManager:
         dock.setMinimumHeight(150)  # Enough for controls
 
         # Set size policy to allow shrinking but with limits
-        policy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        policy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         policy.setHorizontalStretch(1)
         policy.setVerticalStretch(1)
         dock.setSizePolicy(policy)
@@ -295,9 +319,9 @@ class UIManager:
                     self.main_window,
                     "Overwrite Layout?",
                     f"Layout '{name}' already exists. Overwrite?",
-                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                 )
-                if reply != QMessageBox.Yes:
+                if reply != QMessageBox.StandardButton.Yes:
                     return
             self.save_layout(name)
 
@@ -356,9 +380,9 @@ class UIManager:
             self.main_window,
             "Delete Layout",
             f"Are you sure you want to delete layout '{name}'?",
-            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
-        if reply == QMessageBox.Yes:
+        if reply == QMessageBox.StandardButton.Yes:
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
             layouts = settings.value(SETTINGS_LAYOUTS_KEY, {})
 
@@ -404,12 +428,18 @@ class UIManager:
     def reset_layout(self) -> None:
         """Restores the default docking layout."""
         if "list" in self.docks:
-            self.main_window.addDockWidget(Qt.LeftDockWidgetArea, self.docks["list"])
+            self.main_window.addDockWidget(
+                Qt.DockWidgetArea.LeftDockWidgetArea, self.docks["list"]
+            )
             self.docks["list"].show()
 
         if "event" in self.docks and "entity" in self.docks:
-            self.main_window.addDockWidget(Qt.RightDockWidgetArea, self.docks["event"])
-            self.main_window.addDockWidget(Qt.RightDockWidgetArea, self.docks["entity"])
+            self.main_window.addDockWidget(
+                Qt.DockWidgetArea.RightDockWidgetArea, self.docks["event"]
+            )
+            self.main_window.addDockWidget(
+                Qt.DockWidgetArea.RightDockWidgetArea, self.docks["entity"]
+            )
             self.main_window.tabifyDockWidget(self.docks["event"], self.docks["entity"])
             self.docks["event"].show()
             self.docks["entity"].show()
@@ -462,12 +492,13 @@ class UIManager:
     def _open_calendar_config(self) -> None:
         """Requests loading of calendar config to open dialog."""
         from PySide6.QtCore import QMetaObject
-        from PySide6.QtCore import Qt as QtCore_Qt
 
         # Request config from worker (will be handled by on_calendar_config_loaded)
         self._calendar_dialog_pending = True
         QMetaObject.invokeMethod(
-            self.main_window.worker, "load_calendar_config", QtCore_Qt.QueuedConnection
+            self.main_window.worker,
+            "load_calendar_config",
+            Qt.ConnectionType.QueuedConnection,
         )
 
     def show_calendar_dialog(self, current_config: Optional[Any]) -> None:

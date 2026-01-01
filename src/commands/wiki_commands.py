@@ -120,6 +120,7 @@ class ProcessWikiLinksCommand(BaseCommand):
                 if candidate.is_id_based:
                     # Direct lookup by ID
                     # Try Entity first
+                    assert candidate.target_id is not None  # Guaranteed by parser
                     target_obj = db_service.get_entity(candidate.target_id)
                     if target_obj:
                         target_type_str = "Entity"
@@ -139,6 +140,7 @@ class ProcessWikiLinksCommand(BaseCommand):
 
                 # Handle name-based links (legacy)
                 else:
+                    assert candidate.name is not None  # Guaranteed by parser
                     name_key = candidate.name.casefold()
                     matching_targets = name_to_targets.get(name_key, [])
 

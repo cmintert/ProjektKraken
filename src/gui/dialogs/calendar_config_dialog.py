@@ -71,7 +71,7 @@ class CalendarConfigDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Calendar Configuration")
         self.setMinimumSize(600, 500)
-        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
         self._config = config or CalendarConfig.create_default()
         self._validation_errors: List[str] = []
@@ -113,12 +113,14 @@ class CalendarConfigDialog(QDialog):
         self.month_table = QTableWidget()
         self.month_table.setColumnCount(3)
         self.month_table.setHorizontalHeaderLabels(["Name", "Abbreviation", "Days"])
-        self.month_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.month_table.horizontalHeader().setSectionResizeMode(
-            1, QHeaderView.ResizeToContents
+            0, QHeaderView.ResizeMode.Stretch
         )
         self.month_table.horizontalHeader().setSectionResizeMode(
-            2, QHeaderView.ResizeToContents
+            1, QHeaderView.ResizeMode.ResizeToContents
+        )
+        self.month_table.horizontalHeader().setSectionResizeMode(
+            2, QHeaderView.ResizeMode.ResizeToContents
         )
         self.month_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.month_table.itemChanged.connect(self._on_month_changed)
@@ -189,7 +191,8 @@ class CalendarConfigDialog(QDialog):
 
         # --- Buttons ---
         self.button_box = QDialogButtonBox(
-            QDialogButtonBox.Save | QDialogButtonBox.Cancel
+            QDialogButtonBox.StandardButton.Save
+            | QDialogButtonBox.StandardButton.Cancel
         )
         self.button_box.accepted.connect(self._on_save)
         self.button_box.rejected.connect(self.reject)
@@ -208,7 +211,7 @@ class CalendarConfigDialog(QDialog):
             self.month_table.setItem(row, 1, QTableWidgetItem(month.abbreviation))
 
             days_item = QTableWidgetItem(str(month.days))
-            days_item.setData(Qt.UserRole, month.days)
+            days_item.setData(Qt.ItemDataRole.UserRole, month.days)
             self.month_table.setItem(row, 2, days_item)
         self.month_table.blockSignals(False)
 
@@ -225,7 +228,7 @@ class CalendarConfigDialog(QDialog):
         self.month_table.setItem(row, 0, QTableWidgetItem(f"Month {row + 1}"))
         self.month_table.setItem(row, 1, QTableWidgetItem(f"M{row + 1}"))
         days_item = QTableWidgetItem("30")
-        days_item.setData(Qt.UserRole, 30)
+        days_item.setData(Qt.ItemDataRole.UserRole, 30)
         self.month_table.setItem(row, 2, days_item)
         self._update_preview()
 
@@ -244,7 +247,7 @@ class CalendarConfigDialog(QDialog):
                 days = int(item.text())
                 if days <= 0:
                     raise ValueError("Days must be positive")
-                item.setData(Qt.UserRole, days)
+                item.setData(Qt.ItemDataRole.UserRole, days)
             except ValueError:
                 item.setBackground(QColor("#ff6b6b"))
                 return
@@ -310,10 +313,14 @@ class CalendarConfigDialog(QDialog):
             if errors:
                 self.error_label.setText("⚠ " + "; ".join(errors))
                 self.error_label.show()
-                self.button_box.button(QDialogButtonBox.Save).setEnabled(False)
+                self.button_box.button(QDialogButtonBox.StandardButton.Save).setEnabled(
+                    False
+                )
             else:
                 self.error_label.hide()
-                self.button_box.button(QDialogButtonBox.Save).setEnabled(True)
+                self.button_box.button(QDialogButtonBox.StandardButton.Save).setEnabled(
+                    True
+                )
 
                 # Preview conversion
                 converter = CalendarConverter(config)
@@ -324,7 +331,9 @@ class CalendarConfigDialog(QDialog):
         except Exception as e:
             self.error_label.setText(f"⚠ Error: {e}")
             self.error_label.show()
-            self.button_box.button(QDialogButtonBox.Save).setEnabled(False)
+            self.button_box.button(QDialogButtonBox.StandardButton.Save).setEnabled(
+                False
+            )
 
     def _on_save(self) -> None:
         """Handles the save button click."""

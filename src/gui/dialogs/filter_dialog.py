@@ -36,7 +36,7 @@ class FilterDialog(QDialog):
         current_config: Dict[str, Any] = None,
     ) -> None:
         """Initialize the filter dialog.
-        
+
         Args:
             parent: Optional parent widget.
             available_tags: List of available tags to filter by.
@@ -103,7 +103,9 @@ class FilterDialog(QDialog):
         self.layout.addWidget(self.check_case)
 
         # --- Dialog Buttons ---
-        self.buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
         self.buttons.accepted.connect(self.accept)
         self.buttons.rejected.connect(self.reject)
         self.layout.addWidget(self.buttons)
@@ -142,7 +144,7 @@ class FilterDialog(QDialog):
         for tag in self.tags:
             item = QListWidgetItem(tag)
             item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-            item.setCheckState(Qt.Unchecked)
+            item.setCheckState(Qt.CheckState.Unchecked)
             list_widget.addItem(item)
 
     def get_filter_config(self) -> Dict[str, Any]:
@@ -174,7 +176,7 @@ class FilterDialog(QDialog):
         checked = []
         for i in range(list_widget.count()):
             item = list_widget.item(i)
-            if item.checkState() == Qt.Checked:
+            if item.checkState() == Qt.CheckState.Checked:
                 checked.append(item.text())
         return checked
 
@@ -183,6 +185,6 @@ class FilterDialog(QDialog):
         for i in range(list_widget.count()):
             item = list_widget.item(i)
             if item.text() in items_to_check:
-                item.setCheckState(Qt.Checked)
+                item.setCheckState(Qt.CheckState.Checked)
             else:
-                item.setCheckState(Qt.Unchecked)
+                item.setCheckState(Qt.CheckState.Unchecked)

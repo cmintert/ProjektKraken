@@ -5,7 +5,9 @@ Provides a custom widget for relation list items with an embedded
 "Go to" button for quick navigation to related entities/events.
 """
 
-from PySide6.QtCore import Signal
+from typing import Optional
+
+from PySide6.QtCore import QSize, Signal
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QWidget
 
 from src.gui.widgets.standard_buttons import StandardButton
@@ -25,7 +27,13 @@ class RelationItemWidget(QWidget):
 
     go_to_clicked = Signal(str, str)  # target_id, target_name
 
-    def __init__(self, label: str, target_id: str, target_name: str, parent=None):
+    def __init__(
+        self,
+        label: str,
+        target_id: str,
+        target_name: str,
+        parent: Optional[QWidget] = None,
+    ) -> None:
         """
         Initializes the relation item widget.
 
@@ -41,7 +49,7 @@ class RelationItemWidget(QWidget):
 
         self._setup_ui(label)
 
-    def _setup_ui(self, label: str):
+    def _setup_ui(self, label: str) -> None:
         """Sets up the widget UI."""
         layout = QHBoxLayout(self)
         layout.setContentsMargins(6, 2, 6, 2)
@@ -49,7 +57,9 @@ class RelationItemWidget(QWidget):
 
         # Relation label (left-aligned, expanding)
         self.label = QLabel(label)
-        self.label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.label.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
+        )
         layout.addWidget(self.label)
 
         # Go to button (compact, icon-style)
@@ -83,7 +93,7 @@ class RelationItemWidget(QWidget):
 
         layout.addWidget(self.btn_go_to)
 
-    def sizeHint(self):
+    def sizeHint(self) -> QSize:
         """
         Returns the preferred size hint to ensure proper row height.
 
@@ -95,6 +105,6 @@ class RelationItemWidget(QWidget):
         # Button is 22px + 2px top margin + 2px bottom margin = 26px minimum
         return QSize(200, 28)
 
-    def _on_go_to_clicked(self):
+    def _on_go_to_clicked(self) -> None:
         """Handles the Go to button click."""
         self.go_to_clicked.emit(self._target_id, self._target_name)

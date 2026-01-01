@@ -11,7 +11,7 @@ import json
 import logging
 import sqlite3
 from contextlib import contextmanager
-from typing import Any, Dict, Iterator, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
 
 from src.core.calendar import CalendarConfig
 from src.core.entities import Entity
@@ -28,6 +28,9 @@ from src.services.repositories import (
     MapRepository,
     RelationRepository,
 )
+
+if TYPE_CHECKING:
+    from src.services.attachment_service import AttachmentService
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +60,7 @@ class DatabaseService:
         self._map_repo = MapRepository()
         self._calendar_repo = CalendarRepository()
         self._attachment_repo = AttachmentRepository()
+        self.attachment_service: Optional["AttachmentService"] = None
 
         logger.info(f"DatabaseService initialized with path: {self.db_path}")
 
@@ -102,6 +106,7 @@ class DatabaseService:
         """Safe context manager for transactions."""
         if not self._connection:
             self.connect()
+        assert self._connection is not None
         try:
             yield self._connection
             self._connection.commit()
@@ -295,6 +300,7 @@ class DatabaseService:
         """Runs necessary schema migrations."""
         try:
             # Check for 'color' column in 'tags' table
+            assert self._connection is not None
             cursor = self._connection.execute("PRAGMA table_info(tags)")
             # row_factory is set to sqlite3.Row in connect(), so we can access by name
             columns = [row["name"] for row in cursor.fetchall()]
@@ -610,6 +616,7 @@ class DatabaseService:
         """
         if not self._connection:
             self.connect()
+        assert self._connection is not None
 
         # Try Entity
         cursor = self._connection.execute(
@@ -738,6 +745,7 @@ class DatabaseService:
         sql = "SELECT config_json FROM calendar_config WHERE is_active = 1"
         if not self._connection:
             self.connect()
+        assert self._connection is not None
 
         cursor = self._connection.execute(sql)
         row = cursor.fetchone()
@@ -778,6 +786,7 @@ class DatabaseService:
         sql = "SELECT value FROM system_meta WHERE key = 'current_time'"
         if not self._connection:
             self.connect()
+        assert self._connection is not None
 
         cursor = self._connection.execute(sql)
         row = cursor.fetchone()
@@ -961,6 +970,7 @@ class DatabaseService:
         sql = "SELECT * FROM markers WHERE object_id = ? AND object_type = ?"
         if not self._connection:
             self.connect()
+        assert self._connection is not None
 
         cursor = self._connection.execute(sql, (object_id, object_type))
         rows = cursor.fetchall()
@@ -996,6 +1006,7 @@ class DatabaseService:
         """
         if not self._connection:
             self.connect()
+        assert self._connection is not None
 
         cursor = self._connection.execute(sql, (map_id, object_id, object_type))
         row = cursor.fetchone()
@@ -1034,6 +1045,7 @@ class DatabaseService:
         """
         if not self._connection:
             self.connect()
+        assert self._connection is not None
 
         cursor = self._connection.execute(
             "SELECT id, name, created_at FROM tags ORDER BY name"
@@ -1050,6 +1062,7 @@ class DatabaseService:
         """
         if not self._connection:
             self.connect()
+        assert self._connection is not None
 
         cursor = self._connection.execute(
             """
@@ -1085,6 +1098,7 @@ class DatabaseService:
             raise ValueError("Tag name cannot be empty or whitespace-only")
 
         # Check if tag already exists
+        assert self._connection is not None
         cursor = self._connection.execute(
             "SELECT id FROM tags WHERE name = ?", (normalized_name,)
         )
@@ -1183,6 +1197,9 @@ class DatabaseService:
             sqlite3.Error: If the database operation fails.
         """
         # Get tag ID
+        if not self._connection:
+            self.connect()
+        assert self._connection is not None
         cursor = self._connection.execute(
             "SELECT id FROM tags WHERE name = ?", (tag_name.strip(),)
         )
@@ -1211,6 +1228,9 @@ class DatabaseService:
             sqlite3.Error: If the database operation fails.
         """
         # Get tag ID
+        if not self._connection:
+            self.connect()
+        assert self._connection is not None
         cursor = self._connection.execute(
             "SELECT id FROM tags WHERE name = ?", (tag_name.strip(),)
         )
@@ -1239,6 +1259,7 @@ class DatabaseService:
         """
         if not self._connection:
             self.connect()
+        assert self._connection is not None
 
         cursor = self._connection.execute(
             """
@@ -1265,6 +1286,7 @@ class DatabaseService:
         """
         if not self._connection:
             self.connect()
+        assert self._connection is not None
 
         cursor = self._connection.execute(
             """
@@ -1290,6 +1312,9 @@ class DatabaseService:
             sqlite3.Error: If the database operation fails.
         """
         # Get tag ID
+        if not self._connection:
+            self.connect()
+        assert self._connection is not None
         cursor = self._connection.execute(
             "SELECT id FROM tags WHERE name = ?", (tag_name.strip(),)
         )
@@ -1318,6 +1343,7 @@ class DatabaseService:
         """
         if not self._connection:
             self.connect()
+        assert self._connection is not None
 
         cursor = self._connection.execute(
             """
@@ -1352,6 +1378,7 @@ class DatabaseService:
         """
         if not self._connection:
             self.connect()
+        assert self._connection is not None
 
         cursor = self._connection.execute(
             """
@@ -1405,6 +1432,7 @@ class DatabaseService:
 
         if not self._connection:
             self.connect()
+        assert self._connection is not None
 
         # Build date filter clause
         date_filter = ""
@@ -1508,6 +1536,7 @@ class DatabaseService:
         """
         if not self._connection:
             self.connect()
+        assert self._connection is not None
 
         # Build date filter clause
         date_filter = ""
@@ -1633,6 +1662,7 @@ class DatabaseService:
         """
         if not self._connection:
             self.connect()
+        assert self._connection is not None
 
         # Build date filter clause
         date_filter = ""
@@ -1664,17 +1694,30 @@ class DatabaseService:
             events.append(Event.from_dict(data))
         return events
 
-    def set_tag_color(self, tag_name: str, color: str) -> None:
+    def set_tag_color(self, tag_name: str, color: Optional[str]) -> None:
         """
         Sets the color for a tag.
 
         Args:
             tag_name: The name of the tag.
-            color: Hex color string (e.g., "#FF0000" or "#abc").
+            color: Hex color string (e.g., "#FF0000" or "#abc"), or None to clear.
 
         Raises:
             ValueError: If color format is invalid.
         """
+        # Get or create tag
+        tag_id = self.create_tag(tag_name)
+
+        if color is None:
+            # Clear color
+            with self.transaction() as conn:
+                conn.execute(
+                    "UPDATE tags SET color = NULL WHERE id = ?",
+                    (tag_id,),
+                )
+            logger.debug(f"Cleared color for tag '{tag_name}'")
+            return
+
         import re
 
         # Validate hex color format
@@ -1684,9 +1727,6 @@ class DatabaseService:
         # Normalize short form to long form
         if len(color) == 4:
             color = f"#{color[1]}{color[1]}{color[2]}{color[2]}{color[3]}{color[3]}"
-
-        # Get or create tag
-        tag_id = self.create_tag(tag_name)
 
         # Update color
         with self.transaction() as conn:
@@ -1709,6 +1749,7 @@ class DatabaseService:
         """
         if not self._connection:
             self.connect()
+        assert self._connection is not None
 
         # Get tag
         cursor = self._connection.execute(
@@ -1767,6 +1808,7 @@ class DatabaseService:
         """
         if not self._connection:
             self.connect()
+        assert self._connection is not None
 
         cursor = self._connection.execute(
             "SELECT id, name, color, created_at FROM tags WHERE name = ?",
@@ -1833,6 +1875,7 @@ class DatabaseService:
         """
         if not self._connection:
             self.connect()
+        assert self._connection is not None
 
         # Import locally to avoid circular imports
         from src.services import tag_filter
@@ -1866,6 +1909,7 @@ class DatabaseService:
         """
         if not self._connection:
             self.connect()
+        assert self._connection is not None
 
         event_ids = [oid for otype, oid in object_ids if otype == "event"]
         entity_ids = [oid for otype, oid in object_ids if otype == "entity"]
@@ -1951,6 +1995,7 @@ class DatabaseService:
         """
         if not self._connection:
             self.connect()
+        assert self._connection is not None
 
         cursor = self._connection.execute(
             "SELECT value FROM system_meta WHERE key = 'timeline_grouping_config'"

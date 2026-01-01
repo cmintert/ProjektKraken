@@ -7,10 +7,10 @@ for browsing through image attachments.
 
 import logging
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QPixmap, QResizeEvent, QShowEvent
 from PySide6.QtWidgets import (
     QDialog,
     QHBoxLayout,
@@ -33,10 +33,10 @@ class ImageViewerDialog(QDialog):
 
     def __init__(
         self,
-        parent=None,
+        parent: Optional[QWidget] = None,
         attachments: List[ImageAttachment] = None,
         current_index: int = 0,
-    ):
+    ) -> None:
         """
         Initialize the image viewer dialog.
 
@@ -55,7 +55,7 @@ class ImageViewerDialog(QDialog):
         self.init_ui()
         self.load_current_image()
 
-    def init_ui(self):
+    def init_ui(self) -> None:
         """Initialize the user interface components."""
         self.setStyleSheet("background-color: #2b2b2b; color: #e0e0e0;")
         # Main layout with zero margins to let image touch edges if desired
@@ -66,16 +66,20 @@ class ImageViewerDialog(QDialog):
         # Image Area
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setAlignment(Qt.AlignCenter)
-        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scroll_area.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.scroll_area.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.scroll_area.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
         self.scroll_area.setFrameShape(QScrollArea.NoFrame)
 
         # Style the scroll area background to match
         self.scroll_area.setStyleSheet("background-color: #2b2b2b;")
 
         self.image_label = QLabel()
-        self.image_label.setAlignment(Qt.AlignCenter)
+        self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.scroll_area.setWidget(self.image_label)
         layout.addWidget(self.scroll_area)
 
@@ -88,7 +92,7 @@ class ImageViewerDialog(QDialog):
 
         # Caption
         self.caption_label = QLabel()
-        self.caption_label.setAlignment(Qt.AlignCenter)
+        self.caption_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.caption_label.setWordWrap(True)
         self.caption_label.setStyleSheet("font-weight: bold; font-size: 14px;")
         controls_layout.addWidget(self.caption_label)
@@ -113,7 +117,7 @@ class ImageViewerDialog(QDialog):
 
         layout.addWidget(controls_widget)
 
-    def load_current_image(self):
+    def load_current_image(self) -> None:
         """Load and display the current image from the attachments list."""
         if not self.attachments:
             return
@@ -133,7 +137,10 @@ class ImageViewerDialog(QDialog):
                 # 1. Scale down largest dimension to 1024 if needed
                 if original.width() > 1024 or original.height() > 1024:
                     self._base_pixmap = original.scaled(
-                        1024, 1024, Qt.KeepAspectRatio, Qt.SmoothTransformation
+                        1024,
+                        1024,
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation,
                     )
                 else:
                     self._base_pixmap = original
@@ -161,13 +168,13 @@ class ImageViewerDialog(QDialog):
         self.caption_label.setText(caption)
         self.lbl_counter.setText(f"{self.current_index + 1} / {len(self.attachments)}")
 
-    def showEvent(self, event):
+    def showEvent(self, event: QShowEvent) -> None:
         """Ensure we resize to fit image when first shown."""
         super().showEvent(event)
         if hasattr(self, "_base_pixmap") and self._base_pixmap:
             self._resize_to_fit()
 
-    def _resize_to_fit(self):
+    def _resize_to_fit(self) -> None:
         """Calculates optimal window size and applies it."""
         if not self._base_pixmap:
             return
@@ -200,7 +207,7 @@ class ImageViewerDialog(QDialog):
         self.btn_prev.setEnabled(self.current_index > 0)
         self.btn_next.setEnabled(self.current_index < len(self.attachments) - 1)
 
-    def _update_image(self):
+    def _update_image(self) -> None:
         """
         Updates the displayed image based on scroll area size.
         - Downscales if viewport < base image.
@@ -224,25 +231,27 @@ class ImageViewerDialog(QDialog):
             or base_size.height() > viewport_size.height()
         ):
             scaled = self._base_pixmap.scaled(
-                viewport_size, Qt.KeepAspectRatio, Qt.SmoothTransformation
+                viewport_size,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
             )
             self.image_label.setPixmap(scaled)
         else:
             # Viewport area is larger or equal (in containing rect), use base (no upscale)
             self.image_label.setPixmap(self._base_pixmap)
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, event: QResizeEvent) -> None:
         """Handle resize to update image scaling."""
         super().resizeEvent(event)
         self._update_image()
 
-    def show_prev(self):
+    def show_prev(self) -> None:
         """Show the previous image in the list."""
         if self.current_index > 0:
             self.current_index -= 1
             self.load_current_image()
 
-    def show_next(self):
+    def show_next(self) -> None:
         """Show the next image in the list."""
         if self.current_index < len(self.attachments) - 1:
             self.current_index += 1

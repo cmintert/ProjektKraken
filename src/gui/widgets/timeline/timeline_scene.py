@@ -58,9 +58,9 @@ class PlayheadItem(QGraphicsLineItem):
         self.setPen(pen)
 
         # Make draggable
-        self.setFlag(QGraphicsItem.ItemIsMovable, True)
-        self.setFlag(QGraphicsItem.ItemIsSelectable, False)
-        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges, True)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
 
         # Cursor hint
         self.setCursor(QCursor(Qt.SizeHorCursor))
@@ -155,12 +155,12 @@ class CurrentTimeLineItem(QGraphicsLineItem):
         # Style - distinct from playhead (blue instead of red)
         pen = QPen(QColor(100, 150, 255), 3)  # Blue current time line, thicker
         pen.setCosmetic(True)
-        pen.setStyle(Qt.DashLine)  # Dashed to distinguish from playhead
+        pen.setStyle(Qt.PenStyle.DashLine)  # Dashed to distinguish from playhead
         self.setPen(pen)
 
         # Not draggable - set programmatically only
-        self.setFlag(QGraphicsItem.ItemIsMovable, False)
-        self.setFlag(QGraphicsItem.ItemIsSelectable, False)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
 
         # Set high Z value but below playhead
         self.setZValue(99)

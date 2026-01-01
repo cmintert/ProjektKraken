@@ -3,9 +3,11 @@ Database Worker Module.
 Handles asynchronous database operations to keep the UI responsive.
 """
 
+import json
 import logging
 import traceback
 from pathlib import Path
+from typing import List, Optional, Set
 
 from PySide6.QtCore import QObject, Signal, Slot
 
@@ -75,11 +77,15 @@ class DatabaseWorker(QObject):
             # Initialize AssetStore
             # Assume db_path is in project root
             project_root = Path(self.db_path).resolve().parent
-            self.asset_store = AssetStore(project_root)
+            self.asset_store = AssetStore(str(project_root))
 
             # Initialize AttachmentService
             # We access the repo directly from db_service (it was initialized in
             # connect())
+            if not self.db_service._attachment_repo:
+                # Should have been initialized by connect()
+                raise RuntimeError("Attachment repository not initialized")
+
             self.attachment_service = AttachmentService(
                 self.db_service._attachment_repo, self.asset_store
             )
@@ -223,7 +229,9 @@ class DatabaseWorker(QObject):
             self.error_occurred.emit(f"Failed to load attachments for {owner_id}")
 
     @Slot(str, str)
-    def load_longform_sequence(self, doc_id: str, filter_json: str = None) -> None:
+    def load_longform_sequence(
+        self, doc_id: str, filter_json: Optional[str] = None
+    ) -> None:
         """
         Loads the longform document sequence.
 
@@ -237,11 +245,9 @@ class DatabaseWorker(QObject):
         try:
             self.operation_started.emit("Loading longform document...")
 
-            allowed_ids = None
+            allowed_ids: Optional[Set[str]] = None
             if filter_json:
                 try:
-                    import json
-
                     filter_config = json.loads(filter_json)
                     if filter_config:
                         # Use DRY compliance: Reuse existing filter logic
@@ -260,6 +266,10 @@ class DatabaseWorker(QObject):
                     logger.warning(f"Failed to decode filter JSON: {e}")
                 except Exception as e:
                     logger.error(f"Error applying filter in worker: {e}")
+
+            if not self.db_service._connection:
+                self.db_service.connect()
+            assert self.db_service._connection is not None
 
             sequence = longform_builder.build_longform_sequence(
                 self.db_service._connection, doc_id=doc_id, allowed_ids=allowed_ids
@@ -446,7 +456,7 @@ class DatabaseWorker(QObject):
         object_id: str,
         name: str,
         content: str,
-        excluded_attributes: list = None,
+        excluded_attributes: Optional[List[str]] = None,
     ) -> None:
         """
         Index a single object (entity or event) for semantic search.
@@ -468,6 +478,9 @@ class DatabaseWorker(QObject):
             from src.services.search_service import create_search_service
 
             # Create search service (uses settings/defaults)
+            if not self.db_service._connection:
+                self.db_service.connect()
+            assert self.db_service._connection is not None
             search_service = create_search_service(self.db_service._connection)
 
             # Index the object

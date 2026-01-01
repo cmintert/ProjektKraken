@@ -27,7 +27,7 @@ class EmptyStateWidget(QLabel):
             parent: The parent widget, if any.
         """
         super().__init__(message, parent)
-        self.setAlignment(Qt.AlignCenter)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setStyleSheet(StyleHelper.get_empty_state_style())
         self.hide()  # Hidden by default
 

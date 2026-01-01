@@ -62,7 +62,7 @@ class LongformOutlineWidget(QTreeWidget):
         self.setHeaderLabel("Document Outline")
         self.setDragDropMode(QTreeWidget.InternalMove)
         self.setSelectionMode(QTreeWidget.SingleSelection)
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
 
         # Store item metadata
         self._item_meta = {}  # Map item -> (table, id, meta)
@@ -293,14 +293,14 @@ class LongformOutlineWidget(QTreeWidget):
         # Check for Ctrl+[ (promote)
         if (
             event.key() == Qt.Key_BracketLeft
-            and event.modifiers() == Qt.ControlModifier
+            and event.modifiers() == Qt.KeyboardModifier.ControlModifier
         ):
             self._promote_selected()
             event.accept()
         # Check for Ctrl+] (demote)
         elif (
             event.key() == Qt.Key_BracketRight
-            and event.modifiers() == Qt.ControlModifier
+            and event.modifiers() == Qt.KeyboardModifier.ControlModifier
         ):
             self._demote_selected()
             event.accept()
@@ -412,12 +412,12 @@ class LongformEditorWidget(QWidget):
         """Initialize the longform editor."""
         super().__init__(parent)
         self.db_path = db_path
-        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
         # Set size policy to prevent dock collapse
         from PySide6.QtWidgets import QSizePolicy
 
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         # Store current sequence
         self._sequence = []
@@ -483,7 +483,7 @@ class LongformEditorWidget(QWidget):
         layout.addWidget(toolbar)
 
         # Splitter with outline and content
-        splitter = QSplitter(Qt.Horizontal)
+        splitter = QSplitter(Qt.Orientation.Horizontal)
 
         # Left: Outline
         self.outline = LongformOutlineWidget()

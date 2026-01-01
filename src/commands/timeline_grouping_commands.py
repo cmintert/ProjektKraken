@@ -257,16 +257,6 @@ class UpdateTagColorCommand(BaseCommand):
             db_service.set_tag_color(self.tag_name, self._previous_color)
         else:
             # Clear color by setting to None (using SQL directly)
-            if db_service._connection:
-                cursor = db_service._connection.execute(
-                    "SELECT id FROM tags WHERE name = ?", (self.tag_name.strip(),)
-                )
-                result = cursor.fetchone()
-                if result:
-                    with db_service.transaction() as conn:
-                        conn.execute(
-                            "UPDATE tags SET color = NULL WHERE id = ?",
-                            (result["id"],),
-                        )
+            db_service.set_tag_color(self.tag_name, None)
 
         self._is_executed = False

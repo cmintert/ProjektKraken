@@ -195,7 +195,7 @@ class BaseThemeManager:
             except Exception as e:
                 logger.error(f"Error in theme changed callback: {e}")
 
-    def format_stylesheet(self, template: str = None) -> str:
+    def format_stylesheet(self, template: Optional[str] = None) -> str:
         """
         Formats a stylesheet template with current theme values.
 

@@ -53,7 +53,7 @@ class AISettingsDialog(QDialog):
         self.setMinimumWidth(500)
         self.setMinimumHeight(600)
         # self.setAttribute(
-        #     Qt.WA_DeleteOnClose, True
+        #     Qt.WidgetAttribute.WA_DeleteOnClose, True
         # )  # Removed to prevent RuntimeError on re-open
 
         logger.info("Initializing AI Settings Dialog")
@@ -170,7 +170,7 @@ class AISettingsDialog(QDialog):
 
         self.lm_api_key_input = QLineEdit()
         self.lm_api_key_input.setPlaceholderText("Optional")
-        self.lm_api_key_input.setEchoMode(QLineEdit.Password)
+        self.lm_api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
         lm_studio_form.addRow("API Key:", self.lm_api_key_input)
 
         # Test connection button
@@ -292,7 +292,7 @@ class AISettingsDialog(QDialog):
 
         self.openai_api_key_input = QLineEdit()
         self.openai_api_key_input.setPlaceholderText("sk-...")
-        self.openai_api_key_input.setEchoMode(QLineEdit.Password)
+        self.openai_api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
         openai_gen_form.addRow("API Key:", self.openai_api_key_input)
 
         self.openai_model_input = QLineEdit()
@@ -337,7 +337,7 @@ class AISettingsDialog(QDialog):
 
         self.anthropic_api_key_input = QLineEdit()
         self.anthropic_api_key_input.setPlaceholderText("sk-ant-...")
-        self.anthropic_api_key_input.setEchoMode(QLineEdit.Password)
+        self.anthropic_api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
         anthropic_gen_form.addRow("API Key:", self.anthropic_api_key_input)
 
         self.anthropic_model_input = QLineEdit()
@@ -437,11 +437,11 @@ class AISettingsDialog(QDialog):
             "Clear Settings",
             "Are you sure you want to clear all generation provider settings "
             "including API keys?",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
         )
 
-        if reply == QMessageBox.Yes:
+        if reply == QMessageBox.StandardButton.Yes:
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 
             # Clear generation settings for all providers

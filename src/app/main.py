@@ -8,6 +8,22 @@ import sys
 from typing import Optional
 
 from dotenv import load_dotenv
+
+# NOTE: PySide6 Fully Qualified Enum Paths
+# =========================================
+# This codebase uses fully qualified enum paths for all Qt enums, which is
+# the official PySide6 6.4+ recommendation for proper type checking.
+#
+# Examples:
+#   Qt.ConnectionType.QueuedConnection  (not Qt.ConnectionType.QueuedConnection)
+#   Qt.MouseButton.LeftButton           (not Qt.MouseButton.LeftButton)
+#   Qt.AlignmentFlag.AlignCenter        (not Qt.AlignmentFlag.AlignCenter)
+#
+# This ensures Pyright can properly type-check Qt enum usage while maintaining
+# full runtime compatibility. See docs/PYSIDE6_ENUM_SOLUTION.md for details.
+#
+# Remaining ~500 reportAttributeAccessIssue errors are for QMessageBox/QDialog
+# constants and other Qt classes that haven't been updated yet.
 from PySide6.QtCore import (
     Q_ARG,
     QMetaObject,
@@ -17,9 +33,6 @@ from PySide6.QtCore import (
     QTimer,
     Signal,
     Slot,
-)
-from PySide6.QtCore import (
-    Qt as QtCore_Qt,
 )
 from PySide6.QtWidgets import (
     QApplication,
@@ -257,7 +270,7 @@ class MainWindow(QMainWindow):
         QTimer.singleShot(
             100,
             lambda: QMetaObject.invokeMethod(
-                self.worker, "initialize_db", QtCore_Qt.QueuedConnection
+                self.worker, "initialize_db", Qt.ConnectionType.QueuedConnection
             ),
         )
 
@@ -367,7 +380,7 @@ class MainWindow(QMainWindow):
         QMetaObject.invokeMethod(
             self.worker,
             "load_longform_sequence",
-            QtCore_Qt.QueuedConnection,
+            Qt.ConnectionType.QueuedConnection,
             Q_ARG(str, "default"),
             Q_ARG(str, filter_json),
         )
@@ -447,16 +460,18 @@ class MainWindow(QMainWindow):
             "Unsaved Changes",
             f"You have unsaved changes in the {editor_name} Editor.\n"
             "Do you want to save them before proceeding?",
-            QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
+            QMessageBox.StandardButton.Save
+            | QMessageBox.StandardButton.Discard
+            | QMessageBox.StandardButton.Cancel,
         )
 
-        if reply == QMessageBox.Save:
+        if reply == QMessageBox.StandardButton.Save:
             # Trigger save
             # We assume _on_save calls standard save mechanism
             if hasattr(editor, "_on_save"):
                 editor._on_save()
             return True
-        elif reply == QMessageBox.Discard:
+        elif reply == QMessageBox.StandardButton.Discard:
             return True
         else:  # Cancel
             return False
@@ -553,7 +568,7 @@ class MainWindow(QMainWindow):
         """
         self.status_bar.showMessage(message)
         # Busy cursor
-        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
 
     @Slot(str)
     def clear_status_message(self, message: str):
@@ -629,7 +644,7 @@ class MainWindow(QMainWindow):
     def _request_calendar_config(self):
         """Requests loading of the active calendar config from the worker."""
         QMetaObject.invokeMethod(
-            self.worker, "load_calendar_config", QtCore_Qt.QueuedConnection
+            self.worker, "load_calendar_config", Qt.ConnectionType.QueuedConnection
         )
 
     @Slot(object)
@@ -670,7 +685,7 @@ class MainWindow(QMainWindow):
     def _request_current_time(self):
         """Requests loading of the current time from the worker."""
         QMetaObject.invokeMethod(
-            self.worker, "load_current_time", QtCore_Qt.QueuedConnection
+            self.worker, "load_current_time", Qt.ConnectionType.QueuedConnection
         )
 
     @Slot(float)
@@ -696,7 +711,7 @@ class MainWindow(QMainWindow):
         QMetaObject.invokeMethod(
             self.worker,
             "save_current_time",
-            QtCore_Qt.QueuedConnection,
+            Qt.ConnectionType.QueuedConnection,
             Q_ARG(float, time),
         )
         logger.debug(f"Current time changed to: {time}")
@@ -851,12 +866,14 @@ class MainWindow(QMainWindow):
 
     def load_events(self):
         """Requests loading of all events."""
-        QMetaObject.invokeMethod(self.worker, "load_events", QtCore_Qt.QueuedConnection)
+        QMetaObject.invokeMethod(
+            self.worker, "load_events", Qt.ConnectionType.QueuedConnection
+        )
 
     def load_entities(self):
         """Requests loading of all entities."""
         QMetaObject.invokeMethod(
-            self.worker, "load_entities", QtCore_Qt.QueuedConnection
+            self.worker, "load_entities", Qt.ConnectionType.QueuedConnection
         )
 
     def load_event_details(self, event_id: str):
@@ -873,7 +890,7 @@ class MainWindow(QMainWindow):
         QMetaObject.invokeMethod(
             self.worker,
             "load_event_details",
-            QtCore_Qt.QueuedConnection,
+            Qt.ConnectionType.QueuedConnection,
             Q_ARG(str, event_id),
         )
 
@@ -882,7 +899,7 @@ class MainWindow(QMainWindow):
         QMetaObject.invokeMethod(
             self.worker,
             "load_entity_details",
-            QtCore_Qt.QueuedConnection,
+            Qt.ConnectionType.QueuedConnection,
             Q_ARG(str, entity_id),
         )
 
@@ -1168,7 +1185,9 @@ class MainWindow(QMainWindow):
 
     def load_maps(self):
         """Requests loading of all maps."""
-        QMetaObject.invokeMethod(self.worker, "load_maps", QtCore_Qt.QueuedConnection)
+        QMetaObject.invokeMethod(
+            self.worker, "load_maps", Qt.ConnectionType.QueuedConnection
+        )
 
     @Slot(str)
     def on_map_selected(self, map_id):
@@ -1195,7 +1214,7 @@ class MainWindow(QMainWindow):
             QMetaObject.invokeMethod(
                 self.worker,
                 "load_markers",
-                QtCore_Qt.QueuedConnection,
+                Qt.ConnectionType.QueuedConnection,
                 Q_ARG(str, map_id),
             )
 
@@ -1252,9 +1271,9 @@ class MainWindow(QMainWindow):
             self,
             "Delete Map",
             "Are you sure you want to delete this map and all its markers?",
-            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
-        if confirm == QMessageBox.Yes:
+        if confirm == QMessageBox.StandardButton.Yes:
             cmd = DeleteMapCommand(map_id)
             self.command_requested.emit(cmd)
 
@@ -1365,9 +1384,9 @@ class MainWindow(QMainWindow):
             self,
             "Delete Marker",
             "Remove this marker?",
-            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
-        if confirm == QMessageBox.Yes:
+        if confirm == QMessageBox.StandardButton.Yes:
             # Remove marker from UI immediately for instant feedback
             self.map_widget.remove_marker(marker_id)
             # Also remove from mapping
@@ -1468,7 +1487,7 @@ class MainWindow(QMainWindow):
         """Opens grouping configuration dialog by requesting data from worker thread."""
         # Request data from worker thread (thread-safe)
         QMetaObject.invokeMethod(
-            self.worker, "load_grouping_dialog_data", QtCore_Qt.QueuedConnection
+            self.worker, "load_grouping_dialog_data", Qt.ConnectionType.QueuedConnection
         )
 
     @Slot(list, object)
@@ -1572,7 +1591,7 @@ class MainWindow(QMainWindow):
         dialog = FilterDialog(
             self, available_tags=tags, current_config=self.filter_config
         )
-        if dialog.exec() == QDialog.Accepted:
+        if dialog.exec() == QDialog.DialogCode.Accepted:
             config = dialog.get_filter_config()
             self.filter_config = config  # Update local state
 
@@ -1620,7 +1639,7 @@ class MainWindow(QMainWindow):
         dialog = FilterDialog(
             self, available_tags=tags, current_config=self.longform_filter_config
         )
-        if dialog.exec() == QDialog.Accepted:
+        if dialog.exec() == QDialog.DialogCode.Accepted:
             config = dialog.get_filter_config()
             self.longform_filter_config = config
 
@@ -1752,7 +1771,7 @@ class MainWindow(QMainWindow):
 
         btn_entity = msg.addButton("Create Entity", QMessageBox.AcceptRole)
         btn_event = msg.addButton("Create Event", QMessageBox.AcceptRole)
-        msg.addButton(QMessageBox.Cancel)
+        msg.addButton(QMessageBox.StandardButton.Cancel)
 
         msg.exec()
 
@@ -2009,7 +2028,7 @@ class MainWindow(QMainWindow):
     def show_database_manager(self):
         """Shows the Database Manager dialog."""
         dialog = DatabaseManagerDialog(self)
-        if dialog.exec() == QDialog.Accepted:
+        if dialog.exec() == QDialog.DialogCode.Accepted:
             # If accepted, it means a restart is required (implied by select button)
             # We can offer to restart immediately or just close.
             # The dialog already warns user to restart.
@@ -2034,12 +2053,14 @@ class MainWindow(QMainWindow):
 
             # Count indexed objects
             # Use gui_db_service connection (Main Thread)
+            assert self.gui_db_service._connection is not None
             cursor = self.gui_db_service._connection.execute(
                 "SELECT COUNT(*) FROM embeddings"
             )
             count = cursor.fetchone()[0]
 
             # Get last indexed time
+            assert self.gui_db_service._connection is not None
             cursor = self.gui_db_service._connection.execute(
                 "SELECT MAX(created_at) FROM embeddings"
             )

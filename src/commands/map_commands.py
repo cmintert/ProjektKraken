@@ -32,7 +32,7 @@ class CreateMapCommand(BaseCommand):
     Command to create a new map.
     """
 
-    def __init__(self, map_data: dict = None):
+    def __init__(self, map_data: Optional[dict] = None):
         """
         Initializes the CreateMapCommand.
 
