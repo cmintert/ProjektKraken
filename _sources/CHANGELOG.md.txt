@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-01
-### Fixed
-- Fix test_protocols.py: Check protocol attributes with hasattr
+### Added
+- feat(cli): add filtering and tagging support to event and entity commands
 
 
 *This changelog was automatically generated.*
