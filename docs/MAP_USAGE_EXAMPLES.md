@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Map System Usage Guide  
 **Last Updated:** 2026-01-01  
-**Commit:** `199b38b`  
+**Commit:** `d9e3f83`  
 ---
 
 # Map System Usage Guide

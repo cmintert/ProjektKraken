@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Multi-Provider LLM Integration Guide  
 **Last Updated:** 2026-01-01  
-**Commit:** `199b38b`  
+**Commit:** `d9e3f83`  
 ---
 
 # Multi-Provider LLM Integration Guide
