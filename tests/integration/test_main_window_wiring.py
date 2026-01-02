@@ -10,7 +10,7 @@ def main_window(qtbot):
     """Fixture to create the MainWindow."""
     # Mock services to avoid full initialization
     # We use multiple patches. Note: main.py uses specific imports so we patch where they are used.
-    with patch("src.app.main_window.DatabaseService"):
+    with patch("src.app.worker_manager.DatabaseWorker"):
         window = MainWindow()
         qtbot.addWidget(window)
         return window

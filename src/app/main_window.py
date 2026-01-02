@@ -27,17 +27,14 @@ from PySide6.QtCore import (
     QMetaObject,
     QSettings,
     Qt,
-    QThread,
     QTimer,
     Signal,
     Slot,
 )
 from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
-    QApplication,
     QDialog,
     QDockWidget,
-    QFileDialog,
     QInputDialog,
     QLabel,
     QMainWindow,
@@ -49,27 +46,24 @@ from PySide6.QtWidgets import (
 from src.app.ai_search_manager import AISearchManager
 from src.app.command_coordinator import CommandCoordinator
 from src.app.connection_manager import ConnectionManager
-from src.app.longform_manager import LongformManager
-from src.app.map_handler import MapHandler
-from src.app.timeline_grouping_manager import TimelineGroupingManager
-from src.app.worker_manager import WorkerManager
 from src.app.constants import (
     DEFAULT_DB_NAME,
     DEFAULT_WINDOW_HEIGHT,
     DEFAULT_WINDOW_WIDTH,
-    IMAGE_FILE_FILTER,
     SETTINGS_ACTIVE_DB_KEY,
     SETTINGS_FILTER_CONFIG_KEY,
     SETTINGS_LAST_ITEM_ID_KEY,
     SETTINGS_LAST_ITEM_TYPE_KEY,
-    STATUS_DB_INIT_FAIL,
-    STATUS_ERROR_PREFIX,
     WINDOW_SETTINGS_APP,
     WINDOW_SETTINGS_KEY,
     WINDOW_TITLE,
 )
 from src.app.data_handler import DataHandler
+from src.app.longform_manager import LongformManager
+from src.app.map_handler import MapHandler
+from src.app.timeline_grouping_manager import TimelineGroupingManager
 from src.app.ui_manager import UIManager
+from src.app.worker_manager import WorkerManager
 from src.commands.entity_commands import (
     CreateEntityCommand,
     DeleteEntityCommand,
@@ -80,19 +74,6 @@ from src.commands.event_commands import (
     DeleteEventCommand,
     UpdateEventCommand,
 )
-from src.commands.longform_commands import (
-    DemoteLongformEntryCommand,
-    MoveLongformEntryCommand,
-    PromoteLongformEntryCommand,
-)
-from src.commands.map_commands import (
-    CreateMapCommand,
-    CreateMarkerCommand,
-    DeleteMapCommand,
-    DeleteMarkerCommand,
-    UpdateMarkerColorCommand,
-    UpdateMarkerIconCommand,
-)
 from src.commands.relation_commands import (
     AddRelationCommand,
     RemoveRelationCommand,
@@ -100,8 +81,6 @@ from src.commands.relation_commands import (
 )
 from src.commands.wiki_commands import ProcessWikiLinksCommand
 from src.core.logging_config import get_logger
-from src.core.paths import get_user_data_path
-from src.gui.dialogs.ai_settings_dialog import AISettingsDialog
 from src.gui.dialogs.database_manager_dialog import DatabaseManagerDialog
 from src.gui.dialogs.filter_dialog import FilterDialog
 from src.gui.widgets.ai_search_panel import AISearchPanelWidget
@@ -111,8 +90,6 @@ from src.gui.widgets.longform_editor import LongformEditorWidget
 from src.gui.widgets.map_widget import MapWidget
 from src.gui.widgets.timeline import TimelineWidget
 from src.gui.widgets.unified_list import UnifiedListWidget
-from src.services.db_service import DatabaseService
-from src.services.worker import DatabaseWorker
 
 logger = get_logger(__name__)
 
@@ -532,7 +509,6 @@ class MainWindow(QMainWindow):
         """
         self.worker_manager.on_db_initialized(success)
 
-
     def _request_calendar_config(self) -> None:
         """Requests loading of the active calendar config from the worker."""
         QMetaObject.invokeMethod(
@@ -692,6 +668,7 @@ class MainWindow(QMainWindow):
         if not self.worker_thread.wait(2000):  # 2000ms timeout
             logger.warning("Worker thread did not quit in time. Terminating...")
             self.worker_thread.terminate()
+            self.worker_thread.wait()  # Wait for terminate to complete
 
         event.accept()
 
@@ -1539,4 +1516,3 @@ class MainWindow(QMainWindow):
             # qApp.quit()
             # QProcess.startDetached(sys.executable, sys.argv)
             pass
-

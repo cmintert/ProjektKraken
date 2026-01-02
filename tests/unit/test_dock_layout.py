@@ -9,9 +9,8 @@ from src.app.main import MainWindow
 @pytest.fixture
 def main_window(qtbot):
     with (
-        patch("src.app.main_window.DatabaseWorker") as MockWorker,
-        patch("src.app.main_window.QTimer"),
-        patch("src.app.main_window.QThread"),
+        patch("src.app.worker_manager.DatabaseWorker") as MockWorker,
+        patch("src.app.worker_manager.QThread"),
     ):
         mock_worker = MockWorker.return_value
         mock_db = mock_worker.db_service
