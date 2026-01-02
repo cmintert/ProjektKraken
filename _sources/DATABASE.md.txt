@@ -247,29 +247,84 @@ db_service.delete_event(event_id)
 
 ### Relations
 
+Relations store flexible metadata in their `attributes` JSON field. Common attributes include:
+- `weight`: Numeric strength (float, for graph analysis, e.g., 0.0-1.0)
+- `start_date`: When relationship began (float, lore_date format)
+- `end_date`: When relationship ended (float, lore_date format)
+- `confidence`: Certainty level (float, 0.0-1.0)
+- `source`: Citation or reference (str)
+- `notes`: Additional context (str)
+
 ```python
-# Create relation
+# Create relation with attributes
 rel_id = db_service.insert_relation(
     source_id=event1.id,
     target_id=event2.id,
     rel_type="caused",
-    attributes={"certainty": 0.9}
+    attributes={
+        "weight": 0.9,
+        "confidence": 0.8,
+        "source": "Chapter 3, page 42",
+        "notes": "Direct causal relationship confirmed"
+    }
+)
+
+# Create relation without attributes (defaults to empty dict)
+rel_id = db_service.insert_relation(
+    source_id=character.id,
+    target_id=location.id,
+    rel_type="located_in"
 )
 
 # Query relations
 outgoing = db_service.get_relations(source_id)
 incoming = db_service.get_incoming_relations(target_id)
 
-# Update relation
+# Access attributes from returned relations
+for rel in outgoing:
+    weight = rel["attributes"].get("weight", 1.0)
+    confidence = rel["attributes"].get("confidence", 1.0)
+    print(f"Relation {rel['rel_type']} (weight={weight}, confidence={confidence})")
+
+# Update relation with new attributes
 db_service.update_relation(
     rel_id=rel_id,
     target_id=new_target.id,
     rel_type="prevented",
-    attributes={}
+    attributes={
+        "weight": 0.5,
+        "confidence": 0.6,
+        "notes": "Updated based on new evidence"
+    }
 )
 
 # Delete relation
 db_service.delete_relation(rel_id)
+
+# Example: Temporal relations
+db_service.insert_relation(
+    source_id=character.id,
+    target_id=faction.id,
+    rel_type="member_of",
+    attributes={
+        "start_date": 100.0,  # Joined on day 100
+        "end_date": 500.0,    # Left on day 500
+        "role": "Commander",
+        "confidence": 1.0
+    }
+)
+
+# Example: Weighted network relations (for graph analysis)
+db_service.insert_relation(
+    source_id=kingdom_a.id,
+    target_id=kingdom_b.id,
+    rel_type="allied_with",
+    attributes={
+        "weight": 0.75,  # Strength of alliance
+        "start_date": 1000.0,
+        "treaty": "Treaty of Westfall"
+    }
+)
 ```
 
 ## Migration Strategy

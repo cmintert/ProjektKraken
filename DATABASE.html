@@ -547,28 +547,84 @@ For a complete visual representation of the database schema with all tables, col
 </section>
 <section id="relations">
 <h3>Relations<a class="headerlink" href="#relations" title="Link to this heading">¶</a></h3>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create relation</span>
+<p>Relations store flexible metadata in their <code class="docutils literal notranslate"><span class="pre">attributes</span></code> JSON field. Common attributes include:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">weight</span></code>: Numeric strength (float, for graph analysis, e.g., 0.0-1.0)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">start_date</span></code>: When relationship began (float, lore_date format)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">end_date</span></code>: When relationship ended (float, lore_date format)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">confidence</span></code>: Certainty level (float, 0.0-1.0)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">source</span></code>: Citation or reference (str)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">notes</span></code>: Additional context (str)</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create relation with attributes</span>
 <span class="n">rel_id</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">insert_relation</span><span class="p">(</span>
     <span class="n">source_id</span><span class="o">=</span><span class="n">event1</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
     <span class="n">target_id</span><span class="o">=</span><span class="n">event2</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
     <span class="n">rel_type</span><span class="o">=</span><span class="s2">&quot;caused&quot;</span><span class="p">,</span>
-    <span class="n">attributes</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;certainty&quot;</span><span class="p">:</span> <span class="mf">0.9</span><span class="p">}</span>
+    <span class="n">attributes</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="mf">0.9</span><span class="p">,</span>
+        <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>
+        <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;Chapter 3, page 42&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;notes&quot;</span><span class="p">:</span> <span class="s2">&quot;Direct causal relationship confirmed&quot;</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="c1"># Create relation without attributes (defaults to empty dict)</span>
+<span class="n">rel_id</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">insert_relation</span><span class="p">(</span>
+    <span class="n">source_id</span><span class="o">=</span><span class="n">character</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+    <span class="n">target_id</span><span class="o">=</span><span class="n">location</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+    <span class="n">rel_type</span><span class="o">=</span><span class="s2">&quot;located_in&quot;</span>
 <span class="p">)</span>
 
 <span class="c1"># Query relations</span>
 <span class="n">outgoing</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">get_relations</span><span class="p">(</span><span class="n">source_id</span><span class="p">)</span>
 <span class="n">incoming</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">get_incoming_relations</span><span class="p">(</span><span class="n">target_id</span><span class="p">)</span>
 
-<span class="c1"># Update relation</span>
+<span class="c1"># Access attributes from returned relations</span>
+<span class="k">for</span> <span class="n">rel</span> <span class="ow">in</span> <span class="n">outgoing</span><span class="p">:</span>
+    <span class="n">weight</span> <span class="o">=</span> <span class="n">rel</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;weight&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">confidence</span> <span class="o">=</span> <span class="n">rel</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;confidence&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Relation </span><span class="si">{</span><span class="n">rel</span><span class="p">[</span><span class="s1">&#39;rel_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> (weight=</span><span class="si">{</span><span class="n">weight</span><span class="si">}</span><span class="s2">, confidence=</span><span class="si">{</span><span class="n">confidence</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+<span class="c1"># Update relation with new attributes</span>
 <span class="n">db_service</span><span class="o">.</span><span class="n">update_relation</span><span class="p">(</span>
     <span class="n">rel_id</span><span class="o">=</span><span class="n">rel_id</span><span class="p">,</span>
     <span class="n">target_id</span><span class="o">=</span><span class="n">new_target</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
     <span class="n">rel_type</span><span class="o">=</span><span class="s2">&quot;prevented&quot;</span><span class="p">,</span>
-    <span class="n">attributes</span><span class="o">=</span><span class="p">{}</span>
+    <span class="n">attributes</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+        <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="mf">0.6</span><span class="p">,</span>
+        <span class="s2">&quot;notes&quot;</span><span class="p">:</span> <span class="s2">&quot;Updated based on new evidence&quot;</span>
+    <span class="p">}</span>
 <span class="p">)</span>
 
 <span class="c1"># Delete relation</span>
 <span class="n">db_service</span><span class="o">.</span><span class="n">delete_relation</span><span class="p">(</span><span class="n">rel_id</span><span class="p">)</span>
+
+<span class="c1"># Example: Temporal relations</span>
+<span class="n">db_service</span><span class="o">.</span><span class="n">insert_relation</span><span class="p">(</span>
+    <span class="n">source_id</span><span class="o">=</span><span class="n">character</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+    <span class="n">target_id</span><span class="o">=</span><span class="n">faction</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+    <span class="n">rel_type</span><span class="o">=</span><span class="s2">&quot;member_of&quot;</span><span class="p">,</span>
+    <span class="n">attributes</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;start_date&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span>  <span class="c1"># Joined on day 100</span>
+        <span class="s2">&quot;end_date&quot;</span><span class="p">:</span> <span class="mf">500.0</span><span class="p">,</span>    <span class="c1"># Left on day 500</span>
+        <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;Commander&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="mf">1.0</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="c1"># Example: Weighted network relations (for graph analysis)</span>
+<span class="n">db_service</span><span class="o">.</span><span class="n">insert_relation</span><span class="p">(</span>
+    <span class="n">source_id</span><span class="o">=</span><span class="n">kingdom_a</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+    <span class="n">target_id</span><span class="o">=</span><span class="n">kingdom_b</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+    <span class="n">rel_type</span><span class="o">=</span><span class="s2">&quot;allied_with&quot;</span><span class="p">,</span>
+    <span class="n">attributes</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="mf">0.75</span><span class="p">,</span>  <span class="c1"># Strength of alliance</span>
+        <span class="s2">&quot;start_date&quot;</span><span class="p">:</span> <span class="mf">1000.0</span><span class="p">,</span>
+        <span class="s2">&quot;treaty&quot;</span><span class="p">:</span> <span class="s2">&quot;Treaty of Westfall&quot;</span>
+    <span class="p">}</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </section>

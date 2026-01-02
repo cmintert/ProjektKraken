@@ -1,0 +1,827 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
+        <title>Relation Attributes UI Integration Plan - Project Kraken 0.4.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">Project Kraken 0.4.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  <span class="sidebar-brand-text">Project Kraken 0.4.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="WIKI_LINKING.html">ID-Based Wiki Linking Implementation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MAP_USAGE_EXAMPLES.html">Map System Usage Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="LONGFORM.html">Longform Document Feature</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="DATABASE.html">Database Architecture and Best Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DEVELOPMENT.html">Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security Best Practices</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
+<li class="toctree-l1"><a class="reference internal" href="LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html">Tag Normalization Migration Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="modules.html">src</a><input aria-label="Toggle navigation of src" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="app.html">app package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html">cli package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="commands.html">commands package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core.html">core package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="gui.html">gui package</a><input aria-label="Toggle navigation of gui package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui.widgets.html">gui.widgets package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui.dialogs.html">gui.dialogs package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="services.html">services package</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/RELATION_ATTRIBUTES_UI_PLAN.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="relation-attributes-ui-integration-plan">
+<h1>Relation Attributes UI Integration Plan<a class="headerlink" href="#relation-attributes-ui-integration-plan" title="Link to this heading">¶</a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>This document outlines how to integrate relation attributes editing into the ProjektKraken event and entity editors. The goal is to provide a user-friendly way to view, add, and edit relation metadata (weight, confidence, dates, etc.) directly from the object editors.</p>
+</section>
+<section id="current-state">
+<h2>Current State<a class="headerlink" href="#current-state" title="Link to this heading">¶</a></h2>
+<section id="existing-components">
+<h3>Existing Components<a class="headerlink" href="#existing-components" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>RelationDialog</strong> (<code class="docutils literal notranslate"><span class="pre">src/gui/dialogs/relation_dialog.py</span></code>)</p>
+<ul class="simple">
+<li><p>Creates/edits relations</p></li>
+<li><p>Currently supports: source, target, type, bidirectional flag</p></li>
+<li><p>Does NOT currently support attributes editing</p></li>
+</ul>
+</li>
+<li><p><strong>Event/Entity Editors</strong></p>
+<ul class="simple">
+<li><p>Display relations in a list widget</p></li>
+<li><p>Show “Go to” buttons for navigation</p></li>
+<li><p>Do NOT display relation attributes</p></li>
+</ul>
+</li>
+<li><p><strong>CLI</strong> (<code class="docutils literal notranslate"><span class="pre">src/cli/relation.py</span></code>)</p>
+<ul class="simple">
+<li><p>Already supports <code class="docutils literal notranslate"><span class="pre">--attr</span> <span class="pre">key=value</span></code> for attributes</p></li>
+<li><p>Can create/update relations with attributes</p></li>
+</ul>
+</li>
+<li><p><strong>Commands</strong> (<code class="docutils literal notranslate"><span class="pre">src/commands/relation_commands.py</span></code>)</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">AddRelationCommand</span></code>, <code class="docutils literal notranslate"><span class="pre">UpdateRelationCommand</span></code> already accept attributes dict</p></li>
+<li><p>Ready to use once UI passes attributes</p></li>
+</ul>
+</li>
+</ol>
+</section>
+</section>
+<section id="integration-plan">
+<h2>Integration Plan<a class="headerlink" href="#integration-plan" title="Link to this heading">¶</a></h2>
+<section id="phase-1-extend-relationdialog-minimal">
+<h3>Phase 1: Extend RelationDialog (Minimal)<a class="headerlink" href="#phase-1-extend-relationdialog-minimal" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Allow users to add basic relation attributes when creating/editing relations.</p>
+<p><strong>Changes to <code class="docutils literal notranslate"><span class="pre">src/gui/dialogs/relation_dialog.py</span></code>:</strong></p>
+<ol class="arabic">
+<li><p>Add a new section below the relation type selector:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Attributes Section (collapsible)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">attributes_group</span> <span class="o">=</span> <span class="n">QGroupBox</span><span class="p">(</span><span class="s2">&quot;Relation Attributes (Optional)&quot;</span><span class="p">)</span>
+<span class="n">attributes_layout</span> <span class="o">=</span> <span class="n">QFormLayout</span><span class="p">()</span>
+
+<span class="c1"># Common attribute fields</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">weight_spin</span> <span class="o">=</span> <span class="n">QDoubleSpinBox</span><span class="p">()</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">weight_spin</span><span class="o">.</span><span class="n">setRange</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">weight_spin</span><span class="o">.</span><span class="n">setSingleStep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">weight_spin</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="n">attributes_layout</span><span class="o">.</span><span class="n">addRow</span><span class="p">(</span><span class="s2">&quot;Weight:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_spin</span><span class="p">)</span>
+
+<span class="bp">self</span><span class="o">.</span><span class="n">confidence_spin</span> <span class="o">=</span> <span class="n">QDoubleSpinBox</span><span class="p">()</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">confidence_spin</span><span class="o">.</span><span class="n">setRange</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">confidence_spin</span><span class="o">.</span><span class="n">setSingleStep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">confidence_spin</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="n">attributes_layout</span><span class="o">.</span><span class="n">addRow</span><span class="p">(</span><span class="s2">&quot;Confidence:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">confidence_spin</span><span class="p">)</span>
+
+<span class="bp">self</span><span class="o">.</span><span class="n">source_edit</span> <span class="o">=</span> <span class="n">QLineEdit</span><span class="p">()</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">source_edit</span><span class="o">.</span><span class="n">setPlaceholderText</span><span class="p">(</span><span class="s2">&quot;e.g., Chapter 5, page 42&quot;</span><span class="p">)</span>
+<span class="n">attributes_layout</span><span class="o">.</span><span class="n">addRow</span><span class="p">(</span><span class="s2">&quot;Source:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_edit</span><span class="p">)</span>
+
+<span class="bp">self</span><span class="o">.</span><span class="n">notes_edit</span> <span class="o">=</span> <span class="n">QTextEdit</span><span class="p">()</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">notes_edit</span><span class="o">.</span><span class="n">setPlaceholderText</span><span class="p">(</span><span class="s2">&quot;Additional notes...&quot;</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">notes_edit</span><span class="o">.</span><span class="n">setMaximumHeight</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span>
+<span class="n">attributes_layout</span><span class="o">.</span><span class="n">addRow</span><span class="p">(</span><span class="s2">&quot;Notes:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">notes_edit</span><span class="p">)</span>
+
+<span class="bp">self</span><span class="o">.</span><span class="n">attributes_group</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">attributes_layout</span><span class="p">)</span>
+<span class="n">main_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes_group</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p>Add method to collect attributes:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get attributes from the dialog fields.&quot;&quot;&quot;</span>
+    <span class="n">attrs</span> <span class="o">=</span> <span class="p">{}</span>
+    
+    <span class="c1"># Only include non-default values</span>
+    <span class="n">weight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_spin</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">weight</span> <span class="o">!=</span> <span class="mf">1.0</span><span class="p">:</span>
+        <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">weight</span>
+    
+    <span class="n">confidence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">confidence_spin</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">confidence</span> <span class="o">!=</span> <span class="mf">1.0</span><span class="p">:</span>
+        <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">confidence</span>
+    
+    <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_edit</span><span class="o">.</span><span class="n">text</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">source</span><span class="p">:</span>
+        <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;source&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">source</span>
+    
+    <span class="n">notes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">notes_edit</span><span class="o">.</span><span class="n">toPlainText</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">notes</span><span class="p">:</span>
+        <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;notes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">notes</span>
+    
+    <span class="k">return</span> <span class="n">attrs</span>
+</pre></div>
+</div>
+</li>
+<li><p>Update the dialog’s accept handler to pass attributes to the command:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">accept</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Handle OK button click.&quot;&quot;&quot;</span>
+    <span class="c1"># ... existing validation ...</span>
+    
+    <span class="n">attributes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_attributes</span><span class="p">()</span>
+    
+    <span class="c1"># Create or update relation command with attributes</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_editing</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="n">UpdateRelationCommand</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rel_id</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">target_id</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rel_type</span><span class="p">,</span>
+            <span class="n">attributes</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="n">AddRelationCommand</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">source_id</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">target_id</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rel_type</span><span class="p">,</span>
+            <span class="n">attributes</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bidirectional</span>
+        <span class="p">)</span>
+    
+    <span class="c1"># ... execute command ...</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="phase-2-display-attributes-in-relation-lists">
+<h3>Phase 2: Display Attributes in Relation Lists<a class="headerlink" href="#phase-2-display-attributes-in-relation-lists" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Show relation attributes in the event/entity editor relation lists.</p>
+<p><strong>Changes to <code class="docutils literal notranslate"><span class="pre">src/gui/widgets/relation_item_widget.py</span></code>:</strong></p>
+<ol class="arabic">
+<li><p>Extend the widget to display key attributes:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">RelationItemWidget</span><span class="p">(</span><span class="n">QWidget</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                 <span class="n">attributes</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span> <span class="o">=</span> <span class="n">attributes</span> <span class="ow">or</span> <span class="p">{}</span>
+        
+        <span class="c1"># ... existing layout ...</span>
+        
+        <span class="c1"># Add attributes display</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">:</span>
+            <span class="n">attr_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_format_attributes</span><span class="p">()</span>
+            <span class="n">attr_label</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="n">attr_str</span><span class="p">)</span>
+            <span class="n">attr_label</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;color: gray; font-size: 9pt;&quot;</span><span class="p">)</span>
+            <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">attr_label</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_format_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Format attributes for display.&quot;&quot;&quot;</span>
+    <span class="n">parts</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="k">if</span> <span class="s2">&quot;weight&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">:</span>
+        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;weight=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s1">&#39;weight&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="s2">&quot;confidence&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">:</span>
+        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;confidence=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s1">&#39;confidence&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="s2">&quot;start_date&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">:</span>
+        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;from </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s1">&#39;start_date&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="s2">&quot;end_date&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">:</span>
+        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s1">&#39;end_date&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="s2">&quot; • &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="k">if</span> <span class="n">parts</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p>Update event/entity editors to pass attributes when creating widgets:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># In EventEditor/EntityEditor load_relations method:</span>
+<span class="k">for</span> <span class="n">rel</span> <span class="ow">in</span> <span class="n">relations</span><span class="p">:</span>
+    <span class="n">widget</span> <span class="o">=</span> <span class="n">RelationItemWidget</span><span class="p">(</span>
+        <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;→ </span><span class="si">{</span><span class="n">target_name</span><span class="si">}</span><span class="s2"> [</span><span class="si">{</span><span class="n">rel</span><span class="p">[</span><span class="s1">&#39;rel_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">,</span>
+        <span class="n">target_id</span><span class="o">=</span><span class="n">rel</span><span class="p">[</span><span class="s2">&quot;target_id&quot;</span><span class="p">],</span>
+        <span class="n">target_name</span><span class="o">=</span><span class="n">target_name</span><span class="p">,</span>
+        <span class="n">attributes</span><span class="o">=</span><span class="n">rel</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attributes&quot;</span><span class="p">,</span> <span class="p">{}),</span>  <span class="c1"># Pass attributes</span>
+        <span class="n">parent</span><span class="o">=</span><span class="bp">self</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="phase-3-advanced-attributes-editor-optional">
+<h3>Phase 3: Advanced Attributes Editor (Optional)<a class="headerlink" href="#phase-3-advanced-attributes-editor-optional" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Provide a dedicated dialog for editing complex relation attributes.</p>
+<p><strong>New Component: <code class="docutils literal notranslate"><span class="pre">src/gui/dialogs/relation_attributes_dialog.py</span></code>:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">RelationAttributesDialog</span><span class="p">(</span><span class="n">QDialog</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Advanced dialog for editing relation attributes.</span>
+<span class="sd">    </span>
+<span class="sd">    Provides:</span>
+<span class="sd">    - Predefined fields for common attributes (weight, confidence, etc.)</span>
+<span class="sd">    - Key-value editor for custom attributes</span>
+<span class="sd">    - JSON preview/validation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attributes</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s2">&quot;Edit Relation Attributes&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span> <span class="o">=</span> <span class="n">attributes</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">if</span> <span class="n">attributes</span> <span class="k">else</span> <span class="p">{}</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_ui</span><span class="p">()</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_init_ui</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        
+        <span class="c1"># Common attributes section</span>
+        <span class="n">common_group</span> <span class="o">=</span> <span class="n">QGroupBox</span><span class="p">(</span><span class="s2">&quot;Common Attributes&quot;</span><span class="p">)</span>
+        <span class="n">common_layout</span> <span class="o">=</span> <span class="n">QFormLayout</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">weight_spin</span> <span class="o">=</span> <span class="n">QDoubleSpinBox</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weight_spin</span><span class="o">.</span><span class="n">setRange</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weight_spin</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;weight&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
+        <span class="n">common_layout</span><span class="o">.</span><span class="n">addRow</span><span class="p">(</span><span class="s2">&quot;Weight:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_spin</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">confidence_spin</span> <span class="o">=</span> <span class="n">QDoubleSpinBox</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">confidence_spin</span><span class="o">.</span><span class="n">setRange</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">confidence_spin</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;confidence&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
+        <span class="n">common_layout</span><span class="o">.</span><span class="n">addRow</span><span class="p">(</span><span class="s2">&quot;Confidence:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">confidence_spin</span><span class="p">)</span>
+        
+        <span class="c1"># Date pickers (if available) or text fields</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_date_edit</span> <span class="o">=</span> <span class="n">QLineEdit</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_date_edit</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;start_date&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)))</span>
+        <span class="n">common_layout</span><span class="o">.</span><span class="n">addRow</span><span class="p">(</span><span class="s2">&quot;Start Date:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_date_edit</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">end_date_edit</span> <span class="o">=</span> <span class="n">QLineEdit</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end_date_edit</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;end_date&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)))</span>
+        <span class="n">common_layout</span><span class="o">.</span><span class="n">addRow</span><span class="p">(</span><span class="s2">&quot;End Date:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_date_edit</span><span class="p">)</span>
+        
+        <span class="n">common_group</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">common_layout</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">common_group</span><span class="p">)</span>
+        
+        <span class="c1"># Custom attributes section (key-value table)</span>
+        <span class="n">custom_group</span> <span class="o">=</span> <span class="n">QGroupBox</span><span class="p">(</span><span class="s2">&quot;Custom Attributes&quot;</span><span class="p">)</span>
+        <span class="n">custom_layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">custom_table</span> <span class="o">=</span> <span class="n">QTableWidget</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">custom_table</span><span class="o">.</span><span class="n">setColumnCount</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">custom_table</span><span class="o">.</span><span class="n">setHorizontalHeaderLabels</span><span class="p">([</span><span class="s2">&quot;Key&quot;</span><span class="p">,</span> <span class="s2">&quot;Value&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">custom_table</span><span class="o">.</span><span class="n">horizontalHeader</span><span class="p">()</span><span class="o">.</span><span class="n">setStretchLastSection</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        
+        <span class="c1"># Populate with existing custom attributes</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">,</span> <span class="s2">&quot;confidence&quot;</span><span class="p">,</span> <span class="s2">&quot;start_date&quot;</span><span class="p">,</span> <span class="s2">&quot;end_date&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_add_custom_row</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+        
+        <span class="n">custom_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">custom_table</span><span class="p">)</span>
+        
+        <span class="c1"># Add/Remove buttons</span>
+        <span class="n">button_layout</span> <span class="o">=</span> <span class="n">QHBoxLayout</span><span class="p">()</span>
+        <span class="n">add_btn</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Add Row&quot;</span><span class="p">)</span>
+        <span class="n">add_btn</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_custom_row</span><span class="p">())</span>
+        <span class="n">remove_btn</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Remove Selected&quot;</span><span class="p">)</span>
+        <span class="n">remove_btn</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_remove_selected_row</span><span class="p">)</span>
+        <span class="n">button_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">add_btn</span><span class="p">)</span>
+        <span class="n">button_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">remove_btn</span><span class="p">)</span>
+        <span class="n">button_layout</span><span class="o">.</span><span class="n">addStretch</span><span class="p">()</span>
+        <span class="n">custom_layout</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">button_layout</span><span class="p">)</span>
+        
+        <span class="n">custom_group</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">custom_layout</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">custom_group</span><span class="p">)</span>
+        
+        <span class="c1"># JSON preview (read-only)</span>
+        <span class="n">preview_group</span> <span class="o">=</span> <span class="n">QGroupBox</span><span class="p">(</span><span class="s2">&quot;JSON Preview&quot;</span><span class="p">)</span>
+        <span class="n">preview_layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">json_preview</span> <span class="o">=</span> <span class="n">QTextEdit</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">json_preview</span><span class="o">.</span><span class="n">setReadOnly</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">json_preview</span><span class="o">.</span><span class="n">setMaximumHeight</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_json_preview</span><span class="p">()</span>
+        <span class="n">preview_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">json_preview</span><span class="p">)</span>
+        <span class="n">preview_group</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">preview_layout</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">preview_group</span><span class="p">)</span>
+        
+        <span class="c1"># Dialog buttons</span>
+        <span class="n">buttons</span> <span class="o">=</span> <span class="n">QDialogButtonBox</span><span class="p">(</span>
+            <span class="n">QDialogButtonBox</span><span class="o">.</span><span class="n">Ok</span> <span class="o">|</span> <span class="n">QDialogButtonBox</span><span class="o">.</span><span class="n">Cancel</span>
+        <span class="p">)</span>
+        <span class="n">buttons</span><span class="o">.</span><span class="n">accepted</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accept</span><span class="p">)</span>
+        <span class="n">buttons</span><span class="o">.</span><span class="n">rejected</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reject</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">buttons</span><span class="p">)</span>
+        
+        <span class="c1"># Connect value changes to update preview</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weight_spin</span><span class="o">.</span><span class="n">valueChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_update_json_preview</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">confidence_spin</span><span class="o">.</span><span class="n">valueChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_update_json_preview</span><span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_add_custom_row</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a row to the custom attributes table.&quot;&quot;&quot;</span>
+        <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">custom_table</span><span class="o">.</span><span class="n">rowCount</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">custom_table</span><span class="o">.</span><span class="n">insertRow</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">custom_table</span><span class="o">.</span><span class="n">setItem</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">QTableWidgetItem</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">custom_table</span><span class="o">.</span><span class="n">setItem</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">QTableWidgetItem</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_remove_selected_row</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove the selected row from the custom attributes table.&quot;&quot;&quot;</span>
+        <span class="n">current_row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">custom_table</span><span class="o">.</span><span class="n">currentRow</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">current_row</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">custom_table</span><span class="o">.</span><span class="n">removeRow</span><span class="p">(</span><span class="n">current_row</span><span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_update_json_preview</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the JSON preview with current values.&quot;&quot;&quot;</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+        <span class="n">attrs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_attributes</span><span class="p">()</span>
+        <span class="n">json_str</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">attrs</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">json_preview</span><span class="o">.</span><span class="n">setPlainText</span><span class="p">(</span><span class="n">json_str</span><span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all attributes from the dialog.&quot;&quot;&quot;</span>
+        <span class="n">attrs</span> <span class="o">=</span> <span class="p">{}</span>
+        
+        <span class="c1"># Common attributes</span>
+        <span class="n">weight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_spin</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">weight</span> <span class="o">!=</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">weight</span>
+        
+        <span class="n">confidence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">confidence_spin</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">confidence</span> <span class="o">!=</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;confidence&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">confidence</span>
+        
+        <span class="n">start_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_date_edit</span><span class="o">.</span><span class="n">text</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">start_date</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;start_date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">start_date</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;start_date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">start_date</span>
+        
+        <span class="n">end_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_date_edit</span><span class="o">.</span><span class="n">text</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">end_date</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;end_date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">end_date</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;end_date&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">end_date</span>
+        
+        <span class="c1"># Custom attributes from table</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">custom_table</span><span class="o">.</span><span class="n">rowCount</span><span class="p">()):</span>
+            <span class="n">key_item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">custom_table</span><span class="o">.</span><span class="n">item</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">value_item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">custom_table</span><span class="o">.</span><span class="n">item</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="n">key_item</span> <span class="ow">and</span> <span class="n">value_item</span><span class="p">:</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">key_item</span><span class="o">.</span><span class="n">text</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="n">value_str</span> <span class="o">=</span> <span class="n">value_item</span><span class="o">.</span><span class="n">text</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                
+                <span class="k">if</span> <span class="n">key</span><span class="p">:</span>
+                    <span class="c1"># Try to parse value as number or JSON</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+                        <span class="n">value</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">value_str</span><span class="p">)</span>
+                    <span class="k">except</span><span class="p">:</span>
+                        <span class="c1"># Keep as string</span>
+                        <span class="n">value</span> <span class="o">=</span> <span class="n">value_str</span>
+                    
+                    <span class="n">attrs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        
+        <span class="k">return</span> <span class="n">attrs</span>
+</pre></div>
+</div>
+<p><strong>Usage in RelationItemWidget:</strong></p>
+<p>Add a context menu or “Edit Attributes” button:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">RelationItemWidget</span><span class="p">(</span><span class="n">QWidget</span><span class="p">):</span>
+    <span class="n">attributes_changed</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>  <span class="c1"># rel_id, new_attributes</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rel_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">attributes</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rel_id</span> <span class="o">=</span> <span class="n">rel_id</span>
+        <span class="c1"># ...</span>
+        
+        <span class="c1"># Add edit attributes button</span>
+        <span class="n">edit_attrs_btn</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;⚙&quot;</span><span class="p">)</span>
+        <span class="n">edit_attrs_btn</span><span class="o">.</span><span class="n">setMaximumWidth</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span>
+        <span class="n">edit_attrs_btn</span><span class="o">.</span><span class="n">setToolTip</span><span class="p">(</span><span class="s2">&quot;Edit relation attributes&quot;</span><span class="p">)</span>
+        <span class="n">edit_attrs_btn</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_edit_attributes</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">edit_attrs_btn</span><span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_edit_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Open the attributes editor dialog.&quot;&quot;&quot;</span>
+        <span class="n">dialog</span> <span class="o">=</span> <span class="n">RelationAttributesDialog</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">dialog</span><span class="o">.</span><span class="n">exec</span><span class="p">()</span> <span class="o">==</span> <span class="n">QDialog</span><span class="o">.</span><span class="n">Accepted</span><span class="p">:</span>
+            <span class="n">new_attributes</span> <span class="o">=</span> <span class="n">dialog</span><span class="o">.</span><span class="n">get_attributes</span><span class="p">()</span>
+            <span class="c1"># Emit signal for parent to handle update</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">attributes_changed</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rel_id</span><span class="p">,</span> <span class="n">new_attributes</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="implementation-order">
+<h2>Implementation Order<a class="headerlink" href="#implementation-order" title="Link to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p><strong>Phase 1 (Minimal)</strong> - Extend RelationDialog</p>
+<ul class="simple">
+<li><p>Estimated effort: 2-3 hours</p></li>
+<li><p>Provides immediate value for most common use cases</p></li>
+<li><p>No changes to existing relation display</p></li>
+</ul>
+</li>
+<li><p><strong>Phase 2</strong> - Display attributes in lists</p>
+<ul class="simple">
+<li><p>Estimated effort: 1-2 hours</p></li>
+<li><p>Makes existing attributes visible</p></li>
+<li><p>Improves information density</p></li>
+</ul>
+</li>
+<li><p><strong>Phase 3 (Optional)</strong> - Advanced editor</p>
+<ul class="simple">
+<li><p>Estimated effort: 4-6 hours</p></li>
+<li><p>For power users with complex metadata needs</p></li>
+<li><p>Can be deferred if not immediately needed</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="testing-checklist">
+<h2>Testing Checklist<a class="headerlink" href="#testing-checklist" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>[ ] Create relation with attributes via dialog</p></li>
+<li><p>[ ] Update relation attributes via dialog</p></li>
+<li><p>[ ] Verify attributes persist to database</p></li>
+<li><p>[ ] Verify attributes display in relation lists</p></li>
+<li><p>[ ] Test with empty attributes (should default to {})</p></li>
+<li><p>[ ] Test with complex nested attributes</p></li>
+<li><p>[ ] Verify undo/redo works with attributes</p></li>
+<li><p>[ ] Test bidirectional relations with attributes</p></li>
+<li><p>[ ] Verify attributes survive round-trip through UI</p></li>
+</ul>
+</section>
+<section id="design-considerations">
+<h2>Design Considerations<a class="headerlink" href="#design-considerations" title="Link to this heading">¶</a></h2>
+<section id="user-experience">
+<h3>User Experience<a class="headerlink" href="#user-experience" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Progressive Disclosure</strong>: Start with simple fields (weight, confidence), hide advanced editor behind a button</p></li>
+<li><p><strong>Sensible Defaults</strong>: weight=1.0, confidence=1.0, so users don’t need to fill everything</p></li>
+<li><p><strong>Visual Feedback</strong>: Show key attributes (weight, confidence) directly in relation list items</p></li>
+<li><p><strong>Validation</strong>: Ensure numeric fields have appropriate ranges</p></li>
+</ol>
+</section>
+<section id="technical-considerations">
+<h3>Technical Considerations<a class="headerlink" href="#technical-considerations" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Backward Compatibility</strong>: Existing relations without attributes should continue to work</p></li>
+<li><p><strong>JSON Validation</strong>: Consider adding JSON validation for custom attributes</p></li>
+<li><p><strong>Performance</strong>: Don’t load all attributes upfront if not displayed</p></li>
+<li><p><strong>Consistency</strong>: Use same attribute keys across CLI and GUI</p></li>
+</ol>
+</section>
+</section>
+<section id="future-enhancements">
+<h2>Future Enhancements<a class="headerlink" href="#future-enhancements" title="Link to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p><strong>Attribute Templates</strong>: Predefined sets of attributes for common relation types</p></li>
+<li><p><strong>Bulk Edit</strong>: Edit attributes for multiple relations at once</p></li>
+<li><p><strong>Attribute Inheritance</strong>: Relations inherit default attributes from their type</p></li>
+<li><p><strong>Visualization</strong>: Show weight as edge thickness in relation graph views</p></li>
+<li><p><strong>Search/Filter</strong>: Filter relations by attribute values (e.g., confidence &gt; 0.8)</p></li>
+</ol>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Relation dataclass: <code class="docutils literal notranslate"><span class="pre">src/core/relations.py</span></code></p></li>
+<li><p>Database methods: <code class="docutils literal notranslate"><span class="pre">src/services/db_service.py</span></code></p></li>
+<li><p>Commands: <code class="docutils literal notranslate"><span class="pre">src/commands/relation_commands.py</span></code></p></li>
+<li><p>CLI example: <code class="docutils literal notranslate"><span class="pre">src/cli/relation.py</span></code></p></li>
+<li><p>NetworkX example: <code class="docutils literal notranslate"><span class="pre">scripts/networkx_example.py</span></code></p></li>
+</ul>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, Christian Mintert
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Relation Attributes UI Integration Plan</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#current-state">Current State</a><ul>
+<li><a class="reference internal" href="#existing-components">Existing Components</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#integration-plan">Integration Plan</a><ul>
+<li><a class="reference internal" href="#phase-1-extend-relationdialog-minimal">Phase 1: Extend RelationDialog (Minimal)</a></li>
+<li><a class="reference internal" href="#phase-2-display-attributes-in-relation-lists">Phase 2: Display Attributes in Relation Lists</a></li>
+<li><a class="reference internal" href="#phase-3-advanced-attributes-editor-optional">Phase 3: Advanced Attributes Editor (Optional)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#implementation-order">Implementation Order</a></li>
+<li><a class="reference internal" href="#testing-checklist">Testing Checklist</a></li>
+<li><a class="reference internal" href="#design-considerations">Design Considerations</a><ul>
+<li><a class="reference internal" href="#user-experience">User Experience</a></li>
+<li><a class="reference internal" href="#technical-considerations">Technical Considerations</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#future-enhancements">Future Enhancements</a></li>
+<li><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=1437fa6d"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

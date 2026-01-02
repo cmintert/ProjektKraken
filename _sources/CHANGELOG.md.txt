@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-01-01
+## [Development] - 2026-01-02
 ### Internal
-- chore: cleanup root scripts, move utils to scripts/
+- Merge pull request #42 from cmintert/copilot/add-json-attributes-to-relations
 
 
 *This changelog was automatically generated.*
