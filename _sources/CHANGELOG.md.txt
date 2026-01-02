@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-02
 ### Internal
-- Implement default application layout via CLI
+- Merge pull request #43 from cmintert/copilot/refactor-entry-and-main-window
 
 
 *This changelog was automatically generated.*
