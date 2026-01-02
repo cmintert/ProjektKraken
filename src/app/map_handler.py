@@ -10,7 +10,7 @@ import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Q_ARG, QMetaObject, Qt, Slot
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt, Slot
 from PySide6.QtWidgets import QFileDialog, QInputDialog, QMessageBox
 
 from src.app.constants import IMAGE_FILE_FILTER
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class MapHandler:
+class MapHandler(QObject):
     """
     Manages map and marker operations for the MainWindow.
 
@@ -49,6 +49,7 @@ class MapHandler:
         Args:
             main_window: Reference to the MainWindow instance.
         """
+        super().__init__()
         self.window = main_window
         # Mapping from object_id to actual marker.id for position updates
         self._marker_object_to_id: dict[str, str] = {}
@@ -88,6 +89,37 @@ class MapHandler:
                 Qt.ConnectionType.QueuedConnection,
                 Q_ARG(str, map_id),
             )
+
+    @Slot(str)
+    def reload_markers(self, map_id: str) -> None:
+        """
+        Reloads markers for the specified map.
+
+        Args:
+            map_id: The ID of the map to reload markers for.
+        """
+        logger.info(f"Reloading markers for map: {map_id}")
+        QMetaObject.invokeMethod(
+            self.window.worker,
+            "load_markers",
+            Qt.ConnectionType.QueuedConnection,
+            Q_ARG(str, map_id),
+        )
+
+    @Slot()
+    def reload_markers_for_current_map(self) -> None:
+        """
+        Reloads markers for the currently selected map.
+
+        Used when a marker command completes but we don't have the map_id
+        in the command result.
+        """
+        map_id = self.window.map_widget.get_selected_map_id()
+        if map_id:
+            logger.info(f"Reloading markers for current map: {map_id}")
+            self.reload_markers(map_id)
+        else:
+            logger.debug("No map selected, skipping marker reload")
 
     def create_map(self) -> None:
         """Creates a new map via dialogs."""
@@ -343,7 +375,9 @@ class MapHandler:
         if not actual_marker_id:
             logger.warning(f"No marker mapping found for object_id: {marker_id}")
             return
-        cmd = UpdateMarkerCommand(marker_id=actual_marker_id, update_data={"x": x, "y": y})
+        cmd = UpdateMarkerCommand(
+            marker_id=actual_marker_id, update_data={"x": x, "y": y}
+        )
         self.window.command_requested.emit(cmd)
 
     @Slot(list)

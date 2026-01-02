@@ -53,9 +53,11 @@ class ConnectionManager:
         dh.suggestions_update_requested.connect(self.window._on_suggestions_update)
         dh.event_details_ready.connect(self.window._on_event_details_ready)
         dh.entity_details_ready.connect(self.window._on_entity_details_ready)
-        dh.longform_sequence_ready.connect(self.window._on_longform_sequence_ready)
-        dh.maps_ready.connect(self.window._on_maps_ready)
-        dh.markers_ready.connect(self.window._on_markers_ready)
+        dh.longform_sequence_ready.connect(
+            self.window.longform_manager.on_longform_sequence_loaded
+        )
+        dh.maps_ready.connect(self.window.map_handler.on_maps_ready)
+        dh.markers_ready.connect(self.window.map_handler.on_markers_ready)
 
         # UI action signals
         dh.status_message.connect(self.window.status_bar.showMessage)
@@ -70,6 +72,10 @@ class ConnectionManager:
         dh.reload_longform.connect(self.window.load_longform_sequence)
         dh.reload_active_editor_relations.connect(
             self.window._on_reload_active_editor_relations
+        )
+        dh.reload_markers.connect(self.window.map_handler.reload_markers)
+        dh.reload_markers_for_current_map.connect(
+            self.window.map_handler.reload_markers_for_current_map
         )
 
     def connect_unified_list(self) -> None:

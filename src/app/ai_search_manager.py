@@ -9,7 +9,7 @@ import datetime
 import os
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QSettings, Slot
+from PySide6.QtCore import QObject, QSettings, Slot
 
 from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 from src.core.logging_config import get_logger
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class AISearchManager:
+class AISearchManager(QObject):
     """
     Manages AI search and semantic indexing operations for the MainWindow.
 
@@ -39,6 +39,7 @@ class AISearchManager:
         Args:
             main_window: Reference to the MainWindow instance.
         """
+        super().__init__()
         self.window = main_window
 
     @Slot()
@@ -123,9 +124,7 @@ class AISearchManager:
                 logger.warning("GUI DB Service not ready for rebuild.")
                 return
 
-            self.window.status_bar.showMessage(
-                f"Rebuilding {object_type} index...", 0
-            )
+            self.window.status_bar.showMessage(f"Rebuilding {object_type} index...", 0)
 
             # Import search service
             from src.services.search_service import create_search_service

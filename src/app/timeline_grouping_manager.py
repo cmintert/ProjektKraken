@@ -7,7 +7,7 @@ MainWindow to reduce its size and improve maintainability.
 
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QMetaObject, Qt, Slot
+from PySide6.QtCore import QMetaObject, QObject, Qt, Slot
 from PySide6.QtWidgets import QColorDialog
 
 from src.commands.timeline_grouping_commands import (
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class TimelineGroupingManager:
+class TimelineGroupingManager(QObject):
     """
     Manages timeline grouping operations for the MainWindow.
 
@@ -42,6 +42,7 @@ class TimelineGroupingManager:
         Args:
             main_window: Reference to the MainWindow instance.
         """
+        super().__init__()
         self.window = main_window
 
     def request_grouping_config(self) -> None:
@@ -161,5 +162,7 @@ class TimelineGroupingManager:
                 tag_order.remove(tag_name)
                 cmd = SetTimelineGroupingCommand(tag_order, current_config["mode"])
                 self.window.command_requested.emit(cmd)
-                self.window.timeline.set_grouping_config(tag_order, current_config["mode"])
+                self.window.timeline.set_grouping_config(
+                    tag_order, current_config["mode"]
+                )
                 logger.info(f"Removed '{tag_name}' from grouping")

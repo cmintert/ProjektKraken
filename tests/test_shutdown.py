@@ -108,6 +108,6 @@ def test_mainwindow_close_calls_worker_cleanup_logic(qapp):
 
 def test_cleanup_app_shuts_down_logging():
     """Test the cleanup_app top-level function."""
-    with patch("src.app.main_window.shutdown_logging") as mock_shutdown:
+    with patch("src.app.entry.shutdown_logging") as mock_shutdown:
         cleanup_app()
         mock_shutdown.assert_called_once()

@@ -13,11 +13,14 @@ def main_window(qtbot):
     """Create MainWindow with mocked Worker."""
     from PySide6.QtWidgets import QMessageBox
 
-    with patch("src.app.main_window.DatabaseWorker") as MockWorker:
+    with patch("src.app.worker_manager.DatabaseWorker") as MockWorker:
         with (
             patch("src.app.main_window.QThread"),
             patch("src.app.main_window.QTimer"),
-            patch("src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard),
+            patch(
+                "src.app.main_window.QMessageBox.warning",
+                return_value=QMessageBox.Discard,
+            ),
         ):
             # Mock worker and DB
             mock_worker = MockWorker.return_value

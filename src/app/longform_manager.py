@@ -8,7 +8,7 @@ MainWindow to reduce its size and improve maintainability.
 import json
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Q_ARG, QMetaObject, Qt, Slot
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt, Slot
 from PySide6.QtWidgets import QDialog, QFileDialog
 
 from src.commands.longform_commands import (
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class LongformManager:
+class LongformManager(QObject):
     """
     Manages longform document operations for the MainWindow.
 
@@ -42,6 +42,7 @@ class LongformManager:
         Args:
             main_window: Reference to the MainWindow instance.
         """
+        super().__init__()
         self.window = main_window
 
     def load_longform_sequence(self) -> None:

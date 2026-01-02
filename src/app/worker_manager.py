@@ -7,7 +7,14 @@ functionality extracted from MainWindow to reduce its size and improve maintaina
 
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Q_ARG, QMetaObject, QSettings, Qt, QThread, QTimer, Slot
+from PySide6.QtCore import (
+    QObject,
+    QSettings,
+    Qt,
+    QThread,
+    QTimer,
+    Slot,
+)
 from PySide6.QtWidgets import QApplication
 
 from src.app.constants import (
@@ -30,7 +37,7 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class WorkerManager:
+class WorkerManager(QObject):
     """
     Manages database worker thread operations for the MainWindow.
 
@@ -48,6 +55,7 @@ class WorkerManager:
         Args:
             main_window: Reference to the MainWindow instance.
         """
+        super().__init__()
         self.window = main_window
 
     def init_worker(self) -> None:
@@ -102,9 +110,7 @@ class WorkerManager:
         self.window.worker.grouping_dialog_data_loaded.connect(
             self.window.on_grouping_dialog_data_loaded
         )
-        self.window.worker.maps_loaded.connect(
-            self.window.data_handler.on_maps_loaded
-        )
+        self.window.worker.maps_loaded.connect(self.window.data_handler.on_maps_loaded)
         self.window.worker.markers_loaded.connect(
             self.window.data_handler.on_markers_loaded
         )
