@@ -146,7 +146,7 @@ class UIManager:
                 Qt.DockWidgetArea.RightDockWidgetArea, self.docks["longform"]
             )
             # Tabify with inspectors if desired, or keep separate.
-            # Instructions say: addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, ...)
+            # Instructions: addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, ...)
 
         # 6. Map Widget (Bottom, tabbed with Timeline by default)
         if "map_widget" in widgets:
@@ -427,6 +427,30 @@ class UIManager:
 
     def reset_layout(self) -> None:
         """Restores the default docking layout."""
+        # 1. Try to load from default_layout.json
+        from src.core.paths import get_default_layout_path
+
+        default_path = get_default_layout_path()
+        import json
+        from pathlib import Path
+
+        if Path(default_path).exists():
+            try:
+                with open(default_path, "r", encoding="utf-8") as f:
+                    layout_data = json.load(f)
+
+                if "geometry" in layout_data:
+                    self.main_window.restoreGeometry(
+                        bytes.fromhex(layout_data["geometry"])
+                    )
+                if "state" in layout_data:
+                    self.main_window.restoreState(bytes.fromhex(layout_data["state"]))
+                return
+            except Exception:
+                # Fallback if load fails
+                pass
+
+        # 2. Hardcoded fallback
         if "list" in self.docks:
             self.main_window.addDockWidget(
                 Qt.DockWidgetArea.LeftDockWidgetArea, self.docks["list"]
@@ -444,14 +468,36 @@ class UIManager:
             self.docks["event"].show()
             self.docks["entity"].show()
 
-            self.docks["entity"].show()
-
             self.docks["timeline"].show()
             if "map" in self.docks:
                 self.main_window.tabifyDockWidget(
                     self.docks["timeline"], self.docks["map"]
                 )
                 self.docks["map"].show()
+
+    def save_as_default_layout(self) -> None:
+        """
+        Saves the current layout as the default factory layout.
+        Writes to src/assets/default_layout.json.
+        """
+        from src.core.paths import get_default_layout_path
+
+        default_path = get_default_layout_path()
+        import json
+        from pathlib import Path
+
+        # Ensure directory exists
+        Path(default_path).parent.mkdir(parents=True, exist_ok=True)
+
+        layout_data = {
+            "state": self.main_window.saveState().toHex().data().decode("utf-8"),
+            "geometry": self.main_window.saveGeometry().toHex().data().decode("utf-8"),
+        }
+
+        with open(default_path, "w", encoding="utf-8") as f:
+            json.dump(layout_data, f, indent=2)
+
+        print(f"Default layout saved to: {default_path}")
 
     def create_settings_menu(self, menu_bar: QMenuBar) -> None:
         """Creates the Settings menu (AI and other system settings)."""

@@ -51,6 +51,11 @@
 python -m src.app.main
 ```
 
+**Developer / Advanced Options:**
+
+- `--set-default-layout`: Launches the application in "Capture Mode". When you close the application, the current window layout is saved as the new factory default (to `src/assets/default_layout.json`).
+- `--reset-settings`: Clears all persistent settings (window state, preferences) to defaults.
+
 ### CLI Tools
 
 ProjektKraken includes comprehensive command-line tools for headless operations:

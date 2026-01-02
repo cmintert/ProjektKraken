@@ -53,3 +53,11 @@ def get_user_data_path(filename: str = "") -> str:
     if filename:
         return str(data_dir / filename)
     return str(data_dir)
+
+
+def get_default_layout_path() -> str:
+    """
+    Returns the absolute path to the default layout file.
+    Default layout is stored in src/assets/default_layout.json.
+    """
+    return get_resource_path(os.path.join("src", "assets", "default_layout.json"))

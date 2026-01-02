@@ -143,17 +143,16 @@ class MainWindow(QMainWindow):
     # Signal to request filtering
     filter_requested = Signal(dict)
 
-    def __init__(self) -> None:
+    def __init__(self, capture_layout_on_exit: bool = False) -> None:
         """
         Initializes the MainWindow.
 
-        Sets up:
-        - Window Geometry & Title.
-        - UI Manager (Docks & Layouts).
-        - Worker Thread & Service connections.
-        - UI Signals.
+        Args:
+            capture_layout_on_exit: If True, saves current layout as default on exit.
         """
         super().__init__()
+
+        self.capture_layout_on_exit = capture_layout_on_exit
 
         # Load active database for title
         settings = QSettings()
@@ -161,6 +160,8 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle(f"{WINDOW_TITLE} - {active_db}")
         self.resize(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
+
+        # ... (rest of init unchanged until closeEvent)
 
         # 0. Initialize Data Handler (signals-based, no window reference)
         self.data_handler = DataHandler()
@@ -805,6 +806,10 @@ class MainWindow(QMainWindow):
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         settings.setValue("geometry", self.saveGeometry())
         settings.setValue("windowState", self.saveState())
+
+        # Save as Default Layout if requested
+        if self.capture_layout_on_exit:
+            self.ui_manager.save_as_default_layout()
 
         # Cleanup Worker
         QMetaObject.invokeMethod(
@@ -1560,7 +1565,9 @@ class MainWindow(QMainWindow):
 
     def _on_clear_grouping_requested(self) -> None:
         """Clears timeline grouping."""
-        from src.commands.timeline_grouping_commands import ClearTimelineGroupingCommand
+        from src.commands.timeline_grouping_commands import (
+            ClearTimelineGroupingCommand,
+        )
 
         cmd = ClearTimelineGroupingCommand()
         self.command_requested.emit(cmd)
@@ -1591,10 +1598,11 @@ class MainWindow(QMainWindow):
         """
         Remove a tag from current grouping.
 
-        Args:
             tag_name: The name of the tag to remove.
         """
-        from src.commands.timeline_grouping_commands import SetTimelineGroupingCommand
+        from src.commands.timeline_grouping_commands import (
+            SetTimelineGroupingCommand,
+        )
 
         # Get current config from GUI thread's db_service (thread-safe)
         current_config = self.gui_db_service.get_timeline_grouping_config()
@@ -2126,20 +2134,17 @@ class MainWindow(QMainWindow):
 
 
 def main() -> None:
-    """
-    Main entry point.
-    Configures High DPI scaling, Theme, and launches MainWindow.
-    """
-    try:
-        # Check for reset settings flag
-        if "--reset-settings" in sys.argv:
-            print("Resetting Application Settings...")
-            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-            settings.clear()
-            settings.sync()
-            print("Settings cleared. Starting in default state.")
+    """Application entry point."""
+    setup_logging(debug_mode=True)
+    from datetime import datetime
 
+    logger.info("=" * 60)
+    logger.info(f"Project Kraken Session Started at {datetime.now().isoformat()}")
+    logger.info("=" * 60)
+
+    try:
         logger.info("Starting Application...")
+
         # 1. High DPI Scaling
         QApplication.setHighDpiScaleFactorRoundingPolicy(
             Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
@@ -2159,7 +2164,22 @@ def main() -> None:
         except FileNotFoundError:
             logger.warning("main.qss not found, skipping styling.")
 
-        window = MainWindow()
+        # CLI Argument Parsing for Layout Capture
+        capture_layout = "--set-default-layout" in sys.argv
+        if capture_layout:
+            logger.info(
+                "Layout Capture Mode Active: Default layout will be updated on exit."
+            )
+
+        # Check for reset settings flag
+        if "--reset-settings" in sys.argv:
+            print("Resetting Application Settings...")
+            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+            settings.clear()
+            settings.sync()
+            print("Settings cleared. Starting in default state.")
+
+        window = MainWindow(capture_layout_on_exit=capture_layout)
         window.show()
 
         logger.info("Entering Event Loop...")
