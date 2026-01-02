@@ -15,9 +15,9 @@ def test_navigate_to_entity_success(qtbot):
     from PySide6.QtWidgets import QMessageBox
 
     with (
-        patch("src.app.main_window.DatabaseWorker"),
-        patch("src.app.main_window.QTimer"),
-        patch("src.app.main_window.QThread"),
+        patch("src.app.worker_manager.DatabaseWorker"),
+        patch("src.app.worker_manager.QTimer"),
+        patch("src.app.worker_manager.QThread"),
         patch("src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard),
     ):
         window = MainWindow()
@@ -47,9 +47,9 @@ def test_navigate_to_entity_case_insensitive(qtbot):
     from PySide6.QtWidgets import QMessageBox
 
     with (
-        patch("src.app.main_window.DatabaseWorker"),
-        patch("src.app.main_window.QTimer"),
-        patch("src.app.main_window.QThread"),
+        patch("src.app.worker_manager.DatabaseWorker"),
+        patch("src.app.worker_manager.QTimer"),
+        patch("src.app.worker_manager.QThread"),
         patch("src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard),
     ):
         window = MainWindow()
@@ -70,9 +70,9 @@ def test_navigate_to_entity_not_found(qtbot, monkeypatch):
     from PySide6.QtWidgets import QMessageBox
 
     with (
-        patch("src.app.main_window.DatabaseWorker"),
-        patch("src.app.main_window.QTimer"),
-        patch("src.app.main_window.QThread"),
+        patch("src.app.worker_manager.DatabaseWorker"),
+        patch("src.app.worker_manager.QTimer"),
+        patch("src.app.worker_manager.QThread"),
         patch("src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard),
     ):
         window = MainWindow()

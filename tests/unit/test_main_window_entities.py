@@ -13,9 +13,9 @@ from src.core.entities import Entity
 @pytest.fixture
 def main_window(qtbot):
     """Create MainWindow with mocked Worker."""
-    with patch("src.app.main_window.DatabaseWorker"):
+    with patch("src.app.worker_manager.DatabaseWorker"):
         # Avoid thread start in test and prevent deferred init crash
-        with patch("src.app.main_window.QThread"), patch("src.app.main_window.QTimer"):
+        with patch("src.app.worker_manager.QThread"), patch("src.app.worker_manager.QTimer"):
             window = MainWindow()
             # window.show()  <-- Removed for headless testing
             qtbot.addWidget(window)

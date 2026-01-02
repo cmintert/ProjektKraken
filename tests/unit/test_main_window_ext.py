@@ -14,9 +14,9 @@ from src.core.events import Event
 def main_window(qtbot):
     """Create MainWindow with mocked DB."""
     with (
-        patch("src.app.main_window.DatabaseWorker") as MockWorker,
-        patch("src.app.main_window.QTimer"),
-        patch("src.app.main_window.QThread"),
+        patch("src.app.worker_manager.DatabaseWorker") as MockWorker,
+        patch("src.app.worker_manager.QTimer"),
+        patch("src.app.worker_manager.QThread"),
     ):
         mock_worker = MockWorker.return_value
         mock_db = mock_worker.db_service

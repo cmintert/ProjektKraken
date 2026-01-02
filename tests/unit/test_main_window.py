@@ -13,9 +13,9 @@ def main_window(qtbot):
     from PySide6.QtWidgets import QMessageBox
 
     with (
-        patch("src.app.main_window.DatabaseWorker") as MockWorker,
-        patch("src.app.main_window.QTimer"),
-        patch("src.app.main_window.QThread"),
+        patch("src.app.worker_manager.DatabaseWorker") as MockWorker,
+        patch("src.app.worker_manager.QTimer"),
+        patch("src.app.worker_manager.QThread"),
         patch("src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard),
     ):
         mock_worker = MockWorker.return_value

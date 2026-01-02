@@ -113,7 +113,7 @@ def test_mainwindow_check_unsaved_changes(qtbot):
 
     # We'll use a real instance but mock internal components to avoid side effects
     with (
-        patch("src.app.main_window.DatabaseWorker"),
+        patch("src.app.worker_manager.DatabaseWorker"),
         patch("src.app.main_window.UnifiedListWidget"),
         patch("src.app.main_window.EventEditorWidget", return_value=mock_event_editor),
         patch("src.app.main_window.EntityEditorWidget", return_value=mock_entity_editor),
@@ -121,8 +121,8 @@ def test_mainwindow_check_unsaved_changes(qtbot):
         patch("src.app.main_window.MapWidget"),
         patch("src.app.main_window.ThemeManager"),
         patch("src.app.ui_manager.UIManager.setup_docks"),
-        patch("src.app.main_window.QThread"),
-        patch("src.app.main_window.QTimer"),
+        patch("src.app.worker_manager.QThread"),
+        patch("src.app.worker_manager.QTimer"),
     ):
         window = MainWindow()
         qtbot.addWidget(window)

@@ -40,7 +40,7 @@ def test_mainwindow_close_event_cleanups_worker(qapp, mock_db_service):
     Note: We need the 'qapp' fixture (pytest-qt) or a manual generic setup.
     """
     # Setup mocks
-    with patch("src.app.main_window.DatabaseWorker") as MockWorkerClass:
+    with patch("src.app.worker_manager.DatabaseWorker") as MockWorkerClass:
         # Configure the mock worker
         mock_worker = MockWorkerClass.return_value
         mock_worker.cleanup = MagicMock()
@@ -80,8 +80,8 @@ def test_mainwindow_close_calls_worker_cleanup_logic(qapp):
     More direct test of the clean up sequence logic without full Qt event loop if possible.
     """
     with (
-        patch("src.app.main_window.DatabaseWorker"),
-        patch("src.app.main_window.QThread"),
+        patch("src.app.worker_manager.DatabaseWorker"),
+        patch("src.app.worker_manager.QThread"),
         patch("src.app.main_window.QMetaObject.invokeMethod") as mock_invoke,
         patch("src.app.main_window.QSettings") as MockSettings,
     ):

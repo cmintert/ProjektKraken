@@ -49,8 +49,10 @@ from PySide6.QtWidgets import (
 from src.app.ai_search_manager import AISearchManager
 from src.app.command_coordinator import CommandCoordinator
 from src.app.connection_manager import ConnectionManager
+from src.app.longform_manager import LongformManager
 from src.app.map_handler import MapHandler
 from src.app.timeline_grouping_manager import TimelineGroupingManager
+from src.app.worker_manager import WorkerManager
 from src.app.constants import (
     DEFAULT_DB_NAME,
     DEFAULT_WINDOW_HEIGHT,
@@ -156,7 +158,8 @@ class MainWindow(QMainWindow):
         self.data_handler = DataHandler()
 
         # 1. Init Services (Worker Thread)
-        self.init_worker()
+        self.worker_manager = WorkerManager(self)
+        self.worker_manager.init_worker()
 
         # 2. Init Widgets
         self.unified_list = UnifiedListWidget()
@@ -206,6 +209,9 @@ class MainWindow(QMainWindow):
 
         # Initialize AI Search Manager
         self.ai_search_manager = AISearchManager(self)
+
+        # Initialize Longform Manager
+        self.longform_manager = LongformManager(self)
 
         # Status Bar
         self.status_bar = QStatusBar()
@@ -366,30 +372,14 @@ class MainWindow(QMainWindow):
         """
         Loads the longform sequence, applying active filters if any.
         """
-        import json
-
-        # PySide6 cross-thread signal/slot type issues.
-        filter_json = (
-            json.dumps(self.longform_filter_config)
-            if self.longform_filter_config
-            else ""
-        )
-
-        QMetaObject.invokeMethod(
-            self.worker,
-            "load_longform_sequence",
-            Qt.ConnectionType.QueuedConnection,
-            Q_ARG(str, "default"),
-            Q_ARG(str, filter_json),
-        )
+        self.longform_manager.load_longform_sequence()
 
     @Slot(list)
     def _on_longform_sequence_loaded(self, sequence: list) -> None:
         """
         Handler for when longform sequence is loaded.
         """
-        self.longform_editor.load_sequence(sequence)
-        self._cached_longform_sequence = sequence
+        self.longform_manager.on_longform_sequence_loaded(sequence)
 
     def _on_item_selected(self, item_type: str, item_id: str) -> None:
         """Handles selection from unified list or longform editor."""
@@ -503,60 +493,6 @@ class MainWindow(QMainWindow):
         elif item_type == "entity":
             self.delete_entity(item_id)
 
-    def init_worker(self) -> None:
-        """
-        Initializes the DatabaseWorker and moves it to a separate thread.
-        Connects all worker signals to MainWindow slots.
-        """
-        self.worker_thread = QThread()
-
-        # Load active database from settings
-        settings = QSettings()
-        active_db = settings.value(SETTINGS_ACTIVE_DB_KEY, DEFAULT_DB_NAME)
-
-        db_path = get_user_data_path(active_db)
-        logger.info(f"Initializing DatabaseWorker with: {db_path}")
-
-        # Store db_path for main thread usage (path calculations)
-        self.db_path = db_path
-
-        self.worker = DatabaseWorker(db_path)
-        self.worker.moveToThread(self.worker_thread)
-
-        # Connect Worker Signals
-        self.worker.initialized.connect(self.on_db_initialized)
-        self.worker.events_loaded.connect(self.data_handler.on_events_loaded)
-        self.worker.entities_loaded.connect(self.data_handler.on_entities_loaded)
-        self.worker.event_details_loaded.connect(
-            self.data_handler.on_event_details_loaded
-        )
-        self.worker.entity_details_loaded.connect(
-            self.data_handler.on_entity_details_loaded
-        )
-        self.worker.command_finished.connect(self.data_handler.on_command_finished)
-        self.worker.operation_started.connect(self.update_status_message)
-        self.worker.operation_finished.connect(self.clear_status_message)
-        self.worker.error_occurred.connect(self.show_error_message)
-        self.worker.longform_sequence_loaded.connect(
-            self.data_handler.on_longform_sequence_loaded
-        )
-        self.worker.calendar_config_loaded.connect(self.on_calendar_config_loaded)
-        self.worker.current_time_loaded.connect(self.on_current_time_loaded)
-        self.worker.grouping_dialog_data_loaded.connect(
-            self.on_grouping_dialog_data_loaded
-        )
-        self.worker.maps_loaded.connect(self.data_handler.on_maps_loaded)
-        self.worker.markers_loaded.connect(self.data_handler.on_markers_loaded)
-        self.worker.filter_results_ready.connect(self._on_filter_results_ready)
-        # Connect filtering request
-        self.filter_requested.connect(self.worker.apply_filter)
-
-        # Connect MainWindow signal for sending commands to worker thread
-        self.command_requested.connect(self.worker.run_command)
-
-        # Connect Thread Start
-        self.worker_thread.start()
-
     @Slot(str)
     def update_status_message(self, message: str) -> None:
         """
@@ -565,11 +501,8 @@ class MainWindow(QMainWindow):
         Args:
             message (str): The message to display.
         """
-        self.status_bar.showMessage(message)
-        # Busy cursor
-        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        self.worker_manager.update_status_message(message)
 
-    @Slot(str)
     def clear_status_message(self, message: str) -> None:
         """
         Clears the status bar message after a delay and restores cursor.
@@ -577,8 +510,7 @@ class MainWindow(QMainWindow):
         Args:
             message (str): The final completion message.
         """
-        self.status_bar.showMessage(message, 3000)
-        QApplication.restoreOverrideCursor()
+        self.worker_manager.clear_status_message(message)
 
     @Slot(str)
     def show_error_message(self, message: str) -> None:
@@ -588,9 +520,7 @@ class MainWindow(QMainWindow):
         Args:
             message (str): The error description.
         """
-        self.status_bar.showMessage(f"{STATUS_ERROR_PREFIX}{message}", 5000)
-        QApplication.restoreOverrideCursor()
-        logger.error(message)
+        self.worker_manager.show_error_message(message)
 
     @Slot(bool)
     def on_db_initialized(self, success: bool) -> None:
@@ -600,45 +530,8 @@ class MainWindow(QMainWindow):
         Args:
             success (bool): True if connection succeeded, False otherwise.
         """
-        if success:
-            # Initialize GUI database connection for timeline data provider
-            try:
-                # Use the same db_path as the worker
-                self.gui_db_service = DatabaseService(self.db_path)
-                self.gui_db_service.connect()
-                # Set MainWindow as data provider (implements the interface)
-                self.timeline.set_data_provider(self)
-            except Exception as e:
-                logger.error(f"Failed to initialize GUI database service: {e}")
+        self.worker_manager.on_db_initialized(success)
 
-            self.load_data()
-            self._request_calendar_config()
-            self._request_current_time()
-            self._request_grouping_config()
-            self.load_maps()
-
-            # Refresh AI search index status
-            QTimer.singleShot(100, self.refresh_search_index_status)
-
-            # Restore filter configuration
-            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-            filter_config = settings.value(SETTINGS_FILTER_CONFIG_KEY)
-            if filter_config:
-                self.filter_config = filter_config
-                # Apply restored filter
-                logger.info(f"Restoring filter config: {self.filter_config}")
-                self.filter_requested.emit(self.filter_config)
-                # Update UI state
-                has_filter = bool(
-                    self.filter_config.get("include")
-                    or self.filter_config.get("exclude")
-                )
-                self.unified_list.set_filter_active(has_filter)
-
-            # Restore last selected item (delayed to ensure data loaded)
-            QTimer.singleShot(200, self._restore_last_selection)
-        else:
-            self.status_bar.showMessage(STATUS_DB_INIT_FAIL)
 
     def _request_calendar_config(self) -> None:
         """Requests loading of the active calendar config from the worker."""
@@ -754,7 +647,7 @@ class MainWindow(QMainWindow):
 
     def on_command_finished_reload_longform(self) -> None:
         """Handler to reload longform sequence after command completion."""
-        self.load_longform_sequence()
+        self.longform_manager.on_command_finished_reload_longform()
 
     def _request_grouping_config(self) -> None:
         """Requests loading of the timeline grouping configuration."""
@@ -1370,30 +1263,12 @@ class MainWindow(QMainWindow):
     @Slot()
     def show_longform_filter_dialog(self) -> None:
         """Shows filter dialog for the Longform editor (independent state)."""
-        from src.gui.dialogs.filter_dialog import FilterDialog
-
-        tags = []
-        if self.gui_db_service:
-            tag_dicts = self.gui_db_service.get_active_tags()
-            tags = [t["name"] for t in tag_dicts]
-
-        dialog = FilterDialog(
-            self, available_tags=tags, current_config=self.longform_filter_config
-        )
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            config = dialog.get_filter_config()
-            self.longform_filter_config = config
-
-            logger.info(f"Applying longform filter: {config}")
-            # Refresh longform view with new filter
-            self.load_longform_sequence()
+        self.longform_manager.show_longform_filter_dialog()
 
     @Slot()
     def clear_longform_filter(self) -> None:
         """Clears the longform filter and reloads the longform view."""
-        logger.info("Clearing longform filters")
-        self.longform_filter_config = {}
-        self.load_longform_sequence()
+        self.longform_manager.clear_longform_filter()
 
     @Slot(list, list)
     def _on_filter_results_ready(self, events: list, entities: list) -> None:
@@ -1551,8 +1426,7 @@ class MainWindow(QMainWindow):
             row_id (str): ID of the item to promote.
             old_meta (dict): Previous longform metadata for undo.
         """
-        cmd = PromoteLongformEntryCommand(table, row_id, old_meta)
-        self.command_requested.emit(cmd)
+        self.longform_manager.promote_longform_entry(table, row_id, old_meta)
 
     def demote_longform_entry(self, table: str, row_id: str, old_meta: dict) -> None:
         """
@@ -1563,8 +1437,7 @@ class MainWindow(QMainWindow):
             row_id (str): ID of the item to demote.
             old_meta (dict): Previous longform metadata for undo.
         """
-        cmd = DemoteLongformEntryCommand(table, row_id, old_meta)
-        self.command_requested.emit(cmd)
+        self.longform_manager.demote_longform_entry(table, row_id, old_meta)
 
     def move_longform_entry(
         self, table: str, row_id: str, old_meta: dict, new_meta: dict
@@ -1578,46 +1451,14 @@ class MainWindow(QMainWindow):
             old_meta (dict): Old metadata.
             new_meta (dict): New metadata with position/parent/depth.
         """
-        cmd = MoveLongformEntryCommand(table, row_id, old_meta, new_meta)
-        self.command_requested.emit(cmd)
+        self.longform_manager.move_longform_entry(table, row_id, old_meta, new_meta)
 
     def export_longform_document(self) -> None:
         """
         Exports the current longform document to Markdown.
         Opens a file dialog for the user to choose save location.
         """
-        from PySide6.QtWidgets import QFileDialog
-
-        file_path, _ = QFileDialog.getSaveFileName(
-            self,
-            "Export Longform Document",
-            "longform_document.md",
-            "Markdown Files (*.md);;All Files (*)",
-        )
-
-        if file_path:
-            try:
-                lines = []
-                for item in self._cached_longform_sequence:
-                    heading_level = item["heading_level"]
-                    title = item["meta"].get("title_override") or item["name"]
-                    heading = "#" * heading_level + " " + title
-                    lines.append(heading)
-                    lines.append("")
-
-                    content = item.get("content", "").strip()
-                    if content:
-                        lines.append(content)
-                        lines.append("")
-                    lines.append("")
-
-                with open(file_path, "w", encoding="utf-8") as f:
-                    f.write("\n".join(lines))
-
-                self.status_bar.showMessage(f"Exported to {file_path}", 3000)
-            except Exception as e:
-                logger.error(f"Failed to export longform document: {e}")
-                self.status_bar.showMessage(f"Export failed: {e}", 5000)
+        self.longform_manager.export_longform_document()
 
     def toggle_auto_relation_setting(self, checked: bool) -> None:
         """
