@@ -17,7 +17,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
 from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
-from src.app.main import MainWindow
+from src.app.main_window import MainWindow
 from src.core.logging_config import get_logger, setup_logging, shutdown_logging
 from src.core.paths import get_resource_path
 from src.core.theme_manager import ThemeManager
