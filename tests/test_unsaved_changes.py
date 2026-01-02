@@ -113,16 +113,17 @@ def test_mainwindow_check_unsaved_changes(qtbot):
 
     # We'll use a real instance but mock internal components to avoid side effects
     with (
-        patch("src.app.main.DatabaseWorker"),
-        patch("src.app.main.UnifiedListWidget"),
-        patch("src.app.main.EventEditorWidget", return_value=mock_event_editor),
-        patch("src.app.main.EntityEditorWidget", return_value=mock_entity_editor),
-        patch("src.app.main.TimelineWidget"),
-        patch("src.app.main.MapWidget"),
-        patch("src.app.main.ThemeManager"),
+        patch("src.app.worker_manager.DatabaseWorker"),
+        patch("src.app.main_window.UnifiedListWidget"),
+        patch("src.app.main_window.EventEditorWidget", return_value=mock_event_editor),
+        patch(
+            "src.app.main_window.EntityEditorWidget", return_value=mock_entity_editor
+        ),
+        patch("src.app.main_window.TimelineWidget"),
+        patch("src.app.main_window.MapWidget"),
         patch("src.app.ui_manager.UIManager.setup_docks"),
-        patch("src.app.main.QThread"),
-        patch("src.app.main.QTimer"),
+        patch("src.app.worker_manager.QThread"),
+        patch("src.app.worker_manager.QTimer"),
     ):
         window = MainWindow()
         qtbot.addWidget(window)
@@ -138,7 +139,9 @@ def test_mainwindow_check_unsaved_changes(qtbot):
         # 2. Dirty Editor, User selects Save
         mock_event_editor.unsaved = True
 
-        with patch("src.app.main.QMessageBox.warning", return_value=QMessageBox.Save):
+        with patch(
+            "src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Save
+        ):
             # We mock _on_save on the instance
             with patch.object(mock_event_editor, "_on_save") as mock_on_save:
                 assert window.check_unsaved_changes(window.event_editor)
@@ -146,14 +149,16 @@ def test_mainwindow_check_unsaved_changes(qtbot):
 
         # 3. Dirty Editor, User selects Discard
         with patch(
-            "src.app.main.QMessageBox.warning", return_value=QMessageBox.Discard
+            "src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard
         ):
             with patch.object(mock_event_editor, "_on_save") as mock_on_save:
                 assert window.check_unsaved_changes(window.event_editor)
                 mock_on_save.assert_not_called()
 
         # 4. Dirty Editor, User selects Cancel
-        with patch("src.app.main.QMessageBox.warning", return_value=QMessageBox.Cancel):
+        with patch(
+            "src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Cancel
+        ):
             with patch.object(mock_event_editor, "_on_save") as mock_on_save:
                 assert not window.check_unsaved_changes(window.event_editor)
                 mock_on_save.assert_not_called()

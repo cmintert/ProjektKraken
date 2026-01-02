@@ -13,10 +13,10 @@ def main_window(qtbot):
     from PySide6.QtWidgets import QMessageBox
 
     with (
-        patch("src.app.main.DatabaseWorker") as MockWorker,
-        patch("src.app.main.QTimer"),
-        patch("src.app.main.QThread"),
-        patch("src.app.main.QMessageBox.warning", return_value=QMessageBox.Discard),
+        patch("src.app.worker_manager.DatabaseWorker") as MockWorker,
+        patch("src.app.worker_manager.QTimer"),
+        patch("src.app.worker_manager.QThread"),
+        patch("src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard),
     ):
         mock_worker = MockWorker.return_value
         mock_db = mock_worker.db_service
@@ -130,7 +130,7 @@ def test_add_relation(main_window):
     assert cmd.bidirectional is True
 
 
-@patch("src.app.main.QMessageBox.warning")
+@patch("src.app.main_window.QMessageBox.warning")
 def test_check_unsaved_changes_save(mock_warning, main_window):
     # Setup editor with unsaved changes
     main_window.event_editor.has_unsaved_changes = MagicMock(return_value=True)
@@ -147,7 +147,7 @@ def test_check_unsaved_changes_save(mock_warning, main_window):
     main_window.event_editor._on_save.assert_called_once()
 
 
-@patch("src.app.main.QMessageBox.warning")
+@patch("src.app.main_window.QMessageBox.warning")
 def test_check_unsaved_changes_cancel(mock_warning, main_window):
     main_window.event_editor.has_unsaved_changes = MagicMock(return_value=True)
 

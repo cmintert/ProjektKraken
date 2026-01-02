@@ -40,7 +40,7 @@ def test_mainwindow_close_event_cleanups_worker(qapp, mock_db_service):
     Note: We need the 'qapp' fixture (pytest-qt) or a manual generic setup.
     """
     # Setup mocks
-    with patch("src.app.main.DatabaseWorker") as MockWorkerClass:
+    with patch("src.app.worker_manager.DatabaseWorker") as MockWorkerClass:
         # Configure the mock worker
         mock_worker = MockWorkerClass.return_value
         mock_worker.cleanup = MagicMock()
@@ -51,7 +51,7 @@ def test_mainwindow_close_event_cleanups_worker(qapp, mock_db_service):
 
         # Instantiate MainWindow
         # We need to patch where MainWindow instantiates these
-        with patch("src.app.main.QThread", return_value=mock_thread):
+        with patch("src.app.worker_manager.QThread", return_value=mock_thread):
             window = MainWindow()
             # Manually inject our specific mock worker if the constructor didn't use it
             # (It instantiates DatabaseWorker inside __init__, so our patch above handles it)
@@ -80,10 +80,10 @@ def test_mainwindow_close_calls_worker_cleanup_logic(qapp):
     More direct test of the clean up sequence logic without full Qt event loop if possible.
     """
     with (
-        patch("src.app.main.DatabaseWorker"),
-        patch("src.app.main.QThread"),
-        patch("src.app.main.QMetaObject.invokeMethod") as mock_invoke,
-        patch("src.app.main.QSettings") as MockSettings,
+        patch("src.app.worker_manager.DatabaseWorker"),
+        patch("src.app.worker_manager.QThread"),
+        patch("src.app.main_window.QMetaObject.invokeMethod") as mock_invoke,
+        patch("src.app.main_window.QSettings") as MockSettings,
     ):
         # Configure QSettings mock to return None to avoid restoreGeometry TypeError
         mock_settings_instance = MockSettings.return_value
@@ -108,6 +108,6 @@ def test_mainwindow_close_calls_worker_cleanup_logic(qapp):
 
 def test_cleanup_app_shuts_down_logging():
     """Test the cleanup_app top-level function."""
-    with patch("src.app.main.shutdown_logging") as mock_shutdown:
+    with patch("src.app.entry.shutdown_logging") as mock_shutdown:
         cleanup_app()
         mock_shutdown.assert_called_once()

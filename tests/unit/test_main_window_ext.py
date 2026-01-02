@@ -14,9 +14,9 @@ from src.core.events import Event
 def main_window(qtbot):
     """Create MainWindow with mocked DB."""
     with (
-        patch("src.app.main.DatabaseWorker") as MockWorker,
-        patch("src.app.main.QTimer"),
-        patch("src.app.main.QThread"),
+        patch("src.app.worker_manager.DatabaseWorker") as MockWorker,
+        patch("src.app.worker_manager.QTimer"),
+        patch("src.app.worker_manager.QThread"),
     ):
         mock_worker = MockWorker.return_value
         mock_db = mock_worker.db_service
@@ -33,7 +33,7 @@ def test_delete_event_success(main_window):
     main_window.worker.db_service.delete_event.return_value = True
 
     # Mock command to return True
-    with patch("src.app.main.DeleteEventCommand") as MockCmd:
+    with patch("src.app.main_window.DeleteEventCommand") as MockCmd:
         main_window.delete_event("del1")
 
         # Verify command was created and sent to worker
@@ -46,7 +46,7 @@ def test_delete_event_success(main_window):
 
 def test_delete_event_sends_command(main_window):
     """Test delete event sends command to worker."""
-    with patch("src.app.main.DeleteEventCommand"):
+    with patch("src.app.main_window.DeleteEventCommand"):
         main_window.delete_event("nonexistent")
         main_window.worker.run_command.assert_called_once()
 
@@ -58,7 +58,7 @@ def test_update_event_success(main_window):
     # but here we just check if command is emitted or created.
     # Actually, in MainWindow test, we are checking if it calls emit.
 
-    with patch("src.app.main.UpdateEventCommand") as MockCmd:
+    with patch("src.app.main_window.UpdateEventCommand") as MockCmd:
         main_window.update_event(event_data)
 
         MockCmd.assert_called_once_with("up1", event_data)
@@ -78,7 +78,7 @@ def test_update_event_sends_command(main_window):
     """Test update event sends command to worker."""
     event_data = {"id": "up2", "name": "Failed", "lore_date": 300.0, "type": "generic"}
 
-    with patch("src.app.main.UpdateEventCommand") as MockCmd:
+    with patch("src.app.main_window.UpdateEventCommand") as MockCmd:
         main_window.update_event(event_data)
 
         MockCmd.assert_called_once_with("up2", event_data)
@@ -87,7 +87,7 @@ def test_update_event_sends_command(main_window):
 
 def test_add_relation_success(main_window):
     """Test adding a relation."""
-    with patch("src.app.main.AddRelationCommand") as MockCmd:
+    with patch("src.app.main_window.AddRelationCommand") as MockCmd:
         # Mock the load_event_details to avoid errors
         main_window.worker.db_service.get_event.return_value = Event(
             id="src", name="Source", lore_date=100.0, type="generic"
@@ -103,7 +103,7 @@ def test_add_relation_success(main_window):
 
 def test_add_relation_bidirectional(main_window):
     """Test adding bidirectional relation."""
-    with patch("src.app.main.AddRelationCommand") as MockCmd:
+    with patch("src.app.main_window.AddRelationCommand") as MockCmd:
         main_window.worker.db_service.get_event.return_value = Event(
             id="src", name="Source", lore_date=100.0, type="generic"
         )
@@ -121,7 +121,7 @@ def test_remove_relation_success(main_window):
     """Test removing a relation."""
     main_window.event_editor._current_event_id = "evt1"
 
-    with patch("src.app.main.RemoveRelationCommand"):
+    with patch("src.app.main_window.RemoveRelationCommand"):
         main_window.worker.db_service.get_event.return_value = Event(
             id="evt1", name="Event", lore_date=100.0, type="generic"
         )
@@ -138,7 +138,7 @@ def test_remove_relation_no_current_event(main_window):
     """Test removing relation when no current event."""
     main_window.event_editor._current_event_id = None
 
-    with patch("src.app.main.RemoveRelationCommand"):
+    with patch("src.app.main_window.RemoveRelationCommand"):
         main_window.remove_relation("rel1")
 
         # Should not try to reload details
@@ -149,7 +149,7 @@ def test_update_relation_success(main_window):
     """Test updating a relation."""
     main_window.event_editor._current_event_id = "evt1"
 
-    with patch("src.app.main.UpdateRelationCommand") as MockCmd:
+    with patch("src.app.main_window.UpdateRelationCommand") as MockCmd:
         mock_cmd = MockCmd.return_value
         mock_cmd.execute.return_value = True
 
@@ -171,7 +171,7 @@ def test_update_relation_no_current_event(main_window):
     """Test updating relation when no current event."""
     main_window.event_editor._current_event_id = None
 
-    with patch("src.app.main.UpdateRelationCommand"):
+    with patch("src.app.main_window.UpdateRelationCommand"):
         main_window.update_relation("rel1", "tgt", "type")
 
         # Command should still be sent

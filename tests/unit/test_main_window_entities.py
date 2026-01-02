@@ -13,9 +13,9 @@ from src.core.entities import Entity
 @pytest.fixture
 def main_window(qtbot):
     """Create MainWindow with mocked Worker."""
-    with patch("src.app.main.DatabaseWorker"):
+    with patch("src.app.worker_manager.DatabaseWorker"):
         # Avoid thread start in test and prevent deferred init crash
-        with patch("src.app.main.QThread"), patch("src.app.main.QTimer"):
+        with patch("src.app.worker_manager.QThread"), patch("src.app.worker_manager.QTimer"):
             window = MainWindow()
             # window.show()  <-- Removed for headless testing
             qtbot.addWidget(window)
@@ -32,10 +32,10 @@ def test_entity_docks_exist(main_window):
 
 def test_create_entity(main_window):
     """Test creating an entity."""
-    with patch("src.app.main.QInputDialog.getText") as mock_input:
+    with patch("src.app.main_window.QInputDialog.getText") as mock_input:
         mock_input.return_value = ("Test Entity", True)
 
-        with patch("src.app.main.CreateEntityCommand") as MockCmd:
+        with patch("src.app.main_window.CreateEntityCommand") as MockCmd:
             mock_cmd_instance = MockCmd.return_value
 
             main_window.create_entity()
@@ -51,7 +51,7 @@ def test_create_entity(main_window):
 
 def test_delete_entity(main_window):
     """Test deleting an entity."""
-    with patch("src.app.main.DeleteEntityCommand") as MockCmd:
+    with patch("src.app.main_window.DeleteEntityCommand") as MockCmd:
         mock_cmd_instance = MockCmd.return_value
 
         main_window.delete_entity("ent1")
@@ -64,7 +64,7 @@ def test_update_entity(main_window):
     """Test updating an entity."""
     entity_data = {"id": "ent1", "name": "Updated", "type": "Concept"}
 
-    with patch("src.app.main.UpdateEntityCommand") as MockCmd:
+    with patch("src.app.main_window.UpdateEntityCommand") as MockCmd:
         # main_window.update_entity now expects dict
         main_window.update_entity(entity_data)
 
@@ -94,7 +94,7 @@ def test_entity_add_relation(main_window):
     """Test adding a relation from entity editor."""
     main_window.entity_editor._current_entity_id = "src"
 
-    with patch("src.app.main.AddRelationCommand") as MockCmd:
+    with patch("src.app.main_window.AddRelationCommand") as MockCmd:
         mock_cmd_instance = MockCmd.return_value
 
         main_window.add_relation("src", "tgt", "caused", bidirectional=True)
@@ -107,7 +107,7 @@ def test_entity_add_relation(main_window):
 
 def test_entity_remove_relation(main_window):
     """Test removing a relation from entity editor."""
-    with patch("src.app.main.RemoveRelationCommand") as MockCmd:
+    with patch("src.app.main_window.RemoveRelationCommand") as MockCmd:
         mock_cmd_instance = MockCmd.return_value
 
         main_window.remove_relation("rel1")
@@ -118,7 +118,7 @@ def test_entity_remove_relation(main_window):
 
 def test_entity_update_relation(main_window):
     """Test updating a relation from entity editor."""
-    with patch("src.app.main.UpdateRelationCommand") as MockCmd:
+    with patch("src.app.main_window.UpdateRelationCommand") as MockCmd:
         mock_cmd_instance = MockCmd.return_value
 
         main_window.update_relation("rel1", "tgt", "type")

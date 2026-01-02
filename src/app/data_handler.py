@@ -53,6 +53,7 @@ class DataHandler(QObject):
     reload_entities = Signal()
     reload_maps = Signal()
     reload_markers = Signal(str)  # (map_id)
+    reload_markers_for_current_map = Signal()  # For when map_id is unknown
     reload_event_details = Signal(str)  # (event_id)
     reload_entity_details = Signal(str)  # (entity_id)
     reload_longform = Signal()
@@ -263,9 +264,10 @@ class DataHandler(QObject):
             self.reload_maps.emit()
 
         if "Marker" in command_name and "Update" not in command_name:
-            # Emit signal to reload markers - MainWindow will determine current map
-            # This is intentionally left as a pass - MainWindow handles it
-            pass
+            # Reload markers for the currently selected map
+            # We don't have map_id in the result, so emit signal for map handler
+            # to reload markers for whichever map is currently selected
+            self.reload_markers_for_current_map.emit()
 
         if "Event" in command_name:
             self.reload_events.emit()

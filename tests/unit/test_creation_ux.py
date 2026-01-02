@@ -13,11 +13,13 @@ def main_window(qtbot):
     """Create MainWindow with mocked Worker."""
     from PySide6.QtWidgets import QMessageBox
 
-    with patch("src.app.main.DatabaseWorker") as MockWorker:
+    with patch("src.app.worker_manager.DatabaseWorker") as MockWorker:
         with (
-            patch("src.app.main.QThread"),
-            patch("src.app.main.QTimer"),
-            patch("src.app.main.QMessageBox.warning", return_value=QMessageBox.Discard),
+            patch("src.app.worker_manager.QThread"),
+            patch(
+                "src.app.main_window.QMessageBox.warning",
+                return_value=QMessageBox.Discard,
+            ),
         ):
             # Mock worker and DB
             mock_worker = MockWorker.return_value
@@ -32,11 +34,11 @@ def main_window(qtbot):
 def test_create_entity_success_selects_item(main_window):
     """Verify that creating an entity selects it after loading."""
     # 1. Mock Input Dialog
-    with patch("src.app.main.QInputDialog.getText") as mock_input:
+    with patch("src.app.main_window.QInputDialog.getText") as mock_input:
         mock_input.return_value = ("New Entity", True)
 
         # 2. Mock Command
-        with patch("src.app.main.CreateEntityCommand") as MockCmd:
+        with patch("src.app.main_window.CreateEntityCommand") as MockCmd:
             # Execute
             main_window.create_entity()
 
@@ -81,11 +83,11 @@ def test_create_entity_success_selects_item(main_window):
 def test_create_event_success_selects_item(main_window):
     """Verify that creating an event selects it after loading."""
     # 1. Mock Input Dialog
-    with patch("src.app.main.QInputDialog.getText") as mock_input:
+    with patch("src.app.main_window.QInputDialog.getText") as mock_input:
         mock_input.return_value = ("New Event", True)
 
         # 2. Mock Command
-        with patch("src.app.main.CreateEventCommand") as MockCmd:
+        with patch("src.app.main_window.CreateEventCommand") as MockCmd:
             main_window.create_event()
 
             MockCmd.assert_called_once()
@@ -121,10 +123,10 @@ def test_create_event_success_selects_item(main_window):
 
 def test_create_cancel_does_nothing(main_window):
     """Test cancelling creation."""
-    with patch("src.app.main.QInputDialog.getText") as mock_input:
+    with patch("src.app.main_window.QInputDialog.getText") as mock_input:
         mock_input.return_value = ("", False)
 
-        with patch("src.app.main.CreateEntityCommand") as MockCmd:
+        with patch("src.app.main_window.CreateEntityCommand") as MockCmd:
             main_window.create_entity()
             MockCmd.assert_not_called()
             main_window.worker.run_command.assert_not_called()

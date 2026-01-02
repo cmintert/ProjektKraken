@@ -150,17 +150,16 @@ def test_mainwindow_integration(qtbot):
 
     # We need to patch the classes inside main.py namespace or where they are used
     with (
-        patch("src.app.main.DatabaseWorker"),
-        patch("src.app.main.UnifiedListWidget"),
-        patch("src.app.main.EventEditorWidget", spec=EventEditorWidget),
-        patch("src.app.main.EntityEditorWidget", spec=EntityEditorWidget),
-        patch("src.app.main.TimelineWidget"),
-        patch("src.app.main.MapWidget") as MockMapWidgetClass,
-        patch("src.app.main.ThemeManager"),
+        patch("src.app.worker_manager.DatabaseWorker"),
+        patch("src.app.main_window.UnifiedListWidget"),
+        patch("src.app.main_window.EventEditorWidget", spec=EventEditorWidget),
+        patch("src.app.main_window.EntityEditorWidget", spec=EntityEditorWidget),
+        patch("src.app.main_window.TimelineWidget"),
+        patch("src.app.main_window.MapWidget") as MockMapWidgetClass,
         patch("src.app.ui_manager.UIManager.setup_docks"),
         patch.object(QGraphicsObject, "mousePressEvent"),
         patch.object(QGraphicsObject, "mouseReleaseEvent"),
-        patch("src.app.main.QThread"),
+        patch("src.app.worker_manager.QThread"),
     ):
         # Setup the mock map instance
         mock_map_instance = MockMapWidgetClass.return_value

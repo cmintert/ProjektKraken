@@ -19,10 +19,10 @@ def mock_window(qtbot):
     from PySide6.QtWidgets import QMessageBox
 
     with (
-        patch("src.app.main.DatabaseWorker"),
-        patch("src.app.main.QTimer"),
-        patch("src.app.main.QThread"),
-        patch("src.app.main.QMessageBox.warning", return_value=QMessageBox.Discard),
+        patch("src.app.worker_manager.DatabaseWorker"),
+        patch("src.app.worker_manager.QTimer"),
+        patch("src.app.worker_manager.QThread"),
+        patch("src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard),
     ):
         window = MainWindow()
         window.worker = MagicMock()
@@ -37,10 +37,10 @@ def test_update_event_triggers_commands(qtbot):
     from PySide6.QtWidgets import QMessageBox
 
     with (
-        patch("src.app.main.DatabaseWorker"),
-        patch("src.app.main.QTimer"),
-        patch("src.app.main.QThread"),
-        patch("src.app.main.QMessageBox.warning", return_value=QMessageBox.Discard),
+        patch("src.app.worker_manager.DatabaseWorker"),
+        patch("src.app.worker_manager.QTimer"),
+        patch("src.app.worker_manager.QThread"),
+        patch("src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard),
     ):
         window = MainWindow()
         try:
