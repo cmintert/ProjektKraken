@@ -97,9 +97,11 @@ def test_entity_add_relation(main_window):
     with patch("src.app.main.AddRelationCommand") as MockCmd:
         mock_cmd_instance = MockCmd.return_value
 
-        main_window.add_relation("src", "tgt", "caused", True)
+        main_window.add_relation("src", "tgt", "caused", bidirectional=True)
 
-        MockCmd.assert_called_once_with("src", "tgt", "caused", bidirectional=True)
+        MockCmd.assert_called_once_with(
+            "src", "tgt", "caused", attributes=None, bidirectional=True
+        )
         main_window.worker.run_command.assert_called_once_with(mock_cmd_instance)
 
 
@@ -121,5 +123,5 @@ def test_entity_update_relation(main_window):
 
         main_window.update_relation("rel1", "tgt", "type")
 
-        MockCmd.assert_called_once_with("rel1", "tgt", "type")
+        MockCmd.assert_called_once_with("rel1", "tgt", "type", attributes=None)
         main_window.worker.run_command.assert_called_once_with(mock_cmd_instance)

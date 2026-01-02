@@ -38,9 +38,11 @@ class EntityEditorWidget(QWidget):
 
     save_requested = Signal(dict)
     discard_requested = Signal(str)  # item_id to reload
-    add_relation_requested = Signal(str, str, str, bool)  # src, tgt, type, bi
+    add_relation_requested = Signal(
+        str, str, str, dict, bool
+    )  # src, tgt, type, attrs, bi
     remove_relation_requested = Signal(str)
-    update_relation_requested = Signal(str, str, str)
+    update_relation_requested = Signal(str, str, str, dict)
     link_clicked = Signal(str)
     navigate_to_relation = Signal(str)  # target_id for Go to button
     dirty_changed = Signal(bool)
@@ -273,7 +275,10 @@ class EntityEditorWidget(QWidget):
 
                 # Create custom widget with Go to button
                 widget = RelationItemWidget(
-                    label=label, target_id=rel["target_id"], target_name=target_display
+                    label=label,
+                    target_id=rel["target_id"],
+                    target_name=target_display,
+                    attributes=rel.get("attributes"),
                 )
                 widget.go_to_clicked.connect(
                     lambda tid, tn: self.navigate_to_relation.emit(tid)
@@ -294,7 +299,10 @@ class EntityEditorWidget(QWidget):
 
                 # Create custom widget - navigate to source for incoming
                 widget = RelationItemWidget(
-                    label=label, target_id=rel["source_id"], target_name=source_display
+                    label=label,
+                    target_id=rel["source_id"],
+                    target_name=source_display,
+                    attributes=rel.get("attributes"),
                 )
                 widget.go_to_clicked.connect(
                     lambda tid, tn: self.navigate_to_relation.emit(tid)
@@ -371,10 +379,14 @@ class EntityEditorWidget(QWidget):
         )
 
         if dlg.exec():
-            target_id, rel_type, is_bidirectional = dlg.get_data()
+            target_id, rel_type, is_bidirectional, attributes = dlg.get_data()
             if target_id:
                 self.add_relation_requested.emit(
-                    self._current_entity_id, target_id, rel_type, is_bidirectional
+                    self._current_entity_id,
+                    target_id,
+                    rel_type,
+                    attributes,
+                    is_bidirectional,
                 )
 
     def _show_rel_menu(self, pos: QPoint) -> None:
@@ -432,6 +444,7 @@ class EntityEditorWidget(QWidget):
             target_id=rel_data["target_id"],
             rel_type=rel_data["rel_type"],
             is_bidirectional=False,
+            attributes=rel_data.get("attributes"),
             # Editing existing relation implies directional update typically
             suggestion_items=getattr(self, "_suggestion_items", []),
         )
@@ -441,9 +454,11 @@ class EntityEditorWidget(QWidget):
         dlg.bi_check.setVisible(False)
 
         if dlg.exec():
-            target_id, rel_type, _ = dlg.get_data()
+            target_id, rel_type, _, attributes = dlg.get_data()
             if target_id:
-                self.update_relation_requested.emit(rel_data["id"], target_id, rel_type)
+                self.update_relation_requested.emit(
+                    rel_data["id"], target_id, rel_type, attributes
+                )
 
     def _on_edit_selected_relation(self) -> None:
         """
@@ -524,7 +539,7 @@ class EntityEditorWidget(QWidget):
 
         return QSize(400, 600)  # Ideal size for editing
 
-    def _on_wikilink_added(self, target_id: str, target_name: str):
+    def _on_wikilink_added(self, target_id: str, target_name: str) -> None:
         """
         Handles a new wikilink addition.
         Checks setting and prompts for relation creation if enabled.
@@ -553,7 +568,11 @@ class EntityEditorWidget(QWidget):
         dialog.target_edit.setEnabled(False)
 
         if dialog.exec():
-            _, rel_type, is_bidirectional = dialog.get_data()
+            _, rel_type, is_bidirectional, attributes = dialog.get_data()
             self.add_relation_requested.emit(
-                self._current_entity_id, target_id, rel_type, is_bidirectional
+                self._current_entity_id,
+                target_id,
+                rel_type,
+                attributes,
+                is_bidirectional,
             )

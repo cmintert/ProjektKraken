@@ -58,7 +58,7 @@ def test_add_relation_flow(editor, qtbot, monkeypatch):
 
     mock_dialog = MagicMock()
     mock_dialog.exec.return_value = True
-    mock_dialog.get_data.return_value = ("target_id", "caused", True)
+    mock_dialog.get_data.return_value = ("target_id", "caused", True, {})
 
     # Patch the class where it is defined
     monkeypatch.setattr(
@@ -70,8 +70,8 @@ def test_add_relation_flow(editor, qtbot, monkeypatch):
     with qtbot.waitSignal(editor.add_relation_requested) as blocker:
         editor.btn_add_rel.click()
 
-    # Signal: source, target, type, bidirectional
-    assert blocker.args == ["1", "target_id", "caused", True]
+    # Signal: source, target, type, attributes, bidirectional
+    assert blocker.args == ["1", "target_id", "caused", {}, True]
 
 
 def test_remove_relation(editor, qtbot, monkeypatch):
@@ -112,7 +112,7 @@ def test_context_menu_actions(editor, qtbot, monkeypatch):
 
     mock_dialog = MagicMock()
     mock_dialog.exec.return_value = True
-    mock_dialog.get_data.return_value = ("new_target", "related_to", True)
+    mock_dialog.get_data.return_value = ("new_target", "related_to", True, {})
     mock_dialog.bi_check = MagicMock()  # For setVisible(False)
 
     # Patch the class where it is defined
@@ -125,8 +125,8 @@ def test_context_menu_actions(editor, qtbot, monkeypatch):
     with qtbot.waitSignal(editor.update_relation_requested) as blocker:
         editor._on_edit_selected_relation()
 
-    # args: rel_id, target_id, new_type
-    assert blocker.args == ["r1", "new_target", "related_to"]
+    # args: rel_id, target_id, new_type, attributes
+    assert blocker.args == ["r1", "new_target", "related_to", {}]
 
 
 def test_auto_relation_creation(editor, qtbot, monkeypatch):
@@ -147,7 +147,7 @@ def test_auto_relation_creation(editor, qtbot, monkeypatch):
 
     mock_dialog = MagicMock()
     mock_dialog.exec.return_value = True
-    mock_dialog.get_data.return_value = ("target_id", "mentions", False)
+    mock_dialog.get_data.return_value = ("target_id", "mentions", False, {})
     mock_dialog.target_edit = MagicMock()  # Needs target_edit.setEnabled
 
     monkeypatch.setattr(
@@ -161,8 +161,8 @@ def test_auto_relation_creation(editor, qtbot, monkeypatch):
         editor._on_wikilink_added("target_id", "Target Name")
 
     # 4. Verify
-    # Signal: source, target, type, bidirectional
-    assert blocker.args == ["1", "target_id", "mentions", False]
+    # Signal: source, target, type, attributes, bidirectional
+    assert blocker.args == ["1", "target_id", "mentions", {}, False]
     # Check that target_edit was disabled
     mock_dialog.target_edit.setEnabled.assert_called_with(False)
 

@@ -161,7 +161,9 @@ def test_update_relation_success(main_window):
 
         main_window.update_relation("rel1", "new_target", "new_type")
 
-        MockCmd.assert_called_once_with("rel1", "new_target", "new_type")
+        MockCmd.assert_called_once_with(
+            "rel1", "new_target", "new_type", attributes=None
+        )
         main_window.worker.run_command.assert_called_once()
 
 

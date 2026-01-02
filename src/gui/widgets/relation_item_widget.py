@@ -5,7 +5,7 @@ Provides a custom widget for relation list items with an embedded
 "Go to" button for quick navigation to related entities/events.
 """
 
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from PySide6.QtCore import QSize, Signal
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QWidget
@@ -32,6 +32,7 @@ class RelationItemWidget(QWidget):
         label: str,
         target_id: str,
         target_name: str,
+        attributes: Dict[str, Any] = None,
         parent: Optional[QWidget] = None,
     ) -> None:
         """
@@ -41,11 +42,13 @@ class RelationItemWidget(QWidget):
             label: The relation label text (e.g., "→ Alice [friend]")
             target_id: The UUID of the target entity/event
             target_name: The display name of the target
+            attributes: Optional dictionary of relation attributes
             parent: Parent widget
         """
         super().__init__(parent)
         self._target_id = target_id
         self._target_name = target_name
+        self.attributes = attributes or {}
 
         self._setup_ui(label)
 
@@ -61,6 +64,13 @@ class RelationItemWidget(QWidget):
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
         )
         layout.addWidget(self.label)
+
+        # Attributes label (gray, small)
+        if self.attributes:
+            attr_text = self._format_attributes()
+            self.attr_label = QLabel(attr_text)
+            self.attr_label.setStyleSheet("color: #888; font-size: 11px;")
+            layout.addWidget(self.attr_label)
 
         # Go to button (compact, icon-style)
         self.btn_go_to = StandardButton("→")
@@ -92,6 +102,21 @@ class RelationItemWidget(QWidget):
         )
 
         layout.addWidget(self.btn_go_to)
+
+    def _format_attributes(self) -> str:
+        """Format attributes for display."""
+        parts = []
+
+        if "weight" in self.attributes:
+            parts.append(f"weight={self.attributes['weight']}")
+
+        if "confidence" in self.attributes:
+            parts.append(f"confidence={self.attributes['confidence']}")
+
+        if "start_date" in self.attributes:
+            parts.append(f"start={self.attributes['start_date']}")
+
+        return " • ".join(parts)
 
     def sizeHint(self) -> QSize:
         """

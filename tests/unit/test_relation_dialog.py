@@ -32,7 +32,7 @@ def test_autocompletion_resolution(relation_dialog, qtbot):
     relation_dialog.target_edit.setText("Gandalf")
 
     # Get data
-    target_id, rel_type, is_bi = relation_dialog.get_data()
+    target_id, rel_type, is_bi, _ = relation_dialog.get_data()
 
     assert target_id == "id-1"
     assert rel_type == "involved"
@@ -43,7 +43,7 @@ def test_manual_entry_fallback(relation_dialog):
     """Test that manual entry (not in list) is preserved."""
     relation_dialog.target_edit.setText("Manual-ID-123")
 
-    target_id, _, _ = relation_dialog.get_data()
+    target_id, _, _, _ = relation_dialog.get_data()
 
     assert target_id == "Manual-ID-123"
 
@@ -65,5 +65,42 @@ def test_prefill_editing(qtbot):
     assert dialog.bi_check.isChecked()
 
     # Verify data retrieval converts back to ID
-    target_id, _, _ = dialog.get_data()
+    target_id, _, _, _ = dialog.get_data()  # Expect 4 values now
     assert target_id == "id-1"
+
+
+def test_attribute_collection(qtbot):
+    """Test that attributes are correctly collected from the dialog."""
+    dialog = RelationEditDialog()
+    qtbot.addWidget(dialog)
+
+    # Checkboxes removed - attributes always enabled implicitly
+
+    # Simulate user input
+    dialog.weight_spin.setValue(0.8)
+    dialog.confidence_spin.setValue(0.5)
+    # Source removed
+    dialog.notes_edit.setPlainText(
+        "Test Note"
+    )  # Assuming using QTextEdit or QPlainTextEdit
+
+    # Get data
+    _, _, _, attributes = dialog.get_data()
+
+    assert attributes["weight"] == 0.8
+    assert attributes["confidence"] == 0.5
+    # Source removed
+    assert attributes["notes"] == "Test Note"
+
+
+def test_default_attributes_omitted(qtbot):
+    """Test that default values (1.0) are omitted from attributes dict."""
+    dialog = RelationEditDialog()
+    qtbot.addWidget(dialog)
+
+    # Leave defaults (Weight 1.0, Confidence 1.0)
+
+    _, _, _, attributes = dialog.get_data()
+
+    assert "weight" not in attributes
+    assert "confidence" not in attributes

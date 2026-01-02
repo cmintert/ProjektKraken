@@ -1183,7 +1183,12 @@ class MainWindow(QMainWindow):
             self.command_requested.emit(wiki_cmd)
 
     def add_relation(
-        self, source_id: str, target_id: str, rel_type: str, bidirectional: bool = False
+        self,
+        source_id: str,
+        target_id: str,
+        rel_type: str,
+        attributes: dict = None,
+        bidirectional: bool = False,
     ) -> None:
         """
         Adds a relation between entities.
@@ -1192,11 +1197,16 @@ class MainWindow(QMainWindow):
             source_id (str): The ID of the source entity.
             target_id (str): The ID of the target entity.
             rel_type (str): The type of relation.
+            attributes (dict, optional): Attributes for the relation.
             bidirectional (bool, optional): Whether the relation is
                 bidirectional. Defaults to False.
         """
         cmd = AddRelationCommand(
-            source_id, target_id, rel_type, bidirectional=bidirectional
+            source_id,
+            target_id,
+            rel_type,
+            attributes=attributes,
+            bidirectional=bidirectional,
         )
         self.command_requested.emit(cmd)
 
@@ -1693,7 +1703,9 @@ class MainWindow(QMainWindow):
         cmd = RemoveRelationCommand(rel_id)
         self.command_requested.emit(cmd)
 
-    def update_relation(self, rel_id: str, target_id: str, rel_type: str) -> None:
+    def update_relation(
+        self, rel_id: str, target_id: str, rel_type: str, attributes: dict = None
+    ) -> None:
         """
         Updates an existing relation.
 
@@ -1701,8 +1713,9 @@ class MainWindow(QMainWindow):
             rel_id (str): The ID of the relation to update.
             target_id (str): The new target entity ID.
             rel_type (str): The new relation type.
+            attributes (dict, optional): The new attributes.
         """
-        cmd = UpdateRelationCommand(rel_id, target_id, rel_type)
+        cmd = UpdateRelationCommand(rel_id, target_id, rel_type, attributes=attributes)
         self.command_requested.emit(cmd)
 
     def navigate_to_entity(self, target: str) -> None:
@@ -2160,7 +2173,7 @@ def main() -> None:
 
 def cleanup_app() -> None:
     """Performs global cleanup operations before exit."""
-    logger.info("Shimmying down the drain pipe...")
+    logger.info("Shimmying down the drain pipe...Shutting down logging.")
     shutdown_logging()
 
 

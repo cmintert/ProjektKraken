@@ -9,8 +9,6 @@ import logging
 from typing import Any, Optional
 
 from PySide6.QtCore import QPoint, QSize, Qt, Signal
-
-logger = logging.getLogger(__name__)
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
@@ -34,6 +32,8 @@ from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
 from src.gui.widgets.tag_editor import TagEditorWidget
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
+logger = logging.getLogger(__name__)
+
 
 class EventEditorWidget(QWidget):
     """
@@ -45,10 +45,15 @@ class EventEditorWidget(QWidget):
     save_requested = Signal(dict)
     discard_requested = Signal(str)  # item_id to reload
     add_relation_requested = Signal(
-        str, str, str, bool
-    )  # source_id, target_id, type, bidirectional
+        str, str, str, dict, bool
+    )  # source_id, target_id, type, attributes, bidirectional
     remove_relation_requested = Signal(str)  # rel_id
-    update_relation_requested = Signal(str, str, str)  # rel_id, target_id, rel_type
+    update_relation_requested = Signal(
+        str, str, str, dict
+    )  # rel_id, target_id, rel_type, attributes, attributes
+
+    # ... (omitted)
+
     link_clicked = Signal(str)  # target_name
     navigate_to_relation = Signal(str)  # target_id for Go to button
     dirty_changed = Signal(bool)
@@ -401,6 +406,7 @@ class EventEditorWidget(QWidget):
                         label=label,
                         target_id=rel["target_id"],
                         target_name=target_display,
+                        attributes=rel.get("attributes"),
                     )
                     widget.go_to_clicked.connect(
                         lambda tid, tn: self.navigate_to_relation.emit(tid)
@@ -426,6 +432,7 @@ class EventEditorWidget(QWidget):
                         label=label,
                         target_id=rel["source_id"],
                         target_name=source_display,
+                        attributes=rel.get("attributes"),
                     )
                     widget.go_to_clicked.connect(
                         lambda tid, tn: self.navigate_to_relation.emit(tid)
@@ -503,10 +510,14 @@ class EventEditorWidget(QWidget):
         )
 
         if dlg.exec():
-            target_id, rel_type, is_bidirectional = dlg.get_data()
+            target_id, rel_type, is_bidirectional, attributes = dlg.get_data()
             if target_id:
                 self.add_relation_requested.emit(
-                    self._current_event_id, target_id, rel_type, is_bidirectional
+                    self._current_event_id,
+                    target_id,
+                    rel_type,
+                    attributes,
+                    is_bidirectional,
                 )
 
     def _show_rel_menu(self, pos: QPoint) -> None:
@@ -551,6 +562,7 @@ class EventEditorWidget(QWidget):
             target_id=rel_data["target_id"],
             rel_type=rel_data["rel_type"],
             is_bidirectional=False,  # Editing existing
+            attributes=rel_data.get("attributes"),  # Pass existing attributes
             suggestion_items=getattr(self, "_suggestion_items", []),
         )
 
@@ -558,9 +570,11 @@ class EventEditorWidget(QWidget):
         dlg.bi_check.setVisible(False)
 
         if dlg.exec():
-            target_id, rel_type, _ = dlg.get_data()
+            target_id, rel_type, _, attributes = dlg.get_data()
             if target_id:
-                self.update_relation_requested.emit(rel_data["id"], target_id, rel_type)
+                self.update_relation_requested.emit(
+                    rel_data["id"], target_id, rel_type, attributes
+                )
 
     def _on_edit_selected_relation(self) -> None:
         """Edits the currently selected relation."""
@@ -704,7 +718,11 @@ class EventEditorWidget(QWidget):
         dialog.target_edit.setEnabled(False)
 
         if dialog.exec():
-            _, rel_type, is_bidirectional = dialog.get_data()
+            _, rel_type, is_bidirectional, attributes = dialog.get_data()
             self.add_relation_requested.emit(
-                self._current_event_id, target_id, rel_type, is_bidirectional
+                self._current_event_id,
+                target_id,
+                rel_type,
+                attributes,
+                is_bidirectional,
             )
