@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-02
-### Added
-- feat(gui): integrate relation attributes and custom attributes
+### Internal
+- Implement default application layout via CLI
 
 
 *This changelog was automatically generated.*
