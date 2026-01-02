@@ -156,7 +156,6 @@ def test_mainwindow_integration(qtbot):
         patch("src.app.main_window.EntityEditorWidget", spec=EntityEditorWidget),
         patch("src.app.main_window.TimelineWidget"),
         patch("src.app.main_window.MapWidget") as MockMapWidgetClass,
-        patch("src.app.main_window.ThemeManager"),
         patch("src.app.ui_manager.UIManager.setup_docks"),
         patch.object(QGraphicsObject, "mousePressEvent"),
         patch.object(QGraphicsObject, "mouseReleaseEvent"),

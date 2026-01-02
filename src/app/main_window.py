@@ -48,6 +48,7 @@ from PySide6.QtWidgets import (
 
 from src.app.command_coordinator import CommandCoordinator
 from src.app.connection_manager import ConnectionManager
+from src.app.map_handler import MapHandler
 from src.app.constants import (
     DEFAULT_DB_NAME,
     DEFAULT_WINDOW_HEIGHT,
@@ -193,10 +194,10 @@ class MainWindow(QMainWindow):
         self._last_selected_id = None
         self._last_selected_type = None
 
-        # Mapping from object_id to marker.id for position updates
-        self._marker_object_to_id = {}
-
         self.longform_editor = LongformEditorWidget(db_path=self.db_path)
+
+        # Initialize Map Handler
+        self.map_handler = MapHandler(self)
 
         # Status Bar
         self.status_bar = QStatusBar()
@@ -987,13 +988,7 @@ class MainWindow(QMainWindow):
         Args:
             maps: List of Map objects.
         """
-        self.map_widget.set_maps(maps)
-
-        # Auto-select first map if none selected
-        if maps:
-            current_id = self.map_widget.map_selector.currentData()
-            if not current_id:
-                self.map_widget.select_map(maps[0].id)
+        self.map_handler.on_maps_ready(maps)
 
     @Slot(str, list)
     def _on_markers_ready(self, map_id: str, processed_markers: list) -> None:
@@ -1004,28 +999,7 @@ class MainWindow(QMainWindow):
             map_id: The map ID these markers belong to.
             processed_markers: List of dicts with marker data.
         """
-        # Verify we are still looking at this map
-        current_map_id = self.map_widget.map_selector.currentData()
-        if current_map_id != map_id:
-            return
-
-        self.map_widget.clear_markers()
-        self._marker_object_to_id.clear()  # Reset mapping
-
-        for marker_data in processed_markers:
-            # Add marker to map
-            self.map_widget.add_marker(
-                marker_id=marker_data["object_id"],
-                object_type=marker_data["object_type"],
-                label=marker_data["label"],
-                x=marker_data["x"],
-                y=marker_data["y"],
-                icon=marker_data["icon"],
-                color=marker_data["color"],
-            )
-
-            # Store mapping for later updates (object_id -> marker.id)
-            self._marker_object_to_id[marker_data["object_id"]] = marker_data["id"]
+        self.map_handler.on_markers_ready(map_id, processed_markers)
 
     @Slot(str)
     def _on_dock_raise_requested(self, dock_name: str) -> None:
@@ -1203,9 +1177,7 @@ class MainWindow(QMainWindow):
 
     def load_maps(self) -> None:
         """Requests loading of all maps."""
-        QMetaObject.invokeMethod(
-            self.worker, "load_maps", Qt.ConnectionType.QueuedConnection
-        )
+        self.map_handler.load_maps()
 
     @Slot(str)
     def on_map_selected(self, map_id: str) -> None:
@@ -1213,146 +1185,22 @@ class MainWindow(QMainWindow):
         Handler for when a map is selected in the widget.
         Loads the map image and requests markers.
         """
-        # Find map object
-        maps = self.map_widget._maps_data
-        selected_map = next((m for m in maps if m.id == map_id), None)
-        if selected_map and selected_map.image_path:
-            # Resolve relative path against project directory
-            from pathlib import Path
-
-            image_path = selected_map.image_path
-            if not Path(image_path).is_absolute():
-                # Use main thread's db_path for path calculations
-                project_dir = Path(self.db_path).parent
-                image_path = str(project_dir / image_path)
-
-            self.map_widget.load_map(image_path)
-
-            # Request markers
-            QMetaObject.invokeMethod(
-                self.worker,
-                "load_markers",
-                Qt.ConnectionType.QueuedConnection,
-                Q_ARG(str, map_id),
-            )
+        self.map_handler.on_map_selected(map_id)
 
     def create_map(self) -> None:
         """Creates a new map via dialogs."""
-        import shutil
-        import uuid
-        from pathlib import Path
-
-        # 1. Select Image
-        file_path, _ = QFileDialog.getOpenFileName(
-            self, "Select Map Image", "", IMAGE_FILE_FILTER
-        )
-        if not file_path:
-            return
-
-        # 2. Enter Name
-        name, ok = QInputDialog.getText(self, "New Map", "Map Name:")
-        if not ok or not name.strip():
-            return
-
-        # 3. Copy image to project assets folder
-        source_path = Path(file_path)
-        # Use main thread's db_path for path calculations
-        project_dir = Path(self.db_path).parent
-        assets_dir = project_dir / "assets" / "maps"
-        assets_dir.mkdir(parents=True, exist_ok=True)
-
-        # Generate unique filename to avoid conflicts
-        unique_suffix = uuid.uuid4().hex[:8]
-        dest_filename = f"{source_path.stem}_{unique_suffix}{source_path.suffix}"
-        dest_path = assets_dir / dest_filename
-
-        try:
-            shutil.copy2(source_path, dest_path)
-            logger.info(f"Copied map image to: {dest_path}")
-        except Exception as e:
-            QMessageBox.warning(self, "Error", f"Failed to copy image: {e}")
-            return
-
-        # Store relative path
-        relative_path = str(dest_path.relative_to(project_dir))
-
-        cmd = CreateMapCommand({"name": name.strip(), "image_path": relative_path})
-        self.command_requested.emit(cmd)
+        self.map_handler.create_map()
 
     def delete_map(self) -> None:
         """Deletes the currently selected map."""
-        map_id = self.map_widget.map_selector.currentData()
-        if not map_id:
-            return
-
-        confirm = QMessageBox.question(
-            self,
-            "Delete Map",
-            "Are you sure you want to delete this map and all its markers?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        )
-        if confirm == QMessageBox.StandardButton.Yes:
-            cmd = DeleteMapCommand(map_id)
-            self.command_requested.emit(cmd)
+        self.map_handler.delete_map()
 
     def create_marker(self, x: float, y: float) -> None:
         """
         Creates a new marker at the given normalized coordinates.
         Prompts user to select an Entity or Event.
         """
-        map_id = self.map_widget.map_selector.currentData()
-        if not map_id:
-            QMessageBox.warning(self, "No Map", "Please create or select a map first.")
-            return
-
-        # Simple choice: Entity or Event?
-        # For a better UX, we could use a custom dialog with a search box.
-        # For now, using InputDialog is tricky because we need UUIDs.
-        # Better: Use a simple list selection from cached items.
-
-        items = []
-        # Format: "Name (Type)" -> (id, type)
-        for e in self._cached_entities:
-            items.append(f"{e.name} (Entity)")
-        for e in self._cached_events:
-            items.append(f"{e.name} (Event)")
-
-        items.sort()
-
-        item_text, ok = QInputDialog.getItem(
-            self, "Add Marker", "Select Object:", items, 0, False
-        )
-        if not ok or not item_text:
-            return
-
-        # Parse result
-        # This is a bit brittle if names contain " (Entity)", assuming endmatch
-        if item_text.endswith(" (Entity)"):
-            name = item_text[:-9]
-            obj_type = "entity"
-            # Find ID
-            obj = next((e for e in self._cached_entities if e.name == name), None)
-        elif item_text.endswith(" (Event)"):
-            name = item_text[:-8]
-            obj_type = "event"
-            obj = next((e for e in self._cached_events if e.name == name), None)
-        else:
-            return
-
-        if not obj:
-            return
-
-        cmd = CreateMarkerCommand(
-            {
-                "map_id": map_id,
-                "object_id": obj.id,
-                "object_type": obj_type,
-                "x": x,
-                "y": y,
-                "label": obj.name,
-            }
-        )
-        self.command_requested.emit(cmd)
+        self.map_handler.create_marker(x, y)
 
     def _on_marker_dropped(
         self, item_id: str, item_type: str, item_name: str, x: float, y: float
@@ -1367,23 +1215,7 @@ class MainWindow(QMainWindow):
             x: Normalized X coordinate [0.0, 1.0].
             y: Normalized Y coordinate [0.0, 1.0].
         """
-        map_id = self.map_widget.get_selected_map_id()
-        if not map_id:
-            QMessageBox.warning(self, "No Map", "Please select a map first.")
-            return
-
-        cmd = CreateMarkerCommand(
-            {
-                "map_id": map_id,
-                "object_id": item_id,
-                "object_type": item_type,
-                "x": x,
-                "y": y,
-                "label": item_name,
-            }
-        )
-        self.command_requested.emit(cmd)
-        logger.info(f"Creating marker for {item_type} '{item_name}' via drag-drop")
+        self.map_handler.on_marker_dropped(item_id, item_type, item_name, x, y)
 
     def delete_marker(self, marker_id: str) -> None:
         """
@@ -1392,26 +1224,7 @@ class MainWindow(QMainWindow):
         Args:
             marker_id: The object_id from the UI (not the actual marker.id).
         """
-        # Translate object_id to actual marker ID
-        actual_marker_id = self._marker_object_to_id.get(marker_id)
-        if not actual_marker_id:
-            logger.warning(f"No marker mapping found for object_id: {marker_id}")
-            return
-
-        confirm = QMessageBox.question(
-            self,
-            "Delete Marker",
-            "Remove this marker?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        )
-        if confirm == QMessageBox.StandardButton.Yes:
-            # Remove marker from UI immediately for instant feedback
-            self.map_widget.remove_marker(marker_id)
-            # Also remove from mapping
-            del self._marker_object_to_id[marker_id]
-            # Then execute the database command
-            cmd = DeleteMarkerCommand(actual_marker_id)
-            self.command_requested.emit(cmd)
+        self.map_handler.delete_marker(marker_id)
 
     @Slot(str, str)
     def _on_marker_clicked(self, marker_id: str, object_type: str) -> None:
@@ -1422,25 +1235,7 @@ class MainWindow(QMainWindow):
             marker_id: The ID of the item.
             object_type: 'event' or 'entity'.
         """
-        logger.info(
-            f"_on_marker_clicked called: marker_id={marker_id}, "
-            f"object_type={object_type}"
-        )
-        if object_type == "event":
-            if not self.check_unsaved_changes(self.event_editor):
-                return
-            self.load_event_details(marker_id)
-            self._last_selected_id = marker_id
-            self._last_selected_type = "event"
-            self.ui_manager.docks["event"].raise_()
-
-        elif object_type == "entity":
-            if not self.check_unsaved_changes(self.entity_editor):
-                return
-            self.load_entity_details(marker_id)
-            self._last_selected_id = marker_id
-            self._last_selected_type = "entity"
-            self.ui_manager.docks["entity"].raise_()
+        self.map_handler.on_marker_clicked(marker_id, object_type)
 
     @Slot(str, str)
     def _on_marker_icon_changed(self, marker_id: str, icon: str) -> None:
@@ -1451,13 +1246,7 @@ class MainWindow(QMainWindow):
             marker_id: ID of the marker (actually object_id from view)
             icon: New icon filename
         """
-        # Translate object_id to actual marker ID
-        actual_marker_id = self._marker_object_to_id.get(marker_id)
-        if not actual_marker_id:
-            logger.warning(f"No marker mapping found for object_id: {marker_id}")
-            return
-        cmd = UpdateMarkerIconCommand(marker_id=actual_marker_id, icon=icon)
-        self.command_requested.emit(cmd)
+        self.map_handler.on_marker_icon_changed(marker_id, icon)
 
     @Slot(str, str)
     def _on_marker_color_changed(self, marker_id: str, color: str) -> None:
@@ -1468,13 +1257,7 @@ class MainWindow(QMainWindow):
             marker_id: ID of the marker (actually object_id from view)
             color: New color hex code
         """
-        # Translate object_id to actual marker ID
-        actual_marker_id = self._marker_object_to_id.get(marker_id)
-        if not actual_marker_id:
-            logger.warning(f"No marker mapping found for object_id: {marker_id}")
-            return
-        cmd = UpdateMarkerColorCommand(marker_id=actual_marker_id, color=color)
-        self.command_requested.emit(cmd)
+        self.map_handler.on_marker_color_changed(marker_id, color)
 
     @Slot(str, float, float)
     def _on_marker_position_changed(self, marker_id: str, x: float, y: float) -> None:
@@ -1486,16 +1269,7 @@ class MainWindow(QMainWindow):
             x: New normalized X coordinate
             y: New normalized Y coordinate
         """
-        # Translate object_id to actual marker ID
-        actual_marker_id = self._marker_object_to_id.get(marker_id)
-        if not actual_marker_id:
-            logger.warning(f"No marker mapping found for object_id: {marker_id}")
-            return
-        # Import the command
-        from src.commands.map_commands import UpdateMarkerPositionCommand
-
-        cmd = UpdateMarkerPositionCommand(marker_id=actual_marker_id, x=x, y=y)
-        self.command_requested.emit(cmd)
+        self.map_handler.on_marker_position_changed(marker_id, x, y)
 
     # ----------------------------------------------------------------------
     # Timeline Grouping Methods
