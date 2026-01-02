@@ -5,7 +5,6 @@ The main application window that manages UI components, database workers,
 and signal/slot connections.
 """
 
-import os
 from typing import Optional
 
 # NOTE: PySide6 Fully Qualified Enum Paths

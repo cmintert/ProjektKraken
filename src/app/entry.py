@@ -13,14 +13,19 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication
+# Imports after load_dotenv() to allow modules to access environment variables
+from PySide6.QtCore import Qt  # noqa: E402
+from PySide6.QtWidgets import QApplication  # noqa: E402
 
-from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
-from src.app.main_window import MainWindow
-from src.core.logging_config import get_logger, setup_logging, shutdown_logging
-from src.core.paths import get_resource_path
-from src.core.theme_manager import ThemeManager
+from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY  # noqa: E402
+from src.app.main_window import MainWindow  # noqa: E402
+from src.core.logging_config import (  # noqa: E402
+    get_logger,
+    setup_logging,
+    shutdown_logging,
+)
+from src.core.paths import get_resource_path  # noqa: E402
+from src.core.theme_manager import ThemeManager  # noqa: E402
 
 # Initialize Logging
 setup_logging(debug_mode=True)
