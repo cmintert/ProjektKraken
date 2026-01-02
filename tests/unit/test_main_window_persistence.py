@@ -20,7 +20,7 @@ from src.app.main import MainWindow
 @pytest.fixture
 def mock_settings():
     """Mock QSettings to prevent real persistence usage."""
-    with patch("src.app.main.QSettings") as MockSettings:
+    with patch("src.app.main_window.QSettings") as MockSettings:
         storage = {}
 
         def mock_init(*args):
@@ -53,11 +53,11 @@ def main_window(qapp, qtbot, mock_settings):
     """Fixture to create a MainWindow instance."""
     # Patch UIManager and DataHandler to avoid complex init
     with (
-        patch("src.app.main.UIManager"),
-        patch("src.app.main.DataHandler"),
-        patch("src.app.main.ConnectionManager"),
-        patch("src.app.main.QMessageBox.question", return_value=QMessageBox.Discard),
-        patch("src.app.main.QMessageBox.warning", return_value=QMessageBox.Discard),
+        patch("src.app.main_window.UIManager"),
+        patch("src.app.main_window.DataHandler"),
+        patch("src.app.main_window.ConnectionManager"),
+        patch("src.app.main_window.QMessageBox.question", return_value=QMessageBox.Discard),
+        patch("src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard),
     ):
         window = MainWindow()
         qtbot.addWidget(window)

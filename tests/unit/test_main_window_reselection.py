@@ -7,7 +7,7 @@ from src.app.main import MainWindow
 def mock_main_window():
     """Creates a partial mock of MainWindow for logic testing."""
     # We patch MainWindow during import or construction to avoid full init
-    with patch("src.app.main.MainWindow.__init__", return_value=None):
+    with patch("src.app.main_window.MainWindow.__init__", return_value=None):
         window = MainWindow()
         # Initialize attributes used in _on_item_selected
         window.event_editor = MagicMock()
