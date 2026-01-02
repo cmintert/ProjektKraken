@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-02
-### Internal
-- Merge pull request #42 from cmintert/copilot/add-json-attributes-to-relations
+### Added
+- feat(gui): integrate relation attributes and custom attributes
 
 
 *This changelog was automatically generated.*
