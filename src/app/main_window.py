@@ -46,6 +46,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.app.ai_search_manager import AISearchManager
 from src.app.command_coordinator import CommandCoordinator
 from src.app.connection_manager import ConnectionManager
 from src.app.map_handler import MapHandler
@@ -202,6 +203,9 @@ class MainWindow(QMainWindow):
 
         # Initialize Timeline Grouping Manager
         self.grouping_manager = TimelineGroupingManager(self)
+
+        # Initialize AI Search Manager
+        self.ai_search_manager = AISearchManager(self)
 
         # Status Bar
         self.status_bar = QStatusBar()
@@ -1635,25 +1639,12 @@ class MainWindow(QMainWindow):
     @Slot()
     def show_ai_settings_dialog(self) -> None:
         """Shows the AI Settings dialog."""
-        if not self.ai_settings_dialog:
-            self.ai_settings_dialog = AISettingsDialog(self)
-            self.ai_settings_dialog.rebuild_index_requested.connect(
-                self._on_ai_settings_rebuild_requested
-            )
-            self.ai_settings_dialog.index_status_requested.connect(
-                self.refresh_search_index_status
-            )
-            # Initial status update
-            self.refresh_search_index_status()
-
-        self.ai_settings_dialog.show()
-        self.ai_settings_dialog.raise_()
-        self.ai_settings_dialog.activateWindow()
+        self.ai_search_manager.show_ai_settings_dialog()
 
     @Slot(str)
     def _on_ai_settings_rebuild_requested(self, object_type: str) -> None:
         """Handle rebuild request from dialog."""
-        self.rebuild_search_index(object_type)
+        self.ai_search_manager.on_ai_settings_rebuild_requested(object_type)
 
     @Slot(str, str, int)
     def perform_semantic_search(
@@ -1667,35 +1658,7 @@ class MainWindow(QMainWindow):
             object_type_filter: Filter by 'entity' or 'event', or empty for all.
             top_k: Number of results to return.
         """
-        try:
-            if not hasattr(self, "gui_db_service"):
-                logger.warning("GUI DB Service not ready for search.")
-                return
-
-            self.ai_search_panel.set_searching(True)
-
-            # Import search service
-            from src.services.search_service import create_search_service
-
-            # Create search service with GUI thread connection
-            assert self.gui_db_service._connection is not None
-            search_service = create_search_service(self.gui_db_service._connection)
-
-            # Perform query
-            results = search_service.query(
-                text=query,
-                object_type=object_type_filter if object_type_filter else None,
-                top_k=top_k,
-            )
-
-            # Display results
-            self.ai_search_panel.set_results(results)
-            self.ai_search_panel.set_searching(False)
-
-        except Exception as e:
-            logger.error(f"Semantic search failed: {e}")
-            self.ai_search_panel.set_status(f"Search failed: {e}")
-            self.ai_search_panel.set_searching(False)
+        self.ai_search_manager.perform_semantic_search(query, object_type_filter, top_k)
 
     @Slot(str)
     def rebuild_search_index(self, object_type: str) -> None:
@@ -1705,51 +1668,7 @@ class MainWindow(QMainWindow):
         Args:
             object_type: Type to rebuild ('all', 'entity', 'event').
         """
-        try:
-            if not hasattr(self, "gui_db_service"):
-                logger.warning("GUI DB Service not ready for rebuild.")
-                return
-
-            self.status_bar.showMessage(f"Rebuilding {object_type} index...", 0)
-
-            # Import search service
-            from src.services.search_service import create_search_service
-
-            # Create search service with GUI thread connection
-            assert self.gui_db_service._connection is not None
-            search_service = create_search_service(self.gui_db_service._connection)
-
-            # Determine object types to rebuild
-            if object_type == "all":
-                types = ["entity", "event"]
-            else:
-                types = [object_type]
-
-            # Get excluded attributes from QSettings
-            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-            excluded_text = settings.value("ai_search_excluded_attrs", "", type=str)
-            excluded = [
-                attr.strip() for attr in excluded_text.split(",") if attr.strip()
-            ]
-
-            # Rebuild index
-            counts = search_service.rebuild_index(
-                object_types=types, excluded_attributes=excluded
-            )
-
-            # Show results
-            total = sum(counts.values())
-            msg = f"Rebuilt index: {total} objects indexed"
-            self.status_bar.showMessage(msg, 5000)
-            self.ai_search_panel.set_status(msg)
-
-            # Refresh index status
-            self.refresh_search_index_status()
-
-        except Exception as e:
-            logger.error(f"Index rebuild failed: {e}")
-            self.status_bar.showMessage(f"Rebuild failed: {e}", 5000)
-            self.ai_search_panel.set_status(f"Rebuild failed: {e}")
+        self.ai_search_manager.rebuild_search_index(object_type)
 
     @Slot(str, str)
     def _on_search_result_selected(self, object_type: str, object_id: str) -> None:
@@ -1760,13 +1679,12 @@ class MainWindow(QMainWindow):
             object_type: 'entity' or 'event'.
             object_id: Object UUID.
         """
-        # Navigate to the selected item
-        if object_type == "entity":
-            self.load_entity_details(object_id)
-            self._on_dock_raise_requested("entity")
-        elif object_type == "event":
-            self.load_event_details(object_id)
-            self._on_dock_raise_requested("event")
+        self.ai_search_manager.on_search_result_selected(object_type, object_id)
+
+    @Slot()
+    def refresh_search_index_status(self) -> None:
+        """Refresh the search index status display."""
+        self.ai_search_manager.refresh_search_index_status()
 
     @Slot()
     def show_database_manager(self) -> None:
@@ -1780,55 +1698,4 @@ class MainWindow(QMainWindow):
             # qApp.quit()
             # QProcess.startDetached(sys.executable, sys.argv)
             pass
-
-    @Slot()
-    def refresh_search_index_status(self) -> None:
-        """Refresh the search index status display."""
-        try:
-            if not hasattr(self, "gui_db_service"):
-                return
-
-            import datetime
-            import os
-
-            # Get model configuration
-            provider = os.getenv("EMBED_PROVIDER", "lmstudio")
-            model = os.getenv("LMSTUDIO_MODEL", "Not configured")
-
-            # Count indexed objects
-            # Use gui_db_service connection (Main Thread)
-            assert self.gui_db_service._connection is not None
-            cursor = self.gui_db_service._connection.execute(
-                "SELECT COUNT(*) FROM embeddings"
-            )
-            count = cursor.fetchone()[0]
-
-            # Get last indexed time
-            assert self.gui_db_service._connection is not None
-            cursor = self.gui_db_service._connection.execute(
-                "SELECT MAX(created_at) FROM embeddings"
-            )
-            last_time = cursor.fetchone()[0]
-
-            if last_time:
-                dt = datetime.datetime.fromtimestamp(last_time)
-                last_indexed = dt.strftime("%Y-%m-%d %H:%M:%S")
-            else:
-                last_indexed = "Never"
-
-            # Update panel
-            # Update dialog if visible
-            if (
-                hasattr(self, "ai_settings_dialog")
-                and self.ai_settings_dialog
-                and self.ai_settings_dialog.isVisible()
-            ):
-                self.ai_settings_dialog.update_status(
-                    model=f"{provider}:{model}",
-                    counts=str(count),
-                    last_updated=last_indexed,
-                )
-
-        except Exception as e:
-            logger.error(f"Failed to refresh index status: {e}")
 
