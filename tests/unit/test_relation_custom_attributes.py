@@ -33,7 +33,9 @@ def test_custom_attributes_preservation(app):
     # Check standard attribute
     assert result_attributes.get("weight") == 2.5
 
-    # Check custom attributes - CURRENTLY FAILS
-    assert "magic_power" in result_attributes
-    assert result_attributes["magic_power"] == "high"
-    assert result_attributes["hidden_value"] == 42
+    # Check custom attributes (Now nested in 'payload')
+    assert "payload" in result_attributes
+    payload = result_attributes["payload"]
+
+    assert payload.get("magic_power") == "high"
+    assert payload.get("hidden_value") == 42

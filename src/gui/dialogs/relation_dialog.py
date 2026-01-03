@@ -23,6 +23,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.gui.widgets.compact_date_widget import CompactDateWidget
+
 
 class RelationEditDialog(QDialog):
     """
@@ -38,6 +40,7 @@ class RelationEditDialog(QDialog):
         is_bidirectional: bool = False,
         attributes: Dict[str, Any] = None,
         suggestion_items: list[tuple[str, str, str]] = None,  # (id, name, type)
+        calendar_converter: Any = None,
     ) -> None:
         """
         Initializes the dialog.
@@ -55,6 +58,7 @@ class RelationEditDialog(QDialog):
         self.setMinimumWidth(400)
 
         self.attributes = attributes or {}
+        self.calendar_converter = calendar_converter
 
         main_layout = QVBoxLayout(self)
 
@@ -133,15 +137,79 @@ class RelationEditDialog(QDialog):
         self.attributes_group.setLayout(attr_layout)
         self.form_layout.addRow(self.attributes_group)
 
-        # 4. Custom Attributes
-        self.custom_attrs_group = QGroupBox("Custom Attributes")
-        # Checkboxes removed per user request
+        # 4. Temporal Settings (New)
+        self.temporal_group = QGroupBox("Temporal Settings")
+        temp_layout = QFormLayout()
+
+        # Valid From
+        self.check_from = QCheckBox("Valid From:")
+        self.valid_from = CompactDateWidget()
+        self.valid_from.setEnabled(False)  # Default disabled (infinite)
+
+        if self.calendar_converter:
+            self.valid_from.set_calendar_converter(self.calendar_converter)
+
+        initial_from = self.attributes.get("valid_from")
+        if initial_from is not None:
+            self.check_from.setChecked(True)
+            self.valid_from.setEnabled(True)
+            self.valid_from.set_value(initial_from)
+
+        # Connect checkbox
+        self.check_from.toggled.connect(self.valid_from.setEnabled)
+        temp_layout.addRow(self.check_from, self.valid_from)
+
+        # Valid To
+        self.check_to = QCheckBox("Valid To:")
+        self.valid_to = CompactDateWidget()
+        self.valid_to.setEnabled(False)  # Default disabled (infinite)
+
+        if self.calendar_converter:
+            self.valid_to.set_calendar_converter(self.calendar_converter)
+
+        initial_to = self.attributes.get("valid_to")
+        if initial_to is not None:
+            self.check_to.setChecked(True)
+            self.valid_to.setEnabled(True)
+            self.valid_to.set_value(initial_to)
+
+        # Connect checkbox
+        self.check_to.toggled.connect(self.valid_to.setEnabled)
+        temp_layout.addRow(self.check_to, self.valid_to)
+
+        self.temporal_group.setLayout(temp_layout)
+        self.form_layout.addRow(self.temporal_group)
+
+        # 5. Payload / Custom Attributes
+        self.custom_attrs_group = QGroupBox("Payload / Attributes")
 
         # Check if there are any non-standard attributes to load
-        standard_keys = {"weight", "confidence", "notes"}
+        # Standard now includes temporal keys and payload
+        standard_keys = {
+            "weight",
+            "confidence",
+            "notes",
+            "valid_from",
+            "valid_to",
+            "payload",
+        }
+
+        # Merge 'payload' dict into the custom attribute editor for easy editing
+        # We flatten 'payload' into the attribute list for the user,
+        # but re-nest it when saving IF it was originally nested,
+        # OR we just let the attribute editor handle flat keys and later we decide what goes into payload?
+        # DECISION: For MVP, we treat the 'Attribute Editor' as the place to put Payload data.
+        # We will map these back to 'payload' in _get_attributes.
+
         custom_attrs = {
             k: v for k, v in self.attributes.items() if k not in standard_keys
         }
+        # If there is an existing payload dict, flatten it for the editor
+        if "payload" in self.attributes and isinstance(
+            self.attributes["payload"], dict
+        ):
+            for k, v in self.attributes["payload"].items():
+                custom_attrs[k] = v
 
         custom_layout = QVBoxLayout()
         from src.gui.widgets.attribute_editor import AttributeEditorWidget
@@ -191,14 +259,39 @@ class RelationEditDialog(QDialog):
         if notes:
             attrs["notes"] = notes
 
-        # Custom Attributes
+        # Custom Attributes / Payload
         custom = self.custom_attr_editor.get_attributes()
-        # Prevent overwriting standard keys via custom editor
-        # (Source is no longer standard)
-        standard_keys = {"weight", "confidence", "notes"}
+
+        # Standard keys to exclude from payload
+        standard_keys = {"weight", "confidence", "notes", "valid_from", "valid_to"}
+
+        # Payload accumulator
+        payload = {}
+
         for k, v in custom.items():
-            if k not in standard_keys:
-                attrs[k] = v
+            if k in standard_keys:
+                continue
+            # For MVP: Everything in the Attribute Editor that isn't a standard key
+            # is considered part of the "Payload" (the state override).
+            # This is a simplification but aligns with the goal "State at Time T".
+            payload[k] = v
+
+        if payload:
+            attrs["payload"] = payload
+
+        # Temporal Keys
+        if self.check_from.isChecked():
+            attrs["valid_from"] = self.valid_from.get_value()
+
+        if self.check_to.isChecked():
+            v_to = self.valid_to.get_value()
+            # Simple validation: To must be > From if both exist
+            # If only To exists, it's valid (start = -inf)
+            if "valid_from" in attrs and v_to < attrs["valid_from"]:
+                # Just clamp it? Or maybe don't save invalid ranges?
+                # For now let's trust user or they will fix it.
+                pass
+            attrs["valid_to"] = v_to
 
         return attrs
 

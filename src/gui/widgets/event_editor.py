@@ -506,7 +506,9 @@ class EventEditorWidget(QWidget):
         from src.gui.dialogs.relation_dialog import RelationEditDialog
 
         dlg = RelationEditDialog(
-            parent=self, suggestion_items=getattr(self, "_suggestion_items", [])
+            parent=self,
+            suggestion_items=getattr(self, "_suggestion_items", []),
+            calendar_converter=self._calendar_converter,
         )
 
         if dlg.exec():
@@ -564,6 +566,7 @@ class EventEditorWidget(QWidget):
             is_bidirectional=False,  # Editing existing
             attributes=rel_data.get("attributes"),  # Pass existing attributes
             suggestion_items=getattr(self, "_suggestion_items", []),
+            calendar_converter=self._calendar_converter,
         )
 
         # Hide bidirectional check for editing
