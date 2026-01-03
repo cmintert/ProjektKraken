@@ -44,7 +44,7 @@ class RelationRepository(BaseRepository):
             sqlite3.Error: If the database operation fails.
         """
         sql = """
-            INSERT INTO relations (id, source_id, target_id, rel_type, 
+            INSERT INTO relations (id, source_id, target_id, rel_type,
                                    attributes, created_at)
             VALUES (?, ?, ?, ?, ?, ?)
         """
@@ -110,13 +110,22 @@ class RelationRepository(BaseRepository):
         """
         Retrieve all relations where target_id matches.
 
+        Includes 'source_event_date' if the source is an event.
+
         Args:
             target_id: The target entity/event ID.
 
         Returns:
             List of relation dictionaries.
         """
-        sql = "SELECT * FROM relations WHERE target_id = ?"
+        # Join with events table to get source event date efficiently
+        # We rename e.lore_date to source_event_date to avoid collision/ambiguity
+        sql = """
+            SELECT r.*, e.lore_date as source_event_date
+            FROM relations r
+            LEFT JOIN events e ON r.source_id = e.id
+            WHERE r.target_id = ?
+        """
 
         if not self._connection:
             raise RuntimeError("Database connection not initialized")

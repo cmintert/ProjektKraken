@@ -42,6 +42,18 @@ No DB schema change required. We utilize the existing `relations` table with the
   ```
 > **Note**: Multiple relations can exist between the same Event and Entity (e.g., `rel_type="commander"` and `rel_type="injured_in"`). The specific "meaning" is carried by the `rel_type` and the payload.
 
+### Event-Relative Timing (Dynamic Resolution)
+To ensure relations move with Events, we support dynamic dating flags in `attributes`:
+```json
+{
+  "valid_from_event": true, // Resolver uses source_event.lore_date instead of static valid_from
+  "valid_to_event": true,   // Resolver uses source_event.lore_date instead of static valid_to
+  "payload": { ... }
+}
+```
+*   **Repository Layer**: `RelationRepository` joins with `events` table to fetch `lore_date` as `source_event_date`.
+*   **Resolver Layer**: If `valid_from_event` is true, replaces `valid_from` with `source_event_date`.
+
 ### Resolver Semantics
 To compute state for Entity $E$ at time $T$:
 1. **Query**: Find all relations where:
@@ -56,36 +68,40 @@ To compute state for Entity $E$ at time $T$:
 
 ---
 
-## 3. Implementation Stages
+## 3. Implementation Status
+---
 
-### Stage 0: Core Scaffold (1–2 days)
-- **Files**: `src/core/temporal_resolver.py`, `src/core/temporal_manager.py`.
-- **Goal**: Stateless evaluation logic (API stub) + Signal subscribers.
-- **Tests**: pure in-memory unit tests.
+### Stage 0: Core Scaffold (Completed)
+- **Framework**: `TemporalResolver` (Logic) and `TemporalManager` (Orchestration).
+- **Caching**: Naive `(entity_id, time)` cache in Manager.
 
-### Stage 1: Event Editor UI (2–4 days)
-- **UI**: extend `EventEditor` with Participants & Locations pickers.
-- **Features**: Role dropdown, Time-scoped checkbox, "Create temporal attribute" checkbox.
-- **Backend**: Save logic ensuring `relation.attributes` structure.
+### Stage 1: Structured Relationship Backend (Completed)
+- **UI**: Added `RelationEditDialog` support for valid_from/to and JSON payloads.
+- **Backend**: Verified `relations` table JSON support.
 
-### Stage 2: Resolver Integration & Playhead (2–5 days)
-- **Logic**: DB-backed resolver implementation.
-- **UI**: Hook `timeline.playhead_time_changed` → call resolver → update Inspector.
-- **Tests**: Integration tests (Event+Relation → Resolved Override).
+### Stage 2: Resolver Integration & Playhead (Completed)
+- **Flow**: `Timeline.playhead_changed` -> `Worker.resolve_state` -> `EntityEditor.display_state`.
+- **UX**: Entity Inspector enters Read-Only mode (Yellow button) when viewing past states.
+- **Verification**: Integration tests (`test_temporal_integration.py`) confirm DB -> Resolver flow.
 
-### Stage 3: Change Monitoring & Invalidation (2–4 days)
-- **Signals**: Ensure `relation_changed`, `event_changed` are emitted everywhere.
-- **Cache**: `TemporalManager` listens to signals and invalidates `TemporalResolver` caches.
+### Stage 3: Event Editor UI Expansion (Completed)
+- **Categorized Pickers**: `EventEditor` now differentiates between Participants (`involved`), Locations (`located_at`), and Other Relations.
+- **Smart Relations**: `RelationEditDialog` is aware of the source Event context and supports dynamic binding.
+- **Features**: Quick-add `+` buttons for structural relationships (Who/Where).
 
-### Stage 4: Authoring UX & Promote Flow (3–6 days)
-- **UX**: Explicit "Promote to Event" flows.
-- **Logic**: NLP/Parsing suggestions to create events from text.
+### Stage 4: Change Propagation & Caching (Next)
+- **Signals**: Connect `event_updated` and `relation_updated` signals to `TemporalManager`.
+- **Cache**: Implement event-aware invalidation (Event moves -> clear cache for related entities).
 
-### Stage 5: CLI Parity & Export (2–4 days)
+### Stage 5: Future Foundations (Textual Timeline)
+- **UX**: Dedicated "Timeline" tab in Entity Inspector showing chronological changes.
+- **Summarization**: Logic to generate text summaries from Relation Payloads.
+
+### Stage 6: CLI Parity & Export (2–4 days)
 - **CLI**: `event.py` flags for participants/payloads.
 - **New Tool**: `src/cli/animation.py` for sampling state over time.
 
-### Stage 6: Docs & Examples (1–2 days)
+### Stage 7: Docs & Examples (1–2 days)
 - **Docs**: `docs/TEMPORAL_RELATIONS.md`.
 - **Validation**: Example world dataset in CI.
 

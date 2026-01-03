@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QButtonGroup,
     QCheckBox,
     QComboBox,
     QCompleter,
@@ -18,6 +19,7 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QGroupBox,
     QLineEdit,
+    QRadioButton,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -41,6 +43,8 @@ class RelationEditDialog(QDialog):
         attributes: Dict[str, Any] = None,
         suggestion_items: list[tuple[str, str, str]] = None,  # (id, name, type)
         calendar_converter: Any = None,
+        source_event_date: Optional[float] = None,
+        source_event_name: Optional[str] = None,
     ) -> None:
         """
         Initializes the dialog.
@@ -52,6 +56,8 @@ class RelationEditDialog(QDialog):
             is_bidirectional: Initial bidirectional state.
             attributes: Initial relation attributes.
             suggestion_items: List of (id, name, type) for autocompletion.
+            source_event_date: Optional lore_date of the source event.
+            source_event_name: Optional name of the source event.
         """
         super().__init__(parent)
         self.setWindowTitle("Edit Relation")
@@ -59,6 +65,8 @@ class RelationEditDialog(QDialog):
 
         self.attributes = attributes or {}
         self.calendar_converter = calendar_converter
+        self.source_event_date = source_event_date
+        self.source_event_name = source_event_name
 
         main_layout = QVBoxLayout(self)
 
@@ -137,7 +145,52 @@ class RelationEditDialog(QDialog):
         self.attributes_group.setLayout(attr_layout)
         self.form_layout.addRow(self.attributes_group)
 
-        # 4. Temporal Settings (New)
+        # 4. Timeline Logic (Dynamic Binding)
+        # Only show if we have a source event context
+        if self.source_event_date is not None:
+            self.logic_group = QGroupBox(
+                f"Timeline Logic (Source: {self.source_event_name})"
+            )
+            logic_layout = QVBoxLayout()
+
+            self.logic_btn_group = QButtonGroup(self)
+
+            self.rb_absolute = QRadioButton("Absolute Dates (Manual)")
+            self.rb_starts = QRadioButton("Starts at Event")
+            self.rb_ends = QRadioButton("Ends at Event")
+            self.rb_at_event = QRadioButton("Only valid at Event")
+
+            self.logic_btn_group.addButton(self.rb_absolute)
+            self.logic_btn_group.addButton(self.rb_starts)
+            self.logic_btn_group.addButton(self.rb_ends)
+            self.logic_btn_group.addButton(self.rb_at_event)
+
+            logic_layout.addWidget(self.rb_starts)
+            logic_layout.addWidget(self.rb_ends)
+            logic_layout.addWidget(self.rb_at_event)
+            logic_layout.addWidget(self.rb_absolute)
+
+            # Initial State
+            is_start_event = self.attributes.get("valid_from_event", False)
+            is_end_event = self.attributes.get("valid_to_event", False)
+            is_at_event = is_start_event and is_end_event
+
+            if is_at_event:
+                self.rb_at_event.setChecked(True)
+            elif is_start_event:
+                self.rb_starts.setChecked(True)
+            elif is_end_event:
+                self.rb_ends.setChecked(True)
+            else:
+                self.rb_absolute.setChecked(True)
+
+            # Connect Logic
+            self.logic_btn_group.buttonToggled.connect(self._on_logic_changed)
+
+            self.logic_group.setLayout(logic_layout)
+            self.form_layout.addRow(self.logic_group)
+
+        # 4b. Temporal Settings (Absolute/Manual Mode)
         self.temporal_group = QGroupBox("Temporal Settings")
         temp_layout = QFormLayout()
 
@@ -180,6 +233,10 @@ class RelationEditDialog(QDialog):
         self.temporal_group.setLayout(temp_layout)
         self.form_layout.addRow(self.temporal_group)
 
+        # Trigger initial visibility/state update if we have event context
+        if self.source_event_date is not None:
+            self._on_logic_changed(self.logic_btn_group.checkedButton(), True)
+
         # 5. Payload / Custom Attributes
         self.custom_attrs_group = QGroupBox("Payload / Attributes")
 
@@ -198,7 +255,8 @@ class RelationEditDialog(QDialog):
         # We flatten 'payload' into the attribute list for the user,
         # but re-nest it when saving IF it was originally nested,
         # OR we just let the attribute editor handle flat keys and later we decide what goes into payload?
-        # DECISION: For MVP, we treat the 'Attribute Editor' as the place to put Payload data.
+        # DECISION: For MVP, we treat the 'Attribute Editor'
+        # as the place to put Payload data.
         # We will map these back to 'payload' in _get_attributes.
 
         custom_attrs = {
@@ -238,6 +296,53 @@ class RelationEditDialog(QDialog):
 
         # Initial focus
         self.target_edit.setFocus()
+
+    def _on_logic_changed(self, button: QRadioButton, checked: bool) -> None:
+        """Handle logic radio button changes."""
+        if not checked:
+            return
+
+        if button == self.rb_absolute:
+            # Show Temporal Settings for manual configuration
+            self.temporal_group.setVisible(True)
+            # Re-enable controls, user can manual set
+            if self.check_from.isChecked():
+                self.valid_from.setEnabled(True)
+            if self.check_to.isChecked():
+                self.valid_to.setEnabled(True)
+
+        elif button == self.rb_starts:
+            # Hide Temporal Settings (managed automatically)
+            self.temporal_group.setVisible(False)
+            # Starts at Event
+            # Force Valid From = Checked, Value = Event Date, Disabled
+            self.check_from.setChecked(True)
+            self.valid_from.set_value(self.source_event_date)
+            self.valid_from.setEnabled(False)
+            # Clear Valid To (indefinite)
+            self.check_to.setChecked(False)
+
+        elif button == self.rb_ends:
+            # Hide Temporal Settings (managed automatically)
+            self.temporal_group.setVisible(False)
+            # Ends at Event
+            # Force Valid To = Checked, Value = Event Date, Disabled
+            self.check_to.setChecked(True)
+            self.valid_to.set_value(self.source_event_date)
+            self.valid_to.setEnabled(False)
+            # Clear Valid From (from beginning)
+            self.check_from.setChecked(False)
+
+        elif button == self.rb_at_event:
+            # Hide Temporal Settings (managed automatically)
+            self.temporal_group.setVisible(False)
+            # Only valid at Event (both start and end at event date)
+            self.check_from.setChecked(True)
+            self.valid_from.set_value(self.source_event_date)
+            self.valid_from.setEnabled(False)
+            self.check_to.setChecked(True)
+            self.valid_to.set_value(self.source_event_date)
+            self.valid_to.setEnabled(False)
 
     def _get_attributes(self) -> Dict[str, Any]:
         """Collects attributes from UI fields."""
@@ -292,6 +397,26 @@ class RelationEditDialog(QDialog):
                 # For now let's trust user or they will fix it.
                 pass
             attrs["valid_to"] = v_to
+
+        # Save Dynamic Flags
+        if self.source_event_date is not None and hasattr(self, "rb_at_event"):
+            if self.rb_at_event.isChecked():
+                # Only valid at Event - both start and end
+                attrs["valid_from_event"] = True
+                attrs["valid_to_event"] = True
+                attrs["valid_from"] = self.source_event_date
+                attrs["valid_to"] = self.source_event_date
+
+            elif self.rb_starts.isChecked():
+                attrs["valid_from_event"] = True
+                # Ensure date is synced (in case they unchecked
+                # it manually then re-clicked radio?)
+                # _on_logic_changed handles UI, this handles data
+                attrs["valid_from"] = self.source_event_date
+
+            elif self.rb_ends.isChecked():
+                attrs["valid_to_event"] = True
+                attrs["valid_to"] = self.source_event_date
 
         return attrs
 

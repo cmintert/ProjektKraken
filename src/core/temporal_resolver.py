@@ -46,8 +46,18 @@ class TemporalResolver:
         applicable_relations = []
         for rel in relations:
             attrs = rel.get("attributes", {})
-            valid_from = attrs.get("valid_from")
-            valid_to = attrs.get("valid_to")
+            source_event_date = rel.get("source_event_date")
+
+            # Dynamic Timing Logic
+            if attrs.get("valid_from_event") is True and source_event_date is not None:
+                valid_from = float(source_event_date)
+            else:
+                valid_from = attrs.get("valid_from")
+
+            if attrs.get("valid_to_event") is True and source_event_date is not None:
+                valid_to = float(source_event_date)
+            else:
+                valid_to = attrs.get("valid_to")
 
             # Skip if no temporal data
             if valid_from is None:
@@ -89,7 +99,11 @@ class TemporalResolver:
         attrs = relation.get("attributes", {})
 
         # 1. Time
-        valid_from = attrs.get("valid_from", float("-inf"))
+        source_event_date = relation.get("source_event_date")
+        if attrs.get("valid_from_event") is True and source_event_date is not None:
+            valid_from = float(source_event_date)
+        else:
+            valid_from = attrs.get("valid_from", float("-inf"))
 
         # 2. Priority
         # event = 1, manual = 2 (Manual wins ties at same time)

@@ -165,35 +165,7 @@ class EventEditorWidget(QWidget):
 
         # --- Tab 3: Relations ---
         self.tab_relations = QWidget()
-        rel_tab_layout = QVBoxLayout(self.tab_relations)
-        StyleHelper.apply_compact_spacing(rel_tab_layout)
-
-        # Buttons first
-        rel_btn_layout = QHBoxLayout()
-        self.btn_add_rel = StandardButton("Add Relation")
-        self.btn_add_rel.clicked.connect(self._on_add_relation)
-        rel_btn_layout.addWidget(self.btn_add_rel)
-
-        self.btn_edit_rel = StandardButton("Edit")
-        self.btn_edit_rel.clicked.connect(self._on_edit_selected_relation)
-        rel_btn_layout.addWidget(self.btn_edit_rel)
-
-        self.btn_remove_rel = StandardButton("Remove")
-        self.btn_remove_rel.setStyleSheet(StyleHelper.get_destructive_button_style())
-        self.btn_remove_rel.clicked.connect(self._on_remove_selected_relation)
-        rel_btn_layout.addWidget(self.btn_remove_rel)
-
-        rel_btn_layout.addStretch()
-        rel_tab_layout.addLayout(rel_btn_layout)
-
-        # List second
-        self.rel_list = QListWidget()
-        self.rel_list.setSpacing(2)  # Add spacing between items
-        self.rel_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.rel_list.customContextMenuRequested.connect(self._show_rel_menu)
-        self.rel_list.itemDoubleClicked.connect(self._on_edit_relation)
-        rel_tab_layout.addWidget(self.rel_list)
-
+        self._setup_relations_tab()
         self.inspector.add_tab(self.tab_relations, "Relations")
 
         # --- Tab 4: Gallery ---
@@ -240,6 +212,75 @@ class EventEditorWidget(QWidget):
 
         # Start disabled until specific event loaded
         self.setEnabled(False)
+
+    def _setup_relations_tab(self) -> None:
+        """Configures the Relations tab with categorized sections."""
+        from src.gui.utils.style_helper import StyleHelper
+
+        layout = QVBoxLayout(self.tab_relations)
+        StyleHelper.apply_compact_spacing(layout)
+
+        # Helper to create a section
+        def create_section(title: str, add_slot: Any) -> tuple[QWidget, QListWidget]:
+            group = QWidget()
+            vbox = QVBoxLayout(group)
+            vbox.setContentsMargins(0, 0, 0, 0)
+            vbox.setSpacing(4)
+
+            # Header
+            hbox = QHBoxLayout()
+            from PySide6.QtWidgets import QLabel
+
+            lbl = QLabel(title)
+            lbl.setStyleSheet("font-weight: bold; color: gray;")
+            hbox.addWidget(lbl)
+
+            btn_add = StandardButton("+")
+            btn_add.setFixedSize(24, 24)
+            btn_add.clicked.connect(add_slot)
+            hbox.addWidget(btn_add)
+            hbox.addStretch()
+            vbox.addLayout(hbox)
+
+            # List
+            lst = QListWidget()
+            lst.setSpacing(2)
+            lst.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+            lst.customContextMenuRequested.connect(
+                lambda pos: self._show_rel_menu(pos, lst)
+            )
+            lst.itemDoubleClicked.connect(self._on_edit_relation)
+            # Fixed height for compactness, but expandable
+            lst.setMinimumHeight(80)
+            vbox.addWidget(lst)
+
+            return group, lst, btn_add
+
+        # 1. Participants
+        self.grp_participants, self.participant_list, self.btn_add_participant = (
+            create_section("Participants", self._on_add_participant)
+        )
+        layout.addWidget(self.grp_participants)
+
+        # 2. Locations
+        self.grp_locations, self.location_list, self.btn_add_location = create_section(
+            "Locations", self._on_add_location
+        )
+        layout.addWidget(self.grp_locations)
+
+        # 3. Other Relations
+        self.grp_relations, self.rel_list, self.btn_add_rel = create_section(
+            "Other Relations", self._on_add_relation
+        )
+        layout.addWidget(self.grp_relations)
+
+    def _on_add_participant(self) -> None:
+        """Quick add participant."""
+        self._on_add_relation(rel_type="involved")
+
+    def _on_add_location(self) -> None:
+        """Quick add location."""
+        self._on_add_relation(rel_type="located_at")
 
     def _connect_dirty_signals(self) -> None:
         """Connects input widget signals to set_dirty(True)."""
@@ -393,59 +434,62 @@ class EventEditorWidget(QWidget):
 
             # Load relations
             self.rel_list.clear()
+            self.participant_list.clear()
+            self.location_list.clear()
+
+            # Helper to create widget and item
+            def add_relation_item(
+                list_widget: QListWidget, rel: dict, prefix: str = "→"
+            ) -> None:
+                # Determine display name
+                if prefix == "→":
+                    target_display = rel.get("target_name") or rel["target_id"]
+                    other_id = rel["target_id"]
+                else:
+                    target_display = rel.get("source_name") or rel["source_id"]
+                    other_id = rel["source_id"]
+
+                label = f"{prefix} {target_display} [{rel['rel_type']}]"
+
+                # Create custom widget with Go to button
+                widget = RelationItemWidget(
+                    label=label,
+                    target_id=other_id,
+                    target_name=target_display,
+                    attributes=rel.get("attributes"),
+                )
+                widget.go_to_clicked.connect(
+                    lambda tid, tn: self.navigate_to_relation.emit(tid)
+                )
+
+                if prefix == "←":
+                    widget.label.setStyleSheet("color: gray;")
+
+                # Create list item
+                item = QListWidgetItem()
+                item.setData(Qt.ItemDataRole.UserRole, rel)
+                item.setSizeHint(QSize(200, 36))
+
+                list_widget.addItem(item)
+                list_widget.setItemWidget(item, widget)
 
             # Outgoing
             if relations:
                 for rel in relations:
-                    # Format: → TargetID [Type]
-                    target_display = rel.get("target_name") or rel["target_id"]
-                    label = f"→ {target_display} [{rel['rel_type']}]"
+                    rtype = rel.get("rel_type")
+                    if rtype in ("involved", "participated_in", "member_of"):
+                        add_relation_item(self.participant_list, rel, "→")
+                    elif rtype == "located_at":
+                        add_relation_item(self.location_list, rel, "→")
+                    else:
+                        add_relation_item(self.rel_list, rel, "→")
 
-                    # Create custom widget with Go to button
-                    widget = RelationItemWidget(
-                        label=label,
-                        target_id=rel["target_id"],
-                        target_name=target_display,
-                        attributes=rel.get("attributes"),
-                    )
-                    widget.go_to_clicked.connect(
-                        lambda tid, tn: self.navigate_to_relation.emit(tid)
-                    )
-
-                    # Create list item with explicit size hint BEFORE adding
-                    item = QListWidgetItem()
-                    item.setData(Qt.ItemDataRole.UserRole, rel)
-
-                    item.setSizeHint(QSize(200, 36))  # Explicit height for button
-                    self.rel_list.addItem(item)
-                    self.rel_list.setItemWidget(item, widget)
-
-            # Incoming
+            # Incoming (Always goes to Other Relations for now,
+            # or maybe context dependent?)
+            # Usually incoming are less structural context and more backlinks.
             if incoming_relations:
                 for rel in incoming_relations:
-                    # Format: ← SourceID [Type]
-                    source_display = rel.get("source_name") or rel["source_id"]
-                    label = f"← {source_display} [{rel['rel_type']}]"
-
-                    # Create custom widget - navigate to source for incoming
-                    widget = RelationItemWidget(
-                        label=label,
-                        target_id=rel["source_id"],
-                        target_name=source_display,
-                        attributes=rel.get("attributes"),
-                    )
-                    widget.go_to_clicked.connect(
-                        lambda tid, tn: self.navigate_to_relation.emit(tid)
-                    )
-                    widget.label.setStyleSheet("color: gray;")
-
-                    # Create list item with explicit size hint BEFORE adding
-                    item = QListWidgetItem()
-                    item.setData(Qt.ItemDataRole.UserRole, rel)
-
-                    item.setSizeHint(QSize(200, 36))  # Explicit height for button
-                    self.rel_list.addItem(item)
-                    self.rel_list.setItemWidget(item, widget)
+                    add_relation_item(self.rel_list, rel, "←")
 
             # Unblock signals
             self.name_edit.blockSignals(False)
@@ -495,7 +539,7 @@ class EventEditorWidget(QWidget):
 
         self.discard_requested.emit(self._current_event_id)
 
-    def _on_add_relation(self) -> None:
+    def _on_add_relation(self, rel_type: Any = "involved") -> None:
         """
         Prompts user for relation details and emits signal.
         Uses RelationEditDialog with autocompletion.
@@ -503,12 +547,21 @@ class EventEditorWidget(QWidget):
         if not self._current_event_id:
             return
 
+        # Handle signals passing 'checked' boolean
+        if isinstance(rel_type, bool):
+            rel_type = "involved"
+
         from src.gui.dialogs.relation_dialog import RelationEditDialog
 
         dlg = RelationEditDialog(
             parent=self,
+            rel_type=rel_type,
             suggestion_items=getattr(self, "_suggestion_items", []),
             calendar_converter=self._calendar_converter,
+            source_event_date=(
+                self.date_edit.get_value() if self._current_event_id else None
+            ),
+            source_event_name=self.name_edit.text() if self._current_event_id else None,
         )
 
         if dlg.exec():
@@ -522,16 +575,19 @@ class EventEditorWidget(QWidget):
                     is_bidirectional,
                 )
 
-    def _show_rel_menu(self, pos: QPoint) -> None:
+    def _show_rel_menu(self, pos: QPoint, list_widget: QListWidget = None) -> None:
         """Shows context menu for relation items."""
-        item = self.rel_list.itemAt(pos)
+        # Check if list_widget is passed (from new lambda) or use default (legacy/safe)
+        target_list = list_widget or self.rel_list
+
+        item = target_list.itemAt(pos)
         if not item:
             return
 
         menu = QMenu()
         edit_action = menu.addAction("Edit")
         remove_action = menu.addAction("Remove")
-        action = menu.exec(self.rel_list.mapToGlobal(pos))
+        action = menu.exec(target_list.mapToGlobal(pos))
 
         if action == remove_action:
             self._on_remove_relation_item(item)
@@ -567,6 +623,12 @@ class EventEditorWidget(QWidget):
             attributes=rel_data.get("attributes"),  # Pass existing attributes
             suggestion_items=getattr(self, "_suggestion_items", []),
             calendar_converter=self._calendar_converter,
+            source_event_date=(
+                self.date_edit.get_value() if self._current_event_id else None
+            ),
+            source_event_name=(
+                self.name_edit.text() if self._current_event_id else None
+            ),
         )
 
         # Hide bidirectional check for editing
