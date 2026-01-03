@@ -70,11 +70,13 @@ class DatabaseManagerDialog(QDialog):
         # Buttons
         btn_layout = QHBoxLayout()
         self.btn_create = QPushButton("Create New")
+        self.btn_browse = QPushButton("Browse...")
         self.btn_delete = QPushButton("Delete")
         self.btn_select = QPushButton("Select && Restart")  # && escapes to &
         self.btn_close = QPushButton("Cancel")
 
         btn_layout.addWidget(self.btn_create)
+        btn_layout.addWidget(self.btn_browse)
         btn_layout.addWidget(self.btn_delete)
         btn_layout.addWidget(self.btn_select)
         btn_layout.addStretch()
@@ -84,6 +86,7 @@ class DatabaseManagerDialog(QDialog):
 
         # Connections
         self.btn_create.clicked.connect(self._create_db)
+        self.btn_browse.clicked.connect(self._browse_db)
         self.btn_delete.clicked.connect(self._delete_db)
         self.btn_select.clicked.connect(self._select_db)
         self.btn_close.clicked.connect(self.reject)
@@ -148,6 +151,48 @@ class DatabaseManagerDialog(QDialog):
             except Exception as e:
                 logger.error(f"Failed to create database: {e}")
                 QMessageBox.critical(self, "Error", f"Failed to create database:\n{e}")
+
+    def _browse_db(self) -> None:
+        """Browse for a .kraken database file from any location."""
+        from PySide6.QtWidgets import QFileDialog
+
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Open Kraken Database",
+            "",  # Start in default directory
+            "Kraken Databases (*.kraken);;All Files (*)",
+        )
+
+        if file_path:
+            # Get just the filename
+            filename = os.path.basename(file_path)
+            target_path = os.path.join(self.data_dir, filename)
+
+            # If file is not in data_dir, copy it there
+            if os.path.abspath(file_path) != os.path.abspath(target_path):
+                try:
+                    import shutil
+
+                    shutil.copy2(file_path, target_path)
+                    logger.info(f"Copied database from {file_path} to {target_path}")
+                    QMessageBox.information(
+                        self,
+                        "Success",
+                        f"Database copied to:\n{target_path}\n\nYou can now select it.",
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to copy database: {e}")
+                    QMessageBox.critical(
+                        self, "Error", f"Failed to copy database:\n{e}"
+                    )
+                    return
+
+            self._refresh_list()
+
+            # Select the copied/found item
+            items = self.db_list.findItems(filename, Qt.MatchFlag.MatchContains)
+            if items:
+                self.db_list.setCurrentItem(items[0])
 
     def _delete_db(self) -> None:
         """Handle deletion of a database file."""

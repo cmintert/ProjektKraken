@@ -151,6 +151,14 @@ class RelationEditDialog(QDialog):
             self.logic_group = QGroupBox(
                 f"Timeline Logic (Source: {self.source_event_name})"
             )
+
+            # Add tooltip to the group box
+            self.logic_group.setToolTip(
+                "Choose how this relation tracks time.\n\n"
+                "• Dynamic options automatically update if the event date changes.\n"
+                "• Manual mode uses fixed dates that don't change."
+            )
+
             logic_layout = QVBoxLayout()
 
             self.logic_btn_group = QButtonGroup(self)

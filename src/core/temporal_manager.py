@@ -74,17 +74,40 @@ class TemporalManager(QObject):
     @Slot(str)
     def on_event_changed(self, event_id: str) -> None:
         """
-        Slot to handle event changes.
-        Harder to know which entities are affected without querying.
-        For Stage 0, we might leave this as a placeholder or
-        implement a 'nuclear' option if needed.
+        Slot to handle event changes (e.g., date moved, event deleted).
+
+        When an event changes, all entities linked via relations from that
+        event need their caches invalidated, as their resolved states may
+        have changed.
+
+        Args:
+            event_id: ID of the event that changed.
         """
-        # Placeholder for future logic
-        pass
+        # Query all relations where this event is the source
+        try:
+            relations = self._db.get_relations(event_id)
+
+            # Extract unique target entities
+            affected_entities = {rel["target_id"] for rel in relations}
+
+            # Invalidate cache for each affected entity
+            for entity_id in affected_entities:
+                self.invalidate_entity(entity_id)
+
+            if affected_entities:
+                logger.debug(
+                    f"Event {event_id} changed: invalidated {len(affected_entities)} "
+                    f"entities"
+                )
+        except Exception as e:
+            logger.error(f"Error invalidating on event change {event_id}: {e}")
 
     def invalidate_entity(self, entity_id: str) -> None:
         """
         Clears all cached states for a specific entity.
+
+        Args:
+            entity_id: ID of the entity to invalidate.
         """
         # Remove all keys where entity_id matches
         keys_to_remove = [k for k in self._cache.keys() if k[0] == entity_id]
@@ -94,3 +117,14 @@ class TemporalManager(QObject):
         logger.debug(
             f"Invalidated cache for entity {entity_id} ({len(keys_to_remove)} entries)"
         )
+
+    def clear_all_cache(self) -> None:
+        """
+        Nuclear option: Clears ALL cached states.
+
+        Useful for global changes that might affect many entities
+        (e.g., changing calendar system, bulk date adjustments).
+        """
+        cache_size = len(self._cache)
+        self._cache.clear()
+        logger.info(f"Nuclear cache clear: removed {cache_size} entries")

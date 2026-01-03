@@ -38,6 +38,7 @@ def mock_db_service():
         "attributes": {"valid_from": 100, "payload": {"status": "Overridden"}},
     }
     service.get_incoming_relations.return_value = [rel]
+    service.get_relations.return_value = []  # Default: no outgoing relations
 
     return service
 
@@ -100,18 +101,145 @@ def test_invalidation_on_signal(manager, mock_db_service, signal_source):
     assert mock_db_service.get_incoming_relations.call_count == 2
 
 
-def test_invalidation_on_event_change(manager, mock_db_service, signal_source):
+def test_event_change_invalidates_linked_entities(
+    manager, mock_db_service, signal_source
+):
     """
-    Events changing (e.g. date moved) might affect relations.
-    Since we don't easily know which entities an event touches without querying,
-    the manager might need to be smart or conservative (clear all? or query deps?).
-
-    For MVP Stage 0, let's assume conservative: we might not implement Granular
-    Event->Entity invalidation yet, or we assume the signal carries info?
-
-    Actually, db_service.py usually emits signals.
-    If event changes, we technically don't know who is affected unless we look up relations.
-
-    Let's stick to relation_changed for now which has target_id.
+    Test that when an event changes, all entities linked through that event
+    have their caches invalidated.
     """
-    pass
+    # Setup: Event "evt1" has relations to "e1" and "e2"
+    mock_db_service.get_relations.return_value = [
+        {"id": "r1", "target_id": "e1", "rel_type": "involved"},
+        {"id": "r2", "target_id": "e2", "rel_type": "involved"},
+    ]
+
+    # Warm cache for e1
+    manager.get_entity_state_at("e1", time=150.0)
+    assert mock_db_service.get_incoming_relations.call_count == 1
+
+    # Event changes (e.g., date moved)
+    signal_source.event_changed.emit("evt1")
+
+    # Verify cache was cleared for e1
+    manager.get_entity_state_at("e1", time=150.0)
+    assert mock_db_service.get_incoming_relations.call_count == 2
+
+
+def test_event_change_with_no_relations(manager, mock_db_service, signal_source):
+    """Edge case: Event with no outgoing relations should not crash."""
+    mock_db_service.get_relations.return_value = []
+
+    # Should not raise
+    signal_source.event_changed.emit("orphan_event")
+
+
+def test_relation_add_invalidates_target(manager, mock_db_service, signal_source):
+    """Test that adding a new relation invalidates the target entity's cache."""
+    # Warm cache
+    manager.get_entity_state_at("e1", time=150.0)
+    call_count_before = mock_db_service.get_incoming_relations.call_count
+
+    # New relation added
+    signal_source.relation_changed.emit("r_new", "evt1", "e1")
+
+    # Cache should be invalidated
+    manager.get_entity_state_at("e1", time=150.0)
+    assert mock_db_service.get_incoming_relations.call_count > call_count_before
+
+
+def test_relation_delete_invalidates_target(manager, mock_db_service, signal_source):
+    """Test that deleting a relation invalidates the target entity's cache."""
+    # Warm cache
+    manager.get_entity_state_at("e1", time=150.0)
+    call_count_before = mock_db_service.get_incoming_relations.call_count
+
+    # Relation deleted
+    signal_source.relation_changed.emit("r1", "evt1", "e1")
+
+    # Cache should be invalidated
+    manager.get_entity_state_at("e1", time=150.0)
+    assert mock_db_service.get_incoming_relations.call_count > call_count_before
+
+
+def test_multiple_time_points_invalidated(manager, mock_db_service, signal_source):
+    """
+    Test that invalidating an entity clears ALL cached time points.
+    Edge case: Entity cached at T=100, T=200, T=300.
+    """
+    # Warm cache at multiple time points
+    manager.get_entity_state_at("e1", time=100.0)
+    manager.get_entity_state_at("e1", time=200.0)
+    manager.get_entity_state_at("e1", time=300.0)
+    assert mock_db_service.get_incoming_relations.call_count == 3
+
+    # Invalidate
+    signal_source.relation_changed.emit("r1", "evt1", "e1")
+
+    # All time points should be cleared
+    manager.get_entity_state_at("e1", time=100.0)
+    manager.get_entity_state_at("e1", time=200.0)
+    manager.get_entity_state_at("e1", time=300.0)
+    assert mock_db_service.get_incoming_relations.call_count == 6
+
+
+def test_nuclear_clear_cache(manager, mock_db_service):
+    """Test that clear_all_cache() removes all entries."""
+    # Warm cache with multiple entities at multiple times
+    manager.get_entity_state_at("e1", time=100.0)
+    manager.get_entity_state_at("e2", time=200.0)
+    assert mock_db_service.get_incoming_relations.call_count == 2
+
+    # Nuclear clear
+    manager.clear_all_cache()
+
+    # All should be re-fetched
+    manager.get_entity_state_at("e1", time=100.0)
+    manager.get_entity_state_at("e2", time=200.0)
+    assert mock_db_service.get_incoming_relations.call_count == 4
+
+
+def test_invalidation_does_not_affect_other_entities(
+    manager, mock_db_service, signal_source
+):
+    """
+    Edge case: Invalidating e1 should not invalidate e2's cache.
+    """
+    # Setup mock for e2
+    entity2 = Entity(
+        id="e2", name="Other Entity", type="generic", attributes={"status": "Base2"}
+    )
+    mock_db_service.get_entity.side_effect = lambda eid: (
+        entity2
+        if eid == "e2"
+        else Entity(id="e1", name="Test", type="generic", attributes={"status": "Base"})
+    )
+
+    # Warm both caches
+    manager.get_entity_state_at("e1", time=100.0)
+    manager.get_entity_state_at("e2", time=100.0)
+    call_count_after_warm = mock_db_service.get_incoming_relations.call_count
+
+    # Invalidate only e1
+    signal_source.relation_changed.emit("r1", "evt1", "e1")
+
+    # e2 should still be cached
+    manager.get_entity_state_at("e2", time=100.0)
+    # Should not have incremented (still cached)
+    assert mock_db_service.get_incoming_relations.call_count == call_count_after_warm
+
+    # e1 should be invalidated
+    manager.get_entity_state_at("e1", time=100.0)
+    assert (
+        mock_db_service.get_incoming_relations.call_count == call_count_after_warm + 1
+    )
+
+
+def test_nonexistent_entity_does_not_crash(manager, mock_db_service):
+    """Edge case: Requesting state for entity that doesn't exist."""
+    mock_db_service.get_entity.return_value = None
+
+    state = manager.get_entity_state_at("nonexistent", time=100.0)
+
+    # Should return empty dict
+    assert state == {}

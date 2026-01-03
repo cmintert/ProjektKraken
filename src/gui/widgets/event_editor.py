@@ -221,7 +221,9 @@ class EventEditorWidget(QWidget):
         StyleHelper.apply_compact_spacing(layout)
 
         # Helper to create a section
-        def create_section(title: str, add_slot: Any) -> tuple[QWidget, QListWidget]:
+        def create_section(
+            title: str, add_slot: Any, placeholder: str = ""
+        ) -> tuple[QWidget, QListWidget, StandardButton]:
             group = QWidget()
             vbox = QVBoxLayout(group)
             vbox.setContentsMargins(0, 0, 0, 0)
@@ -236,7 +238,9 @@ class EventEditorWidget(QWidget):
             hbox.addWidget(lbl)
 
             btn_add = StandardButton("+")
-            btn_add.setFixedSize(24, 24)
+            btn_add.setFixedSize(
+                32, 32
+            )  # Increased from 24x24 for better touch targets
             btn_add.clicked.connect(add_slot)
             hbox.addWidget(btn_add)
             hbox.addStretch()
@@ -252,25 +256,38 @@ class EventEditorWidget(QWidget):
             lst.itemDoubleClicked.connect(self._on_edit_relation)
             # Fixed height for compactness, but expandable
             lst.setMinimumHeight(80)
+
+            # Store placeholder for later use
+            if placeholder:
+                lst.setProperty("placeholderText", placeholder)
+
             vbox.addWidget(lst)
 
             return group, lst, btn_add
 
         # 1. Participants
         self.grp_participants, self.participant_list, self.btn_add_participant = (
-            create_section("Participants", self._on_add_participant)
+            create_section(
+                "Participants",
+                self._on_add_participant,
+                "No participants yet. Click + to link a character or entity.",
+            )
         )
         layout.addWidget(self.grp_participants)
 
         # 2. Locations
         self.grp_locations, self.location_list, self.btn_add_location = create_section(
-            "Locations", self._on_add_location
+            "Locations",
+            self._on_add_location,
+            "No locations specified. Click + to link a place.",
         )
         layout.addWidget(self.grp_locations)
 
-        # 3. Other Relations
+        # 3. Custom Relations (renamed from "Other Relations" for clarity)
         self.grp_relations, self.rel_list, self.btn_add_rel = create_section(
-            "Other Relations", self._on_add_relation
+            "Custom Relations",
+            self._on_add_relation,
+            "No custom relations. Click + to add a link.",
         )
         layout.addWidget(self.grp_relations)
 
