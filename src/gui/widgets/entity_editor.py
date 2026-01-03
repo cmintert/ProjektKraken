@@ -265,6 +265,9 @@ class EntityEditorWidget(QWidget):
         # Load Gallery
         self.gallery.set_owner("entity", entity.id)
 
+        # Reset Read-Only mode (in case we were in temporal view)
+        self.exit_read_only_mode()
+
         self.rel_list.clear()
 
         # Outgoing
@@ -576,3 +579,49 @@ class EntityEditorWidget(QWidget):
                 attributes,
                 is_bidirectional,
             )
+
+    def display_temporal_state(self, entity_id: str, attributes: dict) -> None:
+        """
+        Displays the resolved temporal state for the current entity.
+        Sets the editor to read-only mode.
+        """
+        if entity_id != self._current_entity_id:
+            return
+
+        # Load attributes (filter internal keys)
+        display_attrs = {k: v for k, v in attributes.items() if k != "_tags"}
+        self.attribute_editor.load_attributes(display_attrs)
+
+        # Enter Read-Only Mode
+        self.set_read_only_mode(True, reason="Viewing Past/Future State")
+
+    def set_read_only_mode(self, readonly: bool, reason: str = "") -> None:
+        """
+        Enables or disables read-only mode.
+        """
+        # Disable form fields
+        self.name_edit.setReadOnly(readonly)
+        self.type_edit.setEnabled(not readonly)
+        self.desc_edit.setReadOnly(readonly)
+
+        # Disable attribute editor
+        self.attribute_editor.setEnabled(not readonly)
+        self.tag_editor.setEnabled(not readonly)
+
+        # Disable Relation buttons (viewing relations is still fine)
+        self.btn_add_rel.setEnabled(not readonly)
+        self.btn_edit_rel.setEnabled(not readonly)
+        self.btn_remove_rel.setEnabled(not readonly)
+
+        # Disable Save/Discard
+        self.btn_save.setEnabled(not readonly)
+        self.btn_discard.setEnabled(not readonly)
+
+        if readonly:
+            self.btn_save.setText(reason or "Read Only")
+        else:
+            self.btn_save.setText("Save Changes")
+
+    def exit_read_only_mode(self) -> None:
+        """Restores normal editing mode."""
+        self.set_read_only_mode(False)

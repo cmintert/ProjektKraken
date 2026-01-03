@@ -1516,3 +1516,24 @@ class MainWindow(QMainWindow):
             # qApp.quit()
             # QProcess.startDetached(sys.executable, sys.argv)
             pass
+
+    @Slot(float)
+    def _on_playhead_changed(self, time: float) -> None:
+        """
+        Refreshes entity inspector based on playhead time.
+        """
+        if self.entity_editor.isVisible() and self.entity_editor._current_entity_id:
+            QMetaObject.invokeMethod(
+                self.worker,
+                "resolve_entity_state",
+                Qt.ConnectionType.QueuedConnection,
+                Q_ARG(str, self.entity_editor._current_entity_id),
+                Q_ARG(float, time),
+            )
+
+    @Slot(str, dict)
+    def _on_entity_state_resolved(self, entity_id: str, attributes: dict) -> None:
+        """
+        Updates entity editor with resolved state.
+        """
+        self.entity_editor.display_temporal_state(entity_id, attributes)

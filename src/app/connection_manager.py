@@ -58,6 +58,7 @@ class ConnectionManager:
         )
         dh.maps_ready.connect(self.window.map_handler.on_maps_ready)
         dh.markers_ready.connect(self.window.map_handler.on_markers_ready)
+        dh.entity_state_resolved.connect(self.window._on_entity_state_resolved)
 
         # UI action signals
         dh.status_message.connect(self.window.status_bar.showMessage)
@@ -124,6 +125,7 @@ class ConnectionManager:
         timeline.event_selected.connect(self.window.load_event_details)
         timeline.current_time_changed.connect(self.window.on_current_time_changed)
         timeline.playhead_time_changed.connect(self.window.update_playhead_time_label)
+        timeline.playhead_time_changed.connect(self.window._on_playhead_changed)
         timeline.event_date_changed.connect(self.window._on_event_date_changed)
 
         # Band manager signals (for timeline grouping)

@@ -45,6 +45,7 @@ class DatabaseWorker(QObject):
     )  # owner_type, owner_id, List[ImageAttachment]
 
     filter_results_ready = Signal(list, list)  # List[Event], List[Entity]
+    entity_state_resolved = Signal(str, dict)  # entity_id, resolved_attributes
 
     command_finished = Signal(object)  # CommandResult object
     error_occurred = Signal(str)
@@ -64,7 +65,10 @@ class DatabaseWorker(QObject):
         self.db_path = db_path
         self.db_service = None
         self.asset_store = None
+        self.db_service = None
+        self.asset_store = None
         self.attachment_service = None
+        self.temporal_manager = None
 
     @Slot()
     def initialize_db(self) -> None:
@@ -91,7 +95,13 @@ class DatabaseWorker(QObject):
             )
 
             # Attach to db_service for Command access (Dependency Injection via Context)
+            # Attach to db_service for Command access (Dependency Injection via Context)
             self.db_service.attachment_service = self.attachment_service
+
+            # Initialize TemporalManager
+            from src.core.temporal_manager import TemporalManager
+
+            self.temporal_manager = TemporalManager(self.db_service)
 
             logger.info("DatabaseWorker initialized successfully.")
             self.initialized.emit(True)
@@ -555,3 +565,25 @@ class DatabaseWorker(QObject):
         except Exception:
             logger.error(f"Failed to apply filter: {traceback.format_exc()}")
             self.error_occurred.emit("Failed to apply filter.")
+
+    @Slot(str, float)
+    def resolve_entity_state(self, entity_id: str, time: float) -> None:
+        """
+        Resolves the state of an entity at a specific time using TemporalManager.
+        Emits entity_state_resolved.
+        """
+        if not self.temporal_manager:
+            return
+
+        try:
+            # self.operation_started.emit(f"Resolving state for {entity_id} at {time}...")
+            # (Quiet operation for smooth scrubbing)
+            state = self.temporal_manager.get_entity_state_at(entity_id, time)
+            self.entity_state_resolved.emit(entity_id, state)
+            # self.operation_finished.emit("State Resolved.")
+        except Exception:
+            logger.error(
+                f"Failed to resolve state for {entity_id}: {traceback.format_exc()}"
+            )
+            # Emit empty state or handle error?
+            # For now, just log.

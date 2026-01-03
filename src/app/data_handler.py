@@ -41,6 +41,7 @@ class DataHandler(QObject):
     longform_sequence_ready = Signal(list)  # Emitted when longform data is processed
     maps_ready = Signal(list)  # Emitted when maps are processed
     markers_ready = Signal(str, list)  # (map_id, markers)
+    entity_state_resolved = Signal(str, dict)  # (entity_id, attributes)
 
     # Signals for UI actions
     status_message = Signal(str)  # Status bar message updates
@@ -279,3 +280,10 @@ class DataHandler(QObject):
 
         if "Longform" in command_name:
             self.reload_longform.emit()
+
+    @Slot(str, dict)
+    def on_entity_state_resolved(self, entity_id: str, attributes: dict) -> None:
+        """
+        Emits signal when entity state is resolved.
+        """
+        self.entity_state_resolved.emit(entity_id, attributes)

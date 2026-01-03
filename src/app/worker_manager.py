@@ -117,6 +117,9 @@ class WorkerManager(QObject):
         self.window.worker.filter_results_ready.connect(
             self.window._on_filter_results_ready
         )
+        self.window.worker.entity_state_resolved.connect(
+            self.window.data_handler.on_entity_state_resolved
+        )
         # Connect filtering request
         self.window.filter_requested.connect(self.window.worker.apply_filter)
 
