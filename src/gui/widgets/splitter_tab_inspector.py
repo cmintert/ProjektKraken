@@ -5,7 +5,9 @@ Provides a custom QSplitter-based widget that supports vertical stacking
 of tabs with drag-and-drop functionality.
 """
 
-from PySide6.QtCore import QMimeData, QPoint, Qt, Signal
+from typing import Optional
+
+from PySide6.QtCore import QMimeData, QPoint, QSize, Qt, Signal
 from PySide6.QtGui import QDrag, QDragEnterEvent, QDropEvent, QMouseEvent
 from PySide6.QtWidgets import (
     QSplitter,
@@ -24,7 +26,7 @@ class DraggableTabBar(QTabBar):
 
     tab_dragged = Signal(int)  # Emitted when a tab drag starts
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the draggable tab bar."""
         super().__init__(parent)
         self.setAcceptDrops(True)
@@ -36,7 +38,7 @@ class DraggableTabBar(QTabBar):
             self._drag_start_pos = event.pos()
         super().mousePressEvent(event)
 
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
         """Initiate drag if moved far enough."""
         if not (event.buttons() & Qt.MouseButton.LeftButton):
             return super().mouseMoveEvent(event)
@@ -93,7 +95,7 @@ class DraggableTabBar(QTabBar):
 
         event.acceptProposedAction()
 
-    def _cleanup_empty_pane(self, tab_widget) -> None:
+    def _cleanup_empty_pane(self, tab_widget: QTabWidget) -> None:
         """Remove a tab widget from splitter if it has no tabs left."""
         if tab_widget.count() == 0:
             splitter = self._find_parent_splitter(tab_widget)
@@ -101,7 +103,7 @@ class DraggableTabBar(QTabBar):
                 tab_widget.setParent(None)
                 tab_widget.deleteLater()
 
-    def _find_parent_splitter(self, widget):
+    def _find_parent_splitter(self, widget: QWidget) -> Optional[QSplitter]:
         """Find the parent QSplitter of a widget."""
         parent = widget.parent()
         while parent:
@@ -114,7 +116,7 @@ class DraggableTabBar(QTabBar):
 class DraggableTabWidget(QTabWidget):
     """A QTabWidget with a draggable tab bar."""
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize with custom tab bar."""
         super().__init__(parent)
         self.setTabBar(DraggableTabBar(self))
@@ -171,13 +173,13 @@ class DraggableTabWidget(QTabWidget):
 
         event.acceptProposedAction()
 
-    def _cleanup_empty_pane(self, tab_widget, splitter) -> None:
+    def _cleanup_empty_pane(self, tab_widget: QTabWidget, splitter: QSplitter) -> None:
         """Remove a tab widget from splitter if it has no tabs left."""
         if tab_widget.count() == 0 and splitter.count() > 1:
             tab_widget.setParent(None)
             tab_widget.deleteLater()
 
-    def _find_parent_splitter(self):
+    def _find_parent_splitter(self) -> Optional[QSplitter]:
         """Find the parent QSplitter."""
         parent = self.parent()
         while parent:
@@ -194,7 +196,7 @@ class SplitterTabInspector(QWidget):
     on the body of another tab widget to create a vertical split.
     """
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the splitter tab inspector."""
         super().__init__(parent)
         main_layout = QVBoxLayout(self)
@@ -216,7 +218,7 @@ class SplitterTabInspector(QWidget):
         # Track all tab widgets for cleanup
         self._tab_widgets = [self.main_tabs]
 
-    def add_tab(self, widget, title: str) -> None:
+    def add_tab(self, widget: QWidget, title: str) -> None:
         """
         Add a tab to the main tab widget.
 
@@ -230,7 +232,7 @@ class SplitterTabInspector(QWidget):
         """Return the main tab widget."""
         return self.main_tabs
 
-    def minimumSizeHint(self):
+    def minimumSizeHint(self) -> QSize:
         """
         Prevent tab inspector collapse.
 
@@ -241,7 +243,7 @@ class SplitterTabInspector(QWidget):
 
         return QSize(200, 150)  # Minimum height for at least one tab visible
 
-    def sizeHint(self):
+    def sizeHint(self) -> QSize:
         """
         Preferred size for tab inspector.
 

@@ -6,7 +6,7 @@ Provides a list-based interface for managing tags on entities and events.
 
 from typing import List, Optional
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLineEdit,
@@ -97,6 +97,7 @@ class TagEditorWidget(QWidget):
             tags.append(item.data(Qt.ItemDataRole.UserRole))
         return tags
 
+    @Slot()
     def _on_add(self) -> None:
         """Handles adding a new tag."""
         raw_tag = self.tag_input.text().strip()
@@ -117,6 +118,7 @@ class TagEditorWidget(QWidget):
         self.tag_input.clear()
         self.tags_changed.emit()
 
+    @Slot()
     def _on_remove(self) -> None:
         """Handles removing the selected tag."""
         current_item = self.tag_list.currentItem()

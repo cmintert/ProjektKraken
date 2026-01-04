@@ -20,7 +20,9 @@ class AttachmentService:
     Service for managing image attachments. Orchestrates DB and Filesystem operations.
     """
 
-    def __init__(self, repository: AttachmentRepository, asset_store: AssetStore) -> None:
+    def __init__(
+        self, repository: AttachmentRepository, asset_store: AssetStore
+    ) -> None:
         """
         Initialize the attachment service.
 

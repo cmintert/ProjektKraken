@@ -6,7 +6,7 @@ Displays a list of events with controls for refreshing and deleting.
 
 from typing import List, Optional
 
-from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtCore import QSize, Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -96,6 +96,7 @@ class EventListWidget(QWidget):
             item.setData(100, event.id)  # Store ID in custom role
             self.list_widget.addItem(item)
 
+    @Slot()
     def _on_selection_changed(self) -> None:
         """
         Handles event selection changes.
@@ -110,6 +111,7 @@ class EventListWidget(QWidget):
         else:
             self.btn_delete.setEnabled(False)
 
+    @Slot()
     def _on_delete_clicked(self) -> None:
         """
         Handles delete button clicks.

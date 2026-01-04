@@ -6,7 +6,7 @@ of the timeline view, remaining visible during horizontal scrolling.
 """
 
 import logging
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPaintEvent, QPolygonF
@@ -28,7 +28,7 @@ class GroupLabelOverlay(QWidget):
     LABEL_WIDTH = 150
     LABEL_PADDING = 8
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initializes the GroupLabelOverlay.
 
@@ -50,7 +50,7 @@ class GroupLabelOverlay(QWidget):
         # Start invisible
         self.setVisible(False)
 
-    def _on_theme_changed(self, theme) -> None:
+    def _on_theme_changed(self, theme: Dict) -> None:
         """Update theme and refresh."""
         self.theme = theme
         self.update()

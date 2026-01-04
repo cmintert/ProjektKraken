@@ -7,7 +7,7 @@ import logging
 import re
 from typing import Any, List, Optional
 
-from PySide6.QtCore import QStringListModel, Qt, Signal
+from PySide6.QtCore import QStringListModel, Qt, Signal, Slot
 from PySide6.QtGui import QKeyEvent, QMouseEvent, QTextCursor
 from PySide6.QtWidgets import QCompleter, QTextEdit, QWidget
 
@@ -27,7 +27,7 @@ class WikiTextEdit(QTextEdit):
     link_clicked = Signal(str)  # Emits the target name (e.g. "Gandalf")
     link_added = Signal(str, str)  # Emits (target_id_or_name, display_name) on creation
 
-    def __init__(self, parent: QWidget = None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initializes the WikiTextEdit.
 
@@ -372,6 +372,7 @@ class WikiTextEdit(QTextEdit):
 
         return "".join(result)
 
+    @Slot(str)
     def insert_completion(self, completion: str) -> None:
         """
         Inserts the selected completion as an HTML anchor.
@@ -612,6 +613,7 @@ class WikiTextEdit(QTextEdit):
                 return
         super().mouseReleaseEvent(event)
 
+    @Slot(dict)
     def _on_theme_changed(self, theme_data: dict) -> None:
         """
         Updates link color and text style when theme changes.

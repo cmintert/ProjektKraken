@@ -9,7 +9,7 @@ import logging
 import os
 from typing import Optional
 
-from PySide6.QtCore import QSettings, Qt, Signal
+from PySide6.QtCore import QSettings, Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QDialog,
@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QVBoxLayout,
+    QWidget,
 )
 
 from src.app.constants import DEFAULT_DB_NAME, SETTINGS_ACTIVE_DB_KEY
@@ -37,7 +38,7 @@ class DatabaseManagerDialog(QDialog):
     # Signal to indicate a restart is requested (optional, handled by dialog msg)
     restart_required = Signal()
 
-    def __init__(self, parent: Optional[QDialog] = None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initialize the database manager dialog.
 
@@ -118,6 +119,7 @@ class DatabaseManagerDialog(QDialog):
                 self.db_list.setCurrentItem(item)
             self.db_list.addItem(item)
 
+    @Slot()
     def _create_db(self) -> None:
         """Handle creation of a new database file."""
         name, ok = QInputDialog.getText(
@@ -152,6 +154,7 @@ class DatabaseManagerDialog(QDialog):
                 logger.error(f"Failed to create database: {e}")
                 QMessageBox.critical(self, "Error", f"Failed to create database:\n{e}")
 
+    @Slot()
     def _browse_db(self) -> None:
         """Browse for a .kraken database file from any location."""
         from PySide6.QtWidgets import QFileDialog
@@ -194,6 +197,7 @@ class DatabaseManagerDialog(QDialog):
             if items:
                 self.db_list.setCurrentItem(items[0])
 
+    @Slot()
     def _delete_db(self) -> None:
         """Handle deletion of a database file."""
         item = self.db_list.currentItem()
@@ -231,6 +235,7 @@ class DatabaseManagerDialog(QDialog):
                 logger.error(f"Failed to delete database: {e}")
                 QMessageBox.critical(self, "Error", f"Failed to delete database:\n{e}")
 
+    @Slot()
     def _select_db(self) -> None:
         """Handle selection of a database to make active (requires restart)."""
         item = self.db_list.currentItem()

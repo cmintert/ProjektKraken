@@ -5,8 +5,10 @@ Provides lightweight button wrappers with standardized properties.
 Visual styling is handled via StyleHelper QSS or global QSS.
 """
 
+from typing import Optional
+
 from PySide6.QtCore import QSize
-from PySide6.QtWidgets import QPushButton
+from PySide6.QtWidgets import QPushButton, QWidget
 
 
 class StandardButton(QPushButton):
@@ -16,7 +18,7 @@ class StandardButton(QPushButton):
     Actual visual styling is applied via StyleHelper or global QSS.
     """
 
-    def __init__(self, text: str, parent=None) -> None:
+    def __init__(self, text: str, parent: Optional[QWidget] = None) -> None:
         """
         Initializes a standard button.
 
@@ -35,7 +37,9 @@ class IconButton(QPushButton):
     Useful for toolbar buttons with icons only.
     """
 
-    def __init__(self, text: str = "", parent=None, size: int = 32) -> None:
+    def __init__(
+        self, text: str = "", parent: Optional[QWidget] = None, size: int = 32
+    ) -> None:
         """
         Initializes an icon button.
 
@@ -55,7 +59,7 @@ class PrimaryButton(StandardButton):
     Applies StyleHelper primary button styling.
     """
 
-    def __init__(self, text: str, parent=None) -> None:
+    def __init__(self, text: str, parent: Optional[QWidget] = None) -> None:
         """
         Initializes a primary button.
 

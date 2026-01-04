@@ -6,8 +6,9 @@ and calculates the floating point day duration based on a start date context.
 """
 
 import logging
+from typing import Optional
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QSize, Signal, Slot
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -28,7 +29,7 @@ class LoreDurationWidget(QWidget):
 
     value_changed = Signal(float)  # Emits duration in days
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initializes the LoreDurationWidget.
 
@@ -81,7 +82,7 @@ class LoreDurationWidget(QWidget):
 
         layout.addStretch()
 
-    def _create_spinbox(self, tooltip):
+    def _create_spinbox(self, tooltip: str) -> QSpinBox:
         """
         Creates a configured QSpinBox for duration input.
 
@@ -116,6 +117,7 @@ class LoreDurationWidget(QWidget):
             # Recalculate duration float based on new start date + preserved inputs
             self._on_input_changed()
 
+    @Slot()
     def _on_input_changed(self) -> None:
         """
         Handles changes to duration inputs and emits the calculated duration.
@@ -176,13 +178,15 @@ class LoreDurationWidget(QWidget):
         # Simple math: target_month_index = (start.month - 1) + months
         # Resolve to Year/Month
 
-        # Get all months for the CURRENT year structure (simplified assumption: year structure doesn't change wildly)
+        # Get all months for the CURRENT year structure
+        # (simplified assumption: year structure doesn't change wildly)
         # Actually, we need to step through years if month count varies per year?
         # Let's assume standard month carrying for now.
 
         config = self._converter._config
 
-        # We need a robust "add months" logic that handles changing year lengths (YearVariants).
+        # We need a robust "add months" logic that handles changing year lengths
+        # (YearVariants).
         # But `CalendarConverter` doesn't expose `add_months`.
 
         # Iterative approach for robustness:
@@ -219,8 +223,9 @@ class LoreDurationWidget(QWidget):
 
         # Clamp Day
         target_months_def = config.get_months_for_year(curr_year)
-        # Handle edge case: if target month index is out of bounds (shouldn't be with above logic logic,
-        # but what if we landed on a leap month that doesn't exist? CalendarDate handles existence?)
+        # Handle edge case: if target month index is out of bounds (shouldn't be
+        # with above logic logic, but what if we landed on a leap month that
+        # doesn't exist? CalendarDate handles existence?)
         if curr_month_idx >= len(target_months_def):
             curr_month_idx = len(target_months_def) - 1
             target_month = curr_month_idx + 1
@@ -228,9 +233,10 @@ class LoreDurationWidget(QWidget):
         max_days = target_months_def[curr_month_idx].days
         target_day = min(start_date.day, max_days)
 
-        # Step 3: Add Days (Simple addition to day, let converter handle overflow? No, converter handles float -> date.
-        # We need Date -> Float here. Converter from_float handles overflow.)
-        # Actually, simpler: Get the float for (Year, Month, ClampedDay, Time). Then add days_delta + time.
+        # Step 3: Add Days
+        # We need Date -> Float here. Converter from_float handles overflow.
+        # Actually, simpler: Get the float for (Year, Month, ClampedDay, Time).
+        # Then add days_delta + time.
 
         # Reconstruct "intermediate" date
         intermediate_date = CalendarDate(
@@ -295,8 +301,8 @@ class LoreDurationWidget(QWidget):
 
                     next_year = curr_date.year + 1
                     # Handle leap days/missing days in target year?
-                    # CalendarConverter handles "valid date" clamping usually via from_float or to_float?
-                    # Let's perform a check:
+                    # CalendarConverter handles "valid date" clamping usually via
+                    # from_float or to_float? Let's perform a check:
                     try:
                         # Construct candidate date for same Month/Day in next year
                         # We need to know max days in that month for next year to clamp
@@ -402,7 +408,7 @@ class LoreDurationWidget(QWidget):
         finally:
             self._updating = False
 
-    def minimumSizeHint(self):
+    def minimumSizeHint(self) -> QSize:
         """
         Returns the minimum size hint to prevent vertical collapse.
 
@@ -413,7 +419,7 @@ class LoreDurationWidget(QWidget):
 
         return QSize(350, 40)  # Single row of controls
 
-    def sizeHint(self):
+    def sizeHint(self) -> QSize:
         """
         Returns the preferred size hint.
 

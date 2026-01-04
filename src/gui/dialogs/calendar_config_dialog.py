@@ -8,7 +8,7 @@ month definitions, week structure, and year variants.
 import logging
 from typing import List, Optional
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QDialog,
@@ -58,7 +58,7 @@ class CalendarConfigDialog(QDialog):
 
     def __init__(
         self,
-        parent=None,
+        parent: Optional[QWidget] = None,
         config: Optional[CalendarConfig] = None,
     ) -> None:
         """
@@ -221,6 +221,7 @@ class CalendarConfigDialog(QDialog):
 
         self._update_preview()
 
+    @Slot()
     def _on_add_month(self) -> None:
         """Adds a new month row to the table."""
         row = self.month_table.rowCount()
@@ -232,6 +233,7 @@ class CalendarConfigDialog(QDialog):
         self.month_table.setItem(row, 2, days_item)
         self._update_preview()
 
+    @Slot()
     def _on_remove_month(self) -> None:
         """Removes the selected month row."""
         current_row = self.month_table.currentRow()
@@ -239,6 +241,7 @@ class CalendarConfigDialog(QDialog):
             self.month_table.removeRow(current_row)
             self._update_preview()
 
+    @Slot(QTableWidgetItem)
     def _on_month_changed(self, item: QTableWidgetItem) -> None:
         """Handles changes to month table cells."""
         # If days column, validate it's a positive integer
@@ -304,6 +307,7 @@ class CalendarConfigDialog(QDialog):
             created_at=self._config.created_at,
         )
 
+    @Slot()
     def _update_preview(self) -> None:
         """Updates the date preview based on current config."""
         try:
@@ -335,6 +339,7 @@ class CalendarConfigDialog(QDialog):
                 False
             )
 
+    @Slot()
     def _on_save(self) -> None:
         """Handles the save button click."""
         config = self._build_config_from_ui()

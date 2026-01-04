@@ -7,7 +7,7 @@ and editing tag colors.
 """
 
 import logging
-from typing import List
+from typing import Any, List, Optional
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QMouseEvent
@@ -44,7 +44,9 @@ class ColorSwatch(QFrame):
 
     clicked = Signal()
 
-    def __init__(self, color: str, size: int = 16, parent=None) -> None:
+    def __init__(
+        self, color: str, size: int = 16, parent: Optional[QWidget] = None
+    ) -> None:
         """
         Initialize the color swatch.
 
@@ -84,7 +86,13 @@ class TagListItem(QWidget):
 
     color_changed = Signal(str, str)  # tag_name, new_color
 
-    def __init__(self, tag_name: str, tag_color: str, event_count: int, parent=None) -> None:
+    def __init__(
+        self,
+        tag_name: str,
+        tag_color: str,
+        event_count: int,
+        parent: Optional[QWidget] = None,
+    ) -> None:
         """
         Initializes the TagListItem.
 
@@ -151,7 +159,13 @@ class GroupingConfigDialog(QDialog):
 
     grouping_applied = Signal(list, str)  # tag_order, mode
 
-    def __init__(self, tags_data, current_config, command_coordinator, parent=None) -> None:
+    def __init__(
+        self,
+        tags_data: list,
+        current_config: Optional[dict],
+        command_coordinator: Any,
+        parent: Optional[QWidget] = None,
+    ) -> None:
         """
         Initializes the GroupingConfigDialog.
 

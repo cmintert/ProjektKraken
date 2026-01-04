@@ -8,7 +8,7 @@ filtering and color-coded differentiation.
 import json
 from typing import List, Union
 
-from PySide6.QtCore import QMimeData, QSize, Qt, Signal
+from PySide6.QtCore import QMimeData, QSize, Qt, Signal, Slot
 from PySide6.QtGui import QBrush, QColor, QDrag
 from PySide6.QtWidgets import (
     QComboBox,
@@ -160,8 +160,9 @@ class UnifiedListWidget(QWidget):
         filter_row.addWidget(self.btn_filter)
 
         # Clear Filters button - keeps concept but might need to signal to clear backend
-        # filter. For now, we'll keep it to clear the backend filter via signal if needed,
-        # or just reload all. Actually, "Clear Filters" usually means "Show All".
+        # filter. For now, we'll keep it to clear the backend filter via signal
+        # if needed, or just reload all. Actually, "Clear Filters" usually means
+        # "Show All".
         self.btn_clear_filters = QPushButton("Clear Filters")
         self.btn_clear_filters.clicked.connect(self._request_clear_filters)
         filter_row.addWidget(self.btn_clear_filters)
@@ -213,6 +214,8 @@ class UnifiedListWidget(QWidget):
 
         self._render_list()
 
+    @Slot()
+    @Slot()
     def _request_clear_filters(self) -> None:
         """
         Requests clearing backend filters.
@@ -337,6 +340,8 @@ class UnifiedListWidget(QWidget):
             self.list_widget.hide()
             self.empty_label.show()
 
+    @Slot(str)
+    @Slot(str)
     def _on_search_text_changed(self, text: str) -> None:
         """
         Handles search bar text changes for live filtering.
@@ -408,6 +413,8 @@ class UnifiedListWidget(QWidget):
 
         return True
 
+    @Slot(str)
+    @Slot(str)
     def _on_filter_changed(self, text: str) -> None:
         """
         Handles filter combo box changes.
@@ -417,6 +424,8 @@ class UnifiedListWidget(QWidget):
         """
         self._render_list()
 
+    @Slot()
+    @Slot()
     def _on_selection_changed(self) -> None:
         """
         Handles item selection changes in the list.
@@ -431,6 +440,8 @@ class UnifiedListWidget(QWidget):
         else:
             self.btn_delete.setEnabled(False)
 
+    @Slot()
+    @Slot()
     def _on_delete_clicked(self) -> None:
         """
         Handles delete button clicks.

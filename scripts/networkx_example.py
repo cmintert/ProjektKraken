@@ -22,7 +22,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.core.entities import Entity
-from src.core.events import Event
 from src.services.db_service import DatabaseService
 
 
@@ -50,40 +49,52 @@ def create_example_world(db_service: DatabaseService) -> None:
     # Create weighted relations
     relations = [
         # Alliances (high weight = strong bond)
-        (characters[0].id, characters[1].id, "allied_with", {
-            "weight": 0.9,
-            "confidence": 1.0,
-            "notes": "Long-standing political alliance"
-        }),
-        (characters[0].id, characters[2].id, "commands", {
-            "weight": 0.85,
-            "confidence": 1.0,
-            "notes": "Military chain of command"
-        }),
-        (characters[1].id, characters[3].id, "trades_with", {
-            "weight": 0.7,
-            "confidence": 0.9,
-            "notes": "Regular trading partner"
-        }),
-
+        (
+            characters[0].id,
+            characters[1].id,
+            "allied_with",
+            {
+                "weight": 0.9,
+                "confidence": 1.0,
+                "notes": "Long-standing political alliance",
+            },
+        ),
+        (
+            characters[0].id,
+            characters[2].id,
+            "commands",
+            {"weight": 0.85, "confidence": 1.0, "notes": "Military chain of command"},
+        ),
+        (
+            characters[1].id,
+            characters[3].id,
+            "trades_with",
+            {"weight": 0.7, "confidence": 0.9, "notes": "Regular trading partner"},
+        ),
         # Weaker connections
-        (characters[3].id, characters[4].id, "associates_with", {
-            "weight": 0.5,
-            "confidence": 0.8,
-            "notes": "Occasional collaboration"
-        }),
-        (characters[2].id, characters[4].id, "consults", {
-            "weight": 0.6,
-            "confidence": 0.85,
-            "notes": "Strategic advisor relationship"
-        }),
-
+        (
+            characters[3].id,
+            characters[4].id,
+            "associates_with",
+            {"weight": 0.5, "confidence": 0.8, "notes": "Occasional collaboration"},
+        ),
+        (
+            characters[2].id,
+            characters[4].id,
+            "consults",
+            {
+                "weight": 0.6,
+                "confidence": 0.85,
+                "notes": "Strategic advisor relationship",
+            },
+        ),
         # Rivalries (low weight)
-        (characters[1].id, characters[2].id, "rivals", {
-            "weight": 0.3,
-            "confidence": 1.0,
-            "notes": "Political tension"
-        }),
+        (
+            characters[1].id,
+            characters[2].id,
+            "rivals",
+            {"weight": 0.3, "confidence": 1.0, "notes": "Political tension"},
+        ),
     ]
 
     for source_id, target_id, rel_type, attrs in relations:
@@ -114,11 +125,7 @@ def export_to_networkx(db_service: DatabaseService):
     all_entities = db_service.get_all_entities()
     for entity in all_entities:
         # entity is an Entity dataclass
-        G.add_node(
-            entity.id,
-            name=entity.name,
-            type=entity.type
-        )
+        G.add_node(entity.id, name=entity.name, type=entity.type)
 
     # Add all relations as edges
     for entity in all_entities:
@@ -131,17 +138,21 @@ def export_to_networkx(db_service: DatabaseService):
 
             # Add edge with attributes
             # Note: We pass weight and confidence separately, then other attrs
-            edge_attrs = {k: v for k, v in attrs.items() if k not in ["weight", "confidence"]}
+            edge_attrs = {
+                k: v for k, v in attrs.items() if k not in ["weight", "confidence"]
+            }
             G.add_edge(
                 rel["source_id"],
                 rel["target_id"],
                 type=rel["rel_type"],
                 weight=weight,
                 confidence=confidence,
-                **edge_attrs
+                **edge_attrs,
             )
 
-    print(f"✓ Created graph with {G.number_of_nodes()} nodes and {G.number_of_edges()} edges")
+    print(
+        f"✓ Created graph with {G.number_of_nodes()} nodes and {G.number_of_edges()} edges"
+    )
     return G
 
 
@@ -152,18 +163,18 @@ def analyze_graph(G) -> None:
 
     import networkx as nx
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("GRAPH ANALYSIS")
-    print("="*60)
+    print("=" * 60)
 
     # Basic statistics
-    print(f"\nBasic Statistics:")
+    print("\nBasic Statistics:")
     print(f"  Nodes: {G.number_of_nodes()}")
     print(f"  Edges: {G.number_of_edges()}")
     print(f"  Density: {nx.density(G):.3f}")
 
     # Degree centrality (who is most connected?)
-    print(f"\nDegree Centrality (most connected characters):")
+    print("\nDegree Centrality (most connected characters):")
     centrality = nx.degree_centrality(G)
     sorted_centrality = sorted(centrality.items(), key=lambda x: x[1], reverse=True)
     for node_id, score in sorted_centrality[:3]:
@@ -171,31 +182,30 @@ def analyze_graph(G) -> None:
         print(f"  {name}: {score:.3f}")
 
     # Weighted degree (sum of edge weights)
-    print(f"\nWeighted Influence (sum of relationship strengths):")
+    print("\nWeighted Influence (sum of relationship strengths):")
     for node in G.nodes():
         name = G.nodes[node]["name"]
         # Sum weights of outgoing edges
         total_weight = sum(
-            G[node][neighbor].get("weight", 1.0)
-            for neighbor in G.successors(node)
+            G[node][neighbor].get("weight", 1.0) for neighbor in G.successors(node)
         )
         print(f"  {name}: {total_weight:.2f}")
 
     # PageRank (importance considering network structure and weights)
     try:
-        print(f"\nPageRank (network importance):")
+        print("\nPageRank (network importance):")
         pagerank = nx.pagerank(G, weight="weight")
         sorted_pagerank = sorted(pagerank.items(), key=lambda x: x[1], reverse=True)
         for node_id, score in sorted_pagerank[:3]:
             name = G.nodes[node_id]["name"]
             print(f"  {name}: {score:.3f}")
     except ImportError:
-        print(f"\nPageRank: (requires scipy - install with: pip install scipy)")
+        print("\nPageRank: (requires scipy - install with: pip install scipy)")
     except Exception as e:
         print(f"\nPageRank: Error - {e}")
 
     # Find shortest weighted path between two nodes
-    print(f"\nExample: Shortest Weighted Path")
+    print("\nExample: Shortest Weighted Path")
     nodes = list(G.nodes())
     if len(nodes) >= 2:
         source = nodes[0]
@@ -206,8 +216,7 @@ def analyze_graph(G) -> None:
         try:
             # Use inverse weight (higher weight = shorter distance)
             path = nx.shortest_path(
-                G, source, target,
-                weight=lambda u, v, d: 1.0 / d.get("weight", 0.1)
+                G, source, target, weight=lambda u, v, d: 1.0 / d.get("weight", 0.1)
             )
             path_names = [G.nodes[n]["name"] for n in path]
             print(f"  From {source_name} to {target_name}:")
@@ -216,7 +225,7 @@ def analyze_graph(G) -> None:
             print(f"  No path from {source_name} to {target_name}")
 
     # Strongly connected components
-    print(f"\nStrongly Connected Components:")
+    print("\nStrongly Connected Components:")
     components = list(nx.strongly_connected_components(G))
     for i, comp in enumerate(components, 1):
         names = [G.nodes[n]["name"] for n in comp]
@@ -239,9 +248,9 @@ def visualize_graph(G) -> None:
         print("\nVisualization requires matplotlib: pip install matplotlib")
         return
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("VISUALIZATION")
-    print("="*60)
+    print("=" * 60)
 
     # Create figure
     plt.figure(figsize=(12, 8))
@@ -250,24 +259,20 @@ def visualize_graph(G) -> None:
     pos = nx.spring_layout(G, k=2, iterations=50)
 
     # Draw nodes
-    nx.draw_networkx_nodes(
-        G, pos,
-        node_color='lightblue',
-        node_size=3000,
-        alpha=0.9
-    )
+    nx.draw_networkx_nodes(G, pos, node_color="lightblue", node_size=3000, alpha=0.9)
 
     # Draw edges with varying thickness based on weight
     edges = G.edges()
     weights = [G[u][v].get("weight", 0.5) * 3 for u, v in edges]
     nx.draw_networkx_edges(
-        G, pos,
-        edge_color='gray',
+        G,
+        pos,
+        edge_color="gray",
         width=weights,
         alpha=0.6,
         arrows=True,
         arrowsize=20,
-        arrowstyle='->'
+        arrowstyle="->",
     )
 
     # Draw labels
@@ -275,24 +280,19 @@ def visualize_graph(G) -> None:
     nx.draw_networkx_labels(G, pos, labels, font_size=10)
 
     # Draw edge labels (relation types)
-    edge_labels = {
-        (u, v): G[u][v]["type"]
-        for u, v in G.edges()
-    }
-    nx.draw_networkx_edge_labels(
-        G, pos, edge_labels,
-        font_size=8,
-        font_color='red'
-    )
+    edge_labels = {(u, v): G[u][v]["type"] for u, v in G.edges()}
+    nx.draw_networkx_edge_labels(G, pos, edge_labels, font_size=8, font_color="red")
 
-    plt.title("ProjektKraken Relations Network\n(Edge thickness = relationship strength)")
-    plt.axis('off')
+    plt.title(
+        "ProjektKraken Relations Network\n(Edge thickness = relationship strength)"
+    )
+    plt.axis("off")
     plt.tight_layout()
 
     # Try to save
     output_path = "relation_graph.png"
     try:
-        plt.savefig(output_path, dpi=150, bbox_inches='tight')
+        plt.savefig(output_path, dpi=150, bbox_inches="tight")
         print(f"✓ Graph saved to {output_path}")
     except Exception as e:
         print(f"✗ Could not save graph: {e}")
@@ -310,12 +310,14 @@ def main():
         description="NetworkX graph analysis example for ProjektKraken relations"
     )
     parser.add_argument(
-        "--database", "-d",
-        help="Path to .kraken database (if omitted, creates in-memory example)"
+        "--database",
+        "-d",
+        help="Path to .kraken database (if omitted, creates in-memory example)",
     )
     parser.add_argument(
-        "--no-viz", action="store_true",
-        help="Skip visualization (useful in headless environments)"
+        "--no-viz",
+        action="store_true",
+        help="Skip visualization (useful in headless environments)",
     )
 
     args = parser.parse_args()

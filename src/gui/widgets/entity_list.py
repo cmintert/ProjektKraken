@@ -4,9 +4,9 @@ Entity List Widget Module.
 Displays a list of entities with controls for creating, refreshing, and deleting.
 """
 
-from typing import List
+from typing import List, Optional
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QSize, Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -33,7 +33,7 @@ class EntityListWidget(QWidget):
     delete_requested = Signal(str)  # entity_id
     create_requested = Signal()
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initializes the EntityListWidget.
 
@@ -97,6 +97,7 @@ class EntityListWidget(QWidget):
             item.setData(Qt.ItemDataRole.UserRole, entity.id)
             self.list_widget.addItem(item)
 
+    @Slot()
     def _on_selection_changed(self) -> None:
         """
         Handles entity selection changes.
@@ -111,6 +112,7 @@ class EntityListWidget(QWidget):
         else:
             self.btn_delete.setEnabled(False)
 
+    @Slot()
     def _on_delete_clicked(self) -> None:
         """
         Handles delete button clicks.
@@ -122,7 +124,7 @@ class EntityListWidget(QWidget):
             entity_id = items[0].data(Qt.ItemDataRole.UserRole)
             self.delete_requested.emit(entity_id)
 
-    def minimumSizeHint(self):
+    def minimumSizeHint(self) -> QSize:
         """
         Override to prevent dock collapse.
 
@@ -133,7 +135,7 @@ class EntityListWidget(QWidget):
 
         return QSize(250, 200)
 
-    def sizeHint(self):
+    def sizeHint(self) -> QSize:
         """
         Preferred size for the entity list.
 

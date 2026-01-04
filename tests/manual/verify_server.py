@@ -3,16 +3,15 @@ import logging
 import os
 import sys
 import time
-import urllib.request
 import traceback
+import urllib.request
 
 # Add src to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-from src.webserver.config import ServerConfig
-from src.services.web_service_manager import WebServiceManager
-from src.services.db_service import DatabaseService
 from src.core.events import Event
+from src.services.db_service import DatabaseService
+from src.services.web_service_manager import WebServiceManager
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -74,7 +73,7 @@ def verify_server():
     """Run the server verification."""
     try:
         setup_test_db()
-    except Exception as e:
+    except Exception:
         logger.error("DB Setup failed")
         traceback.print_exc()
         return

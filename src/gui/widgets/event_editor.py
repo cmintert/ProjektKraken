@@ -8,7 +8,7 @@ description, attributes, and relations.
 import logging
 from typing import Any, Optional
 
-from PySide6.QtCore import QPoint, QSize, Qt, Signal
+from PySide6.QtCore import QPoint, QSize, Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
@@ -367,6 +367,7 @@ class EventEditorWidget(QWidget):
         """Returns True if the editor has unsaved changes."""
         return self._is_dirty
 
+    @Slot(float)
     def _on_start_date_changed(self, new_start: float) -> None:
         """Updates duration widget context and recalculates end date."""
         self.duration_widget.set_start_date(new_start)
@@ -374,6 +375,7 @@ class EventEditorWidget(QWidget):
         current_duration = self.duration_widget.get_value()
         self.end_date_edit.set_value(new_start + current_duration)
 
+    @Slot(float)
     def _on_duration_changed(self, duration: float) -> None:
         """Syncs End Date when Duration changes."""
         start = self.date_edit.get_value()
@@ -381,6 +383,7 @@ class EventEditorWidget(QWidget):
         self.end_date_edit.set_value(start + duration)
         self.end_date_edit.blockSignals(False)
 
+    @Slot(float)
     def _on_end_date_changed(self, end_date: float) -> None:
         """Syncs Duration when End Date changes."""
         start = self.date_edit.get_value()
@@ -553,6 +556,7 @@ class EventEditorWidget(QWidget):
         finally:
             self._is_loading = False
 
+    @Slot()
     def _on_save(self) -> None:
         """
         Collects data from form fields and emits the `save_requested` signal.
@@ -579,6 +583,7 @@ class EventEditorWidget(QWidget):
         self.save_requested.emit(event_data)
         self.set_dirty(False)
 
+    @Slot()
     def _on_discard(self) -> None:
         """
         Discards changes by emitting signal to reload the current event.
@@ -588,6 +593,7 @@ class EventEditorWidget(QWidget):
 
         self.discard_requested.emit(self._current_event_id)
 
+    @Slot(object)  # Allow Any/object for checked signal
     def _on_add_relation(self, rel_type: Any = "involved") -> None:
         """
         Prompts user for relation details and emits signal.
@@ -658,6 +664,7 @@ class EventEditorWidget(QWidget):
         if confirm == QMessageBox.StandardButton.Yes:
             self.remove_relation_requested.emit(rel_data["id"])
 
+    @Slot(QListWidgetItem)
     def _on_edit_relation(self, item: QListWidgetItem) -> None:
         """Emits update signal after dialogs."""
         rel_data = item.data(Qt.ItemDataRole.UserRole)
@@ -690,6 +697,7 @@ class EventEditorWidget(QWidget):
                     rel_data["id"], target_id, rel_type, attributes
                 )
 
+    @Slot()
     def _on_edit_selected_relation(self) -> None:
         """Edits the currently selected relation."""
         item = self.rel_list.currentItem()
@@ -700,6 +708,7 @@ class EventEditorWidget(QWidget):
                 self, "Selection", "Please select a relation to edit."
             )
 
+    @Slot()
     def _on_remove_selected_relation(self) -> None:
         """Removes the currently selected relation."""
         item = self.rel_list.currentItem()
@@ -731,6 +740,7 @@ class EventEditorWidget(QWidget):
 
         return context
 
+    @Slot()
     def _on_field_changed(self) -> None:
         """Marks the editor as dirty and emits live preview signal."""
         if not self._is_loading:
@@ -758,6 +768,7 @@ class EventEditorWidget(QWidget):
             # Widgets may not be fully initialized during loading or partial state
             logger.debug(f"Could not emit current data: {e}")
 
+    @Slot(str)
     def _on_text_generated(self, text: str) -> None:
         """
         Handle text generated from LLM.

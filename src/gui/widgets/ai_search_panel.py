@@ -5,9 +5,9 @@ Provides a dockable panel for semantic search with live results and index status
 Supports future content creation features.
 """
 
-from typing import List
+from typing import List, Optional
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QSize, Qt, Signal, Slot
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import (
     QComboBox,
@@ -41,7 +41,7 @@ class SearchResultItem(QWidget):
         object_id: str,
         score: float,
         obj_subtype: str = "",
-        parent=None,
+        parent: Optional[QWidget] = None,
     ) -> None:
         """
         Initialize a search result item.
@@ -91,7 +91,7 @@ class SearchResultItem(QWidget):
         )
         self.setMinimumHeight(40)
 
-    def sizeHint(self):
+    def sizeHint(self) -> QSize:
         """Ensure item has sufficient height."""
         size = super().sizeHint()
         return size.expandedTo(self.minimumSize())
@@ -115,7 +115,7 @@ class AISearchPanelWidget(QWidget):
     search_requested = Signal(str, str, int)  # query_text, object_type_filter, top_k
     result_selected = Signal(str, str)  # object_type, object_id
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initialize the AI Search Panel.
 
@@ -196,6 +196,7 @@ class AISearchPanelWidget(QWidget):
         # Add stretch to push everything to the top
         main_layout.addStretch()
 
+    @Slot()
     def _on_search_clicked(self) -> None:
         """Handle search button click."""
         query = self.search_input.text().strip()

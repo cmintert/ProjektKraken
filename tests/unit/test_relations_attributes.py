@@ -10,8 +10,8 @@ Tests the full lifecycle of relation attributes including:
 
 import pytest
 
-from src.core.events import Event
 from src.core.entities import Entity
+from src.core.events import Event
 from src.core.relations import Relation
 from src.services.db_service import DatabaseService
 
@@ -31,7 +31,7 @@ def test_relation_dataclass_creation():
         source_id="src-123",
         target_id="tgt-456",
         rel_type="caused",
-        attributes={"weight": 0.8, "confidence": 0.9}
+        attributes={"weight": 0.8, "confidence": 0.9},
     )
 
     assert rel.source_id == "src-123"
@@ -44,11 +44,7 @@ def test_relation_dataclass_creation():
 
 def test_relation_dataclass_default_attributes():
     """Test that Relation defaults to empty dict for attributes."""
-    rel = Relation(
-        source_id="src-123",
-        target_id="tgt-456",
-        rel_type="involved"
-    )
+    rel = Relation(source_id="src-123", target_id="tgt-456", rel_type="involved")
 
     assert rel.attributes == {}
 
@@ -59,7 +55,7 @@ def test_relation_to_dict():
         source_id="src-123",
         target_id="tgt-456",
         rel_type="located_in",
-        attributes={"start_date": 100.0, "end_date": 200.0}
+        attributes={"start_date": 100.0, "end_date": 200.0},
     )
 
     data = rel.to_dict()
@@ -81,7 +77,7 @@ def test_relation_from_dict():
         "target_id": "tgt-456",
         "rel_type": "involved",
         "attributes": {"weight": 0.5},
-        "created_at": 1234567890.0
+        "created_at": 1234567890.0,
     }
 
     rel = Relation.from_dict(data)
@@ -102,7 +98,7 @@ def test_relation_from_dict_null_attributes():
         "target_id": "tgt-456",
         "rel_type": "involved",
         "attributes": None,
-        "created_at": 1234567890.0
+        "created_at": 1234567890.0,
     }
 
     rel = Relation.from_dict(data)
@@ -112,11 +108,7 @@ def test_relation_from_dict_null_attributes():
 
 def test_relation_weight_property():
     """Test weight property accessor."""
-    rel = Relation(
-        source_id="src-123",
-        target_id="tgt-456",
-        rel_type="allied_with"
-    )
+    rel = Relation(source_id="src-123", target_id="tgt-456", rel_type="allied_with")
 
     # Default weight
     assert rel.weight == 1.0
@@ -129,11 +121,7 @@ def test_relation_weight_property():
 
 def test_relation_confidence_property():
     """Test confidence property accessor."""
-    rel = Relation(
-        source_id="src-123",
-        target_id="tgt-456",
-        rel_type="caused"
-    )
+    rel = Relation(source_id="src-123", target_id="tgt-456", rel_type="caused")
 
     # Default confidence
     assert rel.confidence == 1.0
@@ -157,11 +145,9 @@ def test_create_relation_with_attributes(db_service):
         "weight": 0.8,
         "confidence": 0.9,
         "start_date": 150.0,
-        "source": "Historical records"
+        "source": "Historical records",
     }
-    rel_id = db_service.insert_relation(
-        e1.id, e2.id, "caused", attributes
-    )
+    rel_id = db_service.insert_relation(e1.id, e2.id, "caused", attributes)
 
     # Read it back
     rel = db_service.get_relation(rel_id)
@@ -203,16 +189,10 @@ def test_update_relation_attributes(db_service):
     db_service.insert_event(e2)
 
     # Create relation with initial attributes
-    rel_id = db_service.insert_relation(
-        e1.id, e2.id, "caused", {"weight": 0.5}
-    )
+    rel_id = db_service.insert_relation(e1.id, e2.id, "caused", {"weight": 0.5})
 
     # Update with new attributes
-    new_attributes = {
-        "weight": 0.9,
-        "confidence": 0.8,
-        "notes": "Updated information"
-    }
+    new_attributes = {"weight": 0.9, "confidence": 0.8, "notes": "Updated information"}
     db_service.update_relation(rel_id, e2.id, "caused", new_attributes)
 
     # Verify update
@@ -232,15 +212,9 @@ def test_relation_attributes_round_trip(db_service):
     # Complex nested attributes
     attributes = {
         "weight": 0.75,
-        "dates": {
-            "start": 100.0,
-            "end": 200.0
-        },
+        "dates": {"start": 100.0, "end": 200.0},
         "tags": ["important", "verified"],
-        "metadata": {
-            "source": "Primary document",
-            "page": 42
-        }
+        "metadata": {"source": "Primary document", "page": 42},
     }
 
     rel_id = db_service.insert_relation(e1.id, e2.id, "related", attributes)
@@ -262,14 +236,8 @@ def test_relations_with_entities(db_service):
     db_service.insert_entity(ent2)
 
     # Create relation with attributes
-    attributes = {
-        "relationship": "home",
-        "start_date": 50.0,
-        "confidence": 0.95
-    }
-    rel_id = db_service.insert_relation(
-        ent1.id, ent2.id, "located_in", attributes
-    )
+    attributes = {"relationship": "home", "start_date": 50.0, "confidence": 0.95}
+    rel_id = db_service.insert_relation(ent1.id, ent2.id, "located_in", attributes)
 
     # Verify
     rel = db_service.get_relation(rel_id)
@@ -310,8 +278,7 @@ def test_incoming_relations_with_attributes(db_service):
 
     # Create relation
     db_service.insert_relation(
-        e1.id, e2.id, "caused",
-        {"weight": 0.8, "confidence": 0.7}
+        e1.id, e2.id, "caused", {"weight": 0.8, "confidence": 0.7}
     )
 
     # Get incoming relations for e2
@@ -330,9 +297,7 @@ def test_multiple_relations_same_pair_different_attributes(db_service):
     db_service.insert_event(e2)
 
     # Create multiple relations between same pair
-    rel1_id = db_service.insert_relation(
-        e1.id, e2.id, "caused", {"confidence": 0.9}
-    )
+    rel1_id = db_service.insert_relation(e1.id, e2.id, "caused", {"confidence": 0.9})
     rel2_id = db_service.insert_relation(
         e1.id, e2.id, "influenced", {"confidence": 0.6}
     )

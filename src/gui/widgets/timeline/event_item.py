@@ -5,6 +5,7 @@ Provides the EventItem class for rendering individual events on the timeline.
 """
 
 import logging
+from typing import Any, Optional
 
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import (
@@ -17,7 +18,10 @@ from PySide6.QtGui import (
     QPen,
     QPolygonF,
 )
-from PySide6.QtWidgets import QGraphicsItem
+from PySide6.QtWidgets import QGraphicsItem, QStyleOptionGraphicsItem, QWidget
+
+from src.core.calendar import CalendarConverter
+from src.core.events import Event
 
 logger = logging.getLogger(__name__)
 
@@ -49,12 +53,12 @@ class EventItem(QGraphicsItem):
     _calendar_converter = None
 
     @classmethod
-    def get_event_height(cls, event) -> int:
+    def get_event_height(cls, event: Event) -> int:
         """
         Returns the visual height for an event based on its type.
 
         Args:
-            event: The Event object.
+            event (Event): The Event object.
 
         Returns:
             int: Height in pixels.
@@ -64,11 +68,11 @@ class EventItem(QGraphicsItem):
         return cls.POINT_EVENT_HEIGHT
 
     @classmethod
-    def set_calendar_converter(cls, converter) -> None:
+    def set_calendar_converter(cls, converter: CalendarConverter) -> None:
         """Sets the calendar converter for date formatting."""
         cls._calendar_converter = converter
 
-    def __init__(self, event, scale_factor=10.0) -> None:
+    def __init__(self, event: Event, scale_factor: float = 10.0) -> None:
         """
         Initializes an EventBlock.
 
@@ -111,7 +115,7 @@ class EventItem(QGraphicsItem):
         # Track if we're currently dragging
         self._is_dragging = False
 
-    def update_event(self, event) -> None:
+    def update_event(self, event: Event) -> None:
         """
         Updates the event data for this item and refreshes the display.
 
@@ -186,7 +190,7 @@ class EventItem(QGraphicsItem):
         # Capture current Y as the constraint value at drag start
         self._initial_y = self.y()
 
-    def itemChange(self, change, value):
+    def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
         """
         Handles item changes to constrain dragging to horizontal only
         and update the lore_date during drag.
@@ -232,7 +236,12 @@ class EventItem(QGraphicsItem):
                 new_lore_date = self.x() / self.scale_factor
                 self.on_drag_complete(self.event.id, new_lore_date)
 
-    def paint(self, painter, option, widget=None) -> None:
+    def paint(
+        self,
+        painter: QPainter,
+        option: QStyleOptionGraphicsItem,
+        widget: Optional[QWidget] = None,
+    ) -> None:
         """
         Custom painting for the Event Marker.
         Draws a diamond shape and a text label.
@@ -244,7 +253,7 @@ class EventItem(QGraphicsItem):
         else:
             self._paint_point_event(painter)
 
-    def _paint_duration_bar(self, painter) -> None:
+    def _paint_duration_bar(self, painter: QPainter) -> None:
         """Draws the event as a horizontal bar spanning its duration."""
         width = self.event.lore_duration * self.scale_factor
         width = max(width, 10)  # Minimum width visual
@@ -294,7 +303,7 @@ class EventItem(QGraphicsItem):
         painter.setPen(QPen(QColor(180, 180, 180)))
         painter.drawText(QPointF(0, label_y + 12), date_str)
 
-    def _paint_point_event(self, painter) -> None:
+    def _paint_point_event(self, painter: QPainter) -> None:
         """Draws the standard diamond marker for point events."""
         # 1. Draw Diamond Icon
         half = self.ICON_SIZE / 2

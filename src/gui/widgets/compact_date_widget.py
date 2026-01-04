@@ -12,7 +12,7 @@ Provides a polished, calendar-aware date input widget with:
 
 from typing import Optional
 
-from PySide6.QtCore import QSize, Signal
+from PySide6.QtCore import QSize, Signal, Slot
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -48,7 +48,7 @@ class CompactDateWidget(QWidget):
 
     value_changed = Signal(float)
 
-    def __init__(self, parent: QWidget = None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initializes the compact date widget.
 
@@ -231,11 +231,13 @@ class CompactDateWidget(QWidget):
         self.combo_month.blockSignals(False)
         self._updating = False
 
+    @Slot(int)
     def _on_month_changed(self, index: int) -> None:
         """Handles month selection change."""
         self._populate_days()
         self._on_input_changed()
 
+    @Slot()
     def _on_input_changed(self) -> None:
         """Handles any input change."""
         if self._updating:
@@ -344,6 +346,7 @@ class CompactDateWidget(QWidget):
         finally:
             self._updating = False
 
+    @Slot()
     def _open_calendar_popup(self) -> None:
         """Opens the calendar picker popup."""
         if not self._converter:

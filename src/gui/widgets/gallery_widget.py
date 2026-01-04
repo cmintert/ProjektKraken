@@ -46,7 +46,7 @@ class GalleryWidget(QWidget):
 
     # Needs access to main_window to emit commands
 
-    def __init__(self, main_window) -> None:
+    def __init__(self, main_window: QWidget) -> None:
         """
         Initialize the gallery widget.
 
@@ -230,6 +230,7 @@ class GalleryWidget(QWidget):
             # Re-fetch data
             self.set_owner(self.owner_type, self.owner_id)
 
+    @Slot()
     def on_add_clicked(self) -> None:
         """Handle add image button click - open file dialog and create command."""
         if not self.owner_id:
@@ -245,6 +246,7 @@ class GalleryWidget(QWidget):
             # Auto-refresh handled by listing to command_finished signal.
             # MainWindow doesn't auto-trigger 'load_attachments' on command finish.
 
+    @Slot(QListWidgetItem)
     def on_item_double_clicked(self, item: QListWidgetItem) -> None:
         """
         Handle double-click on gallery item - open image viewer.
@@ -292,12 +294,14 @@ class GalleryWidget(QWidget):
         elif action == remove_action:
             self.remove_item(item)
 
+    @Slot()
     def _on_edit_caption_clicked(self) -> None:
         """Handles toolbar button click for editing caption."""
         item = self.list_widget.currentItem()
         if item:
             self.edit_caption(item)
 
+    @Slot()
     def _on_remove_clicked(self) -> None:
         """Handles toolbar button click for removal."""
         item = self.list_widget.currentItem()

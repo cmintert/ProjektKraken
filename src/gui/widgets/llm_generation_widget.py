@@ -10,7 +10,7 @@ import logging
 import sqlite3
 from typing import Any, Optional, Protocol, runtime_checkable
 
-from PySide6.QtCore import QSettings, Qt, QThread, Signal
+from PySide6.QtCore import QSettings, Qt, QThread, Signal, Slot
 from PySide6.QtGui import QIntValidator
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -478,6 +478,7 @@ class LLMGenerationWidget(QWidget):
         except Exception as e:
             logger.warning(f"Failed to load generation settings: {e}")
 
+    @Slot()
     def _save_settings(self) -> None:
         """Save current settings to QSettings."""
         try:
@@ -507,6 +508,7 @@ class LLMGenerationWidget(QWidget):
         }
         return provider_map.get(self.provider_combo.currentText(), "lmstudio")
 
+    @Slot()
     def _on_generate_clicked(self) -> None:
         """Handle generate button click."""
         print("DEBUG: Generate button clicked")  # Direct stdout debug
@@ -717,6 +719,7 @@ class LLMGenerationWidget(QWidget):
     #     """Handle streaming chunk."""
     #     self.preview_text.appendPlainText(chunk)
 
+    @Slot(str)
     def _on_generation_complete(self, text: str) -> None:
         """Handle generation completion."""
         logger.info(f"Generation complete. Received {len(text)} characters.")
@@ -733,6 +736,7 @@ class LLMGenerationWidget(QWidget):
             self._worker.deleteLater()
             self._worker = None
 
+    @Slot(str)
     def _on_generation_error(self, error: str) -> None:
         """Handle generation error."""
         logger.error(f"Generation error: {error}")
@@ -745,6 +749,7 @@ class LLMGenerationWidget(QWidget):
             self._worker.deleteLater()
             self._worker = None
 
+    @Slot()
     def _on_cancel_clicked(self) -> None:
         """Handle cancel button click."""
         if self._worker:
@@ -757,6 +762,7 @@ class LLMGenerationWidget(QWidget):
         self.generate_btn.setEnabled(True)
         self.cancel_btn.setEnabled(False)
 
+    @Slot()
     def _on_preview_clicked(self) -> None:
         """Show prompt preview dialog."""
         context = self._get_generation_context()

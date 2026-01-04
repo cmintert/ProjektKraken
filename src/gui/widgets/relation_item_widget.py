@@ -7,7 +7,7 @@ Provides a custom widget for relation list items with an embedded
 
 from typing import Any, Dict, Optional
 
-from PySide6.QtCore import QSize, Signal
+from PySide6.QtCore import QSize, Signal, Slot
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QWidget
 
 from src.gui.widgets.standard_buttons import StandardButton
@@ -130,6 +130,7 @@ class RelationItemWidget(QWidget):
         # Button is 22px + 2px top margin + 2px bottom margin = 26px minimum
         return QSize(200, 28)
 
+    @Slot()
     def _on_go_to_clicked(self) -> None:
         """Handles the Go to button click."""
         self.go_to_clicked.emit(self._target_id, self._target_name)

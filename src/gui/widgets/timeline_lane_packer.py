@@ -10,6 +10,7 @@ from typing import Dict, List, Tuple
 
 from PySide6.QtGui import QFont, QFontMetrics
 
+from src.core.events import Event
 from src.gui.widgets.timeline.event_item import EventItem
 
 logger = logging.getLogger(__name__)
@@ -47,7 +48,7 @@ class TimelineLanePacker:
             self.font.setBold(True)
             self.fm = QFontMetrics(self.font)
 
-    def pack_events(self, events: List) -> Tuple[Dict[str, int], List[int]]:
+    def pack_events(self, events: List[Event]) -> Tuple[Dict[str, int], List[int]]:
         """
         Packs events into lanes using the First Fit algorithm.
 
@@ -87,7 +88,7 @@ class TimelineLanePacker:
 
         return event_lane_assignments, lanes_heights
 
-    def _calculate_visual_duration(self, event) -> float:
+    def _calculate_visual_duration(self, event: Event) -> float:
         """
         Calculates the visual duration of an event in time units.
 

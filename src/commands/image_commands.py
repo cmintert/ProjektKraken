@@ -167,7 +167,9 @@ class ReorderImagesCommand(BaseCommand):
     Command to reorder attachments for an owner.
     """
 
-    def __init__(self, owner_type: str, owner_id: str, new_order_ids: List[str]) -> None:
+    def __init__(
+        self, owner_type: str, owner_id: str, new_order_ids: List[str]
+    ) -> None:
         """
         Initialize the reorder images command.
 

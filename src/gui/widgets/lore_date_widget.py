@@ -8,7 +8,7 @@ with Year/Month/Day dropdowns and fallback to raw float input.
 import logging
 from typing import Optional
 
-from PySide6.QtCore import QSize, Signal
+from PySide6.QtCore import QSize, Signal, Slot
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -218,6 +218,7 @@ class LoreDateWidget(QWidget):
 
         self._updating = False
 
+    @Slot(int)
     def _on_month_changed(self, index: int) -> None:
         """
         Handles month selection change.
@@ -231,6 +232,7 @@ class LoreDateWidget(QWidget):
         self._update_day_combo()
         self._on_structured_changed()
 
+    @Slot()
     def _on_structured_changed(self) -> None:
         """Handles changes to structured fields."""
         if self._updating:
@@ -239,6 +241,7 @@ class LoreDateWidget(QWidget):
         self._update_preview()
         self.value_changed.emit(self.get_value())
 
+    @Slot(float)
     def _on_raw_changed(self, value: float) -> None:
         """
         Handles changes to raw float spinbox.
@@ -252,6 +255,7 @@ class LoreDateWidget(QWidget):
         self._update_preview()
         self.value_changed.emit(value)
 
+    @Slot(bool)
     def _on_raw_toggle(self, checked: bool) -> None:
         """
         Handles raw mode toggle.

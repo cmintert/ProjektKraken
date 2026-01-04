@@ -7,6 +7,7 @@ above the timeline lanes.
 """
 
 import logging
+from typing import Dict, Optional
 
 from PySide6.QtCore import QRectF, Qt, Signal
 from PySide6.QtGui import (
@@ -18,7 +19,13 @@ from PySide6.QtGui import (
     QPainter,
     QPen,
 )
-from PySide6.QtWidgets import QGraphicsObject
+from PySide6.QtWidgets import (
+    QGraphicsItem,
+    QGraphicsObject,
+    QGraphicsSceneHoverEvent,
+    QStyleOptionGraphicsItem,
+    QWidget,
+)
 
 from src.core.theme_manager import ThemeManager
 
@@ -56,7 +63,7 @@ class GroupBandItem(QGraphicsObject):
         earliest_date: float,
         latest_date: float,
         is_collapsed: bool = False,
-        parent=None,
+        parent: Optional[QGraphicsItem] = None,
     ) -> None:
         """
         Initializes the GroupBandItem.
@@ -98,7 +105,7 @@ class GroupBandItem(QGraphicsObject):
         # Tooltip
         self._update_tooltip()
 
-    def _on_theme_changed(self, theme) -> None:
+    def _on_theme_changed(self, theme: Dict) -> None:
         """Update theme and refresh."""
         self.theme = theme
         self.update()
@@ -133,7 +140,12 @@ class GroupBandItem(QGraphicsObject):
         # Return a very wide rect to span the timeline
         return QRectF(-1e12, 0, 2e12, height)
 
-    def paint(self, painter: QPainter, option, widget=None) -> None:
+    def paint(
+        self,
+        painter: QPainter,
+        option: QStyleOptionGraphicsItem,
+        widget: Optional[QWidget] = None,
+    ) -> None:
         """
         Paints the group band.
 
@@ -236,13 +248,13 @@ class GroupBandItem(QGraphicsObject):
         self.context_menu_requested.emit(self.tag_name, event.screenPos())
         event.accept()
 
-    def hoverEnterEvent(self, event) -> None:
+    def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """Handle hover enter."""
         self._hovered = True
         self.update()
         super().hoverEnterEvent(event)
 
-    def hoverLeaveEvent(self, event) -> None:
+    def hoverLeaveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """Handle hover leave."""
         self._hovered = False
         self.update()
@@ -270,7 +282,9 @@ class GroupBandItem(QGraphicsObject):
         self._color = QColor(color)
         self.update()
 
-    def update_metadata(self, count: int, earliest_date: float, latest_date: float) -> None:
+    def update_metadata(
+        self, count: int, earliest_date: float, latest_date: float
+    ) -> None:
         """
         Update the band metadata.
 

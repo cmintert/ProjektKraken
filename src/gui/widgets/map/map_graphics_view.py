@@ -8,7 +8,7 @@ import json
 import logging
 from typing import Dict, Optional
 
-from PySide6.QtCore import QPointF, Qt, Signal
+from PySide6.QtCore import QPointF, QSize, Qt, Signal
 from PySide6.QtGui import (
     QAction,
     QBrush,
@@ -30,6 +30,7 @@ from PySide6.QtWidgets import (
     QGraphicsScene,
     QGraphicsView,
     QMenu,
+    QWidget,
 )
 
 from src.core.theme_manager import ThemeManager
@@ -57,7 +58,7 @@ class MapGraphicsView(QGraphicsView):
     change_marker_color_requested = Signal(str, str)  # marker_id, new_color_hex
     marker_drop_requested = Signal(str, str, str, float, float)  # id, type, name, x, y
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initializes the MapGraphicsView.
 
@@ -87,7 +88,7 @@ class MapGraphicsView(QGraphicsView):
         # Enable drop support for drag-from-explorer
         self.setAcceptDrops(True)
 
-    def minimumSizeHint(self):
+    def minimumSizeHint(self) -> QSize:
         """
         Override minimum size hint to allow resizing below map image size.
 
@@ -102,7 +103,7 @@ class MapGraphicsView(QGraphicsView):
 
         return QSize(200, 150)
 
-    def _update_theme(self, theme) -> None:
+    def _update_theme(self, theme: dict) -> None:
         """Updates the scene background."""
         self.scene.setBackgroundBrush(QBrush(QColor(theme["app_bg"])))
 

@@ -8,7 +8,9 @@ Provides a polished, calendar-aware duration input widget with:
 - Preview label with written format (hides zero values)
 """
 
-from PySide6.QtCore import Signal
+from typing import Optional
+
+from PySide6.QtCore import QSize, Signal, Slot
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -38,7 +40,7 @@ class CompactDurationWidget(QWidget):
 
     value_changed = Signal(float)
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initializes the compact duration widget.
 
@@ -176,6 +178,7 @@ class CompactDurationWidget(QWidget):
         """
         self._start_date_float = start_date_float
 
+    @Slot()
     def _on_input_changed(self) -> None:
         """Handles any input change."""
         if self._updating:
@@ -362,7 +365,7 @@ class CompactDurationWidget(QWidget):
         finally:
             self._updating = False
 
-    def minimumSizeHint(self):
+    def minimumSizeHint(self) -> QSize:
         """
         Returns the minimum size hint to prevent vertical collapse.
 
@@ -373,7 +376,7 @@ class CompactDurationWidget(QWidget):
 
         return QSize(250, 72)  # Two rows of controls + frame padding
 
-    def sizeHint(self):
+    def sizeHint(self) -> QSize:
         """
         Returns the preferred size hint.
 
