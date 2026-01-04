@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-01-02
-### Internal
-- Merge pull request #43 from cmintert/copilot/refactor-entry-and-main-window
+## [Development] - 2026-01-04
+### Documentation
+- docs: add release policy and status scripts, ignore *.kraken
 
 
 *This changelog was automatically generated.*
