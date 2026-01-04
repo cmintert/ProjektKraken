@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-01-04  
-**Commit:** `4645183`  
+**Commit:** `cf2c11a`  
 ---
 
 # Changelog
@@ -10,6 +10,12 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Fixed
+- *(2026-01-04)* **Quality**: Applied PySide6 type annotations to entire `src/gui` module (49 files).
+- *(2026-01-04)* **Quality**: Fixed ambiguous variable names and missing annotations in test files.
+- *(2026-01-04)* **Bug**: Fixed AI search panel stylesheet selector (hover effects now work).
+- *(2026-01-04)* **Accessibility**: Enabled keyboard navigation in AI search panel (arrow keys + Enter).
 
 ## [0.5.0]
 
