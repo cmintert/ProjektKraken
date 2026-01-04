@@ -1,8 +1,8 @@
 ---
-**Project:** ProjektKraken  
-**Document:** Main Project README  
-**Last Updated:** 2026-01-01  
-**Commit:** `d9e3f83`  
+project: ProjektKraken
+document: Main Project README
+last_updated: 2026-01-01
+commit: d9e3f83
 ---
 
 # Projekt Kraken
