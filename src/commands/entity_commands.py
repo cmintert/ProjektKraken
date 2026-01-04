@@ -165,6 +165,13 @@ class UpdateEntityCommand(BaseCommand):
                 success=True,
                 message="Entity updated.",
                 command_name="UpdateEntityCommand",
+                data={
+                    "id": self._new_entity.id,
+                    "name": self._new_entity.name,
+                    "type": "entity",
+                    "icon": self._new_entity.attributes.get("icon"),
+                    "color": self._new_entity.attributes.get("color"),
+                },
             )
         except Exception as e:
             logger.error(f"Failed to update entity: {e}")

@@ -192,6 +192,13 @@ class UpdateEventCommand(BaseCommand):
                 success=True,
                 message="Event updated successfully.",
                 command_name="UpdateEventCommand",
+                data={
+                    "id": self._new_event.id,
+                    "name": self._new_event.name,
+                    "type": "event",
+                    "icon": self._new_event.attributes.get("icon"),
+                    "color": self._new_event.attributes.get("color"),
+                },
             )
         except Exception as e:
             logger.error(f"Failed to update event: {e}")

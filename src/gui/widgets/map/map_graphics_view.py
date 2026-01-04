@@ -249,6 +249,53 @@ class MapGraphicsView(QGraphicsView):
 
         logger.debug(f"Updated marker {marker_id} to normalized ({x:.3f}, {y:.3f})")
 
+    def update_marker_visuals(
+        self,
+        marker_id: str,
+        label: str,
+        icon: Optional[str] = None,
+        color: Optional[str] = None,
+    ) -> None:
+        """
+        Updates a marker's visual properties (label, icon, color).
+
+        Args:
+            marker_id: Unique identifier for the marker.
+            label: New label text (tooltip).
+            icon: Optional new icon filename.
+            color: Optional new color hex string.
+        """
+        if marker_id not in self.markers:
+            # This is expected if the updated item is not on the current map
+            return
+        marker = self.markers[marker_id]
+
+        logger.debug(
+            f"Updating marker {marker_id}: Old Label='{marker.label}', New Label='{label}'"
+        )
+
+        # Update label/tooltip
+        marker.label = label
+        marker.setToolTip(label)
+
+        # Update icon if provided (not None and not empty)
+        if icon:
+            logger.debug(f"Updating marker {marker_id}: Icon -> {icon}")
+            marker.set_icon(icon)
+
+        # Update color if provided (not None and not empty)
+        if color:
+            logger.debug(f"Updating marker {marker_id}: Color -> {color}")
+            marker.set_color(color)
+
+        # Force update just in case
+        marker.update()
+
+        logger.info(
+            f"Updated visuals for marker {marker_id} complete. "
+            f"Tooltip set to: {marker.toolTip()}"
+        )
+
     def remove_marker(self, marker_id: str) -> None:
         """
         Removes a marker from the map.

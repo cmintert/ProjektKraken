@@ -16,12 +16,10 @@ import os
 from typing import List, Optional
 
 from PySide6.QtCore import Signal, Slot
-from PySide6.QtGui import (
-    QAction,
-)
 from PySide6.QtWidgets import (
     QComboBox,
-    QToolBar,
+    QHBoxLayout,
+    QPushButton,
     QVBoxLayout,
     QWidget,
 )
@@ -85,32 +83,56 @@ class MapWidget(QWidget):
         # Layout
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        # Toolbar
-        self.toolbar = QToolBar(self)
-        layout.addWidget(self.toolbar)
+
+        # Toolbar Layout (Styled Buttons instead of QToolBar for consistency)
+        top_bar = QHBoxLayout()
+        # Use standard spacing from StyleHelper if available, else manual
+        top_bar.setSpacing(8)
+        top_bar.setContentsMargins(8, 8, 8, 8)
 
         # Map Selector
         self.map_selector = QComboBox()
         self.map_selector.setMinimumWidth(200)
         self.map_selector.currentIndexChanged.connect(self._on_map_selected)
-        self.toolbar.addWidget(self.map_selector)
+        top_bar.addWidget(self.map_selector)
 
-        # Actions
-        self.action_new_map = QAction("New Map", self)
-        self.action_new_map.triggered.connect(self.create_map_requested.emit)
-        self.toolbar.addAction(self.action_new_map)
+        # New Map Button
+        self.btn_new_map = QPushButton("New Map")
+        self.btn_new_map.clicked.connect(self.create_map_requested.emit)
+        from src.gui.utils.style_helper import StyleHelper
 
-        self.action_delete_map = QAction("Delete Map", self)
-        self.action_delete_map.triggered.connect(self.delete_map_requested.emit)
-        self.toolbar.addAction(self.action_delete_map)
+        self.btn_new_map.setStyleSheet(StyleHelper.get_primary_button_style())
+        top_bar.addWidget(self.btn_new_map)
 
-        self.toolbar.addSeparator()
+        # Delete Map Button
+        self.btn_delete_map = QPushButton("Delete Map")
+        self.btn_delete_map.clicked.connect(self.delete_map_requested.emit)
+        # Use standard button style or generic if destructive is too strong,
+        # but let's stick to destructive for delete actions
+        self.btn_delete_map.setStyleSheet(StyleHelper.get_destructive_button_style())
+        top_bar.addWidget(self.btn_delete_map)
 
-        self.action_fit_view = QAction("Fit to View", self)
-        self.action_fit_view.triggered.connect(self.view.fit_to_view)
-        self.toolbar.addAction(self.action_fit_view)
+        # Spacer
+        top_bar.addStretch()
 
-        # Add View (after toolbar)
+        # Fit View Button
+        self.btn_fit_view = QPushButton("Fit View")
+        self.btn_fit_view.clicked.connect(self.view.fit_to_view)
+        # Standard style (no special color)
+        # We can reuse standard button style if we had one, or just left default
+        # But for consistency let's use a subtle style or just default Qt style
+        # which usually looks okay if we don't have a "secondary" style in helper yet.
+        # Actually, let's use primary but maybe different? No, keep it simple.
+        # Check if we have a secondary style... we don't.
+        # Let's just use default for utility buttons or maybe similar to unified list buttons.
+        # Unified list uses plain QPushButtons for top bar except "New".
+        # So we leave it default or add simple styling.
+        # Let's import StyleHelper at top strictly speaking but here is fine too.
+        top_bar.addWidget(self.btn_fit_view)
+
+        layout.addLayout(top_bar)
+
+        # Add View
         layout.addWidget(self.view)
 
         # Connect signals
@@ -239,6 +261,24 @@ class MapWidget(QWidget):
             y: Normalized Y coordinate.
         """
         self.view.update_marker_position(marker_id, x, y)
+
+    def update_marker_visuals(
+        self,
+        marker_id: str,
+        label: str,
+        icon: Optional[str] = None,
+        color: Optional[str] = None,
+    ) -> None:
+        """
+        Updates a marker's visuals.
+
+        Args:
+            marker_id: Unique identifier for the marker.
+            label: New label text.
+            icon: Optional new icon.
+            color: Optional new color.
+        """
+        self.view.update_marker_visuals(marker_id, label, icon, color)
 
     def remove_marker(self, marker_id: str) -> None:
         """

@@ -54,6 +54,11 @@ class MapHandler(QObject):
         # Mapping from object_id to actual marker.id for position updates
         self._marker_object_to_id: dict[str, str] = {}
 
+        # Connect visual update signal
+        self.window.data_handler.item_visuals_updated.connect(
+            self.on_item_visuals_updated
+        )
+
     def load_maps(self) -> None:
         """Requests loading of all maps from the worker thread."""
         QMetaObject.invokeMethod(
@@ -317,6 +322,7 @@ class MapHandler(QObject):
             self.window._last_selected_id = marker_id
             self.window._last_selected_type = "event"
             self.window.ui_manager.docks["event"].raise_()
+            self.window.unified_list.select_item("event", marker_id)
 
         elif object_type == "entity":
             if not self.window.check_unsaved_changes(self.window.entity_editor):
@@ -325,6 +331,7 @@ class MapHandler(QObject):
             self.window._last_selected_id = marker_id
             self.window._last_selected_type = "entity"
             self.window.ui_manager.docks["entity"].raise_()
+            self.window.unified_list.select_item("entity", marker_id)
 
     @Slot(str, str)
     def on_marker_icon_changed(self, marker_id: str, icon: str) -> None:
@@ -427,3 +434,55 @@ class MapHandler(QObject):
 
             # Store mapping for later updates (object_id -> marker.id)
             self._marker_object_to_id[marker_data["object_id"]] = marker_data["id"]
+
+    @Slot(str, str, str, str, str)
+    def on_item_visuals_updated(
+        self,
+        item_type: str,
+        item_id: str,
+        label: str,
+        icon: str,
+        color: str,
+    ) -> None:
+        """
+        Handle visual update signal from DataHandler.
+        Updates the marker on the map if it exists.
+
+        Args:
+            item_type: 'entity' or 'event'.
+            item_id: The ID of the item.
+            label: The new name/label.
+            icon: The new icon filename.
+            color: The new color hex code.
+        """
+        # The MapGraphicsView uses the 'marker_id' argument from add_marker as its key.
+        # In add_marker below, we pass marker_data["object_id"] as the marker_id.
+        # So the view uses the Entity/Event ID as its key.
+        # Therefore, we don't need to look up a different ID.
+        # However, purely for safety against future refactors, we check if we have it mapped.
+        # Actually, wait - looking at on_markers_ready:
+        # self.window.map_widget.add_marker(marker_id=marker_data["object_id"], ...)
+        # This confirms the view uses object_id.
+
+        # So we can use item_id directly.
+        marker_id = item_id
+
+        if marker_id:
+            # Check if this marker is actually on the current map by checking if it's in the mapping
+            # (which implies it was loaded for this map)
+            if item_id in self._marker_object_to_id:
+                logger.info(
+                    f"Applying visual update to marker for {item_type} {item_id}"
+                )
+                self.window.map_widget.update_marker_visuals(
+                    marker_id=marker_id,
+                    label=label,
+                    icon=icon,
+                    color=color,
+                )
+            else:
+                logger.debug(
+                    f"Item {item_id} not on current map (not in mapping), skipping update."
+                )
+        else:
+            logger.warning(f"No marker ID derived for {item_type} {item_id}")

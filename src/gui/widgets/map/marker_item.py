@@ -318,3 +318,12 @@ class MarkerItem(QGraphicsObject):
             The processed value.
         """
         return super().itemChange(change, value)
+
+    def setToolTip(self, toolTip: str) -> None:
+        """
+        Overrides setToolTip to ensure the item updates its appearance/events
+        when the tooltip changes.
+        """
+        super().setToolTip(toolTip)
+        # Force update to ensure tooltip area is recalculated if needed (though usually processed by view)
+        self.update()

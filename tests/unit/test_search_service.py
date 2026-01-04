@@ -436,7 +436,11 @@ def test_skip_unchanged_entity(search_service, search_db):
     # Index first time
     search_service.index_entity(entity.id)
 
-    cursor.fetchone()  # Verify embedding exists
+    # Verify embedding exists
+    cursor = search_db.execute(
+        "SELECT created_at FROM embeddings WHERE object_id = ?", (entity.id,)
+    )
+    first_created_at = cursor.fetchone()["created_at"]  # noqa: F841
 
     # Index again (should skip due to unchanged text_hash)
     search_service.index_entity(entity.id)
@@ -445,7 +449,7 @@ def test_skip_unchanged_entity(search_service, search_db):
     cursor = search_db.execute(
         "SELECT created_at FROM embeddings WHERE object_id = ?", (entity.id,)
     )
-    _ = cursor.fetchone()["created_at"]  # noqa: F841
+    second_created_at = cursor.fetchone()["created_at"]
 
     # Note: Due to upsert, created_at might actually update
     # The key test is that the function completes without error

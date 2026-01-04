@@ -42,6 +42,9 @@ class DataHandler(QObject):
     maps_ready = Signal(list)  # Emitted when maps are processed
     markers_ready = Signal(str, list)  # (map_id, markers)
     entity_state_resolved = Signal(str, dict)  # (entity_id, attributes)
+    item_visuals_updated = Signal(
+        str, str, str, str, str
+    )  # (type, id, label, icon, color)
 
     # Signals for UI actions
     status_message = Signal(str)  # Status bar message updates
@@ -233,12 +236,12 @@ class DataHandler(QObject):
         self.markers_ready.emit(map_id, processed_markers)
 
     @Slot(object)
-    def on_command_finished(self, result: CommandResult) -> None:
+    def on_command_finished(self, result: "CommandResult") -> None:
         """
-        Handles completion of async commands, emitting signals for necessary UI refreshes.
+        Handles the completion of a command.
 
         Args:
-            result: CommandResult object containing execution status.
+            result: The result of the command execution.
         """
         if not isinstance(result, CommandResult):
             return
@@ -246,6 +249,12 @@ class DataHandler(QObject):
         command_name = result.command_name
         success = result.success
         message = result.message
+
+        logger.debug(
+            f"DataHandler received command result: {command_name}, Success={result.success}"
+        )
+        if result.data:
+            logger.debug(f"Command result data: {result.data}")
 
         # Determine what to reload based on command
         if not success:
@@ -280,6 +289,19 @@ class DataHandler(QObject):
 
         if "Longform" in command_name:
             self.reload_longform.emit()
+
+        # Handle immediate visual updates for maps
+        if command_name in ["UpdateEntityCommand", "UpdateEventCommand"]:
+            data = result.data
+            if data:
+                # Use empty string as sentinel for None (Qt signals coerce None to "None")
+                self.item_visuals_updated.emit(
+                    data.get("type") or "",
+                    data.get("id") or "",
+                    data.get("name") or "",
+                    data.get("icon") or "",
+                    data.get("color") or "",
+                )
 
     @Slot(str, dict)
     def on_entity_state_resolved(self, entity_id: str, attributes: dict) -> None:
