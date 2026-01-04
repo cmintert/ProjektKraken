@@ -8,7 +8,6 @@ Supports future content creation features.
 from typing import List, Optional
 
 from PySide6.QtCore import QSize, Qt, Signal, Slot
-from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QGroupBox,
@@ -86,8 +85,9 @@ class SearchResultItem(QWidget):
         # Make clickable
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setObjectName("searchResultItem")
         self.setStyleSheet(
-            "SearchResultItem:hover { background-color: rgba(255, 255, 255, 0.1); }"
+            "#searchResultItem:hover { background-color: rgba(255, 255, 255, 0.1); }"
         )
         self.setMinimumHeight(40)
 
@@ -95,12 +95,6 @@ class SearchResultItem(QWidget):
         """Ensure item has sufficient height."""
         size = super().sizeHint()
         return size.expandedTo(self.minimumSize())
-
-    def mousePressEvent(self, event: QMouseEvent) -> None:
-        """Handle mouse click to open the result."""
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.open_requested.emit(self.object_type, self.object_id)
-        super().mousePressEvent(event)
 
 
 class AISearchPanelWidget(QWidget):
@@ -175,7 +169,9 @@ class AISearchPanelWidget(QWidget):
 
         # Results list
         self.results_list = QListWidget()
-        self.results_list.setSelectionMode(QListWidget.NoSelection)
+        self.results_list.setSelectionMode(QListWidget.SelectionMode.SingleSelection)
+        self.results_list.itemClicked.connect(self._on_result_clicked)
+        self.results_list.itemActivated.connect(self._on_result_activated)
         results_layout.addWidget(self.results_list)
 
         # Empty state
@@ -215,6 +211,20 @@ class AISearchPanelWidget(QWidget):
         top_k = self.top_k_spin.value()
 
         self.search_requested.emit(query, object_type_filter, top_k)
+
+    @Slot()
+    def _on_result_clicked(self, item: QListWidgetItem) -> None:
+        """Handle mouse click on search result."""
+        widget = self.results_list.itemWidget(item)
+        if isinstance(widget, SearchResultItem):
+            self.open_requested.emit(widget.object_type, widget.object_id)
+
+    @Slot()
+    def _on_result_activated(self, item: QListWidgetItem) -> None:
+        """Handle keyboard activation (Enter/Return) on search result."""
+        widget = self.results_list.itemWidget(item)
+        if isinstance(widget, SearchResultItem):
+            self.open_requested.emit(widget.object_type, widget.object_id)
 
     def set_results(self, results: List[dict]) -> None:
         """
