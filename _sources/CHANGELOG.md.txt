@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-04
 ### Internal
-- Update README with Windows installation instructions
+- Clarify Windows installation instructions
 
 
 *This changelog was automatically generated.*
