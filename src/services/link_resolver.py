@@ -62,7 +62,7 @@ class LinkResolver:
         logger.warning(f"Broken link detected: ID {target_id} not found")
         return None
 
-    def invalidate_cache(self, target_id: Optional[str] = None):
+    def invalidate_cache(self, target_id: Optional[str] = None) -> None:
         """
         Invalidates the resolution cache.
 

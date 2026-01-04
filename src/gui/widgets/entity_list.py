@@ -33,7 +33,7 @@ class EntityListWidget(QWidget):
     delete_requested = Signal(str)  # entity_id
     create_requested = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         """
         Initializes the EntityListWidget.
 
@@ -76,7 +76,7 @@ class EntityListWidget(QWidget):
         main_layout.addWidget(self.empty_label)
         self.empty_label.hide()
 
-    def set_entities(self, entities: List[Entity]):
+    def set_entities(self, entities: List[Entity]) -> None:
         """
         Populates the list widget with the provided entities.
         """
@@ -97,7 +97,7 @@ class EntityListWidget(QWidget):
             item.setData(Qt.ItemDataRole.UserRole, entity.id)
             self.list_widget.addItem(item)
 
-    def _on_selection_changed(self):
+    def _on_selection_changed(self) -> None:
         """
         Handles entity selection changes.
 
@@ -111,7 +111,7 @@ class EntityListWidget(QWidget):
         else:
             self.btn_delete.setEnabled(False)
 
-    def _on_delete_clicked(self):
+    def _on_delete_clicked(self) -> None:
         """
         Handles delete button clicks.
 

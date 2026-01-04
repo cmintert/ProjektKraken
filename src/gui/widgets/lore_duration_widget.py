@@ -28,7 +28,7 @@ class LoreDurationWidget(QWidget):
 
     value_changed = Signal(float)  # Emits duration in days
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         """
         Initializes the LoreDurationWidget.
 
@@ -47,7 +47,7 @@ class LoreDurationWidget(QWidget):
 
         self._setup_ui()
 
-    def _setup_ui(self):
+    def _setup_ui(self) -> None:
         """Creates and layouts the duration input spinboxes."""
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -98,7 +98,7 @@ class LoreDurationWidget(QWidget):
         spin.valueChanged.connect(self._on_input_changed)
         return spin
 
-    def set_calendar_converter(self, converter: CalendarConverter):
+    def set_calendar_converter(self, converter: CalendarConverter) -> None:
         """
         Sets the calendar converter for accurate duration calculations.
 
@@ -108,7 +108,7 @@ class LoreDurationWidget(QWidget):
         self._converter = converter
         self._on_input_changed()
 
-    def set_start_date(self, start_date_float: float):
+    def set_start_date(self, start_date_float: float) -> None:
         """Sets the context date for duration calculation."""
         # Only update if changed meaningfully to avoid feedback loops if any
         if abs(self._start_date_float - start_date_float) > 0.0001:
@@ -116,7 +116,7 @@ class LoreDurationWidget(QWidget):
             # Recalculate duration float based on new start date + preserved inputs
             self._on_input_changed()
 
-    def _on_input_changed(self):
+    def _on_input_changed(self) -> None:
         """
         Handles changes to duration inputs and emits the calculated duration.
 
@@ -251,7 +251,7 @@ class LoreDurationWidget(QWidget):
 
         return final_float - self._start_date_float
 
-    def set_value(self, days_float: float):
+    def set_value(self, days_float: float) -> None:
         """
         Sets the inputs based on a float duration.
         Attempts to decompose into semantic units (Years, Months, Days).

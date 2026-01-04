@@ -237,7 +237,7 @@ def delete_calendar(args) -> int:
             db_service.close()
 
 
-def main():
+def main() -> None:
     """Main entry point for the calendar CLI tool."""
     parser = argparse.ArgumentParser(description="Manage ProjektKraken calendars")
     parser.add_argument(

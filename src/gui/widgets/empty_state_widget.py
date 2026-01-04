@@ -18,7 +18,7 @@ class EmptyStateWidget(QLabel):
     Use show() to display when no data is available.
     """
 
-    def __init__(self, message: str = "No Items", parent=None):
+    def __init__(self, message: str = "No Items", parent=None) -> None:
         """
         Initializes the empty state widget.
 
@@ -31,7 +31,7 @@ class EmptyStateWidget(QLabel):
         self.setStyleSheet(StyleHelper.get_empty_state_style())
         self.hide()  # Hidden by default
 
-    def set_message(self, message: str):
+    def set_message(self, message: str) -> None:
         """
         Updates the empty state message.
 

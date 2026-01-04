@@ -162,7 +162,7 @@ def reorder_attachments(args) -> int:
             db_service.close()
 
 
-def main():
+def main() -> None:
     """Main entry point for the attachment CLI tool."""
     parser = argparse.ArgumentParser(description="Manage ProjektKraken attachments")
     parser.add_argument(

@@ -63,7 +63,7 @@ class GalleryWidget(QWidget):
         self.init_ui()
         self.connect_signals()
 
-    def init_ui(self):
+    def init_ui(self) -> None:
         """Initialize the user interface components."""
         self.setAcceptDrops(True)
         layout = QVBoxLayout(self)
@@ -114,7 +114,7 @@ class GalleryWidget(QWidget):
 
         layout.addWidget(self.list_widget)
 
-    def connect_signals(self):
+    def connect_signals(self) -> None:
         """Connect widget signals to main window slots."""
         if hasattr(self.main_window, "worker"):
             self.main_window.worker.attachments_loaded.connect(
@@ -122,14 +122,14 @@ class GalleryWidget(QWidget):
             )
             self.main_window.worker.command_finished.connect(self.on_command_finished)
 
-    def _update_button_states(self):
+    def _update_button_states(self) -> None:
         """Updates enabled states for Edit and Remove buttons based on selection."""
         items = self.list_widget.selectedItems()
         count = len(items)
         self.btn_edit.setEnabled(count == 1)
         self.btn_remove.setEnabled(count > 0)
 
-    def set_owner(self, owner_type: str, owner_id: str):
+    def set_owner(self, owner_type: str, owner_id: str) -> None:
         """Sets the current owner and refreshes the view."""
         logger.debug(
             f"GalleryWidget: set_owner called with type={owner_type}, id={owner_id}"
@@ -154,7 +154,7 @@ class GalleryWidget(QWidget):
             Q_ARG(str, self.owner_id),
         )
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear all displayed attachments from the gallery."""
         self.list_widget.clear()
         self.attachments = []

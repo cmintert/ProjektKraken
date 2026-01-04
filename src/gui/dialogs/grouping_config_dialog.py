@@ -10,7 +10,7 @@ import logging
 from typing import List
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QMouseEvent
 from PySide6.QtWidgets import (
     QButtonGroup,
     QCheckBox,
@@ -44,7 +44,7 @@ class ColorSwatch(QFrame):
 
     clicked = Signal()
 
-    def __init__(self, color: str, size: int = 16, parent=None):
+    def __init__(self, color: str, size: int = 16, parent=None) -> None:
         """
         Initialize the color swatch.
 
@@ -60,13 +60,13 @@ class ColorSwatch(QFrame):
             f"background-color: {color}; border: 1px solid #ccc; border-radius: 2px;"
         )
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Emits clicked signal on mouse release."""
         if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit()
         super().mouseReleaseEvent(event)
 
-    def set_color(self, color: str):
+    def set_color(self, color: str) -> None:
         """Updates the swatch color."""
         self.setStyleSheet(
             f"background-color: {color}; border: 1px solid #ccc; border-radius: 2px;"
@@ -84,7 +84,7 @@ class TagListItem(QWidget):
 
     color_changed = Signal(str, str)  # tag_name, new_color
 
-    def __init__(self, tag_name: str, tag_color: str, event_count: int, parent=None):
+    def __init__(self, tag_name: str, tag_color: str, event_count: int, parent=None) -> None:
         """
         Initializes the TagListItem.
 
@@ -117,7 +117,7 @@ class TagListItem(QWidget):
 
         self.setLayout(layout)
 
-    def _on_color_button_clicked(self):
+    def _on_color_button_clicked(self) -> None:
         """Opens color picker and updates button color."""
         color = QColorDialog.getColor(QColor(self.tag_color), self)
         if color.isValid():
@@ -129,11 +129,11 @@ class TagListItem(QWidget):
         """Returns whether the checkbox is checked."""
         return self.checkbox.isChecked()
 
-    def set_checked(self, checked: bool):
+    def set_checked(self, checked: bool) -> None:
         """Sets the checkbox state."""
         self.checkbox.setChecked(checked)
 
-    def update_event_count(self, count: int):
+    def update_event_count(self, count: int) -> None:
         """Updates the event count display."""
         self.label.setText(f"{self.tag_name} ({count})")
 
@@ -151,7 +151,7 @@ class GroupingConfigDialog(QDialog):
 
     grouping_applied = Signal(list, str)  # tag_order, mode
 
-    def __init__(self, tags_data, current_config, command_coordinator, parent=None):
+    def __init__(self, tags_data, current_config, command_coordinator, parent=None) -> None:
         """
         Initializes the GroupingConfigDialog.
 
@@ -176,7 +176,7 @@ class GroupingConfigDialog(QDialog):
         self._load_tags()
         self._load_current_config()
 
-    def _setup_ui(self):
+    def _setup_ui(self) -> None:
         """Sets up the dialog UI."""
         layout = QVBoxLayout()
 
@@ -250,7 +250,7 @@ class GroupingConfigDialog(QDialog):
 
         self.setLayout(layout)
 
-    def _load_tags(self):
+    def _load_tags(self) -> None:
         """Loads tags from provided data and populates the list."""
         try:
             for tag_data in self.tags_data:
@@ -274,7 +274,7 @@ class GroupingConfigDialog(QDialog):
         except Exception as e:
             logger.error(f"Failed to load tags: {e}")
 
-    def _load_current_config(self):
+    def _load_current_config(self) -> None:
         """Loads the current grouping configuration and updates UI."""
         try:
             if self.current_config:
@@ -301,7 +301,7 @@ class GroupingConfigDialog(QDialog):
         except Exception as e:
             logger.warning(f"Failed to load current grouping config: {e}")
 
-    def _reorder_items_by_tags(self, tag_order: List[str]):
+    def _reorder_items_by_tags(self, tag_order: List[str]) -> None:
         """
         Reorders list items to match the given tag order.
 
@@ -320,19 +320,19 @@ class GroupingConfigDialog(QDialog):
                     _, widget = self.tag_items[tag_name]
                     self.list_widget.setItemWidget(item, widget)
 
-    def _move_up(self):
+    def _move_up(self) -> None:
         """Moves the selected item up in the list."""
         current_row = self.list_widget.currentRow()
         if current_row > 0:
             self._move_item(current_row, current_row - 1)
 
-    def _move_down(self):
+    def _move_down(self) -> None:
         """Moves the selected item down in the list."""
         current_row = self.list_widget.currentRow()
         if current_row < self.list_widget.count() - 1 and current_row >= 0:
             self._move_item(current_row, current_row + 1)
 
-    def _move_item(self, source_row: int, target_row: int):
+    def _move_item(self, source_row: int, target_row: int) -> None:
         """
         Moves an item from source_row to target_row by cloning and re-inserting.
         This avoids issues with takeItem causing widget destruction.
@@ -394,7 +394,7 @@ class GroupingConfigDialog(QDialog):
         new_index = target_row
         self.list_widget.setCurrentRow(new_index)
 
-    def _on_tag_color_changed(self, tag_name: str, color: str):
+    def _on_tag_color_changed(self, tag_name: str, color: str) -> None:
         """
         Handles tag color change.
 
@@ -408,11 +408,11 @@ class GroupingConfigDialog(QDialog):
         cmd = UpdateTagColorCommand(tag_name, color)
         self.command_coordinator.execute_command(cmd)
 
-    def _on_apply_clicked(self):
+    def _on_apply_clicked(self) -> None:
         """Handles Apply button click."""
         self._apply_grouping()
 
-    def _apply_grouping(self):
+    def _apply_grouping(self) -> None:
         """Applies the grouping configuration."""
         # Get selected tags in order
         tag_order = []
@@ -434,7 +434,7 @@ class GroupingConfigDialog(QDialog):
         # Emit signal
         self.grouping_applied.emit(tag_order, mode)
 
-    def accept(self):
+    def accept(self) -> None:
         """Override accept to apply grouping before closing."""
         self._apply_grouping()
         super().accept()

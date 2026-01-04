@@ -16,7 +16,7 @@ class StandardButton(QPushButton):
     Actual visual styling is applied via StyleHelper or global QSS.
     """
 
-    def __init__(self, text: str, parent=None):
+    def __init__(self, text: str, parent=None) -> None:
         """
         Initializes a standard button.
 
@@ -35,7 +35,7 @@ class IconButton(QPushButton):
     Useful for toolbar buttons with icons only.
     """
 
-    def __init__(self, text: str = "", parent=None, size: int = 32):
+    def __init__(self, text: str = "", parent=None, size: int = 32) -> None:
         """
         Initializes an icon button.
 
@@ -55,7 +55,7 @@ class PrimaryButton(StandardButton):
     Applies StyleHelper primary button styling.
     """
 
-    def __init__(self, text: str, parent=None):
+    def __init__(self, text: str, parent=None) -> None:
         """
         Initializes a primary button.
 

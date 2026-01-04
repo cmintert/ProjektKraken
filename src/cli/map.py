@@ -339,7 +339,7 @@ def marker_list(args) -> int:
             db_service.close()
 
 
-def main():
+def main() -> None:
     """Main entry point for the map CLI tool."""
     parser = argparse.ArgumentParser(description="Manage ProjektKraken maps")
     parser.add_argument(

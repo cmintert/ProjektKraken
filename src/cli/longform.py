@@ -232,7 +232,7 @@ def reindex_longform(args) -> int:
             db_service.close()
 
 
-def main():
+def main() -> None:
     """Main entry point for the longform document CLI tool."""
     parser = argparse.ArgumentParser(
         description="Manage ProjektKraken longform document"

@@ -8,6 +8,7 @@ Supports future content creation features.
 from typing import List
 
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QGroupBox,
@@ -41,7 +42,7 @@ class SearchResultItem(QWidget):
         score: float,
         obj_subtype: str = "",
         parent=None,
-    ):
+    ) -> None:
         """
         Initialize a search result item.
 
@@ -95,7 +96,7 @@ class SearchResultItem(QWidget):
         size = super().sizeHint()
         return size.expandedTo(self.minimumSize())
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         """Handle mouse click to open the result."""
         if event.button() == Qt.MouseButton.LeftButton:
             self.open_requested.emit(self.object_type, self.object_id)
@@ -114,7 +115,7 @@ class AISearchPanelWidget(QWidget):
     search_requested = Signal(str, str, int)  # query_text, object_type_filter, top_k
     result_selected = Signal(str, str)  # object_type, object_id
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         """
         Initialize the AI Search Panel.
 
@@ -195,7 +196,7 @@ class AISearchPanelWidget(QWidget):
         # Add stretch to push everything to the top
         main_layout.addStretch()
 
-    def _on_search_clicked(self):
+    def _on_search_clicked(self) -> None:
         """Handle search button click."""
         query = self.search_input.text().strip()
         if not query:
@@ -214,7 +215,7 @@ class AISearchPanelWidget(QWidget):
 
         self.search_requested.emit(query, object_type_filter, top_k)
 
-    def set_results(self, results: List[dict]):
+    def set_results(self, results: List[dict]) -> None:
         """
         Display search results.
 
@@ -257,7 +258,7 @@ class AISearchPanelWidget(QWidget):
 
         self.set_status(f"Found {len(results)} result(s)")
 
-    def set_status(self, message: str):
+    def set_status(self, message: str) -> None:
         """
         Set the status message below results.
 
@@ -266,7 +267,7 @@ class AISearchPanelWidget(QWidget):
         """
         self.status_label.setText(message)
 
-    def set_searching(self, searching: bool):
+    def set_searching(self, searching: bool) -> None:
         """
         Update UI to show search in progress.
 
@@ -278,7 +279,7 @@ class AISearchPanelWidget(QWidget):
         if searching:
             self.set_status("Searching...")
 
-    def clear_results(self):
+    def clear_results(self) -> None:
         """Clear the results list."""
         self.results_list.clear()
         self.results_list.hide()

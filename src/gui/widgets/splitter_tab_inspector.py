@@ -6,7 +6,7 @@ of tabs with drag-and-drop functionality.
 """
 
 from PySide6.QtCore import QMimeData, QPoint, Qt, Signal
-from PySide6.QtGui import QDrag
+from PySide6.QtGui import QDrag, QDragEnterEvent, QDropEvent, QMouseEvent
 from PySide6.QtWidgets import (
     QSplitter,
     QTabBar,
@@ -24,13 +24,13 @@ class DraggableTabBar(QTabBar):
 
     tab_dragged = Signal(int)  # Emitted when a tab drag starts
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         """Initialize the draggable tab bar."""
         super().__init__(parent)
         self.setAcceptDrops(True)
         self._drag_start_pos = QPoint()
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         """Track drag start position."""
         if event.button() == Qt.MouseButton.LeftButton:
             self._drag_start_pos = event.pos()
@@ -54,12 +54,12 @@ class DraggableTabBar(QTabBar):
         drag.setMimeData(mime)
         drag.exec(Qt.MoveAction)
 
-    def dragEnterEvent(self, event):
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """Accept tab drag data."""
         if event.mimeData().hasFormat("application/x-inspector-tab"):
             event.acceptProposedAction()
 
-    def dropEvent(self, event):
+    def dropEvent(self, event: QDropEvent) -> None:
         """Handle drop onto this tab bar."""
         if not event.mimeData().hasFormat("application/x-inspector-tab"):
             return
@@ -93,7 +93,7 @@ class DraggableTabBar(QTabBar):
 
         event.acceptProposedAction()
 
-    def _cleanup_empty_pane(self, tab_widget):
+    def _cleanup_empty_pane(self, tab_widget) -> None:
         """Remove a tab widget from splitter if it has no tabs left."""
         if tab_widget.count() == 0:
             splitter = self._find_parent_splitter(tab_widget)
@@ -114,19 +114,19 @@ class DraggableTabBar(QTabBar):
 class DraggableTabWidget(QTabWidget):
     """A QTabWidget with a draggable tab bar."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         """Initialize with custom tab bar."""
         super().__init__(parent)
         self.setTabBar(DraggableTabBar(self))
         self.setAcceptDrops(True)
         self.setMovable(True)
 
-    def dragEnterEvent(self, event):
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """Accept drops to create vertical splits."""
         if event.mimeData().hasFormat("application/x-inspector-tab"):
             event.acceptProposedAction()
 
-    def dropEvent(self, event):
+    def dropEvent(self, event: QDropEvent) -> None:
         """
         Handle drop to create a vertical split.
         If dropped on the body (not the tab bar), create a new pane.
@@ -171,7 +171,7 @@ class DraggableTabWidget(QTabWidget):
 
         event.acceptProposedAction()
 
-    def _cleanup_empty_pane(self, tab_widget, splitter):
+    def _cleanup_empty_pane(self, tab_widget, splitter) -> None:
         """Remove a tab widget from splitter if it has no tabs left."""
         if tab_widget.count() == 0 and splitter.count() > 1:
             tab_widget.setParent(None)
@@ -194,7 +194,7 @@ class SplitterTabInspector(QWidget):
     on the body of another tab widget to create a vertical split.
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         """Initialize the splitter tab inspector."""
         super().__init__(parent)
         main_layout = QVBoxLayout(self)
@@ -216,7 +216,7 @@ class SplitterTabInspector(QWidget):
         # Track all tab widgets for cleanup
         self._tab_widgets = [self.main_tabs]
 
-    def add_tab(self, widget, title: str):
+    def add_tab(self, widget, title: str) -> None:
         """
         Add a tab to the main tab widget.
 

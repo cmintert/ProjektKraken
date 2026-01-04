@@ -74,7 +74,7 @@ def scan_links(args) -> int:
             db_service.close()
 
 
-def main():
+def main() -> None:
     """Main entry point for the wiki content CLI tool."""
     parser = argparse.ArgumentParser(description="Manage ProjektKraken wiki content")
     parser.add_argument(

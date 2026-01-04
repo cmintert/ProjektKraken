@@ -9,7 +9,7 @@ import logging
 from typing import Dict, List
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QFont, QPainter
+from PySide6.QtGui import QColor, QFont, QPainter, QPaintEvent, QPolygonF
 from PySide6.QtWidgets import QWidget
 
 from src.core.theme_manager import ThemeManager
@@ -28,7 +28,7 @@ class GroupLabelOverlay(QWidget):
     LABEL_WIDTH = 150
     LABEL_PADDING = 8
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         """
         Initializes the GroupLabelOverlay.
 
@@ -50,12 +50,12 @@ class GroupLabelOverlay(QWidget):
         # Start invisible
         self.setVisible(False)
 
-    def _on_theme_changed(self, theme):
+    def _on_theme_changed(self, theme) -> None:
         """Update theme and refresh."""
         self.theme = theme
         self.update()
 
-    def set_labels(self, labels: List[Dict]):
+    def set_labels(self, labels: List[Dict]) -> None:
         """
         Set the labels to display.
 
@@ -70,13 +70,13 @@ class GroupLabelOverlay(QWidget):
         self.setVisible(len(labels) > 0)
         self.update()
 
-    def clear_labels(self):
+    def clear_labels(self) -> None:
         """Clear all labels."""
         self._labels = []
         self.setVisible(False)
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, event: QPaintEvent) -> None:
         """Paint the labels."""
         if not self._labels:
             return
@@ -110,7 +110,6 @@ class GroupLabelOverlay(QWidget):
             center_y = int(y_pos) + (label_height // 2)
 
             from PySide6.QtCore import QPointF
-            from PySide6.QtGui import QPolygonF
 
             if is_collapsed:
                 # Triangle pointing right (▶)

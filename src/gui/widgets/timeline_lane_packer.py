@@ -29,7 +29,7 @@ class TimelineLanePacker:
     MIN_BAR_WIDTH = 10.0  # Minimum width for duration bars
     LANE_PADDING = 10  # Vertical padding between lanes
 
-    def __init__(self, scale_factor: float = 20.0):
+    def __init__(self, scale_factor: float = 20.0) -> None:
         """
         Initializes the TimelineLanePacker.
 
@@ -40,7 +40,7 @@ class TimelineLanePacker:
         self.font = None
         self.fm = None
 
-    def _ensure_font_metrics(self):
+    def _ensure_font_metrics(self) -> None:
         """Ensures font metrics are initialized (requires QApplication)."""
         if self.fm is None:
             self.font = QFont()
@@ -158,7 +158,7 @@ class TimelineLanePacker:
         lanes_heights.append(event_height)
         return len(lanes_end_times) - 1
 
-    def update_scale_factor(self, scale_factor: float):
+    def update_scale_factor(self, scale_factor: float) -> None:
         """
         Updates the scale factor for packing calculations.
 

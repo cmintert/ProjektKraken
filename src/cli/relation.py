@@ -228,7 +228,7 @@ def update_relation(args) -> int:
             db_service.close()
 
 
-def main():
+def main() -> None:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
         description="Manage ProjektKraken relations",

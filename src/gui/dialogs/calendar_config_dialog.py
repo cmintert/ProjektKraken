@@ -60,7 +60,7 @@ class CalendarConfigDialog(QDialog):
         self,
         parent=None,
         config: Optional[CalendarConfig] = None,
-    ):
+    ) -> None:
         """
         Initializes the calendar configuration dialog.
 

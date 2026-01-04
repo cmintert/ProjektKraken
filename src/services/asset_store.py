@@ -168,7 +168,7 @@ class AssetStore:
         img_target_rel: str,
         thumb_trash_rel: Optional[str],
         thumb_target_rel: Optional[str],
-    ):
+    ) -> None:
         """
         Restores files from trash to their original location.
         """

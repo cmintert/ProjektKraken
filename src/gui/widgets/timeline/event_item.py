@@ -11,6 +11,7 @@ from PySide6.QtGui import (
     QBrush,
     QColor,
     QCursor,
+    QMouseEvent,
     QPainter,
     QPainterPath,
     QPen,
@@ -63,11 +64,11 @@ class EventItem(QGraphicsItem):
         return cls.POINT_EVENT_HEIGHT
 
     @classmethod
-    def set_calendar_converter(cls, converter):
+    def set_calendar_converter(cls, converter) -> None:
         """Sets the calendar converter for date formatting."""
         cls._calendar_converter = converter
 
-    def __init__(self, event, scale_factor=10.0):
+    def __init__(self, event, scale_factor=10.0) -> None:
         """
         Initializes an EventBlock.
 
@@ -110,7 +111,7 @@ class EventItem(QGraphicsItem):
         # Track if we're currently dragging
         self._is_dragging = False
 
-    def update_event(self, event):
+    def update_event(self, event) -> None:
         """
         Updates the event data for this item and refreshes the display.
 
@@ -171,7 +172,7 @@ class EventItem(QGraphicsItem):
 
         return path
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         """
         Handles mouse press to track drag state.
 
@@ -214,7 +215,7 @@ class EventItem(QGraphicsItem):
             return new_pos
         return super().itemChange(change, value)
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """
         Handles mouse release to emit drag completion callback.
 
@@ -231,7 +232,7 @@ class EventItem(QGraphicsItem):
                 new_lore_date = self.x() / self.scale_factor
                 self.on_drag_complete(self.event.id, new_lore_date)
 
-    def paint(self, painter, option, widget=None):
+    def paint(self, painter, option, widget=None) -> None:
         """
         Custom painting for the Event Marker.
         Draws a diamond shape and a text label.
@@ -243,7 +244,7 @@ class EventItem(QGraphicsItem):
         else:
             self._paint_point_event(painter)
 
-    def _paint_duration_bar(self, painter):
+    def _paint_duration_bar(self, painter) -> None:
         """Draws the event as a horizontal bar spanning its duration."""
         width = self.event.lore_duration * self.scale_factor
         width = max(width, 10)  # Minimum width visual
@@ -293,7 +294,7 @@ class EventItem(QGraphicsItem):
         painter.setPen(QPen(QColor(180, 180, 180)))
         painter.drawText(QPointF(0, label_y + 12), date_str)
 
-    def _paint_point_event(self, painter):
+    def _paint_point_event(self, painter) -> None:
         """Draws the standard diamond marker for point events."""
         # 1. Draw Diamond Icon
         half = self.ICON_SIZE / 2

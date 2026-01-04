@@ -38,7 +38,7 @@ class CompactDurationWidget(QWidget):
 
     value_changed = Signal(float)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         """
         Initializes the compact duration widget.
 
@@ -58,7 +58,7 @@ class CompactDurationWidget(QWidget):
         self._setup_ui()
         self._connect_signals()
 
-    def _setup_ui(self):
+    def _setup_ui(self) -> None:
         """Sets up the widget UI."""
         outer_layout = QVBoxLayout(self)
         outer_layout.setContentsMargins(0, 0, 0, 0)
@@ -146,7 +146,7 @@ class CompactDurationWidget(QWidget):
 
         main_layout.addLayout(hm_row)
 
-    def _connect_signals(self):
+    def _connect_signals(self) -> None:
         """Connects internal signals."""
         self.spin_years.valueChanged.connect(self._on_input_changed)
         self.spin_months.valueChanged.connect(self._on_input_changed)
@@ -154,7 +154,7 @@ class CompactDurationWidget(QWidget):
         self.spin_hours.valueChanged.connect(self._on_input_changed)
         self.spin_minutes.valueChanged.connect(self._on_input_changed)
 
-    def set_calendar_converter(self, converter: CalendarConverter):
+    def set_calendar_converter(self, converter: CalendarConverter) -> None:
         """
         Sets the calendar converter for calculations.
 
@@ -164,7 +164,7 @@ class CompactDurationWidget(QWidget):
         self._converter = converter
         self._update_preview()
 
-    def set_start_date(self, start_date_float: float):
+    def set_start_date(self, start_date_float: float) -> None:
         """
         Sets the start date for duration calculations.
 
@@ -176,7 +176,7 @@ class CompactDurationWidget(QWidget):
         """
         self._start_date_float = start_date_float
 
-    def _on_input_changed(self):
+    def _on_input_changed(self) -> None:
         """Handles any input change."""
         if self._updating:
             return
@@ -185,7 +185,7 @@ class CompactDurationWidget(QWidget):
         value = self.get_value()
         self.value_changed.emit(value)
 
-    def _update_preview(self):
+    def _update_preview(self) -> None:
         """Updates the preview label with written format."""
         parts = []
 
@@ -268,7 +268,7 @@ class CompactDurationWidget(QWidget):
 
         return total_days
 
-    def set_value(self, days_float: float):
+    def set_value(self, days_float: float) -> None:
         """
         Sets the duration from a float value, decomposing into Y/M/D.
 
