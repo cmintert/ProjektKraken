@@ -1,0 +1,841 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
+        <title>Qt Threading Safety Guide - Project Kraken 0.5.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">Project Kraken 0.5.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  <span class="sidebar-brand-text">Project Kraken 0.5.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="WIKI_LINKING.html">ID-Based Wiki Linking Implementation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MAP_USAGE_EXAMPLES.html">Map System Usage Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="LONGFORM.html">Longform Document Feature</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="DATABASE.html">Database Architecture and Best Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DEVELOPMENT.html">Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security Best Practices</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
+<li class="toctree-l1"><a class="reference internal" href="LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html">Tag Normalization Migration Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="modules.html">src</a><input aria-label="Toggle navigation of src" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="app.html">app package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html">cli package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="commands.html">commands package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core.html">core package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="gui.html">gui package</a><input aria-label="Toggle navigation of gui package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui.widgets.html">gui.widgets package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui.dialogs.html">gui.dialogs package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="services.html">services package</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/QT_THREADING_SAFETY.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="qt-threading-safety-guide">
+<h1>Qt Threading Safety Guide<a class="headerlink" href="#qt-threading-safety-guide" title="Link to this heading">¶</a></h1>
+<p><strong>Document:</strong> Qt Threading Safety and Best Practices<br />
+<strong>Last Updated:</strong> 2026-01-04<br />
+<strong>Status:</strong> Production Guidelines</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>ProjektKraken uses Qt’s threading model to keep the UI responsive while performing database operations and other long-running tasks. This document outlines the threading architecture, safety patterns, and best practices used throughout the application.</p>
+</section>
+<section id="threading-architecture">
+<h2>Threading Architecture<a class="headerlink" href="#threading-architecture" title="Link to this heading">¶</a></h2>
+<section id="core-principles">
+<h3>Core Principles<a class="headerlink" href="#core-principles" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>UI Thread (Main Thread)</strong>: All UI operations and widget updates must occur on the main thread</p></li>
+<li><p><strong>Worker Thread</strong>: Database operations and long-running tasks execute on a dedicated worker thread</p></li>
+<li><p><strong>Signal/Slot Communication</strong>: Thread-safe communication between threads using Qt’s signal/slot mechanism</p></li>
+</ol>
+</section>
+<section id="thread-affinity">
+<h3>Thread Affinity<a class="headerlink" href="#thread-affinity" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Main thread owns:</span>
+<span class="o">-</span> <span class="n">MainWindow</span> <span class="ow">and</span> <span class="nb">all</span> <span class="n">QWidget</span> <span class="n">subclasses</span>
+<span class="o">-</span> <span class="n">DatabaseWorker</span> <span class="p">(</span><span class="n">moved</span> <span class="n">to</span> <span class="n">worker</span> <span class="n">thread</span><span class="p">)</span>
+<span class="o">-</span> <span class="n">All</span> <span class="n">UI</span> <span class="n">event</span> <span class="n">handlers</span>
+
+<span class="c1"># Worker thread owns:</span>
+<span class="o">-</span> <span class="n">DatabaseService</span> <span class="n">instance</span>
+<span class="o">-</span> <span class="n">AttachmentService</span> <span class="n">instance</span>
+<span class="o">-</span> <span class="n">AssetStore</span> <span class="n">instance</span>
+<span class="o">-</span> <span class="n">All</span> <span class="n">database</span> <span class="n">connections</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="worker-thread-pattern">
+<h2>Worker Thread Pattern<a class="headerlink" href="#worker-thread-pattern" title="Link to this heading">¶</a></h2>
+<section id="implementation-in-workermanager">
+<h3>Implementation in WorkerManager<a class="headerlink" href="#implementation-in-workermanager" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># From src/app/worker_manager.py</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">WorkerManager</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Create worker thread</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">worker_thread</span> <span class="o">=</span> <span class="n">QThread</span><span class="p">()</span>
+        
+        <span class="c1"># Create worker object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">worker</span> <span class="o">=</span> <span class="n">DatabaseWorker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_path</span><span class="p">)</span>
+        
+        <span class="c1"># Move worker to thread (thread affinity transfer)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">moveToThread</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">worker_thread</span><span class="p">)</span>
+        
+        <span class="c1"># Start thread</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">worker_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="key-safety-points">
+<h3>Key Safety Points<a class="headerlink" href="#key-safety-points" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Never access UI from worker thread</strong>: All UI updates must be done via signals</p></li>
+<li><p><strong>Database connection per thread</strong>: SQLite connections have thread affinity</p></li>
+<li><p><strong>Worker owns services</strong>: DatabaseService, AttachmentService are created and accessed only on worker thread</p></li>
+</ol>
+</section>
+</section>
+<section id="signal-slot-connection-types">
+<h2>Signal/Slot Connection Types<a class="headerlink" href="#signal-slot-connection-types" title="Link to this heading">¶</a></h2>
+<section id="queuedconnection-cross-thread">
+<h3>QueuedConnection (Cross-Thread)<a class="headerlink" href="#queuedconnection-cross-thread" title="Link to this heading">¶</a></h3>
+<p><strong>Use When</strong>: Connecting signals from worker thread to main thread slots</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Correct: QueuedConnection for cross-thread communication</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">events_loaded</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">timeline_widget</span><span class="o">.</span><span class="n">set_events</span><span class="p">,</span>
+    <span class="n">Qt</span><span class="o">.</span><span class="n">ConnectionType</span><span class="o">.</span><span class="n">QueuedConnection</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Why QueuedConnection?</strong></p>
+<ul class="simple">
+<li><p>Thread-safe: Signal is queued in the receiver’s event loop</p></li>
+<li><p>Parameters are copied and passed safely</p></li>
+<li><p>Prevents race conditions and crashes</p></li>
+</ul>
+</section>
+<section id="blockingqueuedconnection-synchronous-cross-thread">
+<h3>BlockingQueuedConnection (Synchronous Cross-Thread)<a class="headerlink" href="#blockingqueuedconnection-synchronous-cross-thread" title="Link to this heading">¶</a></h3>
+<p><strong>Use When</strong>: Need to wait for worker thread operation to complete</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Cleanup must complete before shutdown</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">cleanup</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="p">,</span> <span class="s2">&quot;cleanup&quot;</span><span class="p">,</span>
+    <span class="n">Qt</span><span class="o">.</span><span class="n">ConnectionType</span><span class="o">.</span><span class="n">BlockingQueuedConnection</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Cautions:</strong></p>
+<ul class="simple">
+<li><p>Can cause deadlocks if used incorrectly</p></li>
+<li><p>Only use when absolutely necessary (e.g., shutdown sequences)</p></li>
+<li><p>Never use from worker thread back to UI thread (will deadlock)</p></li>
+</ul>
+</section>
+<section id="directconnection-same-thread">
+<h3>DirectConnection (Same Thread)<a class="headerlink" href="#directconnection-same-thread" title="Link to this heading">¶</a></h3>
+<p><strong>Use When</strong>: Connecting signals/slots on the same thread (rare, usually default)</p>
+<p><strong>Note</strong>: Qt automatically selects appropriate connection type if not specified, but we explicitly specify for clarity and safety.</p>
+</section>
+</section>
+<section id="common-patterns">
+<h2>Common Patterns<a class="headerlink" href="#common-patterns" title="Link to this heading">¶</a></h2>
+<section id="pattern-1-load-data-from-database">
+<h3>Pattern 1: Load Data from Database<a class="headerlink" href="#pattern-1-load-data-from-database" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 1. UI requests data (main thread)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="c1"># Invoke method on worker thread via QMetaObject</span>
+    <span class="n">QMetaObject</span><span class="o">.</span><span class="n">invokeMethod</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="p">,</span>
+        <span class="s2">&quot;load_events&quot;</span><span class="p">,</span>
+        <span class="n">Qt</span><span class="o">.</span><span class="n">ConnectionType</span><span class="o">.</span><span class="n">QueuedConnection</span>
+    <span class="p">)</span>
+
+<span class="c1"># 2. Worker loads data (worker thread)</span>
+<span class="nd">@Slot</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">events</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">get_all_events</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">events_loaded</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">events</span><span class="p">)</span>  <span class="c1"># Thread-safe signal</span>
+
+<span class="c1"># 3. UI updates (main thread)</span>
+<span class="nd">@Slot</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">on_events_loaded</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">events</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">timeline</span><span class="o">.</span><span class="n">set_events</span><span class="p">(</span><span class="n">events</span><span class="p">)</span>  <span class="c1"># Safe: on UI thread</span>
+</pre></div>
+</div>
+</section>
+<section id="pattern-2-execute-command">
+<h3>Pattern 2: Execute Command<a class="headerlink" href="#pattern-2-execute-command" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 1. UI creates command (main thread)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_event</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">CreateEventCommand</span><span class="p">(</span><span class="n">event_data</span><span class="p">)</span>
+    <span class="n">QMetaObject</span><span class="o">.</span><span class="n">invokeMethod</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="p">,</span>
+        <span class="s2">&quot;execute_command&quot;</span><span class="p">,</span>
+        <span class="n">Qt</span><span class="o">.</span><span class="n">ConnectionType</span><span class="o">.</span><span class="n">QueuedConnection</span><span class="p">,</span>
+        <span class="n">Q_ARG</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="n">command</span><span class="p">)</span>
+    <span class="p">)</span>
+
+<span class="c1"># 2. Worker executes (worker thread)</span>
+<span class="nd">@Slot</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">execute_command</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">command</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">command_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+<span class="c1"># 3. UI receives result (main thread)</span>
+<span class="nd">@Slot</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">on_command_finished</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refresh_ui</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="pattern-3-background-processing-with-progress">
+<h3>Pattern 3: Background Processing with Progress<a class="headerlink" href="#pattern-3-background-processing-with-progress" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># From src/services/worker.py</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DatabaseWorker</span><span class="p">(</span><span class="n">QObject</span><span class="p">):</span>
+    <span class="n">operation_started</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    <span class="n">operation_finished</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    
+    <span class="nd">@Slot</span><span class="p">()</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">long_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">operation_started</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s2">&quot;Processing...&quot;</span><span class="p">)</span>
+        <span class="c1"># Do work</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">operation_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s2">&quot;Complete&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="race-conditions-and-data-safety">
+<h2>Race Conditions and Data Safety<a class="headerlink" href="#race-conditions-and-data-safety" title="Link to this heading">¶</a></h2>
+<section id="thread-safe-data-types">
+<h3>Thread-Safe Data Types<a class="headerlink" href="#thread-safe-data-types" title="Link to this heading">¶</a></h3>
+<p><strong>Safe to pass between threads</strong> (copied by Qt):</p>
+<ul class="simple">
+<li><p>Basic Python types: int, float, str, bool</p></li>
+<li><p>Qt value types: QString, QVariant</p></li>
+<li><p>Immutable collections: tuple (of safe types)</p></li>
+<li><p>Dataclasses marked with <code class="docutils literal notranslate"><span class="pre">&#64;dataclass(frozen=True)</span></code></p></li>
+</ul>
+<p><strong>Unsafe without synchronization</strong>:</p>
+<ul class="simple">
+<li><p>Mutable collections: list, dict (unless copied)</p></li>
+<li><p>Custom objects with mutable state</p></li>
+<li><p>Qt object pointers (QObject*, QWidget*)</p></li>
+</ul>
+</section>
+<section id="safe-pattern-copy-data">
+<h3>Safe Pattern: Copy Data<a class="headerlink" href="#safe-pattern-copy-data" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Good: Pass copies</span>
+<span class="n">events</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">get_all_events</span><span class="p">()</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">events_loaded</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">events</span><span class="p">))</span>  <span class="c1"># Explicit copy</span>
+
+<span class="c1"># Good: Immutable data</span>
+<span class="n">event</span> <span class="o">=</span> <span class="n">Event</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Test&quot;</span><span class="p">,</span> <span class="n">lore_date</span><span class="o">=</span><span class="mf">100.0</span><span class="p">)</span>  <span class="c1"># Dataclass</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">event_created</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>  <span class="c1"># Safe if immutable</span>
+</pre></div>
+</div>
+</section>
+<section id="unsafe-pattern-shared-mutable-state">
+<h3>Unsafe Pattern: Shared Mutable State<a class="headerlink" href="#unsafe-pattern-shared-mutable-state" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># BAD: Shared mutable state</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Worker</span><span class="p">(</span><span class="n">QObject</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># Mutable, no lock!</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_to_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>  <span class="c1"># Race condition!</span>
+
+<span class="c1"># Better: Use thread-local storage or signals</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="database-connection-safety">
+<h2>Database Connection Safety<a class="headerlink" href="#database-connection-safety" title="Link to this heading">¶</a></h2>
+<section id="sqlite-threading-constraints">
+<h3>SQLite Threading Constraints<a class="headerlink" href="#sqlite-threading-constraints" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Connection per thread</strong>: Each thread must have its own connection</p></li>
+<li><p><strong>WAL mode</strong>: Enables concurrent readers with single writer</p></li>
+<li><p><strong>PRAGMA foreign_keys</strong>: Must be set per connection</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># From src/services/db_service.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_path</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;PRAGMA foreign_keys = ON;&quot;</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_path</span> <span class="o">!=</span> <span class="s2">&quot;:memory:&quot;</span><span class="p">:</span>
+        <span class="c1"># WAL allows concurrent readers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;PRAGMA journal_mode=WAL;&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="safety-rules">
+<h3>Safety Rules<a class="headerlink" href="#safety-rules" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Never share connections</strong>: DatabaseService instance belongs to worker thread</p></li>
+<li><p><strong>No UI thread database access</strong>: All DB operations via worker</p></li>
+<li><p><strong>Transaction isolation</strong>: Use context managers for transactions</p></li>
+</ol>
+</section>
+</section>
+<section id="common-mistakes-and-solutions">
+<h2>Common Mistakes and Solutions<a class="headerlink" href="#common-mistakes-and-solutions" title="Link to this heading">¶</a></h2>
+<section id="mistake-1-accessing-ui-from-worker">
+<h3>Mistake 1: Accessing UI from Worker<a class="headerlink" href="#mistake-1-accessing-ui-from-worker" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># BAD: Crashes or undefined behavior</span>
+<span class="nd">@Slot</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">main_window</span><span class="o">.</span><span class="n">label</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>  <span class="c1"># WRONG: UI access from worker</span>
+
+<span class="c1"># GOOD: Use signals</span>
+<span class="nd">@Slot</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">data_loaded</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>  <span class="c1"># Signal to UI thread</span>
+</pre></div>
+</div>
+</section>
+<section id="mistake-2-wrong-connection-type">
+<h3>Mistake 2: Wrong Connection Type<a class="headerlink" href="#mistake-2-wrong-connection-type" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># BAD: DirectConnection for cross-thread</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">events_loaded</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">timeline</span><span class="o">.</span><span class="n">set_events</span>  <span class="c1"># Implicit DirectConnection - UNSAFE!</span>
+<span class="p">)</span>
+
+<span class="c1"># GOOD: Explicit QueuedConnection</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">events_loaded</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">timeline</span><span class="o">.</span><span class="n">set_events</span><span class="p">,</span>
+    <span class="n">Qt</span><span class="o">.</span><span class="n">ConnectionType</span><span class="o">.</span><span class="n">QueuedConnection</span>  <span class="c1"># Safe cross-thread</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="mistake-3-blocking-ui-thread">
+<h3>Mistake 3: Blocking UI Thread<a class="headerlink" href="#mistake-3-blocking-ui-thread" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># BAD: Synchronous database call on UI thread</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">button_clicked</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">events</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">get_all_events</span><span class="p">()</span>  <span class="c1"># Blocks UI!</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">events</span><span class="p">)</span>
+
+<span class="c1"># GOOD: Async via worker</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">button_clicked</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">QMetaObject</span><span class="o">.</span><span class="n">invokeMethod</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="p">,</span> <span class="s2">&quot;load_events&quot;</span><span class="p">,</span>
+        <span class="n">Qt</span><span class="o">.</span><span class="n">ConnectionType</span><span class="o">.</span><span class="n">QueuedConnection</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="debugging-threading-issues">
+<h2>Debugging Threading Issues<a class="headerlink" href="#debugging-threading-issues" title="Link to this heading">¶</a></h2>
+<section id="symptoms-of-threading-problems">
+<h3>Symptoms of Threading Problems<a class="headerlink" href="#symptoms-of-threading-problems" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Random crashes</strong>: Usually accessing UI from wrong thread</p></li>
+<li><p><strong>Deadlocks</strong>: Often from BlockingQueuedConnection misuse</p></li>
+<li><p><strong>Stale data</strong>: Race conditions with shared mutable state</p></li>
+<li><p><strong>Database locked errors</strong>: Connection shared across threads</p></li>
+</ol>
+</section>
+<section id="debugging-tools">
+<h3>Debugging Tools<a class="headerlink" href="#debugging-tools" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check current thread</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">QThread</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Current thread: </span><span class="si">{</span><span class="n">QThread</span><span class="o">.</span><span class="n">currentThread</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;UI thread: </span><span class="si">{</span><span class="n">QApplication</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span><span class="o">.</span><span class="n">thread</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Add thread safety assertions</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">update_ui</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">QThread</span><span class="o">.</span><span class="n">currentThread</span><span class="p">()</span> <span class="o">==</span> <span class="n">QApplication</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span><span class="o">.</span><span class="n">thread</span><span class="p">()</span>
+    <span class="c1"># Safe to update UI here</span>
+</pre></div>
+</div>
+</section>
+<section id="enable-qt-warnings">
+<h3>Enable Qt Warnings<a class="headerlink" href="#enable-qt-warnings" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># In main.py or test setup</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;QT_LOGGING_RULES&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;qt.qml.connections=true&#39;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="best-practices">
+<h2>Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading">¶</a></h2>
+<section id="do">
+<h3>DO<a class="headerlink" href="#do" title="Link to this heading">¶</a></h3>
+<p>✅ Use QueuedConnection for all cross-thread signals<br />
+✅ Keep worker thread for database operations<br />
+✅ Emit signals with copied/immutable data<br />
+✅ Use QMetaObject.invokeMethod for worker calls<br />
+✅ Test with assertions for thread safety<br />
+✅ Document thread ownership in class docstrings</p>
+</section>
+<section id="don-t">
+<h3>DON’T<a class="headerlink" href="#don-t" title="Link to this heading">¶</a></h3>
+<p>❌ Access UI widgets from worker thread<br />
+❌ Share database connections between threads<br />
+❌ Use blocking operations on UI thread<br />
+❌ Rely on implicit connection types<br />
+❌ Pass mutable objects without copying<br />
+❌ Use BlockingQueuedConnection from UI to worker</p>
+</section>
+</section>
+<section id="testing-thread-safety">
+<h2>Testing Thread Safety<a class="headerlink" href="#testing-thread-safety" title="Link to this heading">¶</a></h2>
+<section id="unit-test-pattern">
+<h3>Unit Test Pattern<a class="headerlink" href="#unit-test-pattern" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_cross_thread_signal</span><span class="p">(</span><span class="n">qtbot</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that signals work correctly across threads.&quot;&quot;&quot;</span>
+    <span class="n">worker</span> <span class="o">=</span> <span class="n">DatabaseWorker</span><span class="p">()</span>
+    <span class="n">thread</span> <span class="o">=</span> <span class="n">QThread</span><span class="p">()</span>
+    <span class="n">worker</span><span class="o">.</span><span class="n">moveToThread</span><span class="p">(</span><span class="n">thread</span><span class="p">)</span>
+    <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+    
+    <span class="c1"># Use qtbot.waitSignal for thread-safe testing</span>
+    <span class="k">with</span> <span class="n">qtbot</span><span class="o">.</span><span class="n">waitSignal</span><span class="p">(</span><span class="n">worker</span><span class="o">.</span><span class="n">events_loaded</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
+        <span class="n">QMetaObject</span><span class="o">.</span><span class="n">invokeMethod</span><span class="p">(</span>
+            <span class="n">worker</span><span class="p">,</span> <span class="s2">&quot;load_events&quot;</span><span class="p">,</span>
+            <span class="n">Qt</span><span class="o">.</span><span class="n">ConnectionType</span><span class="o">.</span><span class="n">QueuedConnection</span>
+        <span class="p">)</span>
+    
+    <span class="n">thread</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+    <span class="n">thread</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="integration-test-pattern">
+<h3>Integration Test Pattern<a class="headerlink" href="#integration-test-pattern" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">integration</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_command_execution_threading</span><span class="p">(</span><span class="n">qtbot</span><span class="p">,</span> <span class="n">main_window</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test command execution through worker thread.&quot;&quot;&quot;</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">CreateEventCommand</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Test&quot;</span><span class="p">})</span>
+    
+    <span class="k">with</span> <span class="n">qtbot</span><span class="o">.</span><span class="n">waitSignal</span><span class="p">(</span><span class="n">main_window</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">command_finished</span><span class="p">):</span>
+        <span class="n">main_window</span><span class="o">.</span><span class="n">execute_command</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+    
+    <span class="c1"># Verify result on UI thread</span>
+    <span class="k">assert</span> <span class="n">main_window</span><span class="o">.</span><span class="n">event_created</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="performance-considerations">
+<h2>Performance Considerations<a class="headerlink" href="#performance-considerations" title="Link to this heading">¶</a></h2>
+<section id="when-to-use-threading">
+<h3>When to Use Threading<a class="headerlink" href="#when-to-use-threading" title="Link to this heading">¶</a></h3>
+<p><strong>Good candidates:</strong></p>
+<ul class="simple">
+<li><p>Database queries (especially complex ones)</p></li>
+<li><p>File I/O operations</p></li>
+<li><p>Network requests</p></li>
+<li><p>Heavy computations</p></li>
+<li><p>Batch operations</p></li>
+</ul>
+<p><strong>Not worth threading:</strong></p>
+<ul class="simple">
+<li><p>Simple in-memory operations</p></li>
+<li><p>UI updates (must be on main thread anyway)</p></li>
+<li><p>Operations &lt; 16ms (one frame at 60 FPS)</p></li>
+</ul>
+</section>
+<section id="profiling">
+<h3>Profiling<a class="headerlink" href="#profiling" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Use QElapsedTimer for performance measurement</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">QElapsedTimer</span>
+
+<span class="n">timer</span> <span class="o">=</span> <span class="n">QElapsedTimer</span><span class="p">()</span>
+<span class="n">timer</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="c1"># ... operation ...</span>
+<span class="n">elapsed_ms</span> <span class="o">=</span> <span class="n">timer</span><span class="o">.</span><span class="n">elapsed</span><span class="p">()</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Operation took </span><span class="si">{</span><span class="n">elapsed_ms</span><span class="si">}</span><span class="s2">ms&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://doc.qt.io/qt-6/thread-basics.html">Qt Threading Basics</a></p></li>
+<li><p><a class="reference external" href="https://doc.qt.io/qt-6/qthread.html">QThread Documentation</a></p></li>
+<li><p><a class="reference external" href="https://doc.qt.io/qt-6/qt.html#ConnectionType-enum">Qt::ConnectionType</a></p></li>
+<li><p><a class="reference external" href="https://doc.qt.io/qt-6/threads-modules.html">Thread-Support in Qt Modules</a></p></li>
+</ul>
+</section>
+<section id="related-documentation">
+<h2>Related Documentation<a class="headerlink" href="#related-documentation" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Design.md</span></code> - Overall architecture</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/app/worker_manager.py</span></code> - Worker thread setup</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/services/worker.py</span></code> - DatabaseWorker implementation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/app/connection_manager.py</span></code> - Signal/slot wiring</p></li>
+</ul>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, Christian Mintert
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Qt Threading Safety Guide</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#threading-architecture">Threading Architecture</a><ul>
+<li><a class="reference internal" href="#core-principles">Core Principles</a></li>
+<li><a class="reference internal" href="#thread-affinity">Thread Affinity</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#worker-thread-pattern">Worker Thread Pattern</a><ul>
+<li><a class="reference internal" href="#implementation-in-workermanager">Implementation in WorkerManager</a></li>
+<li><a class="reference internal" href="#key-safety-points">Key Safety Points</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#signal-slot-connection-types">Signal/Slot Connection Types</a><ul>
+<li><a class="reference internal" href="#queuedconnection-cross-thread">QueuedConnection (Cross-Thread)</a></li>
+<li><a class="reference internal" href="#blockingqueuedconnection-synchronous-cross-thread">BlockingQueuedConnection (Synchronous Cross-Thread)</a></li>
+<li><a class="reference internal" href="#directconnection-same-thread">DirectConnection (Same Thread)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#common-patterns">Common Patterns</a><ul>
+<li><a class="reference internal" href="#pattern-1-load-data-from-database">Pattern 1: Load Data from Database</a></li>
+<li><a class="reference internal" href="#pattern-2-execute-command">Pattern 2: Execute Command</a></li>
+<li><a class="reference internal" href="#pattern-3-background-processing-with-progress">Pattern 3: Background Processing with Progress</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#race-conditions-and-data-safety">Race Conditions and Data Safety</a><ul>
+<li><a class="reference internal" href="#thread-safe-data-types">Thread-Safe Data Types</a></li>
+<li><a class="reference internal" href="#safe-pattern-copy-data">Safe Pattern: Copy Data</a></li>
+<li><a class="reference internal" href="#unsafe-pattern-shared-mutable-state">Unsafe Pattern: Shared Mutable State</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#database-connection-safety">Database Connection Safety</a><ul>
+<li><a class="reference internal" href="#sqlite-threading-constraints">SQLite Threading Constraints</a></li>
+<li><a class="reference internal" href="#safety-rules">Safety Rules</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#common-mistakes-and-solutions">Common Mistakes and Solutions</a><ul>
+<li><a class="reference internal" href="#mistake-1-accessing-ui-from-worker">Mistake 1: Accessing UI from Worker</a></li>
+<li><a class="reference internal" href="#mistake-2-wrong-connection-type">Mistake 2: Wrong Connection Type</a></li>
+<li><a class="reference internal" href="#mistake-3-blocking-ui-thread">Mistake 3: Blocking UI Thread</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#debugging-threading-issues">Debugging Threading Issues</a><ul>
+<li><a class="reference internal" href="#symptoms-of-threading-problems">Symptoms of Threading Problems</a></li>
+<li><a class="reference internal" href="#debugging-tools">Debugging Tools</a></li>
+<li><a class="reference internal" href="#enable-qt-warnings">Enable Qt Warnings</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#best-practices">Best Practices</a><ul>
+<li><a class="reference internal" href="#do">DO</a></li>
+<li><a class="reference internal" href="#don-t">DON’T</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#testing-thread-safety">Testing Thread Safety</a><ul>
+<li><a class="reference internal" href="#unit-test-pattern">Unit Test Pattern</a></li>
+<li><a class="reference internal" href="#integration-test-pattern">Integration Test Pattern</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#performance-considerations">Performance Considerations</a><ul>
+<li><a class="reference internal" href="#when-to-use-threading">When to Use Threading</a></li>
+<li><a class="reference internal" href="#profiling">Profiling</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#references">References</a></li>
+<li><a class="reference internal" href="#related-documentation">Related Documentation</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=70f82a29"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

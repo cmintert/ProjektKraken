@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-04
 ### Internal
-- chore: maintain changelog for v0.5.0
+- Merge pull request #44 from cmintert/copilot/review-projektkraken-code-again
 
 
 *This changelog was automatically generated.*
