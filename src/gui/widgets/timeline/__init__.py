@@ -11,6 +11,8 @@ maintainability:
 - timeline/timeline_view.py - Main view with zoom/pan and interaction
 """
 
+from typing import Any, Optional
+
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -38,7 +40,7 @@ class TimelineWidget(QWidget):
     current_time_changed = Signal(float)  # Expose current time signal from view
     event_date_changed = Signal(str, float)  # (event_id, new_lore_date)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initializes the TimelineWidget.
 
@@ -86,7 +88,15 @@ class TimelineWidget(QWidget):
             "Set the current time in the world to the playhead position"
         )
         self.btn_set_current_time.clicked.connect(self.set_current_time_to_playhead)
+        self.btn_set_current_time.clicked.connect(self.set_current_time_to_playhead)
         self.toolbar_layout.addWidget(self.btn_set_current_time)
+
+        self.btn_return_present = QPushButton("Return to Present")
+        self.btn_return_present.setToolTip(
+            "Move the playhead to the current story time"
+        )
+        self.btn_return_present.clicked.connect(self.return_to_present)
+        self.toolbar_layout.addWidget(self.btn_return_present)
 
         self.toolbar_layout.addStretch()
 
@@ -104,7 +114,7 @@ class TimelineWidget(QWidget):
         self.view.event_date_changed.connect(self.event_date_changed.emit)
         main_layout.addWidget(self.view)
 
-    def set_data_provider(self, provider):
+    def set_data_provider(self, provider: Any) -> None:
         """
         Sets the data provider for timeline grouping features.
 
@@ -113,19 +123,19 @@ class TimelineWidget(QWidget):
         """
         self.view.set_data_provider(provider)
 
-    def set_events(self, events):
+    def set_events(self, events: list) -> None:
         """Passes the event list to the view."""
         self.view.set_events(events)
 
-    def focus_event(self, event_id: str):
+    def focus_event(self, event_id: str) -> None:
         """Centers the timeline on the given event."""
         self.view.focus_event(event_id)
 
-    def fit_view(self):
+    def fit_view(self) -> None:
         """Fits all events within the view."""
         self.view.fit_all()
 
-    def toggle_playback(self):
+    def toggle_playback(self) -> None:
         """
         Toggles playback on/off and updates button state.
         """
@@ -138,15 +148,15 @@ class TimelineWidget(QWidget):
             self.btn_play_pause.setText("■")
             self.btn_play_pause.setChecked(True)
 
-    def step_forward(self):
+    def step_forward(self) -> None:
         """Steps the playhead forward."""
         self.view.step_forward()
 
-    def step_backward(self):
+    def step_backward(self) -> None:
         """Steps the playhead backward."""
         self.view.step_backward()
 
-    def set_playhead_time(self, time: float):
+    def set_playhead_time(self, time: float) -> None:
         """
         Sets the playhead to a specific time.
 
@@ -164,7 +174,7 @@ class TimelineWidget(QWidget):
         """
         return self.view.get_playhead_time()
 
-    def set_current_time(self, time: float):
+    def set_current_time(self, time: float) -> None:
         """
         Sets the current time in the world.
 
@@ -182,15 +192,23 @@ class TimelineWidget(QWidget):
         """
         return self.view.get_current_time()
 
-    def set_current_time_to_playhead(self):
+    def set_current_time_to_playhead(self) -> None:
         """
         Sets the current time to match the playhead position.
         This is the typical workflow: move playhead, then set as current time.
         """
         playhead_time = self.get_playhead_time()
+        playhead_time = self.get_playhead_time()
         self.set_current_time(playhead_time)
 
-    def set_calendar_converter(self, converter):
+    def return_to_present(self) -> None:
+        """
+        Sets the playhead position to match the current story time.
+        """
+        current_time = self.get_current_time()
+        self.set_playhead_time(current_time)
+
+    def set_calendar_converter(self, converter: Any) -> None:
         """
         Sets the calendar converter for formatted date display.
 
@@ -203,7 +221,7 @@ class TimelineWidget(QWidget):
         # Trigger repaint to update existing items
         self.view.viewport().update()
 
-    def update_event_preview(self, event_data: dict):
+    def update_event_preview(self, event_data: dict) -> None:
         """
         Updates the visual representation of an event in real-time.
         Delegates to the view.
@@ -211,11 +229,11 @@ class TimelineWidget(QWidget):
         self.view.update_event_preview(event_data)
         self.view.update_event_preview(event_data)
 
-    def set_grouping_config(self, tag_order: list, mode: str = "DUPLICATE"):
+    def set_grouping_config(self, tag_order: list, mode: str = "DUPLICATE") -> None:
         """Sets the timeline grouping configuration."""
         self.view.set_grouping_config(tag_order, mode)
 
-    def clear_grouping(self):
+    def clear_grouping(self) -> None:
         """Clears the timeline grouping."""
         self.view.clear_grouping()
 

@@ -118,10 +118,10 @@ class RelationRepository(BaseRepository):
         Returns:
             List of relation dictionaries.
         """
-        # Join with events table to get source event date efficiently
+        # Join with events table to get source event date and name efficiently
         # We rename e.lore_date to source_event_date to avoid collision/ambiguity
         sql = """
-            SELECT r.*, e.lore_date as source_event_date
+            SELECT r.*, e.lore_date as source_event_date, e.name as source_event_name
             FROM relations r
             LEFT JOIN events e ON r.source_id = e.id
             WHERE r.target_id = ?

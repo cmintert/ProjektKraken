@@ -536,6 +536,11 @@ class MainWindow(QMainWindow):
             self.event_editor.set_calendar_converter(converter)
             self.timeline.set_calendar_converter(converter)
 
+            # Set calendar converter for timeline display in entity editor
+            from src.gui.widgets.timeline_display_widget import TimelineDisplayWidget
+
+            TimelineDisplayWidget.set_calendar_converter(converter)
+
             # Check if UIManager has a pending calendar dialog
             self.ui_manager.show_calendar_dialog(config)
 
@@ -583,7 +588,24 @@ class MainWindow(QMainWindow):
             Q_ARG(float, time),
         )
         logger.debug(f"Current time changed to: {time}")
+
+        # Update entity editor's timeline display with NOW marker
+        self.entity_editor.timeline_display.set_current_time(time)
         self.update_world_time_label(time)
+
+    @Slot()
+    def on_return_to_present(self) -> None:
+        """
+        Exits "Viewing Past/Future State" mode.
+        Hides the playhead and reloads the current entity in editable mode.
+        """
+        # Set playhead to "Current Time" (Visual indicator that we are at "Now")
+        current_time = self.timeline.get_current_time()
+        self.timeline.set_playhead_time(current_time)
+
+        # Reload entity in normal editable mode
+        if self.entity_editor.isVisible() and self.entity_editor._current_entity_id:
+            self.load_entity_details(self.entity_editor._current_entity_id)
 
     def update_world_time_label(self, time_val: float) -> None:
         """Updates the blue world time label."""
@@ -1522,6 +1544,9 @@ class MainWindow(QMainWindow):
         """
         Refreshes entity inspector based on playhead time.
         """
+        # Store current playhead time for use in _on_entity_state_resolved
+        self._current_playhead_time = time
+
         if self.entity_editor.isVisible() and self.entity_editor._current_entity_id:
             QMetaObject.invokeMethod(
                 self.worker,
@@ -1536,4 +1561,6 @@ class MainWindow(QMainWindow):
         """
         Updates entity editor with resolved state.
         """
-        self.entity_editor.display_temporal_state(entity_id, attributes)
+        # Pass playhead time for timeline highlighting
+        playhead_time = getattr(self, "_current_playhead_time", None)
+        self.entity_editor.display_temporal_state(entity_id, attributes, playhead_time)

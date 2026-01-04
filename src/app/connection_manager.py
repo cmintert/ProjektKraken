@@ -105,6 +105,9 @@ class ConnectionManager:
         # Specific connections for each editor
         self.window.event_editor.save_requested.connect(self.window.update_event)
         self.window.entity_editor.save_requested.connect(self.window.update_entity)
+        self.window.entity_editor.return_to_present_requested.connect(
+            self.window.on_return_to_present
+        )
 
         # Live preview for Timeline
         self.window.event_editor.current_data_changed.connect(

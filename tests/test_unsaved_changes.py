@@ -90,6 +90,7 @@ class MockEditor(QWidget):
     dirty_changed = Signal(bool)
     current_data_changed = Signal(dict)  # Added for live preview support
     navigate_to_relation = Signal(str)
+    return_to_present_requested = Signal()  # Added for timeline support
 
     def __init__(self):
         super().__init__()

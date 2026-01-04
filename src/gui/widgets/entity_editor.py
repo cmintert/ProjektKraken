@@ -46,7 +46,9 @@ class EntityEditorWidget(QWidget):
     update_relation_requested = Signal(str, str, str, dict)
     link_clicked = Signal(str)
     navigate_to_relation = Signal(str)  # target_id for Go to button
+    navigate_to_relation = Signal(str)  # target_id for Go to button
     dirty_changed = Signal(bool)
+    return_to_present_requested = Signal()  # Request to exit past/future view
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -91,6 +93,36 @@ class EntityEditorWidget(QWidget):
         self.form_layout.addRow("Description:", self.desc_edit)
 
         details_layout.addLayout(self.form_layout)
+
+        # Add Timeline Display Widget (above LLM section)
+        from src.gui.widgets.timeline_display_widget import TimelineDisplayWidget
+
+        self.timeline_group = QGroupBox("Timeline")
+        self.timeline_group.setCheckable(True)
+        self.timeline_group.setChecked(False)  # Start collapsed
+        timeline_layout = QVBoxLayout(self.timeline_group)
+        StyleHelper.apply_compact_spacing(timeline_layout)
+
+        self.timeline_display = TimelineDisplayWidget()
+        timeline_layout.addWidget(self.timeline_display)
+
+        # Connect toggled signal to collapse/expand
+        def _toggle_timeline_section(checked: bool) -> None:
+            self.timeline_display.setVisible(checked)
+            if not checked:
+                self.timeline_group.setMinimumHeight(20)
+                self.timeline_group.setMaximumHeight(20)
+                timeline_layout.setContentsMargins(0, 0, 0, 0)
+                timeline_layout.setSpacing(0)
+            else:
+                self.timeline_group.setMinimumHeight(0)
+                self.timeline_group.setMaximumHeight(16777215)
+                StyleHelper.apply_compact_spacing(timeline_layout)
+
+        self.timeline_group.toggled.connect(_toggle_timeline_section)
+        _toggle_timeline_section(False)  # Start collapsed
+
+        details_layout.addWidget(self.timeline_group)
 
         # Add LLM Generation Widget below description in a collapsible group
         from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
@@ -346,6 +378,9 @@ class EntityEditorWidget(QWidget):
                 self.rel_list.addItem(item)
                 self.rel_list.setItemWidget(item, widget)
 
+        # Populate Timeline Display with incoming relations (sorted by date)
+        self.timeline_display.set_relations(incoming_relations or [])
+
         self.setEnabled(True)
 
         # Unblock & Reset
@@ -358,6 +393,11 @@ class EntityEditorWidget(QWidget):
         """
         Collects data and emits save signal.
         """
+        # Handle "Return to Present" action in special read-only mode
+        if self.btn_save.text() == "Return to Present":
+            self.return_to_present_requested.emit()
+            return
+
         if not self._current_entity_id:
             return
 
@@ -607,10 +647,17 @@ class EntityEditorWidget(QWidget):
                 is_bidirectional,
             )
 
-    def display_temporal_state(self, entity_id: str, attributes: dict) -> None:
+    def display_temporal_state(
+        self, entity_id: str, attributes: dict, playhead_time: float = None
+    ) -> None:
         """
         Displays the resolved temporal state for the current entity.
         Sets the editor to read-only mode.
+
+        Args:
+            entity_id: ID of the entity being displayed.
+            attributes: Resolved temporal attributes.
+            playhead_time: Current playhead time for timeline highlighting.
         """
         if entity_id != self._current_entity_id:
             return
@@ -618,6 +665,10 @@ class EntityEditorWidget(QWidget):
         # Load attributes (filter internal keys)
         display_attrs = {k: v for k, v in attributes.items() if k != "_tags"}
         self.attribute_editor.load_attributes(display_attrs)
+
+        # Update timeline display with playhead time for highlighting
+        if playhead_time is not None:
+            self.timeline_display.set_playhead_time(playhead_time)
 
         # Enter Read-Only Mode
         self.set_read_only_mode(True, reason="Viewing Past/Future State")
@@ -645,9 +696,20 @@ class EntityEditorWidget(QWidget):
         self.btn_discard.setEnabled(not readonly)
 
         if readonly:
-            self.btn_save.setText(reason or "Read Only")
+            if reason == "Viewing Past/Future State":
+                self.btn_save.setText("Return to Present")
+                self.btn_save.setEnabled(True)
+                self.btn_save.setStyleSheet(
+                    "background-color: #2196F3; color: white; font-weight: bold;"
+                )
+            else:
+                self.btn_save.setText(reason or "Read Only")
+                self.btn_save.setEnabled(False)
+                self.btn_save.setStyleSheet("")
         else:
             self.btn_save.setText("Save Changes")
+            self.btn_save.setEnabled(True)
+            self.btn_save.setStyleSheet("")
 
     def exit_read_only_mode(self) -> None:
         """Restores normal editing mode."""

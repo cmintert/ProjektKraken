@@ -66,7 +66,7 @@ def test_moving_event_invalidates_linked_entities(db_service, temporal_manager):
     # 5. Move the event to a later date
     update_cmd = UpdateEventCommand(
         event_id="ev1",
-        data={"lore_date": 2000.0},  # Changed from 1000 to 2000
+        update_data={"lore_date": 2000.0},  # Changed from 1000 to 2000
     )
     update_cmd.execute(db_service)
 
