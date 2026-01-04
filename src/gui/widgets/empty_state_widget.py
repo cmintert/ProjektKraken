@@ -4,8 +4,10 @@ Empty State Widget Module.
 Provides a simple widget for displaying empty state messages.
 """
 
+from typing import Optional
+
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QLabel
+from PySide6.QtWidgets import QLabel, QWidget
 
 from src.gui.utils.style_helper import StyleHelper
 
@@ -18,7 +20,9 @@ class EmptyStateWidget(QLabel):
     Use show() to display when no data is available.
     """
 
-    def __init__(self, message: str = "No Items", parent=None):
+    def __init__(
+        self, message: str = "No Items", parent: Optional[QWidget] = None
+    ) -> None:
         """
         Initializes the empty state widget.
 
@@ -31,7 +35,7 @@ class EmptyStateWidget(QLabel):
         self.setStyleSheet(StyleHelper.get_empty_state_style())
         self.hide()  # Hidden by default
 
-    def set_message(self, message: str):
+    def set_message(self, message: str) -> None:
         """
         Updates the empty state message.
 

@@ -30,7 +30,7 @@ class AddRelationCommand(BaseCommand):
         rel_type: str,
         attributes: Optional[Dict[str, Any]] = None,
         bidirectional: bool = False,
-    ):
+    ) -> None:
         """
         Initializes the AddRelation command.
 
@@ -100,7 +100,7 @@ class RemoveRelationCommand(BaseCommand):
     Command to remove a relationship.
     """
 
-    def __init__(self, rel_id: str):
+    def __init__(self, rel_id: str) -> None:
         """
         Initializes the RemoveRelation command.
 
@@ -145,7 +145,7 @@ class UpdateRelationCommand(BaseCommand):
         target_id: str,
         rel_type: str,
         attributes: Optional[Dict[str, Any]] = None,
-    ):
+    ) -> None:
         """
         Initializes the UpdateRelation command.
 

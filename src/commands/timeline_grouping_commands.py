@@ -23,7 +23,7 @@ class SetTimelineGroupingCommand(BaseCommand):
     Command to set or update timeline grouping configuration.
     """
 
-    def __init__(self, tag_order: List[str], mode: str = "DUPLICATE"):
+    def __init__(self, tag_order: List[str], mode: str = "DUPLICATE") -> None:
         """
         Initializes the SetTimelineGroupingCommand.
 
@@ -112,7 +112,7 @@ class ClearTimelineGroupingCommand(BaseCommand):
     Command to clear timeline grouping configuration.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Initializes the ClearTimelineGroupingCommand.
         """
@@ -179,7 +179,7 @@ class UpdateTagColorCommand(BaseCommand):
     Command to update a tag's color.
     """
 
-    def __init__(self, tag_name: str, color: str):
+    def __init__(self, tag_name: str, color: str) -> None:
         """
         Initializes the UpdateTagColorCommand.
 

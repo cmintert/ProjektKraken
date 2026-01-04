@@ -6,9 +6,13 @@ description: Update CHANGELOG.md with recent commits
 
 ## Steps
 
-1. Get recent commits with dates:
+1. Get recent commits with full details:
    ```
    git log --format="%h %ad %s" --date=short -15
+   ```
+   Then review full commit messages for important details:
+   ```
+   git log --format="%h %ad%n%s%n%n%b%n---" --date=short -10
    ```
 
 2. View current CHANGELOG.md to understand structure:
@@ -39,3 +43,5 @@ description: Update CHANGELOG.md with recent commits
 - Only add entries for user-visible changes, not internal refactoring unless significant
 - Group related commits into single entries where appropriate
 - Use past tense for descriptions
+- Review commit message bodies for additional context and implementation details
+- Extract key changes from multi-line commit messages to create concise changelog entries

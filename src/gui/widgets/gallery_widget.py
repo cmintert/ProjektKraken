@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 from typing import List, Optional
 
-from PySide6.QtCore import QPoint, QSize, Qt, Signal, Slot
+from PySide6.QtCore import QPoint, QSize, Qt, Slot
 from PySide6.QtGui import QDragEnterEvent, QDropEvent, QIcon
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -35,7 +35,6 @@ from src.core.paths import get_user_data_path
 from src.gui.dialogs.image_viewer_dialog import ImageViewerDialog
 from src.gui.widgets.standard_buttons import StandardButton
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -47,7 +46,7 @@ class GalleryWidget(QWidget):
 
     # Needs access to main_window to emit commands
 
-    def __init__(self, main_window) -> None:
+    def __init__(self, main_window: QWidget) -> None:
         """
         Initialize the gallery widget.
 
@@ -64,7 +63,7 @@ class GalleryWidget(QWidget):
         self.init_ui()
         self.connect_signals()
 
-    def init_ui(self):
+    def init_ui(self) -> None:
         """Initialize the user interface components."""
         self.setAcceptDrops(True)
         layout = QVBoxLayout(self)
@@ -115,7 +114,7 @@ class GalleryWidget(QWidget):
 
         layout.addWidget(self.list_widget)
 
-    def connect_signals(self):
+    def connect_signals(self) -> None:
         """Connect widget signals to main window slots."""
         if hasattr(self.main_window, "worker"):
             self.main_window.worker.attachments_loaded.connect(
@@ -123,14 +122,14 @@ class GalleryWidget(QWidget):
             )
             self.main_window.worker.command_finished.connect(self.on_command_finished)
 
-    def _update_button_states(self):
+    def _update_button_states(self) -> None:
         """Updates enabled states for Edit and Remove buttons based on selection."""
         items = self.list_widget.selectedItems()
         count = len(items)
         self.btn_edit.setEnabled(count == 1)
         self.btn_remove.setEnabled(count > 0)
 
-    def set_owner(self, owner_type: str, owner_id: str):
+    def set_owner(self, owner_type: str, owner_id: str) -> None:
         """Sets the current owner and refreshes the view."""
         logger.debug(
             f"GalleryWidget: set_owner called with type={owner_type}, id={owner_id}"
@@ -155,7 +154,7 @@ class GalleryWidget(QWidget):
             Q_ARG(str, self.owner_id),
         )
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear all displayed attachments from the gallery."""
         self.list_widget.clear()
         self.attachments = []
@@ -231,6 +230,7 @@ class GalleryWidget(QWidget):
             # Re-fetch data
             self.set_owner(self.owner_type, self.owner_id)
 
+    @Slot()
     def on_add_clicked(self) -> None:
         """Handle add image button click - open file dialog and create command."""
         if not self.owner_id:
@@ -246,6 +246,7 @@ class GalleryWidget(QWidget):
             # Auto-refresh handled by listing to command_finished signal.
             # MainWindow doesn't auto-trigger 'load_attachments' on command finish.
 
+    @Slot(QListWidgetItem)
     def on_item_double_clicked(self, item: QListWidgetItem) -> None:
         """
         Handle double-click on gallery item - open image viewer.
@@ -293,12 +294,14 @@ class GalleryWidget(QWidget):
         elif action == remove_action:
             self.remove_item(item)
 
+    @Slot()
     def _on_edit_caption_clicked(self) -> None:
         """Handles toolbar button click for editing caption."""
         item = self.list_widget.currentItem()
         if item:
             self.edit_caption(item)
 
+    @Slot()
     def _on_remove_clicked(self) -> None:
         """Handles toolbar button click for removal."""
         item = self.list_widget.currentItem()

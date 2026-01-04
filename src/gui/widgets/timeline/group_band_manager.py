@@ -8,8 +8,8 @@ ordering, collapse state, and requesting data via callback interface.
 import logging
 from typing import Callable, Dict, List, Optional
 
-from PySide6.QtCore import QObject, Signal
-from PySide6.QtWidgets import QMenu
+from PySide6.QtCore import QObject, QPoint, Signal
+from PySide6.QtWidgets import QGraphicsScene, QMenu
 
 from src.gui.widgets.timeline.group_band_item import GroupBandItem
 
@@ -43,11 +43,11 @@ class GroupBandManager(QObject):
 
     def __init__(
         self,
-        scene,
+        scene: QGraphicsScene,
         get_group_metadata_callback: Callable,
         get_events_for_group_callback: Callable,
-        parent=None,
-    ):
+        parent: Optional[QObject] = None,
+    ) -> None:
         """
         Initializes the GroupBandManager.
 
@@ -74,7 +74,7 @@ class GroupBandManager(QObject):
 
     def set_grouping_config(
         self, tag_order: List[str], date_range: Optional[tuple] = None
-    ):
+    ) -> None:
         """
         Set the grouping configuration and create/update bands.
 
@@ -135,14 +135,14 @@ class GroupBandManager(QObject):
 
         logger.info(f"Created {len(self._bands)} bands")
 
-    def clear_bands(self):
+    def clear_bands(self) -> None:
         """Remove all bands from the scene."""
         for band in self._bands.values():
             self.scene.removeItem(band)
         self._bands.clear()
         logger.debug("Cleared all bands")
 
-    def update_band_metadata(self, date_range: Optional[tuple] = None):
+    def update_band_metadata(self, date_range: Optional[tuple] = None) -> None:
         """
         Update metadata for all bands.
 
@@ -168,7 +168,7 @@ class GroupBandManager(QObject):
                     latest_date=meta["latest_date"],
                 )
 
-    def _on_expand_requested(self, tag_name: str):
+    def _on_expand_requested(self, tag_name: str) -> None:
         """Handle band expansion request."""
         logger.debug(f"Expanding band: {tag_name}")
 
@@ -185,7 +185,7 @@ class GroupBandManager(QObject):
             # Emit signal
             self.band_expanded.emit(tag_name)
 
-    def _on_collapse_requested(self, tag_name: str):
+    def _on_collapse_requested(self, tag_name: str) -> None:
         """Handle band collapse request."""
         logger.debug(f"Collapsing band: {tag_name}")
 
@@ -207,7 +207,7 @@ class GroupBandManager(QObject):
             # Emit signal
             self.band_collapsed.emit(tag_name)
 
-    def _reposition_bands(self):
+    def _reposition_bands(self) -> None:
         """Reposition all bands - Handled by TimelineView."""
         # This is now handled by TimelineView layout logic
         pass
@@ -220,7 +220,7 @@ class GroupBandManager(QObject):
         """Get all band items in tag order."""
         return [self._bands[tag] for tag in self._tag_order if tag in self._bands]
 
-    def _on_context_menu_requested(self, tag_name: str, screen_pos):
+    def _on_context_menu_requested(self, tag_name: str, screen_pos: QPoint) -> None:
         """
         Handle context menu request for a band.
 
@@ -257,7 +257,7 @@ class GroupBandManager(QObject):
         """
         return self._collapsed_tags.copy()
 
-    def set_collapsed_tags(self, collapsed_tags: set):
+    def set_collapsed_tags(self, collapsed_tags: set) -> None:
         """
         Set which tags should be collapsed.
 

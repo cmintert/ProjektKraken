@@ -9,7 +9,7 @@ import json
 import logging
 import sqlite3
 from contextlib import contextmanager
-from typing import Optional
+from typing import Iterator, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ class BaseRepository:
         _connection: The SQLite database connection (managed by DatabaseService).
     """
 
-    def __init__(self, connection: Optional[sqlite3.Connection] = None):
+    def __init__(self, connection: Optional[sqlite3.Connection] = None) -> None:
         """
         Initialize the repository.
 
@@ -44,7 +44,7 @@ class BaseRepository:
         self._connection = connection
 
     @contextmanager
-    def transaction(self):
+    def transaction(self) -> Iterator[sqlite3.Connection]:
         """
         Context manager for safe transaction handling.
 

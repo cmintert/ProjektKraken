@@ -32,7 +32,7 @@ class CreateMapCommand(BaseCommand):
     Command to create a new map.
     """
 
-    def __init__(self, map_data: Optional[dict] = None):
+    def __init__(self, map_data: Optional[dict] = None) -> None:
         """
         Initializes the CreateMapCommand.
 
@@ -93,7 +93,7 @@ class UpdateMapCommand(BaseCommand):
     Accepts a dictionary of changes.
     """
 
-    def __init__(self, map_id: str, update_data: dict):
+    def __init__(self, map_id: str, update_data: dict) -> None:
         """
         Initializes the UpdateMapCommand.
 
@@ -172,7 +172,7 @@ class DeleteMapCommand(BaseCommand):
     Command to delete a map and all its markers.
     """
 
-    def __init__(self, map_id: str):
+    def __init__(self, map_id: str) -> None:
         """
         Initializes the DeleteMapCommand.
 
@@ -247,7 +247,7 @@ class CreateMarkerCommand(BaseCommand):
     Command to create a new marker on a map.
     """
 
-    def __init__(self, marker_data: dict):
+    def __init__(self, marker_data: dict) -> None:
         """
         Initializes the CreateMarkerCommand.
 
@@ -313,7 +313,7 @@ class UpdateMarkerCommand(BaseCommand):
     Command to update a marker's position or other properties.
     """
 
-    def __init__(self, marker_id: str, update_data: dict):
+    def __init__(self, marker_id: str, update_data: dict) -> None:
         """
         Initializes the UpdateMarkerCommand.
 
@@ -392,7 +392,7 @@ class DeleteMarkerCommand(BaseCommand):
     Command to delete a marker from a map.
     """
 
-    def __init__(self, marker_id: str):
+    def __init__(self, marker_id: str) -> None:
         """
         Initializes the DeleteMarkerCommand.
 
@@ -459,7 +459,7 @@ class UpdateMarkerIconCommand(BaseCommand):
     Stores the icon filename in the marker's attributes dict.
     """
 
-    def __init__(self, marker_id: str, icon: str):
+    def __init__(self, marker_id: str, icon: str) -> None:
         """
         Initializes the UpdateMarkerIconCommand.
 
@@ -550,7 +550,7 @@ class UpdateMarkerColorCommand(BaseCommand):
     Stores the color hex code in the marker's attributes dict.
     """
 
-    def __init__(self, marker_id: str, color: str):
+    def __init__(self, marker_id: str, color: str) -> None:
         """
         Initializes the UpdateMarkerColorCommand.
 

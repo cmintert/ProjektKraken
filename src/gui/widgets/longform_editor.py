@@ -13,7 +13,7 @@ import json
 import logging
 from typing import Any, Dict, List, Optional
 
-from PySide6.QtCore import QPoint, QSize, Qt, Signal
+from PySide6.QtCore import QPoint, QSize, Qt, Signal, Slot
 from PySide6.QtGui import (
     QBrush,
     QCloseEvent,
@@ -273,6 +273,7 @@ class LongformOutlineWidget(QTreeWidget):
             item_to_select = item_map[selected_item_id]
             self.setCurrentItem(item_to_select)
 
+    @Slot()
     def _on_selection_changed(self) -> None:
         """Handle selection change."""
         items = self.selectedItems()
@@ -523,6 +524,7 @@ class LongformEditorWidget(QWidget):
         count = len(sequence)
         self.status_label.setText(f"{count} item(s) in document")
 
+    @Slot(str, str)
     def _on_item_selected(self, table: str, row_id: str) -> None:
         """
         Handle item selection in outline.
@@ -574,6 +576,7 @@ class LongformEditorWidget(QWidget):
         """
         return QSize(600, 700)  # Comfortable size for split view
 
+    @Slot(bool)
     def _toggle_publish(self, checked: bool) -> None:
         """Handle publish toggle."""
         if checked:
@@ -581,6 +584,7 @@ class LongformEditorWidget(QWidget):
         else:
             self.web_manager.stop_server()
 
+    @Slot(bool, str)
     def _on_server_status_changed(self, is_running: bool, url: str) -> None:
         """Update UI based on server status."""
         self.btn_publish.setChecked(is_running)
@@ -596,6 +600,7 @@ class LongformEditorWidget(QWidget):
             self.btn_publish.setText("Publish to Web")
             self.url_label.setText("")
 
+    @Slot(str)
     def _on_server_error(self, msg: str) -> None:
         """Handle server error manually."""
         from PySide6.QtWidgets import QMessageBox

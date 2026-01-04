@@ -8,7 +8,7 @@ attribute exclusion.
 import logging
 from typing import Optional
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -88,6 +88,7 @@ class AISettingsDialog(QDialog):
         # Load settings
         self.load_settings()
 
+    @Slot()
     def _on_ok_clicked(self) -> None:
         """Handle OK button click."""
         self.save_settings()
@@ -418,14 +419,17 @@ class AISettingsDialog(QDialog):
         # Add to tabs
         self.tabs.addTab(generation_widget, "Text Generation")
 
+    @Slot(int)
     def _on_provider_changed(self, index: int) -> None:
         """Handle embeddings provider selection change."""
         self.provider_stack.setCurrentIndex(index)
 
+    @Slot(int)
     def _on_gen_provider_changed(self, index: int) -> None:
         """Handle generation provider selection change."""
         self.gen_provider_stack.setCurrentIndex(index)
 
+    @Slot()
     def _on_clear_generation_settings(self) -> None:
         """Clear all generation provider settings."""
         from PySide6.QtCore import QSettings
@@ -466,6 +470,7 @@ class AISettingsDialog(QDialog):
                 self, "Settings Cleared", "All generation settings have been cleared."
             )
 
+    @Slot()
     def _on_rebuild_clicked(self) -> None:
         """Handle rebuild button click."""
         obj_type = (
@@ -477,6 +482,7 @@ class AISettingsDialog(QDialog):
         logger.info(f"Rebuild index requested for type: {obj_type}")
         self.rebuild_index_requested.emit(obj_type)
 
+    @Slot()
     def _on_restore_default_prompt(self) -> None:
         """Restore the default system prompt."""
         default_prompt = (
@@ -542,6 +548,7 @@ class AISettingsDialog(QDialog):
                 self, "Error", f"An error occurred while testing connection:\n{str(e)}"
             )
 
+    @Slot()
     def save_settings(self) -> None:
         """Save settings to QSettings."""
         from PySide6.QtCore import QSettings

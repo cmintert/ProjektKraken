@@ -10,7 +10,7 @@ import asyncio
 import json
 import logging
 import time
-from typing import Any, AsyncIterator, Dict, List, Optional
+from typing import Any, AsyncIterator, Callable, Dict, List, Optional
 
 import numpy as np
 import requests
@@ -36,7 +36,7 @@ class AnthropicProvider(Provider):
         base_url: str = "https://api.anthropic.com/v1",
         timeout: int = 30,
         max_retries: int = 3,
-    ):
+    ) -> None:
         """
         Initialize Anthropic provider.
 
@@ -70,7 +70,9 @@ class AnthropicProvider(Provider):
             "anthropic-version": "2023-06-01",
         }
 
-    def _retry_request(self, func, *args, **kwargs):
+    def _retry_request(
+        self, func: Callable[..., Any], *args: Any, **kwargs: Any
+    ) -> Any:
         """Execute request with retry logic and exponential backoff."""
         last_exception = None
         for attempt in range(self.max_retries):
@@ -137,7 +139,7 @@ class AnthropicProvider(Provider):
             Exception: If generation fails.
         """
 
-        def _generate_impl():
+        def _generate_impl() -> str:
             """Inner implementation for retry wrapper."""
             payload = {
                 "model": self.model,
@@ -244,7 +246,8 @@ class AnthropicProvider(Provider):
             # Use asyncio to run blocking requests in executor
             loop = asyncio.get_event_loop()
 
-            def _make_request():
+            def _make_request() -> requests.Response:
+                """Make HTTP request to streaming endpoint."""
                 return requests.post(
                     f"{self.base_url}/messages",
                     json=payload,

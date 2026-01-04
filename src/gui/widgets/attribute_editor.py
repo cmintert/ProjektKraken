@@ -7,7 +7,7 @@ with support for different data types.
 
 from typing import Any, Dict, Optional, Union
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -145,6 +145,7 @@ class AttributeEditorWidget(QWidget):
         combo.currentTextChanged.connect(lambda: self._on_type_changed(row))
         self.table.setCellWidget(row, 2, combo)
 
+    @Slot()
     def _on_add(self) -> None:
         """
         Handles adding a new attribute.
@@ -164,6 +165,7 @@ class AttributeEditorWidget(QWidget):
             self._block_signals = False
             self.attributes_changed.emit()
 
+    @Slot()
     def _on_remove(self) -> None:
         """
         Handles removing the selected attribute.
@@ -173,6 +175,7 @@ class AttributeEditorWidget(QWidget):
             self.table.removeRow(current_row)
             self.attributes_changed.emit()
 
+    @Slot(QTableWidgetItem)
     def _on_item_changed(self, item: QTableWidgetItem) -> None:
         """
         Handles table item changes.
@@ -183,6 +186,7 @@ class AttributeEditorWidget(QWidget):
         if not self._block_signals:
             self.attributes_changed.emit()
 
+    @Slot(int)
     def _on_type_changed(self, row: int) -> None:
         """
         Handles attribute type changes.

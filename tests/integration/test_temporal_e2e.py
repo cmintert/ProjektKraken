@@ -8,6 +8,8 @@ Tests the full flow from:
 4. Verifying state updates when upstream events change.
 """
 
+import gc
+
 import pytest
 
 from src.commands.event_commands import UpdateEventCommand
@@ -25,6 +27,7 @@ def db_service(tmp_path):
     service.connect()
     yield service
     service.close()
+    gc.collect()
 
 
 @pytest.fixture
@@ -122,7 +125,8 @@ def test_upstream_event_change_propagates(db_service, temporal_manager):
     assert temporal_manager.get_entity_state_at("hero", 110.0)["health"] == "Low"
 
     # Move Event to 80.0
-    # Note: We must update the relation's cached valid_from or rely on dynamic resolution if `valid_from_event` is used.
+    # Note: We must update the relation's cached valid_from or rely on dynamic
+    # resolution if `valid_from_event` is used.
     # The TemporalResolver logic (as implemented in Stage 2) joins on cache/db.
     # The `valid_from_event` flag tells resolver to use event.lore_date.
 

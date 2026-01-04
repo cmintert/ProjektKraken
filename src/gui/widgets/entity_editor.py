@@ -7,7 +7,7 @@ for wiki-style text editing, custom attributes, tags, and relationship managemen
 
 from typing import Optional
 
-from PySide6.QtCore import QPoint, QSize, Qt, Signal
+from PySide6.QtCore import QPoint, QSize, Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
@@ -108,6 +108,7 @@ class EntityEditorWidget(QWidget):
 
         # Connect toggled signal to collapse/expand
         def _toggle_timeline_section(checked: bool) -> None:
+            """Toggle visibility of timeline section when checkbox is clicked."""
             self.timeline_display.setVisible(checked)
             if not checked:
                 self.timeline_group.setMinimumHeight(20)
@@ -139,6 +140,7 @@ class EntityEditorWidget(QWidget):
 
         # Connect toggled signal to properly collapse/expand
         def _toggle_llm_section(checked: bool) -> None:
+            """Toggle visibility of LLM generation section when checkbox is clicked."""
             self.llm_generator.setVisible(checked)
             if not checked:
                 # Collapse to just show checkbox/title
@@ -389,6 +391,7 @@ class EntityEditorWidget(QWidget):
         self.desc_edit.blockSignals(False)
         self.set_dirty(False)
 
+    @Slot()
     def _on_save(self) -> None:
         """
         Collects data and emits save signal.
@@ -417,6 +420,7 @@ class EntityEditorWidget(QWidget):
         self.save_requested.emit(entity_data)
         self.set_dirty(False)
 
+    @Slot()
     def _on_discard(self) -> None:
         """
         Discards changes by emitting signal to reload the current entity.
@@ -434,6 +438,7 @@ class EntityEditorWidget(QWidget):
         self.rel_list.clear()  # Clear relations
         self.setEnabled(False)
 
+    @Slot()
     def _on_add_relation(self) -> None:
         """
         Handles adding a new relation.
@@ -498,6 +503,7 @@ class EntityEditorWidget(QWidget):
         if confirm == QMessageBox.StandardButton.Yes:
             self.remove_relation_requested.emit(rel_data["id"])
 
+    @Slot(QListWidgetItem)
     def _on_edit_relation(self, item: QListWidgetItem) -> None:
         """
         Handles editing a relation item.
@@ -530,6 +536,7 @@ class EntityEditorWidget(QWidget):
                     rel_data["id"], target_id, rel_type, attributes
                 )
 
+    @Slot()
     def _on_edit_selected_relation(self) -> None:
         """
         Handles editing the currently selected relation.
@@ -538,6 +545,7 @@ class EntityEditorWidget(QWidget):
         if item:
             self._on_edit_relation(item)
 
+    @Slot()
     def _on_remove_selected_relation(self) -> None:
         """
         Handles removing the currently selected relation.
@@ -560,6 +568,7 @@ class EntityEditorWidget(QWidget):
         }
         return context
 
+    @Slot(str)
     def _on_text_generated(self, text: str) -> None:
         """
         Handle text generated from LLM.
@@ -609,6 +618,7 @@ class EntityEditorWidget(QWidget):
 
         return QSize(400, 600)  # Ideal size for editing
 
+    @Slot(str, str)
     def _on_wikilink_added(self, target_id: str, target_name: str) -> None:
         """
         Handles a new wikilink addition.

@@ -18,7 +18,9 @@ def test_navigate_to_entity_success(qtbot):
         patch("src.app.worker_manager.DatabaseWorker"),
         patch("src.app.worker_manager.QTimer"),
         patch("src.app.worker_manager.QThread"),
-        patch("src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard),
+        patch(
+            "src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard
+        ),
     ):
         window = MainWindow()
         # Mock worker
@@ -50,7 +52,9 @@ def test_navigate_to_entity_case_insensitive(qtbot):
         patch("src.app.worker_manager.DatabaseWorker"),
         patch("src.app.worker_manager.QTimer"),
         patch("src.app.worker_manager.QThread"),
-        patch("src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard),
+        patch(
+            "src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard
+        ),
     ):
         window = MainWindow()
         window.worker = MagicMock()
@@ -73,7 +77,9 @@ def test_navigate_to_entity_not_found(qtbot, monkeypatch):
         patch("src.app.worker_manager.DatabaseWorker"),
         patch("src.app.worker_manager.QTimer"),
         patch("src.app.worker_manager.QThread"),
-        patch("src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard),
+        patch(
+            "src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard
+        ),
     ):
         window = MainWindow()
         window.worker = MagicMock()

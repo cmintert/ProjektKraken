@@ -29,7 +29,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def export_longform(args) -> int:
+def export_longform(args: argparse.Namespace) -> int:
     """Export longform document."""
     db_service = None
     try:
@@ -59,7 +59,9 @@ def export_longform(args) -> int:
             db_service.close()
 
 
-def _get_current_meta(db_service, table, row_id, doc_id):
+def _get_current_meta(
+    db_service: DatabaseService, table: str, row_id: str, doc_id: str
+) -> dict:
     """Helper to get current longform metadata."""
     # This minimal helper is needed because meta isn't exposed in logic yet.
     # longform_builder has no simple 'get item' returning meta dict.
@@ -81,7 +83,7 @@ def _get_current_meta(db_service, table, row_id, doc_id):
     return {}
 
 
-def move_entry(args) -> int:
+def move_entry(args: argparse.Namespace) -> int:
     """Move a longform entry (or add it if missing)."""
     db_service = None
     try:
@@ -126,7 +128,7 @@ def move_entry(args) -> int:
             db_service.close()
 
 
-def remove_entry(args) -> int:
+def remove_entry(args: argparse.Namespace) -> int:
     """Remove entry from longform."""
     db_service = None
     try:
@@ -155,7 +157,7 @@ def remove_entry(args) -> int:
             db_service.close()
 
 
-def promote_entry(args) -> int:
+def promote_entry(args: argparse.Namespace) -> int:
     """Promote a longform entry (reduce depth)."""
     db_service = None
     try:
@@ -184,7 +186,7 @@ def promote_entry(args) -> int:
             db_service.close()
 
 
-def demote_entry(args) -> int:
+def demote_entry(args: argparse.Namespace) -> int:
     """Demote a longform entry (increase depth)."""
     db_service = None
     try:
@@ -213,7 +215,7 @@ def demote_entry(args) -> int:
             db_service.close()
 
 
-def reindex_longform(args) -> int:
+def reindex_longform(args: argparse.Namespace) -> int:
     """Reindex all positions in the longform document."""
     db_service = None
     try:
@@ -232,7 +234,7 @@ def reindex_longform(args) -> int:
             db_service.close()
 
 
-def main():
+def main() -> None:
     """Main entry point for the longform document CLI tool."""
     parser = argparse.ArgumentParser(
         description="Manage ProjektKraken longform document"

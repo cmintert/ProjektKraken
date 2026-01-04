@@ -8,8 +8,21 @@ import json
 import logging
 from typing import Dict, Optional
 
-from PySide6.QtCore import QPointF, Qt, Signal
-from PySide6.QtGui import QAction, QBrush, QColor, QPainter, QPixmap
+from PySide6.QtCore import QPointF, QSize, Qt, Signal
+from PySide6.QtGui import (
+    QAction,
+    QBrush,
+    QColor,
+    QContextMenuEvent,
+    QDragEnterEvent,
+    QDragMoveEvent,
+    QDropEvent,
+    QMouseEvent,
+    QPainter,
+    QPixmap,
+    QResizeEvent,
+    QWheelEvent,
+)
 from PySide6.QtWidgets import (
     QColorDialog,
     QDialog,
@@ -17,6 +30,7 @@ from PySide6.QtWidgets import (
     QGraphicsScene,
     QGraphicsView,
     QMenu,
+    QWidget,
 )
 
 from src.core.theme_manager import ThemeManager
@@ -44,7 +58,7 @@ class MapGraphicsView(QGraphicsView):
     change_marker_color_requested = Signal(str, str)  # marker_id, new_color_hex
     marker_drop_requested = Signal(str, str, str, float, float)  # id, type, name, x, y
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initializes the MapGraphicsView.
 
@@ -74,7 +88,7 @@ class MapGraphicsView(QGraphicsView):
         # Enable drop support for drag-from-explorer
         self.setAcceptDrops(True)
 
-    def minimumSizeHint(self):
+    def minimumSizeHint(self) -> QSize:
         """
         Override minimum size hint to allow resizing below map image size.
 
@@ -89,7 +103,7 @@ class MapGraphicsView(QGraphicsView):
 
         return QSize(200, 150)
 
-    def _update_theme(self, theme):
+    def _update_theme(self, theme: dict) -> None:
         """Updates the scene background."""
         self.scene.setBackgroundBrush(QBrush(QColor(theme["app_bg"])))
 
@@ -129,20 +143,20 @@ class MapGraphicsView(QGraphicsView):
             logger.error(f"Error loading map: {e}")
             return False
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, event: QResizeEvent) -> None:
         """
         Handle resize events.
         Note: We no longer auto-fit here to allow the user to maintain zoom level.
         """
         super().resizeEvent(event)
 
-    def fit_to_view(self):
+    def fit_to_view(self) -> None:
         """Fits the map to the current view size."""
         if self.pixmap_item:
             self.fitInView(self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
             logger.debug("Fit map to view.")
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         """
         Handle mouse press to implement Smart Drag.
         If clicking a marker, disable view panning.
@@ -159,7 +173,7 @@ class MapGraphicsView(QGraphicsView):
             self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         super().mousePressEvent(event)
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Reset drag mode on release."""
         logger.debug("Mouse Release. Resetting to ScrollHandDrag.")
         super().mouseReleaseEvent(event)
@@ -274,7 +288,7 @@ class MapGraphicsView(QGraphicsView):
 
         return QPointF(scene_x, scene_y)
 
-    def wheelEvent(self, event):
+    def wheelEvent(self, event: QWheelEvent) -> None:
         """Handle mouse wheel for zooming."""
         # Sensitivity
         zoom_in_factor = 1.25
@@ -288,7 +302,7 @@ class MapGraphicsView(QGraphicsView):
 
         self.scale(factor, factor)
 
-    def dragEnterEvent(self, event):
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """
         Accept drag events with our custom MIME type.
         """
@@ -299,7 +313,7 @@ class MapGraphicsView(QGraphicsView):
         else:
             event.ignore()
 
-    def dragMoveEvent(self, event):
+    def dragMoveEvent(self, event: QDragMoveEvent) -> None:
         """
         Allow drop only over the map pixmap.
         """
@@ -320,7 +334,7 @@ class MapGraphicsView(QGraphicsView):
         else:
             event.ignore()
 
-    def dropEvent(self, event):
+    def dropEvent(self, event: QDropEvent) -> None:
         """
         Handle drop of item from Project Explorer to create a marker.
         """
@@ -377,7 +391,7 @@ class MapGraphicsView(QGraphicsView):
             logger.error(f"Failed to parse drop data: {e}")
             event.ignore()
 
-    def contextMenuEvent(self, event):
+    def contextMenuEvent(self, event: QContextMenuEvent) -> None:
         """
         Handles context menu events for adding/removing markers.
         """

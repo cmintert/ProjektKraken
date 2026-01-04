@@ -322,6 +322,7 @@ class LMStudioProvider(Provider):
             logger.debug(f"LM Studio stream payload: {json.dumps(payload, indent=2)}")
 
             def _make_request() -> requests.Response:
+                """Make HTTP request to streaming endpoint."""
                 return requests.post(
                     self.generate_url,
                     json=payload,

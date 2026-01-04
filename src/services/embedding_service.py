@@ -8,10 +8,9 @@ compatibility with the existing embeddings database schema.
 
 import json
 import logging
-import os
 import sqlite3
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 
@@ -34,7 +33,7 @@ class EmbeddingService:
         provider: Provider,
         index_dir: Optional[str] = None,
         world_id: Optional[str] = None,
-    ):
+    ) -> None:
         """
         Initialize embedding service.
 
@@ -334,7 +333,7 @@ def create_embedding_service(
     db_connection: sqlite3.Connection,
     provider_id: str = "lmstudio",
     world_id: Optional[str] = None,
-    **provider_kwargs,
+    **provider_kwargs: Any,
 ) -> EmbeddingService:
     """
     Create an EmbeddingService with the specified provider.

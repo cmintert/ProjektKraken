@@ -10,6 +10,7 @@ from typing import Dict, List, Tuple
 
 from PySide6.QtGui import QFont, QFontMetrics
 
+from src.core.events import Event
 from src.gui.widgets.timeline.event_item import EventItem
 
 logger = logging.getLogger(__name__)
@@ -29,7 +30,7 @@ class TimelineLanePacker:
     MIN_BAR_WIDTH = 10.0  # Minimum width for duration bars
     LANE_PADDING = 10  # Vertical padding between lanes
 
-    def __init__(self, scale_factor: float = 20.0):
+    def __init__(self, scale_factor: float = 20.0) -> None:
         """
         Initializes the TimelineLanePacker.
 
@@ -40,14 +41,14 @@ class TimelineLanePacker:
         self.font = None
         self.fm = None
 
-    def _ensure_font_metrics(self):
+    def _ensure_font_metrics(self) -> None:
         """Ensures font metrics are initialized (requires QApplication)."""
         if self.fm is None:
             self.font = QFont()
             self.font.setBold(True)
             self.fm = QFontMetrics(self.font)
 
-    def pack_events(self, events: List) -> Tuple[Dict[str, int], List[int]]:
+    def pack_events(self, events: List[Event]) -> Tuple[Dict[str, int], List[int]]:
         """
         Packs events into lanes using the First Fit algorithm.
 
@@ -87,7 +88,7 @@ class TimelineLanePacker:
 
         return event_lane_assignments, lanes_heights
 
-    def _calculate_visual_duration(self, event) -> float:
+    def _calculate_visual_duration(self, event: Event) -> float:
         """
         Calculates the visual duration of an event in time units.
 
@@ -158,7 +159,7 @@ class TimelineLanePacker:
         lanes_heights.append(event_height)
         return len(lanes_end_times) - 1
 
-    def update_scale_factor(self, scale_factor: float):
+    def update_scale_factor(self, scale_factor: float) -> None:
         """
         Updates the scale factor for packing calculations.
 

@@ -25,7 +25,6 @@ from src.services.search_service import (
     top_k_streaming,
 )
 
-
 # =============================================================================
 # Mock Embedding Provider
 # =============================================================================
@@ -105,7 +104,11 @@ def test_build_text_for_entity_with_attributes():
 
     # Attributes should be in sorted order
     lines = text.split("\n\n")
-    attr_lines = [l for l in lines if ":" in l and not l.startswith(("Name:", "Type:"))]
+    attr_lines = [
+        line
+        for line in lines
+        if ":" in line and not line.startswith(("Name:", "Type:"))
+    ]
 
     # Check sorting
     keys = [line.split(":")[0] for line in attr_lines]
@@ -117,9 +120,7 @@ def test_build_text_for_entity_with_attributes():
 
 def test_build_text_for_event_basic():
     """Test basic event text building."""
-    event = Event(
-        name="Battle", lore_date=1000.0, lore_duration=5.0, type="combat"
-    )
+    event = Event(name="Battle", lore_date=1000.0, lore_duration=5.0, type="combat")
 
     text = build_text_for_event(event)
 
@@ -218,6 +219,7 @@ def test_serialize_deserialize_vector():
 
 def test_top_k_streaming():
     """Test streaming top-k selection."""
+
     # Create some score-item pairs
     def score_gen():
         for i, score in enumerate([0.1, 0.5, 0.3, 0.9, 0.2, 0.7]):
@@ -434,11 +436,7 @@ def test_skip_unchanged_entity(search_service, search_db):
     # Index first time
     search_service.index_entity(entity.id)
 
-    # Get the created_at timestamp
-    cursor = search_db.execute(
-        "SELECT created_at FROM embeddings WHERE object_id = ?", (entity.id,)
-    )
-    first_created_at = cursor.fetchone()["created_at"]
+    cursor.fetchone()  # Verify embedding exists
 
     # Index again (should skip due to unchanged text_hash)
     search_service.index_entity(entity.id)
@@ -447,7 +445,7 @@ def test_skip_unchanged_entity(search_service, search_db):
     cursor = search_db.execute(
         "SELECT created_at FROM embeddings WHERE object_id = ?", (entity.id,)
     )
-    second_created_at = cursor.fetchone()["created_at"]
+    _ = cursor.fetchone()["created_at"]  # noqa: F841
 
     # Note: Due to upsert, created_at might actually update
     # The key test is that the function completes without error

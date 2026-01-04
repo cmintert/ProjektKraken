@@ -7,10 +7,25 @@ above the timeline lanes.
 """
 
 import logging
+from typing import Dict, Optional
 
 from PySide6.QtCore import QRectF, Qt, Signal
-from PySide6.QtGui import QBrush, QColor, QCursor, QPainter, QPen
-from PySide6.QtWidgets import QGraphicsObject
+from PySide6.QtGui import (
+    QBrush,
+    QColor,
+    QContextMenuEvent,
+    QCursor,
+    QMouseEvent,
+    QPainter,
+    QPen,
+)
+from PySide6.QtWidgets import (
+    QGraphicsItem,
+    QGraphicsObject,
+    QGraphicsSceneHoverEvent,
+    QStyleOptionGraphicsItem,
+    QWidget,
+)
 
 from src.core.theme_manager import ThemeManager
 
@@ -48,8 +63,8 @@ class GroupBandItem(QGraphicsObject):
         earliest_date: float,
         latest_date: float,
         is_collapsed: bool = False,
-        parent=None,
-    ):
+        parent: Optional[QGraphicsItem] = None,
+    ) -> None:
         """
         Initializes the GroupBandItem.
 
@@ -90,12 +105,12 @@ class GroupBandItem(QGraphicsObject):
         # Tooltip
         self._update_tooltip()
 
-    def _on_theme_changed(self, theme):
+    def _on_theme_changed(self, theme: Dict) -> None:
         """Update theme and refresh."""
         self.theme = theme
         self.update()
 
-    def _update_tooltip(self):
+    def _update_tooltip(self) -> None:
         """Update the tooltip with current metadata."""
         if self.count == 0:
             tooltip = f"{self.tag_name}\nNo events"
@@ -125,7 +140,12 @@ class GroupBandItem(QGraphicsObject):
         # Return a very wide rect to span the timeline
         return QRectF(-1e12, 0, 2e12, height)
 
-    def paint(self, painter: QPainter, option, widget=None):
+    def paint(
+        self,
+        painter: QPainter,
+        option: QStyleOptionGraphicsItem,
+        widget: Optional[QWidget] = None,
+    ) -> None:
         """
         Paints the group band.
 
@@ -202,7 +222,7 @@ class GroupBandItem(QGraphicsObject):
                     if scene_rect.left() <= x_pos <= scene_rect.right():
                         painter.drawLine(int(x_pos), 0, int(x_pos), int(height))
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         """Handle mouse press."""
         if event.button() == Qt.MouseButton.LeftButton:
             self._pressed = True
@@ -210,7 +230,7 @@ class GroupBandItem(QGraphicsObject):
         else:
             super().mousePressEvent(event)
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Handle mouse release to toggle collapse state."""
         if event.button() == Qt.MouseButton.LeftButton and self._pressed:
             self._pressed = False
@@ -223,24 +243,24 @@ class GroupBandItem(QGraphicsObject):
         else:
             super().mouseReleaseEvent(event)
 
-    def contextMenuEvent(self, event):
+    def contextMenuEvent(self, event: QContextMenuEvent) -> None:
         """Handle context menu request."""
         self.context_menu_requested.emit(self.tag_name, event.screenPos())
         event.accept()
 
-    def hoverEnterEvent(self, event):
+    def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """Handle hover enter."""
         self._hovered = True
         self.update()
         super().hoverEnterEvent(event)
 
-    def hoverLeaveEvent(self, event):
+    def hoverLeaveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """Handle hover leave."""
         self._hovered = False
         self.update()
         super().hoverLeaveEvent(event)
 
-    def set_collapsed(self, collapsed: bool):
+    def set_collapsed(self, collapsed: bool) -> None:
         """
         Set the collapsed state of the band.
 
@@ -252,7 +272,7 @@ class GroupBandItem(QGraphicsObject):
             self.prepareGeometryChange()
             self.update()
 
-    def set_color(self, color: str):
+    def set_color(self, color: str) -> None:
         """
         Update the band color.
 
@@ -262,7 +282,9 @@ class GroupBandItem(QGraphicsObject):
         self._color = QColor(color)
         self.update()
 
-    def update_metadata(self, count: int, earliest_date: float, latest_date: float):
+    def update_metadata(
+        self, count: int, earliest_date: float, latest_date: float
+    ) -> None:
         """
         Update the band metadata.
 
@@ -277,7 +299,7 @@ class GroupBandItem(QGraphicsObject):
         self._update_tooltip()
         self.update()
 
-    def set_event_dates(self, event_dates: list):
+    def set_event_dates(self, event_dates: list) -> None:
         """
         Set the event dates for tick mark rendering.
 

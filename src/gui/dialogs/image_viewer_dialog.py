@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 from typing import List, Optional
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Slot
 from PySide6.QtGui import QPixmap, QResizeEvent, QShowEvent
 from PySide6.QtWidgets import (
     QDialog,
@@ -253,12 +253,14 @@ class ImageViewerDialog(QDialog):
         super().resizeEvent(event)
         self._update_image()
 
+    @Slot()
     def show_prev(self) -> None:
         """Show the previous image in the list."""
         if self.current_index > 0:
             self.current_index -= 1
             self.load_current_image()
 
+    @Slot()
     def show_next(self) -> None:
         """Show the next image in the list."""
         if self.current_index < len(self.attachments) - 1:

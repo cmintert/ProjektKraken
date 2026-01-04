@@ -15,7 +15,7 @@ import logging
 import os
 from typing import List, Optional
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Slot
 from PySide6.QtGui import (
     QAction,
 )
@@ -70,7 +70,7 @@ class MapWidget(QWidget):
     change_marker_color_requested = Signal(str, str)  # marker_id, new_color_hex
     marker_drop_requested = Signal(str, str, str, float, float)  # id, type, name, x, y
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initializes the MapWidget.
 
@@ -128,7 +128,7 @@ class MapWidget(QWidget):
 
         self._maps_data = []  # List of maps for selector
 
-    def set_maps(self, maps: list):
+    def set_maps(self, maps: list) -> None:
         """
         Populates the map selector with available maps.
 
@@ -145,7 +145,7 @@ class MapWidget(QWidget):
         self.map_selector.setCurrentIndex(-1)
         self.map_selector.blockSignals(False)
 
-    def select_map(self, map_id: str):
+    def select_map(self, map_id: str) -> None:
         """Selects the map with the given ID in the dropdown."""
         index = self.map_selector.findData(map_id)
         if index >= 0:
@@ -154,7 +154,8 @@ class MapWidget(QWidget):
         else:
             logger.warning(f"Map ID {map_id} not found in selector")
 
-    def _on_map_selected(self, index):
+    @Slot(int)
+    def _on_map_selected(self, index: int) -> None:
         """Handle map selection change."""
         if index >= 0:
             map_id = self.map_selector.itemData(index)
@@ -172,6 +173,7 @@ class MapWidget(QWidget):
             return self.map_selector.itemData(index)
         return None
 
+    @Slot(str, float, float)
     def _on_marker_moved(self, marker_id: str, x: float, y: float) -> None:
         """
         Handles marker movement from the view.

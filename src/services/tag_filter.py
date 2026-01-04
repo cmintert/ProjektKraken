@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 class FilterClause(ABC):
     """
     Abstract base class for filter clauses.
-    
+
     Subclasses should implement the matches() method to define
     specific filtering logic.
     """
@@ -448,13 +448,19 @@ def filter_object_ids(
     """
     # Validate object_type
     if object_type is not None and object_type not in ("entity", "event"):
-        raise ValueError(f"Invalid object_type: {object_type}. Must be 'entity', 'event', or None.")
+        raise ValueError(
+            f"Invalid object_type: {object_type}. Must be 'entity', 'event', or None."
+        )
 
     # Validate modes
     if include_mode not in ("any", "all"):
-        raise ValueError(f"Invalid include_mode: {include_mode}. Must be 'any' or 'all'.")
+        raise ValueError(
+            f"Invalid include_mode: {include_mode}. Must be 'any' or 'all'."
+        )
     if exclude_mode not in ("any", "all"):
-        raise ValueError(f"Invalid exclude_mode: {exclude_mode}. Must be 'any' or 'all'.")
+        raise ValueError(
+            f"Invalid exclude_mode: {exclude_mode}. Must be 'any' or 'all'."
+        )
 
     # Get connection
     conn = _get_connection(conn_or_db_service)
@@ -475,7 +481,7 @@ def filter_object_ids(
 
 
 def _get_connection(
-    conn_or_db_service: Union[sqlite3.Connection, "DatabaseService"]
+    conn_or_db_service: Union[sqlite3.Connection, "DatabaseService"],
 ) -> sqlite3.Connection:
     """
     Extract SQLite connection from DatabaseService or return connection directly.
@@ -494,7 +500,9 @@ def _get_connection(
 
     # Assume it's a DatabaseService
     if not hasattr(conn_or_db_service, "_connection"):
-        raise ValueError("Invalid argument: must be sqlite3.Connection or DatabaseService")
+        raise ValueError(
+            "Invalid argument: must be sqlite3.Connection or DatabaseService"
+        )
 
     if conn_or_db_service._connection is None:
         raise ValueError("DatabaseService is not connected")

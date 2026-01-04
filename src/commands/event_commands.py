@@ -24,7 +24,7 @@ class CreateEventCommand(BaseCommand):
     Command to create a new event.
     """
 
-    def __init__(self, event_data: Optional[dict] = None):
+    def __init__(self, event_data: Optional[dict] = None) -> None:
         """
         Initializes the CreateEventCommand.
 
@@ -104,7 +104,7 @@ class UpdateEventCommand(BaseCommand):
     Snapshots the clean state before update for undo.
     """
 
-    def __init__(self, event_id: str, update_data: dict):
+    def __init__(self, event_id: str, update_data: dict) -> None:
         """
         Initializes the Update command.
 
@@ -218,7 +218,7 @@ class DeleteEventCommand(BaseCommand):
     Command to delete an event, storing its state for undo.
     """
 
-    def __init__(self, event_id: str):
+    def __init__(self, event_id: str) -> None:
         """
         Initializes the DeleteEventCommand.
 

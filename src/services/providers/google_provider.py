@@ -9,7 +9,7 @@ Note: Streaming not fully supported by all Vertex AI models yet.
 import logging
 import os
 import time
-from typing import Any, AsyncIterator, Dict, List, Optional
+from typing import Any, AsyncIterator, Callable, Dict, List, Optional
 
 import numpy as np
 import requests
@@ -36,7 +36,7 @@ class GoogleProvider(Provider):
         embed_model: str = "textembedding-gecko@001",
         timeout: int = 30,
         max_retries: int = 3,
-    ):
+    ) -> None:
         """
         Initialize Google Vertex AI provider.
 
@@ -55,7 +55,6 @@ class GoogleProvider(Provider):
         """
         try:
             from google.auth import default  # type: ignore
-            from google.auth.transport.requests import Request  # type: ignore
             from google.oauth2 import service_account  # type: ignore
         except ImportError as e:
             raise ImportError(
@@ -127,7 +126,9 @@ class GoogleProvider(Provider):
             "Authorization": f"Bearer {self._get_access_token()}",
         }
 
-    def _retry_request(self, func, *args, **kwargs):
+    def _retry_request(
+        self, func: Callable[..., Any], *args: Any, **kwargs: Any
+    ) -> Any:
         """Execute request with retry logic and exponential backoff."""
         last_exception = None
         for attempt in range(self.max_retries):
@@ -167,7 +168,7 @@ class GoogleProvider(Provider):
         if not texts:
             return np.array([])
 
-        def _embed_impl():
+        def _embed_impl() -> np.ndarray:
             """Inner implementation for retry wrapper."""
             # Vertex AI expects instances with "content" field
             payload = {"instances": [{"content": text} for text in texts]}
@@ -244,7 +245,7 @@ class GoogleProvider(Provider):
             Exception: If generation fails.
         """
 
-        def _generate_impl():
+        def _generate_impl() -> Dict[str, Any]:
             """Inner implementation for retry wrapper."""
             # Vertex AI text generation format
             payload = {

@@ -70,9 +70,9 @@ class TestSmartLanePacking:
 
         # All three should be on different lanes
         y_coords = [items[0].y(), items[1].y(), items[2].y()]
-        assert (
-            len(set(y_coords)) == 3
-        ), "All overlapping events should use different lanes"
+        assert len(set(y_coords)) == 3, (
+            "All overlapping events should use different lanes"
+        )
 
     def test_lane_reuse_after_gap(self, timeline_widget):
         """Events after a gap should reuse lanes."""

@@ -18,7 +18,7 @@ from src.services.db_service import DatabaseService
 logger = logging.getLogger(__name__)
 
 
-def add_attachments(args) -> int:
+def add_attachments(args: argparse.Namespace) -> int:
     """Add image attachments to an entity or event."""
     db_service = None
     try:
@@ -44,7 +44,7 @@ def add_attachments(args) -> int:
             db_service.close()
 
 
-def remove_attachment(args) -> int:
+def remove_attachment(args: argparse.Namespace) -> int:
     """Remove an image attachment."""
     db_service = None
     try:
@@ -73,7 +73,7 @@ def remove_attachment(args) -> int:
             db_service.close()
 
 
-def list_attachments(args) -> int:
+def list_attachments(args: argparse.Namespace) -> int:
     """List attachments for an entity or event."""
     db_service = None
     try:
@@ -111,7 +111,7 @@ def list_attachments(args) -> int:
             db_service.close()
 
 
-def update_caption(args) -> int:
+def update_caption(args: argparse.Namespace) -> int:
     """Update the caption of an attachment."""
     db_service = None
     try:
@@ -135,7 +135,7 @@ def update_caption(args) -> int:
             db_service.close()
 
 
-def reorder_attachments(args) -> int:
+def reorder_attachments(args: argparse.Namespace) -> int:
     """Reorder attachments for an owner."""
     db_service = None
     try:
@@ -162,7 +162,7 @@ def reorder_attachments(args) -> int:
             db_service.close()
 
 
-def main():
+def main() -> None:
     """Main entry point for the attachment CLI tool."""
     parser = argparse.ArgumentParser(description="Manage ProjektKraken attachments")
     parser.add_argument(

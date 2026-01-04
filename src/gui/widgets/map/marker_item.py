@@ -8,12 +8,18 @@ import logging
 import os
 
 # Forward declaration to avoid circular import
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from PySide6.QtCore import QRectF, Qt, Signal
-from PySide6.QtGui import QBrush, QColor, QCursor, QPainter, QPen, QPixmap
+from PySide6.QtGui import QBrush, QColor, QCursor, QMouseEvent, QPainter, QPen, QPixmap
 from PySide6.QtSvg import QSvgRenderer
-from PySide6.QtWidgets import QGraphicsItem, QGraphicsObject, QGraphicsPixmapItem
+from PySide6.QtWidgets import (
+    QGraphicsItem,
+    QGraphicsObject,
+    QGraphicsPixmapItem,
+    QStyleOptionGraphicsItem,
+    QWidget,
+)
 
 if TYPE_CHECKING:
     pass
@@ -57,7 +63,7 @@ class MarkerItem(QGraphicsObject):
         pixmap_item: QGraphicsPixmapItem,
         icon: Optional[str] = None,
         color: Optional[str] = None,
-    ):
+    ) -> None:
         """
         Initializes a MarkerItem.
 
@@ -179,7 +185,12 @@ class MarkerItem(QGraphicsObject):
         half = self.MARKER_SIZE / 2
         return QRectF(-half, -half, self.MARKER_SIZE, self.MARKER_SIZE)
 
-    def paint(self, painter: QPainter, option, widget=None) -> None:
+    def paint(
+        self,
+        painter: QPainter,
+        option: QStyleOptionGraphicsItem,
+        widget: Optional[QWidget] = None,
+    ) -> None:
         """
         Paints the marker, either as an SVG icon or fallback circle.
 
@@ -237,7 +248,7 @@ class MarkerItem(QGraphicsObject):
             painter.setBrush(QBrush(self._color))
             painter.drawEllipse(rect)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         """Track drag start."""
         if event.button() == Qt.MouseButton.LeftButton:
             self._is_dragging = True
@@ -247,7 +258,7 @@ class MarkerItem(QGraphicsObject):
             )
         super().mousePressEvent(event)
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Emit position change on drag end, or clicked signal if distance small."""
         if event.button() == Qt.MouseButton.LeftButton:
             # Check for click vs drag
@@ -292,7 +303,7 @@ class MarkerItem(QGraphicsObject):
                             )
         super().mouseReleaseEvent(event)
 
-    def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value):
+    def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
         """
         Called when the item's state changes.
 

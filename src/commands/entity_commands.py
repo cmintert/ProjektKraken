@@ -17,7 +17,7 @@ class CreateEntityCommand(BaseCommand):
     Command to create a new entity.
     """
 
-    def __init__(self, entity_data: Optional[dict] = None):
+    def __init__(self, entity_data: Optional[dict] = None) -> None:
         """
         Initializes the CreateEntityCommand.
 
@@ -88,7 +88,7 @@ class UpdateEntityCommand(BaseCommand):
     Accepts a dictionary of changes.
     """
 
-    def __init__(self, entity_id: str, update_data: dict):
+    def __init__(self, entity_id: str, update_data: dict) -> None:
         """
         Initializes the UpdateEntityCommand.
 
@@ -192,7 +192,7 @@ class DeleteEntityCommand(BaseCommand):
     Command to delete an entity.
     """
 
-    def __init__(self, entity_id: str):
+    def __init__(self, entity_id: str) -> None:
         """
         Initializes the DeleteEntityCommand.
 
