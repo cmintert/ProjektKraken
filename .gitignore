@@ -44,8 +44,8 @@ credentials/
 
 # Project Specific
 logs/
-world.kraken
-world.kraken-*
+*.kraken
+*.kraken-*
 *.db
 *.db-shm
 *.db-wal
