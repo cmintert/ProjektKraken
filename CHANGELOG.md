@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-01-04  
-**Commit:** `9c0cbb7`  
+**Commit:** `d6f9c6a`  
 ---
 
 # Changelog
@@ -10,6 +10,10 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Added
+- *(2026-01-04)* **Feature**: Implemented immediate map synchronization and selection syncing.
+- *(2026-01-04)* **Docs**: Comprehensive README update detailing temporal relations, AI features, and architecture.
 
 ### Fixed
 - *(2026-01-04)* **Quality**: Applied PySide6 type annotations to entire `src/gui` module (49 files).
