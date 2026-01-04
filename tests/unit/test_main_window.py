@@ -16,7 +16,9 @@ def main_window(qtbot):
         patch("src.app.worker_manager.DatabaseWorker") as MockWorker,
         patch("src.app.worker_manager.QTimer"),
         patch("src.app.worker_manager.QThread"),
-        patch("src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard),
+        patch(
+            "src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard
+        ),
     ):
         mock_worker = MockWorker.return_value
         mock_db = mock_worker.db_service
@@ -27,7 +29,9 @@ def main_window(qtbot):
 
 
 def test_init_window(main_window):
-    assert main_window.windowTitle() == "Project Kraken - v0.4.0 (Alpha) - world.kraken"
+    from src.app.constants import WINDOW_TITLE
+
+    assert main_window.windowTitle() == f"{WINDOW_TITLE} - world.kraken"
     assert main_window.timeline is not None
 
 
