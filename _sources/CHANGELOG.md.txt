@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-04
-### Documentation
-- docs: add release policy and status scripts, ignore *.kraken
+### Internal
+- chore: maintain changelog for v0.5.0
 
 
 *This changelog was automatically generated.*
