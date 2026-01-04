@@ -10,7 +10,7 @@ import json
 import logging
 import sqlite3
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 
@@ -333,7 +333,7 @@ def create_embedding_service(
     db_connection: sqlite3.Connection,
     provider_id: str = "lmstudio",
     world_id: Optional[str] = None,
-    **provider_kwargs,
+    **provider_kwargs: Any,
 ) -> EmbeddingService:
     """
     Create an EmbeddingService with the specified provider.

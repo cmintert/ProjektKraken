@@ -31,7 +31,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def create_map(args) -> int:
+def create_map(args: argparse.Namespace) -> int:
     """Create a new map."""
     db_service = None
     try:
@@ -63,7 +63,7 @@ def create_map(args) -> int:
             db_service.close()
 
 
-def list_maps(args) -> int:
+def list_maps(args: argparse.Namespace) -> int:
     """List all maps."""
     db_service = None
     try:
@@ -96,7 +96,7 @@ def list_maps(args) -> int:
             db_service.close()
 
 
-def delete_map(args) -> int:
+def delete_map(args: argparse.Namespace) -> int:
     """Delete a map."""
     db_service = None
     try:
@@ -132,7 +132,7 @@ def delete_map(args) -> int:
             db_service.close()
 
 
-def add_marker(args) -> int:
+def add_marker(args: argparse.Namespace) -> int:
     """Add a marker to a map."""
     db_service = None
     try:
@@ -180,7 +180,7 @@ def add_marker(args) -> int:
             db_service.close()
 
 
-def update_map(args) -> int:
+def update_map(args: argparse.Namespace) -> int:
     """Update an existing map."""
     db_service = None
     try:
@@ -217,7 +217,7 @@ def update_map(args) -> int:
             db_service.close()
 
 
-def marker_update(args) -> int:
+def marker_update(args: argparse.Namespace) -> int:
     """Update an existing marker."""
     db_service = None
     try:
@@ -266,7 +266,7 @@ def marker_update(args) -> int:
             db_service.close()
 
 
-def marker_delete(args) -> int:
+def marker_delete(args: argparse.Namespace) -> int:
     """Delete a marker."""
     db_service = None
     try:
@@ -302,7 +302,7 @@ def marker_delete(args) -> int:
             db_service.close()
 
 
-def marker_list(args) -> int:
+def marker_list(args: argparse.Namespace) -> int:
     """List markers for a map."""
     db_service = None
     try:

@@ -24,7 +24,7 @@ from src.services.db_service import DatabaseService
 logger = logging.getLogger(__name__)
 
 
-def create_calendar(args) -> int:
+def create_calendar(args: argparse.Namespace) -> int:
     """Create a new calendar configuration."""
     db_service = None
     try:
@@ -112,7 +112,7 @@ def create_calendar(args) -> int:
             db_service.close()
 
 
-def list_calendars(args) -> int:
+def list_calendars(args: argparse.Namespace) -> int:
     """List all calendar configurations."""
     db_service = None
     try:
@@ -144,7 +144,7 @@ def list_calendars(args) -> int:
             db_service.close()
 
 
-def show_calendar(args) -> int:
+def show_calendar(args: argparse.Namespace) -> int:
     """Show details of a calendar configuration."""
     db_service = None
     try:
@@ -180,7 +180,7 @@ def show_calendar(args) -> int:
             db_service.close()
 
 
-def set_active_calendar(args) -> int:
+def set_active_calendar(args: argparse.Namespace) -> int:
     """Set a calendar configuration as active."""
     db_service = None
     try:
@@ -204,7 +204,7 @@ def set_active_calendar(args) -> int:
             db_service.close()
 
 
-def delete_calendar(args) -> int:
+def delete_calendar(args: argparse.Namespace) -> int:
     """Delete a calendar configuration."""
     db_service = None
     try:

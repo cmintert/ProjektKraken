@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def scan_links(args) -> int:
+def scan_links(args: argparse.Namespace) -> int:
     """Scan a source object for wiki links."""
     db_service = None
     try:

@@ -31,7 +31,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def add_relation(args) -> int:
+def add_relation(args: argparse.Namespace) -> int:
     """Add a relation between two entities/events."""
     db_service = None
     try:
@@ -79,7 +79,7 @@ def add_relation(args) -> int:
             db_service.close()
 
 
-def list_relations(args) -> int:
+def list_relations(args: argparse.Namespace) -> int:
     """List relations for an entity/event."""
     db_service = None
     try:
@@ -138,7 +138,7 @@ def list_relations(args) -> int:
             db_service.close()
 
 
-def delete_relation(args) -> int:
+def delete_relation(args: argparse.Namespace) -> int:
     """Delete a relation."""
     db_service = None
     try:
@@ -184,7 +184,7 @@ def delete_relation(args) -> int:
             db_service.close()
 
 
-def update_relation(args) -> int:
+def update_relation(args: argparse.Namespace) -> int:
     """Update an existing relation."""
     db_service = None
     try:
