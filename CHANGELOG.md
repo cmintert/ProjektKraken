@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-01-02  
-**Commit:** `8ee101b`  
+**Last Updated:** 2026-01-04  
+**Commit:** `011f8b1`  
 ---
 
 # Changelog
@@ -18,12 +18,22 @@ All notable changes to this project will be documented in this file.
 - *(2026-01-01)* **Architecture**: Added `DataHandler` signals for all data events.
 - *(2026-01-02)* **Architecture**: Added `reload_markers_for_current_map` signal for auto-reloading markers.
 - *(2026-01-02)* **Testing**: Added integration tests for signal wiring, timeline provider, and map/longform wiring.
+- *(2026-01-04)* **Feature**: Implemented "Return to Present" button in Timeline and Entity Editor.
+- *(2026-01-04)* **Feature**: Implemented text-based, card-style timeline rendering (`TimelineDisplayWidget`).
+- *(2026-01-04)* **Feature**: Added collapsible LLM sections to Event/Entity editors.
+- *(2026-01-03)* **Feature**: Implemented "Timeline Logic" for Temporal Relations (Staging and dynamic overrides).
+- *(2026-01-03)* **UX**: Added collapsible timeline section to Entity Inspector.
+- *(2026-01-04)* **Docs**: Added `docs/TEMPORAL_RELATIONS.md` guide.
 
 ### Fixed
 - *(2026-01-01)* **Stability**: Resolved startup crash caused by corrupted `QSettings`.
 - *(2026-01-02)* **Stability**: Fixed startup crash caused by manager classes not inheriting from `QObject`.
 - *(2026-01-02)* **Stability**: Fixed "QThread: Destroyed while thread is still running" warning on exit.
 - *(2026-01-02)* **Bug**: Fixed map markers not appearing immediately after creation.
+- *(2026-01-04)* **Quality**: Achieved 100% docstring coverage for timeline module.
+- *(2026-01-04)* **Quality**: Resolved all ruff linting errors in timeline components.
+- *(2026-01-04)* **Bug**: Fixed `check_docstrings.py` crash on single file arguments.
+- *(2026-01-04)* **Testing**: Fixed integration test isolation issues (QTimer leak in MainWindow).
 
 ### Changed
 - *(2026-01-02)* **Refactor**: Split `main.py` into `main_window.py` and `entry.py`.
