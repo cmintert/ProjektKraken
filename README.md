@@ -39,6 +39,10 @@ commit: fae25d5
 
 ## Installation
 
+For windows use the executable package v0.5.0
+
+or
+
 1. Clone the repository
 2. Create a virtual environment:
    ```bash
