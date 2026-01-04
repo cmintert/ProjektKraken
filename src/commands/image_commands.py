@@ -19,7 +19,7 @@ class AddImagesCommand(BaseCommand):
     Command to add images to an owner.
     """
 
-    def __init__(self, owner_type: str, owner_id: str, source_paths: List[str]):
+    def __init__(self, owner_type: str, owner_id: str, source_paths: List[str]) -> None:
         """
         Initialize the add images command.
 
@@ -106,7 +106,7 @@ class RemoveImageCommand(BaseCommand):
     Command to remove an image attachment.
     """
 
-    def __init__(self, attachment_id: str):
+    def __init__(self, attachment_id: str) -> None:
         """
         Initialize the remove image command.
 
@@ -167,7 +167,7 @@ class ReorderImagesCommand(BaseCommand):
     Command to reorder attachments for an owner.
     """
 
-    def __init__(self, owner_type: str, owner_id: str, new_order_ids: List[str]):
+    def __init__(self, owner_type: str, owner_id: str, new_order_ids: List[str]) -> None:
         """
         Initialize the reorder images command.
 
@@ -237,7 +237,7 @@ class UpdateImageCaptionCommand(BaseCommand):
     Command to update an image caption.
     """
 
-    def __init__(self, attachment_id: str, new_caption: Optional[str]):
+    def __init__(self, attachment_id: str, new_caption: Optional[str]) -> None:
         """
         Initialize the update image caption command.
 

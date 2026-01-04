@@ -22,7 +22,7 @@ class AssetStore:
     Ensures deterministic paths and safe file handling.
     """
 
-    def __init__(self, project_root: str):
+    def __init__(self, project_root: str) -> None:
         """
         Initialize the asset store.
 
@@ -37,7 +37,7 @@ class AssetStore:
 
         self._ensure_directories()
 
-    def _ensure_directories(self):
+    def _ensure_directories(self) -> None:
         """Creates necessary asset directories if they don't exist."""
         for path in [self.images_dir, self.thumbs_dir, self.trash_dir]:
             path.mkdir(parents=True, exist_ok=True)

@@ -34,7 +34,7 @@ class MoveLongformEntryCommand(BaseCommand):
         old_meta: Dict[str, Any],
         new_meta: Dict[str, Any],
         doc_id: str = longform_builder.DOC_ID_DEFAULT,
-    ):
+    ) -> None:
         """
         Initialize the MoveLongformEntryCommand.
 
@@ -133,7 +133,7 @@ class PromoteLongformEntryCommand(BaseCommand):
         row_id: str,
         old_meta: Dict[str, Any],
         doc_id: str = longform_builder.DOC_ID_DEFAULT,
-    ):
+    ) -> None:
         """
         Initialize the PromoteLongformEntryCommand.
 
@@ -226,7 +226,7 @@ class DemoteLongformEntryCommand(BaseCommand):
         row_id: str,
         old_meta: Dict[str, Any],
         doc_id: str = longform_builder.DOC_ID_DEFAULT,
-    ):
+    ) -> None:
         """
         Initialize the DemoteLongformEntryCommand.
 
@@ -319,7 +319,7 @@ class RemoveLongformEntryCommand(BaseCommand):
         row_id: str,
         old_meta: Dict[str, Any],
         doc_id: str = longform_builder.DOC_ID_DEFAULT,
-    ):
+    ) -> None:
         """
         Initialize the RemoveLongformEntryCommand.
 

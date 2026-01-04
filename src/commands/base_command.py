@@ -43,7 +43,7 @@ class BaseCommand(ABC):
     Encapsulates logic to generic execution and undo/redo support.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Initializes the command.
         """

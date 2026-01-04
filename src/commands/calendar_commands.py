@@ -28,7 +28,7 @@ class CreateCalendarConfigCommand(BaseCommand):
     Supports undo by deleting the created configuration.
     """
 
-    def __init__(self, config: CalendarConfig):
+    def __init__(self, config: CalendarConfig) -> None:
         """
         Initializes the command.
 
@@ -86,7 +86,7 @@ class UpdateCalendarConfigCommand(BaseCommand):
     Stores the original config for undo support.
     """
 
-    def __init__(self, config: CalendarConfig):
+    def __init__(self, config: CalendarConfig) -> None:
         """
         Initializes the command.
 
@@ -148,7 +148,7 @@ class DeleteCalendarConfigCommand(BaseCommand):
     Stores the deleted config for undo support.
     """
 
-    def __init__(self, config_id: str):
+    def __init__(self, config_id: str) -> None:
         """
         Initializes the command.
 
@@ -210,7 +210,7 @@ class SetActiveCalendarCommand(BaseCommand):
     Stores the previously active config ID for undo support.
     """
 
-    def __init__(self, config_id: str):
+    def __init__(self, config_id: str) -> None:
         """
         Initializes the command.
 

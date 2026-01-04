@@ -6,7 +6,7 @@ Provides fault tolerance patterns like circuit breakers for robust API interacti
 
 import logging
 import time
-from typing import Callable
+from typing import Any, Callable
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class CircuitBreaker:
     Implements the three-state pattern: closed, open, half-open.
     """
 
-    def __init__(self, failure_threshold: int = 5, timeout: float = 60.0):
+    def __init__(self, failure_threshold: int = 5, timeout: float = 60.0) -> None:
         """
         Initialize circuit breaker.
 
@@ -34,7 +34,7 @@ class CircuitBreaker:
         self.last_failure_time = 0.0
         self.state = "closed"  # closed, open, half-open
 
-    def call(self, func: Callable, *args, **kwargs):
+    def call(self, func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
         """
         Execute function with circuit breaker protection.
 

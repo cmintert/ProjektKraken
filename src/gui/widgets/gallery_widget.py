@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 from typing import List, Optional
 
-from PySide6.QtCore import QPoint, QSize, Qt, Signal, Slot
+from PySide6.QtCore import QPoint, QSize, Qt, Slot
 from PySide6.QtGui import QDragEnterEvent, QDropEvent, QIcon
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -34,7 +34,6 @@ from src.core.image_attachment import ImageAttachment
 from src.core.paths import get_user_data_path
 from src.gui.dialogs.image_viewer_dialog import ImageViewerDialog
 from src.gui.widgets.standard_buttons import StandardButton
-
 
 logger = logging.getLogger(__name__)
 

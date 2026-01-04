@@ -9,7 +9,7 @@ import asyncio
 import json
 import logging
 import time
-from typing import Any, AsyncIterator, Dict, List, Optional
+from typing import Any, AsyncIterator, Callable, Dict, List, Optional
 
 import numpy as np
 import requests
@@ -35,7 +35,7 @@ class OpenAIProvider(Provider):
         base_url: str = "https://api.openai.com/v1",
         timeout: int = 30,
         max_retries: int = 3,
-    ):
+    ) -> None:
         """
         Initialize OpenAI provider.
 
@@ -72,7 +72,9 @@ class OpenAIProvider(Provider):
             "Authorization": f"Bearer {self.api_key}",
         }
 
-    def _retry_request(self, func, *args, **kwargs):
+    def _retry_request(
+        self, func: Callable[..., Any], *args: Any, **kwargs: Any
+    ) -> Any:
         """Execute request with retry logic and exponential backoff."""
         last_exception = None
         for attempt in range(self.max_retries):
@@ -112,7 +114,7 @@ class OpenAIProvider(Provider):
         if not texts:
             return np.array([])
 
-        def _embed_impl():
+        def _embed_impl() -> np.ndarray:
             """Inner implementation for retry wrapper."""
             payload = {"input": texts, "model": self.embed_model}
             response = requests.post(
@@ -174,7 +176,7 @@ class OpenAIProvider(Provider):
             Exception: If generation fails.
         """
 
-        def _generate_impl():
+        def _generate_impl() -> Dict[str, Any]:
             """Inner implementation for retry wrapper."""
             payload = {
                 "model": self.model,
@@ -271,7 +273,7 @@ class OpenAIProvider(Provider):
             # Use asyncio to run blocking requests in executor
             loop = asyncio.get_event_loop()
 
-            def _make_request():
+            def _make_request() -> requests.Response:
                 return requests.post(
                     f"{self.base_url}/chat/completions",
                     json=payload,

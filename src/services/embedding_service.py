@@ -8,7 +8,6 @@ compatibility with the existing embeddings database schema.
 
 import json
 import logging
-import os
 import sqlite3
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -34,7 +33,7 @@ class EmbeddingService:
         provider: Provider,
         index_dir: Optional[str] = None,
         world_id: Optional[str] = None,
-    ):
+    ) -> None:
         """
         Initialize embedding service.
 
