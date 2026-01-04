@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-01-04  
-**Commit:** `011f8b1`  
+**Commit:** `4645183`  
 ---
 
 # Changelog
@@ -10,6 +10,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [0.5.0]
 
 ### Added
 - *(2026-01-01)* **CLI**: Added `--reset-settings` flag to `launcher.py` to clear persistent application settings.
@@ -24,6 +26,7 @@ All notable changes to this project will be documented in this file.
 - *(2026-01-03)* **Feature**: Implemented "Timeline Logic" for Temporal Relations (Staging and dynamic overrides).
 - *(2026-01-03)* **UX**: Added collapsible timeline section to Entity Inspector.
 - *(2026-01-04)* **Docs**: Added `docs/TEMPORAL_RELATIONS.md` guide.
+- *(2026-01-04)* **Docs**: Established formal release policy and added status checking tools.
 
 ### Fixed
 - *(2026-01-01)* **Stability**: Resolved startup crash caused by corrupted `QSettings`.
