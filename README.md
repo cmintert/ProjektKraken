@@ -1,8 +1,8 @@
 ---
 project: ProjektKraken
 document: Main Project README
-last_updated: 2026-01-01
-commit: d9e3f83
+last_updated: 2026-01-04
+commit: fae25d5
 ---
 
 # Projekt Kraken
@@ -13,19 +13,27 @@ commit: d9e3f83
 
 ### Core Workflow
 - **Timeline-First Design**: Events are first-class citizens with precise chronological data (cosmic to sub-day resolution)
+- **Temporal Relations**: Advanced timeline logic with staging system and dynamic date overrides
 - **Custom Calendar System**: Define worlds with custom months, weeks, and time tracking
 - **Wiki-Style Linking**: `[[Entity Name]]` syntax with auto-completion and navigation
 - **Relation Mapping**: Track relationships between events and entities with typed connections
 
 ### Visualization
-- **Aeon-Style Timeline**: Lane-based event visualization with semantic zoom ruler
+- **Dual Timeline Views**: Lane-based graphic timeline + card-style text timeline
 - **Interactive Maps**: Place markers on custom map images, link to entities/events
 - **Longform Documents**: Hierarchical document structure for narrative prose
+- **Return to Present**: Quick navigation to current timeline position
+
+### AI & Search
+- **Semantic Search**: Local embeddings with LM Studio for natural language queries
+- **AI Panel**: Dedicated search interface with keyboard navigation
+- **LLM Generation**: Context-aware content generation with RAG integration
+- **Custom Prompts**: Configurable LLM prompts and personas
 
 ### Data & UI
+- **Event-Driven Architecture**: Signal-based communication between components
 - **Hybrid Data Model**: Strict SQL schema for relationships + flexible JSON attributes
-- **Semantic Search**: Local embeddings with LM Studio for natural language queries
-- **Dockable Workspace**: Configurable panels with state persistence
+- **Dockable Workspace**: Configurable panels with state persistence and layout management
 - **Theme Support**: Dark mode and custom themes via `ThemeManager`
 - **Image Gallery**: Attach images to events and entities
 
@@ -115,8 +123,6 @@ python -m src.cli.index query --database world.kraken --text "ancient wizard"
 
 See **[Semantic Search Documentation](docs/SEMANTIC_SEARCH.md)** for details.
 
-See **[Semantic Search Documentation](docs/SEMANTIC_SEARCH.md)** for details.
-
 ## Troubleshooting
 
 ### Startup Crashes
@@ -146,6 +152,8 @@ pytest --cov=src --cov-report=term-missing
 
 - **[CLI Tools](src/cli/README.md)** - Command-line interface reference
 - **[Database Architecture](docs/DATABASE.md)** - Schema and data model
+- **[Temporal Relations](docs/TEMPORAL_RELATIONS.md)** - Timeline logic and staging system
+- **[Semantic Search](docs/SEMANTIC_SEARCH.md)** - AI search and embeddings setup
 - **[Security Guidelines](docs/SECURITY.md)** - Security best practices
 - **[Wiki Linking](docs/WIKI_LINKING.md)** - Wiki syntax and navigation
 - **[Design Notes](Design.md)** - Architecture and design decisions
@@ -178,7 +186,7 @@ src/
 
 ## Version
 
-**v0.4.0 (Alpha)**
+**v0.5.0 (Beta)**
 
 ## License
 
