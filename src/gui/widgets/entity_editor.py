@@ -108,6 +108,7 @@ class EntityEditorWidget(QWidget):
 
         # Connect toggled signal to collapse/expand
         def _toggle_timeline_section(checked: bool) -> None:
+            """Toggle visibility of timeline section when checkbox is clicked."""
             self.timeline_display.setVisible(checked)
             if not checked:
                 self.timeline_group.setMinimumHeight(20)
@@ -139,6 +140,7 @@ class EntityEditorWidget(QWidget):
 
         # Connect toggled signal to properly collapse/expand
         def _toggle_llm_section(checked: bool) -> None:
+            """Toggle visibility of LLM generation section when checkbox is clicked."""
             self.llm_generator.setVisible(checked)
             if not checked:
                 # Collapse to just show checkbox/title

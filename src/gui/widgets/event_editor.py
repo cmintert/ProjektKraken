@@ -151,6 +151,7 @@ class EventEditorWidget(QWidget):
 
         # Connect toggled signal to properly collapse/expand
         def _toggle_llm_section(checked: bool) -> None:
+            """Toggle visibility of LLM generation section when checkbox is clicked."""
             self.llm_generator.setVisible(checked)
             if not checked:
                 # Collapse to just show checkbox/title
@@ -253,6 +254,7 @@ class EventEditorWidget(QWidget):
         def create_section(
             title: str, add_slot: Any, placeholder: str = ""
         ) -> tuple[QWidget, QListWidget, StandardButton]:
+            """Create a section with title, list widget, and add button."""
             group = QWidget()
             vbox = QVBoxLayout(group)
             vbox.setContentsMargins(0, 0, 0, 0)
@@ -487,6 +489,7 @@ class EventEditorWidget(QWidget):
             def add_relation_item(
                 list_widget: QListWidget, rel: dict, prefix: str = "→"
             ) -> None:
+                """Add a relation item to the specified list widget."""
                 # Determine display name
                 if prefix == "→":
                     target_display = rel.get("target_name") or rel["target_id"]

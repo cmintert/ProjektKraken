@@ -247,6 +247,7 @@ class AnthropicProvider(Provider):
             loop = asyncio.get_event_loop()
 
             def _make_request() -> requests.Response:
+                """Make HTTP request to streaming endpoint."""
                 return requests.post(
                     f"{self.base_url}/messages",
                     json=payload,

@@ -232,6 +232,7 @@ class GenerationWorker(QThread):
             asyncio.set_event_loop(loop)
 
             async def generate() -> str:
+                """Execute the streaming generation and collect the full text."""
                 full_text = ""
                 async for chunk in self.provider.stream_generate(
                     self.prompt,
