@@ -11,6 +11,7 @@ from PySide6.QtCore import QPoint, QSize, Qt, Signal
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
+    QGroupBox,
     QHBoxLayout,
     QLineEdit,
     QListWidget,
@@ -91,12 +92,38 @@ class EntityEditorWidget(QWidget):
 
         details_layout.addLayout(self.form_layout)
 
-        # Add LLM Generation Widget below description
+        # Add LLM Generation Widget below description in a collapsible group
         from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
+
+        self.llm_group = QGroupBox("LLM Generation")
+        self.llm_group.setCheckable(True)
+        self.llm_group.setChecked(False)  # Start collapsed
+        llm_layout = QVBoxLayout(self.llm_group)
+        StyleHelper.apply_compact_spacing(llm_layout)
 
         self.llm_generator = LLMGenerationWidget(self, context_provider=self)
         self.llm_generator.text_generated.connect(self._on_text_generated)
-        details_layout.addWidget(self.llm_generator)
+        llm_layout.addWidget(self.llm_generator)
+
+        # Connect toggled signal to properly collapse/expand
+        def _toggle_llm_section(checked: bool) -> None:
+            self.llm_generator.setVisible(checked)
+            if not checked:
+                # Collapse to just show checkbox/title
+                self.llm_group.setMinimumHeight(20)  # Just checkbox height
+                self.llm_group.setMaximumHeight(20)  # Lock to checkbox height
+                llm_layout.setContentsMargins(0, 0, 0, 0)
+                llm_layout.setSpacing(0)
+            else:
+                # Restore normal size
+                self.llm_group.setMinimumHeight(0)  # No minimum constraint
+                self.llm_group.setMaximumHeight(16777215)  # Qt's QWIDGETSIZE_MAX
+                StyleHelper.apply_compact_spacing(llm_layout)
+
+        self.llm_group.toggled.connect(_toggle_llm_section)
+        _toggle_llm_section(False)  # Start collapsed
+
+        details_layout.addWidget(self.llm_group)
 
         self.inspector.add_tab(self.tab_details, "Details")
 
