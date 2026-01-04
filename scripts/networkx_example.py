@@ -17,6 +17,7 @@ If no database is provided, creates an in-memory example.
 import argparse
 import sys
 from pathlib import Path
+from typing import Any
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -103,7 +104,7 @@ def create_example_world(db_service: DatabaseService) -> None:
     print(f"✓ Created {len(characters)} characters and {len(relations)} relations")
 
 
-def export_to_networkx(db_service: DatabaseService):
+def export_to_networkx(db_service: DatabaseService) -> Any:
     """
     Export ProjektKraken relations to a NetworkX graph.
 
@@ -156,7 +157,7 @@ def export_to_networkx(db_service: DatabaseService):
     return G
 
 
-def analyze_graph(G) -> None:
+def analyze_graph(G: Any) -> None:
     """Perform basic graph analysis using NetworkX."""
     if G is None:
         return
@@ -232,7 +233,7 @@ def analyze_graph(G) -> None:
         print(f"  Component {i}: {', '.join(names)}")
 
 
-def visualize_graph(G) -> None:
+def visualize_graph(G: Any) -> None:
     """
     Visualize the graph using matplotlib.
 
@@ -304,7 +305,7 @@ def visualize_graph(G) -> None:
         print("  (Display not available - graph saved to file only)")
 
 
-def main():
+def main() -> None:
     """Main entry point."""
     parser = argparse.ArgumentParser(
         description="NetworkX graph analysis example for ProjektKraken relations"

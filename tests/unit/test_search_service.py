@@ -104,7 +104,11 @@ def test_build_text_for_entity_with_attributes():
 
     # Attributes should be in sorted order
     lines = text.split("\n\n")
-    attr_lines = [l for l in lines if ":" in l and not l.startswith(("Name:", "Type:"))]
+    attr_lines = [
+        line
+        for line in lines
+        if ":" in line and not line.startswith(("Name:", "Type:"))
+    ]
 
     # Check sorting
     keys = [line.split(":")[0] for line in attr_lines]
@@ -432,11 +436,7 @@ def test_skip_unchanged_entity(search_service, search_db):
     # Index first time
     search_service.index_entity(entity.id)
 
-    # Get the created_at timestamp
-    cursor = search_db.execute(
-        "SELECT created_at FROM embeddings WHERE object_id = ?", (entity.id,)
-    )
-    first_created_at = cursor.fetchone()["created_at"]
+    cursor.fetchone()  # Verify embedding exists
 
     # Index again (should skip due to unchanged text_hash)
     search_service.index_entity(entity.id)
@@ -445,7 +445,7 @@ def test_skip_unchanged_entity(search_service, search_db):
     cursor = search_db.execute(
         "SELECT created_at FROM embeddings WHERE object_id = ?", (entity.id,)
     )
-    second_created_at = cursor.fetchone()["created_at"]
+    _ = cursor.fetchone()["created_at"]  # noqa: F841
 
     # Note: Due to upsert, created_at might actually update
     # The key test is that the function completes without error
