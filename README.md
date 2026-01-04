@@ -39,7 +39,8 @@ commit: fae25d5
 
 ## Installation
 
-For windows use the executable package v0.5.0
+For windows use the Release Projekt Kraken v0.5.0
+It will persist setting in user directory.
 
 or
 
