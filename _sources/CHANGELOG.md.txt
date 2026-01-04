@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-04
-### Internal
-- Merge pull request #44 from cmintert/copilot/review-projektkraken-code-again
+### Documentation
+- docs: Standardize README front matter key formatting.
 
 
 *This changelog was automatically generated.*
