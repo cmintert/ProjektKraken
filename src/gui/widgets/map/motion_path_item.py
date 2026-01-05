@@ -100,95 +100,27 @@ class HandleItem(QGraphicsObject):
         return super().itemChange(change, value)
 
     def mousePressEvent(self, event: Any) -> None:
-        """Handle mouse press and ensure parent marker stays selected."""
-        import logging
-
-        logger = logging.getLogger(__name__)
-
-        logger.debug(f"HandleItem.mousePressEvent: Handle at t={self.t} pressed")
-        # Find the parent marker and keep it selected
-        if self.scene() and self.parentItem():
-            motion_path = self.parentItem()
-            if hasattr(motion_path, "marker_id"):
-                logger.debug(
-                    f"  - Parent motion path marker_id: {motion_path.marker_id}"
-                )
-                # Find the marker in the scene and ensure it's selected
-                from src.gui.widgets.map.marker_item import MarkerItem
-
-                for item in self.scene().items():
-                    if (
-                        isinstance(item, MarkerItem)
-                        and item.marker_id == motion_path.marker_id
-                    ):
-                        was_selected = item.isSelected()
-                        item.setSelected(True)
-                        logger.debug(
-                            f"  - Found marker {item.marker_id}, was_selected={was_selected}"
-                        )
-                        break
-
+        """Handle mouse press."""
         super().mousePressEvent(event)
-        # Also select this handle
-        self.setSelected(True)
-        logger.debug("  - Handle selected")
         self.clicked.emit(self)
 
     def mouseReleaseEvent(self, event: Any) -> None:
-        """Handle mouse release to emit position update and maintain selection."""
-        import logging
-
-        logger = logging.getLogger(__name__)
-
+        """Handle mouse release to emit position update."""
         super().mouseReleaseEvent(event)
-
-        logger.debug(f"HandleItem.mouseReleaseEvent: Handle at t={self.t} released")
 
         # Calculate new normalized position
         if self.scene() and self.parentItem():
             # Parent is MotionPathItem.
             # HandleItem doesn't inherently know normalized coords.
             # We emit scene position and 't', let View/Widget normalize.
-
             scene_pos = self.scenePos()
-            logger.debug(
-                f"  - New scene position: ({scene_pos.x():.2f}, {scene_pos.y():.2f})"
-            )
 
             # Check for modifiers (Ctrl+Drag to duplicate)
             modifiers = event.modifiers()
             if modifiers & Qt.KeyboardModifier.ControlModifier:
-                logger.debug("  - Ctrl held, emitting duplicate_requested")
                 self.duplicate_requested.emit(self.t, scene_pos.x(), scene_pos.y())
             else:
-                logger.debug("  - Emitting position_changed")
                 self.position_changed.emit(self.t, scene_pos.x(), scene_pos.y())
-
-        # Ensure parent marker stays selected after drag
-        if self.scene() and self.parentItem():
-            motion_path = self.parentItem()
-            if hasattr(motion_path, "marker_id"):
-                from src.gui.widgets.map.marker_item import MarkerItem
-
-                for item in self.scene().items():
-                    if (
-                        isinstance(item, MarkerItem)
-                        and item.marker_id == motion_path.marker_id
-                    ):
-                        if not item.isSelected():
-                            item.setSelected(True)
-                            logger.debug(
-                                f"  - Re-selected parent marker {item.marker_id} in release event"
-                            )
-                        break
-
-        # Ensure handle stays selected after drag
-        was_selected = self.isSelected()
-        if not was_selected:
-            self.setSelected(True)
-            logger.debug("  - Handle was deselected, re-selecting")
-        else:
-            logger.debug("  - Handle still selected")
 
     def mouseDoubleClickEvent(self, event: Any) -> None:
         """Handle double click to edit."""

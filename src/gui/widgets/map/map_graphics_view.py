@@ -6,7 +6,7 @@ Provides the MapGraphicsView class for rendering and interacting with the map.
 
 import json
 import logging
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from PySide6.QtCore import QPointF, QRectF, QSize, Qt, Signal
 from PySide6.QtGui import (
@@ -130,6 +130,17 @@ class MapGraphicsView(QGraphicsView):
     def _update_theme(self, theme: dict) -> None:
         """Updates the scene background."""
         self.scene.setBackgroundBrush(QBrush(QColor(theme["app_bg"])))
+
+    def activate_marker(self, marker_id: str) -> None:
+        """Set the active marker and show its motion path."""
+        # Hide previous path
+        if self._active_marker_id and self._active_marker_id in self.motion_paths:
+            self.motion_paths[self._active_marker_id].setVisible(False)
+
+        # Show new path
+        self._active_marker_id = marker_id
+        if marker_id in self.motion_paths:
+            self.motion_paths[marker_id].setVisible(True)
 
     def load_map(self, image_path: str) -> bool:
         """
