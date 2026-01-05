@@ -20,7 +20,7 @@ def mock_window(qtbot):
 
     with (
         patch("src.app.worker_manager.DatabaseWorker"),
-        patch("src.app.worker_manager.QTimer"),
+        patch("src.app.main_window.QTimer"),
         patch("src.app.worker_manager.QThread"),
         patch(
             "src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard
@@ -40,7 +40,7 @@ def test_update_event_triggers_commands(qtbot):
 
     with (
         patch("src.app.worker_manager.DatabaseWorker"),
-        patch("src.app.worker_manager.QTimer"),
+        patch("src.app.main_window.QTimer"),
         patch("src.app.worker_manager.QThread"),
         patch(
             "src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard

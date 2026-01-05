@@ -17,7 +17,7 @@ def main_window(qtbot):
         # Avoid thread start in test and prevent deferred init crash
         with (
             patch("src.app.worker_manager.QThread"),
-            patch("src.app.worker_manager.QTimer"),
+            patch("src.app.main_window.QTimer"),
         ):
             window = MainWindow()
             # window.show()  <-- Removed for headless testing
