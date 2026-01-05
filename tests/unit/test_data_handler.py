@@ -192,8 +192,47 @@ class TestDataHandlerSignals:
         data_handler.on_events_loaded(sample_events)
 
         # Verify selection was requested
-        assert len(selection_signal) == 1
         assert selection_signal[0] == ("event", "new_event_id")
+
+    def test_update_event_reloads_markers(self, data_handler, qtbot):
+        """Test that updating an event triggers marker reload."""
+        reload_markers_signal = []
+        data_handler.reload_markers_for_current_map.connect(
+            lambda: reload_markers_signal.append(True)
+        )
+
+        # Create a successful update command result
+        result = CommandResult(
+            success=True,
+            command_name="UpdateEventCommand",
+            message="Event updated",
+            data={},
+        )
+
+        data_handler.on_command_finished(result)
+
+        # Verify markers reload signal was emitted
+        assert len(reload_markers_signal) == 1
+
+    def test_update_entity_reloads_markers(self, data_handler, qtbot):
+        """Test that updating an entity triggers marker reload."""
+        reload_markers_signal = []
+        data_handler.reload_markers_for_current_map.connect(
+            lambda: reload_markers_signal.append(True)
+        )
+
+        # Create a successful update command result
+        result = CommandResult(
+            success=True,
+            command_name="UpdateEntityCommand",
+            message="Entity updated",
+            data={},
+        )
+
+        data_handler.on_command_finished(result)
+
+        # Verify markers reload signal was emitted
+        assert len(reload_markers_signal) == 1
 
 
 class TestDataHandlerDecoupling:

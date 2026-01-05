@@ -235,7 +235,8 @@ class DataHandler(QObject):
     @Slot(object)
     def on_command_finished(self, result: CommandResult) -> None:
         """
-        Handles completion of async commands, emitting signals for necessary UI refreshes.
+        Handles completion of async commands, emitting signals for necessary UI
+        refreshes.
 
         Args:
             result: CommandResult object containing execution status.
@@ -272,8 +273,10 @@ class DataHandler(QObject):
 
         if "Event" in command_name:
             self.reload_events.emit()
+            self.reload_markers_for_current_map.emit()
         if "Entity" in command_name:
             self.reload_entities.emit()
+            self.reload_markers_for_current_map.emit()
         if "Relation" in command_name or "WikiLinks" in command_name:
             # Signal to reload editor relations if an editor is active
             self.reload_active_editor_relations.emit()
