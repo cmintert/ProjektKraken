@@ -448,7 +448,6 @@ class MapHandler(QObject):
                 m_label = marker_data.label
                 m_icon = marker_data.attributes.get("icon", "map-pin.svg")
                 m_color = marker_data.attributes.get("color", "#888888")
-                m_id = marker_data.id
                 m_data = marker_data
 
                 # Apply temporal position resolution
