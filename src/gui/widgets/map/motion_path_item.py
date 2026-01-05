@@ -100,7 +100,25 @@ class HandleItem(QGraphicsObject):
         return super().itemChange(change, value)
 
     def mousePressEvent(self, event: Any) -> None:
+        """Handle mouse press and ensure parent marker stays selected."""
+        # Find the parent marker and keep it selected
+        if self.scene() and self.parentItem():
+            motion_path = self.parentItem()
+            if hasattr(motion_path, "marker_id"):
+                # Find the marker in the scene and ensure it's selected
+                from src.gui.widgets.map.marker_item import MarkerItem
+
+                for item in self.scene().items():
+                    if (
+                        isinstance(item, MarkerItem)
+                        and item.marker_id == motion_path.marker_id
+                    ):
+                        item.setSelected(True)
+                        break
+
         super().mousePressEvent(event)
+        # Also select this handle
+        self.setSelected(True)
         self.clicked.emit(self)
 
     def mouseReleaseEvent(self, event: Any) -> None:
