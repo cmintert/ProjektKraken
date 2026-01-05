@@ -90,7 +90,13 @@ class HandleItem(QGraphicsObject):
         painter.restore()
 
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
-        # Standard processing
+        """Handle item changes to redraw path during drag."""
+        if change == QGraphicsItem.ItemPositionChange and self.scene():
+            # Redraw path line during drag (don't emit signals - that happens on release)
+            parent = self.parentItem()
+            if parent and hasattr(parent, "_redraw_path_from_handles"):
+                # Call parent's redraw method to update path visually
+                parent._redraw_path_from_handles()
         return super().itemChange(change, value)
 
     def mousePressEvent(self, event: Any) -> None:
@@ -243,8 +249,32 @@ class MotionPathItem(QObject, QGraphicsPathItem):
         self.handles.append(handle)
 
     def _on_handle_moved(self, t: float, scene_x: float, scene_y: float) -> None:
-        """Forward handle movement with marker_id."""
+        """
+        Forward handle movement with marker_id for database update.
+        Path redrawing happens in HandleItem.itemChange during drag.
+        """
+        # Forward signal for database update (on mouse release)
         self.keyframe_moved.emit(self.marker_id, t, scene_x, scene_y)
+
+    def _redraw_path_from_handles(self) -> None:
+        """Rebuild the path line from current handle positions without recreating handles."""
+        if not self.handles:
+            return
+
+        path = QPainterPath()
+        # Sort handles by time
+        sorted_handles = sorted(self.handles, key=lambda h: h.t)
+
+        # Start path at first handle's current scene position
+        first_pos = sorted_handles[0].scenePos()
+        path.moveTo(self.mapFromScene(first_pos))
+
+        # Add lines to subsequent handles
+        for handle in sorted_handles[1:]:
+            handle_pos = handle.scenePos()
+            path.lineTo(self.mapFromScene(handle_pos))
+
+        self.setPath(path)
 
     def _on_handle_duplicated(self, t: float, scene_x: float, scene_y: float) -> None:
         """Forward duplication request."""
