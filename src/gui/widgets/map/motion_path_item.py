@@ -162,6 +162,24 @@ class HandleItem(QGraphicsObject):
                 logger.debug(f"  - Emitting position_changed")
                 self.position_changed.emit(self.t, scene_pos.x(), scene_pos.y())
 
+        # Ensure parent marker stays selected after drag
+        if self.scene() and self.parentItem():
+            motion_path = self.parentItem()
+            if hasattr(motion_path, "marker_id"):
+                from src.gui.widgets.map.marker_item import MarkerItem
+
+                for item in self.scene().items():
+                    if (
+                        isinstance(item, MarkerItem)
+                        and item.marker_id == motion_path.marker_id
+                    ):
+                        if not item.isSelected():
+                            item.setSelected(True)
+                            logger.debug(
+                                f"  - Re-selected parent marker {item.marker_id} in release event"
+                            )
+                        break
+
         # Ensure handle stays selected after drag
         was_selected = self.isSelected()
         if not was_selected:
