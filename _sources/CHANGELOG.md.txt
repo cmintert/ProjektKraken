@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-05
-### Fixed
-- fix: ensure map markers update when entity/event is modified
+### Added
+- feat: add initial architectural specification and implementation strategy for temporal map markers.
 
 
 *This changelog was automatically generated.*

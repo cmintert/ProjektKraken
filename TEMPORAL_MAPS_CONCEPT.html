@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
-        <title>Concept: Temporal Map Markers - Project Kraken 0.5.0 documentation</title>
+        <title>ProjektKraken: Temporal Map Markers - Project Kraken 0.5.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -275,117 +275,457 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="concept-temporal-map-markers">
-<h1>Concept: Temporal Map Markers<a class="headerlink" href="#concept-temporal-map-markers" title="Link to this heading">¶</a></h1>
-<p><strong>Status</strong>: Proposal / Abandoned Implementation (Jan 2026)
-<strong>Goal</strong>: Visualize the movement and state of entities on a map over time.</p>
-<section id="the-vision">
-<h2>1. The Vision<a class="headerlink" href="#the-vision" title="Link to this heading">¶</a></h2>
-<p>In storytelling and world-building, entities (characters, armies, items) rarely stay in one place. “Temporal Maps” allows ProjektKraken to represent <strong>Journeys</strong> and <strong>Timelines</strong> visually on the map.</p>
-<p>Instead of a marker being fixed at <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code>, a marker has a position <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code> relative to a global <strong>Time</strong> <code class="docutils literal notranslate"><span class="pre">t</span></code>.</p>
-<section id="core-use-cases">
-<h3>Core Use Cases<a class="headerlink" href="#core-use-cases" title="Link to this heading">¶</a></h3>
+          <section id="projektkraken-temporal-map-markers">
+<h1>ProjektKraken: Temporal Map Markers<a class="headerlink" href="#projektkraken-temporal-map-markers" title="Link to this heading">¶</a></h1>
+<section id="architectural-specification-and-implementation-strategy">
+<h2>Architectural Specification and Implementation Strategy<a class="headerlink" href="#architectural-specification-and-implementation-strategy" title="Link to this heading">¶</a></h2>
+</section>
+<section id="executive-summary-the-fourth-dimension-in-digital-cartography">
+<h2>1. Executive Summary: The Fourth Dimension in Digital Cartography<a class="headerlink" href="#executive-summary-the-fourth-dimension-in-digital-cartography" title="Link to this heading">¶</a></h2>
+<p>The visualization of geospatial data has traditionally been bound by the constraints of static representation—a snapshot of a world frozen in a single moment. However, the narrative requirements of ProjektKraken, specifically in the domains of storytelling, world-building, and historical simulation, demand a fundamental paradigm shift. The “Temporal Map Markers” initiative represents the critical evolution from static 2D maps to dynamic 4D visualizations. This report provides an exhaustive technical analysis and implementation roadmap for this feature, aiming to transform the map from a passive reference image into a living, breathing non-linear editor (NLE) for spatial history.</p>
+<p>The core objective is to visualize the state and movement of entities—characters, armies, political borders—as a function of a global time variable, $t$. This requires the system to handle not just the spatial coordinates $(x, y)$, but the temporal existence and trajectory of thousands of entities simultaneously. The architectural challenge is threefold: designing a data model that efficiently queries state at any given $t$; building a rendering pipeline capable of updating thousands of graphical items at 60 frames per second (FPS) within the Python/Qt ecosystem; and constructing a user interface that bridges the gap between spatial manipulation and temporal scrubbing.</p>
+<p>Analysis of the technical requirements and available frameworks, particularly PySide6 (Qt for Python), confirms that this vision is achievable. The Qt Graphics View Framework provides the necessary scene graph capabilities, while specific optimization strategies—such as OpenGL viewport integration, spatial indexing bypasses, and coordinate caching—can overcome the inherent performance bottlenecks of high-frequency updates in Python. This document outlines the mathematical foundations for trajectory interpolation, the synchronization logic for a master clock architecture, and the specific user interaction patterns required to enable “Live Puppeteering” and timeline scrubbing.</p>
+</section>
+<hr class="docutils" />
+<section id="theoretical-framework-and-core-vision">
+<h2>2. Theoretical Framework and Core Vision<a class="headerlink" href="#theoretical-framework-and-core-vision" title="Link to this heading">¶</a></h2>
+<section id="the-limitations-of-static-cartography">
+<h3>2.1 The Limitations of Static Cartography<a class="headerlink" href="#the-limitations-of-static-cartography" title="Link to this heading">¶</a></h3>
+<p>In traditional Geographic Information Systems (GIS) and fantasy map tools, an entity’s location is defined by a static coordinate tuple $P = (x, y)$. To represent movement, users are often forced to create multiple static markers (e.g., “Army at Start,” “Army at Battle,” “Army at End”) or rely on separate map layers that must be manually toggled. This approach fractures the narrative continuity. It fails to convey velocity, simultaneous action, or the causal relationships between moving bodies. For a storytelling platform like ProjektKraken, the map must be a canvas for events, not just locations.</p>
+</section>
+<section id="the-temporal-coordinate-system">
+<h3>2.2 The Temporal Coordinate System<a class="headerlink" href="#the-temporal-coordinate-system" title="Link to this heading">¶</a></h3>
+<p>The “Temporal Map” architecture redefines the fundamental nature of a map marker. An entity $E$ is no longer a static point but a function of time:</p>
+<p>$$P(t) = (x(t), y(t))$$</p>
+<p>This function is defined over an existence interval $[t_{start}, t_{end}]$.</p>
 <ul class="simple">
-<li><p><strong>Tracking Journeys</strong>: Show the path of the “One Ring” across Middle-earth.</p></li>
-<li><p><strong>Historical Borders</strong>: Show how kingdom borders shift over centuries.</p></li>
-<li><p><strong>Battle Maneuvers</strong>: Animate troop movements during a specific battle event.</p></li>
+<li><p><strong>Global Time ($t$)</strong>: A monotonic floating-point value controlled by a central clock.</p></li>
+<li><p><strong>Keyframes</strong>: Discrete snapshots of the entity’s state (position, rotation, opacity, metadata) at specific times.</p></li>
+<li><p><strong>Continuity</strong>: The system must derive the state of the entity at any arbitrary time $t$ by interpolating between the nearest defined keyframes.</p></li>
+</ul>
+<p>This shift necessitates a “Non-Linear Editor (NLE) on Map” philosophy. Much like video editing software allows editors to scrub through video frames, ProjektKraken must allow users to scrub through the “history” of their world. The map becomes the viewport, and the underlying data model becomes a collection of temporal tracks.</p>
+</section>
+<section id="core-use-case-analysis">
+<h3>2.3 Core Use Case Analysis<a class="headerlink" href="#core-use-case-analysis" title="Link to this heading">¶</a></h3>
+<p>The architecture is driven by three distinct use cases, each imposing unique technical constraints:</p>
+<ol class="arabic simple">
+<li><p><strong>Tracking Journeys (The Trajectory Problem)</strong>:</p>
+<ul class="simple">
+<li><p><em>Scenario</em>: Visualizing a character’s travel across a continent.</p></li>
+<li><p><em>Constraint</em>: Movement is rarely linear. Characters follow winding roads or rivers. The system must support complex interpolation (Bezier curves) and visual Motion Paths to show the “past” and “future” trajectory.</p></li>
+</ul>
+</li>
+<li><p><strong>Historical Borders (The Vertex Animation Problem)</strong>:</p>
+<ul class="simple">
+<li><p><em>Scenario</em>: A kingdom expands its territory over 500 years.</p></li>
+<li><p><em>Constraint</em>: This involves animating <code class="docutils literal notranslate"><span class="pre">QPolygonF</span></code> items. Unlike point markers, regions may change topology. The system must interpolate vertex positions while maintaining the integrity of the shape.</p></li>
+</ul>
+</li>
+<li><p><strong>Battle Maneuvers (The Swarm Problem)</strong>:</p>
+<ul class="simple">
+<li><p><em>Scenario</em>: A tactical view of a battle with 1,000 individual troop units.</p></li>
+<li><p><em>Constraint</em>: Performance is paramount. Updating the position of 1,000 independent items every 16ms (to achieve 60fps) is a stress test for the Python Global Interpreter Lock (GIL) and the Qt event loop.</p></li>
+</ul>
+</li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="data-architecture-and-storage-models">
+<h2>3. Data Architecture and Storage Models<a class="headerlink" href="#data-architecture-and-storage-models" title="Link to this heading">¶</a></h2>
+<p>The foundation of the temporal map is the data structure used to store and retrieve time-based attributes.</p>
+<section id="the-temporal-json-schema">
+<h3>3.1 The Temporal JSON Schema<a class="headerlink" href="#the-temporal-json-schema" title="Link to this heading">¶</a></h3>
+<p>To support the “Time” dimension, the data model for a marker must extend standard GeoJSON-like structures. A “Temporal Entity” is defined by a <code class="docutils literal notranslate"><span class="pre">timeline</span></code> property containing a sorted list of keyframes. This structure must be robust enough to handle position, but also extensible for other animated properties (e.g., opacity, color, scale).</p>
+<p><strong>Proposed Data Schema:</strong></p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head text-left"><p>Attribute</p></th>
+<th class="head text-left"><p>Type</p></th>
+<th class="head text-left"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">id</span></code></p></td>
+<td class="text-left"><p>UUID</p></td>
+<td class="text-left"><p>Unique identifier for the entity.</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">name</span></code></p></td>
+<td class="text-left"><p>String</p></td>
+<td class="text-left"><p>Display name (e.g., “The One Ring”).</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">existence</span></code></p></td>
+<td class="text-left"><p>Object</p></td>
+<td class="text-left"><p>Defines the lifespan: <code class="docutils literal notranslate"><span class="pre">{</span> <span class="pre">&quot;start&quot;:</span> <span class="pre">0,</span> <span class="pre">&quot;end&quot;:</span> <span class="pre">3019</span> <span class="pre">}</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><code class="docutils literal notranslate"><span class="pre">timeline</span></code></p></td>
+<td class="text-left"><p>List</p></td>
+<td class="text-left"><p>A time-sorted list of keyframe objects.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Keyframe Structure:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;t&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">150.5</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;pos&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">0.45</span><span class="p">,</span><span class="w"> </span><span class="mf">0.88</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;interpolation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cubic-bezier&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;control_points&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[[</span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="p">],</span><span class="w"> </span><span class="p">[</span><span class="mf">0.6</span><span class="p">,</span><span class="w"> </span><span class="mf">0.6</span><span class="p">]],</span>
+<span class="w">  </span><span class="nt">&quot;attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;opacity&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Camp at Amon Sul&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>This schema implies that the state of an entity between two keyframes is derived. If interpolation is “linear,” the system computes a weighted average. If “cubic-bezier,” it evaluates the curve equation.</p>
+</section>
+<section id="keyframe-storage-and-retrieval-efficiency">
+<h3>3.2 Keyframe Storage and Retrieval Efficiency<a class="headerlink" href="#keyframe-storage-and-retrieval-efficiency" title="Link to this heading">¶</a></h3>
+<p>During playback, the system requests the position of every entity at the current frame. If an entity has 10,000 keyframes (e.g., a highly detailed recorded path), iterating through the list to find the correct interval is computationally expensive ($O(N)$).</p>
+<p><strong>Optimization: Binary Search (Bisect)</strong>
+To maximize performance, keyframes must be maintained as a strictly sorted list by time $t$. This allows the use of the binary search algorithm to locate the insertion point for the current time $t$. Python’s standard library <code class="docutils literal notranslate"><span class="pre">bisect</span></code> module provides a highly efficient C-implemented bisection algorithm.</p>
+<ul class="simple">
+<li><p><strong>Mechanism</strong>: <code class="docutils literal notranslate"><span class="pre">bisect.bisect_right(keyframes,</span> <span class="pre">t)</span></code> returns the index $i$ where $t$ would be inserted.</p></li>
+<li><p><strong>Interval</strong>: The current state is derived from <code class="docutils literal notranslate"><span class="pre">keyframes[i-1]</span></code> (start of interval) and <code class="docutils literal notranslate"><span class="pre">keyframes[i]</span></code> (end of interval).</p></li>
+<li><p><strong>Complexity</strong>: This reduces the lookup cost from $O(N)$ to $O(\log N)$, which is critical when scrubbing through long histories with thousands of data points.</p></li>
+</ul>
+</section>
+<section id="calendar-integration-mapping-t-to-dates">
+<h3>3.3 Calendar Integration: Mapping $t$ to Dates<a class="headerlink" href="#calendar-integration-mapping-t-to-dates" title="Link to this heading">¶</a></h3>
+<p>A request from the “Future Roadmap” is to map the abstract float $t$ to actual calendar dates (e.g., “Year 3018, March 25”).</p>
+<p><strong>The Epoch System</strong>:
+The system should operate internally on a float $t$ (representing atomic units, e.g., hours or days since a global epoch). A translation layer handles the conversion to human-readable dates.</p>
+<ul class="simple">
+<li><p><strong>Calendar Model</strong>: A <code class="docutils literal notranslate"><span class="pre">CalendarSystem</span></code> class defines the rules (months per year, days per month, leap year logic).</p></li>
+<li><p><strong>Mapping</strong>:
+$$Date = Epoch + t \times UnitScale$$
+This separation of concerns allows the underlying animation engine to work with fast float arithmetic while the UI layer handles the complex string formatting of fantasy dates.</p></li>
 </ul>
 </section>
 </section>
 <hr class="docutils" />
-<section id="key-features">
-<h2>2. Key Features<a class="headerlink" href="#key-features" title="Link to this heading">¶</a></h2>
-<section id="global-timeline">
-<h3>Global Timeline<a class="headerlink" href="#global-timeline" title="Link to this heading">¶</a></h3>
+<section id="the-rendering-pipeline-qt-graphics-view-framework">
+<h2>4. The Rendering Pipeline: Qt Graphics View Framework<a class="headerlink" href="#the-rendering-pipeline-qt-graphics-view-framework" title="Link to this heading">¶</a></h2>
+<p>The visual implementation relies on the Qt Graphics View Framework (accessible via PySide6), which utilizes a Model-View-Controller (MVC) architecture specifically designed for managing large numbers of 2D items.</p>
+<section id="the-scene-graph-qgraphicsscene">
+<h3>4.1 The Scene Graph (QGraphicsScene)<a class="headerlink" href="#the-scene-graph-qgraphicsscene" title="Link to this heading">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">QGraphicsScene</span></code> acts as the spatial data model. It manages the geometry of all items (markers, paths, terrain) and handles collision detection.</p>
 <ul class="simple">
-<li><p>A master “Playhead” controls the current time <code class="docutils literal notranslate"><span class="pre">t</span></code> for the entire application.</p></li>
-<li><p>As <code class="docutils literal notranslate"><span class="pre">t</span></code> changes, the map updates to show the state of the world at that moment.</p></li>
+<li><p><strong>Coordinate System</strong>: The scene operates in logical coordinates (Map Units), independent of the screen resolution or zoom level.</p></li>
+<li><p><strong>Spatial Indexing</strong>: The scene uses a Binary Space Partitioning (BSP) tree by default to rapidly locate items. While efficient for static scenes, this index can become a bottleneck for moving items, as the tree must be rebuilt whenever an item changes position.</p></li>
 </ul>
 </section>
-<section id="temporal-markers">
-<h3>Temporal Markers<a class="headerlink" href="#temporal-markers" title="Link to this heading">¶</a></h3>
+<section id="the-viewport-qgraphicsview">
+<h3>4.2 The Viewport (QGraphicsView)<a class="headerlink" href="#the-viewport-qgraphicsview" title="Link to this heading">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">QGraphicsView</span></code> is the widget that renders the scene. It handles the transformation matrix (zoom/pan) and user input events.</p>
 <ul class="simple">
-<li><p>Markers have “Keyframes”: discrete points in time with specific attributes.</p></li>
-<li><p><strong>Position Keyframes</strong>: <code class="docutils literal notranslate"><span class="pre">At</span> <span class="pre">t=0,</span> <span class="pre">pos=(10,10)</span></code>. <code class="docutils literal notranslate"><span class="pre">At</span> <span class="pre">t=100,</span> <span class="pre">pos=(50,50)</span></code>.</p></li>
-<li><p><strong>Interpolation</strong>: System calculates the position between keyframes (e.g., Linear interpolation for straight movement).</p></li>
+<li><p><strong>Render Engine</strong>: By default, <code class="docutils literal notranslate"><span class="pre">QGraphicsView</span></code> uses a raster paint engine (CPU-based). For high-performance animation of thousands of items, this is often insufficient.</p></li>
+<li><p><strong>OpenGL Acceleration</strong>: The viewport can be backed by a <code class="docutils literal notranslate"><span class="pre">QOpenGLWidget</span></code>, forcing Qt to use the GPU for composition and rendering. This is a critical optimization for the “Battle Maneuvers” use case.</p></li>
 </ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">view</span> <span class="o">=</span> <span class="n">QGraphicsView</span><span class="p">(</span><span class="n">scene</span><span class="p">)</span>
+<span class="n">view</span><span class="o">.</span><span class="n">setViewport</span><span class="p">(</span><span class="n">QOpenGLWidget</span><span class="p">())</span>
+</pre></div>
+</div>
 </section>
-<section id="motion-paths">
-<h3>Motion Paths<a class="headerlink" href="#motion-paths" title="Link to this heading">¶</a></h3>
+<section id="the-temporal-marker-item-qgraphicsitem">
+<h3>4.3 The Temporal Marker Item (QGraphicsItem)<a class="headerlink" href="#the-temporal-marker-item-qgraphicsitem" title="Link to this heading">¶</a></h3>
+<p>Each map marker is a subclass of <code class="docutils literal notranslate"><span class="pre">QGraphicsItem</span></code> (or <code class="docutils literal notranslate"><span class="pre">QGraphicsObject</span></code> if signals are needed).</p>
 <ul class="simple">
-<li><p>When a marker is selected, its entire trajectory is visible as a <strong>Motion Path</strong> (dotted line).</p></li>
-<li><p>Nodes on the path represent keyframes.</p></li>
-<li><p>Users can see where an entity <em>was</em> and where it <em>will go</em>.</p></li>
-</ul>
-</section>
-<section id="visibility-existence">
-<h3>Visibility &amp; Existence<a class="headerlink" href="#visibility-existence" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Entities can “appear” and “disappear”.</p></li>
-<li><p>Example: A character is born at <code class="docutils literal notranslate"><span class="pre">t=1980</span></code> and dies at <code class="docutils literal notranslate"><span class="pre">t=2050</span></code>. The marker is only visible on the map between these times.</p></li>
+<li><p><strong>Paint Method</strong>: The <code class="docutils literal notranslate"><span class="pre">paint()</span></code> method draws the visual representation (e.g., an SVG icon or a circle).</p></li>
+<li><p><strong>Bounding Rect</strong>: The <code class="docutils literal notranslate"><span class="pre">boundingRect()</span></code> method defines the area requiring updates. Accurately defining this is crucial for the view to optimize repaints.</p></li>
+<li><p><strong>State Updates</strong>: Unlike standard items, a temporal marker does not store a fixed position. Instead, it subscribes to the global clock and updates its position via <code class="docutils literal notranslate"><span class="pre">setPos()</span></code> whenever the time changes.</p></li>
 </ul>
 </section>
 </section>
 <hr class="docutils" />
-<section id="user-interface-concepts">
-<h2>3. User Interface Concepts<a class="headerlink" href="#user-interface-concepts" title="Link to this heading">¶</a></h2>
-<section id="the-timeline-widget">
-<h3>The Timeline Widget<a class="headerlink" href="#the-timeline-widget" title="Link to this heading">¶</a></h3>
+<section id="algorithmic-core-interpolation-and-trajectory">
+<h2>5. Algorithmic Core: Interpolation and Trajectory<a class="headerlink" href="#algorithmic-core-interpolation-and-trajectory" title="Link to this heading">¶</a></h2>
+<p>To create smooth motion from discrete keyframes, the system must employ robust interpolation algorithms.</p>
+<section id="linear-interpolation-lerp">
+<h3>5.1 Linear Interpolation (Lerp)<a class="headerlink" href="#linear-interpolation-lerp" title="Link to this heading">¶</a></h3>
+<p>For strategic movements (e.g., “Army moves from City A to City B”), linear interpolation is sufficient and computationally cheap.
+Given:</p>
 <ul class="simple">
-<li><p>A dockable panel at the bottom of the map.</p></li>
-<li><p><strong>Scrubber</strong>: Drag to change time.</p></li>
-<li><p><strong>Tracks</strong>: Rows showing keyframes for selected entities.</p></li>
-<li><p><strong>Controls</strong>: Play/Pause, Next/Prev Keyframe.</p></li>
+<li><p>Start Keyframe: $K_1$ at $t_1$, pos $P_1$</p></li>
+<li><p>End Keyframe: $K_2$ at $t_2$, pos $P_2$</p></li>
+<li><p>Current Time: $t$ where $t_1 \le t \le t_2$</p></li>
+</ul>
+<p>The normalized progress factor $\alpha$ is:
+$$\alpha = \frac{t - t_1}{t_2 - t_1}$$</p>
+<p>The position $P(t)$ is:
+$$P(t) = P_1 + (P_2 - P_1) \times \alpha$$</p>
+</section>
+<section id="bezier-interpolation-organic-movement">
+<h3>5.2 Bezier Interpolation (Organic Movement)<a class="headerlink" href="#bezier-interpolation-organic-movement" title="Link to this heading">¶</a></h3>
+<p>For tracking journeys along rivers or roads, linear movement looks robotic. Cubic Bezier curves provide the necessary smoothness. A cubic Bezier segment is defined by four points: $P_0$ (start), $P_1$ (control 1), $P_2$ (control 2), and $P_3$ (end).</p>
+<p>The equation for a point on the curve is:
+$$B(\tau) = (1-\tau)^3P_0 + 3(1-\tau)^2\tau P_1 + 3(1-\tau)\tau^2 P_2 + \tau^3P_3$$</p>
+<p><strong>The Parameterization Challenge</strong>:
+In the standard Bezier equation, $\tau$ varies from 0 to 1. However, simply mapping the time progress $\alpha$ to $\tau$ results in non-uniform speed along the curve (the marker speeds up and slows down depending on the curvature).</p>
+<ul class="simple">
+<li><p><strong>Solution</strong>: For strict constant-speed travel, the system must perform arc-length parameterization (remapping $\alpha$ to distance).</p></li>
+<li><p><strong>Approximation</strong>: For the scale of ProjektKraken, a direct mapping ($\tau \approx \alpha$) is often visually acceptable and significantly faster to compute than numerical integration of arc length. If “perfect” speed is required, a lookup table (LUT) of arc lengths can be pre-calculated for each segment.</p></li>
 </ul>
 </section>
-<section id="map-interaction-the-nle-on-map">
-<h3>Map Interaction (The “NLE on Map”)<a class="headerlink" href="#map-interaction-the-nle-on-map" title="Link to this heading">¶</a></h3>
+<section id="region-animation-polygon-morphing">
+<h3>5.3 Region Animation (Polygon Morphing)<a class="headerlink" href="#region-animation-polygon-morphing" title="Link to this heading">¶</a></h3>
+<p>Animating the borders of a kingdom requires interpolating <code class="docutils literal notranslate"><span class="pre">QPolygonF</span></code> objects.</p>
 <ul class="simple">
-<li><p><strong>Record Mode</strong>: A “Rec” button toggles recording.</p>
-<ul>
-<li><p>When ON, dragging a marker creates a new keyframe at the current <code class="docutils literal notranslate"><span class="pre">t</span></code>.</p></li>
-<li><p>Allows “Live Puppeteering”: Drag a marker while time plays to record complex movements.</p></li>
-</ul>
+<li><p><strong>Topology Consistency</strong>: Morphing between two polygons works best if they have the same number of vertices.</p></li>
+<li><p><strong>Algorithm</strong>:</p>
+<ol class="arabic simple">
+<li><p>Ensure $K_1$ (Polygon A) and $K_2$ (Polygon B) have $N$ vertices. (If not, vertex insertion is required).</p></li>
+<li><p>For each vertex index $i$, linearly interpolate between $V_{A,i}$ and $V_{B,i}$.</p></li>
+<li><p>Reconstruct the <code class="docutils literal notranslate"><span class="pre">QPolygonF</span></code> at time $t$ with the new vertex positions.</p></li>
+</ol>
 </li>
-<li><p><strong>Path Editing</strong>:</p>
-<ul>
-<li><p>Clicking a path node (keyframe) allows dragging it spatially.</p></li>
-<li><p>Right-click context menu to change interpolation type (Linear, Bezier, Instant).</p></li>
 </ul>
-</li>
+<p>This allows regions to expand, contract, or shift smoothly over time.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="time-management-architecture">
+<h2>6. Time Management Architecture<a class="headerlink" href="#time-management-architecture" title="Link to this heading">¶</a></h2>
+<p>The synchronization of the entire application relies on a robust “Master Clock” architecture.</p>
+<section id="the-master-clock-controller">
+<h3>6.1 The Master Clock Controller<a class="headerlink" href="#the-master-clock-controller" title="Link to this heading">¶</a></h3>
+<p>Unlike simple animations that might use <code class="docutils literal notranslate"><span class="pre">QPropertyAnimation</span></code> on individual items, a global timeline requires a centralized controller. This <code class="docutils literal notranslate"><span class="pre">MasterClock</span></code> is a <code class="docutils literal notranslate"><span class="pre">QObject</span></code> that maintains the authoritative current time $t$.</p>
+<ul class="simple">
+<li><p><strong>Signal Propagation</strong>: The clock emits a <code class="docutils literal notranslate"><span class="pre">timeChanged(float</span> <span class="pre">t)</span></code> signal.</p></li>
+<li><p><strong>Subscription</strong>: The <code class="docutils literal notranslate"><span class="pre">QGraphicsScene</span></code> or individual <code class="docutils literal notranslate"><span class="pre">TemporalMarker</span></code> items connect to this signal.</p></li>
+<li><p><strong>Scrubbing Logic</strong>: When the user drags the timeline scrubber, the clock updates $t$ directly without advancing the internal timer.</p></li>
+<li><p><strong>Playback Logic</strong>: When “Play” is active, a <code class="docutils literal notranslate"><span class="pre">QTimer</span></code> fires (e.g., every 16ms), incrementing $t$ by a delta ($\Delta t$) determined by the playback speed.</p></li>
+</ul>
+</section>
+<section id="handling-time-skips-and-non-linear-access">
+<h3>6.2 Handling “Time Skips” and Non-Linear Access<a class="headerlink" href="#handling-time-skips-and-non-linear-access" title="Link to this heading">¶</a></h3>
+<p>When the user scrubs the timeline (jumps from $t=100$ to $t=5000$), the system must handle the state change gracefully.</p>
+<ul class="simple">
+<li><p><strong>Instant Updates</strong>: The interpolation logic is stateless; it depends only on the current $t$. Therefore, a jump is handled identically to a sequential update: binary search for the new interval, calculate position, update view.</p></li>
+<li><p><strong>Event Triggers</strong>: If the system supports “Events” (e.g., “Battle starts at $t=300$”), the clock logic must detect if an event timestamp was crossed during the jump, although for pure visualization, calculating the static state is usually sufficient.</p></li>
 </ul>
 </section>
 </section>
 <hr class="docutils" />
-<section id="technical-requirements">
-<h2>4. Technical Requirements<a class="headerlink" href="#technical-requirements" title="Link to this heading">¶</a></h2>
+<section id="user-interface-the-timeline-widget">
+<h2>7. User Interface: The Timeline Widget<a class="headerlink" href="#user-interface-the-timeline-widget" title="Link to this heading">¶</a></h2>
+<p>The “Timeline Widget” is the primary interface for temporal manipulation, docking at the bottom of the map view.</p>
+<section id="architecture-of-the-timeline">
+<h3>7.1 Architecture of the Timeline<a class="headerlink" href="#architecture-of-the-timeline" title="Link to this heading">¶</a></h3>
+<p>The timeline is effectively a custom <code class="docutils literal notranslate"><span class="pre">QWidget</span></code> that draws a representation of time.</p>
 <ul class="simple">
-<li><p><strong>Data Storage</strong>:</p>
-<ul>
-<li><p>Markers need a <code class="docutils literal notranslate"><span class="pre">temporal</span></code> JSON structure.</p></li>
-<li><p>Keyframes stored as a sorted list: <code class="docutils literal notranslate"><span class="pre">[{t:</span> <span class="pre">0,</span> <span class="pre">x:</span> <span class="pre">0.5,</span> <span class="pre">y:</span> <span class="pre">0.5},</span> <span class="pre">...]</span></code></p></li>
+<li><p><strong>The Ruler</strong>: A horizontal bar rendering time ticks. It requires a coordinate transform to map “Pixels” to “Time Units” (Zooming the timeline).</p></li>
+<li><p><strong>The Playhead</strong>: A vertical indicator representing the current $t$ of the Master Clock.</p></li>
+<li><p><strong>Tracks</strong>: Rows corresponding to selected entities. Each track displays the keyframes (diamonds) and existence duration (bars) of that entity.</p></li>
 </ul>
-</li>
-<li><p><strong>Performance</strong>:</p>
-<ul>
-<li><p>Rendering needs to be efficient; thousands of markers updating every frame (60fps) requires optimized scene graph updates.</p></li>
+</section>
+<section id="synchronization-logic">
+<h3>7.2 Synchronization Logic<a class="headerlink" href="#synchronization-logic" title="Link to this heading">¶</a></h3>
+<p>The Timeline and the Map must be tightly coupled:</p>
+<ol class="arabic simple">
+<li><p><strong>Timeline $\rightarrow$ Map</strong>: Dragging the playhead emits <code class="docutils literal notranslate"><span class="pre">set_time(t)</span></code> to the Master Clock, which updates the Map markers.</p></li>
+<li><p><strong>Map $\rightarrow$ Timeline</strong>: Selecting a marker on the map adds its “Track” to the timeline widget. Dragging a keyframe node on the map (spatial edit) updates the keyframe’s time/position in the data model, which triggers a repaint of the timeline track.</p></li>
+</ol>
+</section>
+<section id="zoom-and-pan-on-the-time-axis">
+<h3>7.3 Zoom and Pan on the Time Axis<a class="headerlink" href="#zoom-and-pan-on-the-time-axis" title="Link to this heading">¶</a></h3>
+<p>Users need to switch between “Tactical Time” (seconds/minutes) and “Historical Time” (years/centuries).</p>
+<ul class="simple">
+<li><p><strong>Implementation</strong>: The Timeline Widget handles <code class="docutils literal notranslate"><span class="pre">wheelEvent</span></code>. Scrolling modifies a <code class="docutils literal notranslate"><span class="pre">scale_factor</span></code> (pixels per time unit).</p></li>
+<li><p><strong>Rendering</strong>: The drawing logic uses this scale factor to determine the interval of tick marks (e.g., labeling every 10 years vs every 10 minutes).</p></li>
 </ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="interaction-design-the-nle-on-map">
+<h2>8. Interaction Design: The “NLE on Map”<a class="headerlink" href="#interaction-design-the-nle-on-map" title="Link to this heading">¶</a></h2>
+<p>The user interface must facilitate not just viewing, but creating these complex journeys.</p>
+<section id="live-puppeteering-recording-mode">
+<h3>8.1 Live Puppeteering (Recording Mode)<a class="headerlink" href="#live-puppeteering-recording-mode" title="Link to this heading">¶</a></h3>
+<p>A unique feature of ProjektKraken is the ability to “act out” a journey.</p>
+<ul class="simple">
+<li><p><strong>Mechanism</strong>:</p>
+<ol class="arabic simple">
+<li><p>User toggles “Record” mode.</p></li>
+<li><p>User drags a marker on the map.</p></li>
+<li><p>A <code class="docutils literal notranslate"><span class="pre">QTimer</span></code> samples the mouse position at a fixed interval (e.g., 100ms) or on every <code class="docutils literal notranslate"><span class="pre">mouseMoveEvent</span></code>.</p></li>
+<li><p>Each sample is saved as a keyframe: <code class="docutils literal notranslate"><span class="pre">{</span> <span class="pre">t:</span> <span class="pre">current_time,</span> <span class="pre">x:</span> <span class="pre">mouse_x,</span> <span class="pre">y:</span> <span class="pre">mouse_y</span> <span class="pre">}</span></code>.</p></li>
+</ol>
 </li>
-<li><p><strong>Interaction Layer</strong>:</p>
+<li><p><strong>Smoothing</strong>: Raw mouse input is jittery and dense. Post-processing is required. The Douglas-Peucker algorithm or simple distance-based filtering can reduce the number of keyframes while preserving the shape of the motion.</p></li>
+</ul>
+</section>
+<section id="motion-path-visualization-and-editing">
+<h3>8.2 Motion Path Visualization and Editing<a class="headerlink" href="#motion-path-visualization-and-editing" title="Link to this heading">¶</a></h3>
+<p>When a marker is selected, its path becomes visible.</p>
+<ul class="simple">
+<li><p><strong>Visual Component</strong>: A <code class="docutils literal notranslate"><span class="pre">QGraphicsPathItem</span></code> draws the trajectory.</p></li>
+<li><p><strong>Node Editing</strong>: The keyframes appear as small, draggable handles along the path.</p></li>
+<li><p><strong>Interaction</strong>:</p>
 <ul>
-<li><p>Separation of “Playback” interactions (panning map) vs “Editing” interactions (moving keyframes).</p></li>
-<li><p>Robust selection model (see <code class="docutils literal notranslate"><span class="pre">post_mortem_temporal_maps.md</span></code> for challenges here).</p></li>
+<li><p><strong>Click &amp; Drag Node</strong>: Updates the $(x, y)$ of that keyframe.</p></li>
+<li><p><strong>Right Click Node</strong>: Opens a context menu to change interpolation (e.g., “Switch to Bezier”).</p></li>
+<li><p><strong>Tangent Handles</strong>: If Bezier is selected, two additional handles (control points) appear, allowing the user to shape the curve.</p></li>
 </ul>
 </li>
 </ul>
 </section>
-<section id="future-roadmap-ideas-if-resurrected">
-<h2>5. Future Roadmap Ideas (If Resurrected)<a class="headerlink" href="#future-roadmap-ideas-if-resurrected" title="Link to this heading">¶</a></h2>
+<section id="selection-challenges-in-a-dynamic-scene">
+<h3>8.3 Selection Challenges in a Dynamic Scene<a class="headerlink" href="#selection-challenges-in-a-dynamic-scene" title="Link to this heading">¶</a></h3>
+<p>Selecting a moving object is difficult.</p>
 <ul class="simple">
-<li><p><strong>Ghost Trails</strong>: Show fading trails behind moving markers during playback.</p></li>
-<li><p><strong>Region Animation</strong>: Support animating polygon vertices for shifting borders.</p></li>
-<li><p><strong>Calendar Integration</strong>: Map abstract <code class="docutils literal notranslate"><span class="pre">t</span></code> values to actual fantasy calendar dates.</p></li>
+<li><p><strong>Hit Testing</strong>: Qt’s <code class="docutils literal notranslate"><span class="pre">QGraphicsView</span></code> handles hit testing via <code class="docutils literal notranslate"><span class="pre">itemAt()</span></code>. However, if the item is moving 60 times a second, the user might miss.</p></li>
+<li><p><strong>Pause-on-Click</strong>: A common UX pattern is to pause the Master Clock momentarily when the user presses the mouse button down, allowing for easier selection and manipulation.</p></li>
 </ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="performance-engineering-rendering-at-scale">
+<h2>9. Performance Engineering: Rendering at Scale<a class="headerlink" href="#performance-engineering-rendering-at-scale" title="Link to this heading">¶</a></h2>
+<p>The requirement to support “thousands of markers” at 60fps is the most significant technical risk. The Python Global Interpreter Lock (GIL) and the overhead of crossing the Python/C++ boundary in PySide6 can lead to performance degradation.</p>
+<section id="optimizing-the-scene-graph">
+<h3>9.1 Optimizing the Scene Graph<a class="headerlink" href="#optimizing-the-scene-graph" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Disable Spatial Indexing (NoIndex)</strong>:
+The <code class="docutils literal notranslate"><span class="pre">QGraphicsScene</span></code> uses a BSP tree to index items. When an item moves, the tree must be updated. For 1,000 moving items, this re-indexing is expensive.</p>
+<ul>
+<li><p><strong>Strategy</strong>: For the layer containing moving units, call <code class="docutils literal notranslate"><span class="pre">scene.setItemIndexMethod(QGraphicsScene.NoIndex)</span></code>. This disables the index. Collision detection becomes $O(N)$, but the frame update cost drops significantly.</p></li>
+</ul>
+</li>
+<li><p><strong>Item Coordinate Cache</strong>:
+Complex markers (e.g., detailed SVG sigils) are expensive to paint.</p>
+<ul>
+<li><p><strong>Strategy</strong>: Enable <code class="docutils literal notranslate"><span class="pre">QGraphicsItem.ItemCoordinateCache</span></code>. Qt renders the item to an offscreen pixmap and reuses it as long as the item’s appearance doesn’t change (even if it moves). This shifts the load from the CPU (painting) to the GPU (texture blitting).</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="the-opengl-viewport-solution">
+<h3>9.2 The OpenGL Viewport Solution<a class="headerlink" href="#the-opengl-viewport-solution" title="Link to this heading">¶</a></h3>
+<p>Standard <code class="docutils literal notranslate"><span class="pre">QWidget</span></code> viewports perform rasterization on the CPU.</p>
+<ul class="simple">
+<li><p><strong>Strategy</strong>: Set the <code class="docutils literal notranslate"><span class="pre">QGraphicsView</span></code> viewport to <code class="docutils literal notranslate"><span class="pre">QOpenGLWidget</span></code>.</p></li>
+<li><p><strong>Benefit</strong>: This unlocks hardware acceleration. Modern GPUs can handle the composition of thousands of textured quads (the cached markers) with ease, bypassing the CPU bottleneck of software rasterization.</p></li>
+</ul>
+</section>
+<section id="level-of-detail-lod">
+<h3>9.3 Level of Detail (LOD)<a class="headerlink" href="#level-of-detail-lod" title="Link to this heading">¶</a></h3>
+<p>Rendering full details for 1,000 units when zoomed out is wasteful.</p>
+<ul class="simple">
+<li><p><strong>Strategy</strong>: Implement LOD in the <code class="docutils literal notranslate"><span class="pre">paint()</span></code> method.</p>
+<ul>
+<li><p><strong>High Zoom</strong>: Draw full SVG marker.</p></li>
+<li><p><strong>Medium Zoom</strong>: Draw simplified geometric shape.</p></li>
+<li><p><strong>Low Zoom</strong>: Draw a single pixel or dot.</p></li>
+</ul>
+</li>
+<li><p><strong>Implementation</strong>: Use <code class="docutils literal notranslate"><span class="pre">QStyleOptionGraphicsItem.levelOfDetailFromTransform</span></code> to determine the current zoom factor and branch the painting logic accordingly.</p></li>
+</ul>
+</section>
+<section id="batching-updates">
+<h3>9.4 Batching Updates<a class="headerlink" href="#batching-updates" title="Link to this heading">¶</a></h3>
+<p>To avoid 1,000 separate Python-to-C++ calls per frame:</p>
+<ul class="simple">
+<li><p><strong>Strategy</strong>: Vectorize the math. Use <code class="docutils literal notranslate"><span class="pre">numpy</span></code> to calculate the positions of all 1,000 units for time $t$ in a single batch operation. While updating the <code class="docutils literal notranslate"><span class="pre">QGraphicsItem</span></code> positions still requires a loop, the heavy lifting of interpolation is done in optimized C code via <code class="docutils literal notranslate"><span class="pre">numpy</span></code>.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="advanced-features-and-future-roadmap">
+<h2>10. Advanced Features and Future Roadmap<a class="headerlink" href="#advanced-features-and-future-roadmap" title="Link to this heading">¶</a></h2>
+<section id="ghost-trails-motion-history">
+<h3>10.1 Ghost Trails (Motion History)<a class="headerlink" href="#ghost-trails-motion-history" title="Link to this heading">¶</a></h3>
+<p>Visualizing where an entity was is crucial for understanding battle maneuvers.</p>
+<ul class="simple">
+<li><p><strong>Implementation Options</strong>:</p>
+<ol class="arabic simple">
+<li><p><strong>Particle System</strong>: Spawn fading “ghost” items behind the marker. Drawback: Explodes the item count (1,000 units $\times$ 10 ghosts = 10,000 items).</p></li>
+<li><p><strong>Path Stroking (Recommended)</strong>: Each marker maintains a <code class="docutils literal notranslate"><span class="pre">QPolygonF</span></code> of its last $N$ positions. The <code class="docutils literal notranslate"><span class="pre">paint()</span></code> method draws this polyline.</p></li>
+</ol>
+</li>
+<li><p><strong>Fading Effect</strong>: Using a <code class="docutils literal notranslate"><span class="pre">QLinearGradient</span></code> brush along the path allows the trail to fade out smoothly without managing transparency for separate items. This is far more performant than particle systems in a <code class="docutils literal notranslate"><span class="pre">QGraphicsView</span></code> context.</p></li>
+</ul>
+</section>
+<section id="visibility-and-existence-intervals">
+<h3>10.2 Visibility and Existence Intervals<a class="headerlink" href="#visibility-and-existence-intervals" title="Link to this heading">¶</a></h3>
+<p>Entities that “die” or haven’t been “born” must be hidden.</p>
+<ul class="simple">
+<li><p><strong>Optimization</strong>: Simply calling <code class="docutils literal notranslate"><span class="pre">hide()</span></code> is not enough if the system still iterates over them.</p></li>
+<li><p><strong>Active List</strong>: Maintain a separate list of “Active Entities” for the current time window. Only update and render items in this list. When $t$ crosses an existence boundary ($t_{start}$ or $t_{end}$), move the entity between the “Active” and “Inactive” lists.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="implementation-roadmap">
+<h2>11. Implementation Roadmap<a class="headerlink" href="#implementation-roadmap" title="Link to this heading">¶</a></h2>
+<p><strong>Phase 1: The Core Engine</strong></p>
+<ol class="arabic simple">
+<li><p>Implement <code class="docutils literal notranslate"><span class="pre">TemporalEntity</span></code> class and JSON schema.</p></li>
+<li><p>Build <code class="docutils literal notranslate"><span class="pre">MasterClock</span></code> and basic <code class="docutils literal notranslate"><span class="pre">QTimer</span></code> playback loop.</p></li>
+<li><p>Implement <code class="docutils literal notranslate"><span class="pre">bisect</span></code> based keyframe lookup.</p></li>
+</ol>
+<p><strong>Phase 2: The Viewer</strong></p>
+<ol class="arabic simple">
+<li><p>Set up <code class="docutils literal notranslate"><span class="pre">QGraphicsScene</span></code> with <code class="docutils literal notranslate"><span class="pre">QOpenGLWidget</span></code> viewport.</p></li>
+<li><p>Implement <code class="docutils literal notranslate"><span class="pre">TemporalMarker</span></code> item with <code class="docutils literal notranslate"><span class="pre">setPos</span></code> updates.</p></li>
+<li><p>Create the Timeline Widget with basic scrubbing.</p></li>
+</ol>
+<p><strong>Phase 3: Interaction &amp; Recording</strong></p>
+<ol class="arabic simple">
+<li><p>Implement “Record” mode with mouse sampling.</p></li>
+<li><p>Add Motion Path visualization (<code class="docutils literal notranslate"><span class="pre">QGraphicsPathItem</span></code>).</p></li>
+<li><p>Implement node dragging and Bezier control points.</p></li>
+</ol>
+<p><strong>Phase 4: Optimization &amp; Scale</strong></p>
+<ol class="arabic simple">
+<li><p>Profile with 1,000 items.</p></li>
+<li><p>Implement <code class="docutils literal notranslate"><span class="pre">ItemCoordinateCache</span></code> and <code class="docutils literal notranslate"><span class="pre">NoIndex</span></code>.</p></li>
+<li><p>Add Level of Detail (LOD) logic.</p></li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="comparison-of-optimization-techniques">
+<h2>12. Comparison of Optimization Techniques<a class="headerlink" href="#comparison-of-optimization-techniques" title="Link to this heading">¶</a></h2>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head text-left"><p>Technique</p></th>
+<th class="head text-left"><p>Implementation Effort</p></th>
+<th class="head text-left"><p>Performance Gain</p></th>
+<th class="head text-left"><p>Use Case</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td class="text-left"><p><strong>Binary Search (Bisect)</strong></p></td>
+<td class="text-left"><p>Low</p></td>
+<td class="text-left"><p>High ($O(\log N)$ lookup)</p></td>
+<td class="text-left"><p>Playback/Scrubbing of long histories.</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><strong>OpenGL Viewport</strong></p></td>
+<td class="text-left"><p>Medium</p></td>
+<td class="text-left"><p>Very High (GPU Render)</p></td>
+<td class="text-left"><p>Rendering 1000+ items; Battle Maneuvers.</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><strong>Item Coordinate Cache</strong></p></td>
+<td class="text-left"><p>Low</p></td>
+<td class="text-left"><p>High (Texture Blitting)</p></td>
+<td class="text-left"><p>Complex SVG markers moving without scaling.</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><strong>NoIndex (BSP Bypass)</strong></p></td>
+<td class="text-left"><p>Low</p></td>
+<td class="text-left"><p>High (Update Speed)</p></td>
+<td class="text-left"><p>Constant movement of many items.</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><strong>LOD (Level of Detail)</strong></p></td>
+<td class="text-left"><p>Medium</p></td>
+<td class="text-left"><p>Medium (Paint reduction)</p></td>
+<td class="text-left"><p>Viewing the whole world map (Zoomed out).</p></td>
+</tr>
+</tbody>
+</table>
+</div>
 </section>
 </section>
 
@@ -426,25 +766,64 @@
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Concept: Temporal Map Markers</a><ul>
-<li><a class="reference internal" href="#the-vision">1. The Vision</a><ul>
-<li><a class="reference internal" href="#core-use-cases">Core Use Cases</a></li>
+<li><a class="reference internal" href="#">ProjektKraken: Temporal Map Markers</a><ul>
+<li><a class="reference internal" href="#architectural-specification-and-implementation-strategy">Architectural Specification and Implementation Strategy</a></li>
+<li><a class="reference internal" href="#executive-summary-the-fourth-dimension-in-digital-cartography">1. Executive Summary: The Fourth Dimension in Digital Cartography</a></li>
+<li><a class="reference internal" href="#theoretical-framework-and-core-vision">2. Theoretical Framework and Core Vision</a><ul>
+<li><a class="reference internal" href="#the-limitations-of-static-cartography">2.1 The Limitations of Static Cartography</a></li>
+<li><a class="reference internal" href="#the-temporal-coordinate-system">2.2 The Temporal Coordinate System</a></li>
+<li><a class="reference internal" href="#core-use-case-analysis">2.3 Core Use Case Analysis</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#key-features">2. Key Features</a><ul>
-<li><a class="reference internal" href="#global-timeline">Global Timeline</a></li>
-<li><a class="reference internal" href="#temporal-markers">Temporal Markers</a></li>
-<li><a class="reference internal" href="#motion-paths">Motion Paths</a></li>
-<li><a class="reference internal" href="#visibility-existence">Visibility &amp; Existence</a></li>
+<li><a class="reference internal" href="#data-architecture-and-storage-models">3. Data Architecture and Storage Models</a><ul>
+<li><a class="reference internal" href="#the-temporal-json-schema">3.1 The Temporal JSON Schema</a></li>
+<li><a class="reference internal" href="#keyframe-storage-and-retrieval-efficiency">3.2 Keyframe Storage and Retrieval Efficiency</a></li>
+<li><a class="reference internal" href="#calendar-integration-mapping-t-to-dates">3.3 Calendar Integration: Mapping $t$ to Dates</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#user-interface-concepts">3. User Interface Concepts</a><ul>
-<li><a class="reference internal" href="#the-timeline-widget">The Timeline Widget</a></li>
-<li><a class="reference internal" href="#map-interaction-the-nle-on-map">Map Interaction (The “NLE on Map”)</a></li>
+<li><a class="reference internal" href="#the-rendering-pipeline-qt-graphics-view-framework">4. The Rendering Pipeline: Qt Graphics View Framework</a><ul>
+<li><a class="reference internal" href="#the-scene-graph-qgraphicsscene">4.1 The Scene Graph (QGraphicsScene)</a></li>
+<li><a class="reference internal" href="#the-viewport-qgraphicsview">4.2 The Viewport (QGraphicsView)</a></li>
+<li><a class="reference internal" href="#the-temporal-marker-item-qgraphicsitem">4.3 The Temporal Marker Item (QGraphicsItem)</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#technical-requirements">4. Technical Requirements</a></li>
-<li><a class="reference internal" href="#future-roadmap-ideas-if-resurrected">5. Future Roadmap Ideas (If Resurrected)</a></li>
+<li><a class="reference internal" href="#algorithmic-core-interpolation-and-trajectory">5. Algorithmic Core: Interpolation and Trajectory</a><ul>
+<li><a class="reference internal" href="#linear-interpolation-lerp">5.1 Linear Interpolation (Lerp)</a></li>
+<li><a class="reference internal" href="#bezier-interpolation-organic-movement">5.2 Bezier Interpolation (Organic Movement)</a></li>
+<li><a class="reference internal" href="#region-animation-polygon-morphing">5.3 Region Animation (Polygon Morphing)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#time-management-architecture">6. Time Management Architecture</a><ul>
+<li><a class="reference internal" href="#the-master-clock-controller">6.1 The Master Clock Controller</a></li>
+<li><a class="reference internal" href="#handling-time-skips-and-non-linear-access">6.2 Handling “Time Skips” and Non-Linear Access</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#user-interface-the-timeline-widget">7. User Interface: The Timeline Widget</a><ul>
+<li><a class="reference internal" href="#architecture-of-the-timeline">7.1 Architecture of the Timeline</a></li>
+<li><a class="reference internal" href="#synchronization-logic">7.2 Synchronization Logic</a></li>
+<li><a class="reference internal" href="#zoom-and-pan-on-the-time-axis">7.3 Zoom and Pan on the Time Axis</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#interaction-design-the-nle-on-map">8. Interaction Design: The “NLE on Map”</a><ul>
+<li><a class="reference internal" href="#live-puppeteering-recording-mode">8.1 Live Puppeteering (Recording Mode)</a></li>
+<li><a class="reference internal" href="#motion-path-visualization-and-editing">8.2 Motion Path Visualization and Editing</a></li>
+<li><a class="reference internal" href="#selection-challenges-in-a-dynamic-scene">8.3 Selection Challenges in a Dynamic Scene</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#performance-engineering-rendering-at-scale">9. Performance Engineering: Rendering at Scale</a><ul>
+<li><a class="reference internal" href="#optimizing-the-scene-graph">9.1 Optimizing the Scene Graph</a></li>
+<li><a class="reference internal" href="#the-opengl-viewport-solution">9.2 The OpenGL Viewport Solution</a></li>
+<li><a class="reference internal" href="#level-of-detail-lod">9.3 Level of Detail (LOD)</a></li>
+<li><a class="reference internal" href="#batching-updates">9.4 Batching Updates</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#advanced-features-and-future-roadmap">10. Advanced Features and Future Roadmap</a><ul>
+<li><a class="reference internal" href="#ghost-trails-motion-history">10.1 Ghost Trails (Motion History)</a></li>
+<li><a class="reference internal" href="#visibility-and-existence-intervals">10.2 Visibility and Existence Intervals</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#implementation-roadmap">11. Implementation Roadmap</a></li>
+<li><a class="reference internal" href="#comparison-of-optimization-techniques">12. Comparison of Optimization Techniques</a></li>
 </ul>
 </li>
 </ul>
