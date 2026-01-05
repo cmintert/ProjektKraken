@@ -226,7 +226,7 @@ class MapGraphicsView(QGraphicsView):
             and hasattr(self, "_press_pos")
         ):
 
-            release_pos = event.scenePos()
+            release_pos = self.mapToScene(event.pos())
             distance = (release_pos - self._press_pos).manhattanLength()
 
             logger.info(
