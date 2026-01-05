@@ -96,6 +96,7 @@ class MapGraphicsView(QGraphicsView):
         self.current_time = 0.0
         self.record_mode = False
         self.current_map_path: Optional[str] = None
+        self._last_motion_path_marker_id: Optional[str] = None  # Sticky path visibility
 
         # Theme
         self.tm = ThemeManager()
@@ -419,6 +420,7 @@ class MapGraphicsView(QGraphicsView):
     def _on_selection_changed(self) -> None:
         """
         Show motion paths for selected markers.
+        Uses sticky visibility: path stays visible until a different marker is selected.
         """
         from src.gui.widgets.map.motion_path_item import HandleItem
 
@@ -427,13 +429,13 @@ class MapGraphicsView(QGraphicsView):
 
         logger.debug(f"Selection changed: {len(selected_items)} items selected")
 
+        # Check what is currently selected
         for item in selected_items:
             if isinstance(item, MarkerItem):
                 selected_ids.add(item.marker_id)
                 logger.debug(f"  - Selected marker: {item.marker_id}")
             elif isinstance(item, HandleItem):
                 # If a handle is selected, keep its parent motion path visible
-                # Find which motion path owns this handle
                 parent = item.parentItem()
                 if isinstance(parent, MotionPathItem):
                     selected_ids.add(parent.marker_id)
@@ -444,6 +446,16 @@ class MapGraphicsView(QGraphicsView):
                 # If path is selected directly, keep it visible
                 selected_ids.add(item.marker_id)
                 logger.debug(f"  - Selected motion path for marker: {item.marker_id}")
+
+        # Sticky behavior: if nothing marker-related is selected, keep showing last path
+        if not selected_ids and self._last_motion_path_marker_id:
+            selected_ids.add(self._last_motion_path_marker_id)
+            logger.debug(
+                f"  - No selection, keeping last path: {self._last_motion_path_marker_id}"
+            )
+        elif selected_ids:
+            # Update last shown marker (pick first if multiple)
+            self._last_motion_path_marker_id = next(iter(selected_ids))
 
         # Update visibility
         logger.debug(f"Total motion paths: {len(self.motion_paths)}")
