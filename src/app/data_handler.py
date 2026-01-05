@@ -200,7 +200,6 @@ class DataHandler(QObject):
             markers: List of Marker objects.
         """
         # Process markers to add labels from cached data
-        processed_markers = []
         for marker in markers:
             # Determine label from cached data
             label = "Unknown"
@@ -219,21 +218,11 @@ class DataHandler(QObject):
                 if event:
                     label = event.name
 
-            # Create marker data dict
-            processed_markers.append(
-                {
-                    "id": marker.id,
-                    "object_id": marker.object_id,
-                    "object_type": marker.object_type,
-                    "label": label,
-                    "x": marker.x,
-                    "y": marker.y,
-                    "icon": marker.attributes.get("icon"),
-                    "color": marker.attributes.get("color"),
-                }
-            )
+            # Set label directly on the Marker object
+            marker.label = label
 
-        self.markers_ready.emit(map_id, processed_markers)
+        # Emit the actual Marker objects to preserve temporal methods
+        self.markers_ready.emit(map_id, markers)
 
     @Slot(object)
     def on_command_finished(self, result: "CommandResult") -> None:
