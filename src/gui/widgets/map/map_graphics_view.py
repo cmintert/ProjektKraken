@@ -60,6 +60,7 @@ class MapGraphicsView(QGraphicsView):
     marker_keyframe_duplicated = Signal(
         str, float, float, float
     )  # marker_id, source_t, norm_x, norm_y
+    edit_keyframe_requested = Signal(str, float)  # marker_id, t
 
     marker_clicked = Signal(str)  # marker_id
     marker_drop_requested = Signal(str, str, str, float, float)
@@ -258,6 +259,9 @@ class MapGraphicsView(QGraphicsView):
             motion_path.keyframe_moved.connect(self._on_keyframe_moved)
             motion_path.keyframe_deleted.connect(self._on_keyframe_deleted)
             motion_path.keyframe_duplicated.connect(self._on_keyframe_duplicated)
+            motion_path.keyframe_double_clicked.connect(
+                self._on_keyframe_double_clicked
+            )
 
             # Initial update of path with current map dimensions
             rect = self.pixmap_item.sceneBoundingRect()
@@ -295,6 +299,10 @@ class MapGraphicsView(QGraphicsView):
     def _on_keyframe_deleted(self, marker_id: str, t: float) -> None:
         """Handle keyframe deletion."""
         self.marker_keyframe_deleted.emit(marker_id, t)
+
+    def _on_keyframe_double_clicked(self, marker_id: str, t: float) -> None:
+        """Handle keyframe edit request."""
+        self.edit_keyframe_requested.emit(marker_id, t)
 
     def _scene_to_normalized(
         self, scene_x: float, scene_y: float

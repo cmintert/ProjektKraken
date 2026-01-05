@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
 
 from src.core.marker import Marker
 from src.core.paths import get_resource_path
+from src.gui.dialogs.keyframe_dialog import KeyframeDialog
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 
 logger = logging.getLogger(__name__)
@@ -145,6 +146,7 @@ class MapWidget(QWidget):
         self.view.marker_keyframe_duplicated.connect(
             self.marker_keyframe_duplicated.emit
         )
+        self.view.edit_keyframe_requested.connect(self._on_edit_keyframe_requested)
         self.view.marker_clicked.connect(self.marker_clicked.emit)
         self.view.add_marker_requested.connect(self.create_marker_requested.emit)
         self.view.delete_marker_requested.connect(self.delete_marker_requested.emit)
@@ -323,3 +325,37 @@ class MapWidget(QWidget):
 
     def clear_markers(self) -> None:
         """Removes all markers from the map."""
+        self.view.clear_markers()
+
+    @Slot(str, float)
+    def _on_edit_keyframe_requested(self, marker_id: str, t: float) -> None:
+        """
+        Shows dialog to edit keyframe properties.
+        """
+        if marker_id not in self.view.markers:
+            logger.warning(f"Marker {marker_id} not found for editing.")
+            return
+
+        marker_item = self.view.markers[marker_id]
+        keyframes = marker_item.marker_data.attributes.get("temporal", {}).get(
+            "keyframes", []
+        )
+
+        kf = next((k for k in keyframes if k["t"] == t), None)
+        if not kf:
+            logger.warning(f"Keyframe at t={t} not found for marker {marker_id}.")
+            return
+
+        current_x = kf["x"]
+        current_y = kf["y"]
+
+        dialog = KeyframeDialog(t, current_x, current_y, self)
+        if dialog.exec():
+            new_t, new_x, new_y = dialog.get_values()
+
+            # If time changed, we must delete the old keyframe and add a new one
+            if new_t != t:
+                self.marker_keyframe_deleted.emit(marker_id, t)
+
+            # Add/Update (if time changed, this adds at new time)
+            self.marker_keyframe_changed.emit(marker_id, new_t, new_x, new_y)

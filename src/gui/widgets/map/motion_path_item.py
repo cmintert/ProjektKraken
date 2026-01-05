@@ -23,6 +23,7 @@ class HandleItem(QGraphicsObject):
     position_changed = Signal(float, float, float)  # t, new_x, new_y
     duplicate_requested = Signal(float, float, float)  # original_t, new_x, new_y
     delete_requested = Signal(float)  # t
+    double_clicked = Signal(float)  # t
     clicked = Signal(object)  # Emits self
 
     def __init__(
@@ -110,16 +111,23 @@ class HandleItem(QGraphicsObject):
             else:
                 self.position_changed.emit(self.t, scene_pos.x(), scene_pos.y())
 
+    def mouseDoubleClickEvent(self, event: Any) -> None:
+        """Handle double click to edit."""
+        super().mouseDoubleClickEvent(event)
+        self.double_clicked.emit(self.t)
+
     def contextMenuEvent(self, event: Any) -> None:
         """Handle context menu for deleting keyframes."""
         menu = QMenu()
+        edit_action = menu.addAction("Edit Keyframe")
+        menu.addSeparator()
         delete_action = menu.addAction("Delete Keyframe")
-
-        # We can also add "Set Time..." or other actions later
 
         action = menu.exec(event.screenPos())
         if action == delete_action:
             self.delete_requested.emit(self.t)
+        elif action == edit_action:
+            self.double_clicked.emit(self.t)
 
 
 class MotionPathItem(QGraphicsPathItem):
@@ -149,6 +157,7 @@ class MotionPathItem(QGraphicsPathItem):
         str, float, float, float
     )  # marker_id, source_t, scene_x, scene_y
     keyframe_deleted = Signal(str, float)  # marker_id, t
+    keyframe_double_clicked = Signal(str, float)  # marker_id, t
 
     def __init__(self, marker_id: str, parent: Optional[QGraphicsItem] = None) -> None:
         super().__init__(parent)
@@ -222,6 +231,7 @@ class MotionPathItem(QGraphicsPathItem):
         handle.position_changed.connect(self._on_handle_moved)
         handle.duplicate_requested.connect(self._on_handle_duplicated)
         handle.delete_requested.connect(self._on_handle_deleted)
+        handle.double_clicked.connect(self._on_handle_double_clicked)
 
         self.handles.append(handle)
 
@@ -237,3 +247,7 @@ class MotionPathItem(QGraphicsPathItem):
     def _on_handle_deleted(self, t: float) -> None:
         """Forward deletion request."""
         self.keyframe_deleted.emit(self.marker_id, t)
+
+    def _on_handle_double_clicked(self, t: float) -> None:
+        """Forward double click (edit) request."""
+        self.keyframe_double_clicked.emit(self.marker_id, t)
