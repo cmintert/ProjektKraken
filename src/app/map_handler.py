@@ -317,6 +317,7 @@ class MapHandler(QObject):
             self.window._last_selected_id = marker_id
             self.window._last_selected_type = "event"
             self.window.ui_manager.docks["event"].raise_()
+            self.window.unified_list.select_item("event", marker_id)
 
         elif object_type == "entity":
             if not self.window.check_unsaved_changes(self.window.entity_editor):
@@ -325,6 +326,7 @@ class MapHandler(QObject):
             self.window._last_selected_id = marker_id
             self.window._last_selected_type = "entity"
             self.window.ui_manager.docks["entity"].raise_()
+            self.window.unified_list.select_item("entity", marker_id)
 
     @Slot(str, str)
     def on_marker_icon_changed(self, marker_id: str, icon: str) -> None:
