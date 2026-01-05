@@ -435,21 +435,36 @@ class MapHandler(QObject):
         self.window.map_widget.clear_markers()
         self._marker_object_to_id.clear()  # Reset mapping
 
+        # Get current timeline time for temporal position resolution
+        current_time = self.window.timeline.get_current_time()
+        logger.debug(f"Loading markers with current time: {current_time}")
+
         for marker_data in processed_markers:
             # Handle both Marker object and dict (for robustness)
             if hasattr(marker_data, "id"):
-                # It's a Marker object
+                # It's a Marker object - use temporal resolution if available
                 m_obj_id = marker_data.object_id
                 m_type = marker_data.object_type
                 m_label = marker_data.label
-                m_x = marker_data.x
-                m_y = marker_data.y
                 m_icon = marker_data.attributes.get("icon", "map-pin.svg")
                 m_color = marker_data.attributes.get("color", "#888888")
                 m_id = marker_data.id
                 m_data = marker_data
+
+                # Apply temporal position resolution
+                if hasattr(marker_data, "get_state_at"):
+                    state = marker_data.get_state_at(current_time)
+                    m_x = state.x
+                    m_y = state.y
+                    logger.debug(
+                        f"Marker {m_obj_id} temporal position at t={current_time}: "
+                        f"({m_x:.3f}, {m_y:.3f})"
+                    )
+                else:
+                    m_x = marker_data.x
+                    m_y = marker_data.y
             else:
-                # It's a dict
+                # It's a dict - use static position
                 m_obj_id = marker_data["object_id"]
                 m_type = marker_data["object_type"]
                 m_label = marker_data["label"]
@@ -458,7 +473,6 @@ class MapHandler(QObject):
                 m_icon = marker_data.get("icon", "map-pin.svg")
                 m_color = marker_data.get("color", "#888888")
                 m_id = marker_data["id"]
-                # Convert to object if needed, but for now None
                 m_data = None
 
             # Add marker to map
