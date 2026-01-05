@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-01-04
-### Internal
-- Clarify Windows installation instructions
+## [Development] - 2026-01-05
+### Added
+- feat: introduce MapHandler to centralize map and marker operations.
 
 
 *This changelog was automatically generated.*

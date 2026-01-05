@@ -3,10 +3,10 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="&lt;no title&gt;" href="LICENSE.html"><link rel="prev" title="services package" href="services.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
-        <title>Changelog - Project Kraken 0.5.0 documentation</title>
+        <title>Concept: Temporal Map Markers - Project Kraken 0.5.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -235,8 +235,8 @@
 </li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
-<ul class="current">
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Changelog</a></li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
 </ul>
 
 </div>
@@ -257,7 +257,7 @@
         </a>
         <div class="content-icon-container">
           <div class="view-this-page">
-  <a class="muted-link" href="_sources/CHANGELOG.md.txt" title="View this page">
+  <a class="muted-link" href="_sources/TEMPORAL_MAPS_CONCEPT.md.txt" title="View this page">
     <svg><use href="#svg-eye"></use></svg>
     <span class="visually-hidden">View this page</span>
   </a>
@@ -275,18 +275,117 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="changelog">
-<h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">¶</a></h1>
-<p>All notable changes to this project will be documented in this file.</p>
-<section id="development-2026-01-05">
-<h2>[Development] - 2026-01-05<a class="headerlink" href="#development-2026-01-05" title="Link to this heading">¶</a></h2>
-<section id="added">
-<h3>Added<a class="headerlink" href="#added" title="Link to this heading">¶</a></h3>
+          <section id="concept-temporal-map-markers">
+<h1>Concept: Temporal Map Markers<a class="headerlink" href="#concept-temporal-map-markers" title="Link to this heading">¶</a></h1>
+<p><strong>Status</strong>: Proposal / Abandoned Implementation (Jan 2026)
+<strong>Goal</strong>: Visualize the movement and state of entities on a map over time.</p>
+<section id="the-vision">
+<h2>1. The Vision<a class="headerlink" href="#the-vision" title="Link to this heading">¶</a></h2>
+<p>In storytelling and world-building, entities (characters, armies, items) rarely stay in one place. “Temporal Maps” allows ProjektKraken to represent <strong>Journeys</strong> and <strong>Timelines</strong> visually on the map.</p>
+<p>Instead of a marker being fixed at <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code>, a marker has a position <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code> relative to a global <strong>Time</strong> <code class="docutils literal notranslate"><span class="pre">t</span></code>.</p>
+<section id="core-use-cases">
+<h3>Core Use Cases<a class="headerlink" href="#core-use-cases" title="Link to this heading">¶</a></h3>
 <ul class="simple">
-<li><p>feat: introduce MapHandler to centralize map and marker operations.</p></li>
+<li><p><strong>Tracking Journeys</strong>: Show the path of the “One Ring” across Middle-earth.</p></li>
+<li><p><strong>Historical Borders</strong>: Show how kingdom borders shift over centuries.</p></li>
+<li><p><strong>Battle Maneuvers</strong>: Animate troop movements during a specific battle event.</p></li>
 </ul>
-<p><em>This changelog was automatically generated.</em></p>
 </section>
+</section>
+<hr class="docutils" />
+<section id="key-features">
+<h2>2. Key Features<a class="headerlink" href="#key-features" title="Link to this heading">¶</a></h2>
+<section id="global-timeline">
+<h3>Global Timeline<a class="headerlink" href="#global-timeline" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>A master “Playhead” controls the current time <code class="docutils literal notranslate"><span class="pre">t</span></code> for the entire application.</p></li>
+<li><p>As <code class="docutils literal notranslate"><span class="pre">t</span></code> changes, the map updates to show the state of the world at that moment.</p></li>
+</ul>
+</section>
+<section id="temporal-markers">
+<h3>Temporal Markers<a class="headerlink" href="#temporal-markers" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Markers have “Keyframes”: discrete points in time with specific attributes.</p></li>
+<li><p><strong>Position Keyframes</strong>: <code class="docutils literal notranslate"><span class="pre">At</span> <span class="pre">t=0,</span> <span class="pre">pos=(10,10)</span></code>. <code class="docutils literal notranslate"><span class="pre">At</span> <span class="pre">t=100,</span> <span class="pre">pos=(50,50)</span></code>.</p></li>
+<li><p><strong>Interpolation</strong>: System calculates the position between keyframes (e.g., Linear interpolation for straight movement).</p></li>
+</ul>
+</section>
+<section id="motion-paths">
+<h3>Motion Paths<a class="headerlink" href="#motion-paths" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>When a marker is selected, its entire trajectory is visible as a <strong>Motion Path</strong> (dotted line).</p></li>
+<li><p>Nodes on the path represent keyframes.</p></li>
+<li><p>Users can see where an entity <em>was</em> and where it <em>will go</em>.</p></li>
+</ul>
+</section>
+<section id="visibility-existence">
+<h3>Visibility &amp; Existence<a class="headerlink" href="#visibility-existence" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Entities can “appear” and “disappear”.</p></li>
+<li><p>Example: A character is born at <code class="docutils literal notranslate"><span class="pre">t=1980</span></code> and dies at <code class="docutils literal notranslate"><span class="pre">t=2050</span></code>. The marker is only visible on the map between these times.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="user-interface-concepts">
+<h2>3. User Interface Concepts<a class="headerlink" href="#user-interface-concepts" title="Link to this heading">¶</a></h2>
+<section id="the-timeline-widget">
+<h3>The Timeline Widget<a class="headerlink" href="#the-timeline-widget" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>A dockable panel at the bottom of the map.</p></li>
+<li><p><strong>Scrubber</strong>: Drag to change time.</p></li>
+<li><p><strong>Tracks</strong>: Rows showing keyframes for selected entities.</p></li>
+<li><p><strong>Controls</strong>: Play/Pause, Next/Prev Keyframe.</p></li>
+</ul>
+</section>
+<section id="map-interaction-the-nle-on-map">
+<h3>Map Interaction (The “NLE on Map”)<a class="headerlink" href="#map-interaction-the-nle-on-map" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Record Mode</strong>: A “Rec” button toggles recording.</p>
+<ul>
+<li><p>When ON, dragging a marker creates a new keyframe at the current <code class="docutils literal notranslate"><span class="pre">t</span></code>.</p></li>
+<li><p>Allows “Live Puppeteering”: Drag a marker while time plays to record complex movements.</p></li>
+</ul>
+</li>
+<li><p><strong>Path Editing</strong>:</p>
+<ul>
+<li><p>Clicking a path node (keyframe) allows dragging it spatially.</p></li>
+<li><p>Right-click context menu to change interpolation type (Linear, Bezier, Instant).</p></li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="technical-requirements">
+<h2>4. Technical Requirements<a class="headerlink" href="#technical-requirements" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Data Storage</strong>:</p>
+<ul>
+<li><p>Markers need a <code class="docutils literal notranslate"><span class="pre">temporal</span></code> JSON structure.</p></li>
+<li><p>Keyframes stored as a sorted list: <code class="docutils literal notranslate"><span class="pre">[{t:</span> <span class="pre">0,</span> <span class="pre">x:</span> <span class="pre">0.5,</span> <span class="pre">y:</span> <span class="pre">0.5},</span> <span class="pre">...]</span></code></p></li>
+</ul>
+</li>
+<li><p><strong>Performance</strong>:</p>
+<ul>
+<li><p>Rendering needs to be efficient; thousands of markers updating every frame (60fps) requires optimized scene graph updates.</p></li>
+</ul>
+</li>
+<li><p><strong>Interaction Layer</strong>:</p>
+<ul>
+<li><p>Separation of “Playback” interactions (panning map) vs “Editing” interactions (moving keyframes).</p></li>
+<li><p>Robust selection model (see <code class="docutils literal notranslate"><span class="pre">post_mortem_temporal_maps.md</span></code> for challenges here).</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="future-roadmap-ideas-if-resurrected">
+<h2>5. Future Roadmap Ideas (If Resurrected)<a class="headerlink" href="#future-roadmap-ideas-if-resurrected" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Ghost Trails</strong>: Show fading trails behind moving markers during playback.</p></li>
+<li><p><strong>Region Animation</strong>: Support animating polygon vertices for shifting borders.</p></li>
+<li><p><strong>Calendar Integration</strong>: Map abstract <code class="docutils literal notranslate"><span class="pre">t</span></code> values to actual fantasy calendar dates.</p></li>
+</ul>
 </section>
 </section>
 
@@ -295,26 +394,8 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="LICENSE.html">
-              <div class="page-info">
-                <div class="context">
-                  <span>Next</span>
-                </div>
-                <div class="title">&lt;no title&gt;</div>
-              </div>
-              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
-            </a>
-          <a class="prev-page" href="services.html">
-              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
-              <div class="page-info">
-                <div class="context">
-                  <span>Previous</span>
-                </div>
-                
-                <div class="title">services package</div>
-                
-              </div>
-            </a>
+          
+          
         </div>
         <div class="bottom-of-page">
           <div class="left-details">
@@ -345,11 +426,25 @@
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Changelog</a><ul>
-<li><a class="reference internal" href="#development-2026-01-05">[Development] - 2026-01-05</a><ul>
-<li><a class="reference internal" href="#added">Added</a></li>
+<li><a class="reference internal" href="#">Concept: Temporal Map Markers</a><ul>
+<li><a class="reference internal" href="#the-vision">1. The Vision</a><ul>
+<li><a class="reference internal" href="#core-use-cases">Core Use Cases</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#key-features">2. Key Features</a><ul>
+<li><a class="reference internal" href="#global-timeline">Global Timeline</a></li>
+<li><a class="reference internal" href="#temporal-markers">Temporal Markers</a></li>
+<li><a class="reference internal" href="#motion-paths">Motion Paths</a></li>
+<li><a class="reference internal" href="#visibility-existence">Visibility &amp; Existence</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#user-interface-concepts">3. User Interface Concepts</a><ul>
+<li><a class="reference internal" href="#the-timeline-widget">The Timeline Widget</a></li>
+<li><a class="reference internal" href="#map-interaction-the-nle-on-map">Map Interaction (The “NLE on Map”)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#technical-requirements">4. Technical Requirements</a></li>
+<li><a class="reference internal" href="#future-roadmap-ideas-if-resurrected">5. Future Roadmap Ideas (If Resurrected)</a></li>
 </ul>
 </li>
 </ul>
