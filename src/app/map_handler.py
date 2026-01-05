@@ -500,7 +500,8 @@ class MapHandler(QObject):
         # In add_marker below, we pass marker_data["object_id"] as the marker_id.
         # So the view uses the Entity/Event ID as its key.
         # Therefore, we don't need to look up a different ID.
-        # However, purely for safety against future refactors, we check if we have it mapped.
+        # However, purely for safety against future refactors,
+        # we check if we have it mapped.
         # Actually, wait - looking at on_markers_ready:
         # self.window.map_widget.add_marker(marker_id=marker_data["object_id"], ...)
         # This confirms the view uses object_id.
@@ -509,8 +510,9 @@ class MapHandler(QObject):
         marker_id = item_id
 
         if marker_id:
-            # Check if this marker is actually on the current map by checking if it's in the mapping
-            # (which implies it was loaded for this map)
+            # Check if this marker is actually on the current map
+            # by checking if it's in the mapping (which implies it was loaded for
+            # this map)
             if item_id in self._marker_object_to_id:
                 logger.info(
                     f"Applying visual update to marker for {item_type} {item_id}"
@@ -540,7 +542,7 @@ class MapHandler(QObject):
         if marker_id in self._marker_object_to_id:
             db_marker_id = self._marker_object_to_id[marker_id]
             cmd = UpdateMarkerKeyframeCommand(db_marker_id, t, x, y)
-            self.window.command_stack.push(cmd)
+            self.window.command_requested.emit(cmd)
             self.load_maps()  # Refresh to show update
         else:
             logger.warning(
@@ -553,7 +555,7 @@ class MapHandler(QObject):
         if marker_id in self._marker_object_to_id:
             db_marker_id = self._marker_object_to_id[marker_id]
             cmd = DeleteMarkerKeyframeCommand(db_marker_id, t)
-            self.window.command_stack.push(cmd)
+            self.window.command_requested.emit(cmd)
             self.load_maps()
         else:
             logger.warning(
@@ -571,7 +573,7 @@ class MapHandler(QObject):
         if marker_id in self._marker_object_to_id:
             db_marker_id = self._marker_object_to_id[marker_id]
             cmd = DuplicateMarkerKeyframeCommand(db_marker_id, source_t, target_t, x, y)
-            self.window.command_stack.push(cmd)
+            self.window.command_requested.emit(cmd)
             self.load_maps()
         else:
             logger.warning(
