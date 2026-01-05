@@ -456,10 +456,15 @@ class MapHandler(QObject):
                     state = marker_data.get_state_at(current_time)
                     m_x = state.x
                     m_y = state.y
+                    m_visible = state.visible
                     logger.debug(
-                        f"Marker {m_obj_id} temporal position at t={current_time}: "
-                        f"({m_x:.3f}, {m_y:.3f})"
+                        f"Marker {m_obj_id} temporal state at t={current_time}: "
+                        f"pos=({m_x:.3f}, {m_y:.3f}), visible={m_visible}"
                     )
+                    # Skip invisible markers
+                    if not m_visible:
+                        logger.debug(f"Skipping invisible marker {m_obj_id}")
+                        continue
                 else:
                     m_x = marker_data.x
                     m_y = marker_data.y
