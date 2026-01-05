@@ -1065,22 +1065,26 @@ class TimelineView(QGraphicsView):
         Handles mouse clicks. Emits 'event_selected' if an EventItem is clicked.
         Tracks playhead dragging.
         """
-        super().mousePressEvent(event)
-
         try:
             pos = event.position().toPoint()
         except AttributeError:
             pos = event.pos()
 
-        # Check for item at click position
+        # Check for item at click position BEFORE calling super
         item = self.scene.itemAt(self.mapToScene(pos), self.transform())
 
-        # Traverse up if needed
+        # If clicking on playhead, clear selection first to prevent
+        # accidental dragging of selected events
+        if isinstance(item, PlayheadItem):
+            self.scene.clearSelection()
+            self._dragging_playhead = True
+
+        # Call super after our check
+        super().mousePressEvent(event)
+
+        # Emit event selection signal if clicked on an event
         if isinstance(item, EventItem):
             self.event_selected.emit(item.event.id)
-        elif isinstance(item, PlayheadItem):
-            # Track that we're dragging the playhead
-            self._dragging_playhead = True
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """

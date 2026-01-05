@@ -506,7 +506,7 @@ class MapHandler(QObject):
             icon: The new icon filename.
             color: The new color hex code.
         """
-        if item_id in self.window.map_widget.markers:
+        if item_id in self.window.map_widget.view.markers:
             logger.debug(f"Applying visual update to marker for {item_type} {item_id}")
             self.window.map_widget.update_marker_visuals(
                 marker_id=item_id,
