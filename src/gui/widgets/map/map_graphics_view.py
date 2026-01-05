@@ -62,7 +62,7 @@ class MapGraphicsView(QGraphicsView):
     )  # marker_id, source_t, norm_x, norm_y
     edit_keyframe_requested = Signal(str, float)  # marker_id, t
 
-    marker_clicked = Signal(str)  # marker_id
+    marker_clicked = Signal(str, str)  # marker_id, object_type
     marker_drop_requested = Signal(str, str, str, float, float)
     add_marker_requested = Signal(float, float)
     delete_marker_requested = Signal(str)
@@ -95,6 +95,7 @@ class MapGraphicsView(QGraphicsView):
         # State
         self.current_time = 0.0
         self.record_mode = False
+        self.current_map_path: Optional[str] = None
 
         # Theme
         self.tm = ThemeManager()
@@ -142,6 +143,9 @@ class MapGraphicsView(QGraphicsView):
                 logger.error(f"Failed to load map image: {image_path}")
                 return False
 
+            # Check if this is a reload of the same map
+            is_reload = self.current_map_path == image_path
+
             # Clear existing map
             if self.pixmap_item:
                 self.scene.removeItem(self.pixmap_item)
@@ -151,9 +155,12 @@ class MapGraphicsView(QGraphicsView):
             self.pixmap_item.setZValue(0)  # Behind markers
             self.scene.addItem(self.pixmap_item)
 
-            # Fit view to map
-            self.fitInView(self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
             self.scene.setSceneRect(self.pixmap_item.boundingRect())
+
+            # Only reset view if it's a new map
+            if not is_reload:
+                self.fitInView(self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
+                self.current_map_path = image_path
 
             logger.info(f"Loaded map: {image_path}")
             return True

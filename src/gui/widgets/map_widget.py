@@ -60,7 +60,7 @@ class MapWidget(QWidget):
     """
 
     marker_position_changed = Signal(str, float, float)
-    marker_clicked = Signal(str)  # marker_id
+    marker_clicked = Signal(str, str)  # marker_id, object_type
     marker_keyframe_changed = Signal(str, float, float, float)  # marker_id, t, x, y
     marker_keyframe_deleted = Signal(str, float)  # marker_id, t
     marker_keyframe_duplicated = Signal(
