@@ -201,7 +201,7 @@ class MapGraphicsView(QGraphicsView):
             self.setDragMode(QGraphicsView.DragMode.NoDrag)
 
             # Store press position and marker for Record Mode handling
-            self._press_pos = event.scenePos()
+            self._press_pos = self.mapToScene(event.pos())
             self._press_marker = item
         else:
             logger.debug("Click on background. Setting ScrollHandDrag.")
