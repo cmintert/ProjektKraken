@@ -1,0 +1,35 @@
+2026-01-05 17:24:48 - root - INFO - ============================================================
+2026-01-05 17:24:48 - root - INFO - Project Kraken Session Started at 2026-01-05T17:24:48.330176
+2026-01-05 17:24:48 - root - INFO - ============================================================
+2026-01-05 17:24:48 - root - INFO - ============================================================
+2026-01-05 17:24:48 - root - INFO - Project Kraken Session Started at 2026-01-05T17:24:48.331920
+2026-01-05 17:24:48 - root - INFO - ============================================================
+2026-01-05 17:24:48 - src.app.entry - INFO - ============================================================
+2026-01-05 17:24:48 - src.app.entry - INFO - Project Kraken Session Started at 2026-01-05T17:24:48.332188
+2026-01-05 17:24:48 - src.app.entry - INFO - ============================================================
+2026-01-05 17:24:48 - src.app.entry - INFO - Starting Application...
+2026-01-05 17:24:48 - src.core.base_theme_manager - DEBUG - Attempting to load themes from: C:\Users\chris\Antigravity Projects\ProjektKraken\themes.json
+2026-01-05 17:24:48 - src.core.base_theme_manager - DEBUG - File exists: True
+2026-01-05 17:24:48 - src.core.base_theme_manager - DEBUG - Current working directory: C:\Users\chris\Antigravity Projects\ProjektKraken
+2026-01-05 17:24:48 - src.core.base_theme_manager - DEBUG - Successfully loaded themes: ['dark_mode', 'light_mode', 'fantasy_mode']
+2026-01-05 17:24:48 - src.core.base_theme_manager - DEBUG - Theme 'dark_mode' font settings: ['font_size_h1', 'font_size_h2', 'font_size_h3', 'font_size_body']
+2026-01-05 17:24:48 - src.core.base_theme_manager - DEBUG - Theme 'light_mode' font settings: ['font_size_h1', 'font_size_h2', 'font_size_h3', 'font_size_body']
+2026-01-05 17:24:48 - src.core.base_theme_manager - DEBUG - Theme 'fantasy_mode' font settings: ['font_size_h1', 'font_size_h2', 'font_size_h3', 'font_size_body']
+2026-01-05 17:24:48 - src.app.data_handler - DEBUG - DataHandler initialized
+2026-01-05 17:24:48 - src.app.worker_manager - INFO - Initializing DatabaseWorker with: C:\Users\chris\AppData\Roaming\ProjektKraken\world.kraken
+2026-01-05 17:24:48 - src.gui.widgets.wiki_text_edit - DEBUG - Building theme CSS. Current theme: dark_mode
+2026-01-05 17:24:48 - src.gui.widgets.wiki_text_edit - DEBUG - Theme data keys: ['app_bg', 'surface', 'border', 'primary', 'accent_secondary', 'text_main', 'text_dim', 'error', 'scrollbar_bg', 'scrollbar_handle', 'font_size_h1', 'font_size_h2', 'font_size_h3', 'font_size_body']
+2026-01-05 17:24:48 - src.gui.widgets.wiki_text_edit - DEBUG - Font sizes from theme: h1=16pt, h2=14pt, h3=12pt, body=10pt
+2026-01-05 17:24:48 - src.gui.widgets.wiki_text_edit - DEBUG - Generated CSS: a { color: #4DA6FF; font-weight: bold; text-decoration: none; } h1 { font-size: 16pt; font-weight: 600; color: #E0E0E0; margin-top: 10px; margin-bottom: 5px; } h2 { font-size: 14pt; font-weight: 600; color: #E0E0E0; margin-top: 8px; margin-bottom: 4px; } h3 { font-size: 12pt; font-weight: 600; color: #E0E0E0; margin-top: 6px; margin-bottom: 3px; } p { margin-bottom: 2px; color: #E0E0E0; font-size: 10pt; } body { color: #E0E0E0; font-size: 10pt; }
+2026-01-05 17:24:48 - src.gui.widgets.wiki_text_edit - DEBUG - Building theme CSS. Current theme: dark_mode
+2026-01-05 17:24:48 - src.gui.widgets.wiki_text_edit - DEBUG - Theme data keys: ['app_bg', 'surface', 'border', 'primary', 'accent_secondary', 'text_main', 'text_dim', 'error', 'scrollbar_bg', 'scrollbar_handle', 'font_size_h1', 'font_size_h2', 'font_size_h3', 'font_size_body']
+2026-01-05 17:24:48 - src.gui.widgets.wiki_text_edit - DEBUG - Font sizes from theme: h1=16pt, h2=14pt, h3=12pt, body=10pt
+2026-01-05 17:24:48 - src.gui.widgets.wiki_text_edit - DEBUG - Generated CSS: a { color: #4DA6FF; font-weight: bold; text-decoration: none; } h1 { font-size: 16pt; font-weight: 600; color: #E0E0E0; margin-top: 10px; margin-bottom: 5px; } h2 { font-size: 14pt; font-weight: 600; color: #E0E0E0; margin-top: 8px; margin-bottom: 4px; } h3 { font-size: 12pt; font-weight: 600; color: #E0E0E0; margin-top: 6px; margin-bottom: 3px; } p { margin-bottom: 2px; color: #E0E0E0; font-size: 10pt; } body { color: #E0E0E0; font-size: 10pt; }
+2026-01-05 17:24:48 - src.gui.widgets.wiki_text_edit - DEBUG - Building theme CSS. Current theme: dark_mode
+2026-01-05 17:24:48 - src.gui.widgets.wiki_text_edit - DEBUG - Theme data keys: ['app_bg', 'surface', 'border', 'primary', 'accent_secondary', 'text_main', 'text_dim', 'error', 'scrollbar_bg', 'scrollbar_handle', 'font_size_h1', 'font_size_h2', 'font_size_h3', 'font_size_body']
+2026-01-05 17:24:48 - src.gui.widgets.wiki_text_edit - DEBUG - Font sizes from theme: h1=16pt, h2=14pt, h3=12pt, body=10pt
+2026-01-05 17:24:48 - src.gui.widgets.wiki_text_edit - DEBUG - Generated CSS: a { color: #4DA6FF; font-weight: bold; text-decoration: none; } h1 { font-size: 16pt; font-weight: 600; color: #E0E0E0; margin-top: 10px; margin-bottom: 5px; } h2 { font-size: 14pt; font-weight: 600; color: #E0E0E0; margin-top: 8px; margin-bottom: 4px; } h3 { font-size: 12pt; font-weight: 600; color: #E0E0E0; margin-top: 6px; margin-bottom: 3px; } p { margin-bottom: 2px; color: #E0E0E0; font-size: 10pt; } body { color: #E0E0E0; font-size: 10pt; }
+2026-01-05 17:24:48 - src.app.connection_manager - DEBUG - ConnectionManager initialized
+2026-01-05 17:24:48 - src.app.connection_manager - DEBUG - All signal/slot connections established
+2026-01-05 17:24:48 - src.app.command_coordinator - DEBUG - CommandCoordinator initialized
+2026-01-05 17:24:48 - src.app.entry - INFO - Entering Event Loop...

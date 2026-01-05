@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from PySide6.QtCore import QPointF, QRectF, Qt, Signal
+from PySide6.QtCore import QObject, QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import QBrush, QColor, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsObject, QGraphicsPathItem, QMenu
 
@@ -130,10 +130,13 @@ class HandleItem(QGraphicsObject):
             self.double_clicked.emit(self.t)
 
 
-class MotionPathItem(QGraphicsPathItem):
+class MotionPathItem(QObject, QGraphicsPathItem):
     """
     Visualizes the temporal path of a marker using a dotted line.
     Manages child HandleItems.
+
+    Note: Inherits from QObject first to enable Signal support, then
+    QGraphicsPathItem for drawing capabilities.
     """
 
     # Signals
@@ -160,7 +163,8 @@ class MotionPathItem(QGraphicsPathItem):
     keyframe_double_clicked = Signal(str, float)  # marker_id, t
 
     def __init__(self, marker_id: str, parent: Optional[QGraphicsItem] = None) -> None:
-        super().__init__(parent)
+        QObject.__init__(self)
+        QGraphicsPathItem.__init__(self, parent)
         self.marker_id = marker_id
         self.setZValue(-1)  # Draw behind the marker itself
 
