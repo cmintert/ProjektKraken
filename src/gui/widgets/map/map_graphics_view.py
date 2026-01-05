@@ -33,9 +33,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.marker import Marker
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.map.icon_picker_dialog import IconPickerDialog
 from src.gui.widgets.map.marker_item import MarkerItem
+from src.gui.widgets.map.motion_path_item import MotionPathItem
 
 logger = logging.getLogger(__name__)
 
@@ -51,12 +53,20 @@ class MapGraphicsView(QGraphicsView):
     """
 
     marker_moved = Signal(str, float, float)
-    marker_clicked = Signal(str, str)  # marker_id, object_type
-    add_marker_requested = Signal(float, float)  # x, y (normalized)
-    delete_marker_requested = Signal(str)  # marker_id
-    change_marker_icon_requested = Signal(str, str)  # marker_id, new_icon
-    change_marker_color_requested = Signal(str, str)  # marker_id, new_color_hex
-    marker_drop_requested = Signal(str, str, str, float, float)  # id, type, name, x, y
+    marker_keyframe_changed = Signal(
+        str, float, float, float
+    )  # marker_id, t, norm_x, norm_y
+    marker_keyframe_deleted = Signal(str, float)  # marker_id, t
+    marker_keyframe_duplicated = Signal(
+        str, float, float, float
+    )  # marker_id, source_t, norm_x, norm_y
+
+    marker_clicked = Signal(str)  # marker_id
+    marker_drop_requested = Signal(str, str, str, float, float)
+    add_marker_requested = Signal(float, float)
+    delete_marker_requested = Signal(str)
+    change_marker_icon_requested = Signal(str, str)
+    change_marker_color_requested = Signal(str, str)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -79,11 +89,19 @@ class MapGraphicsView(QGraphicsView):
         # Map and markers
         self.pixmap_item: Optional[QGraphicsPixmapItem] = None
         self.markers: Dict[str, MarkerItem] = {}
+        self.motion_paths: Dict[str, MotionPathItem] = {}
+
+        # State
+        self.current_time = 0.0
+        self.record_mode = False
 
         # Theme
         self.tm = ThemeManager()
         self.tm.theme_changed.connect(self._update_theme)
         self._update_theme(self.tm.get_theme())
+
+        # Selection changes for motion paths
+        self.scene.selectionChanged.connect(self._on_selection_changed)
 
         # Enable drop support for drag-from-explorer
         self.setAcceptDrops(True)
@@ -188,6 +206,7 @@ class MapGraphicsView(QGraphicsView):
         y: float,
         icon: Optional[str] = None,
         color: Optional[str] = None,
+        marker_data: Optional[Marker] = None,
     ) -> None:
         """
         Adds a marker to the map at normalized coordinates.
@@ -199,6 +218,8 @@ class MapGraphicsView(QGraphicsView):
             x: Normalized X coordinate [0.0, 1.0].
             y: Normalized Y coordinate [0.0, 1.0].
             icon: Optional icon filename (e.g., 'castle.svg').
+            color: Optional color hex.
+            marker_data: Core Marker data object (for temporal logic).
         """
         if not self.pixmap_item:
             logger.warning("Cannot add marker: no map loaded")
@@ -209,9 +230,14 @@ class MapGraphicsView(QGraphicsView):
             self.scene.removeItem(self.markers[marker_id])
             del self.markers[marker_id]
 
+        # Remove existing motion path if present
+        if marker_id in self.motion_paths:
+            self.scene.removeItem(self.motion_paths[marker_id])
+            del self.motion_paths[marker_id]
+
         # Create new marker with optional icon and color
         marker = MarkerItem(
-            marker_id, object_type, label, self.pixmap_item, icon, color
+            marker_id, object_type, label, self.pixmap_item, icon, color, marker_data
         )
 
         # Convert normalized to scene coordinates
@@ -222,13 +248,109 @@ class MapGraphicsView(QGraphicsView):
         self.scene.addItem(marker)
         self.markers[marker_id] = marker
 
+        # Create motion path item if we have data
+        if marker_data and marker_data.attributes.get("temporal", {}).get("enabled"):
+            motion_path = MotionPathItem(marker_id)
+            self.scene.addItem(motion_path)
+            self.motion_paths[marker_id] = motion_path
+
+            # Connect Keyframe Signals
+            motion_path.keyframe_moved.connect(self._on_keyframe_moved)
+            motion_path.keyframe_deleted.connect(self._on_keyframe_deleted)
+            motion_path.keyframe_duplicated.connect(self._on_keyframe_duplicated)
+
+            # Initial update of path with current map dimensions
+            rect = self.pixmap_item.sceneBoundingRect()
+            motion_path.update_path(
+                marker_data.attributes["temporal"]["keyframes"],
+                rect.width(),
+                rect.height(),
+            )
+            motion_path.setVisible(False)  # Hidden by default until selected
+
         # Connect click signal
         marker.clicked.connect(self.marker_clicked.emit)
 
         logger.debug(
-            f"Added marker {marker_id} ({label}) at normalized ({x:.3f}, {y:.3f}), "
-            f"icon={icon}"
+            f"Added marker {marker_id} ({label}) at normalized ({x:.3f}, {y:.3f})"
         )
+
+    def _on_keyframe_moved(
+        self, marker_id: str, t: float, scene_x: float, scene_y: float
+    ) -> None:
+        """
+        Handle keyframe movement from MotionPathItem.
+        Normalize coordinates and bubble up.
+        """
+        norm_x, norm_y = self._scene_to_normalized(scene_x, scene_y)
+        self.marker_keyframe_changed.emit(marker_id, t, norm_x, norm_y)
+
+    def _on_keyframe_duplicated(
+        self, marker_id: str, source_t: float, scene_x: float, scene_y: float
+    ) -> None:
+        """Handle keyframe duplication."""
+        norm_x, norm_y = self._scene_to_normalized(scene_x, scene_y)
+        self.marker_keyframe_duplicated.emit(marker_id, source_t, norm_x, norm_y)
+
+    def _on_keyframe_deleted(self, marker_id: str, t: float) -> None:
+        """Handle keyframe deletion."""
+        self.marker_keyframe_deleted.emit(marker_id, t)
+
+    def _scene_to_normalized(
+        self, scene_x: float, scene_y: float
+    ) -> tuple[float, float]:
+        """Helper to convert scene coords to normalized."""
+        if not self.pixmap_item:
+            return 0.0, 0.0
+
+        pixmap_rect = self.pixmap_item.sceneBoundingRect()
+        rel_x = scene_x - pixmap_rect.left()
+        rel_y = scene_y - pixmap_rect.top()
+
+        width = pixmap_rect.width()
+        height = pixmap_rect.height()
+
+        norm_x = rel_x / width if width > 0 else 0.0
+        norm_y = rel_y / height if height > 0 else 0.0
+        return norm_x, norm_y
+
+    def update_temporal_state(self, current_time: float) -> None:
+        """
+        Updates all markers and motion paths for the given time.
+        """
+        self.current_time = current_time
+
+        for marker in self.markers.values():
+            marker.update_temporal_state(current_time)
+
+    def _on_selection_changed(self) -> None:
+        """
+        Show motion paths for selected markers.
+        """
+        selected_items = self.scene.selectedItems()
+        selected_ids = set()
+
+        for item in selected_items:
+            if isinstance(item, MarkerItem):
+                selected_ids.add(item.marker_id)
+            elif isinstance(item, MotionPathItem):
+                # If path is selected (e.g. handle clicked), keep it visible
+                # Find which marker owns this path?
+                # We stored paths in self.motion_paths keyed by marker_id
+                for mid, path in self.motion_paths.items():
+                    # HandleItem is child of MotionPathItem, but selection propagates
+                    if path == item or item in path.childItems():
+                        selected_ids.add(mid)
+                        break
+
+        # Update visibility
+        for mid, path in self.motion_paths.items():
+            path.setVisible(mid in selected_ids)
+
+    def set_record_mode(self, enabled: bool) -> None:
+        """Sets the recording mode state."""
+        self.record_mode = enabled
+        logger.info(f"Map Record Mode: {enabled}")
 
     def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
         """
@@ -271,7 +393,8 @@ class MapGraphicsView(QGraphicsView):
         marker = self.markers[marker_id]
 
         logger.debug(
-            f"Updating marker {marker_id}: Old Label='{marker.label}', New Label='{label}'"
+            f"Updating marker {marker_id}: Old Label='{marker.label}', "
+            f"New Label='{label}'"
         )
 
         # Update label/tooltip

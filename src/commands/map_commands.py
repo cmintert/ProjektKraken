@@ -631,4 +631,237 @@ class UpdateMarkerColorCommand(BaseCommand):
             )
             db_service.insert_marker(restored_marker)
             self._is_executed = False
-            logger.info(f"Undid color update of marker: {self.marker_id}")
+
+
+class UpdateMarkerKeyframeCommand(BaseCommand):
+    """
+    Command to add or update a keyframe for a marker.
+
+    Updates the 'temporal' attributes of the marker.
+    """
+
+    def __init__(self, marker_id: str, t: float, x: float, y: float) -> None:
+        """
+        Initializes the UpdateMarkerKeyframeCommand.
+
+        Args:
+            marker_id (str): The ID of the marker to update.
+            t (float): The time of the keyframe.
+            x (float): The x coordinate.
+            y (float): The y coordinate.
+        """
+        super().__init__()
+        self.marker_id = marker_id
+        self.t = t
+        self.x = x
+        self.y = y
+        self._previous_marker: Optional[Marker] = None
+        self._new_marker: Optional[Marker] = None
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """
+        Executes the keyframe update.
+
+        Args:
+            db_service (DatabaseService): The database service to use.
+
+        Returns:
+            CommandResult: Result object containing success status and messages.
+        """
+        try:
+            # Fetch current state before update
+            current = db_service.get_marker(self.marker_id)
+            if not current:
+                logger.error(f"Marker not found for keyframe update: {self.marker_id}")
+                return CommandResult(
+                    success=False,
+                    message=f"Marker not found: {self.marker_id}",
+                    command_name="UpdateMarkerKeyframeCommand",
+                )
+
+            self._previous_marker = current
+
+            # Create a copy to modify
+            # (dataclasses are mutable but we want to be safe or use replace)
+            # Actually Marker.add_keyframe modifies the instance if it's not a frozen
+            # dataclass. It is a standard dataclass.
+
+            # We want to keep immutability hygiene if possible, but add_keyframe
+            # likely modifies 'attributes' dict.
+            # Let's clone the marker first.
+            # Since 'attributes' is a dict, we need deep copy of it?
+            # Marker.from_dict(current.to_dict()) is a safe way to clone.
+            new_marker = Marker.from_dict(current.to_dict())
+
+            # Add or update keyframe
+            new_marker.add_keyframe(self.t, self.x, self.y)
+
+            self._new_marker = new_marker
+
+            db_service.insert_marker(self._new_marker)
+            self._is_executed = True
+
+            logger.info(
+                f"Updated keyframe for marker {self.marker_id} at t={self.t}: "
+                f"({self.x:.3f}, {self.y:.3f})"
+            )
+            return CommandResult(
+                success=True,
+                message=f"Marker keyframe updated at t={self.t:.2f}.",
+                command_name="UpdateMarkerKeyframeCommand",
+                data={"t": self.t, "x": self.x, "y": self.y},
+            )
+        except Exception as e:
+            logger.error(f"Failed to update marker keyframe: {e}")
+            return CommandResult(
+                success=False,
+                message=f"Failed to update marker keyframe: {e}",
+                command_name="UpdateMarkerKeyframeCommand",
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """
+        Reverts the keyframe update.
+
+        Args:
+            db_service (DatabaseService): The database service to operate on.
+        """
+        if self._is_executed and self._previous_marker:
+            db_service.insert_marker(self._previous_marker)
+            self._is_executed = False
+            logger.info(f"Undid keyframe update of marker: {self.marker_id}")
+
+
+class DuplicateMarkerKeyframeCommand(BaseCommand):
+    """
+    Command to duplicate a keyframe to a new time and position.
+    """
+
+    def __init__(
+        self, marker_id: str, source_t: float, target_t: float, x: float, y: float
+    ) -> None:
+        super().__init__()
+        self.marker_id = marker_id
+        self.source_t = source_t
+        self.target_t = target_t
+        self.x = x
+        self.y = y
+        self._previous_marker: Optional[Marker] = None
+        self._new_marker: Optional[Marker] = None
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        try:
+            current = db_service.get_marker(self.marker_id)
+            if not current:
+                return CommandResult(
+                    success=False,
+                    message=f"Marker not found: {self.marker_id}",
+                    command_name="DuplicateMarkerKeyframeCommand",
+                )
+
+            self._previous_marker = current
+            new_marker = Marker.from_dict(current.to_dict())
+
+            # Get source keyframe type if possible, or default to 'path'
+            state_at_source = new_marker.get_state_at(self.source_t)
+            # Actually get_state_at interpolates. We want exact keyframe data?
+            # Marker doesn't expose "get_keyframe".
+            # We can just add new keyframe.
+            # The user drag interaction determines X, Y.
+            # We just need to ADD a keyframe at target_t.
+
+            new_marker.add_keyframe(self.target_t, self.x, self.y)
+
+            self._new_marker = new_marker
+            db_service.insert_marker(self._new_marker)
+            self._is_executed = True
+
+            logger.info(
+                f"Duplicated keyframe for {self.marker_id} from {self.source_t} "
+                f"to {self.target_t}"
+            )
+            return CommandResult(
+                success=True,
+                message="Keyframe duplicated.",
+                command_name="DuplicateMarkerKeyframeCommand",
+            )
+        except Exception as e:
+            logger.error(f"Failed to duplicate keyframe: {e}")
+            return CommandResult(
+                success=False,
+                message=f"Error: {e}",
+                command_name="DuplicateMarkerKeyframeCommand",
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        if self._is_executed and self._previous_marker:
+            db_service.insert_marker(self._previous_marker)
+            self._is_executed = False
+            logger.info(f"Undid keyframe duplication: {self.marker_id}")
+
+
+class DeleteMarkerKeyframeCommand(BaseCommand):
+    """
+    Command to delete a keyframe from a marker at a specific time.
+    """
+
+    def __init__(self, marker_id: str, t: float) -> None:
+        """
+        Initializes the DeleteMarkerKeyframeCommand.
+
+        Args:
+            marker_id (str): The ID of the marker.
+            t (float): The time of the keyframe to delete.
+        """
+        super().__init__()
+        self.marker_id = marker_id
+        self.t = t
+        self._previous_marker: Optional[Marker] = None
+        self._new_marker: Optional[Marker] = None
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        try:
+            current = db_service.get_marker(self.marker_id)
+            if not current:
+                return CommandResult(
+                    success=False,
+                    message=f"Marker not found: {self.marker_id}",
+                    command_name="DeleteMarkerKeyframeCommand",
+                )
+
+            self._previous_marker = current
+            new_marker = Marker.from_dict(current.to_dict())
+
+            # Remove keyframe
+            if new_marker.remove_keyframe(self.t):
+                self._new_marker = new_marker
+                db_service.insert_marker(self._new_marker)
+                self._is_executed = True
+                logger.info(
+                    f"Deleted keyframe for marker {self.marker_id} at t={self.t}"
+                )
+                return CommandResult(
+                    success=True,
+                    message=f"Keyframe deleted at t={self.t:.2f}.",
+                    command_name="DeleteMarkerKeyframeCommand",
+                )
+            else:
+                return CommandResult(
+                    success=False,
+                    message=f"No keyframe found at t={self.t:.2f} to delete.",
+                    command_name="DeleteMarkerKeyframeCommand",
+                )
+
+        except Exception as e:
+            logger.error(f"Failed to delete marker keyframe: {e}")
+            return CommandResult(
+                success=False,
+                message=f"Failed to delete marker keyframe: {e}",
+                command_name="DeleteMarkerKeyframeCommand",
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        if self._is_executed and self._previous_marker:
+            db_service.insert_marker(self._previous_marker)
+            self._is_executed = False
+            logger.info(f"Undid keyframe deletion of marker: {self.marker_id}")

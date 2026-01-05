@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.marker import Marker
 from src.core.paths import get_resource_path
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 
@@ -59,6 +60,8 @@ class MapWidget(QWidget):
 
     marker_position_changed = Signal(str, float, float)
     marker_clicked = Signal(str, str)
+    marker_keyframe_changed = Signal(str, float, float, float)  # marker_id, t, x, y
+
     create_map_requested = Signal()
     delete_map_requested = Signal()
     map_selected = Signal(str)  # map_id
@@ -107,27 +110,23 @@ class MapWidget(QWidget):
         # Delete Map Button
         self.btn_delete_map = QPushButton("Delete Map")
         self.btn_delete_map.clicked.connect(self.delete_map_requested.emit)
-        # Use standard button style or generic if destructive is too strong,
-        # but let's stick to destructive for delete actions
         self.btn_delete_map.setStyleSheet(StyleHelper.get_destructive_button_style())
         top_bar.addWidget(self.btn_delete_map)
 
         # Spacer
         top_bar.addStretch()
 
+        # Record Mode Toggle
+        self.btn_record = QPushButton("Record")
+        self.btn_record.setCheckable(True)
+        self.btn_record.toggled.connect(self.view.set_record_mode)
+        # We can style this to look like a red record button when checked
+        # For now standard checkable button
+        top_bar.addWidget(self.btn_record)
+
         # Fit View Button
         self.btn_fit_view = QPushButton("Fit View")
         self.btn_fit_view.clicked.connect(self.view.fit_to_view)
-        # Standard style (no special color)
-        # We can reuse standard button style if we had one, or just left default
-        # But for consistency let's use a subtle style or just default Qt style
-        # which usually looks okay if we don't have a "secondary" style in helper yet.
-        # Actually, let's use primary but maybe different? No, keep it simple.
-        # Check if we have a secondary style... we don't.
-        # Let's just use default for utility buttons or maybe similar to unified list buttons.
-        # Unified list uses plain QPushButtons for top bar except "New".
-        # So we leave it default or add simple styling.
-        # Let's import StyleHelper at top strictly speaking but here is fine too.
         top_bar.addWidget(self.btn_fit_view)
 
         layout.addLayout(top_bar)
@@ -137,6 +136,7 @@ class MapWidget(QWidget):
 
         # Connect signals
         self.view.marker_moved.connect(self._on_marker_moved)
+        self.view.marker_keyframe_changed.connect(self._on_marker_keyframe_changed)
         self.view.marker_clicked.connect(self.marker_clicked.emit)
         self.view.add_marker_requested.connect(self.create_marker_requested.emit)
         self.view.delete_marker_requested.connect(self.delete_marker_requested.emit)
@@ -195,25 +195,45 @@ class MapWidget(QWidget):
             return self.map_selector.itemData(index)
         return None
 
+    @Slot(float)
+    def set_current_time(self, current_time: float) -> None:
+        """
+        Updates the current time for temporal display.
+
+        Args:
+            current_time: The new time from the timeline.
+        """
+        self.view.update_temporal_state(current_time)
+
     @Slot(str, float, float)
     def _on_marker_moved(self, marker_id: str, x: float, y: float) -> None:
         """
         Handles marker movement from the view.
 
-        Updates the widget's marker position and emits signal for persistence.
+        Updates the widget's marker position or keyframe depending on mode.
 
         Args:
             marker_id: ID of the moved marker.
             x: New normalized X coordinate.
             y: New normalized Y coordinate.
         """
-        # Update marker position in widget
-        self.update_marker_position(marker_id, x, y)
+        if self.view.record_mode:
+            # Record Mode: Update/Create keyframe at current time
+            t = self.view.current_time
+            self.marker_keyframe_changed.emit(marker_id, t, x, y)
+            logger.debug(f"Record Mode: Keyframe for {marker_id} at t={t}")
+        else:
+            # Standard Mode: Update static position
+            self.update_marker_position(marker_id, x, y)
+            self.marker_position_changed.emit(marker_id, x, y)
+            logger.debug(f"Standard Mode: Moved {marker_id} to ({x:.3f}, {y:.3f})")
 
-        # Emit signal so app layer can persist the change
-        self.marker_position_changed.emit(marker_id, x, y)
-
-        logger.debug(f"MapWidget: marker {marker_id} moved to ({x:.3f}, {y:.3f})")
+    @Slot(str, float, float, float)
+    def _on_marker_keyframe_changed(
+        self, marker_id: str, t: float, x: float, y: float
+    ) -> None:
+        """Handle keyframe movement from handles."""
+        self.marker_keyframe_changed.emit(marker_id, t, x, y)
 
     def load_map(self, image_path: str) -> bool:
         """
@@ -236,6 +256,7 @@ class MapWidget(QWidget):
         y: float,
         icon: Optional[str] = None,
         color: Optional[str] = None,
+        marker_data: Optional[Marker] = None,
     ) -> None:
         """
         Adds a marker to the map.
@@ -248,8 +269,11 @@ class MapWidget(QWidget):
             y: Normalized Y coordinate [0.0, 1.0].
             icon: Optional icon filename.
             color: Optional color hex string.
+            marker_data: Core Marker object.
         """
-        self.view.add_marker(marker_id, object_type, label, x, y, icon, color)
+        self.view.add_marker(
+            marker_id, object_type, label, x, y, icon, color, marker_data
+        )
 
     def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
         """

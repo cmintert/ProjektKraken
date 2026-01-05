@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional
 
 from PySide6.QtCore import QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import QBrush, QColor, QPainter, QPainterPath, QPen
-from PySide6.QtWidgets import QGraphicsItem, QGraphicsObject, QGraphicsPathItem
+from PySide6.QtWidgets import QGraphicsItem, QGraphicsObject, QGraphicsPathItem, QMenu
 
 # Constants for visuals
 HANDLE_SIZE = 8
@@ -21,6 +21,8 @@ class HandleItem(QGraphicsObject):
 
     # Signals
     position_changed = Signal(float, float, float)  # t, new_x, new_y
+    duplicate_requested = Signal(float, float, float)  # original_t, new_x, new_y
+    delete_requested = Signal(float)  # t
     clicked = Signal(object)  # Emits self
 
     def __init__(
@@ -84,30 +86,40 @@ class HandleItem(QGraphicsObject):
         painter.restore()
 
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
-        if (
-            change == QGraphicsItem.GraphicsItemChange.ItemPositionChange
-            and self.scene()
-        ):
-            # Notify parent/scene of movement
-            # We emitted normalized coordinates? No, handles are in SCENE coords usually.
-            # But the logic expects normalized.
-            # The View will handle the translation of Scene Pos -> Normalized.
-            pass
+        # Standard processing
         return super().itemChange(change, value)
 
     def mousePressEvent(self, event: Any) -> None:
         super().mousePressEvent(event)
         self.clicked.emit(self)
 
-    def hoverEnterEvent(self, event: Any) -> None:
-        self._is_hovered = True
-        self.update()
-        super().hoverEnterEvent(event)
+    def mouseReleaseEvent(self, event: Any) -> None:
+        super().mouseReleaseEvent(event)
+        # Calculate new normalized position
+        if self.scene() and self.parentItem():
+            # Parent is MotionPathItem.
+            # HandleItem doesn't inherently know normalized coords.
+            # We emit scene position and 't', let View/Widget normalize.
 
-    def hoverLeaveEvent(self, event: Any) -> None:
-        self._is_hovered = False
-        self.update()
-        super().hoverLeaveEvent(event)
+            scene_pos = self.scenePos()
+
+            # Check for modifiers (Ctrl+Drag to duplicate)
+            modifiers = event.modifiers()
+            if modifiers & Qt.KeyboardModifier.ControlModifier:
+                self.duplicate_requested.emit(self.t, scene_pos.x(), scene_pos.y())
+            else:
+                self.position_changed.emit(self.t, scene_pos.x(), scene_pos.y())
+
+    def contextMenuEvent(self, event: Any) -> None:
+        """Handle context menu for deleting keyframes."""
+        menu = QMenu()
+        delete_action = menu.addAction("Delete Keyframe")
+
+        # We can also add "Set Time..." or other actions later
+
+        action = menu.exec(event.screenPos())
+        if action == delete_action:
+            self.delete_requested.emit(self.t)
 
 
 class MotionPathItem(QGraphicsPathItem):
@@ -116,8 +128,31 @@ class MotionPathItem(QGraphicsPathItem):
     Manages child HandleItems.
     """
 
-    def __init__(self, parent: Optional[QGraphicsItem] = None) -> None:
+    # Signals
+    keyframe_moved = Signal(str, float, float, float)  # marker_id, t, scene_x, scene_y
+    # Duplicate signal assumes implicit create-at-current-time logic in drag, but
+    # Ctrl+Drag usually implies duplication.
+    # Actually, duplicated keyframe time is not determined by drag?
+    # No, typically Ctrl+Drag moves the *copy* to the new spatial location.
+    # But what is the TIME of the new keyframe?
+    # If we are dragging spatially, we are usually at the same time?
+    # Ah, standard motion path editors (After Effects etc) let you drag spatially.
+    # But keyframes are temporal points.
+    # If I drag a handle (which exists at T=100) and hold Ctrl, I probably want
+    # to creating a NEW keyframe at ... some other time?
+    # Actually, in MapWidget "Record Mode", dragging *creates* a keyframe at current_time.
+    # If I drag a *handle*, I am editing a keyframe at `handle.t`.
+    # If I Ctrl+Drag a handle, maybe I want to Clone it to `current_time`?
+    # Yes, that makes the most sense: "Copy this pose to NOW".
+
+    keyframe_duplicated = Signal(
+        str, float, float, float
+    )  # marker_id, source_t, scene_x, scene_y
+    keyframe_deleted = Signal(str, float)  # marker_id, t
+
+    def __init__(self, marker_id: str, parent: Optional[QGraphicsItem] = None) -> None:
         super().__init__(parent)
+        self.marker_id = marker_id
         self.setZValue(-1)  # Draw behind the marker itself
 
         # Setup Pen
@@ -128,7 +163,10 @@ class MotionPathItem(QGraphicsPathItem):
         self.handles: List[HandleItem] = []
 
     def update_path(
-        self, keyframes: List[Dict[str, Any]], map_width: float, map_height: float
+        self,
+        keyframes: List[Dict[str, Any]],
+        map_width: float,
+        map_height: float,
     ) -> None:
         """
         Rebuilds the path and handles based on keyframes.
@@ -178,6 +216,24 @@ class MotionPathItem(QGraphicsPathItem):
             parent=self,
         )
         # HandleItem is a child of MotionPathItem.
-        # If MotionPathItem is at 0,0 in scene, then handle pos is scene pos.
         handle.setPos(pos)
+
+        # Connect signals
+        handle.position_changed.connect(self._on_handle_moved)
+        handle.duplicate_requested.connect(self._on_handle_duplicated)
+        handle.delete_requested.connect(self._on_handle_deleted)
+
         self.handles.append(handle)
+
+    def _on_handle_moved(self, t: float, scene_x: float, scene_y: float) -> None:
+        """Forward handle movement with marker_id."""
+        self.keyframe_moved.emit(self.marker_id, t, scene_x, scene_y)
+
+    def _on_handle_duplicated(self, t: float, scene_x: float, scene_y: float) -> None:
+        """Forward duplication request."""
+        # Semantics: Copy keyframe from 't', but using new spatial coords 'scene_x/y'.
+        self.keyframe_duplicated.emit(self.marker_id, t, scene_x, scene_y)
+
+    def _on_handle_deleted(self, t: float) -> None:
+        """Forward deletion request."""
+        self.keyframe_deleted.emit(self.marker_id, t)

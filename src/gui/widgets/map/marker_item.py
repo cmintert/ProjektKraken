@@ -21,6 +21,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.marker import Marker
+
 if TYPE_CHECKING:
     pass
 
@@ -63,6 +65,7 @@ class MarkerItem(QGraphicsObject):
         pixmap_item: QGraphicsPixmapItem,
         icon: Optional[str] = None,
         color: Optional[str] = None,
+        marker_data: Optional[Marker] = None,
     ) -> None:
         """
         Initializes a MarkerItem.
@@ -73,6 +76,8 @@ class MarkerItem(QGraphicsObject):
             label: Label text for the marker (tooltip).
             pixmap_item: Reference to the map pixmap item for coordinate conversion.
             icon: Optional icon filename (e.g., 'castle.svg'). Falls back to circle.
+            color: Optional custom color.
+            marker_data: The core Marker data object (for temporal logic).
         """
         super().__init__()
 
@@ -88,6 +93,7 @@ class MarkerItem(QGraphicsObject):
             if color
             else self.COLORS.get(object_type, self.COLORS["default"])
         )
+        self.marker_data = marker_data
 
         # Load icon if specified
         self._load_icon(icon)
@@ -102,7 +108,10 @@ class MarkerItem(QGraphicsObject):
         # Make draggable (but not selectable to avoid white frame)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
-        self.setFlag(QGraphicsItem.ItemIgnoresTransformations, True)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True)
+        self.setFlag(
+            QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True
+        )  # Make selectable for path view
 
         # Cursor hint
         self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
@@ -113,6 +122,27 @@ class MarkerItem(QGraphicsObject):
         # Drag tracking
         self._is_dragging = False
         self._drag_start_pos = None
+
+    def update_temporal_state(self, current_time: float) -> None:
+        """
+        Updates the marker's position and visibility based on time.
+        """
+        if not self.marker_data:
+            return
+
+        # Use core logic
+        state = self.marker_data.get_state_at(current_time)
+
+        # Update visibility
+        self.setVisible(state.visible)
+
+        # Update position if visible
+        if state.visible and self.pixmap_item:
+            # Convert normalized x,y to scene pos
+            rect = self.pixmap_item.sceneBoundingRect()
+            scene_x = rect.left() + (state.x * rect.width())
+            scene_y = rect.top() + (state.y * rect.height())
+            self.setPos(scene_x, scene_y)
 
     def _load_icon(self, icon_name: Optional[str]) -> None:
         """
@@ -259,7 +289,7 @@ class MarkerItem(QGraphicsObject):
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        """Emit position change on drag end, or clicked signal if distance small."""
+        """Emit position change on drag end, or clicked signal."""
         if event.button() == Qt.MouseButton.LeftButton:
             # Check for click vs drag
             if self._drag_start_pos:
@@ -288,9 +318,6 @@ class MarkerItem(QGraphicsObject):
                         else 0.0
                     )
 
-                    norm_x = max(0.0, min(1.0, norm_x))
-                    norm_y = max(0.0, min(1.0, norm_y))
-
                     # Emit only on release
                     if self.scene() and self.scene().views():
                         view = self.scene().views()[0]
@@ -298,8 +325,8 @@ class MarkerItem(QGraphicsObject):
                         if view.__class__.__name__ == "MapGraphicsView":
                             view.marker_moved.emit(self.marker_id, norm_x, norm_y)
                             logger.debug(
-                                f"Marker {self.marker_id} drag ended at normalized "
-                                f"({norm_x:.3f}, {norm_y:.3f})"
+                                f"Marker {self.marker_id} drag ended at "
+                                f"normalized ({norm_x:.3f}, {norm_y:.3f})"
                             )
         super().mouseReleaseEvent(event)
 
@@ -325,5 +352,5 @@ class MarkerItem(QGraphicsObject):
         when the tooltip changes.
         """
         super().setToolTip(toolTip)
-        # Force update to ensure tooltip area is recalculated if needed (though usually processed by view)
+        # Force update to ensure tooltip area is recalculated if needed
         self.update()

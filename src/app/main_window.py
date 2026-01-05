@@ -1547,6 +1547,10 @@ class MainWindow(QMainWindow):
         # Store current playhead time for use in _on_entity_state_resolved
         self._current_playhead_time = time
 
+        # Update Map Widget time
+        if hasattr(self, "map_widget"):
+            self.map_widget.set_current_time(time)
+
         if self.entity_editor.isVisible() and self.entity_editor._current_entity_id:
             QMetaObject.invokeMethod(
                 self.worker,

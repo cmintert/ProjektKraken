@@ -22,6 +22,9 @@ from src.commands.map_commands import (
     UpdateMarkerColorCommand,
     UpdateMarkerCommand,
     UpdateMarkerIconCommand,
+    UpdateMarkerKeyframeCommand,
+    DuplicateMarkerKeyframeCommand,
+    DeleteMarkerKeyframeCommand,
 )
 from src.core.logging_config import get_logger
 
@@ -58,6 +61,18 @@ class MapHandler(QObject):
         self.window.data_handler.item_visuals_updated.connect(
             self.on_item_visuals_updated
         )
+
+        # Connect keyframe update signal
+        if hasattr(self.window, "map_widget"):
+            self.window.map_widget.marker_keyframe_changed.connect(
+                self.on_marker_keyframe_changed
+            )
+            self.window.map_widget.marker_keyframe_deleted.connect(
+                self.on_marker_keyframe_deleted
+            )
+            self.window.map_widget.marker_keyframe_duplicated.connect(
+                self.on_marker_keyframe_duplicated
+            )
 
     def load_maps(self) -> None:
         """Requests loading of all maps from the worker thread."""
@@ -410,7 +425,7 @@ class MapHandler(QObject):
 
         Args:
             map_id: The map ID these markers belong to.
-            processed_markers: List of dicts with marker data.
+            processed_markers: List of Marker objects (or dicts if from older path).
         """
         # Verify we are still looking at this map
         current_map_id = self.window.map_widget.map_selector.currentData()
@@ -421,19 +436,45 @@ class MapHandler(QObject):
         self._marker_object_to_id.clear()  # Reset mapping
 
         for marker_data in processed_markers:
+            # Handle both Marker object and dict (for robustness)
+            if hasattr(marker_data, "id"):
+                # It's a Marker object
+                m_obj_id = marker_data.object_id
+                m_type = marker_data.object_type
+                m_label = marker_data.label
+                m_x = marker_data.x
+                m_y = marker_data.y
+                m_icon = marker_data.attributes.get("icon", "map-pin.svg")
+                m_color = marker_data.attributes.get("color", "#888888")
+                m_id = marker_data.id
+                m_data = marker_data
+            else:
+                # It's a dict
+                m_obj_id = marker_data["object_id"]
+                m_type = marker_data["object_type"]
+                m_label = marker_data["label"]
+                m_x = marker_data["x"]
+                m_y = marker_data["y"]
+                m_icon = marker_data.get("icon", "map-pin.svg")
+                m_color = marker_data.get("color", "#888888")
+                m_id = marker_data["id"]
+                # Convert to object if needed, but for now None
+                m_data = None
+
             # Add marker to map
             self.window.map_widget.add_marker(
-                marker_id=marker_data["object_id"],
-                object_type=marker_data["object_type"],
-                label=marker_data["label"],
-                x=marker_data["x"],
-                y=marker_data["y"],
-                icon=marker_data["icon"],
-                color=marker_data["color"],
+                marker_id=m_obj_id,
+                object_type=m_type,
+                label=m_label,
+                x=m_x,
+                y=m_y,
+                icon=m_icon,
+                color=m_color,
+                marker_data=m_data,
             )
 
             # Store mapping for later updates (object_id -> marker.id)
-            self._marker_object_to_id[marker_data["object_id"]] = marker_data["id"]
+            self._marker_object_to_id[m_obj_id] = m_id
 
     @Slot(str, str, str, str, str)
     def on_item_visuals_updated(
@@ -482,7 +523,57 @@ class MapHandler(QObject):
                 )
             else:
                 logger.debug(
-                    f"Item {item_id} not on current map (not in mapping), skipping update."
+                    f"Item {item_id} not on current map (not in mapping), "
+                    "skipping update."
                 )
         else:
             logger.warning(f"No marker ID derived for {item_type} {item_id}")
+
+    @Slot(str, float, float, float)
+    def on_marker_keyframe_changed(
+        self, marker_id: str, t: float, x: float, y: float
+    ) -> None:
+        """
+        Handle keyframe update from MapWidget (dragged handle or record mode).
+        marker_id here is the object_id from the UI (Entity ID).
+        """
+        if marker_id in self._marker_object_to_id:
+            db_marker_id = self._marker_object_to_id[marker_id]
+            cmd = UpdateMarkerKeyframeCommand(db_marker_id, t, x, y)
+            self.window.command_stack.push(cmd)
+            self.load_maps()  # Refresh to show update
+        else:
+            logger.warning(
+                f"Cannot update keyframe: No marker ID mapping for object {marker_id}"
+            )
+
+    @Slot(str, float)
+    def on_marker_keyframe_deleted(self, marker_id: str, t: float) -> None:
+        """Handle keyframe deletion request."""
+        if marker_id in self._marker_object_to_id:
+            db_marker_id = self._marker_object_to_id[marker_id]
+            cmd = DeleteMarkerKeyframeCommand(db_marker_id, t)
+            self.window.command_stack.push(cmd)
+            self.load_maps()
+        else:
+            logger.warning(
+                f"Cannot delete keyframe: No marker ID mapping for object {marker_id}"
+            )
+
+    @Slot(str, float, float, float)
+    def on_marker_keyframe_duplicated(
+        self, marker_id: str, source_t: float, x: float, y: float
+    ) -> None:
+        """Handle keyframe duplication request."""
+        # Target time is current playhead time from map widget
+        target_t = self.window.map_widget.current_time
+
+        if marker_id in self._marker_object_to_id:
+            db_marker_id = self._marker_object_to_id[marker_id]
+            cmd = DuplicateMarkerKeyframeCommand(db_marker_id, source_t, target_t, x, y)
+            self.window.command_stack.push(cmd)
+            self.load_maps()
+        else:
+            logger.warning(
+                f"Cannot duplicate keyframe: No marker ID mapping {marker_id}"
+            )
