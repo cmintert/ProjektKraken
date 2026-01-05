@@ -226,6 +226,20 @@ class MapWidget(QWidget):
         """
         self.view.update_temporal_state(current_time)
 
+    def _get_db_id(self, marker_id: str) -> Optional[str]:
+        """
+        Helper to get the database ID for a marker.
+        Args:
+            marker_id: The UI/Object ID of the marker.
+        Returns:
+            The Database ID if available (and marker has data), else None.
+        """
+        if marker_id in self.view.markers:
+            marker_item = self.view.markers[marker_id]
+            if hasattr(marker_item, "marker_data") and marker_item.marker_data:
+                return marker_item.marker_data.id
+        return None
+
     @Slot(str, float, float)
     def _on_marker_moved(self, marker_id: str, x: float, y: float) -> None:
         """
@@ -241,8 +255,14 @@ class MapWidget(QWidget):
         if self.view.record_mode:
             # Record Mode: Update/Create keyframe at current time
             t = self.view.current_time
-            self.marker_keyframe_changed.emit(marker_id, t, x, y)
-            logger.debug(f"Record Mode: Keyframe for {marker_id} at t={t}")
+            db_id = self._get_db_id(marker_id)
+            if db_id:
+                self.marker_keyframe_changed.emit(db_id, t, x, y)
+                logger.debug(
+                    f"Record Mode: Keyframe for {marker_id} ({db_id}) at t={t}"
+                )
+            else:
+                logger.warning(f"Record Mode: Could not resolve DB ID for {marker_id}")
         else:
             # Standard Mode: Update static position
             self.update_marker_position(marker_id, x, y)
@@ -254,7 +274,11 @@ class MapWidget(QWidget):
         self, marker_id: str, t: float, x: float, y: float
     ) -> None:
         """Handle keyframe movement from handles."""
-        self.marker_keyframe_changed.emit(marker_id, t, x, y)
+        db_id = self._get_db_id(marker_id)
+        if db_id:
+            self.marker_keyframe_changed.emit(db_id, t, x, y)
+        else:
+            logger.warning(f"Keyframe Drag: Could not resolve DB ID for {marker_id}")
 
     def load_map(self, image_path: str) -> bool:
         """
@@ -394,10 +418,18 @@ class MapWidget(QWidget):
                     f"Time changed from {t} to {new_t}. "
                     "Deleting old keyframe, then adding new."
                 )
-                self.marker_keyframe_deleted.emit(marker_id, t)
+                db_id = self._get_db_id(marker_id)
+                if db_id:
+                    self.marker_keyframe_deleted.emit(db_id, t)
 
             # Add/Update (if time changed, this adds at new time)
-            self.marker_keyframe_changed.emit(marker_id, new_t, new_x, new_y)
+            db_id = self._get_db_id(marker_id)
+            if db_id:
+                self.marker_keyframe_changed.emit(db_id, new_t, new_x, new_y)
+            else:
+                logger.warning(
+                    f"Keyframe Edit: Could not resolve DB ID for {marker_id}"
+                )
         else:
             logger.info("Keyframe dialog cancelled by user.")
 

@@ -488,9 +488,6 @@ class MapHandler(QObject):
                 marker_data=m_data,
             )
 
-            # Store mapping for later updates (object_id -> marker.id)
-            self._marker_object_to_id[m_obj_id] = m_id
-
     @Slot(str, str, str, str, str)
     def on_item_visuals_updated(
         self,
@@ -552,30 +549,19 @@ class MapHandler(QObject):
     ) -> None:
         """
         Handle keyframe update from MapWidget (dragged handle or record mode).
-        marker_id here is the object_id from the UI (Entity ID).
+        marker_id here is the DATABASE ID (resolved by MapWidget).
         """
-        if marker_id in self._marker_object_to_id:
-            db_marker_id = self._marker_object_to_id[marker_id]
-            cmd = UpdateMarkerKeyframeCommand(db_marker_id, t, x, y)
-            self.window.command_requested.emit(cmd)
-            self.load_maps()  # Refresh to show update
-        else:
-            logger.warning(
-                f"Cannot update keyframe: No marker ID mapping for object {marker_id}"
-            )
+        cmd = UpdateMarkerKeyframeCommand(marker_id, t, x, y)
+        self.window.command_requested.emit(cmd)
+        self.load_maps()  # Refresh to show update
 
     @Slot(str, float)
     def on_marker_keyframe_deleted(self, marker_id: str, t: float) -> None:
         """Handle keyframe deletion request."""
-        if marker_id in self._marker_object_to_id:
-            db_marker_id = self._marker_object_to_id[marker_id]
-            cmd = DeleteMarkerKeyframeCommand(db_marker_id, t)
-            self.window.command_requested.emit(cmd)
-            self.load_maps()
-        else:
-            logger.warning(
-                f"Cannot delete keyframe: No marker ID mapping for object {marker_id}"
-            )
+        # marker_id is DB ID
+        cmd = DeleteMarkerKeyframeCommand(marker_id, t)
+        self.window.command_requested.emit(cmd)
+        self.load_maps()
 
     @Slot(str, float, float, float)
     def on_marker_keyframe_duplicated(
@@ -585,12 +571,7 @@ class MapHandler(QObject):
         # Target time is current playhead time from map widget
         target_t = self.window.map_widget.current_time
 
-        if marker_id in self._marker_object_to_id:
-            db_marker_id = self._marker_object_to_id[marker_id]
-            cmd = DuplicateMarkerKeyframeCommand(db_marker_id, source_t, target_t, x, y)
-            self.window.command_requested.emit(cmd)
-            self.load_maps()
-        else:
-            logger.warning(
-                f"Cannot duplicate keyframe: No marker ID mapping {marker_id}"
-            )
+        # marker_id is DB ID
+        cmd = DuplicateMarkerKeyframeCommand(marker_id, source_t, target_t, x, y)
+        self.window.command_requested.emit(cmd)
+        self.load_maps()
