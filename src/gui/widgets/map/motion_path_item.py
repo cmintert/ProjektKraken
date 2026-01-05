@@ -123,6 +123,12 @@ class HandleItem(QGraphicsObject):
 
     def mouseReleaseEvent(self, event: Any) -> None:
         """Handle mouse release to emit position update and maintain selection."""
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        logger.debug(f"HandleItem.mouseReleaseEvent: Handle at t={self.t} released")
+
         # Calculate new normalized position
         if self.scene() and self.parentItem():
             # Parent is MotionPathItem.
@@ -130,17 +136,26 @@ class HandleItem(QGraphicsObject):
             # We emit scene position and 't', let View/Widget normalize.
 
             scene_pos = self.scenePos()
+            logger.debug(
+                f"  - New scene position: ({scene_pos.x():.2f}, {scene_pos.y():.2f})"
+            )
 
             # Check for modifiers (Ctrl+Drag to duplicate)
             modifiers = event.modifiers()
             if modifiers & Qt.KeyboardModifier.ControlModifier:
+                logger.debug(f"  - Ctrl held, emitting duplicate_requested")
                 self.duplicate_requested.emit(self.t, scene_pos.x(), scene_pos.y())
             else:
+                logger.debug(f"  - Emitting position_changed")
                 self.position_changed.emit(self.t, scene_pos.x(), scene_pos.y())
 
         # Ensure handle stays selected after drag
-        if not self.isSelected():
+        was_selected = self.isSelected()
+        if not was_selected:
             self.setSelected(True)
+            logger.debug(f"  - Handle was deselected, re-selecting")
+        else:
+            logger.debug(f"  - Handle still selected")
 
         super().mouseReleaseEvent(event)
 
