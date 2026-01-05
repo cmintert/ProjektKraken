@@ -79,13 +79,13 @@ class PlayheadItem(QGraphicsLineItem):
     def shape(self) -> QPainterPath:
         """
         Define a wider hit area for easier grabbing.
-        Returns a path roughly 10px wide centered on the line.
+        Returns a path roughly 40px wide centered on the line.
         """
         path = QPainterPath()
-        # Create a rectangle 20px wide centered on x=0
+        # Create a rectangle 40px wide centered on x=0
         # Spanning the vertical extent (or just a large range if infinite)
         # Using a finite but large range ensures it works within reasonable view limits
-        path.addRect(-10, -100000, 20, 200000)
+        path.addRect(-20, -100000, 40, 200000)
         return path
 
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
