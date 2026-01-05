@@ -138,12 +138,12 @@ class MotionPathItem(QGraphicsPathItem):
     # If we are dragging spatially, we are usually at the same time?
     # Ah, standard motion path editors (After Effects etc) let you drag spatially.
     # But keyframes are temporal points.
-    # If I drag a handle (which exists at T=100) and hold Ctrl, I probably want
-    # to creating a NEW keyframe at ... some other time?
-    # Actually, in MapWidget "Record Mode", dragging *creates* a keyframe at current_time.
-    # If I drag a *handle*, I am editing a keyframe at `handle.t`.
-    # If I Ctrl+Drag a handle, maybe I want to Clone it to `current_time`?
-    # Yes, that makes the most sense: "Copy this pose to NOW".
+    # If I drag a handle (which exists at T=100) and hold Ctrl, I probably
+    # want to create a NEW keyframe at ... some other time?
+    # Actually, in MapWidget "Record Mode", dragging *creates* a keyframe
+    # at current_time. If I drag a *handle*, I am editing a keyframe at
+    # `handle.t`. If I Ctrl+Drag a handle, maybe I want to Clone it to
+    # `current_time`? Yes, that makes the most sense: "Copy this pose to NOW".
 
     keyframe_duplicated = Signal(
         str, float, float, float

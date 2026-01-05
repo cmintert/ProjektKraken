@@ -353,3 +353,236 @@ def test_delete_marker_command_undo(db_service):
     assert restored.x == 0.7
     assert restored.y == 0.8
     assert restored.label == "Restored"
+
+
+# --------------------------------------------------------------------------
+# Keyframe Command Tests
+# --------------------------------------------------------------------------
+
+
+def test_update_marker_keyframe_command(db_service):
+    """Test adding/updating a keyframe via command."""
+    from src.commands.map_commands import UpdateMarkerKeyframeCommand
+
+    # Create map and marker with temporal enabled
+    map_obj = Map(name="Test Map", image_path="/test.png")
+    db_service.insert_map(map_obj)
+
+    marker = Marker(
+        map_id=map_obj.id,
+        object_id="entity-kf1",
+        object_type="entity",
+        x=0.5,
+        y=0.5,
+        attributes={"temporal": {"enabled": True, "keyframes": []}},
+    )
+    marker_id = db_service.insert_marker(marker)
+
+    # Add keyframe via command
+    cmd = UpdateMarkerKeyframeCommand(marker_id, t=100.0, x=0.2, y=0.3)
+    result = cmd.execute(db_service)
+
+    assert result.success is True
+
+    # Verify keyframe was added
+    updated = db_service.get_marker(marker_id)
+    keyframes = updated.attributes["temporal"]["keyframes"]
+    assert len(keyframes) == 1
+    assert keyframes[0]["t"] == 100.0
+    assert keyframes[0]["x"] == 0.2
+    assert keyframes[0]["y"] == 0.3
+
+
+def test_update_marker_keyframe_command_undo(db_service):
+    """Test undoing keyframe update."""
+    from src.commands.map_commands import UpdateMarkerKeyframeCommand
+
+    map_obj = Map(name="Test Map", image_path="/test.png")
+    db_service.insert_map(map_obj)
+
+    marker = Marker(
+        map_id=map_obj.id,
+        object_id="entity-kf2",
+        object_type="entity",
+        x=0.5,
+        y=0.5,
+        attributes={"temporal": {"enabled": True, "keyframes": []}},
+    )
+    marker_id = db_service.insert_marker(marker)
+
+    # Add keyframe
+    cmd = UpdateMarkerKeyframeCommand(marker_id, t=50.0, x=0.1, y=0.9)
+    cmd.execute(db_service)
+
+    # Verify keyframe exists
+    assert (
+        len(db_service.get_marker(marker_id).attributes["temporal"]["keyframes"]) == 1
+    )
+
+    # Undo
+    cmd.undo(db_service)
+
+    # Verify keyframe removed (restored to original state)
+    restored = db_service.get_marker(marker_id)
+    assert len(restored.attributes["temporal"]["keyframes"]) == 0
+
+
+def test_delete_marker_keyframe_command(db_service):
+    """Test deleting a keyframe via command."""
+    from src.commands.map_commands import DeleteMarkerKeyframeCommand
+
+    map_obj = Map(name="Test Map", image_path="/test.png")
+    db_service.insert_map(map_obj)
+
+    marker = Marker(
+        map_id=map_obj.id,
+        object_id="entity-kf3",
+        object_type="entity",
+        x=0.5,
+        y=0.5,
+        attributes={
+            "temporal": {
+                "enabled": True,
+                "keyframes": [
+                    {"t": 0.0, "x": 0.1, "y": 0.1, "type": "start"},
+                    {"t": 100.0, "x": 0.9, "y": 0.9, "type": "end"},
+                ],
+            }
+        },
+    )
+    marker_id = db_service.insert_marker(marker)
+
+    # Delete keyframe at t=100
+    cmd = DeleteMarkerKeyframeCommand(marker_id, t=100.0)
+    result = cmd.execute(db_service)
+
+    assert result.success is True
+
+    # Verify keyframe was deleted
+    updated = db_service.get_marker(marker_id)
+    keyframes = updated.attributes["temporal"]["keyframes"]
+    assert len(keyframes) == 1
+    assert keyframes[0]["t"] == 0.0
+
+
+def test_delete_marker_keyframe_command_undo(db_service):
+    """Test undoing keyframe deletion."""
+    from src.commands.map_commands import DeleteMarkerKeyframeCommand
+
+    map_obj = Map(name="Test Map", image_path="/test.png")
+    db_service.insert_map(map_obj)
+
+    marker = Marker(
+        map_id=map_obj.id,
+        object_id="entity-kf4",
+        object_type="entity",
+        x=0.5,
+        y=0.5,
+        attributes={
+            "temporal": {
+                "enabled": True,
+                "keyframes": [{"t": 50.0, "x": 0.5, "y": 0.5, "type": "path"}],
+            }
+        },
+    )
+    marker_id = db_service.insert_marker(marker)
+
+    # Delete
+    cmd = DeleteMarkerKeyframeCommand(marker_id, t=50.0)
+    cmd.execute(db_service)
+
+    # Verify deleted
+    assert (
+        len(db_service.get_marker(marker_id).attributes["temporal"]["keyframes"]) == 0
+    )
+
+    # Undo
+    cmd.undo(db_service)
+
+    # Verify restored
+    restored = db_service.get_marker(marker_id)
+    assert len(restored.attributes["temporal"]["keyframes"]) == 1
+    assert restored.attributes["temporal"]["keyframes"][0]["t"] == 50.0
+
+
+def test_duplicate_marker_keyframe_command(db_service):
+    """Test duplicating a keyframe via command."""
+    from src.commands.map_commands import DuplicateMarkerKeyframeCommand
+
+    map_obj = Map(name="Test Map", image_path="/test.png")
+    db_service.insert_map(map_obj)
+
+    marker = Marker(
+        map_id=map_obj.id,
+        object_id="entity-kf5",
+        object_type="entity",
+        x=0.5,
+        y=0.5,
+        attributes={
+            "temporal": {
+                "enabled": True,
+                "keyframes": [{"t": 0.0, "x": 0.1, "y": 0.1, "type": "start"}],
+            }
+        },
+    )
+    marker_id = db_service.insert_marker(marker)
+
+    # Duplicate keyframe from t=0 to t=200 at new position
+    cmd = DuplicateMarkerKeyframeCommand(
+        marker_id, source_t=0.0, target_t=200.0, x=0.8, y=0.2
+    )
+    result = cmd.execute(db_service)
+
+    assert result.success is True
+
+    # Verify new keyframe was added
+    updated = db_service.get_marker(marker_id)
+    keyframes = updated.attributes["temporal"]["keyframes"]
+    assert len(keyframes) == 2
+
+    # Find the new keyframe
+    new_kf = next(kf for kf in keyframes if kf["t"] == 200.0)
+    assert new_kf["x"] == 0.8
+    assert new_kf["y"] == 0.2
+
+
+def test_duplicate_marker_keyframe_command_undo(db_service):
+    """Test undoing keyframe duplication."""
+    from src.commands.map_commands import DuplicateMarkerKeyframeCommand
+
+    map_obj = Map(name="Test Map", image_path="/test.png")
+    db_service.insert_map(map_obj)
+
+    marker = Marker(
+        map_id=map_obj.id,
+        object_id="entity-kf6",
+        object_type="entity",
+        x=0.5,
+        y=0.5,
+        attributes={
+            "temporal": {
+                "enabled": True,
+                "keyframes": [{"t": 10.0, "x": 0.2, "y": 0.3, "type": "path"}],
+            }
+        },
+    )
+    marker_id = db_service.insert_marker(marker)
+
+    # Duplicate
+    cmd = DuplicateMarkerKeyframeCommand(
+        marker_id, source_t=10.0, target_t=500.0, x=0.7, y=0.8
+    )
+    cmd.execute(db_service)
+
+    # Verify duplication
+    assert (
+        len(db_service.get_marker(marker_id).attributes["temporal"]["keyframes"]) == 2
+    )
+
+    # Undo
+    cmd.undo(db_service)
+
+    # Verify restored to original (only 1 keyframe)
+    restored = db_service.get_marker(marker_id)
+    assert len(restored.attributes["temporal"]["keyframes"]) == 1
+    assert restored.attributes["temporal"]["keyframes"][0]["t"] == 10.0

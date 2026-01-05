@@ -61,6 +61,10 @@ class MapWidget(QWidget):
     marker_position_changed = Signal(str, float, float)
     marker_clicked = Signal(str, str)
     marker_keyframe_changed = Signal(str, float, float, float)  # marker_id, t, x, y
+    marker_keyframe_deleted = Signal(str, float)  # marker_id, t
+    marker_keyframe_duplicated = Signal(
+        str, float, float, float
+    )  # marker_id, source_t, x, y
 
     create_map_requested = Signal()
     delete_map_requested = Signal()
@@ -137,6 +141,10 @@ class MapWidget(QWidget):
         # Connect signals
         self.view.marker_moved.connect(self._on_marker_moved)
         self.view.marker_keyframe_changed.connect(self._on_marker_keyframe_changed)
+        self.view.marker_keyframe_deleted.connect(self.marker_keyframe_deleted.emit)
+        self.view.marker_keyframe_duplicated.connect(
+            self.marker_keyframe_duplicated.emit
+        )
         self.view.marker_clicked.connect(self.marker_clicked.emit)
         self.view.add_marker_requested.connect(self.create_marker_requested.emit)
         self.view.delete_marker_requested.connect(self.delete_marker_requested.emit)

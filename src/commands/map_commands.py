@@ -10,6 +10,7 @@ instantiated without database coupling and executed later with the appropriate
 database service instance.
 """
 
+import copy
 import dataclasses
 import logging
 from typing import Optional
@@ -679,19 +680,12 @@ class UpdateMarkerKeyframeCommand(BaseCommand):
                     command_name="UpdateMarkerKeyframeCommand",
                 )
 
-            self._previous_marker = current
+            # Store a deep clone of the current state for undo
+            # (from_dict/to_dict don't deep-copy the attributes dict)
+            self._previous_marker = Marker.from_dict(copy.deepcopy(current.to_dict()))
 
-            # Create a copy to modify
-            # (dataclasses are mutable but we want to be safe or use replace)
-            # Actually Marker.add_keyframe modifies the instance if it's not a frozen
-            # dataclass. It is a standard dataclass.
-
-            # We want to keep immutability hygiene if possible, but add_keyframe
-            # likely modifies 'attributes' dict.
-            # Let's clone the marker first.
-            # Since 'attributes' is a dict, we need deep copy of it?
-            # Marker.from_dict(current.to_dict()) is a safe way to clone.
-            new_marker = Marker.from_dict(current.to_dict())
+            # Create another deep copy to modify
+            new_marker = Marker.from_dict(copy.deepcopy(current.to_dict()))
 
             # Add or update keyframe
             new_marker.add_keyframe(self.t, self.x, self.y)
@@ -759,17 +753,10 @@ class DuplicateMarkerKeyframeCommand(BaseCommand):
                     command_name="DuplicateMarkerKeyframeCommand",
                 )
 
-            self._previous_marker = current
-            new_marker = Marker.from_dict(current.to_dict())
+            self._previous_marker = Marker.from_dict(copy.deepcopy(current.to_dict()))
+            new_marker = Marker.from_dict(copy.deepcopy(current.to_dict()))
 
-            # Get source keyframe type if possible, or default to 'path'
-            state_at_source = new_marker.get_state_at(self.source_t)
-            # Actually get_state_at interpolates. We want exact keyframe data?
-            # Marker doesn't expose "get_keyframe".
-            # We can just add new keyframe.
-            # The user drag interaction determines X, Y.
-            # We just need to ADD a keyframe at target_t.
-
+            # Add keyframe at target_t with new position
             new_marker.add_keyframe(self.target_t, self.x, self.y)
 
             self._new_marker = new_marker
@@ -820,6 +807,7 @@ class DeleteMarkerKeyframeCommand(BaseCommand):
         self._new_marker: Optional[Marker] = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Execute keyframe deletion."""
         try:
             current = db_service.get_marker(self.marker_id)
             if not current:
@@ -829,11 +817,23 @@ class DeleteMarkerKeyframeCommand(BaseCommand):
                     command_name="DeleteMarkerKeyframeCommand",
                 )
 
-            self._previous_marker = current
-            new_marker = Marker.from_dict(current.to_dict())
+            self._previous_marker = Marker.from_dict(copy.deepcopy(current.to_dict()))
+            new_marker = Marker.from_dict(copy.deepcopy(current.to_dict()))
 
-            # Remove keyframe
-            if new_marker.remove_keyframe(self.t):
+            # Get keyframe count before
+            keyframes_before = len(
+                new_marker.attributes.get("temporal", {}).get("keyframes", [])
+            )
+
+            # Remove keyframe (returns None, modifies in place)
+            new_marker.remove_keyframe(self.t)
+
+            # Get keyframe count after
+            keyframes_after = len(
+                new_marker.attributes.get("temporal", {}).get("keyframes", [])
+            )
+
+            if keyframes_after < keyframes_before:
                 self._new_marker = new_marker
                 db_service.insert_marker(self._new_marker)
                 self._is_executed = True
