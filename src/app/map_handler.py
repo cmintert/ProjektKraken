@@ -19,12 +19,12 @@ from src.commands.map_commands import (
     CreateMarkerCommand,
     DeleteMapCommand,
     DeleteMarkerCommand,
+    DeleteMarkerKeyframeCommand,
+    DuplicateMarkerKeyframeCommand,
     UpdateMarkerColorCommand,
     UpdateMarkerCommand,
     UpdateMarkerIconCommand,
     UpdateMarkerKeyframeCommand,
-    DuplicateMarkerKeyframeCommand,
-    DeleteMarkerKeyframeCommand,
 )
 from src.core.logging_config import get_logger
 
