@@ -96,7 +96,9 @@ class MapGraphicsView(QGraphicsView):
         self.current_time = 0.0
         self.record_mode = False
         self.current_map_path: Optional[str] = None
-        self._last_motion_path_marker_id: Optional[str] = None  # Sticky path visibility
+        self.current_map_path: Optional[str] = None
+        self._active_marker_id: Optional[str] = None  # Explicit active marker tracking
+        # self._last_motion_path_marker_id: Optional[str] = None  # Sticky path visibility (Removed)
 
         # Theme
         self.tm = ThemeManager()
@@ -104,7 +106,8 @@ class MapGraphicsView(QGraphicsView):
         self._update_theme(self.tm.get_theme())
 
         # Selection changes for motion paths
-        self.scene.selectionChanged.connect(self._on_selection_changed)
+        # Selection changes for motion paths - Disconnected in favor of explicit activation
+        # self.scene.selectionChanged.connect(self._on_selection_changed)
 
         # Enable drop support for drag-from-explorer
         self.setAcceptDrops(True)

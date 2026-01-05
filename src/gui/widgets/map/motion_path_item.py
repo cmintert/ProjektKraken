@@ -40,8 +40,8 @@ class HandleItem(QGraphicsObject):
         self.y = y
         self.kf_type = kf_type
 
-        # Configure flags
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
+        # Configure flags - NOT selectable to avoid interfering with marker selection
+        # self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)  # Removed!
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True)
@@ -140,6 +140,8 @@ class HandleItem(QGraphicsObject):
 
         logger = logging.getLogger(__name__)
 
+        super().mouseReleaseEvent(event)
+
         logger.debug(f"HandleItem.mouseReleaseEvent: Handle at t={self.t} released")
 
         # Calculate new normalized position
@@ -156,10 +158,10 @@ class HandleItem(QGraphicsObject):
             # Check for modifiers (Ctrl+Drag to duplicate)
             modifiers = event.modifiers()
             if modifiers & Qt.KeyboardModifier.ControlModifier:
-                logger.debug(f"  - Ctrl held, emitting duplicate_requested")
+                logger.debug("  - Ctrl held, emitting duplicate_requested")
                 self.duplicate_requested.emit(self.t, scene_pos.x(), scene_pos.y())
             else:
-                logger.debug(f"  - Emitting position_changed")
+                logger.debug("  - Emitting position_changed")
                 self.position_changed.emit(self.t, scene_pos.x(), scene_pos.y())
 
         # Ensure parent marker stays selected after drag
@@ -184,11 +186,9 @@ class HandleItem(QGraphicsObject):
         was_selected = self.isSelected()
         if not was_selected:
             self.setSelected(True)
-            logger.debug(f"  - Handle was deselected, re-selecting")
+            logger.debug("  - Handle was deselected, re-selecting")
         else:
-            logger.debug(f"  - Handle still selected")
-
-        super().mouseReleaseEvent(event)
+            logger.debug("  - Handle still selected")
 
     def mouseDoubleClickEvent(self, event: Any) -> None:
         """Handle double click to edit."""
