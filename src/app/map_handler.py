@@ -471,9 +471,8 @@ class MapHandler(QObject):
                 m_label = marker_data["label"]
                 m_x = marker_data["x"]
                 m_y = marker_data["y"]
-                m_icon = marker_data.get("icon", "map-pin.svg")
-                m_color = marker_data.get("color", "#888888")
-                m_id = marker_data["id"]
+                m_icon = marker_data.get("icon")
+                m_color = marker_data.get("color")
                 m_data = None
 
             # Add marker to map
@@ -508,40 +507,16 @@ class MapHandler(QObject):
             icon: The new icon filename.
             color: The new color hex code.
         """
-        # The MapGraphicsView uses the 'marker_id' argument from add_marker as its key.
-        # In add_marker below, we pass marker_data["object_id"] as the marker_id.
-        # So the view uses the Entity/Event ID as its key.
-        # Therefore, we don't need to look up a different ID.
-        # However, purely for safety against future refactors,
-        # we check if we have it mapped.
-        # Actually, wait - looking at on_markers_ready:
-        # self.window.map_widget.add_marker(marker_id=marker_data["object_id"], ...)
-        # This confirms the view uses object_id.
-
-        # So we can use item_id directly.
-        marker_id = item_id
-
-        if marker_id:
-            # Check if this marker is actually on the current map
-            # by checking if it's in the mapping (which implies it was loaded for
-            # this map)
-            if item_id in self._marker_object_to_id:
-                logger.info(
-                    f"Applying visual update to marker for {item_type} {item_id}"
-                )
-                self.window.map_widget.update_marker_visuals(
-                    marker_id=marker_id,
-                    label=label,
-                    icon=icon,
-                    color=color,
-                )
-            else:
-                logger.debug(
-                    f"Item {item_id} not on current map (not in mapping), "
-                    "skipping update."
-                )
+        if item_id in self.window.map_widget.markers:
+            logger.debug(f"Applying visual update to marker for {item_type} {item_id}")
+            self.window.map_widget.update_marker_visuals(
+                marker_id=item_id,
+                label=label,
+                icon=icon,
+                color=color,
+            )
         else:
-            logger.warning(f"No marker ID derived for {item_type} {item_id}")
+            logger.debug(f"Item {item_id} not on current map, skipping update.")
 
     @Slot(str, float, float, float)
     def on_marker_keyframe_changed(
