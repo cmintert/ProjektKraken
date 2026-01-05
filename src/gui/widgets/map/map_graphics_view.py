@@ -324,8 +324,12 @@ class MapGraphicsView(QGraphicsView):
         marker.setPos(scene_pos)
 
         # Add to scene and track
+        # Add to scene and track
         self.scene.addItem(marker)
         self.markers[marker_id] = marker
+        marker.activated.connect(
+            self.activate_marker
+        )  # Connect activation signal for visibility
 
         # Create motion path item if we have data
         if marker_data and marker_data.attributes.get("temporal", {}).get("enabled"):
