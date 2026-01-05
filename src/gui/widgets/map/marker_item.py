@@ -286,6 +286,8 @@ class MarkerItem(QGraphicsObject):
             logger.debug(
                 f"Marker {self.marker_id} drag started at {self._drag_start_pos}"
             )
+            # Explicitly select this marker to trigger motion path visibility
+            self.setSelected(True)
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:

@@ -329,6 +329,11 @@ class MapGraphicsView(QGraphicsView):
             self.scene.addItem(motion_path)
             self.motion_paths[marker_id] = motion_path
 
+            logger.debug(
+                f"Created motion path for {marker_id} with "
+                f"{len(marker_data.attributes['temporal']['keyframes'])} keyframes"
+            )
+
             # Connect Keyframe Signals
             motion_path.keyframe_moved.connect(self._on_keyframe_moved)
             motion_path.keyframe_deleted.connect(self._on_keyframe_deleted)
@@ -345,6 +350,12 @@ class MapGraphicsView(QGraphicsView):
                 rect.height(),
             )
             motion_path.setVisible(False)  # Hidden by default until selected
+            logger.debug(f"Motion path for {marker_id} initialized and hidden")
+        else:
+            logger.debug(
+                f"No motion path created for {marker_id} - "
+                f"temporal_enabled={marker_data.attributes.get('temporal', {}).get('enabled') if marker_data else 'no_data'}"
+            )
 
         # Connect click signal
         marker.clicked.connect(self.marker_clicked.emit)
@@ -412,9 +423,12 @@ class MapGraphicsView(QGraphicsView):
         selected_items = self.scene.selectedItems()
         selected_ids = set()
 
+        logger.debug(f"Selection changed: {len(selected_items)} items selected")
+
         for item in selected_items:
             if isinstance(item, MarkerItem):
                 selected_ids.add(item.marker_id)
+                logger.debug(f"  - Selected marker: {item.marker_id}")
             elif isinstance(item, MotionPathItem):
                 # If path is selected (e.g. handle clicked), keep it visible
                 # Find which marker owns this path?
@@ -423,11 +437,15 @@ class MapGraphicsView(QGraphicsView):
                     # HandleItem is child of MotionPathItem, but selection propagates
                     if path == item or item in path.childItems():
                         selected_ids.add(mid)
+                        logger.debug(f"  - Selected motion path for marker: {mid}")
                         break
 
         # Update visibility
+        logger.debug(f"Total motion paths: {len(self.motion_paths)}")
         for mid, path in self.motion_paths.items():
-            path.setVisible(mid in selected_ids)
+            should_be_visible = mid in selected_ids
+            path.setVisible(should_be_visible)
+            logger.debug(f"  - Motion path for {mid}: visible={should_be_visible}")
 
     def set_record_mode(self, enabled: bool) -> None:
         """Sets the recording mode state."""

@@ -1,11 +1,11 @@
 from typing import Any, Dict, List, Optional
 
 from PySide6.QtCore import QObject, QPointF, QRectF, Qt, Signal
-from PySide6.QtGui import QBrush, QColor, QPainter, QPainterPath, QPen
+from PySide6.QtGui import QBrush, QColor, QCursor, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsObject, QGraphicsPathItem, QMenu
 
 # Constants for visuals
-HANDLE_SIZE = 8
+HANDLE_SIZE = 16  # Increased from 8 for easier clicking
 COLOR_START = QColor("#2ECC71")  # Green
 COLOR_END = QColor("#E74C3C")  # Red
 COLOR_PATH_NODE = QColor("#BDC3C7")  # Grey/White
@@ -48,6 +48,9 @@ class HandleItem(QGraphicsObject):
 
         self.setAcceptHoverEvents(True)
         self._is_hovered = False
+
+        # Set cursor to indicate draggability
+        self.setCursor(QCursor(Qt.CursorShape.SizeAllCursor))
 
     def boundingRect(self) -> QRectF:
         # Return a square bounding rect centered at 0,0
@@ -166,7 +169,7 @@ class MotionPathItem(QObject, QGraphicsPathItem):
         QObject.__init__(self)
         QGraphicsPathItem.__init__(self, parent)
         self.marker_id = marker_id
-        self.setZValue(-1)  # Draw behind the marker itself
+        self.setZValue(5)  # Draw above map (0) but below markers (10)
 
         # Setup Pen
         pen = QPen(COLOR_PATH_LINE, 2)
