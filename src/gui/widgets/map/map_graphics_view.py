@@ -420,6 +420,8 @@ class MapGraphicsView(QGraphicsView):
         """
         Show motion paths for selected markers.
         """
+        from src.gui.widgets.map.motion_path_item import HandleItem
+
         selected_items = self.scene.selectedItems()
         selected_ids = set()
 
@@ -429,16 +431,19 @@ class MapGraphicsView(QGraphicsView):
             if isinstance(item, MarkerItem):
                 selected_ids.add(item.marker_id)
                 logger.debug(f"  - Selected marker: {item.marker_id}")
+            elif isinstance(item, HandleItem):
+                # If a handle is selected, keep its parent motion path visible
+                # Find which motion path owns this handle
+                parent = item.parentItem()
+                if isinstance(parent, MotionPathItem):
+                    selected_ids.add(parent.marker_id)
+                    logger.debug(
+                        f"  - Selected handle, keeping path for {parent.marker_id}"
+                    )
             elif isinstance(item, MotionPathItem):
-                # If path is selected (e.g. handle clicked), keep it visible
-                # Find which marker owns this path?
-                # We stored paths in self.motion_paths keyed by marker_id
-                for mid, path in self.motion_paths.items():
-                    # HandleItem is child of MotionPathItem, but selection propagates
-                    if path == item or item in path.childItems():
-                        selected_ids.add(mid)
-                        logger.debug(f"  - Selected motion path for marker: {mid}")
-                        break
+                # If path is selected directly, keep it visible
+                selected_ids.add(item.marker_id)
+                logger.debug(f"  - Selected motion path for marker: {item.marker_id}")
 
         # Update visibility
         logger.debug(f"Total motion paths: {len(self.motion_paths)}")
