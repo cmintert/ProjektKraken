@@ -343,33 +343,63 @@ class MapWidget(QWidget):
         """
         Shows dialog to edit keyframe properties.
         """
+        logger.info(f"Keyframe edit requested for marker {marker_id} at time {t}")
+
         if marker_id not in self.view.markers:
             logger.warning(f"Marker {marker_id} not found for editing.")
             return
 
         marker_item = self.view.markers[marker_id]
+
+        if not hasattr(marker_item, "marker_data") or marker_item.marker_data is None:
+            logger.error(
+                f"Marker {marker_id} has no marker_data. Cannot edit keyframe."
+            )
+            return
+
         keyframes = marker_item.marker_data.attributes.get("temporal", {}).get(
             "keyframes", []
         )
 
+        logger.debug(f"Marker {marker_id} has {len(keyframes)} keyframes")
+
         kf = next((k for k in keyframes if k["t"] == t), None)
         if not kf:
-            logger.warning(f"Keyframe at t={t} not found for marker {marker_id}.")
+            logger.warning(
+                f"Keyframe at t={t} not found for marker {marker_id}. "
+                f"Available times: {[k['t'] for k in keyframes]}"
+            )
             return
 
         current_x = kf["x"]
         current_y = kf["y"]
 
+        logger.info(
+            f"Opening keyframe dialog for {marker_id}: "
+            f"t={t}, x={current_x:.3f}, y={current_y:.3f}"
+        )
+
         dialog = KeyframeDialog(t, current_x, current_y, self)
         if dialog.exec():
             new_t, new_x, new_y = dialog.get_values()
 
+            logger.info(
+                f"Keyframe dialog accepted. New values: "
+                f"t={new_t}, x={new_x:.3f}, y={new_y:.3f}"
+            )
+
             # If time changed, we must delete the old keyframe and add a new one
             if new_t != t:
+                logger.info(
+                    f"Time changed from {t} to {new_t}. "
+                    "Deleting old keyframe, then adding new."
+                )
                 self.marker_keyframe_deleted.emit(marker_id, t)
 
             # Add/Update (if time changed, this adds at new time)
             self.marker_keyframe_changed.emit(marker_id, new_t, new_x, new_y)
+        else:
+            logger.info("Keyframe dialog cancelled by user.")
 
     @Slot(bool)
     def _on_record_toggled(self, checked: bool) -> None:

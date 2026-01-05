@@ -187,21 +187,82 @@ class MapGraphicsView(QGraphicsView):
         Handle mouse press to implement Smart Drag.
         If clicking a marker, disable view panning.
         If clicking background, enable view panning.
+
+        In Record Mode, clicking a marker creates/updates a keyframe.
         """
         item = self.itemAt(event.pos())
         logger.debug(f"Mouse Press at {event.pos()}. Item found: {item}")
 
         if isinstance(item, MarkerItem):
-            logger.debug(f"Click on Marker {item.marker_id}. Setting NoDrag.")
+            logger.debug(
+                f"Click on Marker {item.marker_id}. "
+                f"Record Mode: {self.record_mode}. Setting NoDrag."
+            )
             self.setDragMode(QGraphicsView.DragMode.NoDrag)
+
+            # Store press position and marker for Record Mode handling
+            self._press_pos = event.scenePos()
+            self._press_marker = item
         else:
             logger.debug("Click on background. Setting ScrollHandDrag.")
             self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+            self._press_pos = None
+            self._press_marker = None
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        """Reset drag mode on release."""
+        """
+        Reset drag mode on release.
+
+        In Record Mode, if clicking (not dragging) a marker, create/update keyframe.
+        """
         logger.debug("Mouse Release. Resetting to ScrollHandDrag.")
+
+        # Check for Record Mode keyframe creation
+        if (
+            self.record_mode
+            and hasattr(self, "_press_marker")
+            and self._press_marker is not None
+            and hasattr(self, "_press_pos")
+        ):
+
+            release_pos = event.scenePos()
+            distance = (release_pos - self._press_pos).manhattanLength()
+
+            logger.info(
+                f"Record Mode: Checking click on marker "
+                f"{self._press_marker.marker_id}. Distance: {distance}"
+            )
+
+            # If minimal movement (click, not drag)
+            if distance < 10:  # Threshold for click vs drag
+                marker_id = self._press_marker.marker_id
+                logger.info(
+                    f"Record Mode: Creating/updating keyframe for {marker_id} "
+                    f"at time {self.current_time}"
+                )
+
+                # Get normalized coordinates from marker's current position
+                if self.pixmap_item:
+                    marker_scene_pos = self._press_marker.scenePos()
+                    norm_x, norm_y = self._scene_to_normalized(
+                        marker_scene_pos.x(), marker_scene_pos.y()
+                    )
+
+                    logger.info(
+                        f"Record Mode: Emitting keyframe_changed for {marker_id}: "
+                        f"t={self.current_time}, x={norm_x:.3f}, y={norm_y:.3f}"
+                    )
+
+                    # Emit keyframe change signal
+                    self.marker_keyframe_changed.emit(
+                        marker_id, self.current_time, norm_x, norm_y
+                    )
+
+        # Clean up
+        self._press_marker = None
+        self._press_pos = None
+
         super().mouseReleaseEvent(event)
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
 
