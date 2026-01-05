@@ -7,7 +7,13 @@ Represents a marker on a map that points to an entity or event.
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Dict
+from typing import Any, Dict, NamedTuple
+
+
+class MarkerState(NamedTuple):
+    x: float
+    y: float
+    visible: bool
 
 
 @dataclass
@@ -42,6 +48,129 @@ class Marker:
     attributes: Dict[str, Any] = field(default_factory=dict)
     created_at: float = field(default_factory=time.time)
     modified_at: float = field(default_factory=time.time)
+
+    def _ensure_temporal_init(self) -> None:
+        """Initializes the temporal attribute structure if missing."""
+        if "temporal" not in self.attributes:
+            self.attributes["temporal"] = {
+                "enabled": True,
+                "interpolation": "linear",
+                "keyframes": [],
+            }
+        # Backward compatibility safety
+        if "keyframes" not in self.attributes["temporal"]:
+            self.attributes["temporal"]["keyframes"] = []
+
+    def add_keyframe(
+        self, t: float, x: float, y: float, keyframe_type: str = "path"
+    ) -> None:
+        """
+        Adds or updates a keyframe at time t.
+
+        Args:
+            t: Lore date for the keyframe.
+            x: Normalized X coordinate.
+            y: Normalized Y coordinate.
+            keyframe_type: 'start', 'end', or 'path'.
+        """
+        self._ensure_temporal_init()
+        keyframes = self.attributes["temporal"]["keyframes"]
+
+        # Check for existing keyframe at this exact time
+        for i, kf in enumerate(keyframes):
+            if kf["t"] == t:
+                # Update existing
+                keyframes[i] = {"t": t, "x": x, "y": y, "type": keyframe_type}
+                return
+
+        # Insert new keyframe sorted
+        new_kf = {"t": t, "x": x, "y": y, "type": keyframe_type}
+
+        # Keep sorted
+        inserted = False
+        for i, kf in enumerate(keyframes):
+            if kf["t"] > t:
+                keyframes.insert(i, new_kf)
+                inserted = True
+                break
+
+        if not inserted:
+            keyframes.append(new_kf)
+
+    def remove_keyframe(self, t: float) -> None:
+        """Removes a keyframe at exactly time t."""
+        self._ensure_temporal_init()
+        keyframes = self.attributes["temporal"]["keyframes"]
+        self.attributes["temporal"]["keyframes"] = [k for k in keyframes if k["t"] != t]
+
+    def get_state_at(self, t: float) -> MarkerState:
+        """
+        Calculates the marker state (position and visibility) at time t.
+
+        Args:
+            t: current lore date.
+
+        Returns:
+            MarkerState(x, y, visible)
+        """
+        # If temporal is not enabled or empty, return static state
+        if "temporal" not in self.attributes or not self.attributes["temporal"].get(
+            "enabled", True
+        ):
+            return MarkerState(self.x, self.y, True)
+
+        keyframes = self.attributes["temporal"].get("keyframes", [])
+        if not keyframes:
+            return MarkerState(self.x, self.y, True)
+
+        # Import bisect
+        import bisect
+
+        # Create a list of times for bisection
+        times = [kf["t"] for kf in keyframes]
+
+        # Find insertion point
+        idx = bisect.bisect_right(times, t)
+
+        # Case: Before first keyframe
+        if idx == 0:
+            first = keyframes[0]
+            if first.get("type") == "start":
+                return MarkerState(first["x"], first["y"], False)
+            # Default behavior currently holds the first keyframe position
+            return MarkerState(first["x"], first["y"], True)
+
+        # Case: After last keyframe
+        if idx == len(keyframes):
+            last = keyframes[-1]
+            if last.get("type") == "end":
+                return MarkerState(last["x"], last["y"], False)
+            return MarkerState(last["x"], last["y"], True)
+
+        # Case: Between keyframes (interpolate)
+        prev = keyframes[idx - 1]
+        next_kf = keyframes[idx]
+
+        # Check types for visibility gaps
+        if prev.get("type") == "end":
+            # We are after an end, but before the next point.
+            # If next is 'start', we are in the void.
+            return MarkerState(prev["x"], prev["y"], False)
+
+        # Linear Interpolation
+        t0 = prev["t"]
+        t1 = next_kf["t"]
+
+        # Guard zero division (should be impossible due to existing check?)
+        if t1 == t0:
+            return MarkerState(prev["x"], prev["y"], True)
+
+        fraction = (t - t0) / (t1 - t0)
+
+        lerp_x = prev["x"] + (next_kf["x"] - prev["x"]) * fraction
+        lerp_y = prev["y"] + (next_kf["y"] - prev["y"]) * fraction
+
+        return MarkerState(lerp_x, lerp_y, True)
 
     def to_dict(self) -> Dict[str, Any]:
         """
