@@ -60,7 +60,7 @@ class MapWidget(QWidget):
     """
 
     marker_position_changed = Signal(str, float, float)
-    marker_clicked = Signal(str, str)
+    marker_clicked = Signal(str)  # marker_id
     marker_keyframe_changed = Signal(str, float, float, float)  # marker_id, t, x, y
     marker_keyframe_deleted = Signal(str, float)  # marker_id, t
     marker_keyframe_duplicated = Signal(
@@ -124,9 +124,20 @@ class MapWidget(QWidget):
         # Record Mode Toggle
         self.btn_record = QPushButton("Record")
         self.btn_record.setCheckable(True)
-        self.btn_record.toggled.connect(self.view.set_record_mode)
-        # We can style this to look like a red record button when checked
-        # For now standard checkable button
+        self.btn_record.toggled.connect(self._on_record_toggled)
+        self.btn_record.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #34495e;
+                color: #ecf0f1;
+            }
+            QPushButton:checked {
+                background-color: #e74c3c;
+                color: white;
+                border: 2px solid #c0392b;
+            }
+            """
+        )
         top_bar.addWidget(self.btn_record)
 
         # Fit View Button
@@ -359,3 +370,12 @@ class MapWidget(QWidget):
 
             # Add/Update (if time changed, this adds at new time)
             self.marker_keyframe_changed.emit(marker_id, new_t, new_x, new_y)
+
+    @Slot(bool)
+    def _on_record_toggled(self, checked: bool) -> None:
+        """Handle record mode toggle."""
+        self.view.set_record_mode(checked)
+        if checked:
+            self.btn_record.setText("RECORDING")
+        else:
+            self.btn_record.setText("Record")

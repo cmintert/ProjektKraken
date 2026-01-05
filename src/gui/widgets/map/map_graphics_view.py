@@ -8,7 +8,7 @@ import json
 import logging
 from typing import Dict, Optional
 
-from PySide6.QtCore import QPointF, QSize, Qt, Signal
+from PySide6.QtCore import QPointF, QRectF, QSize, Qt, Signal
 from PySide6.QtGui import (
     QAction,
     QBrush,
@@ -198,6 +198,12 @@ class MapGraphicsView(QGraphicsView):
         super().mouseReleaseEvent(event)
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
 
+    def drawForeground(self, painter: QPainter, rect: QRectF) -> None:
+        """Draw overlay for record mode."""
+        super().drawForeground(painter, rect)
+        # Using stylesheet for border is simpler and sufficient.
+        pass
+
     def add_marker(
         self,
         marker_id: str,
@@ -359,6 +365,14 @@ class MapGraphicsView(QGraphicsView):
         """Sets the recording mode state."""
         self.record_mode = enabled
         logger.info(f"Map Record Mode: {enabled}")
+
+        # Visual cues
+        if enabled:
+            self.setStyleSheet("border: 4px solid #c0392b;")
+            self.setCursor(Qt.CursorShape.CrossCursor)
+        else:
+            self.setStyleSheet("border: none;")
+            self.unsetCursor()
 
     def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
         """
