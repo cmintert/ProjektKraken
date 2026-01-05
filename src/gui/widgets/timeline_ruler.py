@@ -186,12 +186,6 @@ class TimelineRuler:
                 self.THRESHOLD_FULL - self.THRESHOLD_SHOW
             )
 
-        logger.debug(
-            f"Active levels: date_range={date_range:.4f}, "
-            f"major={best_level.name}, minor={minor_level.name}, "
-            f"major_spacing={best_spacing:.1f}px, minor_spacing={minor_spacing:.1f}px"
-        )
-
         return best_level, minor_level, minor_opacity
 
     def calculate_ticks(
@@ -315,15 +309,6 @@ class TimelineRuler:
 
             current += step
             count += 1
-
-        logger.debug(
-            f"Generated {len(ticks)} ticks for {level.name}: "
-            f"range=[{start_date:.4f}, {end_date:.4f}], step={step:.6f}"
-        )
-        if ticks:
-            logger.debug(
-                f"First tick: pos={ticks[0].position:.6f}, label='{ticks[0].label}'"
-            )
 
         return ticks
 
@@ -519,13 +504,6 @@ class TimelineRuler:
 
         labels_kept = sum(1 for t in result if t.label)
         labels_total = sum(1 for t in ticks if t.label)
-        if sorted_ticks:
-            screen_xs = [f"{t.screen_x:.1f}" for t in sorted_ticks[:5]]
-            logger.debug(f"First 5 screen_x values: {screen_xs}")
-        logger.debug(
-            f"Collision avoidance: {labels_kept}/{labels_total} labels kept, "
-            f"label_width={label_width}"
-        )
 
         return result
 
