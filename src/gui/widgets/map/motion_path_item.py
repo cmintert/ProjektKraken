@@ -104,7 +104,7 @@ class HandleItem(QGraphicsObject):
         self.clicked.emit(self)
 
     def mouseReleaseEvent(self, event: Any) -> None:
-        super().mouseReleaseEvent(event)
+        """Handle mouse release to emit position update and maintain selection."""
         # Calculate new normalized position
         if self.scene() and self.parentItem():
             # Parent is MotionPathItem.
@@ -119,6 +119,12 @@ class HandleItem(QGraphicsObject):
                 self.duplicate_requested.emit(self.t, scene_pos.x(), scene_pos.y())
             else:
                 self.position_changed.emit(self.t, scene_pos.x(), scene_pos.y())
+
+        # Ensure handle stays selected after drag
+        if not self.isSelected():
+            self.setSelected(True)
+
+        super().mouseReleaseEvent(event)
 
     def mouseDoubleClickEvent(self, event: Any) -> None:
         """Handle double click to edit."""
