@@ -48,6 +48,9 @@ class MarkerItem(QGraphicsObject):
     """
 
     clicked = Signal(str, str)
+    activated = Signal(
+        str
+    )  # Emitted when marker is clicked (for motion path visibility)
 
     MARKER_SIZE = 24  # Size of the marker icon
     COLORS = {
