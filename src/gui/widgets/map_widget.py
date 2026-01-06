@@ -117,6 +117,15 @@ class MapWidget(QWidget):
         self.btn_settings.clicked.connect(self._configure_map_width)
         self.toolbar.addWidget(self.btn_settings)
 
+        # Demo trajectory button (for testing temporal features)
+        self.btn_demo_trajectory = QPushButton("🚀 Demo")
+        self.btn_demo_trajectory.setToolTip(
+            "Toggle demo trajectory marker (moves with timeline playhead)"
+        )
+        self.btn_demo_trajectory.setCheckable(True)
+        self.btn_demo_trajectory.clicked.connect(self._toggle_demo_trajectory)
+        self.toolbar.addWidget(self.btn_demo_trajectory)
+
         # Add View (after toolbar)
         layout.addWidget(self.view)
 
@@ -148,13 +157,74 @@ class MapWidget(QWidget):
         self._playhead_time: float = 0.0  # Current playhead time from Timeline
         self._current_time: float = 0.0  # Story's "Now" time from Timeline
 
+        # Demo trajectory for testing (will be removed once real trajectories work)
+        self._demo_trajectory: list | None = None
+        self._demo_marker_id = "__demo_trajectory_marker__"
+
+    def enable_demo_trajectory(self) -> None:
+        """
+        Enables a demo trajectory marker for testing.
+
+        Creates a marker that moves along a predefined path when
+        scrubbing the timeline playhead. The trajectory goes:
+        - t=0: top-left (0.1, 0.1)
+        - t=50: center (0.5, 0.5)
+        - t=100: bottom-right (0.9, 0.9)
+        """
+        from src.core.trajectory import Keyframe
+
+        self._demo_trajectory = [
+            Keyframe(t=0.0, x=0.1, y=0.1),
+            Keyframe(t=50.0, x=0.5, y=0.5),
+            Keyframe(t=100.0, x=0.9, y=0.9),
+        ]
+
+        # Add the demo marker at initial position
+        if self.view.pixmap_item:
+            self.view.add_marker(
+                marker_id=self._demo_marker_id,
+                object_type="entity",
+                label="🚀 Demo Trajectory",
+                x=0.1,
+                y=0.1,
+                icon=None,
+                color="#FF00FF",  # Magenta for visibility
+            )
+            logger.info("Demo trajectory marker enabled")
+
+    def disable_demo_trajectory(self) -> None:
+        """Disables and removes the demo trajectory marker."""
+        if self._demo_trajectory:
+            self.view.remove_marker(self._demo_marker_id)
+            self._demo_trajectory = None
+            logger.info("Demo trajectory marker disabled")
+
+    def _toggle_demo_trajectory(self, checked: bool) -> None:
+        """Toggle handler for the demo trajectory button."""
+        if checked:
+            self.enable_demo_trajectory()
+        else:
+            self.disable_demo_trajectory()
+
+    def _update_demo_marker(self) -> None:
+        """Updates the demo marker position based on current playhead time."""
+        if not self._demo_trajectory:
+            return
+
+        from src.core.trajectory import interpolate_position
+
+        position = interpolate_position(self._demo_trajectory, self._playhead_time)
+        if position:
+            x, y = position
+            self.view.update_marker_position(self._demo_marker_id, x, y)
+
     @Slot(float)
     def on_time_changed(self, time: float) -> None:
         """
         Receives playhead time updates from the Timeline.
 
-        Updates the internal time state and refreshes the status display.
-        Future: This will trigger trajectory interpolation for moving markers.
+        Updates the internal time state, refreshes the status display,
+        and updates any trajectory-based markers.
 
         Args:
             time: Current playhead time in lore_date units.
@@ -162,6 +232,7 @@ class MapWidget(QWidget):
         self._playhead_time = time
         self.view._current_time = time
         self._update_time_display()
+        self._update_demo_marker()
         logger.debug(f"Map playhead time updated to {time:.2f}")
 
     @Slot(float)
