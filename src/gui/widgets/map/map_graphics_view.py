@@ -34,10 +34,17 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.widgets.map.coordinate_system import MapCoordinateSystem
 from src.gui.widgets.map.icon_picker_dialog import IconPickerDialog
 from src.gui.widgets.map.marker_item import MarkerItem
 
 logger = logging.getLogger(__name__)
+
+# Layer Z-Values
+LAYER_MAP_BG = 0
+LAYER_TRAJECTORIES = 5
+LAYER_MARKERS = 10
+LAYER_UI_OVERLAY = 100
 
 
 class MapGraphicsView(QGraphicsView):
@@ -67,6 +74,14 @@ class MapGraphicsView(QGraphicsView):
         """
         super().__init__(parent)
 
+        # Initialize Coordinate System
+        self.coord_system = MapCoordinateSystem()
+
+        # Set OpenGL Viewport
+        from PySide6.QtOpenGLWidgets import QOpenGLWidget
+
+        self.setViewport(QOpenGLWidget())
+
         self.scene = QGraphicsScene(self)
         self.setScene(self.scene)
 
@@ -75,6 +90,11 @@ class MapGraphicsView(QGraphicsView):
         self.setRenderHint(QPainter.SmoothPixmapTransform)
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+
+        # Disable scrollbars for infinite canvas feel
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         # Map and markers
         self.pixmap_item: Optional[QGraphicsPixmapItem] = None
@@ -128,9 +148,13 @@ class MapGraphicsView(QGraphicsView):
                 self.scene.removeItem(self.pixmap_item)
 
             # Add new map
+            # Add new map
             self.pixmap_item = QGraphicsPixmapItem(pixmap)
-            self.pixmap_item.setZValue(0)  # Behind markers
+            self.pixmap_item.setZValue(LAYER_MAP_BG)
             self.scene.addItem(self.pixmap_item)
+
+            # Update coordinate system bounds
+            self.coord_system.set_scene_rect(self.pixmap_item.boundingRect())
 
             # Fit view to map
             self.fitInView(self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
@@ -215,8 +239,9 @@ class MapGraphicsView(QGraphicsView):
         )
 
         # Convert normalized to scene coordinates
-        scene_pos = self._normalized_to_scene(x, y)
+        scene_pos = self.coord_system.to_scene(x, y)
         marker.setPos(scene_pos)
+        marker.setZValue(LAYER_MARKERS)
 
         # Add to scene and track
         self.scene.addItem(marker)
@@ -244,7 +269,8 @@ class MapGraphicsView(QGraphicsView):
             return
 
         marker = self.markers[marker_id]
-        scene_pos = self._normalized_to_scene(x, y)
+        marker = self.markers[marker_id]
+        scene_pos = self.coord_system.to_scene(x, y)
         marker.setPos(scene_pos)
 
         logger.debug(f"Updated marker {marker_id} to normalized ({x:.3f}, {y:.3f})")
@@ -270,23 +296,10 @@ class MapGraphicsView(QGraphicsView):
 
     def _normalized_to_scene(self, x: float, y: float) -> QPointF:
         """
-        Converts normalized coordinates to scene coordinates.
-
-        Args:
-            x: Normalized X coordinate [0.0, 1.0].
-            y: Normalized Y coordinate [0.0, 1.0].
-
-        Returns:
-            QPointF: Scene coordinates.
+        [DEPRECATED] Use self.coord_system.to_scene instead.
+        Kept temporarily if external callers use it, but should be removed.
         """
-        if not self.pixmap_item:
-            return QPointF(0, 0)
-
-        pixmap_rect = self.pixmap_item.sceneBoundingRect()
-        scene_x = pixmap_rect.left() + (x * pixmap_rect.width())
-        scene_y = pixmap_rect.top() + (y * pixmap_rect.height())
-
-        return QPointF(scene_x, scene_y)
+        return self.coord_system.to_scene(x, y)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         """Handle mouse wheel for zooming."""
@@ -357,16 +370,9 @@ class MapGraphicsView(QGraphicsView):
             return
 
         # Calculate normalized coordinates
-        pixmap_rect = self.pixmap_item.sceneBoundingRect()
-        rel_x = scene_pos.x() - pixmap_rect.left()
-        rel_y = scene_pos.y() - pixmap_rect.top()
-
-        norm_x = rel_x / pixmap_rect.width() if pixmap_rect.width() > 0 else 0.0
-        norm_y = rel_y / pixmap_rect.height() if pixmap_rect.height() > 0 else 0.0
-
-        # Clamp to [0, 1]
-        norm_x = max(0.0, min(1.0, norm_x))
-        norm_y = max(0.0, min(1.0, norm_y))
+        # Calculate normalized coordinates
+        norm_x, norm_y = self.coord_system.to_normalized(scene_pos)
+        norm_x, norm_y = self.coord_system.clamp_normalized(norm_x, norm_y)
 
         # Parse MIME data
         try:
@@ -429,24 +435,15 @@ class MapGraphicsView(QGraphicsView):
 
             # Check if within map bounds
             if self.pixmap_item.contains(scene_pos):
-                pixmap_rect = self.pixmap_item.sceneBoundingRect()
-                rel_x = scene_pos.x() - pixmap_rect.left()
-                rel_y = scene_pos.y() - pixmap_rect.top()
+                norm_x, norm_y = self.coord_system.to_normalized(scene_pos)
 
-                width = pixmap_rect.width()
-                height = pixmap_rect.height()
-
-                if width > 0 and height > 0:
-                    norm_x = rel_x / width
-                    norm_y = rel_y / height
-
-                    menu = QMenu(self)
-                    add_action = QAction("Add Marker", self)
-                    add_action.triggered.connect(
-                        lambda: self.add_marker_requested.emit(norm_x, norm_y)
-                    )
-                    menu.addAction(add_action)
-                    menu.exec(event.globalPos())
+                menu = QMenu(self)
+                add_action = QAction("Add Marker", self)
+                add_action.triggered.connect(
+                    lambda: self.add_marker_requested.emit(norm_x, norm_y)
+                )
+                menu.addAction(add_action)
+                menu.exec(event.globalPos())
 
     def _show_icon_picker(self, marker_item: MarkerItem) -> None:
         """

@@ -28,6 +28,8 @@ def setup_map_with_pixmap(map_view, width=100, height=100):
     pixmap = create_test_pixmap(width, height)
     map_view.pixmap_item = QGraphicsPixmapItem(pixmap)
     map_view.scene.addItem(map_view.pixmap_item)
+    # Ensure coordinate system knows about the map bounds
+    map_view.coord_system.set_scene_rect(map_view.pixmap_item.boundingRect())
     return map_view
 
 
