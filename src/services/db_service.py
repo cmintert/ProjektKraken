@@ -2120,4 +2120,20 @@ class DatabaseService:
         """
         if not self._connection:
             self.connect()
-        return self._trajectory_repo.get_by_marker_id(marker_id)
+        return self._trajectory_repo.get_by_marker_db_id(marker_id)
+
+    def add_keyframe(self, map_id: str, object_id: str, keyframe: "Keyframe") -> str:
+        """
+        Adds a keyframe to the marker's trajectory.
+
+        Args:
+            map_id: The ID of the map.
+            object_id: The object ID (Entity/Event ID).
+            keyframe: The Keyframe object.
+
+        Returns:
+            The ID of the updated/created trajectory.
+        """
+        if not self._connection:
+            self.connect()
+        return self._trajectory_repo.add_keyframe(map_id, object_id, keyframe)

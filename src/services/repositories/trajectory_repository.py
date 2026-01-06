@@ -35,7 +35,7 @@ class TrajectoryRepository(BaseRepository):
         For this implementation, we insert a new row.
 
         Args:
-            marker_id: The ID of the marker this trajectory belongs to.
+            marker_id: The ID of the marker (DB ID) this trajectory belongs to.
             trajectory: List of Keyframe objects.
             properties: Optional JSON properties (e.g., color, style changes).
 
@@ -70,12 +70,14 @@ class TrajectoryRepository(BaseRepository):
         logger.info(f"Inserted trajectory {feature_id} for marker {marker_id}")
         return feature_id
 
-    def get_by_marker_id(self, marker_id: str) -> List[Tuple[str, List[Keyframe]]]:
+    def get_by_marker_db_id(
+        self, marker_db_id: str
+    ) -> List[Tuple[str, List[Keyframe]]]:
         """
-        Retrieves all trajectories associated with a marker.
+        Retrieves all trajectories associated with a marker (by DB ID).
 
         Args:
-            marker_id: The UUID of the marker.
+            marker_db_id: The UUID of the marker in markers table.
 
         Returns:
             List of tuples (trajectory_id, List[Keyframe]).
@@ -88,7 +90,7 @@ class TrajectoryRepository(BaseRepository):
             WHERE marker_id = ?
             ORDER BY t_start
         """
-        cursor = self._connection.execute(sql, (marker_id,))
+        cursor = self._connection.execute(sql, (marker_db_id,))
         rows = cursor.fetchall()
 
         results = []
@@ -115,13 +117,14 @@ class TrajectoryRepository(BaseRepository):
             map_id: The UUID of the map.
 
         Returns:
-            List of tuples (marker_id, trajectory_id, List[Keyframe]).
+            List of tuples (object_id, trajectory_id, List[Keyframe]).
+            Note: Returns object_id as 'marker_id' for UI compatibility.
         """
         if not self._connection:
             raise RuntimeError("Database connection not initialized")
 
         sql = """
-            SELECT mf.id as traj_id, mf.marker_id, mf.trajectory
+            SELECT mf.id as traj_id, m.object_id as marker_id, mf.trajectory
             FROM moving_features mf
             JOIN markers m ON mf.marker_id = m.id
             WHERE m.map_id = ?
@@ -145,3 +148,71 @@ class TrajectoryRepository(BaseRepository):
                 logger.error(f"Failed to parse trajectory {traj_id}: {e}")
 
         return results
+
+    def add_keyframe(self, map_id: str, object_id: str, keyframe: Keyframe) -> str:
+        """
+        Adds or updates a keyframe for the given marker (identified by map+object).
+        Resolves the internal markers.id first.
+
+        Args:
+            map_id: ID of the map.
+            object_id: The object ID (Entity/Event ID).
+            keyframe: The Keyframe to add.
+
+        Returns:
+            The ID of the trajectory updated or created.
+        """
+        if not self._connection:
+            raise RuntimeError("Database connection not initialized")
+
+        # 1. Resolve markers.id
+        row = self._connection.execute(
+            "SELECT id FROM markers WHERE map_id = ? AND object_id = ?",
+            (map_id, object_id),
+        ).fetchone()
+
+        if not row:
+            logger.error(f"No marker found for map_id={map_id}, object_id={object_id}")
+            raise ValueError(f"Marker not found: map={map_id}, obj={object_id}")
+
+        marker_db_id = row["id"]
+
+        # 2. Get existing trajectories
+        trajectories = self.get_by_marker_db_id(marker_db_id)
+
+        if trajectories:
+            # Update existing (pick the last one based on t_start if multiple, or just first)
+            traj_id, keyframes = trajectories[0]
+
+            # Remove any existing keyframe at exactly this time (or within small epsilon)
+            epsilon = 0.0001
+            keyframes = [k for k in keyframes if abs(k.t - keyframe.t) > epsilon]
+
+            keyframes.append(keyframe)
+            keyframes.sort(key=lambda k: k.t)
+
+            # Persist update
+            self._update_trajectory_record(traj_id, keyframes)
+            return traj_id
+        else:
+            return self.insert(marker_db_id, [keyframe])
+
+    def _update_trajectory_record(
+        self, traj_id: str, keyframes: List[Keyframe]
+    ) -> None:
+        """Updates the trajectory JSON in the database."""
+        if not keyframes:
+            return
+
+        t_start = keyframes[0].t
+        t_end = keyframes[-1].t
+        traj_data = [[kf.t, kf.x, kf.y] for kf in keyframes]
+        traj_json = json.dumps(traj_data)
+
+        sql = """
+            UPDATE moving_features
+            SET t_start = ?, t_end = ?, trajectory = ?
+            WHERE id = ?
+        """
+        with self.transaction() as conn:
+            conn.execute(sql, (t_start, t_end, traj_json, traj_id))

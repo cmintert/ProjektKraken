@@ -26,12 +26,15 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import (
     QColorDialog,
     QDialog,
+    QGraphicsEllipseItem,
+    QGraphicsPathItem,
     QGraphicsPixmapItem,
     QGraphicsScene,
     QGraphicsView,
     QMenu,
     QWidget,
 )
+from PySide6.QtGui import QPainterPath, QPen
 
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.map.coordinate_system import MapCoordinateSystem
@@ -139,6 +142,10 @@ class MapGraphicsView(QGraphicsView):
 
         # Temporal state (for future trajectory animation)
         self._current_time: float = 0.0
+
+        # Trajectory Visualization
+        self.trajectory_path_item: Optional[QGraphicsPathItem] = None
+        self.keyframe_items: list[QGraphicsEllipseItem] = []
 
     def minimumSizeHint(self) -> QSize:
         """
@@ -608,3 +615,60 @@ class MapGraphicsView(QGraphicsView):
         )
         menu.addAction(add_action)
         menu.exec(global_pos)
+
+    def show_trajectory(self, keyframes: list) -> None:
+        """
+        Visualizes the trajectory path and keyframes.
+
+        Args:
+            keyframes: List of Keyframe objects.
+        """
+        self.clear_trajectory()
+        if not keyframes or len(keyframes) < 2:
+            return
+
+        # Create Path
+        path = QPainterPath()
+        start = self.coord_system.to_scene(keyframes[0].x, keyframes[0].y)
+        path.moveTo(start)
+
+        for i in range(1, len(keyframes)):
+            kf = keyframes[i]
+            pos = self.coord_system.to_scene(kf.x, kf.y)
+            path.lineTo(pos)
+
+        self.trajectory_path_item = QGraphicsPathItem(path)
+        pen = QPen(QColor("#3498db"), 2)  # Blue path
+        pen.setStyle(Qt.PenStyle.DashLine)
+        self.trajectory_path_item.setPen(pen)
+        self.trajectory_path_item.setZValue(LAYER_TRAJECTORIES)
+        self.scene.addItem(self.trajectory_path_item)
+
+        # Create Keyframe Dots with dynamic size scaling
+        # Use a fixed visual size (e.g., 8px) divided by view scale
+        view_scale = self.transform().m11()
+        dot_radius = 4.0 / view_scale if view_scale > 0 else 4.0
+
+        for kf in keyframes:
+            pos = self.coord_system.to_scene(kf.x, kf.y)
+            dot = QGraphicsEllipseItem(
+                pos.x() - dot_radius,
+                pos.y() - dot_radius,
+                dot_radius * 2,
+                dot_radius * 2,
+            )
+            dot.setBrush(QBrush(QColor("#f1c40f")))  # Yellow dots
+            dot.setPen(QPen(Qt.PenStyle.NoPen))
+            dot.setZValue(LAYER_TRAJECTORIES + 1)
+            self.scene.addItem(dot)
+            self.keyframe_items.append(dot)
+
+    def clear_trajectory(self) -> None:
+        """Clears the rendered trajectory path and keyframes."""
+        if self.trajectory_path_item:
+            self.scene.removeItem(self.trajectory_path_item)
+            self.trajectory_path_item = None
+
+        for item in self.keyframe_items:
+            self.scene.removeItem(item)
+        self.keyframe_items.clear()

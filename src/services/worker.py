@@ -201,6 +201,34 @@ class DatabaseWorker(QObject):
             logger.error(f"Failed to load trajectories: {traceback.format_exc()}")
             self.error_occurred.emit(f"Failed to load trajectories for map {map_id}.")
 
+    @Slot(str, str, float, float, float)
+    def add_keyframe(
+        self, map_id: str, marker_id: str, t: float, x: float, y: float
+    ) -> None:
+        """
+        Adds a keyframe to a marker's trajectory and reloads trajectories.
+
+        Args:
+            map_id: The map ID (for reloading).
+            marker_id: The marker ID.
+            t: Time timestamp.
+            x: Normalized X.
+            y: Normalized Y.
+        """
+        if not self.db_service:
+            return
+
+        try:
+            from src.core.trajectory import Keyframe
+
+            kf = Keyframe(t=t, x=x, y=y)
+            self.db_service.add_keyframe(map_id, marker_id, kf)
+            self.load_trajectories(map_id)
+            self.operation_finished.emit("Keyframe added.")
+        except Exception:
+            logger.error(f"Failed to add keyframe: {traceback.format_exc()}")
+            self.error_occurred.emit("Failed to add keyframe.")
+
     @Slot(str)
     def load_event_details(self, event_id: str) -> None:
         """Loads event details and sends them back."""

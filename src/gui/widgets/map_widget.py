@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
 
 from src.core.paths import get_resource_path
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
+from src.gui.widgets.map.marker_item import MarkerItem
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +69,11 @@ class MapWidget(QWidget):
     delete_marker_requested = Signal(str)  # marker_id
     change_marker_icon_requested = Signal(str, str)  # marker_id, new_icon
     change_marker_color_requested = Signal(str, str)  # marker_id, new_color_hex
+    change_marker_color_requested = Signal(str, str)  # marker_id, new_color_hex
     marker_drop_requested = Signal(str, str, str, float, float)  # id, type, name, x, y
+    add_keyframe_requested = Signal(
+        str, str, float, float, float
+    )  # map_id, marker_id, t, x, y
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -117,6 +122,11 @@ class MapWidget(QWidget):
         self.btn_settings.clicked.connect(self._configure_map_width)
         self.toolbar.addWidget(self.btn_settings)
 
+        self.btn_add_keyframe = QPushButton("Add Keyframe")
+        self.btn_add_keyframe.setToolTip("Save current marker position at current time")
+        self.btn_add_keyframe.clicked.connect(self._on_add_keyframe)
+        self.toolbar.addWidget(self.btn_add_keyframe)
+
         # Add View (after toolbar)
         layout.addWidget(self.view)
 
@@ -133,6 +143,7 @@ class MapWidget(QWidget):
         # Connect signals
         self.view.marker_moved.connect(self._on_marker_moved)
         self.view.marker_clicked.connect(self.marker_clicked.emit)
+        self.view.marker_clicked.connect(self._on_marker_clicked_internal)
         self.view.add_marker_requested.connect(self.create_marker_requested.emit)
         self.view.delete_marker_requested.connect(self.delete_marker_requested.emit)
         self.view.change_marker_icon_requested.connect(
@@ -149,6 +160,7 @@ class MapWidget(QWidget):
         self._current_time: float = 0.0  # Story's "Now" time from Timeline
 
         self._active_trajectories: dict[str, list] = {}  # marker_id -> list[Keyframe]
+        self._selected_marker_id: Optional[str] = None
 
         # Import Keyframe for type checking if needed, or rely on duck typing
         from src.core.trajectory import interpolate_position
@@ -176,6 +188,10 @@ class MapWidget(QWidget):
         logger.debug(f"Loaded {count} temporal trajectories for map")
         # Force an update immediately so markers jump to correct spot for current time
         self._update_trajectory_positions()
+
+        # Update visualization if selection exists
+        if self._selected_marker_id:
+            self._update_trajectory_visualization(self._selected_marker_id)
 
     def _update_trajectory_positions(self) -> None:
         """Updates all trajectory-based markers for the current playhead time."""
@@ -425,3 +441,50 @@ class MapWidget(QWidget):
         if ok:
             self.view.set_map_width_meters(float(width))
             logger.info(f"Map width set to {width} meters")
+
+    @Slot()
+    def _on_add_keyframe(self) -> None:
+        """
+        Captures the current position of the selected marker and saves it as a keyframe.
+        """
+        selected_items = self.view.scene.selectedItems()
+        if not selected_items:
+            logger.warning("Cannot add keyframe: No marker selected.")
+            return
+
+        # Assuming single selection for now
+        item = selected_items[0]
+        if not isinstance(item, MarkerItem):
+            logger.warning("Selected item is not a marker.")
+            return
+
+        marker_id = item.marker_id
+        t = self._playhead_time
+
+        # Get position in normalized coordinates
+        pos = item.pos()
+        norm_pos = self.view.coord_system.to_normalized(pos)
+        x, y = norm_pos
+
+        logger.info(f"Adding keyframe for {marker_id} at t={t}: ({x:.3f}, {y:.3f})")
+
+        logger.info(f"Adding keyframe for {marker_id} at t={t}: ({x:.3f}, {y:.3f})")
+
+        # Emit signal
+        map_id = self.get_selected_map_id()
+        if map_id:
+            self.add_keyframe_requested.emit(map_id, marker_id, t, x, y)
+
+    @Slot(str, str)
+    def _on_marker_clicked_internal(self, marker_id: str, object_type: str) -> None:
+        """Internal handler for marker click to update visualization."""
+        self._selected_marker_id = marker_id
+        self._update_trajectory_visualization(marker_id)
+
+    def _update_trajectory_visualization(self, marker_id: str) -> None:
+        """Updates the view to show the trajectory for the given marker."""
+        keyframes = self._active_trajectories.get(marker_id, [])
+        if keyframes:
+            self.view.show_trajectory(keyframes)
+        else:
+            self.view.clear_trajectory()

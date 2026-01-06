@@ -181,6 +181,9 @@ class ConnectionManager:
         timeline.playhead_time_changed.connect(map_widget.on_time_changed)
         timeline.current_time_changed.connect(map_widget.on_current_time_changed)
 
+        # Connect keyframe request
+        map_widget.add_keyframe_requested.connect(self.window.worker.add_keyframe)
+
     def connect_ai_search_panel(self) -> None:
         """Connect signals from the AI search panel widget."""
         panel = self.window.ai_search_panel
