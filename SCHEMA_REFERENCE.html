@@ -350,6 +350,16 @@
         REAL modified_at
     }
 
+    moving_features {
+        TEXT id PK
+        TEXT marker_id
+        REAL t_start
+        REAL t_end
+        JSON trajectory
+        JSON properties
+        REAL created_at
+    }
+
     image_attachments {
         TEXT id PK
         TEXT owner_type
@@ -359,7 +369,7 @@
         TEXT caption
         INTEGER order_index
         REAL created_at
-        TEXT, resolution
+        TEXT resolution
         TEXT source
     }
 
@@ -396,6 +406,7 @@
     }
 
     markers }o--|| maps : &quot;map_id&quot;
+    moving_features }o--|| markers : &quot;marker_id&quot;
     event_tags }o--|| events : &quot;event_id&quot;
     event_tags }o--|| tags : &quot;tag_id&quot;
     entity_tags }o--|| entities : &quot;entity_id&quot;
@@ -701,6 +712,49 @@
 </div>
 <p><strong>Indexes:</strong> <code class="docutils literal notranslate"><span class="pre">idx_markers_map</span></code></p>
 </section>
+<section id="moving-features">
+<h3><code class="docutils literal notranslate"><span class="pre">moving_features</span></code><a class="headerlink" href="#moving-features" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Column</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Constraints</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">id</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>PRIMARY KEY</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">marker_id</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>NOT NULL</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">t_start</span></code></p></td>
+<td><p>REAL</p></td>
+<td><p>NOT NULL</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">t_end</span></code></p></td>
+<td><p>REAL</p></td>
+<td><p>NOT NULL</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">trajectory</span></code></p></td>
+<td><p>JSON</p></td>
+<td><p>NOT NULL, – List of [t, x, y]</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">properties</span></code></p></td>
+<td><p>JSON</p></td>
+<td><p>DEFAULT ‘{}’, – Changing properties over time</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">created_at</span></code></p></td>
+<td><p>REAL</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
 <section id="image-attachments">
 <h3><code class="docutils literal notranslate"><span class="pre">image_attachments</span></code><a class="headerlink" href="#image-attachments" title="Link to this heading">¶</a></h3>
 <div class="table-wrapper colwidths-auto docutils container">
@@ -745,8 +799,8 @@
 <td><p></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">resolution</span></code></p></td>
-<td><p>TEXT,</p></td>
-<td><p>– Stored as “widthxheight” or JSON [w, h]</p></td>
+<td><p>TEXT</p></td>
+<td><p></p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">source</span></code></p></td>
 <td><p>TEXT</p></td>
@@ -967,6 +1021,7 @@
 <li><a class="reference internal" href="#calendar-config"><code class="docutils literal notranslate"><span class="pre">calendar_config</span></code></a></li>
 <li><a class="reference internal" href="#maps"><code class="docutils literal notranslate"><span class="pre">maps</span></code></a></li>
 <li><a class="reference internal" href="#markers"><code class="docutils literal notranslate"><span class="pre">markers</span></code></a></li>
+<li><a class="reference internal" href="#moving-features"><code class="docutils literal notranslate"><span class="pre">moving_features</span></code></a></li>
 <li><a class="reference internal" href="#image-attachments"><code class="docutils literal notranslate"><span class="pre">image_attachments</span></code></a></li>
 <li><a class="reference internal" href="#tags"><code class="docutils literal notranslate"><span class="pre">tags</span></code></a></li>
 <li><a class="reference internal" href="#event-tags"><code class="docutils literal notranslate"><span class="pre">event_tags</span></code></a></li>

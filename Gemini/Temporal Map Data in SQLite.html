@@ -1,0 +1,684 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
+        <title>Temporal Geospatial Architectures: Engineering High-Performance Animation Systems in PySide6 with Hybrid SQLite Storage - Project Kraken 0.5.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">Project Kraken 0.5.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  
+  <span class="sidebar-brand-text">Project Kraken 0.5.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../WIKI_LINKING.html">ID-Based Wiki Linking Implementation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../MAP_USAGE_EXAMPLES.html">Map System Usage Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../LONGFORM.html">Longform Document Feature</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../DATABASE.html">Database Architecture and Best Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../DEVELOPMENT.html">Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../SECURITY.html">Security Best Practices</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../TAG_MIGRATION_GUIDE.html">Tag Normalization Migration Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../modules.html">src</a><input aria-label="Toggle navigation of src" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../app.html">app package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cli.html">cli package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../commands.html">commands package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../core.html">core package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../gui.html">gui package</a><input aria-label="Toggle navigation of gui package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../gui.widgets.html">gui.widgets package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gui.dialogs.html">gui.dialogs package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../services.html">services package</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../CHANGELOG.html">Changelog</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../_sources/Gemini/Temporal Map Data in SQLite.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="temporal-geospatial-architectures-engineering-high-performance-animation-systems-in-pyside6-with-hybrid-sqlite-storage">
+<h1><strong>Temporal Geospatial Architectures: Engineering High-Performance Animation Systems in PySide6 with Hybrid SQLite Storage</strong><a class="headerlink" href="#temporal-geospatial-architectures-engineering-high-performance-animation-systems-in-pyside6-with-hybrid-sqlite-storage" title="Link to this heading">¶</a></h1>
+<section id="architectural-convergence-in-temporal-gis">
+<h2><strong>1. Architectural Convergence in Temporal GIS</strong><a class="headerlink" href="#architectural-convergence-in-temporal-gis" title="Link to this heading">¶</a></h2>
+<p>The contemporary landscape of Geographic Information Systems (GIS) is undergoing a fundamental shift from static cartography to dynamic, temporal visualization. This transition necessitates a re-evaluation of traditional database architectures and rendering pipelines, particularly when targeting desktop environments using Python and Qt. Your objective—to construct a map application capable of keyframe-based animation using a hybrid SQLite database—places the project at the bleeding edge of “Post-Relational” geospatial engineering. This report serves as a comprehensive architectural blueprint, deconstructing the complexities of storing, interpolating, and rendering moving features (trajectories) within a PySide6 environment.<br />
+The challenge is multi-dimensional. It requires reconciling the distinct requirements of storage efficiency, query latency, and rendering frame rates. A hybrid SQLite approach, where relational rigour meets the schema flexibility of JSON, offers a potent solution but introduces specific pitfalls regarding indexing and serialization overhead. Furthermore, the user experience (UX) of <em>editing</em> time—translating abstract temporal qualities into tangible, manipulable interface elements—requires a sophisticated understanding of animation principles derived from computer graphics rather than traditional GIS forms.<br />
+We define “Moving Features” not merely as points with timestamps, but as continuous geometries—prisms in a 4D space-time cube—that require mathematical interpolation to render at arbitrary time t. The analysis that follows integrates rigorous database optimization strategies, computational geometry algorithms, and advanced Qt widget engineering to deliver a system that is both performant and intuitive.</p>
+</section>
+<section id="the-persistence-layer-hybrid-sqlite-optimization">
+<h2><strong>2. The Persistence Layer: Hybrid SQLite Optimization</strong><a class="headerlink" href="#the-persistence-layer-hybrid-sqlite-optimization" title="Link to this heading">¶</a></h2>
+<p>The decision to utilize a hybrid approach in SQLite—storing core entity metadata in relational columns and complex trajectory data in JSON documents—aligns with modern “Multi-Model” database paradigms. This architecture allows for the high-speed retrieval of entity lists while preserving the structural integrity of variable-length time-series data. However, the implementation details determine whether this system scales to thousands of features or falters under the weight of parsing overhead.</p>
+<section id="the-mechanics-of-sqlite-jsonb-and-hybrid-storage">
+<h3><strong>2.1 The Mechanics of SQLite JSONB and Hybrid Storage</strong><a class="headerlink" href="#the-mechanics-of-sqlite-jsonb-and-hybrid-storage" title="Link to this heading">¶</a></h3>
+<p>Traditionally, geospatial trajectories were modeled in Third Normal Form (3NF), where a parent Track table linked to a child Waypoints table containing millions of rows of (track_id, timestamp, lat, lon). While theoretically sound, this model is disastrous for animation performance. To render a single frame at time t, the database engine must perform massive JOIN operations and scan indexes across millions of rows to find the two points bracketing t for every active entity.<br />
+The hybrid approach encapsulates the entire trajectory—the sequence of spatiotemporal coordinates—into a single row within the features table. This dramatically reduces the “Seek” penalty of the disk I/O. As of SQLite version 3.45, the introduction of <strong>JSONB</strong>—a binary encoding of JSON—transforms this pattern from a convenient hack into a high-performance standard. JSONB eliminates the parse-on-read penalty associated with text-based JSON, allowing the application to load complex trajectories directly into memory buffers with minimal serialization overhead.<br />
+Research indicates that storing trajectory data as a JSON array of arrays—[[t1, x1, y1], [t2, x2, y2]]—is superior to arrays of objects for storage density and parsing speed, although it sacrifices some self-describing clarity. In a Python 3.13 environment, leveraging orjson or standard json libraries to deserialize these binary blobs is significantly faster than iterating cursor results from a normalized table.</p>
+</section>
+<section id="generated-columns-the-indexing-strategy">
+<h3><strong>2.2 Generated Columns: The Indexing Strategy</strong><a class="headerlink" href="#generated-columns-the-indexing-strategy" title="Link to this heading">¶</a></h3>
+<p>The primary critique of storing JSON in databases is the inability to index values buried within the document. In a temporal map, the system must efficiently answer the query: <em>“Which features are active between 12:00 and 12:05?”</em> If the start and end times are locked inside the JSON blob, the database must perform a full table scan, parsing every row to extract the timestamps. This is O(N) complexity, which is unacceptable for real-time applications.<br />
+The solution lies in <strong>Virtual Generated Columns</strong>. SQLite allows the definition of columns that are mathematically derived from other columns. By creating virtual columns for start_time, end_time, and the spatial Bounding Box (min/max lat/lon), we project the internal JSON data into the relational realm where it can be indexed using standard B-Trees or R-Trees.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head text-left"><p>Column Type</p></th>
+<th class="head text-left"><p>Description</p></th>
+<th class="head text-left"><p>Storage Impact</p></th>
+<th class="head text-left"><p>Performance Impact</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td class="text-left"><p><strong>Standard</strong></p></td>
+<td class="text-left"><p>Static data (ID, Name, Type)</p></td>
+<td class="text-left"><p>Normal</p></td>
+<td class="text-left"><p>Fast Indexing</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><strong>JSON/JSONB</strong></p></td>
+<td class="text-left"><p>The Trajectory Blob</p></td>
+<td class="text-left"><p>High (stores full path)</p></td>
+<td class="text-left"><p>Slow if queried directly</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><strong>Stored Generated</strong></p></td>
+<td class="text-left"><p>Computes value on INSERT/UPDATE</p></td>
+<td class="text-left"><p>High (duplicates data)</p></td>
+<td class="text-left"><p>Ultra-fast Read, Slower Write</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><strong>Virtual Generated</strong></p></td>
+<td class="text-left"><p>Computes value on READ</p></td>
+<td class="text-left"><p>Zero (CPU only)</p></td>
+<td class="text-left"><p>Fast Read (if indexed), Fast Write</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Recommended Schema Implementation:</strong><br />
+The following SQL Data Definition Language (DDL) demonstrates the optimal structure. It extracts the temporal bounds from the JSON array (assuming the first element is start and the last is end) and creates a compound index.<br />
+<code class="docutils literal notranslate"><span class="pre">CREATE</span> <span class="pre">TABLE</span> <span class="pre">moving_features</span> <span class="pre">(</span></code><br />
+<code class="docutils literal notranslate"><span class="pre">id</span> <span class="pre">INTEGER</span> <span class="pre">PRIMARY</span> <span class="pre">KEY,</span></code><br />
+<code class="docutils literal notranslate"><span class="pre">name</span> <span class="pre">TEXT</span> <span class="pre">NOT</span> <span class="pre">NULL,</span></code><br />
+<code class="docutils literal notranslate"><span class="pre">--</span> <span class="pre">Core</span> <span class="pre">Trajectory</span> <span class="pre">Data:</span> <span class="pre">Stored</span> <span class="pre">as</span> <span class="pre">JSONB</span> <span class="pre">for</span> <span class="pre">performance</span></code><br />
+<code class="docutils literal notranslate"><span class="pre">--</span> <span class="pre">Structure:</span> <span class="pre">{&quot;coordinates&quot;:</span> <span class="pre">[[t,</span> <span class="pre">x,</span> <span class="pre">y],...],</span> <span class="pre">&quot;properties&quot;:</span> <span class="pre">{...}}</span></code><br />
+<code class="docutils literal notranslate"><span class="pre">trajectory_data</span> <span class="pre">BLOB,</span></code></p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>`-- VIRTUAL COLUMNS for Indexing`  
+`-- We extract the first timestamp from the coordinates array`  
+`start_time INTEGER GENERATED ALWAYS AS (`  
+    `json_extract(trajectory_data, &#39;$.coordinates&#39;)`  
+`) VIRTUAL,`  
+  
+`-- We extract the last timestamp using the array length`  
+`end_time INTEGER GENERATED ALWAYS AS (`  
+    `json_extract(trajectory_data, &#39;$.coordinates[#-1]&#39;)`  
+`) VIRTUAL,`
+
+`-- Spatial Bounds for Viewport Queries`  
+`min_lon REAL GENERATED ALWAYS AS (json_extract(trajectory_data, &#39;$.bbox&#39;)) VIRTUAL,`  
+`min_lat REAL GENERATED ALWAYS AS (json_extract(trajectory_data, &#39;$.bbox&#39;)) VIRTUAL,`  
+`max_lon REAL GENERATED ALWAYS AS (json_extract(trajectory_data, &#39;$.bbox&#39;)) VIRTUAL,`  
+`max_lat REAL GENERATED ALWAYS AS (json_extract(trajectory_data, &#39;$.bbox&#39;)) VIRTUAL`  
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">);</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">--</span> <span class="pre">Compound</span> <span class="pre">Index</span> <span class="pre">for</span> <span class="pre">Temporal</span> <span class="pre">Indexing</span></code><br />
+<code class="docutils literal notranslate"><span class="pre">CREATE</span> <span class="pre">INDEX</span> <span class="pre">idx_time_bounds</span> <span class="pre">ON</span> <span class="pre">moving_features(start_time,</span> <span class="pre">end_time);</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">--</span> <span class="pre">Spatial</span> <span class="pre">Index</span> <span class="pre">(approximated</span> <span class="pre">with</span> <span class="pre">standard</span> <span class="pre">index,</span> <span class="pre">or</span> <span class="pre">use</span> <span class="pre">R-Tree</span> <span class="pre">extension)</span></code><br />
+<code class="docutils literal notranslate"><span class="pre">CREATE</span> <span class="pre">INDEX</span> <span class="pre">idx_spatial_bounds</span> <span class="pre">ON</span> <span class="pre">moving_features(min_lon,</span> <span class="pre">max_lon,</span> <span class="pre">min_lat,</span> <span class="pre">max_lat);</span></code></p>
+<p>This architecture allows the PySide6 application to execute “Time Slice” queries instantly. When the playhead moves, the application queries the DB for WHERE end_time &gt;= current_time AND start_time &lt;= current_time. Because these values are exposed as indexed virtual columns, SQLite performs a rapid index seek rather than scanning the blobs.</p>
+</section>
+<section id="ogc-moving-features-compliance-and-geopackage">
+<h3><strong>2.3 OGC Moving Features Compliance and GeoPackage</strong><a class="headerlink" href="#ogc-moving-features-compliance-and-geopackage" title="Link to this heading">¶</a></h3>
+<p>While flexibility is a virtue, adhering to established standards ensures interoperability and long-term maintainability. The <strong>Open Geospatial Consortium (OGC) Moving Features</strong> standard provides the rigorous conceptual framework required for this application. It defines the “Moving Feature” not just as a path, but as a feature with <em>temporal geometry</em> and <em>temporal properties</em>.<br />
+The application should adopt the <strong>MF-JSON</strong> (Moving Features JSON) encoding specification for the content of the JSON columns. MF-JSON explicitly handles the complexities of time-varying attributes—for instance, a vehicle that changes color or speed classification over time.<br />
+<strong>MF-JSON Structure Recommendation:</strong><br />
+<code class="docutils literal notranslate"><span class="pre">{</span></code><br />
+<code class="docutils literal notranslate"><span class="pre">&quot;type&quot;:</span> <span class="pre">&quot;MovingFeature&quot;,</span></code><br />
+<code class="docutils literal notranslate"><span class="pre">&quot;temporalGeometry&quot;:</span> <span class="pre">{</span></code><br />
+<code class="docutils literal notranslate"><span class="pre">&quot;type&quot;:</span> <span class="pre">&quot;MovingPoint&quot;,</span></code><br />
+<code class="docutils literal notranslate"><span class="pre">&quot;datetimes&quot;:,</span></code><br />
+<code class="docutils literal notranslate"><span class="pre">&quot;coordinates&quot;:</span> <span class="pre">[[10.0,</span> <span class="pre">20.0],</span> <span class="pre">[10.1,</span> <span class="pre">20.2]],</span></code><br />
+<code class="docutils literal notranslate"><span class="pre">&quot;interpolation&quot;:</span> <span class="pre">&quot;Linear&quot;</span></code><br />
+<code class="docutils literal notranslate"><span class="pre">},</span></code><br />
+<code class="docutils literal notranslate"><span class="pre">&quot;temporalProperties&quot;:,</span></code><br />
+<code class="docutils literal notranslate"><span class="pre">&quot;speed&quot;:</span> <span class="pre">{&quot;values&quot;:</span> <span class="pre">,</span> <span class="pre">&quot;interpolation&quot;:</span> <span class="pre">&quot;Stepwise&quot;}</span></code><br />
+<code class="docutils literal notranslate"><span class="pre">}</span></code><br />
+<code class="docutils literal notranslate"><span class="pre">]</span></code><br />
+<code class="docutils literal notranslate"><span class="pre">}</span></code></p>
+<p>Adopting this standard allows the application to utilize libraries like <strong>MovingPandas</strong> for heavy lifting (import/export) while maintaining a custom, lightweight rendering loop. Furthermore, because SQLite is the underlying container for the <strong>OGC GeoPackage</strong> standard, this hybrid table can technically coexist within a valid.gpkg file , allowing the data to be opened (as static tables) in GIS software like QGIS, provided the gpkg_geometry_columns are managed correctly.<br />
+For the purpose of an editing application, the strict OGC separation of datetimes and coordinates into parallel arrays is efficient for storage but risky for manual editing (index misalignment). However, it is the standard. If the user interface provides a robust abstraction layer, this risk is mitigated.</p>
+</section>
+<section id="transaction-management-and-batching">
+<h3><strong>2.4 Transaction Management and Batching</strong><a class="headerlink" href="#transaction-management-and-batching" title="Link to this heading">¶</a></h3>
+<p>A critical performance pitfall in SQLite interactions from Python is the handling of write operations during editing. If the user drags a keyframe on the timeline, generating hundreds of “move” events, and the application attempts to commit each change individually, performance will collapse. SQLite’s default behavior waits for the filesystem flush (fsync) on every transaction, limiting throughput to approximately 50 transactions per second on rotational media, or slightly higher on SSDs.<br />
+<strong>Best Practice: The “Dirty” Buffer Strategy</strong></p>
+<ol class="arabic simple">
+<li><p><strong>In-Memory Manipulation:</strong> All interactive editing happens on Python objects (e.g., a Trajectory class instance).</p></li>
+<li><p><strong>Debounced Saves:</strong> The application should implement a “dirty” flag. Writes to the database are triggered either by an explicit “Save” action, an auto-save timer (e.g., every 30 seconds), or when the user deselects the active feature.</p></li>
+<li><p><strong>Explicit Transactions:</strong> When saving, wrap all updates in a single transaction block (BEGIN TRANSACTION;… COMMIT;). This allows SQLite to commit thousands of updates in milliseconds.</p></li>
+<li><p><strong>WAL Mode:</strong> Enable Write-Ahead Logging (PRAGMA journal_mode=WAL;). This allows readers (the rendering thread) to access the database concurrently with the writer (the auto-save thread) without blocking, ensuring that the animation playback doesn’t stutter during a background save operation.</p></li>
+</ol>
+</section>
+</section>
+<section id="computational-geometry-interpolation-and-trajectory-logic">
+<h2><strong>3. Computational Geometry: Interpolation and Trajectory Logic</strong><a class="headerlink" href="#computational-geometry-interpolation-and-trajectory-logic" title="Link to this heading">¶</a></h2>
+<p>The core value proposition of the application is the ability to determine the state of a feature at any arbitrary time t. Since the database stores discrete samples (t_0, p_0), (t_1, p_1) \dots, the application must implement a robust interpolation engine.</p>
+<section id="the-mathematics-of-interpolation">
+<h3><strong>3.1 The Mathematics of Interpolation</strong><a class="headerlink" href="#the-mathematics-of-interpolation" title="Link to this heading">¶</a></h3>
+<p>The choice of interpolation algorithm dictates the visual quality and geospatial accuracy of the animation.</p>
+<section id="linear-vs-spherical-interpolation">
+<h4><strong>3.1.1 Linear vs. Spherical Interpolation</strong><a class="headerlink" href="#linear-vs-spherical-interpolation" title="Link to this heading">¶</a></h4>
+<p>For standard projected coordinate systems (like Web Mercator, EPSG:3857), Linear Interpolation (LERP) is often sufficient for visual smoothness over short distances. The formula for a point P at time t between t_0 and t_1 is:<br />
+However, for trajectories covering significant global distances (e.g., flight paths), LERP on a projected plane results in visual artifacts where the speed appears to vary, and the path deviates from the Great Circle route. In these cases, <strong>Spherical Linear Interpolation (SLERP)</strong> is required. SLERP interpolates the angle between two vectors on a sphere, ensuring constant angular velocity and a true geodesic path.<br />
+While SLERP is computationally more expensive, Python’s scipy.spatial.transform.Rotation or dedicated geospatial libraries handle this efficiently via quaternions. For a generic map editor, providing a toggle between “Linear” (screen space) and “Geodesic” (spherical space) interpolation is a best practice.</p>
+</section>
+<section id="vectorized-calculation-with-numpy">
+<h4><strong>3.1.2 Vectorized Calculation with NumPy</strong><a class="headerlink" href="#vectorized-calculation-with-numpy" title="Link to this heading">¶</a></h4>
+<p>A common performance pitfall is implementing the interpolation logic using native Python loops. Python’s interpreter overhead is significant when calculating positions for thousands of markers 60 times per second.<br />
+The architectural solution is <strong>Vectorization</strong>. Instead of storing keyframes as lists of objects, store them as <strong>NumPy arrays</strong>. This allows the use of np.interp, which delegates the calculation to optimized C code.<br />
+<code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">Vectorized</span> <span class="pre">Interpolation</span> <span class="pre">Concept</span></code><br />
+<code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">numpy</span> <span class="pre">as</span> <span class="pre">np</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">class</span> <span class="pre">VectorizedTrajectory:</span></code><br />
+<code class="docutils literal notranslate"><span class="pre">def</span> <span class="pre">__init__(self,</span> <span class="pre">times,</span> <span class="pre">lats,</span> <span class="pre">lons):</span></code><br />
+<code class="docutils literal notranslate"><span class="pre">self.times</span> <span class="pre">=</span> <span class="pre">np.array(times)</span> <span class="pre">#</span> <span class="pre">Sorted</span> <span class="pre">timestamps</span></code><br />
+<code class="docutils literal notranslate"><span class="pre">self.lats</span> <span class="pre">=</span> <span class="pre">np.array(lats)</span></code><br />
+<code class="docutils literal notranslate"><span class="pre">self.lons</span> <span class="pre">=</span> <span class="pre">np.array(lons)</span></code></p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>`def get_position_at(self, t):`  
+    `# np.interp performs linear interpolation efficiently in C`  
+    `lat = np.interp(t, self.times, self.lats)`  
+    `lon = np.interp(t, self.times, self.lons)`  
+    `return lat, lon`
+</pre></div>
+</div>
+<p>This approach is orders of magnitude faster than iterating through a list of dictionaries in Python, leaving more CPU time for the Qt rendering loop.</p>
+</section>
+</section>
+<section id="integration-with-movingpandas">
+<h3><strong>3.2 Integration with MovingPandas</strong><a class="headerlink" href="#integration-with-movingpandas" title="Link to this heading">¶</a></h3>
+<p>Rather than reinventing the wheel, the application logic should leverage <strong>MovingPandas</strong>. MovingPandas is a Python library specifically designed for trajectory analysis. It sits on top of GeoPandas and Pandas, providing robust data structures for trajectory collections.<br />
+MovingPandas implements the get_position_at(datetime) method, handling the underlying interpolation complexities. It also supports trajectory generalization and cleaning (removing outliers). However, a caveat exists: MovingPandas is heavy. For the real-time <em>rendering loop</em> (60 FPS), calling a complex MovingPandas method might be too slow due to Pandas’ indexing overhead.<br />
+<strong>Recommendation:</strong> Use MovingPandas for the “Edit Mode” (loading data, cleaning, splitting tracks, analysis) and for exporting/importing MF-JSON. For the “Playback Mode,” compile the validated MovingPandas trajectory into the lightweight NumPy structure described in 3.1.2 for raw speed.</p>
+</section>
+<section id="trajectory-simplification-and-topology">
+<h3><strong>3.3 Trajectory Simplification and Topology</strong><a class="headerlink" href="#trajectory-simplification-and-topology" title="Link to this heading">¶</a></h3>
+<p>User-generated data (e.g., recorded mouse movements or raw GPS logs) often contains excessive density—thousands of points for a straight line. This bloats the database and slows down the np.interp search.<br />
+The <strong>Ramer-Douglas-Peucker (RDP)</strong> algorithm is essential for optimizing this data. RDP decimates the curve, removing points that do not contribute significantly to the shape (based on a user-defined epsilon \epsilon threshold).<br />
+<strong>The Topology Pitfall:</strong> Aggressive simplification can alter the topological relationship between features (e.g., a path that went around a building might now cut through it). When applying RDP, one must be careful with the epsilon value. Libraries like shapely offer simplify(preserve_topology=True), which is slower but safer.<br />
+For an editor, the “User Friendliest Way” to handle this is to run RDP automatically on <em>import</em> or <em>recording</em> completion, reducing the input noise to a manageable set of “Keyframes” that the user can then manually tweak.</p>
+</section>
+</section>
+<section id="the-visualization-layer-pyside6-architecture">
+<h2><strong>4. The Visualization Layer: PySide6 Architecture</strong><a class="headerlink" href="#the-visualization-layer-pyside6-architecture" title="Link to this heading">¶</a></h2>
+<p>The choice of widget for rendering the map determines the ceiling of the application’s performance.</p>
+<section id="comparison-of-rendering-engines">
+<h3><strong>4.1 Comparison of Rendering Engines</strong><a class="headerlink" href="#comparison-of-rendering-engines" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head text-left"><p>Feature</p></th>
+<th class="head text-left"><p>QWebEngineView (Leaflet/MapLibre)</p></th>
+<th class="head text-left"><p>QGraphicsView (Native Qt)</p></th>
+<th class="head text-left"><p>QOpenGLWidget (Direct GL)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td class="text-left"><p><strong>Map Fidelity</strong></p></td>
+<td class="text-left"><p><strong>High</strong> (Standard Web Tiles, Styles)</p></td>
+<td class="text-left"><p>Moderate (Requires custom tile loader)</p></td>
+<td class="text-left"><p>Low (Requires custom engine)</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><strong>Animation Perf.</strong></p></td>
+<td class="text-left"><p>Low (IPC Latency)</p></td>
+<td class="text-left"><p><strong>High</strong> (Native C++ Scene Graph)</p></td>
+<td class="text-left"><p><strong>Extreme</strong> (GPU Accelerated)</p></td>
+</tr>
+<tr class="row-even"><td class="text-left"><p><strong>Python Control</strong></p></td>
+<td class="text-left"><p>Difficult (Async JS Bridge)</p></td>
+<td class="text-left"><p><strong>Direct</strong> (Python Objects)</p></td>
+<td class="text-left"><p>Difficult (Raw Matrices)</p></td>
+</tr>
+<tr class="row-odd"><td class="text-left"><p><strong>Editing UX</strong></p></td>
+<td class="text-left"><p>Poor (HTML/DOM limitations)</p></td>
+<td class="text-left"><p><strong>Excellent</strong> (Native Drag/Drop events)</p></td>
+<td class="text-left"><p>Moderate (Custom Hit testing)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="the-latency-of-qwebengineview">
+<h4><strong>4.1.1 The Latency of QWebEngineView</strong><a class="headerlink" href="#the-latency-of-qwebengineview" title="Link to this heading">¶</a></h4>
+<p>Many developers default to QWebEngineView to load Leaflet or MapLibre GL because it is easy to get a map on screen. However, this creates a “Split Brain” architecture. The map lives in a Chromium process, while the data lives in the Python process. To animate a marker, Python must send a signal over a WebSocket or runJavaScript channel. This introduces asynchronous latency. Scrubbing a timeline in PySide6 and waiting for the WebEngine to update results in a “muddy,” disconnected feel. High-performance animation in WebEngine requires moving the <em>entire</em> logic loop into JavaScript, relegating Python to a simple data server.</p>
+</section>
+<section id="the-superiority-of-qgraphicsview-for-editors">
+<h4><strong>4.1.2 The Superiority of QGraphicsView for Editors</strong><a class="headerlink" href="#the-superiority-of-qgraphicsview-for-editors" title="Link to this heading">¶</a></h4>
+<p>For a keyframe editor where interaction (clicking, dragging, selecting) is paramount, <strong>QGraphicsView</strong> is the superior architectural choice. The Graphics View Framework uses a BSP (Binary Space Partitioning) tree to manage millions of items efficiently.</p>
+<ul class="simple">
+<li><p><strong>Architecture:</strong> The Map is a QGraphicsScene. The Map Tiles are QGraphicsPixmapItems loaded in background threads. The Moving Features are QGraphicsPathItems (for the track) and QGraphicsItems (for the marker).</p></li>
+<li><p><strong>Coordinate System:</strong> The application must implement a transformation class to map Longitude/Latitude to the Scene’s Cartesian coordinate system (usually Web Mercator).</p></li>
+<li><p><strong>Performance:</strong> QGraphicsView can easily handle thousands of moving items at 60 FPS if the viewport is set to use OpenGL acceleration (view.setViewport(QOpenGLWidget())).</p></li>
+</ul>
+</section>
+</section>
+<section id="the-animation-loop">
+<h3><strong>4.2 The Animation Loop</strong><a class="headerlink" href="#the-animation-loop" title="Link to this heading">¶</a></h3>
+<p>Do not use time.sleep(). The animation must be driven by the Qt Event Loop to keep the GUI responsive.<br />
+<strong>The “Pulse” Mechanism:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>AnimationController:</strong> A class owning a QElapsedTimer and a QTimer.</p></li>
+<li><p><strong>The Tick:</strong> Every 16ms (target 60 FPS), the QTimer fires. The Controller calculates the new current_time based on the elapsed real time multiplied by the playback_speed.</p></li>
+<li><p><strong>Signal Emission:</strong> A signal timeChanged(float timestamp) is emitted.</p></li>
+<li><p><strong>Observer Update:</strong> All MapMarker objects connected to this signal receive the timestamp, call their internal trajectory.get_position_at(t) method (using the NumPy logic), and update their setPos(x, y) on the scene.</p></li>
+</ol>
+<p>This “Push” architecture ensures that the visual state is always synchronized with the internal clock.</p>
+</section>
+</section>
+<section id="user-experience-ux-designing-for-temporal-entry">
+<h2><strong>5. User Experience (UX): Designing for Temporal Entry</strong><a class="headerlink" href="#user-experience-ux-designing-for-temporal-entry" title="Link to this heading">¶</a></h2>
+<p>Entering temporal data is cognitively demanding. Users understand space intuitively, but “time” requires abstraction. The “user friendliest way” to enter these qualities is to hide the raw timestamps behind visual metaphors and direct manipulation.</p>
+<section id="the-timeline-widget-dope-sheet">
+<h3><strong>5.1 The Timeline Widget (“Dope Sheet”)</strong><a class="headerlink" href="#the-timeline-widget-dope-sheet" title="Link to this heading">¶</a></h3>
+<p>A custom widget, docked at the bottom of the screen, is essential. It should borrow the “Dope Sheet” paradigm from animation software (Blender, After Effects).<br />
+<strong>Components of the Timeline:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>The Ruler:</strong> A horizontal axis representing time. It must support zooming (scroll wheel) to change the scale from “Years” down to “Milliseconds”.</p></li>
+<li><p><strong>Tracks:</strong> Each Moving Feature has a horizontal track.</p></li>
+<li><p><strong>Keyframes (Diamonds):</strong> Discrete points in time where the user has explicitly defined a position.</p></li>
+<li><p><strong>Interpolation Curves (Lines):</strong> Visual lines connecting keyframes. Clicking the line could open a dialog to change the interpolation type (Linear vs. Ease-In/Ease-Out).</p></li>
+</ol>
+<p><strong>Interaction Logic:</strong></p>
+<ul class="simple">
+<li><p><strong>Scrubbing:</strong> The user drags a vertical “Playhead” line. This updates the map in real-time (ghosting).</p></li>
+<li><p><strong>Retiming:</strong> The user can drag a Keyframe diamond left or right to change <em>when</em> an event happens without changing <em>where</em> it happens. This is the distinct advantage of the separated Timeline view over strictly map-based editing.</p></li>
+</ul>
+</section>
+<section id="input-methods-auto-keying-vs-path-drawing">
+<h3><strong>5.2 Input Methods: “Auto-Keying” vs. Path Drawing</strong><a class="headerlink" href="#input-methods-auto-keying-vs-path-drawing" title="Link to this heading">¶</a></h3>
+<p>How does a user create a trajectory from scratch?<br />
+<strong>Method A: Auto-Keying (The Animator’s Approach)</strong> This is the most intuitive for precise control.</p>
+<ol class="arabic simple">
+<li><p>User scrubs Playhead to Time T_0. Moves Marker to Location A. System records Keyframe (T_0, A).</p></li>
+<li><p>User scrubs Playhead to Time T_1. Moves Marker to Location B. System records Keyframe (T_1, B). <em>Insight:</em> This separates the dimensions. The user focuses on “When” first, then “Where.”</p></li>
+</ol>
+<p><strong>Method B: Path Drawing (The GIS Approach)</strong> Better for defining routes.</p>
+<ol class="arabic simple">
+<li><p>User draws a polyline on the map.</p></li>
+<li><p>System prompts: “Start Time?” and “Duration/Speed?”.</p></li>
+<li><p>System calculates the timestamps for each vertex assuming constant speed. <em>Refinement:</em> To make this “user friendly,” allow the user to draw the path <em>gesturally</em> with the mouse while the clock runs (Live Recording). The system records the mouse position and the timestamp of the mouse event simultaneously. This captures natural acceleration and deceleration. Post-processing with RDP simplification is required here to reduce the jittery mouse input into clean keyframes.</p></li>
+</ol>
+</section>
+<section id="visual-feedback-onion-skinning">
+<h3><strong>5.3 Visual Feedback: Onion Skinning</strong><a class="headerlink" href="#visual-feedback-onion-skinning" title="Link to this heading">¶</a></h3>
+<p>To assist in editing, the application should implement <strong>Onion Skinning</strong> (Ghosting). When a marker is selected, render its position at t-1s, t-2s, etc., with decreasing opacity. This allows the user to visualize the velocity and direction of the movement even when the animation is paused. In QGraphicsView, this is achieved by creating temporary QGraphicsItem clones with reduced alpha channels.</p>
+</section>
+</section>
+<section id="best-practices-and-pitfalls-summary">
+<h2><strong>6. Best Practices and Pitfalls Summary</strong><a class="headerlink" href="#best-practices-and-pitfalls-summary" title="Link to this heading">¶</a></h2>
+<section id="best-practices">
+<h3><strong>6.1 Best Practices</strong><a class="headerlink" href="#best-practices" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Use JSONB:</strong> Leverage SQLite’s binary JSON format for storage efficiency.</p></li>
+<li><p><strong>Virtual Columns:</strong> Always expose temporal bounds (start, end) and spatial bounds (bbox) as Virtual Generated Columns for indexing.</p></li>
+<li><p><strong>Vectorization:</strong> Use NumPy for interpolation calculations to avoid the Python loop overhead.</p></li>
+<li><p><strong>Native Rendering:</strong> Prefer QGraphicsView with OpenGL acceleration for the editor interface to ensure low-latency interaction.</p></li>
+<li><p><strong>Batch Writes:</strong> Use transactions and WAL mode to prevent UI freezing during saves.</p></li>
+</ul>
+</section>
+<section id="pitfalls-to-avoid">
+<h3><strong>6.2 Pitfalls to Avoid</strong><a class="headerlink" href="#pitfalls-to-avoid" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Deep Inheritance in JSON:</strong> Avoid deeply nested JSON structures for the core trajectory arrays. Keep the coordinate arrays flat or shallow to minimize extraction cost.</p></li>
+<li><p><strong>QWebEngineView for Editing:</strong> Avoid using web widgets for the core editing loop; the IPC latency will degrade the “feel” of the application.</p></li>
+<li><p><strong>Blocking the Main Thread:</strong> Do not perform database fetches or complex path simplifications on the GUI thread. Use QThread or QRunnable for all I/O operations.</p></li>
+<li><p><strong>Timezone Confusion:</strong> Store all timestamps in the database as UTC (Unix Epoch or ISO 8601). Only convert to local time for the Timeline Widget display labels.</p></li>
+</ul>
+</section>
+</section>
+<section id="implementation-roadmap">
+<h2><strong>7. Implementation Roadmap</strong><a class="headerlink" href="#implementation-roadmap" title="Link to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p><strong>Phase 1: Database &amp; Model:</strong> Define the SQLite schema with JSONB and Virtual Columns. Implement the Python Trajectory class with NumPy-based get_position_at(t).</p></li>
+<li><p><strong>Phase 2: Visualization Engine:</strong> Build the QGraphicsView map with a background Tile Loader. Implement the coordinate transform logic.</p></li>
+<li><p><strong>Phase 3: Animation Loop:</strong> Implement the AnimationController (Timer) and connect it to the Map Markers.</p></li>
+<li><p><strong>Phase 4: Timeline UI:</strong> Create the custom QWidget for the Dope Sheet. Implement the “Scrubbing” logic.</p></li>
+<li><p><strong>Phase 5: Editing Tools:</strong> Implement “Auto-Key” and “Path Draw” modes with RDP simplification.</p></li>
+</ol>
+<p>This architecture provides a robust, scalable foundation for a temporal map editor, balancing the flexibility of hybrid data structures with the performance requirements of real-time animation.</p>
+<section id="works-cited">
+<h3><strong>Works cited</strong><a class="headerlink" href="#works-cited" title="Link to this heading">¶</a></h3>
+<p>1. Using JSON instead of normalized data, is this approach correct? - Stack Overflow, https://stackoverflow.com/questions/12970831/using-json-instead-of-normalized-data-is-this-approach-correct 2. JSON and Virtual Columns in SQLite - Hacker News, https://news.ycombinator.com/item?id=31396578 3. Is it good to use SQL function like JSON_EXTRACT for large number of data, https://stackoverflow.com/questions/53497108/is-it-good-to-use-sql-function-like-json-extract-for-large-number-of-data 4. SQLite Boosts JSON Query Speed with Virtual Generated Columns - WebProNews, https://www.webpronews.com/sqlite-boosts-json-query-speed-with-virtual-generated-columns/ 5. OGC Moving Features Encoding Extension - JSON, https://docs.ogc.org/is/19-045r3/19-045r3.html 6. opengeospatial/movingfeatures: public repo for Moving Features - GitHub, https://github.com/opengeospatial/movingfeatures 7. OGC Moving Features Encoding Extension - JSON - GitHub Pages, https://ksookim.github.io/mf-json/ 8. OGC API - Moving Features - Part 1: Core, https://docs.ogc.org/is/22-003r3/22-003r3.html 9. OGC GeoPackage Related Tables Extension, https://docs.ogc.org/is/18-000/18-000.html 10. OGC® GeoPackage Encoding Standard - with Corrigendum, https://www.geopackage.org/spec121/ 11. Best practices for SQLite performance | App quality - Android Developers, https://developer.android.com/topic/performance/sqlite-performance-best-practices 12. Best Practices for Managing Schema, Indexes, and Storage in SQLite for Data Engineering | by firman brilian | Medium, https://medium.com/&#64;firmanbrilian/best-practices-for-managing-schema-indexes-and-storage-in-sqlite-for-data-engineering-c74f71056518 13. How to use linear interpolation estimate current position between two Geo Coordinates?, https://stackoverflow.com/questions/1739019/how-to-use-linear-interpolation-estimate-current-position-between-two-geo-coordi 14. Lerp vs Slerp - Tibor Stanko, https://tiborstanko.sk/lerp-vs-slerp.html 15. Interpolation (scipy.interpolate) — SciPy v1.16.2 Manual, https://docs.scipy.org/doc/scipy/reference/interpolate.html 16. Trajectory interpolation at multiple time stamps · Issue #213 - GitHub, https://github.com/anitagraser/movingpandas/issues/213 17. movingpandas/movingpandas: Movement trajectory classes and functions built on top of GeoPandas - GitHub, https://github.com/movingpandas/movingpandas 18. movingpandas/movingpandas/trajectory.py at main - GitHub, https://github.com/anitagraser/movingpandas/blob/master/movingpandas/trajectory.py 19. movingpandas.TrajectoryCollection.to_mf_json, https://movingpandas.readthedocs.io/en/main/api/api/movingpandas.TrajectoryCollection.to_mf_json.html 20. New MovingPandas tutorial: taking OGC Moving Features full circle with MF-JSON, https://anitagraser.com/2024/07/08/new-movingpandas-tutorial-taking-ogc-moving-features-full-circle-with-mf-json/ 21. Ramer–Douglas–Peucker algorithm - Wikipedia, https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm 22. Shapely’s simplify won’t simplify any more - GIS StackExchange, https://gis.stackexchange.com/questions/120004/shapelys-simplify-wont-simplify-any-more 23. simplify() can return invalid geometries (even with preserve_topology=True) #2165 - GitHub, https://github.com/shapely/shapely/issues/2165 24. Why does PyQt6 make Leaflet so slow with 1000 markers? - Stack Overflow, https://stackoverflow.com/questions/75976663/why-does-pyqt6-make-leaflet-so-slow-with-1000-markers 25. QtWebEngine performance is very poor - Qt Forum, https://forum.qt.io/topic/154895/qtwebengine-performance-is-very-poor 26. 0n3byt3/Leaflet.MarkerPlayer: A plug-in for animating marker along polyline with ability to get/set progress. - GitHub, https://github.com/0n3byt3/Leaflet.MarkerPlayer 27. QWebEngineView and leaflet.js slow performance - Stack Overflow, https://stackoverflow.com/questions/74914600/qwebengineview-and-leaflet-js-slow-performance 28. QGraphics vector graphics interfaces with Python and PyQt6, https://www.pythonguis.com/tutorials/pyqt6-qgraphics-vector-graphics/ 29. QGeoView - Qt/C ++ widget for visualizing geographic data, https://forum.qt.io/topic/94771/qgeoview-qt-c-widget-for-visualizing-geographic-data 30. PySide6.QtOpenGLWidgets.QOpenGLWidget - Qt for Python, https://doc.qt.io/qtforpython-6/PySide6/QtOpenGLWidgets/QOpenGLWidget.html 31. hasielhassan/QtEditorialTimelineWidget: Non linear editor timeline widget for python Qt bindings - GitHub, https://github.com/hasielhassan/QtEditorialTimelineWidget 32. Use the Animation Timeline pane—ArcGIS Pro | Documentation, https://pro.arcgis.com/en/pro-app/latest/help/mapping/animation/animation-timeline-pane.htm 33. How do I achieve smooth mouse movement on turns in Pyautogui? - Stack Overflow, https://stackoverflow.com/questions/76861629/how-do-i-achieve-smooth-mouse-movement-on-turns-in-pyautogui 34. Realistic Mouse Movement from A to B : r/learnpython - Reddit, https://www.reddit.com/r/learnpython/comments/c49cos/realistic_mouse_movement_from_a_to_b/</p>
+</section>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, Christian Mintert
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#"><strong>Temporal Geospatial Architectures: Engineering High-Performance Animation Systems in PySide6 with Hybrid SQLite Storage</strong></a><ul>
+<li><a class="reference internal" href="#architectural-convergence-in-temporal-gis"><strong>1. Architectural Convergence in Temporal GIS</strong></a></li>
+<li><a class="reference internal" href="#the-persistence-layer-hybrid-sqlite-optimization"><strong>2. The Persistence Layer: Hybrid SQLite Optimization</strong></a><ul>
+<li><a class="reference internal" href="#the-mechanics-of-sqlite-jsonb-and-hybrid-storage"><strong>2.1 The Mechanics of SQLite JSONB and Hybrid Storage</strong></a></li>
+<li><a class="reference internal" href="#generated-columns-the-indexing-strategy"><strong>2.2 Generated Columns: The Indexing Strategy</strong></a></li>
+<li><a class="reference internal" href="#ogc-moving-features-compliance-and-geopackage"><strong>2.3 OGC Moving Features Compliance and GeoPackage</strong></a></li>
+<li><a class="reference internal" href="#transaction-management-and-batching"><strong>2.4 Transaction Management and Batching</strong></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#computational-geometry-interpolation-and-trajectory-logic"><strong>3. Computational Geometry: Interpolation and Trajectory Logic</strong></a><ul>
+<li><a class="reference internal" href="#the-mathematics-of-interpolation"><strong>3.1 The Mathematics of Interpolation</strong></a><ul>
+<li><a class="reference internal" href="#linear-vs-spherical-interpolation"><strong>3.1.1 Linear vs. Spherical Interpolation</strong></a></li>
+<li><a class="reference internal" href="#vectorized-calculation-with-numpy"><strong>3.1.2 Vectorized Calculation with NumPy</strong></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#integration-with-movingpandas"><strong>3.2 Integration with MovingPandas</strong></a></li>
+<li><a class="reference internal" href="#trajectory-simplification-and-topology"><strong>3.3 Trajectory Simplification and Topology</strong></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#the-visualization-layer-pyside6-architecture"><strong>4. The Visualization Layer: PySide6 Architecture</strong></a><ul>
+<li><a class="reference internal" href="#comparison-of-rendering-engines"><strong>4.1 Comparison of Rendering Engines</strong></a><ul>
+<li><a class="reference internal" href="#the-latency-of-qwebengineview"><strong>4.1.1 The Latency of QWebEngineView</strong></a></li>
+<li><a class="reference internal" href="#the-superiority-of-qgraphicsview-for-editors"><strong>4.1.2 The Superiority of QGraphicsView for Editors</strong></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#the-animation-loop"><strong>4.2 The Animation Loop</strong></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#user-experience-ux-designing-for-temporal-entry"><strong>5. User Experience (UX): Designing for Temporal Entry</strong></a><ul>
+<li><a class="reference internal" href="#the-timeline-widget-dope-sheet"><strong>5.1 The Timeline Widget (“Dope Sheet”)</strong></a></li>
+<li><a class="reference internal" href="#input-methods-auto-keying-vs-path-drawing"><strong>5.2 Input Methods: “Auto-Keying” vs. Path Drawing</strong></a></li>
+<li><a class="reference internal" href="#visual-feedback-onion-skinning"><strong>5.3 Visual Feedback: Onion Skinning</strong></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#best-practices-and-pitfalls-summary"><strong>6. Best Practices and Pitfalls Summary</strong></a><ul>
+<li><a class="reference internal" href="#best-practices"><strong>6.1 Best Practices</strong></a></li>
+<li><a class="reference internal" href="#pitfalls-to-avoid"><strong>6.2 Pitfalls to Avoid</strong></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#implementation-roadmap"><strong>7. Implementation Roadmap</strong></a><ul>
+<li><a class="reference internal" href="#works-cited"><strong>Works cited</strong></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=70f82a29"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

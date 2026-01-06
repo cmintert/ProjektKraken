@@ -414,18 +414,33 @@ This separation of concerns allows the underlying animation engine to work with 
 <p>The <code class="docutils literal notranslate"><span class="pre">QGraphicsScene</span></code> acts as the spatial data model. It manages the geometry of all items (markers, paths, terrain) and handles collision detection.</p>
 <ul class="simple">
 <li><p><strong>Coordinate System</strong>: The scene operates in logical coordinates (Map Units), independent of the screen resolution or zoom level.</p></li>
+<li><p><strong>Coordinate Mapping</strong>: Interaction requires constant translation between View (Pixel) and Scene (Map) coordinates.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">view.mapToScene(QPoint)</span></code>: Converts mouse pixel coordinates to map locations.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">view.mapFromScene(QPointF)</span></code>: Converts map locations to screen pixels (essential for static UI overlays).</p></li>
+</ul>
+</li>
 <li><p><strong>Spatial Indexing</strong>: The scene uses a Binary Space Partitioning (BSP) tree by default to rapidly locate items. While efficient for static scenes, this index can become a bottleneck for moving items, as the tree must be rebuilt whenever an item changes position.</p></li>
 </ul>
 </section>
 <section id="the-viewport-qgraphicsview">
 <h3>4.2 The Viewport (QGraphicsView)<a class="headerlink" href="#the-viewport-qgraphicsview" title="Link to this heading">¶</a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">QGraphicsView</span></code> is the widget that renders the scene. It handles the transformation matrix (zoom/pan) and user input events.</p>
-<ul class="simple">
+<ul>
 <li><p><strong>Render Engine</strong>: By default, <code class="docutils literal notranslate"><span class="pre">QGraphicsView</span></code> uses a raster paint engine (CPU-based). For high-performance animation of thousands of items, this is often insufficient.</p></li>
 <li><p><strong>OpenGL Acceleration</strong>: The viewport can be backed by a <code class="docutils literal notranslate"><span class="pre">QOpenGLWidget</span></code>, forcing Qt to use the GPU for composition and rendering. This is a critical optimization for the “Battle Maneuvers” use case.</p></li>
+<li><p><strong>Y-Axis Inversion</strong>: Standard GIS coordinates have $Y$ pointing Up (North), while Qt screen coordinates have $Y$ pointing Down. To align these, apply a scale transformation to the view: <code class="docutils literal notranslate"><span class="pre">view.scale(1,</span> <span class="pre">-1)</span></code>. This allows the scene logic to remain consistent with Cartesian GIS standards.</p></li>
+<li><p><strong>Infinite Canvas Policy</strong>: To implement a modern “drag-to-pan” map style, disable the default scrollbars:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">view</span><span class="o">.</span><span class="n">setHorizontalScrollBarPolicy</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">ScrollBarAlwaysOff</span><span class="p">)</span>
+<span class="n">view</span><span class="o">.</span><span class="n">setVerticalScrollBarPolicy</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">ScrollBarAlwaysOff</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
 </ul>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">view</span> <span class="o">=</span> <span class="n">QGraphicsView</span><span class="p">(</span><span class="n">scene</span><span class="p">)</span>
 <span class="n">view</span><span class="o">.</span><span class="n">setViewport</span><span class="p">(</span><span class="n">QOpenGLWidget</span><span class="p">())</span>
+<span class="c1"># Invert Y axis to match GIS conventions</span>
+<span class="n">view</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
@@ -577,6 +592,13 @@ In the standard Bezier equation, $\tau$ varies from 0 to 1. However, simply mapp
 <p>Selecting a moving object is difficult.</p>
 <ul class="simple">
 <li><p><strong>Hit Testing</strong>: Qt’s <code class="docutils literal notranslate"><span class="pre">QGraphicsView</span></code> handles hit testing via <code class="docutils literal notranslate"><span class="pre">itemAt()</span></code>. However, if the item is moving 60 times a second, the user might miss.</p></li>
+<li><p><strong>Selection Implementation</strong>:</p>
+<ul>
+<li><p><strong>Flags</strong>: Enable selection on items using <code class="docutils literal notranslate"><span class="pre">item.setFlag(QGraphicsItem.ItemIsSelectable,</span> <span class="pre">True)</span></code>.</p></li>
+<li><p><strong>Retrieval</strong>: Use <code class="docutils literal notranslate"><span class="pre">scene.selectedItems()</span></code> to get the current selection.</p></li>
+<li><p><strong>Rubberband</strong>: Enable rectangular selection with <code class="docutils literal notranslate"><span class="pre">view.setDragMode(QGraphicsView.RubberBandDrag)</span></code>.</p></li>
+</ul>
+</li>
 <li><p><strong>Pause-on-Click</strong>: A common UX pattern is to pause the Master Clock momentarily when the user presses the mouse button down, allowing for easier selection and manipulation.</p></li>
 </ul>
 </section>
@@ -629,6 +651,11 @@ Complex markers (e.g., detailed SVG sigils) are expensive to paint.</p>
 <p>To avoid 1,000 separate Python-to-C++ calls per frame:</p>
 <ul class="simple">
 <li><p><strong>Strategy</strong>: Vectorize the math. Use <code class="docutils literal notranslate"><span class="pre">numpy</span></code> to calculate the positions of all 1,000 units for time $t$ in a single batch operation. While updating the <code class="docutils literal notranslate"><span class="pre">QGraphicsItem</span></code> positions still requires a loop, the heavy lifting of interpolation is done in optimized C code via <code class="docutils literal notranslate"><span class="pre">numpy</span></code>.</p></li>
+<li><p><strong>Thread Safety</strong>: <strong>Critical Warning</strong>: Qt Widgets are NOT thread-safe. Do not attempt to update <code class="docutils literal notranslate"><span class="pre">QGraphicsItem</span></code> positions from a background thread.</p>
+<ul>
+<li><p><strong>Pattern</strong>: Calculate positions in a worker thread (or <code class="docutils literal notranslate"><span class="pre">numpy</span></code> op), then emit a signal with the result. A slot on the main thread receives the data and efficiently calls <code class="docutils literal notranslate"><span class="pre">setPos</span></code> on the items.</p></li>
+</ul>
+</li>
 </ul>
 </section>
 </section>
@@ -727,6 +754,66 @@ Complex markers (e.g., detailed SVG sigils) are expensive to paint.</p>
 </table>
 </div>
 </section>
+<section id="current-implementation-status-jan-2026">
+<h2>13. Current Implementation Status (Jan 2026)<a class="headerlink" href="#current-implementation-status-jan-2026" title="Link to this heading">¶</a></h2>
+<section id="completed-groundwork">
+<h3>Completed Groundwork<a class="headerlink" href="#completed-groundwork" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Rendering Engine</strong>: <code class="docutils literal notranslate"><span class="pre">MapGraphicsView</span></code> has been upgraded to use <code class="docutils literal notranslate"><span class="pre">QOpenGLWidget</span></code> as the viewport. This provides the GPU acceleration foundation required for future high-load scenarios.</p></li>
+<li><p><strong>Coordinate System</strong>: A strict <strong>Cartesian 2D</strong> abstraction layer (<code class="docutils literal notranslate"><span class="pre">MapCoordinateSystem</span></code>) has been implemented.</p>
+<ul>
+<li><p>It cleanly separates Normalized [0, 1] logic from Scene/Pixel logic.</p></li>
+<li><p>It is architected to support future <code class="docutils literal notranslate"><span class="pre">pyproj</span></code> integration without breaking the UI.</p></li>
+<li><p><strong>Note</strong>: Full Y-Axis Inversion is prepared for but not yet active to match current static map behavior.</p></li>
+</ul>
+</li>
+<li><p><strong>Database Schema</strong>: The <code class="docutils literal notranslate"><span class="pre">moving_features</span></code> table has been added to the SQLite schema.</p>
+<ul>
+<li><p>It supports storing <code class="docutils literal notranslate"><span class="pre">trajectory</span></code> as a JSON blob.</p></li>
+<li><p>Temporal indices (<code class="docutils literal notranslate"><span class="pre">t_start</span></code>, <code class="docutils literal notranslate"><span class="pre">t_end</span></code>) are in place for efficient queries.</p></li>
+</ul>
+</li>
+<li><p><strong>Interaction</strong>: The map now uses an “Infinite Canvas” interaction model (Scrollbars disabled, Drag-to-Pan enforced).</p></li>
+</ul>
+</section>
+<section id="existing-capabilities">
+<h3>Existing Capabilities<a class="headerlink" href="#existing-capabilities" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Map Visualization</strong>: Supports loading static map images (<code class="docutils literal notranslate"><span class="pre">QGraphicsPixmapItem</span></code>).</p></li>
+<li><p><strong>Marker Implementation</strong>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">MarkerItem</span></code> supports SVG icons and coloring.</p></li>
+<li><p>Optimization flags (<code class="docutils literal notranslate"><span class="pre">ItemIsMovable</span></code>, <code class="docutils literal notranslate"><span class="pre">ItemSendsGeometryChanges</span></code>, <code class="docutils literal notranslate"><span class="pre">ItemCoordinateCache</span></code> equivalent) are enabled.</p></li>
+</ul>
+</li>
+<li><p><strong>Map Hardening / GIS Features</strong> (New):</p>
+<ul>
+<li><p><strong>Scale Bar</strong>: Implemented GIS-style scale bar overlay (<code class="docutils literal notranslate"><span class="pre">ScaleBarPainter</span></code>) leveraging <code class="docutils literal notranslate"><span class="pre">drawForeground</span></code>.</p></li>
+<li><p><strong>Configuration</strong>: Added “Settings” dialog to define map pixel-to-meter ratio.</p></li>
+<li><p><strong>Live Coordinates</strong>: Real-time display of Normalized and Kilometer coordinates.</p></li>
+<li><p><strong>UI Polish</strong>: Standardized Map Widget toolbar with <code class="docutils literal notranslate"><span class="pre">QPushButton</span></code> styling to match application theme.</p></li>
+</ul>
+</li>
+<li><p><strong>Layers</strong>: The scene is now structured with defined Z-Values (<code class="docutils literal notranslate"><span class="pre">LAYER_MAP_BG</span></code>, <code class="docutils literal notranslate"><span class="pre">LAYER_MARKERS</span></code>, etc.) to prevent future rendering conflicts.</p></li>
+<li><p><strong>Code Quality &amp; Stability</strong>:</p>
+<ul>
+<li><p><strong>Marker Logic</strong>: Refactored <code class="docutils literal notranslate"><span class="pre">MarkerItem</span></code> for better maintainability (helper methods for painting/drag).</p></li>
+<li><p><strong>Critical Fixes</strong>: Resolved interaction bugs where markers at <code class="docutils literal notranslate"><span class="pre">(0,0)</span></code> were unclickable.</p></li>
+<li><p><strong>Testing</strong>: Expanded unit tests to cover coordinate display and marker signals.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="gaps-next-steps">
+<h3>Gaps &amp; Next Steps<a class="headerlink" href="#gaps-next-steps" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Time Service</strong>: The <code class="docutils literal notranslate"><span class="pre">MasterClock</span></code> and the actual animation loop are not yet implemented.</p></li>
+<li><p><strong>Trajectory Logic</strong>: While the database <em>can</em> store trajectories, the application logic to read them and interpolate positions (<code class="docutils literal notranslate"><span class="pre">numpy</span></code>/<code class="docutils literal notranslate"><span class="pre">bisect</span></code>) is not yet written.</p></li>
+<li><p><strong>Timeline UI</strong>: The UI widget for scrubbing time does not exist.</p></li>
+<li><p><strong>Recording Mode</strong>: The “Puppeteering” logic for recording mouse movements into the database is missing.</p></li>
+</ol>
+</section>
+</section>
 </section>
 
         </article>
@@ -824,6 +911,12 @@ Complex markers (e.g., detailed SVG sigils) are expensive to paint.</p>
 </li>
 <li><a class="reference internal" href="#implementation-roadmap">11. Implementation Roadmap</a></li>
 <li><a class="reference internal" href="#comparison-of-optimization-techniques">12. Comparison of Optimization Techniques</a></li>
+<li><a class="reference internal" href="#current-implementation-status-jan-2026">13. Current Implementation Status (Jan 2026)</a><ul>
+<li><a class="reference internal" href="#completed-groundwork">Completed Groundwork</a></li>
+<li><a class="reference internal" href="#existing-capabilities">Existing Capabilities</a></li>
+<li><a class="reference internal" href="#gaps-next-steps">Gaps &amp; Next Steps</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

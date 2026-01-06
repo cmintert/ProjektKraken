@@ -486,6 +486,24 @@
 <span class="s2">        CREATE INDEX IF NOT EXISTS idx_markers_object</span>
 <span class="s2">            ON markers(object_id, object_type);</span>
 
+<span class="s2">        -- Moving Features Table (Temporal Trajectories)</span>
+<span class="s2">        CREATE TABLE IF NOT EXISTS moving_features (</span>
+<span class="s2">            id TEXT PRIMARY KEY,</span>
+<span class="s2">            marker_id TEXT NOT NULL,</span>
+<span class="s2">            t_start REAL NOT NULL,</span>
+<span class="s2">            t_end REAL NOT NULL,</span>
+<span class="s2">            trajectory JSON NOT NULL, -- List of [t, x, y]</span>
+<span class="s2">            properties JSON DEFAULT &#39;</span><span class="si">{}</span><span class="s2">&#39;, -- Changing properties over time</span>
+<span class="s2">            created_at REAL,</span>
+<span class="s2">            FOREIGN KEY(marker_id) REFERENCES markers(id) ON DELETE CASCADE</span>
+<span class="s2">        );</span>
+
+<span class="s2">        -- Indexes for temporal queries</span>
+<span class="s2">        CREATE INDEX IF NOT EXISTS idx_moving_features_marker</span>
+<span class="s2">            ON moving_features(marker_id);</span>
+<span class="s2">        CREATE INDEX IF NOT EXISTS idx_moving_features_time</span>
+<span class="s2">            ON moving_features(t_start, t_end);</span>
+
 <span class="s2">        -- Image Attachments Table</span>
 <span class="s2">        CREATE TABLE IF NOT EXISTS image_attachments (</span>
 <span class="s2">            id TEXT PRIMARY KEY,</span>
@@ -496,7 +514,8 @@
 <span class="s2">            caption TEXT,</span>
 <span class="s2">            order_index INTEGER DEFAULT 0,</span>
 <span class="s2">            created_at REAL,</span>
-<span class="s2">            resolution TEXT, -- Stored as &quot;widthxheight&quot; or JSON [w, h]</span>
+<span class="s2">            -- Stored as &quot;widthxheight&quot; or JSON [w, h]</span>
+<span class="s2">            resolution TEXT,</span>
 <span class="s2">            source TEXT</span>
 <span class="s2">        );</span>
 

@@ -98,16 +98,27 @@ The visual implementation relies on the Qt Graphics View Framework (accessible v
 ### 4.1 The Scene Graph (QGraphicsScene)
 The `QGraphicsScene` acts as the spatial data model. It manages the geometry of all items (markers, paths, terrain) and handles collision detection.
 * **Coordinate System**: The scene operates in logical coordinates (Map Units), independent of the screen resolution or zoom level.
+* **Coordinate Mapping**: Interaction requires constant translation between View (Pixel) and Scene (Map) coordinates.
+    * `view.mapToScene(QPoint)`: Converts mouse pixel coordinates to map locations.
+    * `view.mapFromScene(QPointF)`: Converts map locations to screen pixels (essential for static UI overlays).
 * **Spatial Indexing**: The scene uses a Binary Space Partitioning (BSP) tree by default to rapidly locate items. While efficient for static scenes, this index can become a bottleneck for moving items, as the tree must be rebuilt whenever an item changes position.
 
 ### 4.2 The Viewport (QGraphicsView)
 The `QGraphicsView` is the widget that renders the scene. It handles the transformation matrix (zoom/pan) and user input events.
 * **Render Engine**: By default, `QGraphicsView` uses a raster paint engine (CPU-based). For high-performance animation of thousands of items, this is often insufficient.
 * **OpenGL Acceleration**: The viewport can be backed by a `QOpenGLWidget`, forcing Qt to use the GPU for composition and rendering. This is a critical optimization for the "Battle Maneuvers" use case.
+* **Y-Axis Inversion**: Standard GIS coordinates have $Y$ pointing Up (North), while Qt screen coordinates have $Y$ pointing Down. To align these, apply a scale transformation to the view: `view.scale(1, -1)`. This allows the scene logic to remain consistent with Cartesian GIS standards.
+* **Infinite Canvas Policy**: To implement a modern "drag-to-pan" map style, disable the default scrollbars:
+    ```python
+    view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    ```
 
 ```python
 view = QGraphicsView(scene)
 view.setViewport(QOpenGLWidget())
+# Invert Y axis to match GIS conventions
+view.scale(1, -1)
 ```
 
 ### 4.3 The Temporal Marker Item (QGraphicsItem)
@@ -219,6 +230,10 @@ When a marker is selected, its path becomes visible.
 ### 8.3 Selection Challenges in a Dynamic Scene
 Selecting a moving object is difficult.
 * **Hit Testing**: Qt's `QGraphicsView` handles hit testing via `itemAt()`. However, if the item is moving 60 times a second, the user might miss.
+* **Selection Implementation**:
+    * **Flags**: Enable selection on items using `item.setFlag(QGraphicsItem.ItemIsSelectable, True)`.
+    * **Retrieval**: Use `scene.selectedItems()` to get the current selection.
+    * **Rubberband**: Enable rectangular selection with `view.setDragMode(QGraphicsView.RubberBandDrag)`.
 * **Pause-on-Click**: A common UX pattern is to pause the Master Clock momentarily when the user presses the mouse button down, allowing for easier selection and manipulation.
 
 ---
@@ -250,6 +265,8 @@ Rendering full details for 1,000 units when zoomed out is wasteful.
 ### 9.4 Batching Updates
 To avoid 1,000 separate Python-to-C++ calls per frame:
 * **Strategy**: Vectorize the math. Use `numpy` to calculate the positions of all 1,000 units for time $t$ in a single batch operation. While updating the `QGraphicsItem` positions still requires a loop, the heavy lifting of interpolation is done in optimized C code via `numpy`.
+* **Thread Safety**: **Critical Warning**: Qt Widgets are NOT thread-safe. Do not attempt to update `QGraphicsItem` positions from a background thread.
+    * **Pattern**: Calculate positions in a worker thread (or `numpy` op), then emit a signal with the result. A slot on the main thread receives the data and efficiently calls `setPos` on the items.
 
 ---
 
@@ -302,3 +319,38 @@ Entities that "die" or haven't been "born" must be hidden.
 | **Item Coordinate Cache** | Low | High (Texture Blitting) | Complex SVG markers moving without scaling. |
 | **NoIndex (BSP Bypass)** | Low | High (Update Speed) | Constant movement of many items. |
 | **LOD (Level of Detail)** | Medium | Medium (Paint reduction) | Viewing the whole world map (Zoomed out). |
+
+## 13. Current Implementation Status (Jan 2026)
+
+### Completed Groundwork
+* **Rendering Engine**: `MapGraphicsView` has been upgraded to use `QOpenGLWidget` as the viewport. This provides the GPU acceleration foundation required for future high-load scenarios.
+* **Coordinate System**: A strict **Cartesian 2D** abstraction layer (`MapCoordinateSystem`) has been implemented.
+    *   It cleanly separates Normalized [0, 1] logic from Scene/Pixel logic.
+    *   It is architected to support future `pyproj` integration without breaking the UI.
+    *   **Note**: Full Y-Axis Inversion is prepared for but not yet active to match current static map behavior.
+* **Database Schema**: The `moving_features` table has been added to the SQLite schema.
+    *   It supports storing `trajectory` as a JSON blob.
+    *   Temporal indices (`t_start`, `t_end`) are in place for efficient queries.
+* **Interaction**: The map now uses an "Infinite Canvas" interaction model (Scrollbars disabled, Drag-to-Pan enforced).
+
+### Existing Capabilities
+* **Map Visualization**: Supports loading static map images (`QGraphicsPixmapItem`).
+* **Marker Implementation**:
+    *   `MarkerItem` supports SVG icons and coloring.
+    *   Optimization flags (`ItemIsMovable`, `ItemSendsGeometryChanges`, `ItemCoordinateCache` equivalent) are enabled.
+* **Map Hardening / GIS Features** (New):
+    *   **Scale Bar**: Implemented GIS-style scale bar overlay (`ScaleBarPainter`) leveraging `drawForeground`.
+    *   **Configuration**: Added "Settings" dialog to define map pixel-to-meter ratio.
+    *   **Live Coordinates**: Real-time display of Normalized and Kilometer coordinates.
+    *   **UI Polish**: Standardized Map Widget toolbar with `QPushButton` styling to match application theme.
+* **Layers**: The scene is now structured with defined Z-Values (`LAYER_MAP_BG`, `LAYER_MARKERS`, etc.) to prevent future rendering conflicts.
+* **Code Quality & Stability**:
+    *   **Marker Logic**: Refactored `MarkerItem` for better maintainability (helper methods for painting/drag).
+    *   **Critical Fixes**: Resolved interaction bugs where markers at `(0,0)` were unclickable.
+    *   **Testing**: Expanded unit tests to cover coordinate display and marker signals.
+
+### Gaps & Next Steps
+1.  **Time Service**: The `MasterClock` and the actual animation loop are not yet implemented.
+2.  **Trajectory Logic**: While the database *can* store trajectories, the application logic to read them and interpolate positions (`numpy`/`bisect`) is not yet written.
+3.  **Timeline UI**: The UI widget for scrubbing time does not exist.
+4.  **Recording Mode**: The "Puppeteering" logic for recording mouse movements into the database is missing.
