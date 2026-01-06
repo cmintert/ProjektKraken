@@ -115,7 +115,4 @@ class ScaleBarPainter:
 
     def _format_distance(self, meters: float) -> str:
         """Formats meters into m or km string."""
-        if meters >= 1000:
-            return f"{meters / 1000:.0f} km"
-        else:
-            return f"{meters:.0f} m"
+        return f"{meters / 1000:.0f} km" if meters >= 1000 else f"{meters:.0f} m"
