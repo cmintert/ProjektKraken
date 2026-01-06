@@ -291,9 +291,12 @@ def test_mouse_coordinates_display(map_widget):
     assert "N: (0.5000, 0.5000)" in text
     assert "RW: 0.50 km, 0.50 km" in text
 
-    # 2. Test Out-of-Bounds
+    # 2. Test Out-of-Bounds - now includes time suffix
     map_widget._on_mouse_coordinates_changed(0.0, 0.0, False)
-    map_widget.coord_label.setText.assert_called_with("Ready")
+    args, _ = map_widget.coord_label.setText.call_args
+    out_of_bounds_text = args[0]
+    assert "Ready" in out_of_bounds_text
+    assert "T:" in out_of_bounds_text  # Time is always shown
 
     # 3. Test Zero Height (Division by Zero protection)
     map_widget.view.pixmap_item.boundingRect.return_value = QRectF(0, 0, 100, 0)

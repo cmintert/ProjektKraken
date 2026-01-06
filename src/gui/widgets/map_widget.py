@@ -145,6 +145,51 @@ class MapWidget(QWidget):
         self.view.mouse_coordinates_changed.connect(self._on_mouse_coordinates_changed)
 
         self._maps_data = []  # List of maps for selector
+        self._playhead_time: float = 0.0  # Current playhead time from Timeline
+        self._current_time: float = 0.0  # Story's "Now" time from Timeline
+
+    @Slot(float)
+    def on_time_changed(self, time: float) -> None:
+        """
+        Receives playhead time updates from the Timeline.
+
+        Updates the internal time state and refreshes the status display.
+        Future: This will trigger trajectory interpolation for moving markers.
+
+        Args:
+            time: Current playhead time in lore_date units.
+        """
+        self._playhead_time = time
+        self.view._current_time = time
+        self._update_time_display()
+        logger.debug(f"Map playhead time updated to {time:.2f}")
+
+    @Slot(float)
+    def on_current_time_changed(self, time: float) -> None:
+        """
+        Receives current time ("Now") updates from the Timeline.
+
+        This represents the story's current moment, distinct from the playhead.
+
+        Args:
+            time: Current time in lore_date units.
+        """
+        self._current_time = time
+        self._update_time_display()
+        logger.debug(f"Map current time (Now) updated to {time:.2f}")
+
+    def _update_time_display(self) -> None:
+        """Updates the coord_label to include playhead and current time."""
+        # Get existing coordinate text or default
+        current_text = self.coord_label.text()
+
+        # Remove any existing time suffix
+        if " | T:" in current_text:
+            current_text = current_text.split(" | T:")[0]
+
+        # Append time (Playhead and Now)
+        time_str = f"T: {self._playhead_time:.1f} | Now: {self._current_time:.1f}"
+        self.coord_label.setText(f"{current_text} | {time_str}")
 
     def set_maps(self, maps: list) -> None:
         """
@@ -221,8 +266,11 @@ class MapWidget(QWidget):
             y: Normalized Y [0-1]
             in_bounds: True if cursor is over the map image.
         """
+        # Time suffix (always shown)
+        time_str = f"T: {self._playhead_time:.1f} | Now: {self._current_time:.1f}"
+
         if not in_bounds:
-            self.coord_label.setText("Ready")
+            self.coord_label.setText(f"Ready | {time_str}")
             return
 
         # 1. Format Normalized
@@ -256,7 +304,7 @@ class MapWidget(QWidget):
 
         km_str = f"RW: {km_x:.2f} km, {km_y:.2f} km"
 
-        self.coord_label.setText(f"{norm_str}  |  {km_str}")
+        self.coord_label.setText(f"{norm_str} | {km_str} | {time_str}")
 
     def load_map(self, image_path: str) -> bool:
         """

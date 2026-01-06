@@ -338,7 +338,7 @@ Entities that "die" or haven't been "born" must be hidden.
 * **Marker Implementation**:
     *   `MarkerItem` supports SVG icons and coloring.
     *   Optimization flags (`ItemIsMovable`, `ItemSendsGeometryChanges`, `ItemCoordinateCache` equivalent) are enabled.
-* **Map Hardening / GIS Features** (New):
+* **Map Hardening / GIS Features**:
     *   **Scale Bar**: Implemented GIS-style scale bar overlay (`ScaleBarPainter`) leveraging `drawForeground`.
     *   **Configuration**: Added "Settings" dialog to define map pixel-to-meter ratio.
     *   **Live Coordinates**: Real-time display of Normalized and Kilometer coordinates.
@@ -349,8 +349,17 @@ Entities that "die" or haven't been "born" must be hidden.
     *   **Critical Fixes**: Resolved interaction bugs where markers at `(0,0)` were unclickable.
     *   **Testing**: Expanded unit tests to cover coordinate display and marker signals.
 
+### Temporal Synchronization (New)
+* **Timeline ↔ Map Signal Wiring**: The map now subscribes to time changes from the Timeline widget.
+    *   `playhead_time_changed` signal connected to `MapWidget.on_time_changed`.
+    *   `current_time_changed` signal connected to `MapWidget.on_current_time_changed`.
+    *   Both `_playhead_time` (scrubber position) and `_current_time` (story's "Now") are stored in `MapWidget`.
+    *   `MapGraphicsView._current_time` is updated for future use by trajectory interpolation.
+* **Time Display**: The map status bar now displays both `T:` (playhead) and `Now:` (current time) values in real-time alongside coordinate information.
+
 ### Gaps & Next Steps
-1.  **Time Service**: The `MasterClock` and the actual animation loop are not yet implemented.
+1.  ~~**Time Service**: The `MasterClock` and the actual animation loop are not yet implemented.~~ **Partial**: Wiring uses Timeline's existing playback as the time source (Option B). A standalone `MasterClock` service may be extracted later if needed.
 2.  **Trajectory Logic**: While the database *can* store trajectories, the application logic to read them and interpolate positions (`numpy`/`bisect`) is not yet written.
-3.  **Timeline UI**: The UI widget for scrubbing time does not exist.
+3.  ~~**Timeline UI**: The UI widget for scrubbing time does not exist.~~ **Done**: The Timeline widget with playhead scrubbing already exists and is connected.
 4.  **Recording Mode**: The "Puppeteering" logic for recording mouse movements into the database is missing.
+

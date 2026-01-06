@@ -137,6 +137,9 @@ class MapGraphicsView(QGraphicsView):
         # Enable drop support for drag-from-explorer
         self.setAcceptDrops(True)
 
+        # Temporal state (for future trajectory animation)
+        self._current_time: float = 0.0
+
     def minimumSizeHint(self) -> QSize:
         """
         Override minimum size hint to allow resizing below map image size.

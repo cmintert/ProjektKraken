@@ -175,6 +175,11 @@ class ConnectionManager:
         )
         map_widget.marker_drop_requested.connect(self.window._on_marker_dropped)
 
+        # Wire Timeline playhead to Map for temporal synchronization
+        timeline = self.window.timeline
+        timeline.playhead_time_changed.connect(map_widget.on_time_changed)
+        timeline.current_time_changed.connect(map_widget.on_current_time_changed)
+
     def connect_ai_search_panel(self) -> None:
         """Connect signals from the AI search panel widget."""
         panel = self.window.ai_search_panel
