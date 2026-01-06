@@ -41,7 +41,8 @@ class MarkerItem(QGraphicsObject):
     Supports custom SVG icons with fallback to colored circles.
 
     Signals:
-        clicked: Emitted when the marker is clicked (released within threshold distance).
+        clicked: Emitted when the marker is clicked
+                 (released within threshold distance).
                  Args: (marker_id: str, object_type: str)
     """
 
@@ -205,50 +206,47 @@ class MarkerItem(QGraphicsObject):
         rect = self.boundingRect()
 
         if self._svg_renderer and self._svg_renderer.isValid():
-            # Render SVG with color tinting
-
-            # If we have a custom color, we want to tint the SVG
-            if self._custom_color:
-                # Create a pixmap of the marker size
-                pixmap = QPixmap(int(self.MARKER_SIZE), int(self.MARKER_SIZE))
-                pixmap.fill(Qt.GlobalColor.transparent)
-
-                # Render SVG into pixmap
-                p = QPainter(pixmap)
-                self._svg_renderer.render(p)
-
-                # Tint using CompositionMode_SourceIn
-                p.setCompositionMode(QPainter.CompositionMode_SourceIn)
-                p.fillRect(pixmap.rect(), self._color)
-                p.end()
-
-                # Draw the tinted pixmap
-                # First draw a shadow/background to ensure visibility
-                painter.setPen(Qt.PenStyle.NoPen)
-                painter.setBrush(QBrush(QColor(0, 0, 0, 50)))
-                painter.drawEllipse(rect.adjusted(2, 2, 2, 2))
-
-                painter.drawPixmap(rect.toRect(), pixmap)
-            else:
-                # Standard SVG rendering (no tint)
-                # First draw a shadow/background
-                painter.setPen(Qt.PenStyle.NoPen)
-                painter.setBrush(QBrush(QColor(0, 0, 0, 50)))
-                painter.drawEllipse(rect.adjusted(2, 2, 2, 2))
-
-                # Render the SVG
-                self._svg_renderer.render(painter, rect)
-
-            # Draw selection highlight
-            if self.isSelected():
-                painter.setPen(QPen(QColor(255, 255, 255), 2))
-                painter.setBrush(Qt.NoBrush)
-                painter.drawRect(rect)
+            self._draw_svg_icon(painter, rect)
         else:
-            # Fallback to colored circle
+            self._draw_fallback_circle(painter, rect)
+
+    def _draw_svg_icon(self, painter: QPainter, rect: QRectF) -> None:
+        """Draws the SVG icon, applying custom color tint if set."""
+        # Draw shadow/background
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QBrush(QColor(0, 0, 0, 50)))
+        painter.drawEllipse(rect.adjusted(2, 2, 2, 2))
+
+        if self._custom_color:
+            # Create a pixmap of the marker size
+            pixmap = QPixmap(int(self.MARKER_SIZE), int(self.MARKER_SIZE))
+            pixmap.fill(Qt.GlobalColor.transparent)
+
+            # Render SVG into pixmap
+            p = QPainter(pixmap)
+            self._svg_renderer.render(p)
+
+            # Tint using CompositionMode_SourceIn
+            p.setCompositionMode(QPainter.CompositionMode_SourceIn)
+            p.fillRect(pixmap.rect(), self._color)
+            p.end()
+
+            painter.drawPixmap(rect.toRect(), pixmap)
+        else:
+            # Standard SVG rendering (no tint)
+            self._svg_renderer.render(painter, rect)
+
+        # Draw selection highlight
+        if self.isSelected():
             painter.setPen(QPen(QColor(255, 255, 255), 2))
-            painter.setBrush(QBrush(self._color))
-            painter.drawEllipse(rect)
+            painter.setBrush(Qt.NoBrush)
+            painter.drawRect(rect)
+
+    def _draw_fallback_circle(self, painter: QPainter, rect: QRectF) -> None:
+        """Draws a fallback colored circle."""
+        painter.setPen(QPen(QColor(255, 255, 255), 2))
+        painter.setBrush(QBrush(self._color))
+        painter.drawEllipse(rect)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Track drag start."""
@@ -262,48 +260,61 @@ class MarkerItem(QGraphicsObject):
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Emit position change on drag end, or clicked signal if distance small."""
-        if event.button() == Qt.MouseButton.LeftButton:
-            # Check for click vs drag
-            if self._drag_start_pos is not None:
-                dist = (self.pos() - self._drag_start_pos).manhattanLength()
-                if dist < 3:
-                    # It's a click!
-                    self.clicked.emit(self.marker_id, self.object_type)
-                    logger.debug(f"Marker {self.marker_id} clicked.")
+        if event.button() != Qt.MouseButton.LeftButton:
+            super().mouseReleaseEvent(event)
+            return
 
-            if self._is_dragging:
-                self._is_dragging = False
-                # Calculate final normalized position
-                if self.pixmap_item and self.pixmap_item.pixmap():
-                    scene_pos = self.pos()
-                    pixmap_rect = self.pixmap_item.sceneBoundingRect()
+        # Check for click vs drag
+        if self._drag_start_pos is not None:
+            dist = (self.pos() - self._drag_start_pos).manhattanLength()
+            if dist < 3:
+                # It's a click!
+                self.clicked.emit(self.marker_id, self.object_type)
+                logger.debug(f"Marker {self.marker_id} clicked.")
 
-                    rel_x = scene_pos.x() - pixmap_rect.left()
-                    rel_y = scene_pos.y() - pixmap_rect.top()
+        if self._is_dragging:
+            self._is_dragging = False
+            self._handle_drag_end()
 
-                    norm_x = (
-                        rel_x / pixmap_rect.width() if pixmap_rect.width() > 0 else 0.0
-                    )
-                    norm_y = (
-                        rel_y / pixmap_rect.height()
-                        if pixmap_rect.height() > 0
-                        else 0.0
-                    )
-
-                    norm_x = max(0.0, min(1.0, norm_x))
-                    norm_y = max(0.0, min(1.0, norm_y))
-
-                    # Emit only on release
-                    if self.scene() and self.scene().views():
-                        view = self.scene().views()[0]
-                        # Use string check to avoid circular import
-                        if view.__class__.__name__ == "MapGraphicsView":
-                            view.marker_moved.emit(self.marker_id, norm_x, norm_y)
-                            logger.debug(
-                                f"Marker {self.marker_id} drag ended at normalized "
-                                f"({norm_x:.3f}, {norm_y:.3f})"
-                            )
         super().mouseReleaseEvent(event)
+
+    def _handle_drag_end(self) -> None:
+        """Calculates normalized position and emits marker_moved signal."""
+        norm_pos = self._get_normalized_position()
+        if norm_pos:
+            norm_x, norm_y = norm_pos
+            # Emit only on release
+            if self.scene() and self.scene().views():
+                view = self.scene().views()[0]
+                # Use string check to avoid circular import
+                if view.__class__.__name__ == "MapGraphicsView":
+                    view.marker_moved.emit(self.marker_id, norm_x, norm_y)
+                    logger.debug(
+                        f"Marker {self.marker_id} drag ended at normalized "
+                        f"({norm_x:.3f}, {norm_y:.3f})"
+                    )
+
+    def _get_normalized_position(self) -> Optional[tuple[float, float]]:
+        """Calculates the current normalized position of the marker."""
+        if not (self.pixmap_item and self.pixmap_item.pixmap()):
+            return None
+
+        scene_pos = self.pos()
+        pixmap_rect = self.pixmap_item.sceneBoundingRect()
+
+        rel_x = scene_pos.x() - pixmap_rect.left()
+        rel_y = scene_pos.y() - pixmap_rect.top()
+
+        width = pixmap_rect.width()
+        height = pixmap_rect.height()
+
+        norm_x = rel_x / width if width > 0 else 0.0
+        norm_y = rel_y / height if height > 0 else 0.0
+
+        norm_x = max(0.0, min(1.0, norm_x))
+        norm_y = max(0.0, min(1.0, norm_y))
+
+        return norm_x, norm_y
 
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
         """
