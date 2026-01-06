@@ -41,6 +41,7 @@ class DataHandler(QObject):
     longform_sequence_ready = Signal(list)  # Emitted when longform data is processed
     maps_ready = Signal(list)  # Emitted when maps are processed
     markers_ready = Signal(str, list)  # (map_id, markers)
+    trajectories_ready = Signal(list)  # (trajectories)
     entity_state_resolved = Signal(str, dict)  # (entity_id, attributes)
 
     # Signals for UI actions
@@ -231,6 +232,13 @@ class DataHandler(QObject):
             )
 
         self.markers_ready.emit(map_id, processed_markers)
+
+    @Slot(list)
+    def on_trajectories_loaded(self, trajectories: List[Any]) -> None:
+        """
+        Emits signal for map widget to be updated with trajectories.
+        """
+        self.trajectories_ready.emit(trajectories)
 
     @Slot(object)
     def on_command_finished(self, result: CommandResult) -> None:

@@ -33,6 +33,7 @@ class DatabaseWorker(QObject):
     entities_loaded = Signal(list)  # List[Entity]
     maps_loaded = Signal(list)  # List[Map]
     markers_loaded = Signal(str, list)  # map_id, List[Marker]
+    trajectories_loaded = Signal(list)  # List[Tuple[str, str, List[Keyframe]]]
     longform_sequence_loaded = Signal(list)  # List[dict]
     calendar_config_loaded = Signal(object)  # CalendarConfig or None
     current_time_loaded = Signal(float)  # Current time in lore_date units
@@ -183,6 +184,22 @@ class DatabaseWorker(QObject):
         except Exception:
             logger.error(f"Failed to load markers: {traceback.format_exc()}")
             self.error_occurred.emit(f"Failed to load markers for map {map_id}.")
+
+    @Slot(str)
+    def load_trajectories(self, map_id: str) -> None:
+        """Loads trajectories for a specific map."""
+        if not self.db_service:
+            return
+
+        try:
+            # self.operation_started.emit(f"Loading Trajectories for Map {map_id}...")
+            # (Quiet operation)
+            trajectories = self.db_service.get_trajectories_by_map(map_id)
+            self.trajectories_loaded.emit(trajectories)
+            # self.operation_finished.emit("Trajectories Loaded.")
+        except Exception:
+            logger.error(f"Failed to load trajectories: {traceback.format_exc()}")
+            self.error_occurred.emit(f"Failed to load trajectories for map {map_id}.")
 
     @Slot(str)
     def load_event_details(self, event_id: str) -> None:

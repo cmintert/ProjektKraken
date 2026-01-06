@@ -11,6 +11,7 @@ from src.services.repositories.entity_repository import EntityRepository
 from src.services.repositories.event_repository import EventRepository
 from src.services.repositories.map_repository import MapRepository
 from src.services.repositories.relation_repository import RelationRepository
+from src.services.repositories.trajectory_repository import TrajectoryRepository
 
 __all__ = [
     "EventRepository",
@@ -19,4 +20,5 @@ __all__ = [
     "MapRepository",
     "CalendarRepository",
     "AttachmentRepository",
+    "TrajectoryRepository",
 ]

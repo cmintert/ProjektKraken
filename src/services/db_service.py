@@ -11,7 +11,7 @@ import json
 import logging
 import sqlite3
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
 
 from src.core.calendar import CalendarConfig
 from src.core.entities import Entity
@@ -27,10 +27,12 @@ from src.services.repositories import (
     EventRepository,
     MapRepository,
     RelationRepository,
+    TrajectoryRepository,
 )
 
 if TYPE_CHECKING:
     from src.services.attachment_service import AttachmentService
+    from src.core.trajectory import Keyframe
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +62,7 @@ class DatabaseService:
         self._map_repo = MapRepository()
         self._calendar_repo = CalendarRepository()
         self._attachment_repo = AttachmentRepository()
+        self._trajectory_repo = TrajectoryRepository()
         self.attachment_service: Optional["AttachmentService"] = None
 
         logger.info(f"DatabaseService initialized with path: {self.db_path}")
@@ -89,6 +92,7 @@ class DatabaseService:
             self._map_repo.set_connection(self._connection)
             self._calendar_repo.set_connection(self._connection)
             self._attachment_repo.set_connection(self._connection)
+            self._trajectory_repo.set_connection(self._connection)
 
         except sqlite3.Error as e:
             logger.critical(f"Failed to connect to database: {e}")
@@ -2060,3 +2064,60 @@ class DatabaseService:
             )
 
         logger.debug("Cleared timeline grouping config")
+
+    # --------------------------------------------------------------------------
+    # Temporal Trajectories - Delegates to TrajectoryRepository
+    # --------------------------------------------------------------------------
+
+    def insert_trajectory(
+        self,
+        marker_id: str,
+        trajectory: List["Keyframe"],
+        properties: Optional[dict] = None,
+    ) -> str:
+        """
+        Inserts a spatial trajectory for a marker.
+
+        Args:
+            marker_id: UUID of the marker.
+            trajectory: List of Keyframe objects.
+            properties: Optional JSON metadata.
+
+        Returns:
+            UUID of the inserted trajectory record.
+        """
+        if not self._connection:
+            self.connect()
+        return self._trajectory_repo.insert(marker_id, trajectory, properties)
+
+    def get_trajectories_by_map(
+        self, map_id: str
+    ) -> List[Tuple[str, str, List["Keyframe"]]]:
+        """
+        Retrieves all trajectories for a specific map.
+
+        Args:
+            map_id: UUID of the map.
+
+        Returns:
+            List of (marker_id, trajectory_id, List[Keyframe]) tuples.
+        """
+        if not self._connection:
+            self.connect()
+        return self._trajectory_repo.get_by_map_id(map_id)
+
+    def get_trajectories_by_marker(
+        self, marker_id: str
+    ) -> List[Tuple[str, List["Keyframe"]]]:
+        """
+        Retrieves all trajectories for a specific marker.
+
+        Args:
+            marker_id: UUID of the marker.
+
+        Returns:
+            List of (trajectory_id, List[Keyframe]) tuples.
+        """
+        if not self._connection:
+            self.connect()
+        return self._trajectory_repo.get_by_marker_id(marker_id)

@@ -90,6 +90,14 @@ class MapHandler(QObject):
                 Q_ARG(str, map_id),
             )
 
+            # Request trajectories
+            QMetaObject.invokeMethod(
+                self.window.worker,
+                "load_trajectories",
+                Qt.ConnectionType.QueuedConnection,
+                Q_ARG(str, map_id),
+            )
+
     @Slot(str)
     def reload_markers(self, map_id: str) -> None:
         """
@@ -429,3 +437,13 @@ class MapHandler(QObject):
 
             # Store mapping for later updates (object_id -> marker.id)
             self._marker_object_to_id[marker_data["object_id"]] = marker_data["id"]
+
+    @Slot(list)
+    def on_trajectories_ready(self, trajectories: list) -> None:
+        """
+        Handle trajectories ready signal from DataHandler.
+
+        Args:
+            trajectories: List of (marker_id, trajectory_id, keyframes) tuples.
+        """
+        self.window.map_widget.set_trajectories(trajectories)
