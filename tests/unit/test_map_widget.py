@@ -5,7 +5,7 @@ Unit tests for map widget functionality.
 from unittest.mock import MagicMock
 
 import pytest
-from PySide6.QtCore import QPointF, Qt
+from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsPixmapItem
 
@@ -151,7 +151,7 @@ def test_marker_position_changed_signal(map_widget, qtbot):
 
     # Verify signal was emitted with correct values
     # Note: Signal may be emitted twice due to update_marker_position call
-    assert len(signal_spy) >= 1
+    assert signal_spy
     assert ("marker1", 0.7, 0.8) in signal_spy
 
 
@@ -268,3 +268,38 @@ def test_marker_item_change_emits_signal(map_view, qtbot):
     # For this test, we verify the marker is configured correctly.
     assert marker.flags() & QGraphicsItem.ItemIsMovable
     assert marker.flags() & QGraphicsItem.ItemSendsGeometryChanges
+
+
+def test_mouse_coordinates_display(map_widget):
+    """Test that mouse coordinates update the label correctly."""
+    # Mock the label
+    map_widget.coord_label = MagicMock()
+    map_widget.view.map_width_meters = 1000.0  # Simple width for calc
+
+    # Mock scene rect for aspect ratio (square 100x100)
+    map_widget.view.sceneRect = MagicMock(return_value=QRectF(0, 0, 100, 100))
+    map_widget.view.pixmap_item = MagicMock()
+    map_widget.view.pixmap_item.boundingRect.return_value = QRectF(0, 0, 100, 100)
+
+    # 1. Test In-Bounds
+    # x=0.5, y=0.5. With width=1000m, height should be 1000m.
+    # Expected: 500m, 500m -> 0.5km, 0.5km
+    map_widget._on_mouse_coordinates_changed(0.5, 0.5, True)
+
+    # Check text set on label
+    args, _ = map_widget.coord_label.setText.call_args
+    text = args[0]
+    assert "N: (0.5000, 0.5000)" in text
+    assert "RW: 0.50 km, 0.50 km" in text
+
+    # 2. Test Out-of-Bounds
+    map_widget._on_mouse_coordinates_changed(0.0, 0.0, False)
+    map_widget.coord_label.setText.assert_called_with("Ready")
+
+    # 3. Test Zero Height (Division by Zero protection)
+    map_widget.view.sceneRect.return_value = QRectF(0, 0, 100, 0)
+    map_widget._on_mouse_coordinates_changed(0.5, 0.5, True)
+    # Should fall back to 1:1 (height_meters = width_meters = 1000)
+    # y=0.5 * 1000 = 500
+    args, _ = map_widget.coord_label.setText.call_args
+    assert "RW: 0.50 km, 0.50 km" in args[0]

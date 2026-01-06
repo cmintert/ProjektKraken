@@ -264,7 +264,7 @@ class MarkerItem(QGraphicsObject):
         """Emit position change on drag end, or clicked signal if distance small."""
         if event.button() == Qt.MouseButton.LeftButton:
             # Check for click vs drag
-            if self._drag_start_pos:
+            if self._drag_start_pos is not None:
                 dist = (self.pos() - self._drag_start_pos).manhattanLength()
                 if dist < 3:
                     # It's a click!

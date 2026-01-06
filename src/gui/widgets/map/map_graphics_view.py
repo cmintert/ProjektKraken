@@ -8,7 +8,7 @@ import json
 import logging
 from typing import Dict, Optional
 
-from PySide6.QtCore import QPointF, QRectF, QSize, Qt, Signal
+from PySide6.QtCore import QPoint, QPointF, QRectF, QSize, Qt, Signal
 from PySide6.QtGui import (
     QAction,
     QBrush,
@@ -65,7 +65,9 @@ class MapGraphicsView(QGraphicsView):
     change_marker_icon_requested = Signal(str, str)  # marker_id, new_icon
     change_marker_color_requested = Signal(str, str)  # marker_id, new_color_hex
     marker_drop_requested = Signal(str, str, str, float, float)  # id, type, name, x, y
-    mouse_coordinates_changed = Signal(float, float)  # x, y (normalized)
+    mouse_coordinates_changed = Signal(
+        float, float, bool
+    )  # x, y (normalized), in_bounds
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -79,10 +81,34 @@ class MapGraphicsView(QGraphicsView):
         # Initialize Coordinate System
         self.coord_system = MapCoordinateSystem()
 
-        # Set OpenGL Viewport
-        from PySide6.QtOpenGLWidgets import QOpenGLWidget
+        # Set OpenGL Viewport (Safe Fallback)
+        import os
 
-        self.setViewport(QOpenGLWidget())
+        force_software = os.environ.get("KRAKEN_NO_OPENGL", "").lower() in (
+            "1",
+            "true",
+            "yes",
+        )
+
+        if not force_software:
+            try:
+                from PySide6.QtOpenGLWidgets import QOpenGLWidget
+
+                self.setViewport(QOpenGLWidget())
+                logger.debug("Initialized MapGraphicsView with OpenGL Viewport.")
+            except ImportError:
+                logger.warning(
+                    "QtOpenGLWidgets not available. Requesting software rendering."
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Failed to initialize OpenGL viewport: {e}. "
+                    "Falling back to software rendering."
+                )
+        else:
+            logger.info(
+                "OpenGL disabled via KRAKEN_NO_OPENGL. Using software rendering."
+            )
 
         self.scene = QGraphicsScene(self)
         self.setScene(self.scene)
@@ -224,7 +250,9 @@ class MapGraphicsView(QGraphicsView):
             # Check if within map bounds
             if self.pixmap_item.contains(scene_pos):
                 norm_pos = self.coord_system.to_normalized(scene_pos)
-                self.mouse_coordinates_changed.emit(norm_pos[0], norm_pos[1])
+                self.mouse_coordinates_changed.emit(norm_pos[0], norm_pos[1], True)
+            else:
+                self.mouse_coordinates_changed.emit(0.0, 0.0, False)
 
     def add_marker(
         self,
@@ -331,10 +359,7 @@ class MapGraphicsView(QGraphicsView):
         zoom_out_factor = 1 / zoom_in_factor
 
         # Check zoom direction
-        if event.angleDelta().y() > 0:
-            factor = zoom_in_factor
-        else:
-            factor = zoom_out_factor
+        factor = zoom_in_factor if event.angleDelta().y() > 0 else zoom_out_factor
 
         self.scale(factor, factor)
 
@@ -398,26 +423,7 @@ class MapGraphicsView(QGraphicsView):
         norm_x, norm_y = self.coord_system.clamp_normalized(norm_x, norm_y)
 
         # Parse MIME data
-        try:
-            data_bytes = event.mimeData().data(KRAKEN_ITEM_MIME_TYPE).data()
-            data = json.loads(data_bytes.decode("utf-8"))
-
-            item_id = data.get("id")
-            item_type = data.get("type")
-            item_name = data.get("name", "Unknown")
-
-            if item_id and item_type:
-                self.marker_drop_requested.emit(
-                    item_id, item_type, item_name, norm_x, norm_y
-                )
-                event.acceptProposedAction()
-                logger.info(
-                    f"Dropped {item_type} '{item_name}' at ({norm_x:.3f}, {norm_y:.3f})"
-                )
-            else:
-                event.ignore()
-        except Exception as e:
-            logger.error(f"Failed to parse drop data: {e}")
+        if not self._handle_drop_data(event, norm_x, norm_y):
             event.ignore()
 
     def contextMenuEvent(self, event: QContextMenuEvent) -> None:
@@ -430,27 +436,7 @@ class MapGraphicsView(QGraphicsView):
         # Check if we clicked on a marker
         item = self.itemAt(event.pos())
         if isinstance(item, MarkerItem):
-            menu = QMenu(self)
-
-            # Change Icon action
-            change_icon_action = QAction("Change Icon...", self)
-            change_icon_action.triggered.connect(lambda: self._show_icon_picker(item))
-            menu.addAction(change_icon_action)
-
-            # Change Color action
-            change_color_action = QAction("Change Color...", self)
-            change_color_action.triggered.connect(lambda: self._show_color_picker(item))
-            menu.addAction(change_color_action)
-
-            menu.addSeparator()
-
-            # Delete action
-            delete_action = QAction("Delete Marker", self)
-            delete_action.triggered.connect(
-                lambda: self.delete_marker_requested.emit(item.marker_id)
-            )
-            menu.addAction(delete_action)
-            menu.exec(event.globalPos())
+            self._show_marker_context_menu(item, event.globalPos())
         else:
             # Clicked on map (or empty space)
             # Convert screen pos to scene pos
@@ -458,14 +444,7 @@ class MapGraphicsView(QGraphicsView):
 
             # Check if within map bounds
             if self.pixmap_item.contains(scene_pos):
-                norm_pos = self.coord_system.to_normalized(scene_pos)
-                menu = QMenu(self)
-                add_action = QAction("Add Marker Here", self)
-                add_action.triggered.connect(
-                    lambda: self.add_marker_requested.emit(norm_pos.x(), norm_pos.y())
-                )
-                menu.addAction(add_action)
-                menu.exec(event.globalPos())
+                self._show_map_background_context_menu(scene_pos, event.globalPos())
 
     def set_map_width_meters(self, width_meters: float) -> None:
         """
@@ -486,16 +465,19 @@ class MapGraphicsView(QGraphicsView):
         """
         Draw overlay elements on top of the scene.
         Using drawForeground allows us to hook into the render loop correctly,
-        even with an OpenGL viewport. We reset the transform to draw in window coordinates.
+        even with an OpenGL viewport.
+        We reset the transform to draw in window coordinates.
         """
         super().drawForeground(painter, rect)
 
         # Draw Scale Bar Overlay
         if self.pixmap_item and self.map_width_meters > 0:
-            scene_width = self.sceneRect().width()
-            if scene_width > 0:
+            # Use pixmap bounding rect width for calculation to rely on image size,
+            # not dynamic scene rect which can expand.
+            image_width_px = self.pixmap_item.boundingRect().width()
+            if image_width_px > 0:
                 # Calculate resolution: meters per scene unit (pixel)
-                base_resolution = self.map_width_meters / scene_width
+                base_resolution = self.map_width_meters / image_width_px
 
                 # Adjust for current view zoom (m11 is horizontal scale)
                 view_scale = self.transform().m11()
@@ -525,13 +507,11 @@ class MapGraphicsView(QGraphicsView):
             marker_item: The marker to change the icon for.
         """
         dialog = IconPickerDialog(self)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            selected_icon = dialog.selected_icon
-            if selected_icon:
-                marker_item.set_icon(selected_icon)
-                self.change_marker_icon_requested.emit(
-                    marker_item.marker_id, selected_icon
-                )
+        if dialog.exec() == QDialog.DialogCode.Accepted and (
+            selected_icon := dialog.selected_icon
+        ):
+            marker_item.set_icon(selected_icon)
+            self.change_marker_icon_requested.emit(marker_item.marker_id, selected_icon)
 
     def _show_color_picker(self, marker_item: MarkerItem) -> None:
         """
@@ -549,3 +529,74 @@ class MapGraphicsView(QGraphicsView):
             color_hex = color.name().upper()
             marker_item.set_color(color_hex)
             self.change_marker_color_requested.emit(marker_item.marker_id, color_hex)
+
+    def _handle_drop_data(
+        self, event: QDropEvent, norm_x: float, norm_y: float
+    ) -> bool:
+        """
+        Parses drop data and emits marker request.
+        """
+        from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
+
+        try:
+            data_bytes = event.mimeData().data(KRAKEN_ITEM_MIME_TYPE).data()
+            data = json.loads(data_bytes.decode("utf-8"))
+
+            item_id = data.get("id")
+            item_type = data.get("type")
+            item_name = data.get("name", "Unknown")
+
+            if item_id and item_type:
+                self.marker_drop_requested.emit(
+                    item_id, item_type, item_name, norm_x, norm_y
+                )
+                event.acceptProposedAction()
+                logger.info(
+                    f"Dropped {item_type} '{item_name}' at ({norm_x:.3f}, {norm_y:.3f})"
+                )
+                return True
+        except Exception as e:
+            logger.error(f"Failed to parse drop data: {e}")
+
+        return False
+
+    def _show_marker_context_menu(self, item: MarkerItem, global_pos: QPoint) -> None:
+        """
+        Shows context menu for a marker.
+        """
+        menu = QMenu(self)
+
+        # Change Icon action
+        change_icon_action = QAction("Change Icon...", self)
+        change_icon_action.triggered.connect(lambda: self._show_icon_picker(item))
+        menu.addAction(change_icon_action)
+
+        # Change Color action
+        change_color_action = QAction("Change Color...", self)
+        change_color_action.triggered.connect(lambda: self._show_color_picker(item))
+        menu.addAction(change_color_action)
+
+        menu.addSeparator()
+
+        # Delete action
+        delete_action = QAction("Delete Marker", self)
+        delete_action.triggered.connect(
+            lambda: self.delete_marker_requested.emit(item.marker_id)
+        )
+        menu.addAction(delete_action)
+        menu.exec(global_pos)
+
+    def _show_map_background_context_menu(
+        self, scene_pos: QPointF, global_pos: QPoint
+    ) -> None:
+        """
+        Shows context menu for adding a marker at a specific location.
+        """
+        norm_pos = self.coord_system.to_normalized(scene_pos)
+        menu = QMenu(self)
+        add_action = QAction("Add Marker Here", self)
+        add_action.triggered.connect(
+            lambda: self.add_marker_requested.emit(norm_pos.x(), norm_pos.y())
+        )
+        menu.addAction(add_action)
+        menu.exec(global_pos)
