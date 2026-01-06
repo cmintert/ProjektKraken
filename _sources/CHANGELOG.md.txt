@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-06
-### Internal
-- style: simplify _format_distance to ternary expression
+### Added
+- feat(map): wire Timeline playhead/current time to Map widget
 
 
 *This changelog was automatically generated.*

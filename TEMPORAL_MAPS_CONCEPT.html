@@ -786,7 +786,7 @@ Complex markers (e.g., detailed SVG sigils) are expensive to paint.</p>
 <li><p>Optimization flags (<code class="docutils literal notranslate"><span class="pre">ItemIsMovable</span></code>, <code class="docutils literal notranslate"><span class="pre">ItemSendsGeometryChanges</span></code>, <code class="docutils literal notranslate"><span class="pre">ItemCoordinateCache</span></code> equivalent) are enabled.</p></li>
 </ul>
 </li>
-<li><p><strong>Map Hardening / GIS Features</strong> (New):</p>
+<li><p><strong>Map Hardening / GIS Features</strong>:</p>
 <ul>
 <li><p><strong>Scale Bar</strong>: Implemented GIS-style scale bar overlay (<code class="docutils literal notranslate"><span class="pre">ScaleBarPainter</span></code>) leveraging <code class="docutils literal notranslate"><span class="pre">drawForeground</span></code>.</p></li>
 <li><p><strong>Configuration</strong>: Added “Settings” dialog to define map pixel-to-meter ratio.</p></li>
@@ -804,12 +804,26 @@ Complex markers (e.g., detailed SVG sigils) are expensive to paint.</p>
 </li>
 </ul>
 </section>
+<section id="temporal-synchronization-new">
+<h3>Temporal Synchronization (New)<a class="headerlink" href="#temporal-synchronization-new" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Timeline ↔ Map Signal Wiring</strong>: The map now subscribes to time changes from the Timeline widget.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">playhead_time_changed</span></code> signal connected to <code class="docutils literal notranslate"><span class="pre">MapWidget.on_time_changed</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">current_time_changed</span></code> signal connected to <code class="docutils literal notranslate"><span class="pre">MapWidget.on_current_time_changed</span></code>.</p></li>
+<li><p>Both <code class="docutils literal notranslate"><span class="pre">_playhead_time</span></code> (scrubber position) and <code class="docutils literal notranslate"><span class="pre">_current_time</span></code> (story’s “Now”) are stored in <code class="docutils literal notranslate"><span class="pre">MapWidget</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">MapGraphicsView._current_time</span></code> is updated for future use by trajectory interpolation.</p></li>
+</ul>
+</li>
+<li><p><strong>Time Display</strong>: The map status bar now displays both <code class="docutils literal notranslate"><span class="pre">T:</span></code> (playhead) and <code class="docutils literal notranslate"><span class="pre">Now:</span></code> (current time) values in real-time alongside coordinate information.</p></li>
+</ul>
+</section>
 <section id="gaps-next-steps">
 <h3>Gaps &amp; Next Steps<a class="headerlink" href="#gaps-next-steps" title="Link to this heading">¶</a></h3>
 <ol class="arabic simple">
-<li><p><strong>Time Service</strong>: The <code class="docutils literal notranslate"><span class="pre">MasterClock</span></code> and the actual animation loop are not yet implemented.</p></li>
+<li><p>~~<strong>Time Service</strong>: The <code class="docutils literal notranslate"><span class="pre">MasterClock</span></code> and the actual animation loop are not yet implemented.~~ <strong>Partial</strong>: Wiring uses Timeline’s existing playback as the time source (Option B). A standalone <code class="docutils literal notranslate"><span class="pre">MasterClock</span></code> service may be extracted later if needed.</p></li>
 <li><p><strong>Trajectory Logic</strong>: While the database <em>can</em> store trajectories, the application logic to read them and interpolate positions (<code class="docutils literal notranslate"><span class="pre">numpy</span></code>/<code class="docutils literal notranslate"><span class="pre">bisect</span></code>) is not yet written.</p></li>
-<li><p><strong>Timeline UI</strong>: The UI widget for scrubbing time does not exist.</p></li>
+<li><p>~~<strong>Timeline UI</strong>: The UI widget for scrubbing time does not exist.~~ <strong>Done</strong>: The Timeline widget with playhead scrubbing already exists and is connected.</p></li>
 <li><p><strong>Recording Mode</strong>: The “Puppeteering” logic for recording mouse movements into the database is missing.</p></li>
 </ol>
 </section>
@@ -914,6 +928,7 @@ Complex markers (e.g., detailed SVG sigils) are expensive to paint.</p>
 <li><a class="reference internal" href="#current-implementation-status-jan-2026">13. Current Implementation Status (Jan 2026)</a><ul>
 <li><a class="reference internal" href="#completed-groundwork">Completed Groundwork</a></li>
 <li><a class="reference internal" href="#existing-capabilities">Existing Capabilities</a></li>
+<li><a class="reference internal" href="#temporal-synchronization-new">Temporal Synchronization (New)</a></li>
 <li><a class="reference internal" href="#gaps-next-steps">Gaps &amp; Next Steps</a></li>
 </ul>
 </li>
