@@ -232,12 +232,24 @@ class MapWidget(QWidget):
         width_meters = self.view.map_width_meters
 
         # Calculate Aspect Ratio to find Height
-        scene_rect = self.view.sceneRect()
-        if scene_rect.width() > 0 and scene_rect.height() > 0:
-            aspect_ratio = scene_rect.width() / scene_rect.height()
-            height_meters = width_meters / aspect_ratio
+        # Prefer the underlying map image bounds so that Y scaling
+        # is tied to the actual map, not to dynamic scene extents.
+        height_meters = width_meters  # Default fallback: square
+        aspect_ratio = None
+
+        pixmap_item = getattr(self.view, "pixmap_item", None)
+        if pixmap_item is not None:
+            img_rect = pixmap_item.boundingRect()
+            if img_rect.width() > 0 and img_rect.height() > 0:
+                aspect_ratio = img_rect.width() / img_rect.height()
         else:
-            height_meters = width_meters  # Fallback
+            # Fallback: use sceneRect for aspect ratio if no pixmap is available
+            scene_rect = self.view.sceneRect()
+            if scene_rect.width() > 0 and scene_rect.height() > 0:
+                aspect_ratio = scene_rect.width() / scene_rect.height()
+
+        if aspect_ratio:
+            height_meters = width_meters / aspect_ratio
 
         km_x = (x * width_meters) / 1000.0
         km_y = (y * height_meters) / 1000.0

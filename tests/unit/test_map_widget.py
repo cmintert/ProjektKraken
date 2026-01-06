@@ -276,8 +276,7 @@ def test_mouse_coordinates_display(map_widget):
     map_widget.coord_label = MagicMock()
     map_widget.view.map_width_meters = 1000.0  # Simple width for calc
 
-    # Mock scene rect for aspect ratio (square 100x100)
-    map_widget.view.sceneRect = MagicMock(return_value=QRectF(0, 0, 100, 100))
+    # Mock pixmap_item for aspect ratio (square 100x100)
     map_widget.view.pixmap_item = MagicMock()
     map_widget.view.pixmap_item.boundingRect.return_value = QRectF(0, 0, 100, 100)
 
@@ -297,7 +296,7 @@ def test_mouse_coordinates_display(map_widget):
     map_widget.coord_label.setText.assert_called_with("Ready")
 
     # 3. Test Zero Height (Division by Zero protection)
-    map_widget.view.sceneRect.return_value = QRectF(0, 0, 100, 0)
+    map_widget.view.pixmap_item.boundingRect.return_value = QRectF(0, 0, 100, 0)
     map_widget._on_mouse_coordinates_changed(0.5, 0.5, True)
     # Should fall back to 1:1 (height_meters = width_meters = 1000)
     # y=0.5 * 1000 = 500

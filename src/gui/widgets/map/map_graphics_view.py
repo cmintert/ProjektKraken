@@ -247,8 +247,9 @@ class MapGraphicsView(QGraphicsView):
             # Map view pos to scene pos
             scene_pos = self.mapToScene(event.pos())
 
-            # Check if within map bounds
-            if self.pixmap_item.contains(scene_pos):
+            # Check if within map bounds (convert to item-local coordinates)
+            item_pos = self.pixmap_item.mapFromScene(scene_pos)
+            if self.pixmap_item.contains(item_pos):
                 norm_pos = self.coord_system.to_normalized(scene_pos)
                 self.mouse_coordinates_changed.emit(norm_pos[0], norm_pos[1], True)
             else:
@@ -388,9 +389,10 @@ class MapGraphicsView(QGraphicsView):
             event.ignore()
             return
 
-        # Check if over map
+        # Check if over map (convert to item-local coordinates)
         scene_pos = self.mapToScene(event.position().toPoint())
-        if self.pixmap_item.contains(scene_pos):
+        item_pos = self.pixmap_item.mapFromScene(scene_pos)
+        if self.pixmap_item.contains(item_pos):
             event.acceptProposedAction()
         else:
             event.ignore()
@@ -412,8 +414,9 @@ class MapGraphicsView(QGraphicsView):
         # Get drop position
         scene_pos = self.mapToScene(event.position().toPoint())
 
-        # Check if within map bounds
-        if not self.pixmap_item.contains(scene_pos):
+        # Check if within map bounds (convert to item-local coordinates)
+        item_pos = self.pixmap_item.mapFromScene(scene_pos)
+        if not self.pixmap_item.contains(item_pos):
             event.ignore()
             return
 
@@ -442,8 +445,9 @@ class MapGraphicsView(QGraphicsView):
             # Convert screen pos to scene pos
             scene_pos = self.mapToScene(event.pos())
 
-            # Check if within map bounds
-            if self.pixmap_item.contains(scene_pos):
+            # Check if within map bounds (convert to item-local coordinates)
+            item_pos = self.pixmap_item.mapFromScene(scene_pos)
+            if self.pixmap_item.contains(item_pos):
                 self._show_map_background_context_menu(scene_pos, event.globalPos())
 
     def set_map_width_meters(self, width_meters: float) -> None:
@@ -592,11 +596,12 @@ class MapGraphicsView(QGraphicsView):
         """
         Shows context menu for adding a marker at a specific location.
         """
-        norm_pos = self.coord_system.to_normalized(scene_pos)
+        # Unpack tuple to avoid closure issues with lambda
+        norm_x, norm_y = self.coord_system.to_normalized(scene_pos)
         menu = QMenu(self)
         add_action = QAction("Add Marker Here", self)
         add_action.triggered.connect(
-            lambda: self.add_marker_requested.emit(norm_pos.x(), norm_pos.y())
+            lambda: self.add_marker_requested.emit(norm_x, norm_y)
         )
         menu.addAction(add_action)
         menu.exec(global_pos)
