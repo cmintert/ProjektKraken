@@ -349,17 +349,21 @@ Entities that "die" or haven't been "born" must be hidden.
     *   **Critical Fixes**: Resolved interaction bugs where markers at `(0,0)` were unclickable.
     *   **Testing**: Expanded unit tests to cover coordinate display and marker signals.
 
-### Temporal Synchronization (New)
-* **Timeline ↔ Map Signal Wiring**: The map now subscribes to time changes from the Timeline widget.
-    *   `playhead_time_changed` signal connected to `MapWidget.on_time_changed`.
-    *   `current_time_changed` signal connected to `MapWidget.on_current_time_changed`.
-    *   Both `_playhead_time` (scrubber position) and `_current_time` (story's "Now") are stored in `MapWidget`.
-    *   `MapGraphicsView._current_time` is updated for future use by trajectory interpolation.
-* **Time Display**: The map status bar now displays both `T:` (playhead) and `Now:` (current time) values in real-time alongside coordinate information.
+### Temporal Synchronization & Animation
+* **Timeline ↔ Map Signal Wiring**: The map subscribes to time changes from the Timeline widget (`playhead_time_changed`).
+* **Interpolation Logic**: Implemented `interpolate_position` (Linear) using `bisect` for efficient keyframe lookup.
+* **Marker Movement**: `MapWidget` now automatically updates marker positions during timeline scrubbing/playback based on interpolated trajectory data.
+* **Trajectory Persistence**: Dedicated `TrajectoryRepository` handles ACID-compliant storage of keyframes, resolving the mapping between transient UI "Object IDs" and persistent Database Primary Keys.
+
+### Interaction & Visualization (New)
+* **Manual Keyframing (Snapshots)**: Added "Add Keyframe" button to the Map toolbar. This allows users to set precise snapshots of marker state at specific timeline moments.
+* **Trajectory Visualizer**:
+    *   **Visual Cues**: When a marker is selected, its entire trajectory is rendered as a dashed path.
+    *   **Keyframe Indicators**: Individual keyframes are visualized as dots on the map, providing immediate visual feedback of the "history" of the entity.
+    *   **Zoom-Aware Rendering**: Keyframe dots scale with zoom level to maintain visual consistency.
 
 ### Gaps & Next Steps
-1.  ~~**Time Service**: The `MasterClock` and the actual animation loop are not yet implemented.~~ **Partial**: Wiring uses Timeline's existing playback as the time source (Option B). A standalone `MasterClock` service may be extracted later if needed.
-2.  **Trajectory Logic**: While the database *can* store trajectories, the application logic to read them and interpolate positions (`numpy`/`bisect`) is not yet written.
-3.  ~~**Timeline UI**: The UI widget for scrubbing time does not exist.~~ **Done**: The Timeline widget with playhead scrubbing already exists and is connected.
-4.  **Recording Mode**: The "Puppeteering" logic for recording mouse movements into the database is missing.
+1.  **Recording Mode**: The "Live Puppeteering" logic (Phase 8.1) for recording real-time mouse movements is not yet implemented.
+2.  **Bezier Interpolation**: Current interpolation is strictly linear; Bezier support (Phase 5.2) remains a roadmap item.
+3.  **In-Scene Keyframe Editing**: Direct dragging of keyframe dots (Phase 8.2) on the map is not yet implemented.
 
