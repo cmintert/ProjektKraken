@@ -214,8 +214,10 @@ class DatabaseService:
         );
 
         -- Indexes for temporal queries
-        CREATE INDEX IF NOT EXISTS idx_moving_features_marker ON moving_features(marker_id);
-        CREATE INDEX IF NOT EXISTS idx_moving_features_time ON moving_features(t_start, t_end);
+        CREATE INDEX IF NOT EXISTS idx_moving_features_marker
+            ON moving_features(marker_id);
+        CREATE INDEX IF NOT EXISTS idx_moving_features_time
+            ON moving_features(t_start, t_end);
 
         -- Image Attachments Table
         CREATE TABLE IF NOT EXISTS image_attachments (

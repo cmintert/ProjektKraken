@@ -187,9 +187,7 @@ class MapWidget(QWidget):
             Optional[str]: The map ID, or None if no map is selected.
         """
         index = self.map_selector.currentIndex()
-        if index >= 0:
-            return self.map_selector.itemData(index)
-        return None
+        return self.map_selector.itemData(index) if index >= 0 else None
 
     @Slot(str, float, float)
     def _on_marker_moved(self, marker_id: str, x: float, y: float) -> None:
@@ -211,15 +209,22 @@ class MapWidget(QWidget):
 
         logger.debug(f"MapWidget: marker {marker_id} moved to ({x:.3f}, {y:.3f})")
 
-    @Slot(float, float)
-    def _on_mouse_coordinates_changed(self, x: float, y: float) -> None:
+    @Slot(float, float, bool)
+    def _on_mouse_coordinates_changed(
+        self, x: float, y: float, in_bounds: bool
+    ) -> None:
         """
         Updates the coordinate label.
 
         Args:
             x: Normalized X [0-1]
             y: Normalized Y [0-1]
+            in_bounds: True if cursor is over the map image.
         """
+        if not in_bounds:
+            self.coord_label.setText("Ready")
+            return
+
         # 1. Format Normalized
         norm_str = f"N: ({x:.4f}, {y:.4f})"
 
@@ -228,7 +233,7 @@ class MapWidget(QWidget):
 
         # Calculate Aspect Ratio to find Height
         scene_rect = self.view.sceneRect()
-        if scene_rect.width() > 0:
+        if scene_rect.width() > 0 and scene_rect.height() > 0:
             aspect_ratio = scene_rect.width() / scene_rect.height()
             height_meters = width_meters / aspect_ratio
         else:
@@ -303,6 +308,10 @@ class MapWidget(QWidget):
 
     def _configure_map_width(self) -> None:
         """Opens a dialog to configure the real-world width of the map."""
+        if not self.view.pixmap_item:
+            logger.warning("Ignoring request to configure map width: no map loaded.")
+            return
+
         current_width = int(self.view.map_width_meters)
         width, ok = QInputDialog.getInt(
             self,
