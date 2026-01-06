@@ -261,12 +261,15 @@ class WikiTextEdit(QTextEdit):
         """
         self.setStyleSheet(widget_qss)
 
-    def set_wiki_text(self, text: str) -> None:
+    def set_wiki_text(self, text: Optional[str]) -> None:
         """
         Sets the content using WikiLink syntax, converting it to HTML anchors.
         Uses the 'markdown' library for rich text rendering.
         """
         import markdown
+
+        if text is None:
+            text = ""
 
         # Store text for re-rendering on theme change
         self._current_wiki_text = text
