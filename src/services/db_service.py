@@ -201,6 +201,22 @@ class DatabaseService:
         CREATE INDEX IF NOT EXISTS idx_markers_object
             ON markers(object_id, object_type);
 
+        -- Moving Features Table (Temporal Trajectories)
+        CREATE TABLE IF NOT EXISTS moving_features (
+            id TEXT PRIMARY KEY,
+            marker_id TEXT NOT NULL,
+            t_start REAL NOT NULL,
+            t_end REAL NOT NULL,
+            trajectory JSON NOT NULL, -- List of [t, x, y]
+            properties JSON DEFAULT '{}', -- Changing properties over time
+            created_at REAL,
+            FOREIGN KEY(marker_id) REFERENCES markers(id) ON DELETE CASCADE
+        );
+
+        -- Indexes for temporal queries
+        CREATE INDEX IF NOT EXISTS idx_moving_features_marker ON moving_features(marker_id);
+        CREATE INDEX IF NOT EXISTS idx_moving_features_time ON moving_features(t_start, t_end);
+
         -- Image Attachments Table
         CREATE TABLE IF NOT EXISTS image_attachments (
             id TEXT PRIMARY KEY,
