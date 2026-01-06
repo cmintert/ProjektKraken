@@ -16,11 +16,10 @@ import os
 from typing import List, Optional
 
 from PySide6.QtCore import Signal, Slot
-from PySide6.QtGui import (
-    QAction,
-)
 from PySide6.QtWidgets import (
     QComboBox,
+    QInputDialog,
+    QPushButton,
     QToolBar,
     QVBoxLayout,
     QWidget,
@@ -87,6 +86,7 @@ class MapWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         # Toolbar
         self.toolbar = QToolBar(self)
+        self.toolbar.setStyleSheet("QToolBar { spacing: 10px; padding: 5px; }")
         layout.addWidget(self.toolbar)
 
         # Map Selector
@@ -95,20 +95,26 @@ class MapWidget(QWidget):
         self.map_selector.currentIndexChanged.connect(self._on_map_selected)
         self.toolbar.addWidget(self.map_selector)
 
-        # Actions
-        self.action_new_map = QAction("New Map", self)
-        self.action_new_map.triggered.connect(self.create_map_requested.emit)
-        self.toolbar.addAction(self.action_new_map)
+        # Buttons
+        self.btn_new_map = QPushButton("New Map")
+        self.btn_new_map.clicked.connect(self.create_map_requested.emit)
+        self.toolbar.addWidget(self.btn_new_map)
 
-        self.action_delete_map = QAction("Delete Map", self)
-        self.action_delete_map.triggered.connect(self.delete_map_requested.emit)
-        self.toolbar.addAction(self.action_delete_map)
+        self.btn_delete_map = QPushButton("Delete Map")
+        self.btn_delete_map.clicked.connect(self.delete_map_requested.emit)
+        self.toolbar.addWidget(self.btn_delete_map)
 
-        self.toolbar.addSeparator()
+        # Spacer or Separator could go here, but Longform doesn't use standard
+        # separator widget with buttons often using a simple label or just spacing
 
-        self.action_fit_view = QAction("Fit to View", self)
-        self.action_fit_view.triggered.connect(self.view.fit_to_view)
-        self.toolbar.addAction(self.action_fit_view)
+        self.btn_fit_view = QPushButton("Fit to View")
+        self.btn_fit_view.clicked.connect(self.view.fit_to_view)
+        self.toolbar.addWidget(self.btn_fit_view)
+
+        self.btn_settings = QPushButton("Settings")
+        self.btn_settings.setToolTip("Configure Map Properties (Scale)")
+        self.btn_settings.clicked.connect(self._configure_map_width)
+        self.toolbar.addWidget(self.btn_settings)
 
         # Add View (after toolbar)
         layout.addWidget(self.view)
@@ -251,3 +257,20 @@ class MapWidget(QWidget):
 
     def clear_markers(self) -> None:
         """Removes all markers from the map."""
+        self.view.clear_markers()
+
+    def _configure_map_width(self) -> None:
+        """Opens a dialog to configure the real-world width of the map."""
+        current_width = int(self.view.map_width_meters)
+        width, ok = QInputDialog.getInt(
+            self,
+            "Map Scale Base",
+            "Enter the real-world width of this map image (in meters):",
+            current_width,
+            100,  # Min 100m
+            100_000_000,  # Max 100,000 km
+            1000,  # Step
+        )
+        if ok:
+            self.view.set_map_width_meters(float(width))
+            logger.info(f"Map width set to {width} meters")

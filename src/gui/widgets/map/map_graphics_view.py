@@ -8,7 +8,7 @@ import json
 import logging
 from typing import Dict, Optional
 
-from PySide6.QtCore import QPointF, QSize, Qt, Signal
+from PySide6.QtCore import QPointF, QRectF, QSize, Qt, Signal
 from PySide6.QtGui import (
     QAction,
     QBrush,
@@ -37,6 +37,7 @@ from src.core.theme_manager import ThemeManager
 from src.gui.widgets.map.coordinate_system import MapCoordinateSystem
 from src.gui.widgets.map.icon_picker_dialog import IconPickerDialog
 from src.gui.widgets.map.marker_item import MarkerItem
+from src.gui.widgets.map.scale_bar_painter import ScaleBarPainter
 
 logger = logging.getLogger(__name__)
 
@@ -126,6 +127,10 @@ class MapGraphicsView(QGraphicsView):
     def _update_theme(self, theme: dict) -> None:
         """Updates the scene background."""
         self.scene.setBackgroundBrush(QBrush(QColor(theme["app_bg"])))
+
+        # Scale Bar
+        self.scale_bar_painter = ScaleBarPainter()
+        self.map_width_meters = 1_000_000.0  # Default 1000km
 
     def load_map(self, image_path: str) -> bool:
         """
@@ -435,15 +440,64 @@ class MapGraphicsView(QGraphicsView):
 
             # Check if within map bounds
             if self.pixmap_item.contains(scene_pos):
-                norm_x, norm_y = self.coord_system.to_normalized(scene_pos)
-
+                norm_pos = self.coord_system.to_normalized(scene_pos)
                 menu = QMenu(self)
-                add_action = QAction("Add Marker", self)
+                add_action = QAction("Add Marker Here", self)
                 add_action.triggered.connect(
-                    lambda: self.add_marker_requested.emit(norm_x, norm_y)
+                    lambda: self.add_marker_requested.emit(norm_pos.x(), norm_pos.y())
                 )
                 menu.addAction(add_action)
                 menu.exec(event.globalPos())
+
+    def set_map_width_meters(self, width_meters: float) -> None:
+        """
+        Sets the real-world width of the map for scale calculation.
+
+        Args:
+            width_meters: Width of the map image in meters.
+        """
+        if width_meters <= 0:
+            logger.warning(f"Invalid map width: {width_meters}. Ignoring.")
+            return
+
+        self.map_width_meters = width_meters
+        # Trigger repaint to update scale bar
+        self.viewport().update()
+
+    def drawForeground(self, painter: QPainter, rect: QRectF) -> None:
+        """
+        Draw overlay elements on top of the scene.
+        Using drawForeground allows us to hook into the render loop correctly,
+        even with an OpenGL viewport. We reset the transform to draw in window coordinates.
+        """
+        super().drawForeground(painter, rect)
+
+        # Draw Scale Bar Overlay
+        if self.pixmap_item and self.map_width_meters > 0:
+            scene_width = self.sceneRect().width()
+            if scene_width > 0:
+                # Calculate resolution: meters per scene unit (pixel)
+                base_resolution = self.map_width_meters / scene_width
+
+                # Adjust for current view zoom (m11 is horizontal scale)
+                view_scale = self.transform().m11()
+
+                if view_scale > 0:
+                    current_resolution = base_resolution / view_scale
+
+                    # Save painter state (Scene coordinates)
+                    painter.save()
+
+                    # Reset transform to draw in Viewport (Pixel) coordinates
+                    painter.resetTransform()
+
+                    # Draw Scale Bar
+                    self.scale_bar_painter.paint(
+                        painter, QRectF(self.viewport().rect()), current_resolution
+                    )
+
+                    # Restore painter state
+                    painter.restore()
 
     def _show_icon_picker(self, marker_item: MarkerItem) -> None:
         """
