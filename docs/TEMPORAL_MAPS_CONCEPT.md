@@ -338,6 +338,11 @@ Entities that "die" or haven't been "born" must be hidden.
 * **Marker Implementation**:
     *   `MarkerItem` supports SVG icons and coloring.
     *   Optimization flags (`ItemIsMovable`, `ItemSendsGeometryChanges`, `ItemCoordinateCache` equivalent) are enabled.
+* **Map Hardening / GIS Features** (New):
+    *   **Scale Bar**: Implemented GIS-style scale bar overlay (`ScaleBarPainter`) leveraging `drawForeground`.
+    *   **Configuration**: Added "Settings" dialog to define map pixel-to-meter ratio.
+    *   **Live Coordinates**: Real-time display of Normalized and Kilometer coordinates.
+    *   **UI Polish**: Standardized Map Widget toolbar with `QPushButton` styling to match application theme.
 * **Layers**: The scene is now structured with defined Z-Values (`LAYER_MAP_BG`, `LAYER_MARKERS`, etc.) to prevent future rendering conflicts.
 
 ### Gaps & Next Steps

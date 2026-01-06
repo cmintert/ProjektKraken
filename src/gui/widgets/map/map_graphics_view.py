@@ -65,6 +65,7 @@ class MapGraphicsView(QGraphicsView):
     change_marker_icon_requested = Signal(str, str)  # marker_id, new_icon
     change_marker_color_requested = Signal(str, str)  # marker_id, new_color_hex
     marker_drop_requested = Signal(str, str, str, float, float)  # id, type, name, x, y
+    mouse_coordinates_changed = Signal(float, float)  # x, y (normalized)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -92,6 +93,7 @@ class MapGraphicsView(QGraphicsView):
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        self.setMouseTracking(True)  # Enable mouse tracking for coordinates
 
         # Disable scrollbars for infinite canvas feel
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -207,6 +209,22 @@ class MapGraphicsView(QGraphicsView):
         logger.debug("Mouse Release. Resetting to ScrollHandDrag.")
         super().mouseReleaseEvent(event)
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        """
+        Handle mouse move to track coordinates.
+        Does not interfere with drag operations as we call super().
+        """
+        super().mouseMoveEvent(event)
+
+        if self.pixmap_item:
+            # Map view pos to scene pos
+            scene_pos = self.mapToScene(event.pos())
+
+            # Check if within map bounds
+            if self.pixmap_item.contains(scene_pos):
+                norm_pos = self.coord_system.to_normalized(scene_pos)
+                self.mouse_coordinates_changed.emit(norm_pos[0], norm_pos[1])
 
     def add_marker(
         self,

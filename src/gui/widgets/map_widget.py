@@ -15,10 +15,11 @@ import logging
 import os
 from typing import List, Optional
 
-from PySide6.QtCore import Signal, Slot
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QComboBox,
     QInputDialog,
+    QLabel,
     QPushButton,
     QToolBar,
     QVBoxLayout,
@@ -119,6 +120,16 @@ class MapWidget(QWidget):
         # Add View (after toolbar)
         layout.addWidget(self.view)
 
+        # Coordinate Label
+        self.coord_label = QLabel("Ready")
+        self.coord_label.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
+        self.coord_label.setStyleSheet(
+            "color: #888888; font-size: 10px; padding: 2px 5px;"
+        )
+        layout.addWidget(self.coord_label)
+
         # Connect signals
         self.view.marker_moved.connect(self._on_marker_moved)
         self.view.marker_clicked.connect(self.marker_clicked.emit)
@@ -131,6 +142,7 @@ class MapWidget(QWidget):
             self.change_marker_color_requested.emit
         )
         self.view.marker_drop_requested.connect(self.marker_drop_requested.emit)
+        self.view.mouse_coordinates_changed.connect(self._on_mouse_coordinates_changed)
 
         self._maps_data = []  # List of maps for selector
 
@@ -198,6 +210,36 @@ class MapWidget(QWidget):
         self.marker_position_changed.emit(marker_id, x, y)
 
         logger.debug(f"MapWidget: marker {marker_id} moved to ({x:.3f}, {y:.3f})")
+
+    @Slot(float, float)
+    def _on_mouse_coordinates_changed(self, x: float, y: float) -> None:
+        """
+        Updates the coordinate label.
+
+        Args:
+            x: Normalized X [0-1]
+            y: Normalized Y [0-1]
+        """
+        # 1. Format Normalized
+        norm_str = f"N: ({x:.4f}, {y:.4f})"
+
+        # 2. Format Real World (KM)
+        width_meters = self.view.map_width_meters
+
+        # Calculate Aspect Ratio to find Height
+        scene_rect = self.view.sceneRect()
+        if scene_rect.width() > 0:
+            aspect_ratio = scene_rect.width() / scene_rect.height()
+            height_meters = width_meters / aspect_ratio
+        else:
+            height_meters = width_meters  # Fallback
+
+        km_x = (x * width_meters) / 1000.0
+        km_y = (y * height_meters) / 1000.0
+
+        km_str = f"RW: {km_x:.2f} km, {km_y:.2f} km"
+
+        self.coord_label.setText(f"{norm_str}  |  {km_str}")
 
     def load_map(self, image_path: str) -> bool:
         """
