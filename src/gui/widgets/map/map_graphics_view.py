@@ -8,7 +8,7 @@ import json
 import logging
 from typing import Dict, Optional
 
-from PySide6.QtCore import QPointF, QSize, Qt, Signal
+from PySide6.QtCore import QPoint, QPointF, QRectF, QSize, Qt, Signal
 from PySide6.QtGui import (
     QAction,
     QBrush,
@@ -34,10 +34,18 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.widgets.map.coordinate_system import MapCoordinateSystem
 from src.gui.widgets.map.icon_picker_dialog import IconPickerDialog
 from src.gui.widgets.map.marker_item import MarkerItem
+from src.gui.widgets.map.scale_bar_painter import ScaleBarPainter
 
 logger = logging.getLogger(__name__)
+
+# Layer Z-Values
+LAYER_MAP_BG = 0
+LAYER_TRAJECTORIES = 5
+LAYER_MARKERS = 10
+LAYER_UI_OVERLAY = 100
 
 
 class MapGraphicsView(QGraphicsView):
@@ -57,6 +65,9 @@ class MapGraphicsView(QGraphicsView):
     change_marker_icon_requested = Signal(str, str)  # marker_id, new_icon
     change_marker_color_requested = Signal(str, str)  # marker_id, new_color_hex
     marker_drop_requested = Signal(str, str, str, float, float)  # id, type, name, x, y
+    mouse_coordinates_changed = Signal(
+        float, float, bool
+    )  # x, y (normalized), in_bounds
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -67,6 +78,38 @@ class MapGraphicsView(QGraphicsView):
         """
         super().__init__(parent)
 
+        # Initialize Coordinate System
+        self.coord_system = MapCoordinateSystem()
+
+        # Set OpenGL Viewport (Safe Fallback)
+        import os
+
+        force_software = os.environ.get("KRAKEN_NO_OPENGL", "").lower() in (
+            "1",
+            "true",
+            "yes",
+        )
+
+        if not force_software:
+            try:
+                from PySide6.QtOpenGLWidgets import QOpenGLWidget
+
+                self.setViewport(QOpenGLWidget())
+                logger.debug("Initialized MapGraphicsView with OpenGL Viewport.")
+            except ImportError:
+                logger.warning(
+                    "QtOpenGLWidgets not available. Requesting software rendering."
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Failed to initialize OpenGL viewport: {e}. "
+                    "Falling back to software rendering."
+                )
+        else:
+            logger.info(
+                "OpenGL disabled via KRAKEN_NO_OPENGL. Using software rendering."
+            )
+
         self.scene = QGraphicsScene(self)
         self.setScene(self.scene)
 
@@ -75,6 +118,12 @@ class MapGraphicsView(QGraphicsView):
         self.setRenderHint(QPainter.SmoothPixmapTransform)
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        self.setMouseTracking(True)  # Enable mouse tracking for coordinates
+
+        # Disable scrollbars for infinite canvas feel
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         # Map and markers
         self.pixmap_item: Optional[QGraphicsPixmapItem] = None
@@ -107,6 +156,10 @@ class MapGraphicsView(QGraphicsView):
         """Updates the scene background."""
         self.scene.setBackgroundBrush(QBrush(QColor(theme["app_bg"])))
 
+        # Scale Bar
+        self.scale_bar_painter = ScaleBarPainter()
+        self.map_width_meters = 1_000_000.0  # Default 1000km
+
     def load_map(self, image_path: str) -> bool:
         """
         Loads a map image into the view.
@@ -128,9 +181,13 @@ class MapGraphicsView(QGraphicsView):
                 self.scene.removeItem(self.pixmap_item)
 
             # Add new map
+            # Add new map
             self.pixmap_item = QGraphicsPixmapItem(pixmap)
-            self.pixmap_item.setZValue(0)  # Behind markers
+            self.pixmap_item.setZValue(LAYER_MAP_BG)
             self.scene.addItem(self.pixmap_item)
+
+            # Update coordinate system bounds
+            self.coord_system.set_scene_rect(self.pixmap_item.boundingRect())
 
             # Fit view to map
             self.fitInView(self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
@@ -179,6 +236,25 @@ class MapGraphicsView(QGraphicsView):
         super().mouseReleaseEvent(event)
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
 
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        """
+        Handle mouse move to track coordinates.
+        Does not interfere with drag operations as we call super().
+        """
+        super().mouseMoveEvent(event)
+
+        if self.pixmap_item:
+            # Map view pos to scene pos
+            scene_pos = self.mapToScene(event.pos())
+
+            # Check if within map bounds (convert to item-local coordinates)
+            item_pos = self.pixmap_item.mapFromScene(scene_pos)
+            if self.pixmap_item.contains(item_pos):
+                norm_pos = self.coord_system.to_normalized(scene_pos)
+                self.mouse_coordinates_changed.emit(norm_pos[0], norm_pos[1], True)
+            else:
+                self.mouse_coordinates_changed.emit(0.0, 0.0, False)
+
     def add_marker(
         self,
         marker_id: str,
@@ -215,8 +291,9 @@ class MapGraphicsView(QGraphicsView):
         )
 
         # Convert normalized to scene coordinates
-        scene_pos = self._normalized_to_scene(x, y)
+        scene_pos = self.coord_system.to_scene(x, y)
         marker.setPos(scene_pos)
+        marker.setZValue(LAYER_MARKERS)
 
         # Add to scene and track
         self.scene.addItem(marker)
@@ -244,7 +321,8 @@ class MapGraphicsView(QGraphicsView):
             return
 
         marker = self.markers[marker_id]
-        scene_pos = self._normalized_to_scene(x, y)
+        marker = self.markers[marker_id]
+        scene_pos = self.coord_system.to_scene(x, y)
         marker.setPos(scene_pos)
 
         logger.debug(f"Updated marker {marker_id} to normalized ({x:.3f}, {y:.3f})")
@@ -270,23 +348,10 @@ class MapGraphicsView(QGraphicsView):
 
     def _normalized_to_scene(self, x: float, y: float) -> QPointF:
         """
-        Converts normalized coordinates to scene coordinates.
-
-        Args:
-            x: Normalized X coordinate [0.0, 1.0].
-            y: Normalized Y coordinate [0.0, 1.0].
-
-        Returns:
-            QPointF: Scene coordinates.
+        [DEPRECATED] Use self.coord_system.to_scene instead.
+        Kept temporarily if external callers use it, but should be removed.
         """
-        if not self.pixmap_item:
-            return QPointF(0, 0)
-
-        pixmap_rect = self.pixmap_item.sceneBoundingRect()
-        scene_x = pixmap_rect.left() + (x * pixmap_rect.width())
-        scene_y = pixmap_rect.top() + (y * pixmap_rect.height())
-
-        return QPointF(scene_x, scene_y)
+        return self.coord_system.to_scene(x, y)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         """Handle mouse wheel for zooming."""
@@ -295,10 +360,7 @@ class MapGraphicsView(QGraphicsView):
         zoom_out_factor = 1 / zoom_in_factor
 
         # Check zoom direction
-        if event.angleDelta().y() > 0:
-            factor = zoom_in_factor
-        else:
-            factor = zoom_out_factor
+        factor = zoom_in_factor if event.angleDelta().y() > 0 else zoom_out_factor
 
         self.scale(factor, factor)
 
@@ -327,9 +389,10 @@ class MapGraphicsView(QGraphicsView):
             event.ignore()
             return
 
-        # Check if over map
+        # Check if over map (convert to item-local coordinates)
         scene_pos = self.mapToScene(event.position().toPoint())
-        if self.pixmap_item.contains(scene_pos):
+        item_pos = self.pixmap_item.mapFromScene(scene_pos)
+        if self.pixmap_item.contains(item_pos):
             event.acceptProposedAction()
         else:
             event.ignore()
@@ -351,44 +414,19 @@ class MapGraphicsView(QGraphicsView):
         # Get drop position
         scene_pos = self.mapToScene(event.position().toPoint())
 
-        # Check if within map bounds
-        if not self.pixmap_item.contains(scene_pos):
+        # Check if within map bounds (convert to item-local coordinates)
+        item_pos = self.pixmap_item.mapFromScene(scene_pos)
+        if not self.pixmap_item.contains(item_pos):
             event.ignore()
             return
 
         # Calculate normalized coordinates
-        pixmap_rect = self.pixmap_item.sceneBoundingRect()
-        rel_x = scene_pos.x() - pixmap_rect.left()
-        rel_y = scene_pos.y() - pixmap_rect.top()
-
-        norm_x = rel_x / pixmap_rect.width() if pixmap_rect.width() > 0 else 0.0
-        norm_y = rel_y / pixmap_rect.height() if pixmap_rect.height() > 0 else 0.0
-
-        # Clamp to [0, 1]
-        norm_x = max(0.0, min(1.0, norm_x))
-        norm_y = max(0.0, min(1.0, norm_y))
+        # Calculate normalized coordinates
+        norm_x, norm_y = self.coord_system.to_normalized(scene_pos)
+        norm_x, norm_y = self.coord_system.clamp_normalized(norm_x, norm_y)
 
         # Parse MIME data
-        try:
-            data_bytes = event.mimeData().data(KRAKEN_ITEM_MIME_TYPE).data()
-            data = json.loads(data_bytes.decode("utf-8"))
-
-            item_id = data.get("id")
-            item_type = data.get("type")
-            item_name = data.get("name", "Unknown")
-
-            if item_id and item_type:
-                self.marker_drop_requested.emit(
-                    item_id, item_type, item_name, norm_x, norm_y
-                )
-                event.acceptProposedAction()
-                logger.info(
-                    f"Dropped {item_type} '{item_name}' at ({norm_x:.3f}, {norm_y:.3f})"
-                )
-            else:
-                event.ignore()
-        except Exception as e:
-            logger.error(f"Failed to parse drop data: {e}")
+        if not self._handle_drop_data(event, norm_x, norm_y):
             event.ignore()
 
     def contextMenuEvent(self, event: QContextMenuEvent) -> None:
@@ -401,52 +439,69 @@ class MapGraphicsView(QGraphicsView):
         # Check if we clicked on a marker
         item = self.itemAt(event.pos())
         if isinstance(item, MarkerItem):
-            menu = QMenu(self)
-
-            # Change Icon action
-            change_icon_action = QAction("Change Icon...", self)
-            change_icon_action.triggered.connect(lambda: self._show_icon_picker(item))
-            menu.addAction(change_icon_action)
-
-            # Change Color action
-            change_color_action = QAction("Change Color...", self)
-            change_color_action.triggered.connect(lambda: self._show_color_picker(item))
-            menu.addAction(change_color_action)
-
-            menu.addSeparator()
-
-            # Delete action
-            delete_action = QAction("Delete Marker", self)
-            delete_action.triggered.connect(
-                lambda: self.delete_marker_requested.emit(item.marker_id)
-            )
-            menu.addAction(delete_action)
-            menu.exec(event.globalPos())
+            self._show_marker_context_menu(item, event.globalPos())
         else:
             # Clicked on map (or empty space)
             # Convert screen pos to scene pos
             scene_pos = self.mapToScene(event.pos())
 
-            # Check if within map bounds
-            if self.pixmap_item.contains(scene_pos):
-                pixmap_rect = self.pixmap_item.sceneBoundingRect()
-                rel_x = scene_pos.x() - pixmap_rect.left()
-                rel_y = scene_pos.y() - pixmap_rect.top()
+            # Check if within map bounds (convert to item-local coordinates)
+            item_pos = self.pixmap_item.mapFromScene(scene_pos)
+            if self.pixmap_item.contains(item_pos):
+                self._show_map_background_context_menu(scene_pos, event.globalPos())
 
-                width = pixmap_rect.width()
-                height = pixmap_rect.height()
+    def set_map_width_meters(self, width_meters: float) -> None:
+        """
+        Sets the real-world width of the map for scale calculation.
 
-                if width > 0 and height > 0:
-                    norm_x = rel_x / width
-                    norm_y = rel_y / height
+        Args:
+            width_meters: Width of the map image in meters.
+        """
+        if width_meters <= 0:
+            logger.warning(f"Invalid map width: {width_meters}. Ignoring.")
+            return
 
-                    menu = QMenu(self)
-                    add_action = QAction("Add Marker", self)
-                    add_action.triggered.connect(
-                        lambda: self.add_marker_requested.emit(norm_x, norm_y)
+        self.map_width_meters = width_meters
+        # Trigger repaint to update scale bar
+        self.viewport().update()
+
+    def drawForeground(self, painter: QPainter, rect: QRectF) -> None:
+        """
+        Draw overlay elements on top of the scene.
+        Using drawForeground allows us to hook into the render loop correctly,
+        even with an OpenGL viewport.
+        We reset the transform to draw in window coordinates.
+        """
+        super().drawForeground(painter, rect)
+
+        # Draw Scale Bar Overlay
+        if self.pixmap_item and self.map_width_meters > 0:
+            # Use pixmap bounding rect width for calculation to rely on image size,
+            # not dynamic scene rect which can expand.
+            image_width_px = self.pixmap_item.boundingRect().width()
+            if image_width_px > 0:
+                # Calculate resolution: meters per scene unit (pixel)
+                base_resolution = self.map_width_meters / image_width_px
+
+                # Adjust for current view zoom (m11 is horizontal scale)
+                view_scale = self.transform().m11()
+
+                if view_scale > 0:
+                    current_resolution = base_resolution / view_scale
+
+                    # Save painter state (Scene coordinates)
+                    painter.save()
+
+                    # Reset transform to draw in Viewport (Pixel) coordinates
+                    painter.resetTransform()
+
+                    # Draw Scale Bar
+                    self.scale_bar_painter.paint(
+                        painter, QRectF(self.viewport().rect()), current_resolution
                     )
-                    menu.addAction(add_action)
-                    menu.exec(event.globalPos())
+
+                    # Restore painter state
+                    painter.restore()
 
     def _show_icon_picker(self, marker_item: MarkerItem) -> None:
         """
@@ -456,13 +511,11 @@ class MapGraphicsView(QGraphicsView):
             marker_item: The marker to change the icon for.
         """
         dialog = IconPickerDialog(self)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            selected_icon = dialog.selected_icon
-            if selected_icon:
-                marker_item.set_icon(selected_icon)
-                self.change_marker_icon_requested.emit(
-                    marker_item.marker_id, selected_icon
-                )
+        if dialog.exec() == QDialog.DialogCode.Accepted and (
+            selected_icon := dialog.selected_icon
+        ):
+            marker_item.set_icon(selected_icon)
+            self.change_marker_icon_requested.emit(marker_item.marker_id, selected_icon)
 
     def _show_color_picker(self, marker_item: MarkerItem) -> None:
         """
@@ -480,3 +533,75 @@ class MapGraphicsView(QGraphicsView):
             color_hex = color.name().upper()
             marker_item.set_color(color_hex)
             self.change_marker_color_requested.emit(marker_item.marker_id, color_hex)
+
+    def _handle_drop_data(
+        self, event: QDropEvent, norm_x: float, norm_y: float
+    ) -> bool:
+        """
+        Parses drop data and emits marker request.
+        """
+        from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
+
+        try:
+            data_bytes = event.mimeData().data(KRAKEN_ITEM_MIME_TYPE).data()
+            data = json.loads(data_bytes.decode("utf-8"))
+
+            item_id = data.get("id")
+            item_type = data.get("type")
+            item_name = data.get("name", "Unknown")
+
+            if item_id and item_type:
+                self.marker_drop_requested.emit(
+                    item_id, item_type, item_name, norm_x, norm_y
+                )
+                event.acceptProposedAction()
+                logger.info(
+                    f"Dropped {item_type} '{item_name}' at ({norm_x:.3f}, {norm_y:.3f})"
+                )
+                return True
+        except Exception as e:
+            logger.error(f"Failed to parse drop data: {e}")
+
+        return False
+
+    def _show_marker_context_menu(self, item: MarkerItem, global_pos: QPoint) -> None:
+        """
+        Shows context menu for a marker.
+        """
+        menu = QMenu(self)
+
+        # Change Icon action
+        change_icon_action = QAction("Change Icon...", self)
+        change_icon_action.triggered.connect(lambda: self._show_icon_picker(item))
+        menu.addAction(change_icon_action)
+
+        # Change Color action
+        change_color_action = QAction("Change Color...", self)
+        change_color_action.triggered.connect(lambda: self._show_color_picker(item))
+        menu.addAction(change_color_action)
+
+        menu.addSeparator()
+
+        # Delete action
+        delete_action = QAction("Delete Marker", self)
+        delete_action.triggered.connect(
+            lambda: self.delete_marker_requested.emit(item.marker_id)
+        )
+        menu.addAction(delete_action)
+        menu.exec(global_pos)
+
+    def _show_map_background_context_menu(
+        self, scene_pos: QPointF, global_pos: QPoint
+    ) -> None:
+        """
+        Shows context menu for adding a marker at a specific location.
+        """
+        # Unpack tuple to avoid closure issues with lambda
+        norm_x, norm_y = self.coord_system.to_normalized(scene_pos)
+        menu = QMenu(self)
+        add_action = QAction("Add Marker Here", self)
+        add_action.triggered.connect(
+            lambda: self.add_marker_requested.emit(norm_x, norm_y)
+        )
+        menu.addAction(add_action)
+        menu.exec(global_pos)

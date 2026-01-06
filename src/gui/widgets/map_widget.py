@@ -15,12 +15,12 @@ import logging
 import os
 from typing import List, Optional
 
-from PySide6.QtCore import Signal, Slot
-from PySide6.QtGui import (
-    QAction,
-)
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QComboBox,
+    QInputDialog,
+    QLabel,
+    QPushButton,
     QToolBar,
     QVBoxLayout,
     QWidget,
@@ -87,6 +87,7 @@ class MapWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         # Toolbar
         self.toolbar = QToolBar(self)
+        self.toolbar.setStyleSheet("QToolBar { spacing: 10px; padding: 5px; }")
         layout.addWidget(self.toolbar)
 
         # Map Selector
@@ -95,23 +96,39 @@ class MapWidget(QWidget):
         self.map_selector.currentIndexChanged.connect(self._on_map_selected)
         self.toolbar.addWidget(self.map_selector)
 
-        # Actions
-        self.action_new_map = QAction("New Map", self)
-        self.action_new_map.triggered.connect(self.create_map_requested.emit)
-        self.toolbar.addAction(self.action_new_map)
+        # Buttons
+        self.btn_new_map = QPushButton("New Map")
+        self.btn_new_map.clicked.connect(self.create_map_requested.emit)
+        self.toolbar.addWidget(self.btn_new_map)
 
-        self.action_delete_map = QAction("Delete Map", self)
-        self.action_delete_map.triggered.connect(self.delete_map_requested.emit)
-        self.toolbar.addAction(self.action_delete_map)
+        self.btn_delete_map = QPushButton("Delete Map")
+        self.btn_delete_map.clicked.connect(self.delete_map_requested.emit)
+        self.toolbar.addWidget(self.btn_delete_map)
 
-        self.toolbar.addSeparator()
+        # Spacer or Separator could go here, but Longform doesn't use standard
+        # separator widget with buttons often using a simple label or just spacing
 
-        self.action_fit_view = QAction("Fit to View", self)
-        self.action_fit_view.triggered.connect(self.view.fit_to_view)
-        self.toolbar.addAction(self.action_fit_view)
+        self.btn_fit_view = QPushButton("Fit to View")
+        self.btn_fit_view.clicked.connect(self.view.fit_to_view)
+        self.toolbar.addWidget(self.btn_fit_view)
+
+        self.btn_settings = QPushButton("Settings")
+        self.btn_settings.setToolTip("Configure Map Properties (Scale)")
+        self.btn_settings.clicked.connect(self._configure_map_width)
+        self.toolbar.addWidget(self.btn_settings)
 
         # Add View (after toolbar)
         layout.addWidget(self.view)
+
+        # Coordinate Label
+        self.coord_label = QLabel("Ready")
+        self.coord_label.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
+        self.coord_label.setStyleSheet(
+            "color: #888888; font-size: 10px; padding: 2px 5px;"
+        )
+        layout.addWidget(self.coord_label)
 
         # Connect signals
         self.view.marker_moved.connect(self._on_marker_moved)
@@ -125,6 +142,7 @@ class MapWidget(QWidget):
             self.change_marker_color_requested.emit
         )
         self.view.marker_drop_requested.connect(self.marker_drop_requested.emit)
+        self.view.mouse_coordinates_changed.connect(self._on_mouse_coordinates_changed)
 
         self._maps_data = []  # List of maps for selector
 
@@ -169,9 +187,7 @@ class MapWidget(QWidget):
             Optional[str]: The map ID, or None if no map is selected.
         """
         index = self.map_selector.currentIndex()
-        if index >= 0:
-            return self.map_selector.itemData(index)
-        return None
+        return self.map_selector.itemData(index) if index >= 0 else None
 
     @Slot(str, float, float)
     def _on_marker_moved(self, marker_id: str, x: float, y: float) -> None:
@@ -192,6 +208,55 @@ class MapWidget(QWidget):
         self.marker_position_changed.emit(marker_id, x, y)
 
         logger.debug(f"MapWidget: marker {marker_id} moved to ({x:.3f}, {y:.3f})")
+
+    @Slot(float, float, bool)
+    def _on_mouse_coordinates_changed(
+        self, x: float, y: float, in_bounds: bool
+    ) -> None:
+        """
+        Updates the coordinate label.
+
+        Args:
+            x: Normalized X [0-1]
+            y: Normalized Y [0-1]
+            in_bounds: True if cursor is over the map image.
+        """
+        if not in_bounds:
+            self.coord_label.setText("Ready")
+            return
+
+        # 1. Format Normalized
+        norm_str = f"N: ({x:.4f}, {y:.4f})"
+
+        # 2. Format Real World (KM)
+        width_meters = self.view.map_width_meters
+
+        # Calculate Aspect Ratio to find Height
+        # Prefer the underlying map image bounds so that Y scaling
+        # is tied to the actual map, not to dynamic scene extents.
+        height_meters = width_meters  # Default fallback: square
+        aspect_ratio = None
+
+        pixmap_item = getattr(self.view, "pixmap_item", None)
+        if pixmap_item is not None:
+            img_rect = pixmap_item.boundingRect()
+            if img_rect.width() > 0 and img_rect.height() > 0:
+                aspect_ratio = img_rect.width() / img_rect.height()
+        else:
+            # Fallback: use sceneRect for aspect ratio if no pixmap is available
+            scene_rect = self.view.sceneRect()
+            if scene_rect.width() > 0 and scene_rect.height() > 0:
+                aspect_ratio = scene_rect.width() / scene_rect.height()
+
+        if aspect_ratio:
+            height_meters = width_meters / aspect_ratio
+
+        km_x = (x * width_meters) / 1000.0
+        km_y = (y * height_meters) / 1000.0
+
+        km_str = f"RW: {km_x:.2f} km, {km_y:.2f} km"
+
+        self.coord_label.setText(f"{norm_str}  |  {km_str}")
 
     def load_map(self, image_path: str) -> bool:
         """
@@ -251,3 +316,24 @@ class MapWidget(QWidget):
 
     def clear_markers(self) -> None:
         """Removes all markers from the map."""
+        self.view.clear_markers()
+
+    def _configure_map_width(self) -> None:
+        """Opens a dialog to configure the real-world width of the map."""
+        if not self.view.pixmap_item:
+            logger.warning("Ignoring request to configure map width: no map loaded.")
+            return
+
+        current_width = int(self.view.map_width_meters)
+        width, ok = QInputDialog.getInt(
+            self,
+            "Map Scale Base",
+            "Enter the real-world width of this map image (in meters):",
+            current_width,
+            100,  # Min 100m
+            100_000_000,  # Max 100,000 km
+            1000,  # Step
+        )
+        if ok:
+            self.view.set_map_width_meters(float(width))
+            logger.info(f"Map width set to {width} meters")
