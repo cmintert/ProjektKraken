@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-06
-### Internal
-- Merge pull request #45 from cmintert/improve-map-widget
+### Documentation
+- docs: update changelog with 2026-01-06 map improvements
 
 
 *This changelog was automatically generated.*
