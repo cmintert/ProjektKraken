@@ -3,7 +3,6 @@ Unit tests for Temporal Database Schema.
 Verifies the existence and functionality of the moving_features table.
 """
 
-import sqlite3
 import pytest
 from src.services.db_service import DatabaseService
 

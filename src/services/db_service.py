@@ -227,7 +227,8 @@ class DatabaseService:
             caption TEXT,
             order_index INTEGER DEFAULT 0,
             created_at REAL,
-            resolution TEXT, -- Stored as "widthxheight" or JSON [w, h]
+            -- Stored as "widthxheight" or JSON [w, h]
+            resolution TEXT,
             source TEXT
         );
 
