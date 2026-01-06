@@ -344,6 +344,10 @@ Entities that "die" or haven't been "born" must be hidden.
     *   **Live Coordinates**: Real-time display of Normalized and Kilometer coordinates.
     *   **UI Polish**: Standardized Map Widget toolbar with `QPushButton` styling to match application theme.
 * **Layers**: The scene is now structured with defined Z-Values (`LAYER_MAP_BG`, `LAYER_MARKERS`, etc.) to prevent future rendering conflicts.
+* **Code Quality & Stability**:
+    *   **Marker Logic**: Refactored `MarkerItem` for better maintainability (helper methods for painting/drag).
+    *   **Critical Fixes**: Resolved interaction bugs where markers at `(0,0)` were unclickable.
+    *   **Testing**: Expanded unit tests to cover coordinate display and marker signals.
 
 ### Gaps & Next Steps
 1.  **Time Service**: The `MasterClock` and the actual animation loop are not yet implemented.
