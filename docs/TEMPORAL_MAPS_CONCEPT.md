@@ -322,23 +322,26 @@ Entities that "die" or haven't been "born" must be hidden.
 
 ## 13. Current Implementation Status (Jan 2026)
 
+### Completed Groundwork
+* **Rendering Engine**: `MapGraphicsView` has been upgraded to use `QOpenGLWidget` as the viewport. This provides the GPU acceleration foundation required for future high-load scenarios.
+* **Coordinate System**: A strict **Cartesian 2D** abstraction layer (`MapCoordinateSystem`) has been implemented.
+    *   It cleanly separates Normalized [0, 1] logic from Scene/Pixel logic.
+    *   It is architected to support future `pyproj` integration without breaking the UI.
+    *   **Note**: Full Y-Axis Inversion is prepared for but not yet active to match current static map behavior.
+* **Database Schema**: The `moving_features` table has been added to the SQLite schema.
+    *   It supports storing `trajectory` as a JSON blob.
+    *   Temporal indices (`t_start`, `t_end`) are in place for efficient queries.
+* **Interaction**: The map now uses an "Infinite Canvas" interaction model (Scrollbars disabled, Drag-to-Pan enforced).
+
 ### Existing Capabilities
-* **Map Visualization**: The `MapGraphicsView` currently supports loading static map images (`QGraphicsPixmapItem`) and placing markers (`MarkerItem`) at specific coordinates.
-* **Coordinate System**:
-    *   The current implementation uses **Normalized Coordinates** [0.0, 1.0] for the API level (0,0 = Top-Left, 1,1 = Bottom-Right).
-    *   These are internally mapped to **Scene Coordinates** (Pixel dimensions of the background image).
-    *   **Y-Axis Inversion is NOT implemented**. The system currently uses standard Qt screen coordinates (Y-Down).
+* **Map Visualization**: Supports loading static map images (`QGraphicsPixmapItem`).
 * **Marker Implementation**:
-    *   `MarkerItem` supports SVG icons (`QSvgRenderer`) and fallback colored circles.
-    *   `ItemIgnoresTransformations` is enabled, keeping markers the same size regardless of map zoom level.
-    *   Drag-and-drop from the Project Explorer is supported.
-* **Database**:
-    *   The current `sqlite3` schema supports a `markers` table with static `x, y` columns.
-    *   **The Hybrid `moving_features` table and `trajectory_data` JSONB columns are NOT yet implemented.**
-    *   `system_meta` table stores a `current_time` value, but it is not currently driving an animation loop for markers.
+    *   `MarkerItem` supports SVG icons and coloring.
+    *   Optimization flags (`ItemIsMovable`, `ItemSendsGeometryChanges`, `ItemCoordinateCache` equivalent) are enabled.
+* **Layers**: The scene is now structured with defined Z-Values (`LAYER_MAP_BG`, `LAYER_MARKERS`, etc.) to prevent future rendering conflicts.
 
 ### Gaps & Next Steps
-1.  **Storage Migration**: The `db_service.py` schema must be updated to include the `moving_features` table with the virtual generated columns schema described in Section 3.
-2.  **Rendering Engine**: `QOpenGLWidget` is not currently set as the viewport. This needs to be enabled for performance.
-3.  **Coordinate Refactor**: The codebase must migrate from the current "Image Pixel" coordinate system to a proper "Projected Meter" system using `pyproj` to support the `view.scale(1, -1)` Y-inversion strategy.
-4.  **Trajectory Logic**: The `MarkerItem` class is currently static. The `setPos` update loop driven by `MasterClock` and `numpy` interpolation is missing.
+1.  **Time Service**: The `MasterClock` and the actual animation loop are not yet implemented.
+2.  **Trajectory Logic**: While the database *can* store trajectories, the application logic to read them and interpolate positions (`numpy`/`bisect`) is not yet written.
+3.  **Timeline UI**: The UI widget for scrubbing time does not exist.
+4.  **Recording Mode**: The "Puppeteering" logic for recording mouse movements into the database is missing.
