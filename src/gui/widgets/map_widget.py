@@ -497,3 +497,7 @@ class MapWidget(QWidget):
         if map_id:
             # Reuses the same pipeline as 'Add Keyframe' - performing an upsert
             self.add_keyframe_requested.emit(map_id, marker_id, t, x, y)
+
+    def set_calendar_converter(self, converter: object) -> None:
+        """Sets the calendar converter for formatting keyframe date labels."""
+        self.view.set_calendar_converter(converter)

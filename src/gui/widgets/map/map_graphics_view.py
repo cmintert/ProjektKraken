@@ -30,11 +30,12 @@ from PySide6.QtWidgets import (
     QGraphicsPathItem,
     QGraphicsPixmapItem,
     QGraphicsScene,
+    QGraphicsSimpleTextItem,
     QGraphicsView,
     QMenu,
     QWidget,
 )
-from PySide6.QtGui import QPainterPath, QPen
+from PySide6.QtGui import QFont, QPainterPath, QPen
 
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.map.coordinate_system import MapCoordinateSystem
@@ -197,6 +198,8 @@ class MapGraphicsView(QGraphicsView):
         # Trajectory Visualization
         self.trajectory_path_item: Optional[QGraphicsPathItem] = None
         self.keyframe_items: list[QGraphicsEllipseItem] = []
+        self.keyframe_label_items: list[QGraphicsSimpleTextItem] = []
+        self._calendar_converter: Optional[object] = None  # CalendarConverter instance
 
     def minimumSizeHint(self) -> QSize:
         """
@@ -680,8 +683,9 @@ class MapGraphicsView(QGraphicsView):
             return
 
         # Create Keyframe Dots (store them first, then draw path)
-        view_scale = self.transform().m11()
-        dot_radius = 4.0 / view_scale if view_scale > 0 else 4.0
+        # Scale with zoom: target 6px on screen, minimum 3 scene units for clickability
+        view_scale = self.transform().m11() if self.transform().m11() > 0 else 1.0
+        dot_radius = max(3.0 / view_scale, 3.0)
 
         for kf in keyframes:
             pos = self.coord_system.to_scene(kf.x, kf.y)
@@ -701,6 +705,27 @@ class MapGraphicsView(QGraphicsView):
             dot.setZValue(LAYER_MARKERS + 1)  # Above markers for editability
             self.scene.addItem(dot)
             self.keyframe_items.append(dot)
+
+            # Add date label if calendar converter is available
+            if self._calendar_converter:
+                try:
+                    date_str = self._calendar_converter.format_date(kf.t)
+                except Exception:
+                    date_str = f"{kf.t:.0f}"
+            else:
+                date_str = f"{kf.t:.0f}"
+
+            label = QGraphicsSimpleTextItem(date_str)
+            label.setPos(pos.x() + dot_radius + 2, pos.y() - 6)
+            label.setBrush(QBrush(QColor("#e0e0e0")))  # Light gray text
+            font = QFont("Segoe UI", 7)
+            label.setFont(font)
+            label.setZValue(LAYER_MARKERS + 2)
+            label.setFlag(
+                QGraphicsSimpleTextItem.GraphicsItemFlag.ItemIgnoresTransformations
+            )
+            self.scene.addItem(label)
+            self.keyframe_label_items.append(label)
 
         # Draw path initially
         self._update_trajectory_path()
@@ -726,7 +751,7 @@ class MapGraphicsView(QGraphicsView):
         # If path item doesn't exist, create it
         if not self.trajectory_path_item:
             self.trajectory_path_item = QGraphicsPathItem(path)
-            pen = QPen(QColor("#3498db"), 2)  # Blue path
+            pen = QPen(QColor("#3498db"), 1)  # Blue path, thin line
             pen.setStyle(Qt.PenStyle.DashLine)
             self.trajectory_path_item.setPen(pen)
             self.trajectory_path_item.setZValue(LAYER_TRAJECTORIES)
@@ -747,7 +772,7 @@ class MapGraphicsView(QGraphicsView):
         self.keyframe_moved.emit(item.marker_id, item.t, x, y)
 
     def clear_trajectory(self) -> None:
-        """Clears the rendered trajectory path and keyframes."""
+        """Clears the rendered trajectory path, keyframes, and labels."""
         if self.trajectory_path_item:
             self.scene.removeItem(self.trajectory_path_item)
             self.trajectory_path_item = None
@@ -755,3 +780,11 @@ class MapGraphicsView(QGraphicsView):
         for item in self.keyframe_items:
             self.scene.removeItem(item)
         self.keyframe_items.clear()
+
+        for label in self.keyframe_label_items:
+            self.scene.removeItem(label)
+        self.keyframe_label_items.clear()
+
+    def set_calendar_converter(self, converter: object) -> None:
+        """Sets the calendar converter for formatting keyframe date labels."""
+        self._calendar_converter = converter
