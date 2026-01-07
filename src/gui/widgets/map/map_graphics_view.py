@@ -6,7 +6,7 @@ Provides the MapGraphicsView class for rendering and interacting with the map.
 
 import json
 import logging
-from typing import Dict, Optional
+from typing import Callable, Dict, Optional
 
 from PySide6.QtCore import QPoint, QPointF, QRectF, QSize, Qt, Signal
 from PySide6.QtGui import (
@@ -51,6 +51,56 @@ LAYER_MARKERS = 10
 LAYER_UI_OVERLAY = 100
 
 
+class KeyframeItem(QGraphicsEllipseItem):
+    """
+    A draggable keyframe dot on the trajectory.
+    """
+
+    def __init__(
+        self,
+        marker_id: str,
+        t: float,
+        x: float,
+        y: float,
+        rect: QRectF,
+        on_drop_callback: Callable[["KeyframeItem"], None],
+        on_drag_callback: Optional[Callable[[], None]] = None,
+    ) -> None:
+        super().__init__(rect)
+        self.marker_id = marker_id
+        self.t = t
+        self.original_x = x  # Normalized X
+        self.original_y = y  # Normalized Y
+        self.on_drop_callback = on_drop_callback
+        self.on_drag_callback = on_drag_callback
+
+        # Enable interaction
+        self.setFlag(QGraphicsEllipseItem.GraphicsItemFlag.ItemIsMovable)
+        self.setFlag(QGraphicsEllipseItem.GraphicsItemFlag.ItemSendsGeometryChanges)
+        self.setAcceptHoverEvents(True)
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        """Clear any existing selection before starting drag."""
+        if self.scene():
+            self.scene().clearSelection()
+        super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        """Handle drop event."""
+        super().mouseReleaseEvent(event)
+        if self.on_drop_callback:
+            self.on_drop_callback(self)
+
+    def itemChange(
+        self, change: QGraphicsEllipseItem.GraphicsItemChange, value: any
+    ) -> any:
+        """Handle position changes during drag."""
+        if change == QGraphicsEllipseItem.GraphicsItemChange.ItemPositionHasChanged:
+            if self.on_drag_callback:
+                self.on_drag_callback()
+        return super().itemChange(change, value)
+
+
 class MapGraphicsView(QGraphicsView):
     """
     Graphics view for displaying a map image with draggable markers.
@@ -71,6 +121,7 @@ class MapGraphicsView(QGraphicsView):
     mouse_coordinates_changed = Signal(
         float, float, bool
     )  # x, y (normalized), in_bounds
+    keyframe_moved = Signal(str, float, float, float)  # marker_id, t, new_x, new_y
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -616,52 +667,84 @@ class MapGraphicsView(QGraphicsView):
         menu.addAction(add_action)
         menu.exec(global_pos)
 
-    def show_trajectory(self, keyframes: list) -> None:
+    def show_trajectory(self, marker_id: str, keyframes: list) -> None:
         """
         Visualizes the trajectory path and keyframes.
 
         Args:
+            marker_id: The ID of the marker owning this trajectory.
             keyframes: List of Keyframe objects.
         """
         self.clear_trajectory()
         if not keyframes or len(keyframes) < 2:
             return
 
-        # Create Path
-        path = QPainterPath()
-        start = self.coord_system.to_scene(keyframes[0].x, keyframes[0].y)
-        path.moveTo(start)
-
-        for i in range(1, len(keyframes)):
-            kf = keyframes[i]
-            pos = self.coord_system.to_scene(kf.x, kf.y)
-            path.lineTo(pos)
-
-        self.trajectory_path_item = QGraphicsPathItem(path)
-        pen = QPen(QColor("#3498db"), 2)  # Blue path
-        pen.setStyle(Qt.PenStyle.DashLine)
-        self.trajectory_path_item.setPen(pen)
-        self.trajectory_path_item.setZValue(LAYER_TRAJECTORIES)
-        self.scene.addItem(self.trajectory_path_item)
-
-        # Create Keyframe Dots with dynamic size scaling
-        # Use a fixed visual size (e.g., 8px) divided by view scale
+        # Create Keyframe Dots (store them first, then draw path)
         view_scale = self.transform().m11()
         dot_radius = 4.0 / view_scale if view_scale > 0 else 4.0
 
         for kf in keyframes:
             pos = self.coord_system.to_scene(kf.x, kf.y)
-            dot = QGraphicsEllipseItem(
-                pos.x() - dot_radius,
-                pos.y() - dot_radius,
-                dot_radius * 2,
-                dot_radius * 2,
+            # Create interactive item
+            dot = KeyframeItem(
+                marker_id,
+                kf.t,
+                kf.x,
+                kf.y,
+                QRectF(-dot_radius, -dot_radius, dot_radius * 2, dot_radius * 2),
+                self._on_keyframe_dropped,
+                self._update_trajectory_path,  # Live update callback
             )
+            dot.setPos(pos)
             dot.setBrush(QBrush(QColor("#f1c40f")))  # Yellow dots
             dot.setPen(QPen(Qt.PenStyle.NoPen))
-            dot.setZValue(LAYER_TRAJECTORIES + 1)
+            dot.setZValue(LAYER_MARKERS + 1)  # Above markers for editability
             self.scene.addItem(dot)
             self.keyframe_items.append(dot)
+
+        # Draw path initially
+        self._update_trajectory_path()
+
+    def _update_trajectory_path(self) -> None:
+        """Re-draws the trajectory path based on current keyframe positions."""
+        if not self.keyframe_items or len(self.keyframe_items) < 2:
+            if self.trajectory_path_item:
+                self.scene.removeItem(self.trajectory_path_item)
+                self.trajectory_path_item = None
+            return
+
+        # Sort items by time to ensure correct path order
+        sorted_items = sorted(self.keyframe_items, key=lambda item: item.t)
+
+        path = QPainterPath()
+        start = sorted_items[0].scenePos()
+        path.moveTo(start)
+
+        for i in range(1, len(sorted_items)):
+            path.lineTo(sorted_items[i].scenePos())
+
+        # If path item doesn't exist, create it
+        if not self.trajectory_path_item:
+            self.trajectory_path_item = QGraphicsPathItem(path)
+            pen = QPen(QColor("#3498db"), 2)  # Blue path
+            pen.setStyle(Qt.PenStyle.DashLine)
+            self.trajectory_path_item.setPen(pen)
+            self.trajectory_path_item.setZValue(LAYER_TRAJECTORIES)
+            self.scene.addItem(self.trajectory_path_item)
+        else:
+            # Update existing item
+            self.trajectory_path_item.setPath(path)
+
+    def _on_keyframe_dropped(self, item: KeyframeItem) -> None:
+        """Callback when a keyframe dot is released after dragging."""
+        scene_pos = item.scenePos()
+        norm_pos = self.coord_system.to_normalized(scene_pos)
+        x, y = norm_pos
+
+        logger.info(
+            f"Keyframe dropped for {item.marker_id} at t={item.t}: ({x:.3f}, {y:.3f})"
+        )
+        self.keyframe_moved.emit(item.marker_id, item.t, x, y)
 
     def clear_trajectory(self) -> None:
         """Clears the rendered trajectory path and keyframes."""

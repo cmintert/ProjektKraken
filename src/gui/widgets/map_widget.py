@@ -144,6 +144,7 @@ class MapWidget(QWidget):
         self.view.marker_moved.connect(self._on_marker_moved)
         self.view.marker_clicked.connect(self.marker_clicked.emit)
         self.view.marker_clicked.connect(self._on_marker_clicked_internal)
+        self.view.keyframe_moved.connect(self._on_keyframe_moved)
         self.view.add_marker_requested.connect(self.create_marker_requested.emit)
         self.view.delete_marker_requested.connect(self.delete_marker_requested.emit)
         self.view.change_marker_icon_requested.connect(
@@ -485,6 +486,14 @@ class MapWidget(QWidget):
         """Updates the view to show the trajectory for the given marker."""
         keyframes = self._active_trajectories.get(marker_id, [])
         if keyframes:
-            self.view.show_trajectory(keyframes)
+            self.view.show_trajectory(marker_id, keyframes)
         else:
             self.view.clear_trajectory()
+
+    @Slot(str, float, float, float)
+    def _on_keyframe_moved(self, marker_id: str, t: float, x: float, y: float) -> None:
+        """Handle drag-to-edit of keyframes."""
+        map_id = self.get_selected_map_id()
+        if map_id:
+            # Reuses the same pipeline as 'Add Keyframe' - performing an upsert
+            self.add_keyframe_requested.emit(map_id, marker_id, t, x, y)
