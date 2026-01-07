@@ -355,17 +355,20 @@ Entities that "die" or haven't been "born" must be hidden.
 * **Marker Movement**: `MapWidget` now automatically updates marker positions during timeline scrubbing/playback based on interpolated trajectory data.
 * **Trajectory Persistence**: Dedicated `TrajectoryRepository` handles ACID-compliant storage of keyframes, resolving the mapping between transient UI "Object IDs" and persistent Database Primary Keys.
 
-### Interaction & Visualization (New)
+### Interaction & Visualization
 * **Manual Keyframing (Snapshots)**: Added "Add Keyframe" button to the Map toolbar. This allows users to set precise snapshots of marker state at specific timeline moments.
 * **Trajectory Visualizer**:
     *   **Visual Cues**: When a marker is selected, its entire trajectory is rendered as a dashed path.
     *   **Keyframe Indicators**: Individual keyframes are visualized as dots on the map, providing immediate visual feedback of the "history" of the entity.
     *   **Zoom-Aware Rendering**: Keyframe dots scale with zoom level to maintain visual consistency.
+* **Drag-to-Edit Keyframes** (New):
+    *   **Interactive `KeyframeItem`**: Keyframe dots are now draggable. Users can click and drag to reposition individual keyframes.
+    *   **Rubber-Band Path**: The trajectory path updates in real-time during drag, providing immediate visual feedback before committing.
+    *   **Smart Selection Handling**: Clicking a keyframe dot clears any marker selection, preventing accidental co-movement.
 
 ### Gaps & Next Steps
 1.  **Recording Mode**: The "Live Puppeteering" logic (Phase 8.1) for recording real-time mouse movements is not yet implemented.
 2.  **Bezier Interpolation**: Current interpolation is strictly linear; Bezier support (Phase 5.2) remains a roadmap item.
-3.  **In-Scene Keyframe Editing**: Direct dragging of keyframe dots (Phase 8.2) on the map is not yet implemented.
 
 ---
 
