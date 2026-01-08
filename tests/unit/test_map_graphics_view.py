@@ -173,7 +173,10 @@ def test_keyframe_gizmo_interaction(qtbot):
 
     from PySide6.QtWidgets import QGraphicsScene, QGraphicsView
 
-    from src.gui.widgets.map.map_graphics_view import KeyframeItem
+    from src.gui.widgets.map.map_graphics_view import (
+        KEYFRAME_COLOR_SELECTED,
+        KeyframeItem,
+    )
 
     scene = QGraphicsScene()
     view = QGraphicsView(scene)
@@ -210,10 +213,10 @@ def test_keyframe_gizmo_interaction(qtbot):
     # 3. Pin Keyframe
     keyframe.set_pinned(True)
     assert keyframe.is_pinned is True
-    # Initial highlight color check (Cyan #00ffff)
+    # Initial highlight color check
     pen = keyframe.pen()
-    assert pen.color().name() == "#00ffff"
+    assert pen.color().name() == KEYFRAME_COLOR_SELECTED
 
     keyframe.set_pinned(False)
     assert keyframe.is_pinned is False
-    assert keyframe.pen().color().name() != "#00ffff"
+    assert keyframe.pen().color().name() != KEYFRAME_COLOR_SELECTED

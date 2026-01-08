@@ -24,6 +24,7 @@ from PySide6.QtGui import (
     QPen,
     QPixmap,
     QResizeEvent,
+    QTransform,
     QWheelEvent,
 )
 from PySide6.QtWidgets import (
@@ -58,6 +59,25 @@ LAYER_TRAJECTORIES = 5
 LAYER_MARKERS = 10
 LAYER_UI_OVERLAY = 100
 
+# Colors
+KEYFRAME_COLOR_DEFAULT = "#f1c40f"  # Yellow
+KEYFRAME_COLOR_SELECTED = "#e74c3c"  # Red
+KEYFRAME_LABEL_COLOR = "#000000"  # Black
+TRAJECTORY_PATH_COLOR = "#3498db"  # Blue
+GIZMO_TEXT_COLOR = "#ffffff"  # White
+
+# Layout Constants
+GIZMO_SIZE = 6
+GIZMO_FONT_FAMILY = "Segoe UI"
+GIZMO_FONT_SIZE = 6
+
+KEYFRAME_LABEL_FONT_FAMILY = "Segoe UI"
+KEYFRAME_LABEL_FONT_SIZE = 12
+KEYFRAME_LABEL_OFFSET_X = -10
+KEYFRAME_LABEL_OFFSET_Y = 10
+KEYFRAME_LABEL_MIN_SIZE_PT = 8
+KEYFRAME_LABEL_MAX_SIZE_PT = 10
+
 
 class KeyframeGizmo(QGraphicsItemGroup):
     """
@@ -74,28 +94,28 @@ class KeyframeGizmo(QGraphicsItemGroup):
         self.setAcceptHoverEvents(True)
 
         # Create Clock icon (centered)
-        self.clock_icon = self._create_icon("🕐", 0, "#e74c3c")
+        self.clock_icon = self._create_icon("🕐", 0, GIZMO_TEXT_COLOR)
         self.addToGroup(self.clock_icon)
 
-        # Position gizmo to the right of keyframe
-        self.setPos(8, -5)
+        # Position gizmo to Northeast of keyframe (Right and Up)
+        self.setPos(3, -8)
 
     def _create_icon(self, text: str, x_offset: float, color: str) -> QGraphicsRectItem:
         """Creates a clickable icon button."""
         from PySide6.QtCore import Qt
 
         # Background rect (smaller)
-        size = 10
+        size = GIZMO_SIZE
         rect = QGraphicsRectItem(x_offset, 0, size, size)
-        rect.setBrush(QBrush(QColor(color)))
-        rect.setPen(QPen(QColor("#ffffff"), 1))
+        rect.setBrush(Qt.NoBrush)
+        rect.setPen(Qt.NoPen)
         rect.setZValue(LAYER_UI_OVERLAY)
 
         # Icon text (smaller font)
         label = QGraphicsSimpleTextItem(text, rect)
         label.setPos(x_offset + 1, -3)
-        label.setBrush(QBrush(QColor("#ffffff")))
-        font = QFont("Segoe UI", 7)
+        label.setBrush(QBrush(QColor(color)))
+        font = QFont(GIZMO_FONT_FAMILY, GIZMO_FONT_SIZE)
         label.setFont(font)
 
         # Make clickable
@@ -177,16 +197,14 @@ class KeyframeItem(QGraphicsEllipseItem):
     def set_pinned(self, pinned: bool) -> None:
         """Set visual state for pinned keyframe (Clock Mode)."""
         self.is_pinned = pinned
-        if pinned:
-            # Cyan highlight with thick border
-            self.setPen(QPen(QColor("#00ffff"), 3))
-            self.setBrush(QBrush(QColor("#00ffff")))
-            logger.debug(f"Keyframe {self.marker_id} pinned (highlighted)")
-        else:
-            # Reset to normal blue
-            self.setPen(QPen(QColor("#0080ff"), 1))
-            self.setBrush(QBrush(QColor("#0080ff")))
-            logger.debug(f"Keyframe {self.marker_id} unpinned")
+        color = KEYFRAME_COLOR_SELECTED if pinned else KEYFRAME_COLOR_DEFAULT
+        pen_width = 3 if pinned else 1
+
+        self.setPen(QPen(QColor(color), pen_width))
+        self.setBrush(QBrush(QColor(color)))
+
+        state = "pinned (highlighted)" if pinned else "unpinned"
+        logger.debug(f"Keyframe {self.marker_id} {state}")
 
     def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """Show gizmo when hovering over keyframe."""
@@ -202,19 +220,31 @@ class KeyframeItem(QGraphicsEllipseItem):
 
     def _cleanup_gizmo(self) -> None:
         """Remove gizmo if not being hovered."""
+        # Additional guard: check if gizmo itself thinks it's under mouse
+        # This handles the race condition where we leave keyframe but enter gizmo
+        gizmo_under_mouse = self.gizmo and self.gizmo.isUnderMouse()
+
         logger.debug(
             f"Cleanup gizmo: {self.marker_id}, "
             f"has_gizmo={self.gizmo is not None}, "
-            f"hovered={self._gizmo_hovered}, pinned={self.is_pinned}"
+            f"hovered={self._gizmo_hovered}, pinned={self.is_pinned}, "
+            f"gizmo_under_mouse={gizmo_under_mouse}"
         )
-        if self.gizmo and not self._gizmo_hovered and not self.is_pinned:
+
+        if (
+            self.gizmo
+            and not self._gizmo_hovered
+            and not self.is_pinned
+            and not gizmo_under_mouse
+        ):
             logger.debug(f"Hiding gizmo for {self.marker_id}")
             self.gizmo.setVisible(False)
 
     def hoverLeaveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """Hide gizmo when leaving keyframe."""
         super().hoverLeaveEvent(event)
-        # Gizmo will cleanup itself via its own hover events
+        # Attempt cleanup when leaving the keyframe dot
+        self._cleanup_gizmo()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Clear any existing selection before starting drag."""
@@ -240,9 +270,11 @@ class KeyframeItem(QGraphicsEllipseItem):
         self, change: QGraphicsEllipseItem.GraphicsItemChange, value: Any
     ) -> Any:
         """Handle position changes during drag."""
-        if change == QGraphicsEllipseItem.GraphicsItemChange.ItemPositionHasChanged:
-            if self.on_drag_callback:
-                self.on_drag_callback()
+        if (
+            change == QGraphicsEllipseItem.GraphicsItemChange.ItemPositionHasChanged
+            and self.on_drag_callback
+        ):
+            self.on_drag_callback()
         return super().itemChange(change, value)
 
 
@@ -572,6 +604,7 @@ class MapGraphicsView(QGraphicsView):
         factor = zoom_in_factor if event.angleDelta().y() > 0 else zoom_out_factor
 
         self.scale(factor, factor)
+        self._update_label_scales()
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """
@@ -845,7 +878,7 @@ class MapGraphicsView(QGraphicsView):
                 self._update_trajectory_path,  # Live update callback
             )
             dot.setPos(pos)
-            dot.setBrush(QBrush(QColor("#f1c40f")))  # Yellow dots
+            dot.setBrush(QBrush(QColor(KEYFRAME_COLOR_DEFAULT)))  # Yellow dots
             dot.setPen(QPen(Qt.PenStyle.NoPen))
             dot.setZValue(LAYER_MARKERS + 1)  # Above markers for editability
             self.scene.addItem(dot)
@@ -861,19 +894,59 @@ class MapGraphicsView(QGraphicsView):
                 date_str = f"{kf.t:.0f}"
 
             label = QGraphicsSimpleTextItem(date_str)
-            label.setPos(pos.x() + dot_radius + 2, pos.y() - 6)
-            label.setBrush(QBrush(QColor("#e0e0e0")))  # Light gray text
-            font = QFont("Segoe UI", 7)
+            # Position at the dot center (scene coords)
+            label.setPos(pos)
+            label.setBrush(QBrush(QColor(KEYFRAME_LABEL_COLOR)))
+            font = QFont(KEYFRAME_LABEL_FONT_FAMILY, KEYFRAME_LABEL_FONT_SIZE)
             label.setFont(font)
             label.setZValue(LAYER_MARKERS + 2)
+            # Ignore transformations to keep constant screen size
             label.setFlag(
                 QGraphicsSimpleTextItem.GraphicsItemFlag.ItemIgnoresTransformations
+            )
+            # Apply offset in screen pixels via transform
+            label.setTransform(
+                QTransform().translate(KEYFRAME_LABEL_OFFSET_X, KEYFRAME_LABEL_OFFSET_Y)
             )
             self.scene.addItem(label)
             self.keyframe_label_items.append(label)
 
         # Draw path initially
         self._update_trajectory_path()
+        self._update_label_scales()
+
+    def _update_label_scales(self) -> None:
+        """
+        Updates the scale of keyframe labels based on current zoom level.
+        Logic:
+        - Scale < 1 (Zoom Out): Keep constant screen size (s=1.0).
+        - Scale > 1 (Zoom In): Grow with map (s=scale), but cap at MAX_SCALE.
+        """
+        view_scale = self.transform().m11()
+        if view_scale <= 0:
+            return
+
+        # Calculate limits for scale factor s:
+        # eff_size = Base * s  =>  s = eff_size / Base
+        min_s = KEYFRAME_LABEL_MIN_SIZE_PT / KEYFRAME_LABEL_FONT_SIZE
+        max_s = KEYFRAME_LABEL_MAX_SIZE_PT / KEYFRAME_LABEL_FONT_SIZE
+
+        # Clamp view_scale within these bounds
+        s = max(min_s, min(view_scale, max_s))
+
+        logger.debug(
+            f"Zoom Level: {view_scale:.2f} | Label Scale: {s:.2f} | "
+            f"Effective Font Size: {KEYFRAME_LABEL_FONT_SIZE * s:.1f}pt"
+        )
+
+        transform = (
+            QTransform()
+            .translate(KEYFRAME_LABEL_OFFSET_X, KEYFRAME_LABEL_OFFSET_Y)
+            .scale(s, s)
+        )
+
+        for label in self.keyframe_label_items:
+            label.setTransform(transform)
 
     def _update_trajectory_path(self) -> None:
         """Re-draws the trajectory path based on current keyframe positions."""
@@ -895,15 +968,20 @@ class MapGraphicsView(QGraphicsView):
 
         # If path item doesn't exist, create it
         if not self.trajectory_path_item:
-            self.trajectory_path_item = QGraphicsPathItem(path)
-            pen = QPen(QColor("#3498db"), 1)  # Blue path, thin line
-            pen.setStyle(Qt.PenStyle.DashLine)
-            self.trajectory_path_item.setPen(pen)
-            self.trajectory_path_item.setZValue(LAYER_TRAJECTORIES)
+            self.trajectory_path_item = self._create_trajectory_item(path)
             self.scene.addItem(self.trajectory_path_item)
         else:
             # Update existing item
             self.trajectory_path_item.setPath(path)
+
+    def _create_trajectory_item(self, path: QPainterPath) -> QGraphicsPathItem:
+        """Creates and configures the trajectory path item."""
+        item = QGraphicsPathItem(path)
+        pen = QPen(QColor(TRAJECTORY_PATH_COLOR), 1)  # Blue path, thin line
+        pen.setStyle(Qt.PenStyle.DashLine)
+        item.setPen(pen)
+        item.setZValue(LAYER_TRAJECTORIES)
+        return item
 
     def _on_keyframe_dropped(self, item: KeyframeItem) -> None:
         """Callback when a keyframe dot is released after dragging."""
@@ -937,8 +1015,11 @@ class MapGraphicsView(QGraphicsView):
     def set_keyframe_pinned(self, marker_id: str, t: float, pinned: bool) -> None:
         """Set visual pinned state for a specific keyframe."""
         for item in self.keyframe_items:
-            if isinstance(item, KeyframeItem) and item.marker_id == marker_id:
-                if abs(item.t - t) < KEYFRAME_TIME_EPSILON:  # Match by time (epsilon)
-                    item.set_pinned(pinned)
-                    logger.debug(f"Set keyframe {marker_id} at t={t} pinned={pinned}")
-                    return
+            if (
+                isinstance(item, KeyframeItem)
+                and item.marker_id == marker_id
+                and abs(item.t - t) < KEYFRAME_TIME_EPSILON
+            ):
+                item.set_pinned(pinned)
+                logger.debug(f"Set keyframe {marker_id} at t={t} pinned={pinned}")
+                return

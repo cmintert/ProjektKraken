@@ -216,15 +216,7 @@ class MarkerItem(QGraphicsObject):
         painter.drawEllipse(rect.adjusted(2, 2, 2, 2))
 
         if self._custom_color:
-            # Create a pixmap of the marker size
-            pixmap = QPixmap(int(self.MARKER_SIZE), int(self.MARKER_SIZE))
-            pixmap.fill(Qt.GlobalColor.transparent)
-
-            # Render SVG into pixmap
-            p = QPainter(pixmap)
-            self._svg_renderer.render(p)
-            p.end()
-
+            pixmap = self._render_svg_to_pixmap()
             self._tint_pixmap(pixmap, self._color)
 
             painter.drawPixmap(rect.toRect(), pixmap)
@@ -237,6 +229,17 @@ class MarkerItem(QGraphicsObject):
             painter.setPen(QPen(QColor(255, 255, 255), 2))
             painter.setBrush(Qt.NoBrush)
             painter.drawRect(rect)
+
+    def _render_svg_to_pixmap(self) -> QPixmap:
+        """Renders the current SVG to a transparent QPixmap."""
+        pixmap = QPixmap(int(self.MARKER_SIZE), int(self.MARKER_SIZE))
+        pixmap.fill(Qt.GlobalColor.transparent)
+
+        p = QPainter(pixmap)
+        if self._svg_renderer:
+            self._svg_renderer.render(p)
+        p.end()
+        return pixmap
 
     def _tint_pixmap(self, pixmap: QPixmap, color: QColor) -> None:
         """Tint a pixmap with the given color."""
