@@ -164,6 +164,7 @@ class MapWidget(QWidget):
         )
         self.view.marker_drop_requested.connect(self.marker_drop_requested.emit)
         self.view.mouse_coordinates_changed.connect(self._on_mouse_coordinates_changed)
+        self.view.scene.selectionChanged.connect(self._on_selection_changed)
 
         self._maps_data = []  # List of maps for selector
         self._playhead_time: float = 0.0  # Current playhead time from Timeline
@@ -174,6 +175,30 @@ class MapWidget(QWidget):
 
         # Update all markers with active trajectories
         self._update_trajectory_positions()
+
+    def _on_selection_changed(self) -> None:
+        """Updates UI state based on selection."""
+        selected_items = self.view.scene.selectedItems()
+        should_enable = False
+        if selected_items:
+            item = selected_items[0]
+            if isinstance(item, MarkerItem):
+                # EVENTS cannot have keyframes (trajectories)
+                should_enable = item.object_type != "event"
+
+        self.btn_add_keyframe.setEnabled(should_enable)
+        if hasattr(self, "btn_add_keyframe"):
+            # Update tooltip to explain why disabled if needed
+            if (
+                not should_enable
+                and selected_items
+                and isinstance(selected_items[0], MarkerItem)
+            ):
+                self.btn_add_keyframe.setToolTip("Events cannot have trajectories")
+            else:
+                self.btn_add_keyframe.setToolTip(
+                    "Save current marker position at current time"
+                )
 
     def set_trajectories(self, trajectories: list) -> None:
         """
@@ -195,6 +220,40 @@ class MapWidget(QWidget):
         # Update visualization if selection exists
         if self._selected_marker_id:
             self._update_trajectory_visualization(self._selected_marker_id)
+
+    # Note: Skipping unrelated methods to reach _on_add_keyframe
+
+    @Slot()
+    def _on_add_keyframe(self) -> None:
+        """
+        Captures the current position of the selected marker and saves it as a keyframe.
+        """
+        selected_items = self.view.scene.selectedItems()
+        if not selected_items:
+            logger.warning("Cannot add keyframe: No marker selected.")
+            return
+
+        # Assuming single selection for now
+        item = selected_items[0]
+        if not isinstance(item, MarkerItem):
+            logger.warning("Selected item is not a marker.")
+            return
+
+        if item.object_type == "event":
+            logger.warning(f"Cannot add keyframe for event marker {item.marker_id}")
+            return
+
+        marker_id = item.marker_id
+        t = self._playhead_time
+
+        # Get position in normalized coordinates
+        pos = item.pos()
+        norm_pos = self.view.coord_system.to_normalized(pos)
+        x, y = norm_pos
+
+        logger.info(f"Adding keyframe for {marker_id} at t={t}: ({x:.3f}, {y:.3f})")
+
+        self._emit_keyframe_upsert(marker_id, t, x, y)
 
     def _iter_trajectory_positions(self) -> Iterator[Tuple[str, float, float]]:
         """Yield (marker_id, x, y) for markers with trajectories at current time."""
@@ -471,34 +530,6 @@ class MapWidget(QWidget):
         map_id = self.get_selected_map_id()
         if map_id:
             self.add_keyframe_requested.emit(map_id, marker_id, t, x, y)
-
-    @Slot()
-    def _on_add_keyframe(self) -> None:
-        """
-        Captures the current position of the selected marker and saves it as a keyframe.
-        """
-        selected_items = self.view.scene.selectedItems()
-        if not selected_items:
-            logger.warning("Cannot add keyframe: No marker selected.")
-            return
-
-        # Assuming single selection for now
-        item = selected_items[0]
-        if not isinstance(item, MarkerItem):
-            logger.warning("Selected item is not a marker.")
-            return
-
-        marker_id = item.marker_id
-        t = self._playhead_time
-
-        # Get position in normalized coordinates
-        pos = item.pos()
-        norm_pos = self.view.coord_system.to_normalized(pos)
-        x, y = norm_pos
-
-        logger.info(f"Adding keyframe for {marker_id} at t={t}: ({x:.3f}, {y:.3f})")
-
-        self._emit_keyframe_upsert(marker_id, t, x, y)
 
     @Slot(str, str)
     def _on_marker_clicked_internal(self, marker_id: str, object_type: str) -> None:
