@@ -10,7 +10,7 @@ import logging
 import uuid
 from typing import List, Optional, Tuple
 
-from src.core.trajectory import Keyframe
+from src.core.trajectory import KEYFRAME_TIME_EPSILON, Keyframe
 from src.services.repositories.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)
@@ -185,8 +185,9 @@ class TrajectoryRepository(BaseRepository):
             traj_id, keyframes = trajectories[0]
 
             # Remove any existing keyframe at exactly this time (or within small epsilon)
-            epsilon = 0.0001
-            keyframes = [k for k in keyframes if abs(k.t - keyframe.t) > epsilon]
+            keyframes = [
+                k for k in keyframes if abs(k.t - keyframe.t) > KEYFRAME_TIME_EPSILON
+            ]
 
             keyframes.append(keyframe)
             keyframes.sort(key=lambda k: k.t)
@@ -240,10 +241,9 @@ class TrajectoryRepository(BaseRepository):
         traj_id, keyframes = trajectories[0]
 
         # 3. Find keyframe at old_t (within epsilon)
-        epsilon = 0.0001
         target_kf = None
         for kf in keyframes:
-            if abs(kf.t - old_t) < epsilon:
+            if abs(kf.t - old_t) < KEYFRAME_TIME_EPSILON:
                 target_kf = kf
                 break
 

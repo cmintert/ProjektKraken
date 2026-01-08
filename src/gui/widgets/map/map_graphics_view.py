@@ -6,7 +6,7 @@ Provides the MapGraphicsView class for rendering and interacting with the map.
 
 import json
 import logging
-from typing import Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from PySide6.QtCore import QPoint, QPointF, QRectF, QSize, Qt, Signal
 from PySide6.QtGui import (
@@ -30,11 +30,13 @@ from PySide6.QtWidgets import (
     QColorDialog,
     QDialog,
     QGraphicsEllipseItem,
+    QGraphicsItem,
     QGraphicsItemGroup,
     QGraphicsPathItem,
     QGraphicsPixmapItem,
     QGraphicsRectItem,
     QGraphicsScene,
+    QGraphicsSceneHoverEvent,
     QGraphicsSimpleTextItem,
     QGraphicsView,
     QMenu,
@@ -42,6 +44,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.core.trajectory import KEYFRAME_TIME_EPSILON
 from src.gui.widgets.map.coordinate_system import MapCoordinateSystem
 from src.gui.widgets.map.icon_picker_dialog import IconPickerDialog
 from src.gui.widgets.map.marker_item import MarkerItem
@@ -62,7 +65,9 @@ class KeyframeGizmo(QGraphicsItemGroup):
     Shows a single clickable clock icon.
     """
 
-    def __init__(self, keyframe_item: "KeyframeItem", parent=None) -> None:
+    def __init__(
+        self, keyframe_item: "KeyframeItem", parent: Optional[QGraphicsItem] = None
+    ) -> None:
         super().__init__(parent)
         self.keyframe_item = keyframe_item
         self.setZValue(LAYER_UI_OVERLAY)
@@ -99,13 +104,13 @@ class KeyframeGizmo(QGraphicsItemGroup):
 
         return rect
 
-    def hoverEnterEvent(self, event) -> None:
+    def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """Keep gizmo visible while hovering over it."""
         logger.debug(f"Gizmo hover enter for marker {self.keyframe_item.marker_id}")
         super().hoverEnterEvent(event)
         self.keyframe_item._gizmo_hovered = True
 
-    def hoverLeaveEvent(self, event) -> None:
+    def hoverLeaveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """Remove gizmo when mouse leaves."""
         logger.debug(f"Gizmo hover leave for marker {self.keyframe_item.marker_id}")
         super().hoverLeaveEvent(event)
@@ -183,7 +188,7 @@ class KeyframeItem(QGraphicsEllipseItem):
             self.setBrush(QBrush(QColor("#0080ff")))
             logger.debug(f"Keyframe {self.marker_id} unpinned")
 
-    def hoverEnterEvent(self, event) -> None:
+    def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """Show gizmo when hovering over keyframe."""
         logger.debug(f"Keyframe hover enter for {self.marker_id}")
         super().hoverEnterEvent(event)
@@ -206,7 +211,7 @@ class KeyframeItem(QGraphicsEllipseItem):
             logger.debug(f"Hiding gizmo for {self.marker_id}")
             self.gizmo.setVisible(False)
 
-    def hoverLeaveEvent(self, event) -> None:
+    def hoverLeaveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """Hide gizmo when leaving keyframe."""
         super().hoverLeaveEvent(event)
         # Gizmo will cleanup itself via its own hover events
@@ -232,8 +237,8 @@ class KeyframeItem(QGraphicsEllipseItem):
             self.on_drop_callback(self)
 
     def itemChange(
-        self, change: QGraphicsEllipseItem.GraphicsItemChange, value: any
-    ) -> any:
+        self, change: QGraphicsEllipseItem.GraphicsItemChange, value: Any
+    ) -> Any:
         """Handle position changes during drag."""
         if change == QGraphicsEllipseItem.GraphicsItemChange.ItemPositionHasChanged:
             if self.on_drag_callback:
@@ -933,7 +938,7 @@ class MapGraphicsView(QGraphicsView):
         """Set visual pinned state for a specific keyframe."""
         for item in self.keyframe_items:
             if isinstance(item, KeyframeItem) and item.marker_id == marker_id:
-                if abs(item.t - t) < 0.01:  # Match by time (epsilon)
+                if abs(item.t - t) < KEYFRAME_TIME_EPSILON:  # Match by time (epsilon)
                     item.set_pinned(pinned)
                     logger.debug(f"Set keyframe {marker_id} at t={t} pinned={pinned}")
                     return

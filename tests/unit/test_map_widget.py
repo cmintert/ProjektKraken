@@ -350,3 +350,27 @@ def test_clock_mode_logic(map_widget, qtbot):
 
     # Should be unpinned
     assert map_widget._pinned_marker_id is None
+
+
+def test_clock_mode_jumps_time(map_widget, qtbot):
+    """Test that entering Clock Mode emits jump_to_time_requested."""
+    # Spy on the signal
+    signal_spy = []
+
+    def on_jump(t):
+        signal_spy.append(t)
+
+    map_widget.jump_to_time_requested.connect(on_jump)
+
+    # Trigger Clock Mode
+    marker_id = "marker_1"
+    t = 123.45
+
+    # Mock view method to prevent errors during call
+    map_widget.view.set_keyframe_pinned = MagicMock()
+
+    map_widget._on_clock_mode_requested(marker_id, t)
+
+    # Verify signal emitted with correct time
+    assert len(signal_spy) == 1
+    assert signal_spy[0] == t

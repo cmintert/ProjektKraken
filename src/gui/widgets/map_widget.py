@@ -13,7 +13,7 @@ maintainability:
 
 import logging
 import os
-from typing import List, Optional
+from typing import Iterator, List, Optional, Tuple
 
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import (
@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.paths import get_resource_path
+from src.core.trajectory import KEYFRAME_TIME_EPSILON, interpolate_position
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 from src.gui.widgets.map.marker_item import MarkerItem
 
@@ -69,7 +70,6 @@ class MapWidget(QWidget):
     delete_marker_requested = Signal(str)  # marker_id
     change_marker_icon_requested = Signal(str, str)  # marker_id, new_icon
     change_marker_color_requested = Signal(str, str)  # marker_id, new_color_hex
-    change_marker_color_requested = Signal(str, str)  # marker_id, new_color_hex
     marker_drop_requested = Signal(str, str, str, float, float)  # id, type, name, x, y
     add_keyframe_requested = Signal(
         str, str, float, float, float
@@ -77,6 +77,7 @@ class MapWidget(QWidget):
     update_keyframe_time_requested = Signal(
         str, str, float, float
     )  # map_id, marker_id, old_t, new_t
+    jump_to_time_requested = Signal(float)  # target_time
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -171,15 +172,8 @@ class MapWidget(QWidget):
         self._active_trajectories: dict[str, list] = {}  # marker_id -> list[Keyframe]
         self._selected_marker_id: Optional[str] = None
 
-        # Import Keyframe for type checking if needed, or rely on duck typing
-        from src.core.trajectory import interpolate_position
-
         # Update all markers with active trajectories
-        for marker_id, keyframes in self._active_trajectories.items():
-            position = interpolate_position(keyframes, self._playhead_time)
-            if position:
-                x, y = position
-                self.view.update_marker_position(marker_id, x, y)
+        self._update_trajectory_positions()
 
     def set_trajectories(self, trajectories: list) -> None:
         """
@@ -202,15 +196,18 @@ class MapWidget(QWidget):
         if self._selected_marker_id:
             self._update_trajectory_visualization(self._selected_marker_id)
 
-    def _update_trajectory_positions(self) -> None:
-        """Updates all trajectory-based markers for the current playhead time."""
-        from src.core.trajectory import interpolate_position
-
+    def _iter_trajectory_positions(self) -> Iterator[Tuple[str, float, float]]:
+        """Yield (marker_id, x, y) for markers with trajectories at current time."""
         for marker_id, keyframes in self._active_trajectories.items():
             position = interpolate_position(keyframes, self._playhead_time)
             if position:
                 x, y = position
-                self.view.update_marker_position(marker_id, x, y)
+                yield marker_id, x, y
+
+    def _update_trajectory_positions(self) -> None:
+        """Updates all trajectory-based markers for the current playhead time."""
+        for marker_id, x, y in self._iter_trajectory_positions():
+            self.view.update_marker_position(marker_id, x, y)
 
     @Slot(float)
     def on_time_changed(self, time: float) -> None:
@@ -462,6 +459,14 @@ class MapWidget(QWidget):
             self.view.set_map_width_meters(float(width))
             logger.info(f"Map width set to {width} meters")
 
+    def _emit_keyframe_upsert(
+        self, marker_id: str, t: float, x: float, y: float
+    ) -> None:
+        """Emits signal to upsert (add/update) a keyframe."""
+        map_id = self.get_selected_map_id()
+        if map_id:
+            self.add_keyframe_requested.emit(map_id, marker_id, t, x, y)
+
     @Slot()
     def _on_add_keyframe(self) -> None:
         """
@@ -488,12 +493,7 @@ class MapWidget(QWidget):
 
         logger.info(f"Adding keyframe for {marker_id} at t={t}: ({x:.3f}, {y:.3f})")
 
-        logger.info(f"Adding keyframe for {marker_id} at t={t}: ({x:.3f}, {y:.3f})")
-
-        # Emit signal
-        map_id = self.get_selected_map_id()
-        if map_id:
-            self.add_keyframe_requested.emit(map_id, marker_id, t, x, y)
+        self._emit_keyframe_upsert(marker_id, t, x, y)
 
     @Slot(str, str)
     def _on_marker_clicked_internal(self, marker_id: str, object_type: str) -> None:
@@ -512,59 +512,79 @@ class MapWidget(QWidget):
     @Slot(str, float, float, float)
     def _on_keyframe_moved(self, marker_id: str, t: float, x: float, y: float) -> None:
         """Handle drag-to-edit of keyframes."""
+        self._emit_keyframe_upsert(marker_id, t, x, y)
+
+    def _enter_clock_mode(self, marker_id: str, t: float) -> None:
+        """Transition: Default -> Clock Mode."""
+        if self._pinned_marker_id:
+            self._cancel_clock_mode()  # clear previous without commit
+        logger.info(f"Clock Mode activated for marker {marker_id} at t={t}")
+        self._pinned_marker_id = marker_id
+        self._pinned_original_t = t
+        self.view.set_keyframe_pinned(marker_id, t, True)
+        # Jump playhead to keyframe time
+        self.jump_to_time_requested.emit(t)
+
+    def _commit_clock_mode(self) -> None:
+        """Transition: Clock Mode -> Default (Committing change)."""
+        if not (self._pinned_marker_id and self._pinned_original_t is not None):
+            return
+
+        # Check if time actually changed and playhead checks pass
         map_id = self.get_selected_map_id()
-        if map_id:
-            # Reuses the same pipeline as 'Add Keyframe' - performing an upsert
-            self.add_keyframe_requested.emit(map_id, marker_id, t, x, y)
+        if (
+            map_id
+            and self._playhead_time is not None
+            and abs(self._playhead_time - self._pinned_original_t)
+            > KEYFRAME_TIME_EPSILON
+        ):
+            logger.info(
+                f"Unpinning {self._pinned_marker_id}: "
+                f"{self._pinned_original_t:.1f} → {self._playhead_time:.1f}"
+            )
+            self.update_keyframe_time_requested.emit(
+                map_id,
+                self._pinned_marker_id,
+                self._pinned_original_t,
+                self._playhead_time,
+            )
+
+        self._clear_clock_mode_visuals()
+
+    def _cancel_clock_mode(self) -> None:
+        """Transition: Clock Mode -> Default (Aborting change)."""
+        self._clear_clock_mode_visuals()
+
+    def _clear_clock_mode_visuals(self) -> None:
+        """Resets visual pinned state and internal tracking."""
+        if self._pinned_marker_id and self._pinned_original_t is not None:
+            self.view.set_keyframe_pinned(
+                self._pinned_marker_id, self._pinned_original_t, False
+            )
+        self._pinned_marker_id = None
+        self._pinned_original_t = None
+
+    def _handle_clock_mode_time_change(self, time: float) -> None:
+        """Log or process time changes while in Clock Mode (without moving marker)."""
+        logger.debug(
+            f"Clock Mode: playhead={time:.1f}, "
+            f"pinned={self._pinned_marker_id} "
+            f"at orig_t={self._pinned_original_t:.1f}"
+        )
 
     @Slot(str, float)
     def _on_clock_mode_requested(self, marker_id: str, t: float) -> None:
         """Enter/Exit Clock Mode - toggle pin/unpin for temporal editing."""
-        # Toggle: if already pinned, commit and unpin
         if self._pinned_marker_id == marker_id:
             logger.info(f"Clock Mode: Committing changes for {marker_id}")
-            self._unpin_keyframe(commit=True)
+            self._commit_clock_mode()
         else:
-            # Pin new keyframe (unpinning any previous one first)
             if self._pinned_marker_id:
                 logger.info(
                     f"Clock Mode: Switching from "
                     f"{self._pinned_marker_id} to {marker_id}"
                 )
-                self._unpin_keyframe(commit=False)  # Cancel previous pin
-            logger.info(f"Clock Mode activated for marker {marker_id} at t={t}")
-            self._pinned_marker_id = marker_id
-            self._pinned_original_t = t
-            # Visual feedback: highlight the pinned keyframe
-            self.view.set_keyframe_pinned(marker_id, t, True)
-
-    def _unpin_keyframe(self, commit: bool = True) -> None:
-        """Exit Clock Mode and optionally persist timestamp change."""
-        if not self._pinned_marker_id:
-            return
-
-        if commit and self._playhead_time and self._pinned_original_t:
-            map_id = self.get_selected_map_id()
-            if map_id and abs(self._playhead_time - self._pinned_original_t) > 0.01:
-                logger.info(
-                    f"Unpinning {self._pinned_marker_id}: "
-                    f"{self._pinned_original_t:.1f} → {self._playhead_time:.1f}"
-                )
-                self.update_keyframe_time_requested.emit(
-                    map_id,
-                    self._pinned_marker_id,
-                    self._pinned_original_t,
-                    self._playhead_time,
-                )
-
-        # Visual feedback: unhighlight
-        if self._pinned_marker_id and self._pinned_original_t:
-            self.view.set_keyframe_pinned(
-                self._pinned_marker_id, self._pinned_original_t, False
-            )
-
-        self._pinned_marker_id = None
-        self._pinned_original_t = None
+            self._enter_clock_mode(marker_id, t)
 
     def set_calendar_converter(self, converter: object) -> None:
         """Sets the calendar converter for formatting keyframe date labels."""

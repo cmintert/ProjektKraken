@@ -25,6 +25,10 @@ class Keyframe:
     y: float
 
 
+# Shared tolerance for comparing keyframe timestamps (e.g. for UI selection vs DB lookup)
+KEYFRAME_TIME_EPSILON: float = 0.01
+
+
 def interpolate_position(
     keyframes: list[Keyframe], t: float
 ) -> tuple[float, float] | None:

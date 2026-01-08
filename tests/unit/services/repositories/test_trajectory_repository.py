@@ -172,3 +172,25 @@ class TestTrajectoryRepository:
         fetched = repo.get_by_marker_db_id(marker_id)[0][1]
         assert len(fetched) == 1
         assert fetched[0].t == 10.0
+
+    def test_add_keyframe_creates_new_trajectory(self, repo, setup_data):
+        """Test adding a keyframe to a marker with no existing trajectory."""
+        marker_id = setup_data["marker_id"]
+        # Ensure no trajectory exists initially
+        assert len(repo.get_by_marker_db_id(marker_id)) == 0
+
+        kf = Keyframe(t=15.0, x=0.2, y=0.2)
+        repo.add_keyframe("map1", marker_id, kf)
+
+        results = repo.get_by_marker_db_id(marker_id)
+        assert len(results) == 1
+        fetched_traj = results[0][1]
+        assert len(fetched_traj) == 1
+        assert fetched_traj[0].t == 15.0
+
+    def test_add_keyframe_raises_error_for_missing_marker(self, repo):
+        """Test that adding a keyframe for a non-existent marker fails."""
+        kf = Keyframe(t=10.0, x=0.5, y=0.5)
+        # Repo logic apparently checks for marker existence explicitly
+        with pytest.raises(ValueError, match="Marker not found"):
+            repo.add_keyframe("map1", "non_existent_marker", kf)
