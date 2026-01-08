@@ -288,25 +288,26 @@ Entities that "die" or haven't been "born" must be hidden.
 
 ## 11. Implementation Roadmap
 
-**Phase 1: The Core Engine**
-1. Implement `TemporalEntity` class and JSON schema.
-2. Build `MasterClock` and basic `QTimer` playback loop.
-3. Implement `bisect` based keyframe lookup.
+**Phase 1: The Core Engine (Completed)**
+1. [x] Implement `TemporalEntity` class and JSON schema (`TrajectoryRepository`).
+2. [x] Build `MasterClock` and basic `QTimer` playback loop (`TimelineView`).
+3. [x] Implement `bisect` based keyframe lookup (`interpolate_position`).
 
-**Phase 2: The Viewer**
-1. Set up `QGraphicsScene` with `QOpenGLWidget` viewport.
-2. Implement `TemporalMarker` item with `setPos` updates.
-3. Create the Timeline Widget with basic scrubbing.
+**Phase 2: The Viewer (Completed)**
+1. [x] Set up `QGraphicsScene` with `QOpenGLWidget` viewport.
+2. [x] Implement `TemporalMarker` item with `setPos` updates (`MarkerItem`).
+3. [x] Create the Timeline Widget with basic scrubbing.
 
-**Phase 3: Interaction & Recording**
-1. Implement "Record" mode with mouse sampling.
-2. Add Motion Path visualization (`QGraphicsPathItem`).
-3. Implement node dragging and Bezier control points.
+**Phase 3: Interaction & Recording (In Progress)**
+1. [x] Add Motion Path visualization (`QGraphicsPathItem`).
+2. [x] Implement node dragging and keyframe editing (Spatial & Temporal Modes).
+3. [ ] Implement "Record" mode with mouse sampling.
+4. [ ] Implement Bezier control points and interpolation.
 
-**Phase 4: Optimization & Scale**
-1. Profile with 1,000 items.
-2. Implement `ItemCoordinateCache` and `NoIndex`.
-3. Add Level of Detail (LOD) logic.
+**Phase 4: Optimization & Scale (Pending)**
+1. [ ] Profile with 1,000 items.
+2. [ ] Implement `ItemCoordinateCache` and `NoIndex`.
+3. [ ] Add Level of Detail (LOD) logic.
 
 ---
 
@@ -364,11 +365,15 @@ Entities that "die" or haven't been "born" must be hidden.
 * **Dual-Mode Keyframe Editing** (Implemented):
     *   **Transform Mode (Spatial)**: Default state. Users can click and drag keyframe dots to reposition their $(x, y)$ coordinates. The trajectory path updates in real-time (Rubber-Banding).
     *   **Clock Mode (Temporal)**:
-        *   **Gizmo Activation**: Hovering a keyframe reveals a persistent "Clock" icon.
+        *   **Gizmo Activation**: Hovering a keyframe reveals a persistent "Clock" icon (Size 6, matched to dot).
         *   **Pinning**: Clicking the icon "Pins" the keyframe, locking its spatial position but unlocking its timestamp.
-        *   **Visual Feedback**: Pinned keyframes glow **Cyan** (#00FFFF) to clearly distinguish Temporal Mode from Spatial selection.
-        *   **Scrub-to-Edit**: While pinned, scrubbing the timeline moves the keyframe itself through time (updating $t$) rather than moving the playhead.
+        *   **Visual Feedback**: Pinned keyframes glow **Red** (#E74C3C) to clearly distinguish Temporal Mode from Spatial selection.
+        *   **Scrub-to-Edit**: While pinned, scrubbing the timeline moves the keyframe itself through time.
+        *   **Live Feedback**: The keyframe's date label updates in real-time as the playhead drags, showing the exact target date.
         *   **Commit**: Clicking the icon again commits the new timestamp, automatically re-sorting the keyframe list to maintain chronological integrity.
+*   **Smart Label Scaling**:
+    *   Keyframe date labels dynamically scale with zoom but are constrained between **8pt** (readability floor) and **10pt** (visual clutter ceiling).
+    *   Labels are pixel-aligned directly below markers for consistent legibility.
 
 ### Gaps & Next Steps
 1.  **Recording Mode**: The "Live Puppeteering" logic (Phase 8.1) for recording real-time mouse movements is not yet implemented.
