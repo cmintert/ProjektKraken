@@ -231,6 +231,11 @@ class MapWidget(QWidget):
                 f"pinned={self._pinned_marker_id} "
                 f"at orig_t={self._pinned_original_t:.1f}"
             )
+            # Live update of the keyframe date label
+            if self._pinned_original_t is not None:
+                self.view.update_keyframe_label(
+                    self._pinned_marker_id, self._pinned_original_t, time
+                )
         else:
             # Normal Mode: update marker positions along trajectories
             self._update_trajectory_positions()

@@ -1023,3 +1023,27 @@ class MapGraphicsView(QGraphicsView):
                 item.set_pinned(pinned)
                 logger.debug(f"Set keyframe {marker_id} at t={t} pinned={pinned}")
                 return
+
+    def update_keyframe_label(self, marker_id: str, t: float, new_time: float) -> None:
+        """
+        Updates the label of a specific keyframe to show a new time/date.
+        Used for live feedback during Clock Mode.
+        """
+        for i, item in enumerate(self.keyframe_items):
+            if (
+                isinstance(item, KeyframeItem)
+                and item.marker_id == marker_id
+                and abs(item.t - t) < KEYFRAME_TIME_EPSILON
+            ):
+                # Found the item, update corresponding label
+                if i < len(self.keyframe_label_items):
+                    label = self.keyframe_label_items[i]
+                    if self._calendar_converter:
+                        try:
+                            text = self._calendar_converter.format_date(new_time)
+                        except Exception:
+                            text = f"{new_time:.0f}"
+                    else:
+                        text = f"{new_time:.0f}"
+                    label.setText(text)
+                return
