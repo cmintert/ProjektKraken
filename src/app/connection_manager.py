@@ -183,6 +183,9 @@ class ConnectionManager:
 
         # Connect keyframe request
         map_widget.add_keyframe_requested.connect(self.window.worker.add_keyframe)
+        map_widget.update_keyframe_time_requested.connect(
+            self.window.worker.update_keyframe_time
+        )
 
     def connect_ai_search_panel(self) -> None:
         """Connect signals from the AI search panel widget."""

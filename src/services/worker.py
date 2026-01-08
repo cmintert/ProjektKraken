@@ -229,6 +229,32 @@ class DatabaseWorker(QObject):
             logger.error(f"Failed to add keyframe: {traceback.format_exc()}")
             self.error_occurred.emit("Failed to add keyframe.")
 
+    @Slot(str, str, float, float)
+    def update_keyframe_time(
+        self, map_id: str, marker_id: str, old_t: float, new_t: float
+    ) -> None:
+        """
+        Updates a keyframe's timestamp (Clock Mode) and reloads trajectories.
+
+        Args:
+            map_id: The map ID (for reloading).
+            marker_id: The marker ID.
+            old_t: Original timestamp.
+            new_t: New timestamp.
+        """
+        if not self.db_service:
+            return
+
+        try:
+            self.db_service.update_keyframe_time(map_id, marker_id, old_t, new_t)
+            self.load_trajectories(map_id)
+            self.operation_finished.emit(
+                f"Keyframe time updated: {old_t:.1f} → {new_t:.1f}"
+            )
+        except Exception:
+            logger.error(f"Failed to update keyframe time: {traceback.format_exc()}")
+            self.error_occurred.emit("Failed to update keyframe timestamp.")
+
     @Slot(str)
     def load_event_details(self, event_id: str) -> None:
         """Loads event details and sends them back."""

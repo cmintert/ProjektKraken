@@ -31,8 +31,8 @@ from src.services.repositories import (
 )
 
 if TYPE_CHECKING:
-    from src.services.attachment_service import AttachmentService
     from src.core.trajectory import Keyframe
+    from src.services.attachment_service import AttachmentService
 
 logger = logging.getLogger(__name__)
 
@@ -2137,3 +2137,24 @@ class DatabaseService:
         if not self._connection:
             self.connect()
         return self._trajectory_repo.add_keyframe(map_id, object_id, keyframe)
+
+    def update_keyframe_time(
+        self, map_id: str, object_id: str, old_t: float, new_t: float
+    ) -> str:
+        """
+        Updates a keyframe's timestamp (Clock Mode editing).
+
+        Args:
+            map_id: The ID of the map.
+            object_id: The object ID (Entity/Event ID).
+            old_t: Original timestamp.
+            new_t: New timestamp.
+
+        Returns:
+            The ID of the updated trajectory.
+        """
+        if not self._connection:
+            self.connect()
+        return self._trajectory_repo.update_keyframe_time(
+            map_id, object_id, old_t, new_t
+        )

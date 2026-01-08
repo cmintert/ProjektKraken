@@ -74,6 +74,9 @@ class MapWidget(QWidget):
     add_keyframe_requested = Signal(
         str, str, float, float, float
     )  # map_id, marker_id, t, x, y
+    update_keyframe_time_requested = Signal(
+        str, str, float, float
+    )  # map_id, marker_id, old_t, new_t
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -86,6 +89,10 @@ class MapWidget(QWidget):
 
         # Create view
         self.view = MapGraphicsView(self)
+
+        # Clock Mode state
+        self._pinned_marker_id: Optional[str] = None
+        self._pinned_original_t: Optional[float] = None
 
         # Layout
         layout = QVBoxLayout(self)
@@ -145,6 +152,7 @@ class MapWidget(QWidget):
         self.view.marker_clicked.connect(self.marker_clicked.emit)
         self.view.marker_clicked.connect(self._on_marker_clicked_internal)
         self.view.keyframe_moved.connect(self._on_keyframe_moved)
+        self.view.keyframe_clock_mode_requested.connect(self._on_clock_mode_requested)
         self.view.add_marker_requested.connect(self.create_marker_requested.emit)
         self.view.delete_marker_requested.connect(self.delete_marker_requested.emit)
         self.view.change_marker_icon_requested.connect(
@@ -218,7 +226,18 @@ class MapWidget(QWidget):
         self._playhead_time = time
         self.view._current_time = time
         self._update_time_display()
-        self._update_trajectory_positions()
+
+        # In Clock Mode: don't update positions, just track time for later commit
+        if self._pinned_marker_id:
+            logger.debug(
+                f"Clock Mode: playhead={time:.1f}, "
+                f"pinned={self._pinned_marker_id} "
+                f"at orig_t={self._pinned_original_t:.1f}"
+            )
+        else:
+            # Normal Mode: update marker positions along trajectories
+            self._update_trajectory_positions()
+
         logger.debug(f"Map playhead time updated to {time:.2f}")
 
     @Slot(float)
@@ -497,6 +516,55 @@ class MapWidget(QWidget):
         if map_id:
             # Reuses the same pipeline as 'Add Keyframe' - performing an upsert
             self.add_keyframe_requested.emit(map_id, marker_id, t, x, y)
+
+    @Slot(str, float)
+    def _on_clock_mode_requested(self, marker_id: str, t: float) -> None:
+        """Enter/Exit Clock Mode - toggle pin/unpin for temporal editing."""
+        # Toggle: if already pinned, commit and unpin
+        if self._pinned_marker_id == marker_id:
+            logger.info(f"Clock Mode: Committing changes for {marker_id}")
+            self._unpin_keyframe(commit=True)
+        else:
+            # Pin new keyframe (unpinning any previous one first)
+            if self._pinned_marker_id:
+                logger.info(
+                    f"Clock Mode: Switching from "
+                    f"{self._pinned_marker_id} to {marker_id}"
+                )
+                self._unpin_keyframe(commit=False)  # Cancel previous pin
+            logger.info(f"Clock Mode activated for marker {marker_id} at t={t}")
+            self._pinned_marker_id = marker_id
+            self._pinned_original_t = t
+            # Visual feedback: highlight the pinned keyframe
+            self.view.set_keyframe_pinned(marker_id, t, True)
+
+    def _unpin_keyframe(self, commit: bool = True) -> None:
+        """Exit Clock Mode and optionally persist timestamp change."""
+        if not self._pinned_marker_id:
+            return
+
+        if commit and self._playhead_time and self._pinned_original_t:
+            map_id = self.get_selected_map_id()
+            if map_id and abs(self._playhead_time - self._pinned_original_t) > 0.01:
+                logger.info(
+                    f"Unpinning {self._pinned_marker_id}: "
+                    f"{self._pinned_original_t:.1f} → {self._playhead_time:.1f}"
+                )
+                self.update_keyframe_time_requested.emit(
+                    map_id,
+                    self._pinned_marker_id,
+                    self._pinned_original_t,
+                    self._playhead_time,
+                )
+
+        # Visual feedback: unhighlight
+        if self._pinned_marker_id and self._pinned_original_t:
+            self.view.set_keyframe_pinned(
+                self._pinned_marker_id, self._pinned_original_t, False
+            )
+
+        self._pinned_marker_id = None
+        self._pinned_original_t = None
 
     def set_calendar_converter(self, converter: object) -> None:
         """Sets the calendar converter for formatting keyframe date labels."""

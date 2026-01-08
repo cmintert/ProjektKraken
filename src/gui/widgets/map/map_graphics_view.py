@@ -17,8 +17,11 @@ from PySide6.QtGui import (
     QDragEnterEvent,
     QDragMoveEvent,
     QDropEvent,
+    QFont,
     QMouseEvent,
     QPainter,
+    QPainterPath,
+    QPen,
     QPixmap,
     QResizeEvent,
     QWheelEvent,
@@ -27,15 +30,16 @@ from PySide6.QtWidgets import (
     QColorDialog,
     QDialog,
     QGraphicsEllipseItem,
+    QGraphicsItemGroup,
     QGraphicsPathItem,
     QGraphicsPixmapItem,
+    QGraphicsRectItem,
     QGraphicsScene,
     QGraphicsSimpleTextItem,
     QGraphicsView,
     QMenu,
     QWidget,
 )
-from PySide6.QtGui import QFont, QPainterPath, QPen
 
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.map.coordinate_system import MapCoordinateSystem
@@ -50,6 +54,70 @@ LAYER_MAP_BG = 0
 LAYER_TRAJECTORIES = 5
 LAYER_MARKERS = 10
 LAYER_UI_OVERLAY = 100
+
+
+class KeyframeGizmo(QGraphicsItemGroup):
+    """
+    Hover gizmo for entering Clock Mode (temporal editing).
+    Shows a single clickable clock icon.
+    """
+
+    def __init__(self, keyframe_item: "KeyframeItem", parent=None) -> None:
+        super().__init__(parent)
+        self.keyframe_item = keyframe_item
+        self.setZValue(LAYER_UI_OVERLAY)
+        self.setAcceptHoverEvents(True)
+
+        # Create Clock icon (centered)
+        self.clock_icon = self._create_icon("🕐", 0, "#e74c3c")
+        self.addToGroup(self.clock_icon)
+
+        # Position gizmo to the right of keyframe
+        self.setPos(8, -5)
+
+    def _create_icon(self, text: str, x_offset: float, color: str) -> QGraphicsRectItem:
+        """Creates a clickable icon button."""
+        from PySide6.QtCore import Qt
+
+        # Background rect (smaller)
+        size = 10
+        rect = QGraphicsRectItem(x_offset, 0, size, size)
+        rect.setBrush(QBrush(QColor(color)))
+        rect.setPen(QPen(QColor("#ffffff"), 1))
+        rect.setZValue(LAYER_UI_OVERLAY)
+
+        # Icon text (smaller font)
+        label = QGraphicsSimpleTextItem(text, rect)
+        label.setPos(x_offset + 1, -3)
+        label.setBrush(QBrush(QColor("#ffffff")))
+        font = QFont("Segoe UI", 7)
+        label.setFont(font)
+
+        # Make clickable
+        rect.setAcceptHoverEvents(True)
+        rect.setCursor(Qt.CursorShape.PointingHandCursor)
+
+        return rect
+
+    def hoverEnterEvent(self, event) -> None:
+        """Keep gizmo visible while hovering over it."""
+        logger.debug(f"Gizmo hover enter for marker {self.keyframe_item.marker_id}")
+        super().hoverEnterEvent(event)
+        self.keyframe_item._gizmo_hovered = True
+
+    def hoverLeaveEvent(self, event) -> None:
+        """Remove gizmo when mouse leaves."""
+        logger.debug(f"Gizmo hover leave for marker {self.keyframe_item.marker_id}")
+        super().hoverLeaveEvent(event)
+        self.keyframe_item._gizmo_hovered = False
+        if not self.keyframe_item.isUnderMouse():
+            self.keyframe_item._cleanup_gizmo()
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        """Handle clock icon click - enter Clock Mode."""
+        logger.info(f"Clock icon clicked for marker {self.keyframe_item.marker_id}")
+        self.keyframe_item.set_mode("clock")
+        event.accept()
 
 
 class KeyframeItem(QGraphicsEllipseItem):
@@ -75,15 +143,86 @@ class KeyframeItem(QGraphicsEllipseItem):
         self.on_drop_callback = on_drop_callback
         self.on_drag_callback = on_drag_callback
 
+        # Mode state
+        self.mode: str = "transform"  # "transform" or "clock"
+        self.is_pinned: bool = False
+
+        # Gizmo (mode selector)
+        self.gizmo: Optional[KeyframeGizmo] = None
+        self._gizmo_hovered: bool = False
+
         # Enable interaction
         self.setFlag(QGraphicsEllipseItem.GraphicsItemFlag.ItemIsMovable)
         self.setFlag(QGraphicsEllipseItem.GraphicsItemFlag.ItemSendsGeometryChanges)
         self.setAcceptHoverEvents(True)
 
+    def set_mode(self, mode: str) -> None:
+        """Switch between transform and clock modes."""
+        logger.info(f"Keyframe {self.marker_id} mode set to: {mode}")
+        self.mode = mode
+        if mode == "clock":
+            # Emit signal to enter Clock Mode
+            view = self.scene().views()[0] if self.scene() else None
+            if view and hasattr(view, "keyframe_clock_mode_requested"):
+                logger.debug(f"Emitting clock mode for {self.marker_id} at t={self.t}")
+                view.keyframe_clock_mode_requested.emit(self.marker_id, self.t)
+        # Hide gizmo after selection
+        self._cleanup_gizmo()
+
+    def set_pinned(self, pinned: bool) -> None:
+        """Set visual state for pinned keyframe (Clock Mode)."""
+        self.is_pinned = pinned
+        if pinned:
+            # Cyan highlight with thick border
+            self.setPen(QPen(QColor("#00ffff"), 3))
+            self.setBrush(QBrush(QColor("#00ffff")))
+            logger.debug(f"Keyframe {self.marker_id} pinned (highlighted)")
+        else:
+            # Reset to normal blue
+            self.setPen(QPen(QColor("#0080ff"), 1))
+            self.setBrush(QBrush(QColor("#0080ff")))
+            logger.debug(f"Keyframe {self.marker_id} unpinned")
+
+    def hoverEnterEvent(self, event) -> None:
+        """Show gizmo when hovering over keyframe."""
+        logger.debug(f"Keyframe hover enter for {self.marker_id}")
+        super().hoverEnterEvent(event)
+        if not self.gizmo and not self.is_pinned:
+            logger.debug(f"Creating gizmo for {self.marker_id}")
+            self.gizmo = KeyframeGizmo(self)
+            self.gizmo.setParentItem(self)  # Auto-cleanup when parent deleted
+            self.gizmo.setVisible(True)
+        elif self.gizmo:
+            self.gizmo.setVisible(True)
+
+    def _cleanup_gizmo(self) -> None:
+        """Remove gizmo if not being hovered."""
+        logger.debug(
+            f"Cleanup gizmo: {self.marker_id}, "
+            f"has_gizmo={self.gizmo is not None}, "
+            f"hovered={self._gizmo_hovered}, pinned={self.is_pinned}"
+        )
+        if self.gizmo and not self._gizmo_hovered and not self.is_pinned:
+            logger.debug(f"Hiding gizmo for {self.marker_id}")
+            self.gizmo.setVisible(False)
+
+    def hoverLeaveEvent(self, event) -> None:
+        """Hide gizmo when leaving keyframe."""
+        super().hoverLeaveEvent(event)
+        # Gizmo will cleanup itself via its own hover events
+
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Clear any existing selection before starting drag."""
+        logger.debug(
+            f"Keyframe mouse press for {self.marker_id}, "
+            f"mode={self.mode}, has_gizmo={self.gizmo is not None}"
+        )
         if self.scene():
             self.scene().clearSelection()
+        # Hide gizmo immediately when starting drag
+        if self.gizmo and self.mode == "transform":
+            logger.debug(f"Hiding gizmo before drag for {self.marker_id}")
+            self.gizmo.setVisible(False)
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
@@ -123,6 +262,7 @@ class MapGraphicsView(QGraphicsView):
         float, float, bool
     )  # x, y (normalized), in_bounds
     keyframe_moved = Signal(str, float, float, float)  # marker_id, t, new_x, new_y
+    keyframe_clock_mode_requested = Signal(str, float)  # marker_id, t
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -788,3 +928,12 @@ class MapGraphicsView(QGraphicsView):
     def set_calendar_converter(self, converter: object) -> None:
         """Sets the calendar converter for formatting keyframe date labels."""
         self._calendar_converter = converter
+
+    def set_keyframe_pinned(self, marker_id: str, t: float, pinned: bool) -> None:
+        """Set visual pinned state for a specific keyframe."""
+        for item in self.keyframe_items:
+            if isinstance(item, KeyframeItem) and item.marker_id == marker_id:
+                if abs(item.t - t) < 0.01:  # Match by time (epsilon)
+                    item.set_pinned(pinned)
+                    logger.debug(f"Set keyframe {marker_id} at t={t} pinned={pinned}")
+                    return

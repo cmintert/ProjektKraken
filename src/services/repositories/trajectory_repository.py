@@ -197,6 +197,70 @@ class TrajectoryRepository(BaseRepository):
         else:
             return self.insert(marker_db_id, [keyframe])
 
+    def update_keyframe_time(
+        self, map_id: str, object_id: str, old_t: float, new_t: float
+    ) -> str:
+        """
+        Updates the timestamp of a specific keyframe (Clock Mode editing).
+        Finds keyframe at old_t, changes its t to new_t, re-sorts trajectory.
+
+        Args:
+            map_id: ID of the map.
+            object_id: The object ID (Entity/Event ID).
+            old_t: Original timestamp to find the keyframe.
+            new_t: New timestamp to assign.
+
+        Returns:
+            The ID of the trajectory updated.
+
+        Raises:
+            ValueError: If marker or keyframe not found.
+        """
+        if not self._connection:
+            raise RuntimeError("Database connection not initialized")
+
+        # 1. Resolve markers.id
+        row = self._connection.execute(
+            "SELECT id FROM markers WHERE map_id = ? AND object_id = ?",
+            (map_id, object_id),
+        ).fetchone()
+
+        if not row:
+            logger.error(f"No marker found for map_id={map_id}, object_id={object_id}")
+            raise ValueError(f"Marker not found: map={map_id}, obj={object_id}")
+
+        marker_db_id = row["id"]
+
+        # 2. Get existing trajectories
+        trajectories = self.get_by_marker_db_id(marker_db_id)
+
+        if not trajectories:
+            raise ValueError(f"No trajectory found for marker {object_id}")
+
+        traj_id, keyframes = trajectories[0]
+
+        # 3. Find keyframe at old_t (within epsilon)
+        epsilon = 0.0001
+        target_kf = None
+        for kf in keyframes:
+            if abs(kf.t - old_t) < epsilon:
+                target_kf = kf
+                break
+
+        if not target_kf:
+            raise ValueError(f"Keyframe at t={old_t} not found")
+
+        # 4. Update timestamp
+        target_kf.t = new_t
+
+        # 5. Re-sort keyframes (natural reordering)
+        keyframes.sort(key=lambda k: k.t)
+
+        # 6. Persist update
+        self._update_trajectory_record(traj_id, keyframes)
+        logger.info(f"Updated keyframe time: {old_t:.2f} → {new_t:.2f} for {object_id}")
+        return traj_id
+
     def _update_trajectory_record(
         self, traj_id: str, keyframes: List[Keyframe]
     ) -> None:
