@@ -361,10 +361,14 @@ Entities that "die" or haven't been "born" must be hidden.
     *   **Visual Cues**: When a marker is selected, its entire trajectory is rendered as a dashed path.
     *   **Keyframe Indicators**: Individual keyframes are visualized as dots on the map, providing immediate visual feedback of the "history" of the entity.
     *   **Zoom-Aware Rendering**: Keyframe dots scale with zoom level to maintain visual consistency.
-* **Drag-to-Edit Keyframes** (New):
-    *   **Interactive `KeyframeItem`**: Keyframe dots are now draggable. Users can click and drag to reposition individual keyframes.
-    *   **Rubber-Band Path**: The trajectory path updates in real-time during drag, providing immediate visual feedback before committing.
-    *   **Smart Selection Handling**: Clicking a keyframe dot clears any marker selection, preventing accidental co-movement.
+* **Dual-Mode Keyframe Editing** (Implemented):
+    *   **Transform Mode (Spatial)**: Default state. Users can click and drag keyframe dots to reposition their $(x, y)$ coordinates. The trajectory path updates in real-time (Rubber-Banding).
+    *   **Clock Mode (Temporal)**:
+        *   **Gizmo Activation**: Hovering a keyframe reveals a persistent "Clock" icon.
+        *   **Pinning**: Clicking the icon "Pins" the keyframe, locking its spatial position but unlocking its timestamp.
+        *   **Visual Feedback**: Pinned keyframes glow **Cyan** (#00FFFF) to clearly distinguish Temporal Mode from Spatial selection.
+        *   **Scrub-to-Edit**: While pinned, scrubbing the timeline moves the keyframe itself through time (updating $t$) rather than moving the playhead.
+        *   **Commit**: Clicking the icon again commits the new timestamp, automatically re-sorting the keyframe list to maintain chronological integrity.
 
 ### Gaps & Next Steps
 1.  **Recording Mode**: The "Live Puppeteering" logic (Phase 8.1) for recording real-time mouse movements is not yet implemented.
