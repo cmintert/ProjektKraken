@@ -464,6 +464,7 @@ class MapWidget(QWidget):
         y: float,
         icon: Optional[str] = None,
         color: Optional[str] = None,
+        description: Optional[str] = None,
     ) -> None:
         """
         Adds a marker to the map.
@@ -476,8 +477,11 @@ class MapWidget(QWidget):
             y: Normalized Y coordinate [0.0, 1.0].
             icon: Optional icon filename.
             color: Optional color hex string.
+            description: Optional description for tooltip.
         """
-        self.view.add_marker(marker_id, object_type, label, x, y, icon, color)
+        self.view.add_marker(
+            marker_id, object_type, label, x, y, icon, color, description
+        )
 
     def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
         """

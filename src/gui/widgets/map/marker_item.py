@@ -11,16 +11,25 @@ import os
 from typing import Any, Optional
 
 from PySide6.QtCore import QRectF, Qt, Signal
-from PySide6.QtGui import QBrush, QColor, QCursor, QMouseEvent, QPainter, QPen, QPixmap
+from PySide6.QtGui import (
+    QBrush,
+    QColor,
+    QCursor,
+    QFont,
+    QMouseEvent,
+    QPainter,
+    QPen,
+    QPixmap,
+)
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (
     QGraphicsItem,
     QGraphicsObject,
     QGraphicsPixmapItem,
+    QGraphicsSimpleTextItem,
     QStyleOptionGraphicsItem,
     QWidget,
 )
-
 
 # Resolve marker icons path
 MARKER_ICONS_PATH = os.path.join(
@@ -62,6 +71,7 @@ class MarkerItem(QGraphicsObject):
         pixmap_item: QGraphicsPixmapItem,
         icon: Optional[str] = None,
         color: Optional[str] = None,
+        description: Optional[str] = None,
     ) -> None:
         """
         Initializes a MarkerItem.
@@ -69,9 +79,11 @@ class MarkerItem(QGraphicsObject):
         Args:
             marker_id: Unique identifier for the marker.
             object_type: Type of object ('entity' or 'event').
-            label: Label text for the marker (tooltip).
+            label: Label text for the marker (displayed below marker).
             pixmap_item: Reference to the map pixmap item for coordinate conversion.
             icon: Optional icon filename (e.g., 'castle.svg'). Falls back to circle.
+            color: Optional color hex string.
+            description: Optional description for tooltip. Falls back to label if empty.
         """
         super().__init__()
 
@@ -95,8 +107,8 @@ class MarkerItem(QGraphicsObject):
             f"Created MarkerItem {marker_id} with label: {label}, icon: {icon}"
         )
 
-        # Tooltip
-        self.setToolTip(label)
+        # Tooltip - use description if available, otherwise fall back to label
+        self.setToolTip(description or label)
 
         # Make draggable and selectable
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
@@ -114,6 +126,26 @@ class MarkerItem(QGraphicsObject):
         # Drag tracking
         self._is_dragging = False
         self._drag_start_pos = None
+
+        # Text Label - dark grey for visibility on light/dark backgrounds
+        self._label_item = QGraphicsSimpleTextItem(label, self)
+        self._label_item.setBrush(QBrush(QColor("#333333")))  # Dark grey
+
+        font = QFont("Segoe UI", 8)
+        font.setBold(True)
+        self._label_item.setFont(font)
+
+        # Center the label below the marker
+        self._update_label_position()
+
+    def _update_label_position(self) -> None:
+        """Centers the label below the marker."""
+        rect = self._label_item.boundingRect()
+        # Center horizontally relative to 0 (marker center)
+        x = -rect.width() / 2
+        # Position vertically below the marker (MARKER_SIZE/2 is bottom edge)
+        y = (self.MARKER_SIZE / 2) + 2  # 2px padding
+        self._label_item.setPos(x, y)
 
     def _load_icon(self, icon_name: Optional[str]) -> None:
         """

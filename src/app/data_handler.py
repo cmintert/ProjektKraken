@@ -200,8 +200,9 @@ class DataHandler(QObject):
         # Process markers to add labels from cached data
         processed_markers = []
         for marker in markers:
-            # Determine label from cached data
+            # Determine label and description from cached data
             label = "Unknown"
+            description = ""
             if marker.object_type == "entity" and self._cached_entities:
                 entity = next(
                     (e for e in self._cached_entities if e.id == marker.object_id),
@@ -209,6 +210,7 @@ class DataHandler(QObject):
                 )
                 if entity:
                     label = entity.name
+                    description = getattr(entity, "description", "") or ""
             elif marker.object_type == "event" and self._cached_events:
                 event = next(
                     (e for e in self._cached_events if e.id == marker.object_id),
@@ -216,6 +218,7 @@ class DataHandler(QObject):
                 )
                 if event:
                     label = event.name
+                    description = getattr(event, "description", "") or ""
 
             # Create marker data dict
             processed_markers.append(
@@ -224,6 +227,7 @@ class DataHandler(QObject):
                     "object_id": marker.object_id,
                     "object_type": marker.object_type,
                     "label": label,
+                    "description": description,
                     "x": marker.x,
                     "y": marker.y,
                     "icon": marker.attributes.get("icon"),

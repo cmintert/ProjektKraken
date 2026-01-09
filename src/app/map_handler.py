@@ -433,6 +433,7 @@ class MapHandler(QObject):
                 y=marker_data["y"],
                 icon=marker_data["icon"],
                 color=marker_data["color"],
+                description=marker_data.get("description", ""),
             )
 
             # Store mapping for later updates (object_id -> marker.id)

@@ -505,6 +505,7 @@ class MapGraphicsView(QGraphicsView):
         y: float,
         icon: Optional[str] = None,
         color: Optional[str] = None,
+        description: Optional[str] = None,
     ) -> None:
         """
         Adds a marker to the map at normalized coordinates.
@@ -516,6 +517,7 @@ class MapGraphicsView(QGraphicsView):
             x: Normalized X coordinate [0.0, 1.0].
             y: Normalized Y coordinate [0.0, 1.0].
             icon: Optional icon filename (e.g., 'castle.svg').
+            description: Optional description for tooltip.
         """
         if not self.pixmap_item:
             logger.warning("Cannot add marker: no map loaded")
@@ -528,7 +530,7 @@ class MapGraphicsView(QGraphicsView):
 
         # Create new marker with optional icon and color
         marker = MarkerItem(
-            marker_id, object_type, label, self.pixmap_item, icon, color
+            marker_id, object_type, label, self.pixmap_item, icon, color, description
         )
 
         # Convert normalized to scene coordinates
