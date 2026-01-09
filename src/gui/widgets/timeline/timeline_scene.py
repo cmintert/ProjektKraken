@@ -62,6 +62,7 @@ class PlayheadItem(QGraphicsLineItem):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
+        self.setAcceptHoverEvents(True)  # Enable hover for visual feedback
 
         # Cursor hint
         self.setCursor(QCursor(Qt.SizeHorCursor))
@@ -76,16 +77,39 @@ class PlayheadItem(QGraphicsLineItem):
         self._top = -100000.0
         self._bottom = 100000.0  # Vertically infinite-ish
 
+        # Zoom level for dynamic hit testing
+        self._zoom_level = 1.0
+
+    def set_zoom(self, zoom: float) -> None:
+        """
+        Updates the zoom level to maintain constant screen-space hit area.
+
+        Args:
+            zoom: Current view zoom level (pixels per time unit * base scale).
+        """
+        if zoom <= 0:
+            return
+        if self._zoom_level != zoom:
+            self._zoom_level = zoom
+            # Trigger shape recalculation
+            self.prepareGeometryChange()
+
     def shape(self) -> QPainterPath:
         """
         Define a wider hit area for easier grabbing.
-        Returns a path roughly 10px wide centered on the line.
+        Returns a path roughly 30px wide (screen space).
         """
         path = QPainterPath()
-        # Create a rectangle 20px wide centered on x=0
-        # Spanning the vertical extent (or just a large range if infinite)
-        # Using a finite but large range ensures it works within reasonable view limits
-        path.addRect(-10, -100000, 20, 200000)
+
+        # Target screen width in pixels
+        target_screen_width = 30.0
+
+        # Calculate width in scene coordinates
+        # Width = ScreenPixels / ZoomLevel
+        width = target_screen_width / self._zoom_level
+        half_width = width / 2
+
+        path.addRect(-half_width, -100000, width, 200000)
         return path
 
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:

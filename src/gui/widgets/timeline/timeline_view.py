@@ -13,6 +13,7 @@ from PySide6.QtGui import (
     QFont,
     QMouseEvent,
     QPainter,
+    QPainterPath,
     QPen,
     QResizeEvent,
     QTransform,
@@ -57,6 +58,15 @@ class TimelineView(QGraphicsView):
     # Zoom limits
     MIN_ZOOM = 0.01  # Maximum zoom out (1% of normal)
     MAX_ZOOM = 100.0  # Maximum zoom in (100x normal)
+
+    # Ruler & Playhead Constants
+    PLAYHEAD_COLOR = QColor(255, 100, 100)
+    PLAYHEAD_HANDLE_WIDTH = 20
+    PLAYHEAD_HANDLE_RECT_HEIGHT = 12
+    PLAYHEAD_HANDLE_TRI_HEIGHT = 8
+
+    MAJOR_TICK_HEIGHT = 12
+    MINOR_TICK_HEIGHT = 8
 
     # Special "All Events" group
     ALL_EVENTS_GROUP_NAME = "All events"
@@ -164,6 +174,9 @@ class TimelineView(QGraphicsView):
         """
         from PySide6.QtCore import QSize
 
+        if self._playhead:
+            self._playhead.set_zoom(self._current_zoom * self.scale_factor)
+
         return QSize(200, 100)
 
     def _on_playhead_moved(self, x_pos: float) -> None:
@@ -208,6 +221,10 @@ class TimelineView(QGraphicsView):
             self.fit_all()
             self._initial_fit_pending = False
             self._has_done_initial_fit = True
+
+        # Ensure playhead zoom is updated if view size affects it
+        if self._playhead and hasattr(self, "_current_zoom"):
+            self._playhead.set_zoom(self._current_zoom * self.scale_factor)
 
         # Update label overlay geometry to match viewport
         if hasattr(self, "_label_overlay"):
@@ -313,11 +330,11 @@ class TimelineView(QGraphicsView):
 
             # Determine tick styling
             if tick.is_major:
-                tick_height = 12
+                tick_height = self.MAJOR_TICK_HEIGHT
                 painter.setFont(major_font)
                 text_color = QColor(theme["text_main"])
             else:
-                tick_height = 8
+                tick_height = self.MINOR_TICK_HEIGHT
                 painter.setFont(minor_font)
                 text_color = QColor(theme["text_dim"])
 
@@ -360,7 +377,66 @@ class TimelineView(QGraphicsView):
                 context_label,
             )
 
+        # 8. Draw Playhead Handle (on top of everything else)
+        self._draw_playhead_handle(painter, rect)
+
+        # 9. Clean up
         painter.restore()
+
+    def _draw_playhead_handle(self, painter: QPainter, rect: QRectF) -> None:
+        """
+        Draws a handle for the playhead in the ruler area.
+        """
+        playhead_time = self._playhead.get_time(self.scale_factor)
+
+        # Convert to screen coordinates
+        playhead_scene_x = playhead_time * self.scale_factor
+        playhead_screen_pos = self.mapFromScene(playhead_scene_x, 0)
+        screen_x = playhead_screen_pos.x()
+
+        # Check if visible
+        if screen_x < 0 or screen_x > rect.width():
+            return
+
+        # Draw Handle
+        # A pentagon shape pointing down
+        # Width: 14px, Height: 12px
+
+        handle_color = QColor(self.PLAYHEAD_COLOR)  # Match playhead red
+
+        # Check for hover/drag state to highlight
+        if hasattr(self, "_dragging_playhead") and self._dragging_playhead:
+            handle_color = handle_color.lighter(130)
+        elif self._playhead.isUnderMouse():
+            handle_color = handle_color.lighter(120)
+
+        painter.setBrush(handle_color)
+        painter.setPen(Qt.PenStyle.NoPen)
+
+        # Define shape: Pentagon
+        # Top-Left, Top-Right, Bottom-Tip
+        # Actually let's do a simple pentagon: rectangle top + triangle bottom
+        w = self.PLAYHEAD_HANDLE_WIDTH
+        h_rect = self.PLAYHEAD_HANDLE_RECT_HEIGHT
+        h_tri = self.PLAYHEAD_HANDLE_TRI_HEIGHT
+
+        x = screen_x
+
+        path = QPainterPath()
+        # Start top-left of the rect part
+        path.moveTo(x - w / 2, 0)
+        # Top-right
+        path.lineTo(x + w / 2, 0)
+        # Bottom-right of rect
+        path.lineTo(x + w / 2, h_rect)
+        # Tip
+        path.lineTo(x, h_rect + h_tri)
+        # Bottom-left of rect
+        path.lineTo(x - w / 2, h_rect)
+        # Close
+        path.closeSubpath()
+
+        painter.drawPath(path)
 
     def set_ruler_calendar(self, converter: Any) -> None:
         """
@@ -959,6 +1035,9 @@ class TimelineView(QGraphicsView):
             self.setTransform(QTransform().scale(scale_x, 1.0))
             self._current_zoom = scale_x
 
+            # Update playhead zoom
+            self._playhead.set_zoom(scale_x * self.scale_factor)
+
             # Repack on new zoom
             self.repack_events()
 
@@ -1010,6 +1089,9 @@ class TimelineView(QGraphicsView):
                 # Apply zoom
                 self.scale(factor, 1.0)
                 self._current_zoom = new_zoom
+
+                # Update playhead zoom
+                self._playhead.set_zoom(new_zoom * self.scale_factor)
 
                 # Repack on new zoom
                 self.repack_events()
