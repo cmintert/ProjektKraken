@@ -184,7 +184,8 @@ class TimelineView(QGraphicsView):
         Called when playhead is dragged manually.
         Updates the internal time and emits signal.
         """
-        new_time = x_pos / self.scale_factor
+        # Round to 4 decimal places to prevent float precision drift
+        new_time = round(x_pos / self.scale_factor, 4)
         self._playhead._time = new_time  # Directly update internal state
         self.playhead_time_changed.emit(new_time)
 
@@ -1091,8 +1092,9 @@ class TimelineView(QGraphicsView):
         super().mouseReleaseEvent(event)
 
         if hasattr(self, "_dragging_playhead") and self._dragging_playhead:
-            # Emit signal with new playhead time
-            new_time = self._playhead.get_time(self.scale_factor)
+            # Emit final authoritative signal with rounded playhead time
+            # This ensures markers snap to exact position after scrubbing
+            new_time = round(self._playhead.get_time(self.scale_factor), 4)
             self.playhead_time_changed.emit(new_time)
             self._dragging_playhead = False
 

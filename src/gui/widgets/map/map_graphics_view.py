@@ -81,8 +81,8 @@ KEYFRAME_LABEL_MAX_SIZE_PT = 10
 
 class KeyframeGizmo(QGraphicsItemGroup):
     """
-    Hover gizmo for entering Clock Mode (temporal editing).
-    Shows a single clickable clock icon.
+    Hover gizmo for keyframe actions: Clock Mode and Delete.
+    Shows clickable icons for temporal editing (clock) and deletion (red X).
     """
 
     def __init__(
@@ -93,9 +93,13 @@ class KeyframeGizmo(QGraphicsItemGroup):
         self.setZValue(LAYER_UI_OVERLAY)
         self.setAcceptHoverEvents(True)
 
-        # Create Clock icon (centered)
+        # Create Clock icon (left)
         self.clock_icon = self._create_icon("🕐", 0, GIZMO_TEXT_COLOR)
         self.addToGroup(self.clock_icon)
+
+        # Create Delete icon (right) - red X
+        self.delete_icon = self._create_icon("✕", GIZMO_SIZE + 2, "#FF4444")
+        self.addToGroup(self.delete_icon)
 
         # Position gizmo to Northeast of keyframe (Right and Up)
         self.setPos(3, -8)
@@ -139,9 +143,21 @@ class KeyframeGizmo(QGraphicsItemGroup):
             self.keyframe_item._cleanup_gizmo()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        """Handle clock icon click - enter Clock Mode."""
-        logger.info(f"Clock icon clicked for marker {self.keyframe_item.marker_id}")
-        self.keyframe_item.set_mode("clock")
+        """Handle icon clicks - clock for Clock Mode, X for delete."""
+        # Determine which icon was clicked based on x position
+        click_x = event.pos().x()
+
+        if click_x < GIZMO_SIZE + 1:
+            # Clock icon clicked - enter Clock Mode
+            logger.info(f"Clock icon clicked for marker {self.keyframe_item.marker_id}")
+            self.keyframe_item.set_mode("clock")
+        else:
+            # Delete icon clicked - request keyframe deletion
+            logger.info(
+                f"Delete icon clicked for keyframe {self.keyframe_item.marker_id} "
+                f"at t={self.keyframe_item.t}"
+            )
+            self.keyframe_item.request_delete()
         event.accept()
 
 
@@ -205,6 +221,17 @@ class KeyframeItem(QGraphicsEllipseItem):
 
         state = "pinned (highlighted)" if pinned else "unpinned"
         logger.debug(f"Keyframe {self.marker_id} {state}")
+
+    def request_delete(self) -> None:
+        """Request deletion of this keyframe by emitting signal to view."""
+        view = self.scene().views()[0] if self.scene() else None
+        if view and hasattr(view, "keyframe_delete_requested"):
+            logger.info(
+                f"Requesting delete for keyframe {self.marker_id} at t={self.t}"
+            )
+            view.keyframe_delete_requested.emit(self.marker_id, self.t)
+        # Cleanup gizmo after action
+        self._cleanup_gizmo()
 
     def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """Show gizmo when hovering over keyframe."""
@@ -300,6 +327,7 @@ class MapGraphicsView(QGraphicsView):
     )  # x, y (normalized), in_bounds
     keyframe_moved = Signal(str, float, float, float)  # marker_id, t, new_x, new_y
     keyframe_clock_mode_requested = Signal(str, float)  # marker_id, t
+    keyframe_delete_requested = Signal(str, float)  # marker_id, t
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """

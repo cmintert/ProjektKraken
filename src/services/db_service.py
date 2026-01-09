@@ -2158,3 +2158,19 @@ class DatabaseService:
         return self._trajectory_repo.update_keyframe_time(
             map_id, object_id, old_t, new_t
         )
+
+    def delete_keyframe(self, map_id: str, object_id: str, t: float) -> Optional[str]:
+        """
+        Deletes a keyframe from a marker's trajectory.
+
+        Args:
+            map_id: The ID of the map.
+            object_id: The object ID (Entity/Event ID).
+            t: The timestamp of the keyframe to delete.
+
+        Returns:
+            The ID of the updated trajectory, or None if trajectory was deleted.
+        """
+        if not self._connection:
+            self.connect()
+        return self._trajectory_repo.delete_keyframe(map_id, object_id, t)

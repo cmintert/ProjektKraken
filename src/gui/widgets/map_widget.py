@@ -77,6 +77,7 @@ class MapWidget(QWidget):
     update_keyframe_time_requested = Signal(
         str, str, float, float
     )  # map_id, marker_id, old_t, new_t
+    delete_keyframe_requested = Signal(str, str, float)  # map_id, marker_id, t
     jump_to_time_requested = Signal(float)  # target_time
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
@@ -154,6 +155,7 @@ class MapWidget(QWidget):
         self.view.marker_clicked.connect(self._on_marker_clicked_internal)
         self.view.keyframe_moved.connect(self._on_keyframe_moved)
         self.view.keyframe_clock_mode_requested.connect(self._on_clock_mode_requested)
+        self.view.keyframe_delete_requested.connect(self._on_keyframe_delete_requested)
         self.view.add_marker_requested.connect(self.create_marker_requested.emit)
         self.view.delete_marker_requested.connect(self.delete_marker_requested.emit)
         self.view.change_marker_icon_requested.connect(
@@ -279,6 +281,10 @@ class MapWidget(QWidget):
         Args:
             time: Current playhead time in lore_date units.
         """
+        # Round to 4 decimal places to prevent float precision drift
+        # during rapid playhead scrubbing
+        time = round(time, 4)
+
         self._playhead_time = time
         self.view._current_time = time
         self._update_time_display()
@@ -629,3 +635,20 @@ class MapWidget(QWidget):
     def set_calendar_converter(self, converter: object) -> None:
         """Sets the calendar converter for formatting keyframe date labels."""
         self.view.set_calendar_converter(converter)
+
+    @Slot(str, float)
+    def _on_keyframe_delete_requested(self, marker_id: str, t: float) -> None:
+        """
+        Handle keyframe delete request from gizmo.
+
+        Args:
+            marker_id: The ID of the marker (object_id).
+            t: The timestamp of the keyframe to delete.
+        """
+        map_id = self.map_selector.currentData()
+        if not map_id:
+            logger.warning("Cannot delete keyframe: no map selected")
+            return
+
+        logger.info(f"Requesting keyframe delete: marker={marker_id}, t={t}")
+        self.delete_keyframe_requested.emit(map_id, marker_id, t)

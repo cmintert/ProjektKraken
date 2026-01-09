@@ -255,6 +255,30 @@ class DatabaseWorker(QObject):
             logger.error(f"Failed to update keyframe time: {traceback.format_exc()}")
             self.error_occurred.emit("Failed to update keyframe timestamp.")
 
+    @Slot(str, str, float)
+    def delete_keyframe(self, map_id: str, marker_id: str, t: float) -> None:
+        """
+        Deletes a keyframe from a marker's trajectory and reloads trajectories.
+
+        Args:
+            map_id: The map ID (for reloading).
+            marker_id: The marker ID (object_id).
+            t: The timestamp of the keyframe to delete.
+        """
+        if not self.db_service:
+            return
+
+        try:
+            self.db_service.delete_keyframe(map_id, marker_id, t)
+            self.load_trajectories(map_id)
+            self.operation_finished.emit(f"Keyframe at t={t:.1f} deleted.")
+        except ValueError as e:
+            logger.warning(f"Keyframe delete failed: {e}")
+            self.error_occurred.emit(str(e))
+        except Exception:
+            logger.error(f"Failed to delete keyframe: {traceback.format_exc()}")
+            self.error_occurred.emit("Failed to delete keyframe.")
+
     @Slot(str)
     def load_event_details(self, event_id: str) -> None:
         """Loads event details and sends them back."""

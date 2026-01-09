@@ -261,6 +261,66 @@ class TrajectoryRepository(BaseRepository):
         logger.info(f"Updated keyframe time: {old_t:.2f} → {new_t:.2f} for {object_id}")
         return traj_id
 
+    def delete_keyframe(self, map_id: str, object_id: str, t: float) -> Optional[str]:
+        """
+        Deletes a keyframe at a specific time from a trajectory.
+
+        Args:
+            map_id: ID of the map.
+            object_id: The object ID (Entity/Event ID).
+            t: The timestamp of the keyframe to delete.
+
+        Returns:
+            The ID of the trajectory updated, or None if trajectory is now empty.
+
+        Raises:
+            ValueError: If marker or keyframe not found.
+        """
+        if not self._connection:
+            raise RuntimeError("Database connection not initialized")
+
+        # 1. Resolve markers.id
+        row = self._connection.execute(
+            "SELECT id FROM markers WHERE map_id = ? AND object_id = ?",
+            (map_id, object_id),
+        ).fetchone()
+
+        if not row:
+            logger.error(f"No marker found for map_id={map_id}, object_id={object_id}")
+            raise ValueError(f"Marker not found: map={map_id}, obj={object_id}")
+
+        marker_db_id = row["id"]
+
+        # 2. Get existing trajectories
+        trajectories = self.get_by_marker_db_id(marker_db_id)
+
+        if not trajectories:
+            raise ValueError(f"No trajectory found for marker {object_id}")
+
+        traj_id, keyframes = trajectories[0]
+
+        # 3. Find and remove keyframe at t (within epsilon)
+        original_count = len(keyframes)
+        keyframes = [kf for kf in keyframes if abs(kf.t - t) > KEYFRAME_TIME_EPSILON]
+
+        if len(keyframes) == original_count:
+            raise ValueError(f"Keyframe at t={t} not found")
+
+        logger.info(f"Deleted keyframe at t={t:.2f} for {object_id}")
+
+        # 4. If trajectory now has less than 2 keyframes, delete the entire trajectory
+        if len(keyframes) < 2:
+            logger.info(
+                f"Trajectory {traj_id} has <2 keyframes, deleting entire trajectory"
+            )
+            with self.transaction() as conn:
+                conn.execute("DELETE FROM moving_features WHERE id = ?", (traj_id,))
+            return None
+
+        # 5. Persist update
+        self._update_trajectory_record(traj_id, keyframes)
+        return traj_id
+
     def _update_trajectory_record(
         self, traj_id: str, keyframes: List[Keyframe]
     ) -> None:
