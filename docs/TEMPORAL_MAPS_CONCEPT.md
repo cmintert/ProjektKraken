@@ -334,46 +334,50 @@ Entities that "die" or haven't been "born" must be hidden.
     *   Temporal indices (`t_start`, `t_end`) are in place for efficient queries.
 * **Interaction**: The map now uses an "Infinite Canvas" interaction model (Scrollbars disabled, Drag-to-Pan enforced).
 
-### Existing Capabilities
-* **Map Visualization**: Supports loading static map images (`QGraphicsPixmapItem`).
-* **Marker Implementation**:
-    *   `MarkerItem` supports SVG icons and coloring.
-    *   Optimization flags (`ItemIsMovable`, `ItemSendsGeometryChanges`, `ItemCoordinateCache` equivalent) are enabled.
-* **Map Hardening / GIS Features**:
-    *   **Scale Bar**: Implemented GIS-style scale bar overlay (`ScaleBarPainter`) leveraging `drawForeground`.
-    *   **Configuration**: Added "Settings" dialog to define map pixel-to-meter ratio.
-    *   **Live Coordinates**: Real-time display of Normalized and Kilometer coordinates.
-    *   **UI Polish**: Standardized Map Widget toolbar with `QPushButton` styling to match application theme.
-* **Layers**: The scene is now structured with defined Z-Values (`LAYER_MAP_BG`, `LAYER_MARKERS`, etc.) to prevent future rendering conflicts.
-* **Code Quality & Stability**:
-    *   **Marker Logic**: Refactored `MarkerItem` for better maintainability (helper methods for painting/drag).
-    *   **Critical Fixes**: Resolved interaction bugs where markers at `(0,0)` were unclickable.
-    *   **Testing**: Expanded unit tests to cover coordinate display and marker signals.
-
-### Temporal Synchronization & Animation
-* **Timeline ↔ Map Signal Wiring**: The map subscribes to time changes from the Timeline widget (`playhead_time_changed`).
-* **Interpolation Logic**: Implemented `interpolate_position` (Linear) using `bisect` for efficient keyframe lookup.
-* **Marker Movement**: `MapWidget` now automatically updates marker positions during timeline scrubbing/playback based on interpolated trajectory data.
-* **Trajectory Persistence**: Dedicated `TrajectoryRepository` handles ACID-compliant storage of keyframes, resolving the mapping between transient UI "Object IDs" and persistent Database Primary Keys.
+### Marker Visualization & UI
+* **Permanent Marker Labels**:
+    *   Markers now feature a permanent label displaying the linked item's name (Entities/Events).
+    *   Styled in dark grey (**#333333**) using bold **8pt Segoe UI** font.
+    *   Labels inherit the `ItemIgnoresTransformations` flag, ensuring they remain legible and correctly positioned regardless of map zoom.
+* **Description Tooltips**: Tooltips now prioritize the item's `description` field for richer context, falling back to the `label` if no description is available.
+* **Smart Marker Scale**: Markers and their associated visual elements leverage dynamic scaling and hitbox adjustments for professional "pixel-perfect" interaction.
 
 ### Interaction & Visualization
 * **Manual Keyframing (Snapshots)**: Added "Add Keyframe" button to the Map toolbar. This allows users to set precise snapshots of marker state at specific timeline moments.
+* **Constraint: Entity-Only Keyframes**: Keyframing is strictly reserved for **Entity** markers. **Event** markers are treated as static chronological pins without trajectories. UI controls (Add Keyframe button) automatically disable when an Event is selected.
 * **Trajectory Visualizer**:
     *   **Visual Cues**: When a marker is selected, its entire trajectory is rendered as a dashed path.
     *   **Keyframe Indicators**: Individual keyframes are visualized as dots on the map, providing immediate visual feedback of the "history" of the entity.
     *   **Zoom-Aware Rendering**: Keyframe dots scale with zoom level to maintain visual consistency.
-* **Dual-Mode Keyframe Editing** (Implemented):
-    *   **Transform Mode (Spatial)**: Default state. Users can click and drag keyframe dots to reposition their $(x, y)$ coordinates. The trajectory path updates in real-time (Rubber-Banding).
-    *   **Clock Mode (Temporal)**:
-        *   **Gizmo Activation**: Hovering a keyframe reveals a persistent "Clock" icon (Size 6, matched to dot).
-        *   **Pinning**: Clicking the icon "Pins" the keyframe, locking its spatial position but unlocking its timestamp.
-        *   **Visual Feedback**: Pinned keyframes glow **Red** (#E74C3C) to clearly distinguish Temporal Mode from Spatial selection.
+* **Multi-Action Keyframe Gizmo** (Implemented):
+    *   **Activation**: Hovering a keyframe dot reveals a dual-icon gizmo (matched to dot size).
+    *   **Spatial Editing**: Dragging the dot directly repositions $(x, y)$ coordinates. The trajectory path updates in real-time (Rubber-Banding).
+    *   **Clock Mode (Temporal Edit)**:
+        *   **Action**: Clicking the **Clock icon** (left) "Pins" the keyframe, locking its spatial position but unlocking its timestamp.
+        *   **Timeline Jump**: Clicking the clock icon now triggers a "Jump-to-Time" event, instantly moving the timeline playhead to the keyframe's timestamp.
+        *   **Visual Feedback**: Pinned keyframes glow **Red** (#E74C3C).
         *   **Scrub-to-Edit**: While pinned, scrubbing the timeline moves the keyframe itself through time.
-        *   **Live Feedback**: The keyframe's date label updates in real-time as the playhead drags, showing the exact target date.
-        *   **Commit**: Clicking the icon again commits the new timestamp, automatically re-sorting the keyframe list to maintain chronological integrity.
-*   **Smart Label Scaling**:
-    *   Keyframe date labels dynamically scale with zoom but are constrained between **8pt** (readability floor) and **10pt** (visual clutter ceiling).
+        *   **Live Feedback**: The keyframe's date label updates in real-time as the playhead is dragged.
+        *   **Commit**: Clicking the icon again commits the new timestamp, re-sorting the keyframe list.
+    *   **Keyframe Deletion**:
+        *   **Action**: Clicking the **Red "✕" icon** (right) requests deletion.
+        *   **Command Pattern**: Executed via `DeleteKeyframeCommand` with full Undo/Redo support.
+        *   **Self-Cleanup**: If a deletion leaves fewer than 2 keyframes, the entire trajectory record is automatically removed from the database to maintain data integrity.
+* **Smart Label Scaling**:
+    *   Keyframe date labels dynamically scale with zoom but are constrained between **8pt** and **10pt**.
     *   Labels are pixel-aligned directly below markers for consistent legibility.
+* **Time Precision & Hardening**:
+    *   **Precision Standard**: All internal playhead calculations are now rounded to **4 decimal places**.
+    *   **Consistency**: Rounding is applied during active scrubbing and authoritative mouse release in `TimelineView`, and enforced at the input level in `MapWidget`.
+    *   **Benefit**: Eliminates floating-point drift and "jitter" in marker positions during rapid playhead interaction.
+
+### Core Component Stability & Refactoring
+* **TimelineView Hardening**:
+    *   Refactored "magic number" layout constants into unified, named configurations for better maintainability.
+    *   Significantly improved playhead selectability with dynamic hitbox scaling that responds to zoom level.
+* **Test Coverage Enhancement**:
+    *   Expanded the unit test suite with 18+ new tests for `TimelineView` helpers, including lane calculations, zoom transforms, and date-to-pixel mapping.
+    *   Total trajectory-related test coverage now ensures stability against regressions in interpolation and coordinate transformation logic.
 
 ### Gaps & Next Steps
 1.  **Recording Mode**: The "Live Puppeteering" logic (Phase 8.1) for recording real-time mouse movements is not yet implemented.
