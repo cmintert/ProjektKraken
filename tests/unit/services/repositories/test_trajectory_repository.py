@@ -133,7 +133,6 @@ class TestTrajectoryRepository:
         ).fetchone()
 
         assert row["t_start"] == 10.0
-        assert row["t_start"] == 10.0
         assert row["t_end"] == 50.0
 
     def test_update_keyframe_time_and_resort(self, repo, setup_data):
