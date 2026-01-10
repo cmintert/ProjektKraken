@@ -622,6 +622,7 @@ class MapGraphicsView(QGraphicsView):
         icon: Optional[str] = None,
         color: Optional[str] = None,
         description: Optional[str] = None,
+        lore_date: Optional[float] = None,
     ) -> None:
         """
         Adds a marker to the map at normalized coordinates.
@@ -634,6 +635,7 @@ class MapGraphicsView(QGraphicsView):
             y: Normalized Y coordinate [0.0, 1.0].
             icon: Optional icon filename (e.g., 'castle.svg').
             description: Optional description for tooltip.
+            lore_date: Optional lore timestamp for temporal filtering.
         """
         if not self.pixmap_item:
             logger.warning("Cannot add marker: no map loaded")
@@ -646,7 +648,14 @@ class MapGraphicsView(QGraphicsView):
 
         # Create new marker with optional icon and color
         marker = MarkerItem(
-            marker_id, object_type, label, self.pixmap_item, icon, color, description
+            marker_id,
+            object_type,
+            label,
+            self.pixmap_item,
+            icon,
+            color,
+            description,
+            lore_date,
         )
 
         # Convert normalized to scene coordinates
@@ -669,29 +678,21 @@ class MapGraphicsView(QGraphicsView):
     def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
         """
         Updates a marker's position to new normalized coordinates.
-
-        Args:
-            marker_id: Unique identifier for the marker.
-            x: Normalized X coordinate [0.0, 1.0].
-            y: Normalized Y coordinate [0.0, 1.0].
         """
         if marker_id not in self.markers:
             logger.warning(f"Cannot update: marker {marker_id} not found")
             return
 
         marker = self.markers[marker_id]
-        marker = self.markers[marker_id]
         scene_pos = self.coord_system.to_scene(x, y)
         marker.setPos(scene_pos)
 
-        logger.debug(f"Updated marker {marker_id} to normalized ({x:.3f}, {y:.3f})")
+        # Remove spammy log
+        # logger.debug(f"Updated marker {marker_id} to normalized ({x:.3f}, {y:.3f})")
 
     def remove_marker(self, marker_id: str) -> None:
         """
         Removes a marker from the map.
-
-        Args:
-            marker_id: Unique identifier for the marker to remove.
         """
         if marker_id in self.markers:
             self.scene.removeItem(self.markers[marker_id])
@@ -704,6 +705,37 @@ class MapGraphicsView(QGraphicsView):
             self.scene.removeItem(marker)
         self.markers.clear()
         logger.debug("Cleared all markers")
+
+    def update_markers_temporal_state(
+        self, playhead_time: float, current_time: float
+    ) -> None:
+        """
+        Updates the temporal visual state of all markers based on time.
+        """
+        for marker in self.markers.values():
+            if marker.lore_date is None:
+                # Timeless entities are always present/vivid
+                marker.set_temporal_state(is_future=False, is_past=False)
+                continue
+
+            # Determine State
+            # "Future": It hasn't happened yet in the playback AND hasn't happened in 'Now'.
+            # Usually, playhead is the view into history. If playhead < event_date, it's future relative to view.
+            is_future = marker.lore_date > playhead_time
+
+            # Optional: You could allow seeing "future relative to playhead but past relative to now" differently.
+            # But "Dull out markers in the future of the playhead OR in the future of the current time"
+            # suggests a strong condition.
+            # Let's interpret user request:
+            # "dull out markers that lie in the future of the playhead" -> Primary requirement.
+            # "or in the future of the current time" -> If playhead is dragged past 'Now', those potential future events are still future?
+            # actually usually 'Now' is the max valid time.
+            # Let's stick to Playhead as the primary visibility filter for "replaying history".
+
+            # Is Past: It has already happened.
+            is_past = marker.lore_date <= playhead_time
+
+            marker.set_temporal_state(is_future=is_future, is_past=is_past)
 
     def _normalized_to_scene(self, x: float, y: float) -> QPointF:
         """

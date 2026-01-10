@@ -434,6 +434,7 @@ class MapHandler(QObject):
                 icon=marker_data["icon"],
                 color=marker_data["color"],
                 description=marker_data.get("description", ""),
+                lore_date=marker_data.get("lore_date"),
             )
 
             # Store mapping for later updates (object_id -> marker.id)

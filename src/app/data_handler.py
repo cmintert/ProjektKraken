@@ -203,22 +203,29 @@ class DataHandler(QObject):
             # Determine label and description from cached data
             label = "Unknown"
             description = ""
+            lore_date = None
+
             if marker.object_type == "entity" and self._cached_entities:
                 entity = next(
                     (e for e in self._cached_entities if e.id == marker.object_id),
                     None,
                 )
                 if entity:
-                    label = entity.name
+                    label = getattr(entity, "name", "Unknown Entity")
                     description = getattr(entity, "description", "") or ""
+                    # Entities don't have a single specific date usually,
+                    # but could check attributes if needed. For now None.
+                    lore_date = None
+
             elif marker.object_type == "event" and self._cached_events:
                 event = next(
                     (e for e in self._cached_events if e.id == marker.object_id),
                     None,
                 )
                 if event:
-                    label = event.name
+                    label = getattr(event, "name", "Unknown Event")
                     description = getattr(event, "description", "") or ""
+                    lore_date = getattr(event, "lore_date", None)
 
             # Create marker data dict
             processed_markers.append(
@@ -232,6 +239,7 @@ class DataHandler(QObject):
                     "y": marker.y,
                     "icon": marker.attributes.get("icon"),
                     "color": marker.attributes.get("color"),
+                    "lore_date": lore_date,
                 }
             )
 

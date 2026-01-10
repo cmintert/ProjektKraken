@@ -72,6 +72,7 @@ class MarkerItem(QGraphicsObject):
         icon: Optional[str] = None,
         color: Optional[str] = None,
         description: Optional[str] = None,
+        lore_date: Optional[float] = None,
     ) -> None:
         """
         Initializes a MarkerItem.
@@ -84,6 +85,7 @@ class MarkerItem(QGraphicsObject):
             icon: Optional icon filename (e.g., 'castle.svg'). Falls back to circle.
             color: Optional color hex string.
             description: Optional description for tooltip. Falls back to label if empty.
+            lore_date: Optional lore timestamp for temporal filtering.
         """
         super().__init__()
 
@@ -99,6 +101,11 @@ class MarkerItem(QGraphicsObject):
             if color
             else self.COLORS.get(object_type, self.COLORS["default"])
         )
+
+        # Temporal State
+        self.lore_date = lore_date
+        self.is_future = False
+        self.is_past = False
 
         # Load icon if specified
         self._load_icon(icon)
@@ -208,6 +215,47 @@ class MarkerItem(QGraphicsObject):
         """
         return self._custom_color
 
+    def set_temporal_state(self, is_future: bool, is_past: bool = False) -> None:
+        """
+        Updates the marker's visual state based on its temporal relation.
+
+        Args:
+            is_future: If True, marker is in the future (dull/faded).
+            is_past: If True, marker is in the past (reserved for "visited" styling).
+        """
+        if self.is_future == is_future and self.is_past == is_past:
+            return
+
+        self.is_future = is_future
+        self.is_past = is_past
+
+        # Update visual properties based on state
+        if is_future:
+            # Dulling effect: Reduced opacity
+            self.setOpacity(0.5)
+            # Saturation change happens in paint() via color processing
+        else:
+            # Normal state: Vivid
+            self.setOpacity(1.0)
+
+        self.update()
+
+    def _get_effective_color(self) -> QColor:
+        """
+        Returns the color modified by current state (e.g., deseaturated if future).
+        """
+        color = QColor(self._color)
+
+        if self.is_future:
+            # Desaturate significantly for future state
+            h, s, lightness, a = color.getHslF()
+            # Reduce saturation by 60% and lightness slightly increased for "faded" look
+            s = max(0.0, s * 0.4)
+            lightness = min(1.0, lightness + 0.1)
+            color = QColor.fromHslF(h, s, lightness, a)
+
+        return color
+
     def boundingRect(self) -> QRectF:
         """
         Returns the bounding rectangle for the marker.
@@ -242,14 +290,11 @@ class MarkerItem(QGraphicsObject):
 
     def _draw_svg_icon(self, painter: QPainter, rect: QRectF) -> None:
         """Draws the SVG icon, applying custom color tint if set."""
-        # Draw shadow/background
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QBrush(QColor(0, 0, 0, 50)))
-        painter.drawEllipse(rect.adjusted(2, 2, 2, 2))
+        # removed shadow/background
 
         if self._custom_color:
             pixmap = self._render_svg_to_pixmap()
-            self._tint_pixmap(pixmap, self._color)
+            self._tint_pixmap(pixmap, self._get_effective_color())
 
             painter.drawPixmap(rect.toRect(), pixmap)
         else:
@@ -283,7 +328,7 @@ class MarkerItem(QGraphicsObject):
     def _draw_fallback_circle(self, painter: QPainter, rect: QRectF) -> None:
         """Draws a fallback colored circle."""
         painter.setPen(QPen(QColor(255, 255, 255), 2))
-        painter.setBrush(QBrush(self._color))
+        painter.setBrush(QBrush(self._get_effective_color()))
         painter.drawEllipse(rect)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:

@@ -382,6 +382,9 @@ class MapWidget(QWidget):
             self._transient_marker_ids.clear()
             self._update_trajectory_positions(force_all=True)
 
+        # Update marker visuals (dull/vivid) based on new time
+        self.view.update_markers_temporal_state(self._playhead_time, self._current_time)
+
         logger.debug(f"Map playhead time updated to {time:.2f}")
 
     @Slot(float)
@@ -396,6 +399,10 @@ class MapWidget(QWidget):
         """
         self._current_time = time
         self._update_time_display()
+
+        # Update marker visuals (dull/vivid) based on new 'Now'
+        self.view.update_markers_temporal_state(self._playhead_time, self._current_time)
+
         logger.debug(f"Map current time (Now) updated to {time:.2f}")
 
     def _update_time_display(self) -> None:
@@ -559,6 +566,7 @@ class MapWidget(QWidget):
         icon: Optional[str] = None,
         color: Optional[str] = None,
         description: Optional[str] = None,
+        lore_date: Optional[float] = None,
     ) -> None:
         """
         Adds a marker to the map.
@@ -574,7 +582,7 @@ class MapWidget(QWidget):
             description: Optional description for tooltip.
         """
         self.view.add_marker(
-            marker_id, object_type, label, x, y, icon, color, description
+            marker_id, object_type, label, x, y, icon, color, description, lore_date
         )
 
     def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
