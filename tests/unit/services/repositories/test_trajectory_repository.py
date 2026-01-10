@@ -194,3 +194,30 @@ class TestTrajectoryRepository:
         # Repo logic apparently checks for marker existence explicitly
         with pytest.raises(ValueError, match="Marker not found"):
             repo.add_keyframe("map1", "non_existent_marker", kf)
+
+    def test_backward_compat_parses_old_format(self, repo, db_connection, setup_data):
+        """Test that old [[t,x,y],...] format is correctly parsed."""
+        import json
+
+        marker_id = setup_data["marker_id"]
+        # Insert old-format trajectory directly into DB
+        old_format = [[10.0, 0.1, 0.1], [50.0, 0.5, 0.5]]
+        db_connection.execute(
+            """
+            INSERT INTO moving_features (id, marker_id, t_start, t_end, trajectory, properties)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            ("old-traj-id", marker_id, 10.0, 50.0, json.dumps(old_format), "{}"),
+        )
+        db_connection.commit()
+
+        # Verify repo can parse it
+        results = repo.get_by_marker_db_id(marker_id)
+        assert len(results) == 1
+        traj_id, keyframes = results[0]
+        assert traj_id == "old-traj-id"
+        assert len(keyframes) == 2
+        assert keyframes[0].t == 10.0
+        assert keyframes[0].x == 0.1
+        assert keyframes[1].t == 50.0
+        assert keyframes[1].x == 0.5

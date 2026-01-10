@@ -342,9 +342,59 @@ class DatabaseService:
                     logger.error(f"Failed to add color column to tags table: {e}")
                     raise
 
+            # Migrate trajectory data from old format to MF-JSON
+            self._migrate_trajectories_to_mfjson()
+
         except sqlite3.Error as e:
             logger.critical(f"Migration check failed: {e}")
             raise
+
+    def _migrate_trajectories_to_mfjson(self) -> None:
+        """Migrates old-format trajectories to MF-JSON format.
+
+        Old format: [[t, x, y], ...]
+        New format: {"type": "MovingPoint", "coordinates": [[x, y], ...], "datetimes": [...]}
+        """
+        import json
+
+        assert self._connection is not None
+
+        cursor = self._connection.execute("SELECT id, trajectory FROM moving_features")
+        rows = cursor.fetchall()
+        migrated_count = 0
+
+        for row in rows:
+            traj_id = row["id"]
+            traj_json = row["trajectory"]
+            try:
+                data = json.loads(traj_json)
+                # Skip if already MF-JSON format
+                if isinstance(data, dict) and data.get("type") == "MovingPoint":
+                    continue
+
+                # Convert old format (list of [t, x, y])
+                if isinstance(data, list) and data:
+                    coordinates = [[item[1], item[2]] for item in data]
+                    datetimes = [item[0] for item in data]
+                    mfjson = {
+                        "type": "MovingPoint",
+                        "coordinates": coordinates,
+                        "datetimes": datetimes,
+                    }
+                    self._connection.execute(
+                        "UPDATE moving_features SET trajectory = ? WHERE id = ?",
+                        (json.dumps(mfjson), traj_id),
+                    )
+                    migrated_count += 1
+
+            except (json.JSONDecodeError, IndexError, TypeError) as e:
+                logger.warning(f"Skipping corrupt trajectory {traj_id}: {e}")
+
+        if migrated_count > 0:
+            self._connection.commit()
+            logger.info(
+                f"Migration: Converted {migrated_count} trajectories to MF-JSON format"
+            )
 
     # --------------------------------------------------------------------------
     # Event CRUD - Delegates to EventRepository

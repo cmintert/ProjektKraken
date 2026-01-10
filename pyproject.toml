@@ -13,6 +13,7 @@ dependencies = [
     "fastapi",
     "uvicorn[standard]",
     "python-multipart",
+    "geojson>=3.0.0",
 ]
 license = {text = "AGPL-3.0-only"}
 

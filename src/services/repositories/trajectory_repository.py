@@ -10,7 +10,12 @@ import logging
 import uuid
 from typing import List, Optional, Tuple
 
-from src.core.trajectory import KEYFRAME_TIME_EPSILON, Keyframe
+from src.core.trajectory import (
+    KEYFRAME_TIME_EPSILON,
+    Keyframe,
+    keyframes_to_mfjson,
+    mfjson_to_keyframes,
+)
 from src.services.repositories.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)
@@ -50,9 +55,8 @@ class TrajectoryRepository(BaseRepository):
         t_start = trajectory[0].t
         t_end = trajectory[-1].t
 
-        # Serialize trajectory to list of [t, x, y] lists for JSON storage
-        traj_data = [[kf.t, kf.x, kf.y] for kf in trajectory]
-        traj_json = json.dumps(traj_data)
+        # Serialize trajectory to MF-JSON format
+        traj_json = json.dumps(keyframes_to_mfjson(trajectory))
         props_json = self._serialize_json(properties or {})
 
         feature_id = str(uuid.uuid4())
@@ -98,13 +102,11 @@ class TrajectoryRepository(BaseRepository):
             traj_id = row["id"]
             traj_json = row["trajectory"]
             try:
-                traj_list = json.loads(traj_json)
-                # Convert back to Keyframe objects
-                keyframes = [
-                    Keyframe(t=item[0], x=item[1], y=item[2]) for item in traj_list
-                ]
+                traj_data = json.loads(traj_json)
+                # Backward compatibility: detect old [[t,x,y],...] format
+                keyframes = self._parse_trajectory_json(traj_data)
                 results.append((traj_id, keyframes))
-            except (json.JSONDecodeError, IndexError, TypeError) as e:
+            except (json.JSONDecodeError, IndexError, TypeError, ValueError) as e:
                 logger.error(f"Failed to parse trajectory {traj_id}: {e}")
 
         return results
@@ -139,12 +141,11 @@ class TrajectoryRepository(BaseRepository):
             traj_id = row["traj_id"]
             traj_json = row["trajectory"]
             try:
-                traj_list = json.loads(traj_json)
-                keyframes = [
-                    Keyframe(t=item[0], x=item[1], y=item[2]) for item in traj_list
-                ]
+                traj_data = json.loads(traj_json)
+                # Backward compatibility: detect old [[t,x,y],...] format
+                keyframes = self._parse_trajectory_json(traj_data)
                 results.append((marker_id, traj_id, keyframes))
-            except (json.JSONDecodeError, IndexError, TypeError) as e:
+            except (json.JSONDecodeError, IndexError, TypeError, ValueError) as e:
                 logger.error(f"Failed to parse trajectory {traj_id}: {e}")
 
         return results
@@ -330,8 +331,7 @@ class TrajectoryRepository(BaseRepository):
 
         t_start = keyframes[0].t
         t_end = keyframes[-1].t
-        traj_data = [[kf.t, kf.x, kf.y] for kf in keyframes]
-        traj_json = json.dumps(traj_data)
+        traj_json = json.dumps(keyframes_to_mfjson(keyframes))
 
         sql = """
             UPDATE moving_features
@@ -340,3 +340,23 @@ class TrajectoryRepository(BaseRepository):
         """
         with self.transaction() as conn:
             conn.execute(sql, (t_start, t_end, traj_json, traj_id))
+
+    def _parse_trajectory_json(self, data: dict | list) -> List[Keyframe]:
+        """
+        Parse trajectory data, supporting both old and new formats.
+
+        Args:
+            data: Either MF-JSON dict or old [[t,x,y],...] list.
+
+        Returns:
+            List of Keyframe objects.
+        """
+        # New MF-JSON format: {'type': 'MovingPoint', 'coordinates': [...], 'datetimes': [...]}
+        if isinstance(data, dict) and data.get("type") == "MovingPoint":
+            return mfjson_to_keyframes(data)
+
+        # Old format: [[t, x, y], ...]
+        if isinstance(data, list):
+            return [Keyframe(t=item[0], x=item[1], y=item[2]) for item in data]
+
+        raise ValueError(f"Unknown trajectory format: {type(data)}")

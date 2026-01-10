@@ -93,3 +93,65 @@ def interpolate_position(
     y = kf_start.y + (kf_end.y - kf_start.y) * alpha
 
     return (x, y)
+
+
+def keyframes_to_mfjson(keyframes: list[Keyframe]) -> dict:
+    """
+    Serialize a list of Keyframes to an OGC MF-JSON MovingPoint structure.
+
+    Args:
+        keyframes: List of Keyframe objects.
+
+    Returns:
+        A dict representing an MF-JSON TemporalPrimitiveGeometry (MovingPoint).
+
+    Raises:
+        ValueError: If keyframes list is empty.
+
+    Example:
+        >>> kfs = [Keyframe(t=0, x=0.1, y=0.2), Keyframe(t=100, x=0.9, y=0.8)]
+        >>> keyframes_to_mfjson(kfs)  # doctest: +NORMALIZE_WHITESPACE
+        {'type': 'MovingPoint', 'coordinates': [[0.1, 0.2], [0.9, 0.8]],
+         'datetimes': [0, 100]}
+    """
+    if not keyframes:
+        raise ValueError("Cannot serialize an empty keyframes list.")
+
+    return {
+        "type": "MovingPoint",
+        "coordinates": [[kf.x, kf.y] for kf in keyframes],
+        "datetimes": [kf.t for kf in keyframes],
+    }
+
+
+def mfjson_to_keyframes(data: dict) -> list[Keyframe]:
+    """
+    Deserialize an OGC MF-JSON MovingPoint structure to a list of Keyframes.
+
+    Args:
+        data: A dict representing an MF-JSON TemporalPrimitiveGeometry.
+
+    Returns:
+        A list of Keyframe objects.
+
+    Raises:
+        ValueError: If 'datetimes' key is missing or lengths mismatch.
+
+    Example:
+        >>> mfjson = {'type': 'MovingPoint', 'coordinates': [[0.1, 0.2]],
+        ...           'datetimes': [0]}
+        >>> mfjson_to_keyframes(mfjson)
+        [Keyframe(t=0, x=0.1, y=0.2)]
+    """
+    if "datetimes" not in data:
+        raise ValueError("MF-JSON data is missing 'datetimes' key.")
+
+    coords = data.get("coordinates", [])
+    times = data["datetimes"]
+
+    if len(coords) != len(times):
+        raise ValueError(
+            f"Coordinates/datetimes length mismatch: {len(coords)} vs {len(times)}."
+        )
+
+    return [Keyframe(t=t, x=coord[0], y=coord[1]) for t, coord in zip(times, coords)]
