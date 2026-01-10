@@ -15,10 +15,12 @@ import logging
 import os
 from typing import Iterator, List, Optional, Tuple
 
-from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtCore import QSettings, Qt, Signal, Slot
 from PySide6.QtGui import QKeyEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QComboBox,
+    QDialog,
+    QHBoxLayout,
     QInputDialog,
     QLabel,
     QPushButton,
@@ -81,6 +83,7 @@ class MapWidget(QWidget):
     )  # map_id, marker_id, old_t, new_t
     delete_keyframe_requested = Signal(str, str, float)  # map_id, marker_id, t
     jump_to_time_requested = Signal(float)  # target_time
+    show_onboarding_requested = Signal()  # To trigger animation or hints
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -196,6 +199,7 @@ class MapWidget(QWidget):
         self.view.keyframe_moved.connect(self._on_keyframe_moved)
         self.view.keyframe_clock_mode_requested.connect(self._on_clock_mode_requested)
         self.view.keyframe_delete_requested.connect(self._on_keyframe_delete_requested)
+        self.view.keyframe_edit_requested.connect(self._emit_keyframe_upsert)
         self.view.add_marker_requested.connect(self.create_marker_requested.emit)
         self.view.delete_marker_requested.connect(self.delete_marker_requested.emit)
         self.view.change_marker_icon_requested.connect(
@@ -255,6 +259,21 @@ class MapWidget(QWidget):
             self._active_trajectories[marker_id] = keyframes
             count += 1
 
+        # Detect first trajectory use for animation
+        settings = QSettings()
+        is_first_trajectories = not settings.value(
+            "map/trajectories_initialized", False, type=bool
+        )
+        logger.debug(
+            f"set_trajectories: count={count}, is_first={is_first_trajectories}"
+        )
+        if is_first_trajectories and count > 0:
+            logger.info(
+                "First trajectory display detected - enabling pulsing animation"
+            )
+            settings.setValue("map/trajectories_initialized", True)
+            self.view.trigger_first_use_animation = True
+
         logger.debug(f"Loaded {count} temporal trajectories for map")
         # Force an update immediately so markers jump to correct spot for current time
         self._update_trajectory_positions()
@@ -294,8 +313,7 @@ class MapWidget(QWidget):
         x, y = norm_pos
 
         logger.info(f"Adding keyframe for {marker_id} at t={t}: ({x:.3f}, {y:.3f})")
-
-        self._emit_keyframe_upsert(marker_id, t, x, y)
+        self._emit_keyframe_upsert(marker_id, t, x, y, is_add=True)
 
     def _iter_trajectory_positions(self) -> Iterator[Tuple[str, float, float]]:
         """Yield (marker_id, x, y) for markers with trajectories at current time."""
@@ -574,12 +592,26 @@ class MapWidget(QWidget):
             logger.info(f"Map width set to {width} meters")
 
     def _emit_keyframe_upsert(
-        self, marker_id: str, t: float, x: float, y: float
+        self, marker_id: str, t: float, x: float, y: float, is_add: bool = False
     ) -> None:
         """Emits signal to upsert (add/update) a keyframe."""
         map_id = self.get_selected_map_id()
         if map_id:
             self.add_keyframe_requested.emit(map_id, marker_id, t, x, y)
+
+            # Onboarding check - Only on new creation
+            if is_add:
+                settings = QSettings()
+                if not settings.value(
+                    "map/onboarding_keyframe_created", False, type=bool
+                ):
+                    self._show_onboarding_dialog()
+                    settings.setValue("map/onboarding_keyframe_created", True)
+
+    def _show_onboarding_dialog(self) -> None:
+        """Shows the onboarding dialog for first-time keyframe creation."""
+        dialog = OnboardingDialog(self)
+        dialog.exec()
 
     @Slot(str, str)
     def _on_marker_clicked_internal(self, marker_id: str, object_type: str) -> None:
@@ -598,7 +630,7 @@ class MapWidget(QWidget):
     @Slot(str, float, float, float)
     def _on_keyframe_moved(self, marker_id: str, t: float, x: float, y: float) -> None:
         """Handle drag-to-edit of keyframes."""
-        self._emit_keyframe_upsert(marker_id, t, x, y)
+        self._emit_keyframe_upsert(marker_id, t, x, y, is_add=False)
 
     def _enter_clock_mode(self, marker_id: str, t: float) -> None:
         """Transition: Default -> Clock Mode."""
@@ -780,3 +812,67 @@ class MapWidget(QWidget):
         """Handle resize to keep overlay centered."""
         super().resizeEvent(event)
         self._update_overlay_position()
+
+
+class OnboardingDialog(QDialog):
+    """Onboarding dialog shown when the first keyframe is created."""
+
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("✨ Keyframe Created!")
+        self.setFixedWidth(400)
+        self.setStyleSheet(
+            """
+            QDialog {
+                background-color: #2c3e50;
+                color: white;
+            }
+            QLabel {
+                color: white;
+                font-size: 13px;
+            }
+            QPushButton {
+                background-color: #3498db;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #2980b9;
+            }
+        """
+        )
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
+
+        title = QLabel("✨ Keyframe Created!")
+        title.setStyleSheet("font-size: 18px; font-weight: bold;")
+        layout.addWidget(title)
+
+        body = QLabel(
+            "Hover over yellow dots to reveal editing tools:<br/>"
+            "• <b>Drag</b> to adjust position<br/>"
+            "• Click 🕐 to adjust <b>timing</b> (Clock Mode)<br/>"
+            "• Click ✕ to <b>delete</b>"
+        )
+        body.setWordWrap(True)
+        layout.addWidget(body)
+
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+
+        self.btn_got_it = QPushButton("Got it!")
+        self.btn_got_it.clicked.connect(self.accept)
+        btn_layout.addWidget(self.btn_got_it)
+
+        self.btn_tutorial = QPushButton("Show Tutorial Video")
+        self.btn_tutorial.setStyleSheet("background-color: #7f8c8d;")
+        # In a real app, this would open a URL
+        self.btn_tutorial.clicked.connect(self.accept)
+        btn_layout.addWidget(self.btn_tutorial)
+
+        layout.addLayout(btn_layout)

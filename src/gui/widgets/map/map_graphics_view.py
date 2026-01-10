@@ -8,7 +8,17 @@ import json
 import logging
 from typing import Any, Callable, Dict, Optional
 
-from PySide6.QtCore import QPoint, QPointF, QRectF, QSize, Qt, Signal
+from PySide6.QtCore import (
+    Property,
+    QPoint,
+    QPointF,
+    QPropertyAnimation,
+    QRectF,
+    QSettings,
+    QSize,
+    Qt,
+    Signal,
+)
 from PySide6.QtGui import (
     QAction,
     QBrush,
@@ -33,6 +43,7 @@ from PySide6.QtWidgets import (
     QGraphicsEllipseItem,
     QGraphicsItem,
     QGraphicsItemGroup,
+    QGraphicsObject,
     QGraphicsPathItem,
     QGraphicsPixmapItem,
     QGraphicsRectItem,
@@ -40,7 +51,13 @@ from PySide6.QtWidgets import (
     QGraphicsSceneHoverEvent,
     QGraphicsSimpleTextItem,
     QGraphicsView,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
     QMenu,
+    QPushButton,
+    QStyleOptionGraphicsItem,
+    QVBoxLayout,
     QWidget,
 )
 
@@ -98,7 +115,7 @@ class KeyframeGizmo(QGraphicsItemGroup):
         self.addToGroup(self.clock_icon)
 
         # Create Delete icon (right) - red X
-        self.delete_icon = self._create_icon("✕", GIZMO_SIZE + 2, "#FF4444")
+        self.delete_icon = self._create_icon("✕", GIZMO_SIZE + 4, "#FF4444")
         self.addToGroup(self.delete_icon)
 
         # Position gizmo to Northeast of keyframe (Right and Up)
@@ -161,7 +178,7 @@ class KeyframeGizmo(QGraphicsItemGroup):
         event.accept()
 
 
-class KeyframeItem(QGraphicsEllipseItem):
+class KeyframeItem(QGraphicsObject):
     """
     A draggable keyframe dot on the trajectory.
     """
@@ -176,7 +193,8 @@ class KeyframeItem(QGraphicsEllipseItem):
         on_drop_callback: Callable[["KeyframeItem"], None],
         on_drag_callback: Optional[Callable[[], None]] = None,
     ) -> None:
-        super().__init__(rect)
+        super().__init__()
+        self._rect = rect
         self.marker_id = marker_id
         self.t = t
         self.original_x = x  # Normalized X
@@ -188,14 +206,63 @@ class KeyframeItem(QGraphicsEllipseItem):
         self.mode: str = "transform"  # "transform" or "clock"
         self.is_pinned: bool = False
 
+        # Visuals
+        self._brush = QBrush(QColor(KEYFRAME_COLOR_DEFAULT))
+        self._pen = QPen(Qt.PenStyle.NoPen)
+
         # Gizmo (mode selector)
         self.gizmo: Optional[KeyframeGizmo] = None
         self._gizmo_hovered: bool = False
 
         # Enable interaction
-        self.setFlag(QGraphicsEllipseItem.GraphicsItemFlag.ItemIsMovable)
-        self.setFlag(QGraphicsEllipseItem.GraphicsItemFlag.ItemSendsGeometryChanges)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges)
         self.setAcceptHoverEvents(True)
+
+    def boundingRect(self) -> QRectF:
+        """Returns the bounding rectangle for the dot."""
+        return self._rect
+
+    def paint(
+        self,
+        painter: QPainter,
+        option: QStyleOptionGraphicsItem,
+        widget: Optional[QWidget] = None,
+    ) -> None:
+        """Paints the keyframe dot."""
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setBrush(self._brush)
+        painter.setPen(self._pen)
+        painter.drawEllipse(self._rect)
+
+    def setBrush(self, brush: QBrush) -> None:
+        """Sets the brush for the dot."""
+        self._brush = brush
+        self.update()
+
+    def brush(self) -> QBrush:
+        """Returns the brush for the dot."""
+        return self._brush
+
+    @Property(float)
+    def scale_val(self) -> float:
+        """Returns the scale for animation."""
+        return self.scale()
+
+    @scale_val.setter
+    def scale_val(self, value: float) -> None:
+        """Sets the scale for animation."""
+        self.setScale(value)
+        self.update()
+
+    def setPen(self, pen: QPen) -> None:
+        """Sets the pen for the dot."""
+        self._pen = pen
+        self.update()
+
+    def pen(self) -> QPen:
+        """Returns the pen for the dot."""
+        return self._pen
 
     def set_mode(self, mode: str) -> None:
         """Switch between transform and clock modes."""
@@ -247,6 +314,20 @@ class KeyframeItem(QGraphicsEllipseItem):
 
         if self.mode == "transform":
             self.setCursor(Qt.CursorShape.SizeAllCursor)
+
+        # Show Hint Tooltip if first-use
+        self._show_hover_hint()
+
+    def _show_hover_hint(self) -> None:
+        """Shows a one-time hint tooltip."""
+        settings = QSettings()
+        if not settings.value("map/onboarding_hover_hint_shown", False, type=bool):
+            self.setToolTip("💡 Tip: Hover keyframes to edit position or time")
+            # We can't easily dismiss it with "Don't show again" inside a native tooltip,
+            # but we can mark it as shown if it stays for a while.
+            # Using QToolTip.showText or similar might be better for floating UI.
+            # For now, let's use the standard tooltip and mark it as seen.
+            settings.setValue("map/onboarding_hover_hint_shown", True)
 
     def _cleanup_gizmo(self) -> None:
         """Remove gizmo if not being hovered."""
@@ -332,6 +413,7 @@ class MapGraphicsView(QGraphicsView):
     keyframe_moved = Signal(str, float, float, float)  # marker_id, t, new_x, new_y
     keyframe_clock_mode_requested = Signal(str, float)  # marker_id, t
     keyframe_delete_requested = Signal(str, float)  # marker_id, t
+    keyframe_edit_requested = Signal(str, float, float, float)  # marker_id, t, x, y
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -406,9 +488,11 @@ class MapGraphicsView(QGraphicsView):
 
         # Trajectory Visualization
         self.trajectory_path_item: Optional[QGraphicsPathItem] = None
-        self.keyframe_items: list[QGraphicsEllipseItem] = []
+        self.keyframe_items: list[KeyframeItem] = []
         self.keyframe_label_items: list[QGraphicsSimpleTextItem] = []
         self._calendar_converter: Optional[object] = None  # CalendarConverter instance
+        self.trigger_first_use_animation: bool = False
+        self._animations: list[QPropertyAnimation] = []  # Keep references
 
     def minimumSizeHint(self) -> QSize:
         """
@@ -948,6 +1032,83 @@ class MapGraphicsView(QGraphicsView):
         # Draw path initially
         self._update_trajectory_path()
         self._update_label_scales()
+
+        # Pulsing Animation on first use
+        if self.trigger_first_use_animation:
+            logger.debug(
+                f"Triggering pulsing animation for {len(self.keyframe_items)} keyframes"
+            )
+            self.trigger_first_use_animation = False
+            for dot in self.keyframe_items:
+                self._pulse_item(dot)
+
+    def _pulse_item(self, item: QGraphicsObject) -> None:
+        """Pulses the given item 3 times (scale 1.0 -> 1.1 -> 1.0)."""
+        # Ensure transformation origin is centered for scaling
+        item.setTransformOriginPoint(0, 0)
+
+        animation = QPropertyAnimation(item, b"scale_val")
+        animation.setDuration(600)
+        animation.setStartValue(1.0)
+        animation.setKeyValueAt(0.5, 1.1)
+        animation.setEndValue(1.0)
+        animation.setLoopCount(3)
+
+        # Store animation to prevent garbage collection before it finishes
+        self._animations.append(animation)
+        animation.finished.connect(lambda: self._animations.remove(animation))
+
+        animation.start()  # Keep alive until removal from self._animations
+
+    def _show_edit_keyframe_dialog(self, item: KeyframeItem) -> None:
+        """Shows a dialog to edit keyframe properties manually."""
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Edit Keyframe")
+        layout = QVBoxLayout(dialog)
+
+        # Position (X)
+        x_layout = QHBoxLayout()
+        x_layout.addWidget(QLabel("Position X:"))
+        x_input = QLineEdit(f"{item.original_x:.3f}")
+        x_layout.addWidget(x_input)
+        layout.addLayout(x_layout)
+
+        # Position (Y)
+        y_layout = QHBoxLayout()
+        y_layout.addWidget(QLabel("Position Y:"))
+        y_input = QLineEdit(f"{item.original_y:.3f}")
+        y_layout.addWidget(y_input)
+        layout.addLayout(y_layout)
+
+        # Time
+        t_layout = QHBoxLayout()
+        t_layout.addWidget(QLabel("Time:"))
+        t_input = QLineEdit(f"{item.t:.1f}")
+        t_layout.addWidget(t_input)
+        layout.addLayout(t_layout)
+
+        # Buttons
+        btn_layout = QHBoxLayout()
+        save_btn = QPushButton("Save")
+        save_btn.clicked.connect(dialog.accept)
+        btn_layout.addWidget(save_btn)
+
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(dialog.reject)
+        btn_layout.addWidget(cancel_btn)
+        layout.addLayout(btn_layout)
+
+        if dialog.exec() == QDialog.Accepted:
+            try:
+                new_x = float(x_input.text())
+                new_y = float(y_input.text())
+                new_t = float(t_input.text())
+                # Emit request to parent (MapWidget -> Controller)
+                # Since MapGraphicsView is internal, we can emit a signal
+                # and let MapWidget handle it.
+                self.keyframe_edit_requested.emit(item.marker_id, new_t, new_x, new_y)
+            except ValueError:
+                logger.error("Invalid input for keyframe edit")
 
     def _update_label_scales(self) -> None:
         """
