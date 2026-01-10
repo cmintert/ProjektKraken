@@ -306,6 +306,7 @@
     <span class="n">entities_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>  <span class="c1"># List[Entity]</span>
     <span class="n">maps_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>  <span class="c1"># List[Map]</span>
     <span class="n">markers_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>  <span class="c1"># map_id, List[Marker]</span>
+    <span class="n">trajectories_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>  <span class="c1"># List[Tuple[str, str, List[Keyframe]]]</span>
     <span class="n">longform_sequence_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>  <span class="c1"># List[dict]</span>
     <span class="n">calendar_config_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>  <span class="c1"># CalendarConfig or None</span>
     <span class="n">current_time_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>  <span class="c1"># Current time in lore_date units</span>
@@ -476,6 +477,112 @@
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load markers: </span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load markers for map </span><span class="si">{</span><span class="n">map_id</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseWorker.load_trajectories">
+<a class="viewcode-back" href="../../services.html#services.worker.DatabaseWorker.load_trajectories">[docs]</a>
+    <span class="nd">@Slot</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_trajectories</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads trajectories for a specific map.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># self.operation_started.emit(f&quot;Loading Trajectories for Map {map_id}...&quot;)</span>
+            <span class="c1"># (Quiet operation)</span>
+            <span class="n">trajectories</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">get_trajectories_by_map</span><span class="p">(</span><span class="n">map_id</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trajectories_loaded</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">trajectories</span><span class="p">)</span>
+            <span class="c1"># self.operation_finished.emit(&quot;Trajectories Loaded.&quot;)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load trajectories: </span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load trajectories for map </span><span class="si">{</span><span class="n">map_id</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseWorker.add_keyframe">
+<a class="viewcode-back" href="../../services.html#services.worker.DatabaseWorker.add_keyframe">[docs]</a>
+    <span class="nd">@Slot</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_keyframe</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">map_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">marker_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds a keyframe to a marker&#39;s trajectory and reloads trajectories.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            map_id: The map ID (for reloading).</span>
+<span class="sd">            marker_id: The marker ID.</span>
+<span class="sd">            t: Time timestamp.</span>
+<span class="sd">            x: Normalized X.</span>
+<span class="sd">            y: Normalized Y.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.trajectory</span><span class="w"> </span><span class="kn">import</span> <span class="n">Keyframe</span>
+
+            <span class="n">kf</span> <span class="o">=</span> <span class="n">Keyframe</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">add_keyframe</span><span class="p">(</span><span class="n">map_id</span><span class="p">,</span> <span class="n">marker_id</span><span class="p">,</span> <span class="n">kf</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load_trajectories</span><span class="p">(</span><span class="n">map_id</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">operation_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s2">&quot;Keyframe added.&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to add keyframe: </span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s2">&quot;Failed to add keyframe.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseWorker.update_keyframe_time">
+<a class="viewcode-back" href="../../services.html#services.worker.DatabaseWorker.update_keyframe_time">[docs]</a>
+    <span class="nd">@Slot</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_keyframe_time</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">map_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">marker_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">old_t</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">new_t</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates a keyframe&#39;s timestamp (Clock Mode) and reloads trajectories.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            map_id: The map ID (for reloading).</span>
+<span class="sd">            marker_id: The marker ID.</span>
+<span class="sd">            old_t: Original timestamp.</span>
+<span class="sd">            new_t: New timestamp.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">update_keyframe_time</span><span class="p">(</span><span class="n">map_id</span><span class="p">,</span> <span class="n">marker_id</span><span class="p">,</span> <span class="n">old_t</span><span class="p">,</span> <span class="n">new_t</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load_trajectories</span><span class="p">(</span><span class="n">map_id</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">operation_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Keyframe time updated: </span><span class="si">{</span><span class="n">old_t</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">new_t</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to update keyframe time: </span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s2">&quot;Failed to update keyframe timestamp.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseWorker.delete_keyframe">
+<a class="viewcode-back" href="../../services.html#services.worker.DatabaseWorker.delete_keyframe">[docs]</a>
+    <span class="nd">@Slot</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delete_keyframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">marker_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Deletes a keyframe from a marker&#39;s trajectory and reloads trajectories.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            map_id: The map ID (for reloading).</span>
+<span class="sd">            marker_id: The marker ID (object_id).</span>
+<span class="sd">            t: The timestamp of the keyframe to delete.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">delete_keyframe</span><span class="p">(</span><span class="n">map_id</span><span class="p">,</span> <span class="n">marker_id</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load_trajectories</span><span class="p">(</span><span class="n">map_id</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">operation_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Keyframe at t=</span><span class="si">{</span><span class="n">t</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> deleted.&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Keyframe delete failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to delete keyframe: </span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s2">&quot;Failed to delete keyframe.&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DatabaseWorker.load_event_details">

@@ -307,6 +307,24 @@ Defaults to :memory: for testing.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.add_keyframe">
+<span class="sig-name descname"><span class="pre">add_keyframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keyframe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Keyframe</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.add_keyframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.add_keyframe" title="Link to this definition">¶</a></dt>
+<dd><p>Adds a keyframe to the marker’s trajectory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>map_id</strong> – The ID of the map.</p></li>
+<li><p><strong>object_id</strong> – The object ID (Entity/Event ID).</p></li>
+<li><p><strong>keyframe</strong> – The Keyframe object.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The ID of the updated/created trajectory.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.assign_tag_to_entity">
 <span class="sig-name descname"><span class="pre">assign_tag_to_entity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.assign_tag_to_entity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.assign_tag_to_entity" title="Link to this definition">¶</a></dt>
 <dd><p>Assigns a tag to an entity, creating the tag if it doesn’t exist.</p>
@@ -425,6 +443,24 @@ Defaults to :memory: for testing.</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>sqlite3.Error</strong> – If the database operation fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.delete_keyframe">
+<span class="sig-name descname"><span class="pre">delete_keyframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.delete_keyframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.delete_keyframe" title="Link to this definition">¶</a></dt>
+<dd><p>Deletes a keyframe from a marker’s trajectory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>map_id</strong> – The ID of the map.</p></li>
+<li><p><strong>object_id</strong> – The object ID (Entity/Event ID).</p></li>
+<li><p><strong>t</strong> – The timestamp of the keyframe to delete.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The ID of the updated trajectory, or None if trajectory was deleted.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1137,6 +1173,34 @@ Results are returned sorted by their natural order:
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_trajectories_by_map">
+<span class="sig-name descname"><span class="pre">get_trajectories_by_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Keyframe</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_trajectories_by_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_trajectories_by_map" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves all trajectories for a specific map.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>map_id</strong> – UUID of the map.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of (marker_id, trajectory_id, List[Keyframe]) tuples.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_trajectories_by_marker">
+<span class="sig-name descname"><span class="pre">get_trajectories_by_marker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">marker_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Keyframe</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_trajectories_by_marker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_trajectories_by_marker" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves all trajectories for a specific marker.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>marker_id</strong> – UUID of the marker.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of (trajectory_id, List[Keyframe]) tuples.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.insert_calendar_config">
 <span class="sig-name descname"><span class="pre">insert_calendar_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">CalendarConfig</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.insert_calendar_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.insert_calendar_config" title="Link to this definition">¶</a></dt>
 <dd><p>Inserts a new calendar config or updates an existing one (Upsert).</p>
@@ -1280,6 +1344,24 @@ the existing row’s id is retained.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.insert_trajectory">
+<span class="sig-name descname"><span class="pre">insert_trajectory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">marker_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trajectory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Keyframe</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">properties</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.insert_trajectory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.insert_trajectory" title="Link to this definition">¶</a></dt>
+<dd><p>Inserts a spatial trajectory for a marker.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>marker_id</strong> – UUID of the marker.</p></li>
+<li><p><strong>trajectory</strong> – List of Keyframe objects.</p></li>
+<li><p><strong>properties</strong> – Optional JSON metadata.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>UUID of the inserted trajectory record.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.remove_tag_from_entity">
 <span class="sig-name descname"><span class="pre">remove_tag_from_entity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.remove_tag_from_entity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.remove_tag_from_entity" title="Link to this definition">¶</a></dt>
 <dd><p>Removes a tag from an entity.</p>
@@ -1380,6 +1462,25 @@ the existing row’s id is retained.</p>
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.transaction">
 <span class="sig-name descname"><span class="pre">transaction</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><span class="pre">Connection</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.transaction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.transaction" title="Link to this definition">¶</a></dt>
 <dd><p>Safe context manager for transactions.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.update_keyframe_time">
+<span class="sig-name descname"><span class="pre">update_keyframe_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.update_keyframe_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.update_keyframe_time" title="Link to this definition">¶</a></dt>
+<dd><p>Updates a keyframe’s timestamp (Clock Mode editing).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>map_id</strong> – The ID of the map.</p></li>
+<li><p><strong>object_id</strong> – The object ID (Entity/Event ID).</p></li>
+<li><p><strong>old_t</strong> – Original timestamp.</p></li>
+<li><p><strong>new_t</strong> – New timestamp.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The ID of the updated trajectory.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1926,6 +2027,23 @@ Owns the DatabaseService instance to ensure thread affinity.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.add_keyframe">
+<span class="sig-name descname"><span class="pre">add_keyframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marker_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.add_keyframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.add_keyframe" title="Link to this definition">¶</a></dt>
+<dd><p>Adds a keyframe to a marker’s trajectory and reloads trajectories.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>map_id</strong> – The map ID (for reloading).</p></li>
+<li><p><strong>marker_id</strong> – The marker ID.</p></li>
+<li><p><strong>t</strong> – Time timestamp.</p></li>
+<li><p><strong>x</strong> – Normalized X.</p></li>
+<li><p><strong>y</strong> – Normalized Y.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="services.worker.DatabaseWorker.apply_filter">
 <span class="sig-name descname"><span class="pre">apply_filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filter_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.apply_filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.apply_filter" title="Link to this definition">¶</a></dt>
 <dd><p>Applies a tag filter and loads the matching objects.</p>
@@ -1963,6 +2081,21 @@ Should be called before the thread is terminated.</p>
 <dt class="sig sig-object py" id="services.worker.DatabaseWorker.current_time_loaded">
 <span class="sig-name descname"><span class="pre">current_time_loaded</span></span><a class="headerlink" href="#services.worker.DatabaseWorker.current_time_loaded" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.delete_keyframe">
+<span class="sig-name descname"><span class="pre">delete_keyframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marker_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.delete_keyframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.delete_keyframe" title="Link to this definition">¶</a></dt>
+<dd><p>Deletes a keyframe from a marker’s trajectory and reloads trajectories.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>map_id</strong> – The map ID (for reloading).</p></li>
+<li><p><strong>marker_id</strong> – The marker ID (object_id).</p></li>
+<li><p><strong>t</strong> – The timestamp of the keyframe to delete.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="services.worker.DatabaseWorker.entities_loaded">
@@ -2115,6 +2248,12 @@ Should be called before the thread is terminated.</p>
 <dd><p>Loads markers for a specific map.</p>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.load_trajectories">
+<span class="sig-name descname"><span class="pre">load_trajectories</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.load_trajectories"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.load_trajectories" title="Link to this definition">¶</a></dt>
+<dd><p>Loads trajectories for a specific map.</p>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="services.worker.DatabaseWorker.longform_sequence_loaded">
 <span class="sig-name descname"><span class="pre">longform_sequence_loaded</span></span><a class="headerlink" href="#services.worker.DatabaseWorker.longform_sequence_loaded" title="Link to this definition">¶</a></dt>
@@ -2184,8 +2323,29 @@ operation_finished (str): Status update.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="services.worker.DatabaseWorker.staticMetaObject">
-<span class="sig-name descname"><span class="pre">staticMetaObject</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">PySide6.QtCore.QMetaObject(&quot;DatabaseWorker&quot;</span> <span class="pre">inherits</span> <span class="pre">&quot;QObject&quot;:</span> <span class="pre">Methods:</span>&#160;&#160; <span class="pre">#4</span> <span class="pre">type=Signal,</span> <span class="pre">signature=initialized(bool),</span> <span class="pre">parameters=bool</span>&#160;&#160; <span class="pre">#5</span> <span class="pre">type=Signal,</span> <span class="pre">signature=events_loaded(QVariantList),</span> <span class="pre">parameters=QVariantList</span>&#160;&#160; <span class="pre">#6</span> <span class="pre">type=Signal,</span> <span class="pre">signature=entities_loaded(QVariantList),</span> <span class="pre">parameters=QVariantList</span>&#160;&#160; <span class="pre">#7</span> <span class="pre">type=Signal,</span> <span class="pre">signature=maps_loaded(QVariantList),</span> <span class="pre">parameters=QVariantList</span>&#160;&#160; <span class="pre">#8</span> <span class="pre">type=Signal,</span> <span class="pre">signature=markers_loaded(QString,QVariantList),</span> <span class="pre">parameters=QString,</span> <span class="pre">QVariantList</span>&#160;&#160; <span class="pre">#9</span> <span class="pre">type=Signal,</span> <span class="pre">signature=longform_sequence_loaded(QVariantList),</span> <span class="pre">parameters=QVariantList</span>&#160;&#160; <span class="pre">#10</span> <span class="pre">type=Signal,</span> <span class="pre">signature=calendar_config_loaded(PyObject),</span> <span class="pre">parameters=PyObject</span>&#160;&#160; <span class="pre">#11</span> <span class="pre">type=Signal,</span> <span class="pre">signature=current_time_loaded(double),</span> <span class="pre">parameters=double</span>&#160;&#160; <span class="pre">#12</span> <span class="pre">type=Signal,</span> <span class="pre">signature=grouping_dialog_data_loaded(QVariantList,PyObject),</span> <span class="pre">parameters=QVariantList,</span> <span class="pre">PyObject</span>&#160;&#160; <span class="pre">#13</span> <span class="pre">type=Signal,</span> <span class="pre">signature=event_details_loaded(PyObject,QVariantList,QVariantList),</span> <span class="pre">parameters=PyObject,</span> <span class="pre">QVariantList,</span> <span class="pre">QVariantList</span>&#160;&#160; <span class="pre">#14</span> <span class="pre">type=Signal,</span> <span class="pre">signature=entity_details_loaded(PyObject,QVariantList,QVariantList),</span> <span class="pre">parameters=PyObject,</span> <span class="pre">QVariantList,</span> <span class="pre">QVariantList</span>&#160;&#160; <span class="pre">#15</span> <span class="pre">type=Signal,</span> <span class="pre">signature=attachments_loaded(QString,QString,QVariantList),</span> <span class="pre">parameters=QString,</span> <span class="pre">QString,</span> <span class="pre">QVariantList</span>&#160;&#160; <span class="pre">#16</span> <span class="pre">type=Signal,</span> <span class="pre">signature=filter_results_ready(QVariantList,QVariantList),</span> <span class="pre">parameters=QVariantList,</span> <span class="pre">QVariantList</span>&#160;&#160; <span class="pre">#17</span> <span class="pre">type=Signal,</span> <span class="pre">signature=entity_state_resolved(QString,QVariantMap),</span> <span class="pre">parameters=QString,</span> <span class="pre">QVariantMap</span>&#160;&#160; <span class="pre">#18</span> <span class="pre">type=Signal,</span> <span class="pre">signature=command_finished(PyObject),</span> <span class="pre">parameters=PyObject</span>&#160;&#160; <span class="pre">#19</span> <span class="pre">type=Signal,</span> <span class="pre">signature=error_occurred(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#20</span> <span class="pre">type=Signal,</span> <span class="pre">signature=operation_started(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#21</span> <span class="pre">type=Signal,</span> <span class="pre">signature=operation_finished(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#22</span> <span class="pre">type=Slot,</span> <span class="pre">signature=initialize_db()</span>&#160;&#160; <span class="pre">#23</span> <span class="pre">type=Slot,</span> <span class="pre">signature=cleanup()</span>&#160;&#160; <span class="pre">#24</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_events()</span>&#160;&#160; <span class="pre">#25</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_entities()</span>&#160;&#160; <span class="pre">#26</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_maps()</span>&#160;&#160; <span class="pre">#27</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_markers(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#28</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_event_details(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#29</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_entity_details(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#30</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_attachments(QString,QString),</span> <span class="pre">parameters=QString,</span> <span class="pre">QString</span>&#160;&#160; <span class="pre">#31</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_longform_sequence(QString,QString),</span> <span class="pre">parameters=QString,</span> <span class="pre">QString</span>&#160;&#160; <span class="pre">#32</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_calendar_config()</span>&#160;&#160; <span class="pre">#33</span> <span class="pre">type=Slot,</span> <span class="pre">signature=run_command(PyObject,PyObject),</span> <span class="pre">parameters=PyObject,</span> <span class="pre">PyObject</span>&#160;&#160; <span class="pre">#34</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_current_time()</span>&#160;&#160; <span class="pre">#35</span> <span class="pre">type=Slot,</span> <span class="pre">signature=save_current_time(double),</span> <span class="pre">parameters=double</span>&#160;&#160; <span class="pre">#36</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_grouping_dialog_data()</span>&#160;&#160; <span class="pre">#37</span> <span class="pre">type=Slot,</span> <span class="pre">signature=index_object(QString,QString,QString,QString,QVariantList),</span> <span class="pre">parameters=QString,</span> <span class="pre">QString,</span> <span class="pre">QString,</span> <span class="pre">QString,</span> <span class="pre">QVariantList</span>&#160;&#160; <span class="pre">#38</span> <span class="pre">type=Slot,</span> <span class="pre">signature=apply_filter(QVariantMap),</span> <span class="pre">parameters=QVariantMap</span>&#160;&#160; <span class="pre">#39</span> <span class="pre">type=Slot,</span> <span class="pre">signature=resolve_entity_state(QString,double),</span> <span class="pre">parameters=QString,</span> <span class="pre">double</span> <span class="pre">)</span></em><a class="headerlink" href="#services.worker.DatabaseWorker.staticMetaObject" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">staticMetaObject</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">PySide6.QtCore.QMetaObject(&quot;DatabaseWorker&quot;</span> <span class="pre">inherits</span> <span class="pre">&quot;QObject&quot;:</span> <span class="pre">Methods:</span>&#160;&#160; <span class="pre">#4</span> <span class="pre">type=Signal,</span> <span class="pre">signature=initialized(bool),</span> <span class="pre">parameters=bool</span>&#160;&#160; <span class="pre">#5</span> <span class="pre">type=Signal,</span> <span class="pre">signature=events_loaded(QVariantList),</span> <span class="pre">parameters=QVariantList</span>&#160;&#160; <span class="pre">#6</span> <span class="pre">type=Signal,</span> <span class="pre">signature=entities_loaded(QVariantList),</span> <span class="pre">parameters=QVariantList</span>&#160;&#160; <span class="pre">#7</span> <span class="pre">type=Signal,</span> <span class="pre">signature=maps_loaded(QVariantList),</span> <span class="pre">parameters=QVariantList</span>&#160;&#160; <span class="pre">#8</span> <span class="pre">type=Signal,</span> <span class="pre">signature=markers_loaded(QString,QVariantList),</span> <span class="pre">parameters=QString,</span> <span class="pre">QVariantList</span>&#160;&#160; <span class="pre">#9</span> <span class="pre">type=Signal,</span> <span class="pre">signature=trajectories_loaded(QVariantList),</span> <span class="pre">parameters=QVariantList</span>&#160;&#160; <span class="pre">#10</span> <span class="pre">type=Signal,</span> <span class="pre">signature=longform_sequence_loaded(QVariantList),</span> <span class="pre">parameters=QVariantList</span>&#160;&#160; <span class="pre">#11</span> <span class="pre">type=Signal,</span> <span class="pre">signature=calendar_config_loaded(PyObject),</span> <span class="pre">parameters=PyObject</span>&#160;&#160; <span class="pre">#12</span> <span class="pre">type=Signal,</span> <span class="pre">signature=current_time_loaded(double),</span> <span class="pre">parameters=double</span>&#160;&#160; <span class="pre">#13</span> <span class="pre">type=Signal,</span> <span class="pre">signature=grouping_dialog_data_loaded(QVariantList,PyObject),</span> <span class="pre">parameters=QVariantList,</span> <span class="pre">PyObject</span>&#160;&#160; <span class="pre">#14</span> <span class="pre">type=Signal,</span> <span class="pre">signature=event_details_loaded(PyObject,QVariantList,QVariantList),</span> <span class="pre">parameters=PyObject,</span> <span class="pre">QVariantList,</span> <span class="pre">QVariantList</span>&#160;&#160; <span class="pre">#15</span> <span class="pre">type=Signal,</span> <span class="pre">signature=entity_details_loaded(PyObject,QVariantList,QVariantList),</span> <span class="pre">parameters=PyObject,</span> <span class="pre">QVariantList,</span> <span class="pre">QVariantList</span>&#160;&#160; <span class="pre">#16</span> <span class="pre">type=Signal,</span> <span class="pre">signature=attachments_loaded(QString,QString,QVariantList),</span> <span class="pre">parameters=QString,</span> <span class="pre">QString,</span> <span class="pre">QVariantList</span>&#160;&#160; <span class="pre">#17</span> <span class="pre">type=Signal,</span> <span class="pre">signature=filter_results_ready(QVariantList,QVariantList),</span> <span class="pre">parameters=QVariantList,</span> <span class="pre">QVariantList</span>&#160;&#160; <span class="pre">#18</span> <span class="pre">type=Signal,</span> <span class="pre">signature=entity_state_resolved(QString,QVariantMap),</span> <span class="pre">parameters=QString,</span> <span class="pre">QVariantMap</span>&#160;&#160; <span class="pre">#19</span> <span class="pre">type=Signal,</span> <span class="pre">signature=command_finished(PyObject),</span> <span class="pre">parameters=PyObject</span>&#160;&#160; <span class="pre">#20</span> <span class="pre">type=Signal,</span> <span class="pre">signature=error_occurred(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#21</span> <span class="pre">type=Signal,</span> <span class="pre">signature=operation_started(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#22</span> <span class="pre">type=Signal,</span> <span class="pre">signature=operation_finished(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#23</span> <span class="pre">type=Slot,</span> <span class="pre">signature=initialize_db()</span>&#160;&#160; <span class="pre">#24</span> <span class="pre">type=Slot,</span> <span class="pre">signature=cleanup()</span>&#160;&#160; <span class="pre">#25</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_events()</span>&#160;&#160; <span class="pre">#26</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_entities()</span>&#160;&#160; <span class="pre">#27</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_maps()</span>&#160;&#160; <span class="pre">#28</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_markers(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#29</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_trajectories(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#30</span> <span class="pre">type=Slot,</span> <span class="pre">signature=add_keyframe(QString,QString,double,double,double),</span> <span class="pre">parameters=QString,</span> <span class="pre">QString,</span> <span class="pre">double,</span> <span class="pre">double,</span> <span class="pre">double</span>&#160;&#160; <span class="pre">#31</span> <span class="pre">type=Slot,</span> <span class="pre">signature=update_keyframe_time(QString,QString,double,double),</span> <span class="pre">parameters=QString,</span> <span class="pre">QString,</span> <span class="pre">double,</span> <span class="pre">double</span>&#160;&#160; <span class="pre">#32</span> <span class="pre">type=Slot,</span> <span class="pre">signature=delete_keyframe(QString,QString,double),</span> <span class="pre">parameters=QString,</span> <span class="pre">QString,</span> <span class="pre">double</span>&#160;&#160; <span class="pre">#33</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_event_details(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#34</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_entity_details(QString),</span> <span class="pre">parameters=QString</span>&#160;&#160; <span class="pre">#35</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_attachments(QString,QString),</span> <span class="pre">parameters=QString,</span> <span class="pre">QString</span>&#160;&#160; <span class="pre">#36</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_longform_sequence(QString,QString),</span> <span class="pre">parameters=QString,</span> <span class="pre">QString</span>&#160;&#160; <span class="pre">#37</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_calendar_config()</span>&#160;&#160; <span class="pre">#38</span> <span class="pre">type=Slot,</span> <span class="pre">signature=run_command(PyObject,PyObject),</span> <span class="pre">parameters=PyObject,</span> <span class="pre">PyObject</span>&#160;&#160; <span class="pre">#39</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_current_time()</span>&#160;&#160; <span class="pre">#40</span> <span class="pre">type=Slot,</span> <span class="pre">signature=save_current_time(double),</span> <span class="pre">parameters=double</span>&#160;&#160; <span class="pre">#41</span> <span class="pre">type=Slot,</span> <span class="pre">signature=load_grouping_dialog_data()</span>&#160;&#160; <span class="pre">#42</span> <span class="pre">type=Slot,</span> <span class="pre">signature=index_object(QString,QString,QString,QString,QVariantList),</span> <span class="pre">parameters=QString,</span> <span class="pre">QString,</span> <span class="pre">QString,</span> <span class="pre">QString,</span> <span class="pre">QVariantList</span>&#160;&#160; <span class="pre">#43</span> <span class="pre">type=Slot,</span> <span class="pre">signature=apply_filter(QVariantMap),</span> <span class="pre">parameters=QVariantMap</span>&#160;&#160; <span class="pre">#44</span> <span class="pre">type=Slot,</span> <span class="pre">signature=resolve_entity_state(QString,double),</span> <span class="pre">parameters=QString,</span> <span class="pre">double</span> <span class="pre">)</span></em><a class="headerlink" href="#services.worker.DatabaseWorker.staticMetaObject" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.trajectories_loaded">
+<span class="sig-name descname"><span class="pre">trajectories_loaded</span></span><a class="headerlink" href="#services.worker.DatabaseWorker.trajectories_loaded" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.worker.DatabaseWorker.update_keyframe_time">
+<span class="sig-name descname"><span class="pre">update_keyframe_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">map_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marker_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.update_keyframe_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.update_keyframe_time" title="Link to this definition">¶</a></dt>
+<dd><p>Updates a keyframe’s timestamp (Clock Mode) and reloads trajectories.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>map_id</strong> – The map ID (for reloading).</p></li>
+<li><p><strong>marker_id</strong> – The marker ID.</p></li>
+<li><p><strong>old_t</strong> – Original timestamp.</p></li>
+<li><p><strong>new_t</strong> – New timestamp.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -2258,6 +2418,7 @@ text parsing, and background workers.</p>
 <li><a class="reference internal" href="#module-services.db_service">services.db_service module</a><ul>
 <li><a class="reference internal" href="#services.db_service.DatabaseService"><code class="docutils literal notranslate"><span class="pre">DatabaseService</span></code></a><ul>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.__init__"><code class="docutils literal notranslate"><span class="pre">DatabaseService.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.add_keyframe"><code class="docutils literal notranslate"><span class="pre">DatabaseService.add_keyframe()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.assign_tag_to_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.assign_tag_to_entity()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.assign_tag_to_event"><code class="docutils literal notranslate"><span class="pre">DatabaseService.assign_tag_to_event()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.clear_timeline_grouping_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.clear_timeline_grouping_config()</span></code></a></li>
@@ -2267,6 +2428,7 @@ text parsing, and background workers.</p>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.delete_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_calendar_config()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.delete_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_entity()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.delete_event"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_event()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.delete_keyframe"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_keyframe()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.delete_map"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_map()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.delete_marker"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_marker()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.delete_relation"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_relation()</span></code></a></li>
@@ -2307,6 +2469,8 @@ text parsing, and background workers.</p>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_tags_for_event"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_tags_for_event()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_tags_with_events"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_tags_with_events()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_timeline_grouping_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_timeline_grouping_config()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_trajectories_by_map"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_trajectories_by_map()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_trajectories_by_marker"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_trajectories_by_marker()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.insert_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_calendar_config()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.insert_entities_bulk"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_entities_bulk()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.insert_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_entity()</span></code></a></li>
@@ -2315,6 +2479,7 @@ text parsing, and background workers.</p>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.insert_map"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_map()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.insert_marker"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_marker()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.insert_relation"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_relation()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.insert_trajectory"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_trajectory()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.remove_tag_from_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.remove_tag_from_entity()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.remove_tag_from_event"><code class="docutils literal notranslate"><span class="pre">DatabaseService.remove_tag_from_event()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.set_active_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.set_active_calendar_config()</span></code></a></li>
@@ -2322,6 +2487,7 @@ text parsing, and background workers.</p>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.set_tag_color"><code class="docutils literal notranslate"><span class="pre">DatabaseService.set_tag_color()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.set_timeline_grouping_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.set_timeline_grouping_config()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.transaction"><code class="docutils literal notranslate"><span class="pre">DatabaseService.transaction()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.update_keyframe_time"><code class="docutils literal notranslate"><span class="pre">DatabaseService.update_keyframe_time()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.update_relation"><code class="docutils literal notranslate"><span class="pre">DatabaseService.update_relation()</span></code></a></li>
 </ul>
 </li>
@@ -2380,12 +2546,14 @@ text parsing, and background workers.</p>
 <li><a class="reference internal" href="#module-services.worker">services.worker module</a><ul>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker</span></code></a><ul>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.__init__"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.add_keyframe"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.add_keyframe()</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.apply_filter"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.apply_filter()</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.attachments_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.attachments_loaded</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.calendar_config_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.calendar_config_loaded</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.cleanup"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.cleanup()</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.command_finished"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.command_finished</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.current_time_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.current_time_loaded</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.delete_keyframe"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.delete_keyframe()</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.entities_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.entities_loaded</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.entity_details_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.entity_details_loaded</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.entity_state_resolved"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.entity_state_resolved</span></code></a></li>
@@ -2408,6 +2576,7 @@ text parsing, and background workers.</p>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.load_longform_sequence"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_longform_sequence()</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.load_maps"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_maps()</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.load_markers"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_markers()</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.load_trajectories"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.load_trajectories()</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.longform_sequence_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.longform_sequence_loaded</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.maps_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.maps_loaded</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.markers_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.markers_loaded</span></code></a></li>
@@ -2417,6 +2586,8 @@ text parsing, and background workers.</p>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.run_command"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.run_command()</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.save_current_time"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.save_current_time()</span></code></a></li>
 <li><a class="reference internal" href="#services.worker.DatabaseWorker.staticMetaObject"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.staticMetaObject</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.trajectories_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.trajectories_loaded</span></code></a></li>
+<li><a class="reference internal" href="#services.worker.DatabaseWorker.update_keyframe_time"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.update_keyframe_time()</span></code></a></li>
 </ul>
 </li>
 </ul>

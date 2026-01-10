@@ -338,6 +338,12 @@
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="core.html#core.calendar.MonthDefinition.abbreviation">abbreviation (core.calendar.MonthDefinition attribute)</a>, <a href="core.html#id14">[1]</a>
 </li>
+        <li><a href="services.html#services.db_service.DatabaseService.add_keyframe">add_keyframe() (services.db_service.DatabaseService method)</a>
+
+        <ul>
+          <li><a href="services.html#services.worker.DatabaseWorker.add_keyframe">(services.worker.DatabaseWorker method)</a>
+</li>
+        </ul></li>
         <li><a href="commands.html#commands.relation_commands.AddRelationCommand">AddRelationCommand (class in commands.relation_commands)</a>
 </li>
         <li>
@@ -564,6 +570,12 @@
 </li>
         <li><a href="services.html#services.db_service.DatabaseService.delete_event">delete_event() (services.db_service.DatabaseService method)</a>
 </li>
+        <li><a href="services.html#services.db_service.DatabaseService.delete_keyframe">delete_keyframe() (services.db_service.DatabaseService method)</a>
+
+        <ul>
+          <li><a href="services.html#services.worker.DatabaseWorker.delete_keyframe">(services.worker.DatabaseWorker method)</a>
+</li>
+        </ul></li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="services.html#services.db_service.DatabaseService.delete_map">delete_map() (services.db_service.DatabaseService method)</a>
@@ -760,10 +772,10 @@
 </li>
         <li><a href="services.html#services.db_service.DatabaseService.get_map">get_map() (services.db_service.DatabaseService method)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="services.html#services.db_service.DatabaseService.get_marker">get_marker() (services.db_service.DatabaseService method)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="services.html#services.db_service.DatabaseService.get_marker_by_composite">get_marker_by_composite() (services.db_service.DatabaseService method)</a>
 </li>
         <li><a href="services.html#services.db_service.DatabaseService.get_markers_for_map">get_markers_for_map() (services.db_service.DatabaseService method)</a>
@@ -791,6 +803,10 @@
         <li><a href="services.html#services.db_service.DatabaseService.get_tags_with_events">get_tags_with_events() (services.db_service.DatabaseService method)</a>
 </li>
         <li><a href="services.html#services.db_service.DatabaseService.get_timeline_grouping_config">get_timeline_grouping_config() (services.db_service.DatabaseService method)</a>
+</li>
+        <li><a href="services.html#services.db_service.DatabaseService.get_trajectories_by_map">get_trajectories_by_map() (services.db_service.DatabaseService method)</a>
+</li>
+        <li><a href="services.html#services.db_service.DatabaseService.get_trajectories_by_marker">get_trajectories_by_marker() (services.db_service.DatabaseService method)</a>
 </li>
         <li><a href="core.html#core.calendar.CalendarConfig.get_year_length">get_year_length() (core.calendar.CalendarConfig method)</a>
 </li>
@@ -861,6 +877,8 @@
 </li>
         <li><a href="services.html#services.db_service.DatabaseService.insert_relation">insert_relation() (services.db_service.DatabaseService method)</a>
 </li>
+        <li><a href="services.html#services.db_service.DatabaseService.insert_trajectory">insert_trajectory() (services.db_service.DatabaseService method)</a>
+</li>
         <li><a href="services.html#services.link_resolver.LinkResolver.invalidate_cache">invalidate_cache() (services.link_resolver.LinkResolver method)</a>
 </li>
         <li><a href="core.html#core.calendar.CalendarConfig.is_active">is_active (core.calendar.CalendarConfig attribute)</a>
@@ -904,6 +922,8 @@
         <li><a href="services.html#services.worker.DatabaseWorker.load_maps">load_maps() (services.worker.DatabaseWorker method)</a>
 </li>
         <li><a href="services.html#services.worker.DatabaseWorker.load_markers">load_markers() (services.worker.DatabaseWorker method)</a>
+</li>
+        <li><a href="services.html#services.worker.DatabaseWorker.load_trajectories">load_trajectories() (services.worker.DatabaseWorker method)</a>
 </li>
         <li><a href="services.html#services.worker.DatabaseWorker.longform_sequence_loaded">longform_sequence_loaded (services.worker.DatabaseWorker attribute)</a>
 </li>
@@ -1202,6 +1222,8 @@
 </li>
         <li><a href="core.html#core.calendar.CalendarConfig.to_json">to_json() (core.calendar.CalendarConfig method)</a>
 </li>
+        <li><a href="services.html#services.worker.DatabaseWorker.trajectories_loaded">trajectories_loaded (services.worker.DatabaseWorker attribute)</a>
+</li>
         <li><a href="services.html#services.db_service.DatabaseService.transaction">transaction() (services.db_service.DatabaseService method)</a>
 </li>
         <li><a href="core.html#core.entities.Entity.type">type (core.entities.Entity attribute)</a>
@@ -1260,6 +1282,12 @@
         </ul></li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="services.html#services.db_service.DatabaseService.update_keyframe_time">update_keyframe_time() (services.db_service.DatabaseService method)</a>
+
+        <ul>
+          <li><a href="services.html#services.worker.DatabaseWorker.update_keyframe_time">(services.worker.DatabaseWorker method)</a>
+</li>
+        </ul></li>
         <li><a href="services.html#services.db_service.DatabaseService.update_relation">update_relation() (services.db_service.DatabaseService method)</a>
 </li>
         <li><a href="commands.html#commands.calendar_commands.UpdateCalendarConfigCommand">UpdateCalendarConfigCommand (class in commands.calendar_commands)</a>

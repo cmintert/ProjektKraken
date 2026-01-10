@@ -282,7 +282,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">sqlite3</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">contextlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">contextmanager</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.calendar</span><span class="w"> </span><span class="kn">import</span> <span class="n">CalendarConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.entities</span><span class="w"> </span><span class="kn">import</span> <span class="n">Entity</span>
@@ -298,9 +298,11 @@
     <span class="n">EventRepository</span><span class="p">,</span>
     <span class="n">MapRepository</span><span class="p">,</span>
     <span class="n">RelationRepository</span><span class="p">,</span>
+    <span class="n">TrajectoryRepository</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.trajectory</span><span class="w"> </span><span class="kn">import</span> <span class="n">Keyframe</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.attachment_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">AttachmentService</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
@@ -335,6 +337,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_map_repo</span> <span class="o">=</span> <span class="n">MapRepository</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_calendar_repo</span> <span class="o">=</span> <span class="n">CalendarRepository</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_attachment_repo</span> <span class="o">=</span> <span class="n">AttachmentRepository</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_trajectory_repo</span> <span class="o">=</span> <span class="n">TrajectoryRepository</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attachment_service</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;AttachmentService&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DatabaseService initialized with path: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">db_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
@@ -367,6 +370,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_map_repo</span><span class="o">.</span><span class="n">set_connection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_calendar_repo</span><span class="o">.</span><span class="n">set_connection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_attachment_repo</span><span class="o">.</span><span class="n">set_connection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_trajectory_repo</span><span class="o">.</span><span class="n">set_connection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">)</span>
 
         <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to connect to database: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -623,9 +627,57 @@
                     <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to add color column to tags table: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                     <span class="k">raise</span>
 
+            <span class="c1"># Migrate trajectory data from old format to MF-JSON</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_migrate_trajectories_to_mfjson</span><span class="p">()</span>
+
         <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Migration check failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">raise</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_migrate_trajectories_to_mfjson</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Migrates old-format trajectories to MF-JSON format.</span>
+
+<span class="sd">        Old format: [[t, x, y], ...]</span>
+<span class="sd">        New format: {&quot;type&quot;: &quot;MovingPoint&quot;, &quot;coordinates&quot;: [[x, y], ...], &quot;datetimes&quot;: [...]}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT id, trajectory FROM moving_features&quot;</span><span class="p">)</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+        <span class="n">migrated_count</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
+            <span class="n">traj_id</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
+            <span class="n">traj_json</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;trajectory&quot;</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">traj_json</span><span class="p">)</span>
+                <span class="c1"># Skip if already MF-JSON format</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;MovingPoint&quot;</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># Convert old format (list of [t, x, y])</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="n">data</span><span class="p">:</span>
+                    <span class="n">coordinates</span> <span class="o">=</span> <span class="p">[[</span><span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">item</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">data</span><span class="p">]</span>
+                    <span class="n">datetimes</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">data</span><span class="p">]</span>
+                    <span class="n">mfjson</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;MovingPoint&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;coordinates&quot;</span><span class="p">:</span> <span class="n">coordinates</span><span class="p">,</span>
+                        <span class="s2">&quot;datetimes&quot;</span><span class="p">:</span> <span class="n">datetimes</span><span class="p">,</span>
+                    <span class="p">}</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                        <span class="s2">&quot;UPDATE moving_features SET trajectory = ? WHERE id = ?&quot;</span><span class="p">,</span>
+                        <span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">mfjson</span><span class="p">),</span> <span class="n">traj_id</span><span class="p">),</span>
+                    <span class="p">)</span>
+                    <span class="n">migrated_count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="k">except</span> <span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skipping corrupt trajectory </span><span class="si">{</span><span class="n">traj_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">migrated_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Migration: Converted </span><span class="si">{</span><span class="n">migrated_count</span><span class="si">}</span><span class="s2"> trajectories to MF-JSON format&quot;</span>
+            <span class="p">)</span>
 
     <span class="c1"># --------------------------------------------------------------------------</span>
     <span class="c1"># Event CRUD - Delegates to EventRepository</span>
@@ -2530,6 +2582,134 @@
             <span class="p">)</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Cleared timeline grouping config&quot;</span><span class="p">)</span></div>
+
+
+    <span class="c1"># --------------------------------------------------------------------------</span>
+    <span class="c1"># Temporal Trajectories - Delegates to TrajectoryRepository</span>
+    <span class="c1"># --------------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="DatabaseService.insert_trajectory">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.insert_trajectory">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">insert_trajectory</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">marker_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">trajectory</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="s2">&quot;Keyframe&quot;</span><span class="p">],</span>
+        <span class="n">properties</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Inserts a spatial trajectory for a marker.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            marker_id: UUID of the marker.</span>
+<span class="sd">            trajectory: List of Keyframe objects.</span>
+<span class="sd">            properties: Optional JSON metadata.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            UUID of the inserted trajectory record.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trajectory_repo</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">marker_id</span><span class="p">,</span> <span class="n">trajectory</span><span class="p">,</span> <span class="n">properties</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.get_trajectories_by_map">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_trajectories_by_map">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_trajectories_by_map</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">map_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="s2">&quot;Keyframe&quot;</span><span class="p">]]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves all trajectories for a specific map.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            map_id: UUID of the map.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of (marker_id, trajectory_id, List[Keyframe]) tuples.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trajectory_repo</span><span class="o">.</span><span class="n">get_by_map_id</span><span class="p">(</span><span class="n">map_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.get_trajectories_by_marker">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_trajectories_by_marker">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_trajectories_by_marker</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">marker_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="s2">&quot;Keyframe&quot;</span><span class="p">]]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves all trajectories for a specific marker.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            marker_id: UUID of the marker.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of (trajectory_id, List[Keyframe]) tuples.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trajectory_repo</span><span class="o">.</span><span class="n">get_by_marker_db_id</span><span class="p">(</span><span class="n">marker_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.add_keyframe">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.add_keyframe">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_keyframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">object_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">keyframe</span><span class="p">:</span> <span class="s2">&quot;Keyframe&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds a keyframe to the marker&#39;s trajectory.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            map_id: The ID of the map.</span>
+<span class="sd">            object_id: The object ID (Entity/Event ID).</span>
+<span class="sd">            keyframe: The Keyframe object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The ID of the updated/created trajectory.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trajectory_repo</span><span class="o">.</span><span class="n">add_keyframe</span><span class="p">(</span><span class="n">map_id</span><span class="p">,</span> <span class="n">object_id</span><span class="p">,</span> <span class="n">keyframe</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.update_keyframe_time">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.update_keyframe_time">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_keyframe_time</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">map_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">object_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">old_t</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">new_t</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates a keyframe&#39;s timestamp (Clock Mode editing).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            map_id: The ID of the map.</span>
+<span class="sd">            object_id: The object ID (Entity/Event ID).</span>
+<span class="sd">            old_t: Original timestamp.</span>
+<span class="sd">            new_t: New timestamp.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The ID of the updated trajectory.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trajectory_repo</span><span class="o">.</span><span class="n">update_keyframe_time</span><span class="p">(</span>
+            <span class="n">map_id</span><span class="p">,</span> <span class="n">object_id</span><span class="p">,</span> <span class="n">old_t</span><span class="p">,</span> <span class="n">new_t</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.delete_keyframe">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.delete_keyframe">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delete_keyframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">object_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Deletes a keyframe from a marker&#39;s trajectory.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            map_id: The ID of the map.</span>
+<span class="sd">            object_id: The object ID (Entity/Event ID).</span>
+<span class="sd">            t: The timestamp of the keyframe to delete.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The ID of the updated trajectory, or None if trajectory was deleted.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trajectory_repo</span><span class="o">.</span><span class="n">delete_keyframe</span><span class="p">(</span><span class="n">map_id</span><span class="p">,</span> <span class="n">object_id</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span></div>
 </div>
 
 </pre></div>
