@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-10
-### Internal
-- Merge pull request #46 from cmintert/time-map
+### Documentation
+- docs: Document temporal marker visualization rules
 
 
 *This changelog was automatically generated.*

@@ -836,6 +836,12 @@ Complex markers (e.g., detailed SVG sigils) are expensive to paint.</p>
 </li>
 <li><p><strong>Description Tooltips</strong>: Tooltips now prioritize the item’s <code class="docutils literal notranslate"><span class="pre">description</span></code> field for richer context, falling back to the <code class="docutils literal notranslate"><span class="pre">label</span></code> if no description is available.</p></li>
 <li><p><strong>Smart Marker Scale</strong>: Markers and their associated visual elements leverage dynamic scaling and hitbox adjustments for professional “pixel-perfect” interaction.</p></li>
+<li><p><strong>Temporal State Visualization</strong>:</p>
+<ul>
+<li><p><strong>Future Markers</strong>: Markers with a <code class="docutils literal notranslate"><span class="pre">lore_date</span></code> in the future relative to the playhead are rendered with <strong>reduced opacity (0.7)</strong> and <strong>desaturated colors (80% saturation)</strong>. This provides a clear visual distinction between “what has happened” and “what will happen”, allowing users to anticipate upcoming events without being distracted by them.</p></li>
+<li><p><strong>Past/Present Markers</strong>: Retain full opacity (1.0) and vivid color saturation to indicate their active or historical status.</p></li>
+</ul>
+</li>
 </ul>
 </section>
 <section id="interaction-visualization">

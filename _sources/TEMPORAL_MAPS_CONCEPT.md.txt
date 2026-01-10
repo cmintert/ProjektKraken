@@ -374,6 +374,9 @@ Entities that "die" or haven't been "born" must be hidden.
     *   Labels inherit the `ItemIgnoresTransformations` flag, ensuring they remain legible and correctly positioned regardless of map zoom.
 * **Description Tooltips**: Tooltips now prioritize the item's `description` field for richer context, falling back to the `label` if no description is available.
 * **Smart Marker Scale**: Markers and their associated visual elements leverage dynamic scaling and hitbox adjustments for professional "pixel-perfect" interaction.
+* **Temporal State Visualization**:
+    *   **Future Markers**: Markers with a `lore_date` in the future relative to the playhead are rendered with **reduced opacity (0.7)** and **desaturated colors (80% saturation)**. This provides a clear visual distinction between "what has happened" and "what will happen", allowing users to anticipate upcoming events without being distracted by them.
+    *   **Past/Present Markers**: Retain full opacity (1.0) and vivid color saturation to indicate their active or historical status.
 
 ### Interaction & Visualization
 * **Manual Keyframing (Snapshots)**: Added "Add Keyframe" button to the Map toolbar. This allows users to set precise snapshots of marker state at specific timeline moments.
