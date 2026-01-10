@@ -18,6 +18,12 @@ class MapCoordinateSystem:
     """
 
     def __init__(self) -> None:
+        """
+        Initializes the MapCoordinateSystem.
+
+        Creates a coordinate system with an empty scene rectangle.
+        Call set_scene_rect() after initialization to define the map bounds.
+        """
         self._scene_rect = QRectF()
 
     def set_scene_rect(self, rect: QRectF) -> None:

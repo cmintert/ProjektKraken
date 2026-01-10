@@ -105,6 +105,16 @@ class KeyframeGizmo(QGraphicsItemGroup):
     def __init__(
         self, keyframe_item: "KeyframeItem", parent: Optional[QGraphicsItem] = None
     ) -> None:
+        """
+        Initializes the KeyframeGizmo.
+
+        Creates a hover gizmo with clock (for Clock Mode) and delete icons
+        positioned to the northeast of the parent keyframe item.
+
+        Args:
+            keyframe_item: The parent KeyframeItem this gizmo is attached to.
+            parent: Optional parent graphics item.
+        """
         super().__init__(parent)
         self.keyframe_item = keyframe_item
         self.setZValue(LAYER_UI_OVERLAY)
@@ -193,6 +203,22 @@ class KeyframeItem(QGraphicsObject):
         on_drop_callback: Callable[["KeyframeItem"], None],
         on_drag_callback: Optional[Callable[[], None]] = None,
     ) -> None:
+        """
+        Initializes a KeyframeItem.
+
+        Creates a draggable keyframe dot representing a position at a specific time
+        in a trajectory. The item can be moved to adjust spatial position and provides
+        a gizmo interface for temporal editing (Clock Mode) and deletion.
+
+        Args:
+            marker_id: ID of the marker this keyframe belongs to.
+            t: Time value (lore_date) for this keyframe.
+            x: Normalized X coordinate [0.0, 1.0] of the position.
+            y: Normalized Y coordinate [0.0, 1.0] of the position.
+            rect: Bounding rectangle for the keyframe dot visual.
+            on_drop_callback: Callback invoked when the keyframe is dropped after dragging.
+            on_drag_callback: Optional callback invoked during drag to update visuals.
+        """
         super().__init__()
         self._rect = rect
         self.marker_id = marker_id

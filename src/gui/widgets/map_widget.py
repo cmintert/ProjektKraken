@@ -887,6 +887,16 @@ class OnboardingDialog(QDialog):
     """Onboarding dialog shown when the first keyframe is created."""
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
+        """
+        Initializes the OnboardingDialog.
+
+        Creates a dialog that introduces users to keyframe editing features
+        when they create their first keyframe. Displays instructions for
+        drag editing, Clock Mode, and deletion.
+
+        Args:
+            parent: Parent widget.
+        """
         super().__init__(parent)
         self.setWindowTitle("✨ Keyframe Created!")
         self.setFixedWidth(400)

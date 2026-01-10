@@ -13,6 +13,13 @@ class ScaleBarPainter:
     """
 
     def __init__(self) -> None:
+        """
+        Initializes the ScaleBarPainter.
+
+        Sets up fonts, pens, and brushes for rendering the scale bar overlay.
+        The scale bar uses a semi-transparent white background with black text
+        and lines for maximum visibility on various map backgrounds.
+        """
         self.font = QFont("Sans Serif", 9)
         self.font.setBold(True)
         self.pen_black = QPen(Qt.GlobalColor.black, 2)
