@@ -80,6 +80,35 @@ To maximize performance, keyframes must be maintained as a strictly sorted list 
 * **Interval**: The current state is derived from `keyframes[i-1]` (start of interval) and `keyframes[i]` (end of interval).
 * **Complexity**: This reduces the lookup cost from $O(N)$ to $O(\log N)$, which is critical when scrubbing through long histories with thousands of data points.
 
+#### 3.2.1 OGC MF-JSON Database Storage Format
+
+Trajectory data is persisted in the `moving_features` table using the **OGC Moving Features JSON** (MF-JSON) format. This standard ensures geospatial interoperability while supporting our temporal requirements.
+
+**Database Column**: `moving_features.trajectory` (JSON blob)
+
+**MF-JSON Structure (MovingPoint):**
+```json
+{
+  "type": "MovingPoint",
+  "coordinates": [[0.1, 0.2], [0.5, 0.5], [0.9, 0.8]],
+  "datetimes": [0.0, 50.0, 100.0]
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `type` | Always `"MovingPoint"` for point trajectories |
+| `coordinates` | Array of `[x, y]` normalized positions (0.0 - 1.0) |
+| `datetimes` | Array of time values (lore_date floats), aligned with coordinates |
+
+**Future Extensions** (not yet implemented):
+- `interpolation`: Specify curve type (`"Linear"`, `"Step"`, `"CubicBezier"`)
+- `properties`: Dynamic attributes that change over time (e.g., speed, status)
+
+**Serialization Helpers** (`src/core/trajectory.py`):
+- `keyframes_to_mfjson(keyframes: list[Keyframe]) -> dict`
+- `mfjson_to_keyframes(data: dict) -> list[Keyframe]`
+
 ### 3.3 Calendar Integration: Mapping $t$ to Dates
 A request from the "Future Roadmap" is to map the abstract float $t$ to actual calendar dates (e.g., "Year 3018, March 25").
 
@@ -333,7 +362,8 @@ Entities that "die" or haven't been "born" must be hidden.
     *   It is architected to support future `pyproj` integration without breaking the UI.
     *   **Note**: Full Y-Axis Inversion is prepared for but not yet active to match current static map behavior.
 * **Database Schema**: The `moving_features` table has been added to the SQLite schema.
-    *   It supports storing `trajectory` as a JSON blob.
+    *   Trajectories are stored in **OGC MF-JSON format** (`{"type": "MovingPoint", "coordinates": [...], "datetimes": [...]}`).
+    *   Auto-migration converts legacy `[[t,x,y],...]` format on database connect.
     *   Temporal indices (`t_start`, `t_end`) are in place for efficient queries.
 * **Interaction**: The map now uses an "Infinite Canvas" interaction model (Scrollbars disabled, Drag-to-Pan enforced).
 
