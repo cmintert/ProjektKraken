@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-01-10  
-**Commit:** `15c017f`  
+**Commit:** `1038041`  
 ---
 
 # Changelog
@@ -12,7 +12,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- *(2026-01-10)* **Feature**: Implemented persistent "Clock Mode" indicator with a toolbar status label and an interactive map overlay banner.
+- *(2026-01-10)* **Architecture**: Migrated trajectory storage to OGC MF-JSON format for geospatial interoperability.
+  - Added `geojson>=3.0.0` dependency.
+  - Added `keyframes_to_mfjson()` and `mfjson_to_keyframes()` serialization helpers.
+  - Added `_migrate_trajectories_to_mfjson()` for automatic one-time data migration on DB connect.
+  - Structure: `{"type": "MovingPoint", "coordinates": [[x,y],...], "datetimes": [t,...]}`.
+- *(2026-01-10)* **Feature**: Implemented persistent \"Clock Mode\" indicator with a toolbar status label and an interactive map overlay banner.
   - Added keyboard shortcuts: `Esc` for cancel and `Enter`/`Return` for commit.
   - Added `WaitCursor` feedback when entering Clock Mode.
 - *(2026-01-10)* **Feature**: Integrated a comprehensive progressive disclosure system for map UX.
@@ -20,12 +25,13 @@ All notable changes to this project will be documented in this file.
   - Added a subtle pulsing animation (1.1x scale, 3 loops) for trajectories on first load to improve discoverability.
   - Added one-time 💡 hover hint tooltips for keyframes.
 - *(2026-01-10)* **Feature**: Implemented Playhead Persistence, saving state on drag release, stop, and exit.
-- *(2026-01-10)* **Feature**: Implemented "Draft Mode" (Amber) for transient marker states with visual snap-back on selection change or scrubbing.
+- *(2026-01-10)* **Feature**: Implemented \"Draft Mode\" (Amber) for transient marker states with visual snap-back on selection change or scrubbing.
 - *(2026-01-10)* **UX**: Enhanced keyframe interaction with `SizeAllCursor` in spatial mode and optimized gizmo icon spacing for better click precision.
 - *(2026-01-09)* **Feature**: Implemented keyframe deletion support and hardened trajectory precision.
-  - Added context menu for keyframes with "Edit Keyframe..." and "Delete Keyframe" options.
+  - Added context menu for keyframes with \"Edit Keyframe...\" and \"Delete Keyframe\" options.
   - Hardened trajectory calculation by rounding to 4 decimal places to prevent float precision drift.
   - Added description/tooltip support for markers, pulling from cached entity/event data.
+- *(2026-01-09)* **Refactor**: Improved TimelineView code quality with 10 helper extractions and 18 new tests.
 - *(2026-01-06)* **Feature**: Implemented live mouse coordinate display showing Normalized (0-1) and Real-World (Kilometers) values.
 - *(2026-01-06)* **Feature**: Added GIS-style `ScaleBarPainter` with automatic unit selection and configurable map width via settings dialog.
 - *(2026-01-06)* **Feature**: Added `moving_features` table for temporal map data with `ON DELETE CASCADE` on marker FK.
