@@ -355,8 +355,6 @@ class DatabaseService:
         Old format: [[t, x, y], ...]
         New format: {"type": "MovingPoint", "coordinates": [[x, y], ...], "datetimes": [...]}
         """
-        import json
-
         assert self._connection is not None
 
         cursor = self._connection.execute("SELECT id, trajectory FROM moving_features")
