@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-01-10  
-**Commit:** `1c03151`  
+**Commit:** `15c017f`  
 ---
 
 # Changelog
@@ -19,6 +19,8 @@ All notable changes to this project will be documented in this file.
   - Added `OnboardingDialog` for first-time keyframe creation guidance.
   - Added a subtle pulsing animation (1.1x scale, 3 loops) for trajectories on first load to improve discoverability.
   - Added one-time 💡 hover hint tooltips for keyframes.
+- *(2026-01-10)* **Feature**: Implemented Playhead Persistence, saving state on drag release, stop, and exit.
+- *(2026-01-10)* **Feature**: Implemented "Draft Mode" (Amber) for transient marker states with visual snap-back on selection change or scrubbing.
 - *(2026-01-10)* **UX**: Enhanced keyframe interaction with `SizeAllCursor` in spatial mode and optimized gizmo icon spacing for better click precision.
 - *(2026-01-09)* **Feature**: Implemented keyframe deletion support and hardened trajectory precision.
   - Added context menu for keyframes with "Edit Keyframe..." and "Delete Keyframe" options.
@@ -44,6 +46,7 @@ All notable changes to this project will be documented in this file.
 - *(2026-01-04)* **Accessibility**: Enabled keyboard navigation in AI search panel (arrow keys + Enter).
 
 ### Changed
+- *(2026-01-10)* **Refactor**: Refactored `MapWidget` mode indicator to support Normal, Clock, and Draft modes.
 - *(2026-01-10)* **Refactor**: Refactored `KeyframeItem` to `QGraphicsObject` for `QPropertyAnimation` support.
 - *(2026-01-06)* **Refactor**: Refactored `MapWidget` toolbar to use styled `QPushButton`s for theme consistency.
 - *(2026-01-06)* **Refactor**: Extracted drop handling and context menu logic in `MapGraphicsView`.
