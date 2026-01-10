@@ -632,3 +632,98 @@ class UpdateMarkerColorCommand(BaseCommand):
             db_service.insert_marker(restored_marker)
             self._is_executed = False
             logger.info(f"Undid color update of marker: {self.marker_id}")
+
+
+class DeleteKeyframeCommand(BaseCommand):
+    """
+    Command to delete a keyframe from a marker's trajectory.
+    """
+
+    def __init__(self, map_id: str, marker_id: str, t: float) -> None:
+        """
+        Initializes the DeleteKeyframeCommand.
+
+        Args:
+            map_id: The ID of the map.
+            marker_id: The object ID of the marker (entity/event ID).
+            t: The timestamp of the keyframe to delete.
+        """
+        super().__init__()
+        self.map_id = map_id
+        self.marker_id = marker_id
+        self.t = t
+        self._deleted_keyframe: Optional[tuple] = None  # (t, x, y) for undo
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """
+        Executes the keyframe deletion.
+
+        Args:
+            db_service: The database service to use.
+
+        Returns:
+            CommandResult: Result object containing success status and messages.
+        """
+        try:
+            # Store keyframe for undo (get it before deletion)
+            from src.core.trajectory import KEYFRAME_TIME_EPSILON
+
+            trajectories = db_service.trajectory_repo.get_by_map_id(self.map_id)
+            for marker_id_db, traj_id, keyframes in trajectories:
+                if marker_id_db == self.marker_id:
+                    for kf in keyframes:
+                        if abs(kf.t - self.t) < KEYFRAME_TIME_EPSILON:
+                            self._deleted_keyframe = (kf.t, kf.x, kf.y)
+                            break
+                    break
+
+            result = db_service.trajectory_repo.delete_keyframe(
+                self.map_id, self.marker_id, self.t
+            )
+            self._is_executed = True
+
+            if result is None:
+                logger.info(
+                    f"Deleted keyframe at t={self.t:.2f} for {self.marker_id} "
+                    f"(trajectory removed - <2 keyframes remaining)"
+                )
+            else:
+                logger.info(f"Deleted keyframe at t={self.t:.2f} for {self.marker_id}")
+
+            return CommandResult(
+                success=True,
+                message="Keyframe deleted.",
+                command_name="DeleteKeyframeCommand",
+            )
+        except ValueError as e:
+            logger.warning(f"Keyframe delete failed: {e}")
+            return CommandResult(
+                success=False,
+                message=str(e),
+                command_name="DeleteKeyframeCommand",
+            )
+        except Exception as e:
+            logger.error(f"Failed to delete keyframe: {e}")
+            return CommandResult(
+                success=False,
+                message=f"Failed to delete keyframe: {e}",
+                command_name="DeleteKeyframeCommand",
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """
+        Reverts the keyframe deletion by restoring it.
+
+        Args:
+            db_service: The database service to operate on.
+        """
+        if self._is_executed and self._deleted_keyframe:
+            from src.core.trajectory import Keyframe
+
+            t, x, y = self._deleted_keyframe
+            keyframe = Keyframe(t=t, x=x, y=y)
+            db_service.trajectory_repo.add_keyframe(
+                self.map_id, self.marker_id, keyframe
+            )
+            self._is_executed = False
+            logger.info(f"Undid deletion of keyframe at t={t:.2f} for {self.marker_id}")

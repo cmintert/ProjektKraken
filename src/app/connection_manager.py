@@ -58,6 +58,7 @@ class ConnectionManager:
         )
         dh.maps_ready.connect(self.window.map_handler.on_maps_ready)
         dh.markers_ready.connect(self.window.map_handler.on_markers_ready)
+        dh.trajectories_ready.connect(self.window.map_handler.on_trajectories_ready)
         dh.entity_state_resolved.connect(self.window._on_entity_state_resolved)
 
         # UI action signals
@@ -179,6 +180,16 @@ class ConnectionManager:
         timeline = self.window.timeline
         timeline.playhead_time_changed.connect(map_widget.on_time_changed)
         timeline.current_time_changed.connect(map_widget.on_current_time_changed)
+
+        # Connect keyframe request
+        map_widget.add_keyframe_requested.connect(self.window.worker.add_keyframe)
+        map_widget.update_keyframe_time_requested.connect(
+            self.window.worker.update_keyframe_time
+        )
+        map_widget.delete_keyframe_requested.connect(self.window.worker.delete_keyframe)
+        map_widget.jump_to_time_requested.connect(
+            self.window.timeline.set_playhead_time
+        )
 
     def connect_ai_search_panel(self) -> None:
         """Connect signals from the AI search panel widget."""

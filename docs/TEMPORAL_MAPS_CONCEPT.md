@@ -80,6 +80,35 @@ To maximize performance, keyframes must be maintained as a strictly sorted list 
 * **Interval**: The current state is derived from `keyframes[i-1]` (start of interval) and `keyframes[i]` (end of interval).
 * **Complexity**: This reduces the lookup cost from $O(N)$ to $O(\log N)$, which is critical when scrubbing through long histories with thousands of data points.
 
+#### 3.2.1 OGC MF-JSON Database Storage Format
+
+Trajectory data is persisted in the `moving_features` table using the **OGC Moving Features JSON** (MF-JSON) format. This standard ensures geospatial interoperability while supporting our temporal requirements.
+
+**Database Column**: `moving_features.trajectory` (JSON blob)
+
+**MF-JSON Structure (MovingPoint):**
+```json
+{
+  "type": "MovingPoint",
+  "coordinates": [[0.1, 0.2], [0.5, 0.5], [0.9, 0.8]],
+  "datetimes": [0.0, 50.0, 100.0]
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `type` | Always `"MovingPoint"` for point trajectories |
+| `coordinates` | Array of `[x, y]` normalized positions (0.0 - 1.0) |
+| `datetimes` | Array of time values (lore_date floats), aligned with coordinates |
+
+**Future Extensions** (not yet implemented):
+- `interpolation`: Specify curve type (`"Linear"`, `"Step"`, `"CubicBezier"`)
+- `properties`: Dynamic attributes that change over time (e.g., speed, status)
+
+**Serialization Helpers** (`src/core/trajectory.py`):
+- `keyframes_to_mfjson(keyframes: list[Keyframe]) -> dict`
+- `mfjson_to_keyframes(data: dict) -> list[Keyframe]`
+
 ### 3.3 Calendar Integration: Mapping $t$ to Dates
 A request from the "Future Roadmap" is to map the abstract float $t$ to actual calendar dates (e.g., "Year 3018, March 25").
 
@@ -288,25 +317,29 @@ Entities that "die" or haven't been "born" must be hidden.
 
 ## 11. Implementation Roadmap
 
-**Phase 1: The Core Engine**
-1. Implement `TemporalEntity` class and JSON schema.
-2. Build `MasterClock` and basic `QTimer` playback loop.
-3. Implement `bisect` based keyframe lookup.
+**Phase 1: The Core Engine (Completed)**
+1. [x] Implement `TemporalEntity` class and JSON schema (`TrajectoryRepository`).
+2. [x] Build `MasterClock` and basic `QTimer` playback loop (`TimelineView`).
+3. [x] Implement `bisect` based keyframe lookup (`interpolate_position`).
 
-**Phase 2: The Viewer**
-1. Set up `QGraphicsScene` with `QOpenGLWidget` viewport.
-2. Implement `TemporalMarker` item with `setPos` updates.
-3. Create the Timeline Widget with basic scrubbing.
+**Phase 2: The Viewer (Completed)**
+1. [x] Set up `QGraphicsScene` with `QOpenGLWidget` viewport.
+2. [x] Implement `TemporalMarker` item with `setPos` updates (`MarkerItem`).
+3. [x] Create the Timeline Widget with basic scrubbing.
+4. [x] Implement Clamped Persistence and Transient State logic.
 
-**Phase 3: Interaction & Recording**
-1. Implement "Record" mode with mouse sampling.
-2. Add Motion Path visualization (`QGraphicsPathItem`).
-3. Implement node dragging and Bezier control points.
+**Phase 3: Interaction & Recording (In Progress)**
+1. [x] Add Motion Path visualization (`QGraphicsPathItem`).
+2. [x] Implement node dragging and keyframe editing (Spatial & Temporal Modes).
+3. [x] Implement Draft Mode (Transient State) with Visual Feedback.
+4. [x] Implement Playhead Persistence.
+5. [ ] Implement "Record" mode with mouse sampling.
+6. [ ] Implement Bezier control points and interpolation.
 
-**Phase 4: Optimization & Scale**
-1. Profile with 1,000 items.
-2. Implement `ItemCoordinateCache` and `NoIndex`.
-3. Add Level of Detail (LOD) logic.
+**Phase 4: Optimization & Scale (Pending)**
+1. [ ] Profile with 1,000 items.
+2. [ ] Implement `ItemCoordinateCache` and `NoIndex`.
+3. [ ] Add Level of Detail (LOD) logic.
 
 ---
 
@@ -329,37 +362,199 @@ Entities that "die" or haven't been "born" must be hidden.
     *   It is architected to support future `pyproj` integration without breaking the UI.
     *   **Note**: Full Y-Axis Inversion is prepared for but not yet active to match current static map behavior.
 * **Database Schema**: The `moving_features` table has been added to the SQLite schema.
-    *   It supports storing `trajectory` as a JSON blob.
+    *   Trajectories are stored in **OGC MF-JSON format** (`{"type": "MovingPoint", "coordinates": [...], "datetimes": [...]}`).
+    *   Auto-migration converts legacy `[[t,x,y],...]` format on database connect.
     *   Temporal indices (`t_start`, `t_end`) are in place for efficient queries.
 * **Interaction**: The map now uses an "Infinite Canvas" interaction model (Scrollbars disabled, Drag-to-Pan enforced).
 
-### Existing Capabilities
-* **Map Visualization**: Supports loading static map images (`QGraphicsPixmapItem`).
-* **Marker Implementation**:
-    *   `MarkerItem` supports SVG icons and coloring.
-    *   Optimization flags (`ItemIsMovable`, `ItemSendsGeometryChanges`, `ItemCoordinateCache` equivalent) are enabled.
-* **Map Hardening / GIS Features**:
-    *   **Scale Bar**: Implemented GIS-style scale bar overlay (`ScaleBarPainter`) leveraging `drawForeground`.
-    *   **Configuration**: Added "Settings" dialog to define map pixel-to-meter ratio.
-    *   **Live Coordinates**: Real-time display of Normalized and Kilometer coordinates.
-    *   **UI Polish**: Standardized Map Widget toolbar with `QPushButton` styling to match application theme.
-* **Layers**: The scene is now structured with defined Z-Values (`LAYER_MAP_BG`, `LAYER_MARKERS`, etc.) to prevent future rendering conflicts.
-* **Code Quality & Stability**:
-    *   **Marker Logic**: Refactored `MarkerItem` for better maintainability (helper methods for painting/drag).
-    *   **Critical Fixes**: Resolved interaction bugs where markers at `(0,0)` were unclickable.
-    *   **Testing**: Expanded unit tests to cover coordinate display and marker signals.
+### Marker Visualization & UI
+* **Permanent Marker Labels**:
+    *   Markers now feature a permanent label displaying the linked item's name (Entities/Events).
+    *   Styled in dark grey (**#333333**) using bold **8pt Segoe UI** font.
+    *   Labels inherit the `ItemIgnoresTransformations` flag, ensuring they remain legible and correctly positioned regardless of map zoom.
+* **Description Tooltips**: Tooltips now prioritize the item's `description` field for richer context, falling back to the `label` if no description is available.
+* **Smart Marker Scale**: Markers and their associated visual elements leverage dynamic scaling and hitbox adjustments for professional "pixel-perfect" interaction.
 
-### Temporal Synchronization (New)
-* **Timeline ↔ Map Signal Wiring**: The map now subscribes to time changes from the Timeline widget.
-    *   `playhead_time_changed` signal connected to `MapWidget.on_time_changed`.
-    *   `current_time_changed` signal connected to `MapWidget.on_current_time_changed`.
-    *   Both `_playhead_time` (scrubber position) and `_current_time` (story's "Now") are stored in `MapWidget`.
-    *   `MapGraphicsView._current_time` is updated for future use by trajectory interpolation.
-* **Time Display**: The map status bar now displays both `T:` (playhead) and `Now:` (current time) values in real-time alongside coordinate information.
+### Interaction & Visualization
+* **Manual Keyframing (Snapshots)**: Added "Add Keyframe" button to the Map toolbar. This allows users to set precise snapshots of marker state at specific timeline moments.
+* **Constraint: Entity-Only Keyframes**: Keyframing is strictly reserved for **Entity** markers. **Event** markers are treated as static chronological pins without trajectories. UI controls (Add Keyframe button) automatically disable when an Event is selected.
+* **Trajectory Visualizer & Clamped Persistence**:
+    *   **Visual Cues**: When a marker is selected, its entire trajectory is rendered as a dashed path.
+    *   **Clamped Persistence**: Trajectory authority is now absolute. If the playhead is before the first keyframe or after the last, the marker remains locked at that endpoint's position rather than returning to a static "home".
+    *   **Transient State**: Users can drag trajectory-based markers to "audition" new keyframe positions. This enters a "Transient State" (logged in UI) where the marker stays at the dropped position.
+    *   **Authority & Snap-Back**: Trajectory authority is enforced on **Time Change**. Scrubbing the timeline clears all transient offsets and snaps markers back to their mathematically defined paths.
+    *   **Keyframe Indicators**: Individual keyframes are visualized as dots on the map, providing immediate visual feedback of the "history" of the entity.
+    *   **Zoom-Aware Rendering**: Keyframe dots scale with zoom level to maintain visual consistency.
+* **Multi-Action Keyframe Gizmo** (Implemented):
+    *   **Activation**: Hovering a keyframe dot reveals a dual-icon gizmo (matched to dot size).
+    *   **Spatial Editing**: Dragging the dot directly repositions $(x, y)$ coordinates. The trajectory path updates in real-time (Rubber-Banding).
+    *   **Clock Mode (Temporal Edit)**:
+        *   **Action**: Clicking the **Clock icon** (left) "Pins" the keyframe, locking its spatial position but unlocking its timestamp.
+        *   **Timeline Jump**: Clicking the clock icon now triggers a "Jump-to-Time" event, instantly moving the timeline playhead to the keyframe's timestamp.
+        *   **Visual Feedback**: Pinned keyframes glow **Red** (#E74C3C).
+        *   **Scrub-to-Edit**: While pinned, scrubbing the timeline moves the keyframe itself through time.
+        *   **Live Feedback**: The keyframe's date label updates in real-time as the playhead is dragged.
+        *   **Commit**: Clicking the icon again commits the new timestamp, re-sorting the keyframe list.
+    *   **Keyframe Deletion**:
+        *   **Action**: Clicking the **Red "✕" icon** (right) requests deletion.
+        *   **Command Pattern**: Executed via `DeleteKeyframeCommand` with full Undo/Redo support.
+        *   **Self-Cleanup**: If a deletion leaves fewer than 2 keyframes, the entire trajectory record is automatically removed from the database to maintain data integrity.
+* **Smart Label Scaling**:
+    *   Keyframe date labels dynamically scale with zoom but are constrained between **8pt** and **10pt**.
+    *   Labels are pixel-aligned directly below markers for consistent legibility.
+* **Time Precision & Hardening**:
+    *   **Precision Standard**: All internal playhead calculations are now rounded to **4 decimal places**.
+    *   **Consistency**: Rounding is applied during active scrubbing and authoritative mouse release in `TimelineView`, and enforced at the input level in `MapWidget`.
+    *   **Benefit**: Eliminates floating-point drift and "jitter" in marker positions during rapid playhead interaction.
+* **Playhead Persistence** (New):
+    *   **State Saving**: The playhead time is now persisted across application restarts.
+    *   **Triggers**: Time is saved on **Drag Release** (scrubbing), **Playback Stop**, and **Application Exit** (robust backup).
+    *   **Restoration**: The app automatically restores the timeline to the last active moment on launch.
+* **Draft Mode & Visual Feedback** (New):
+    *   **Draft Indicator**: A distinct "Draft Mode" (Amber) is triggered when a marker is dragged but not committed.
+    *   **Visual Separator**: The Toolbar status and Map Overlay explicitly state the current mode (Normal vs. Draft vs. Clock).
+    *   **Snap-Back Logic**:
+        *   **Selection Change**: Selecting another item destroys the transient buffer, snapping the marker back.
+        *   **Esc Key**: Pressing Esc deselects the item and forces a snap-back.
+        *   **Scrubbing**: Moving the timeline enforces authority, clearing the draft.
+
+### Core Component Stability & Refactoring
+* **TimelineView Hardening**:
+    *   Refactored "magic number" layout constants into unified, named configurations for better maintainability.
+    *   Significantly improved playhead selectability with dynamic hitbox scaling that responds to zoom level.
+* **Test Coverage Enhancement**:
+    *   Expanded the unit test suite with 18+ new tests for `TimelineView` helpers, including lane calculations, zoom transforms, and date-to-pixel mapping.
+    *   Total trajectory-related test coverage now ensures stability against regressions in interpolation and coordinate transformation logic.
 
 ### Gaps & Next Steps
-1.  ~~**Time Service**: The `MasterClock` and the actual animation loop are not yet implemented.~~ **Partial**: Wiring uses Timeline's existing playback as the time source (Option B). A standalone `MasterClock` service may be extracted later if needed.
-2.  **Trajectory Logic**: While the database *can* store trajectories, the application logic to read them and interpolate positions (`numpy`/`bisect`) is not yet written.
-3.  ~~**Timeline UI**: The UI widget for scrubbing time does not exist.~~ **Done**: The Timeline widget with playhead scrubbing already exists and is connected.
-4.  **Recording Mode**: The "Puppeteering" logic for recording mouse movements into the database is missing.
+1.  **Recording Mode**: The "Live Puppeteering" logic (Phase 8.1) for recording real-time mouse movements is not yet implemented.
+2.  **Bezier Interpolation**: Current interpolation is strictly linear; Bezier support (Phase 5.2) remains a roadmap item.
+
+---
+
+## 14. The Chronological Paradox: Architectural and Interaction Patterns for State Persistence in Temporal Cartesian Interfaces
+
+### 14.1 Introduction: The Gulf of Execution in Non-Linear Time
+The interaction design of temporal interfaces—specifically those governing the animation of spatial markers on Cartesian planes—represents one of the most sophisticated challenges in Human-Computer Interaction (HCI). The user query highlights a fundamental friction point inherent to Non-Linear Editing (NLE) systems: the conflict between the Recorded State, defined by the deterministic interpolation of the evaluation graph, and the Transient State, generated by the user's immediate manipulation of the viewport.
+
+This report analyzes a specific solution proposed by the user: a Hybrid Static/Buffer Model. In this model, manipulating a marker "outside" a keyframe range affects its global static position, while manipulating it "inside" a range creates a temporary, scrubbable "transient" keyframe set that persists until explicitly committed.
+
+This document validates this workflow against industry standards, specifically drawing parallels to Buffer Curves in Autodesk Maya, Animation Layers in MotionBuilder, and Additive Animation logic in game engines.
+
+#### 14.1.1 The Phenomenology of the "Snap Back"
+The "snap back" occurs because standard NLE architectures prioritize the timeline's authority over the user's input buffer. When the playhead moves, the system recalculates the scene based on the graph, discarding any "unsaved" values. The user's proposed model resolves this by creating a Temporary Edit Session—a state where the "Transient Value" temporarily overrides the "Recorded Value" during scrubbing, bridging the gap between exploration and commitment.
+
+### 14.2 The Hybrid Static/Buffer Architecture
+The user's proposed workflow divides the timeline into two distinct interaction zones. This section deconstructs that logic using established animation theory.
+
+#### 14.2.1 Zone 1: Outside Keyframe Range (The Static Base)
+*   **User Input**: "Outside the range the position is undefined by key frames, it is just an arbitrary position."
+    *   In professional animation terms, this is the Base Layer or Setup Mode.
+*   **Concept**: When the playhead is outside the influence of an active F-Curve (or before/after the animation clip), the object falls back to its static transform properties.
+*   **Behavior**: Moving the marker here does not create a keyframe. Instead, it updates the Global Offset or Root Transform of the object.
+*   **Technical Precedent**: This mirrors the behavior in MotionBuilder where editing on the "BaseAnimation" layer shifts the entire character's position without altering the relative animation data on layers above it.
+*   **UX Benefit**: This solves the "layout" problem. Users can reposition a marker (e.g., "Move the entire path 50 pixels East") without having to select and move every individual keyframe.
+
+#### 14.2.2 Zone 2: Inside Keyframe Range (The Transient Buffer)
+*   **User Input**: "Moving a marker sets a new transient keyframe. Scrubbing keeps that but dirties the keyframe set."
+    *   This is the core innovation of the proposed model. It creates a Non-Destructive Edit Buffer.
+*   **Concept**: When the user manipulates a value inside a keyed range, the system does not immediately overwrite the curve. Instead, it creates a Transient Keyframe in a temporary memory buffer.
+*   **Scrubbing Behavior**: The animation engine calculates position as:
+    $$P(t) = Interpolation(Keyframes_{original}) + \Delta(Transient)$$
+    Or, in a replacement logic:
+    $$P(t) = Interpolation(Keyframes_{transient})$$
+*   **Persistence**: Crucially, this transient state survives the "Scrub" event. The user can scrub back and forth to see how their new (unsaved) keyframe interacts with the rest of the animation.
+*   **Industry Validation**: This is functionally identical to the Buffer Curve workflow in Autodesk Maya. In Maya, users can take a "Snapshot" of a curve, edit it, and scrub the timeline to compare the "Edited" (Transient) curve against the "Buffer" (Original) curve before swapping/committing.
+
+### 14.3 Comparative Analysis of "Proven and Tested" Interaction Models
+To implement the user's model effectively, we must look at how similar "Buffer" and "Commit" patterns are handled in existing software.
+
+#### 14.3.1 The "Buffer Curve" Pattern (Maya)
+Maya allows users to edit animation curves non-destructively using buffers.
+*   **Mechanism**: The user selects a curve and creates a "Buffer Snapshot." The original curve turns gray (Ghost), and the active curve can be edited freely.
+*   **Scrubbing**: The viewport updates to show the new (transient) animation.
+*   **Commit**: The user clicks "Swap Buffer" to make the changes permanent, or reverts to the snapshot to discard them.
+*   **Relevance**: This proves that separating "Transient Edit Data" from "Committed Data" is a stable, professional workflow.
+
+#### 14.3.2 The "Audition Mode" (Audio & Sequencing)
+In audio software (DAWs) and some NLEs, "Auditioning" allows users to hear/see changes without writing them.
+*   **Logic**: Parameters changed during playback are "overridden" but revert once playback stops unless "Write Automation" is enabled.
+*   **User's Variation**: The user wants the change to persist after the scrub stops (until committed). This is effectively a "Latch" mode in automation terms, but applied to a draft state.
+
+#### 14.3.3 The "Animation Layer" Pattern (Unity/Blender)
+This pattern uses additive logic to handle the "Transient Keyframe."
+*   **Mechanism**: When the user moves the marker inside the range, the system effectively spawns a hidden Additive Animation Layer.
+*   **Math**: The specific move is stored as a $+ \Delta(x,y)$ on this layer.
+*   **Scrubbing**: The system sums the Base Track + The Additive Layer.
+*   **Commit**: Clicking "Commit" flattens (bakes) the additive layer down into the Base Track.
+
+### 14.4 Proposed UX Framework: The "Draft & Commit" Workflow
+Based on the research and the user's guiding input, here is the recommended specification for the UI/UX.
+
+#### 14.4.1 The "Dirty" State Visualization
+When a user moves a marker inside a keyframe range, the interface must explicitly signal that the timeline has entered a Draft/Dirty State.
+
+| State | Visual Indicator | Data Status | Scrub Behavior |
+| :--- | :--- | :--- | :--- |
+| **Clean** | White/Grey Keyframes | Read from Graph | Standard Interpolation |
+| **Draft (Transient)** | Amber/Yellow Path & Keyframes | Read from Buffer | Persists (User's Requirement) |
+| **Committed** | Blue/Red Keyframes | Written to Graph | Standard Interpolation |
+
+*   **Ghosting**: To prevent disorientation, the system should display a Ghost of the original path (the "Snap Back" destination) as a faint dotted line. This gives the user confidence that their original data is safe.
+
+#### 14.4.2 The Interaction Logic
+
+**Outside the Range (Setup Mode)**
+*   **Action**: User drags marker at $t < Start$ or $t > End$.
+*   **System**: Updates Object.BasePosition.
+*   **Visual**: The entire animation path shifts rigidly. No keyframes are added.
+*   **Feedback**: "Global Offset Applied."
+
+**Inside the Range (Draft Mode)**
+*   **Action**: User drags marker at $t_{current}$.
+*   **System**:
+    1.  Checks if DraftBuffer exists. If not, creates one as a copy of ActiveCurve.
+    2.  Inserts Key_{transient} at $t_{current}$ into DraftBuffer.
+    3.  Sets Renderer.Source = DraftBuffer.
+*   **Visual**:
+    *   The marker path turns Amber.
+    *   A "Commit" button (Checkmark) and "Discard" button (X) appear near the marker or timeline.
+    *   **Ghost**: The original path remains visible (Grey/Transparent).
+*   **Scrubbing**: The user scrubs. The marker follows the Amber path (the Draft). The Grey path (Original) stays put.
+
+#### 14.4.3 The "Commit" Action
+*   **Action**: User clicks "Commit."
+*   **System**:
+    1.  ActiveCurve = DraftBuffer.
+    2.  DraftBuffer = null.
+    3.  Renderer.Source = ActiveCurve.
+*   **Visual**: Amber path turns standard color. Ghost disappears. "Commit" button vanishes.
+
+### 14.5 Technical Considerations
+
+#### 14.5.1 Handling "Transient" Data
+To support scrubbing without "snapping back," the application must maintain a Secondary State Object for the active selection.
+*   **Reference**: This is similar to the EditorCurveBinding in Unity or the F-Curve Modifier stack in Blender.
+*   **Implementation**: The "Scrub" event listener usually queries AnimationEngine.evaluate(time). It must be patched to query DraftEngine.evaluate(time) if isDirty == true.
+
+#### 14.5.2 Auto-Keying vs. Explicit Commit
+The user requested a Button to Commit. This is an "Explicit Save" pattern.
+*   **Pros**: Prevents accidental destruction of carefully tuned animation curves.
+*   **Cons**: Requires an extra click.
+*   **Recommendation**: Offer a "Auto-Commit" toggle in settings for power users, but default to the Explicit Button to solve the "Snap Back" anxiety.
+
+### 14.6 Summary of Recommendations
+To build the solution geared to your specific input:
+1.  **Adopt "Buffer Curve" Architecture**: Treat the "Inside Range" edits as a temporary layer (Draft) that overlays the original data. This allows the scrubbing persistence you require.
+2.  **Implement Visual Ghosting**: Always show the "Original" position (Ghost) when a "Transient" keyframe is active. This explains the relationship between the Draft and the Saved state.
+3.  **Differentiate "Static" vs. "Keyed" Moves**: Explicitly handle "Outside Range" moves as global offsets (changing the root transform) rather than adding keys. This aligns with the "Setup vs. Animate" mode distinction.
+4.  **Floating Commit UI**: Place the "Commit/Discard" controls directly in the viewport near the modified marker to reduce mouse travel and reinforce the "Draft" metaphor.
+
+This approach transforms the "Snap Back" bug into a powerful Non-Destructive Versioning Feature, giving users the freedom to experiment ("audition") without fear of data loss.
+
+### Works cited
+*   Animation Layers - Maya - Autodesk product documentation, accessed on January 7, 2026, https://help.autodesk.com/view/MAYAUL/2024/ENU/?guid=GUID-5C202CB8-EB3C-4ADE-B203-5F93A9FD9104
+*   NLA Additive Animation Layers: (Add/Subtract/Multiply) - Blender Artists Community, accessed on January 7, 2026, https://blenderartists.org/t/nla-additive-animation-layers-add-subtract-multiply/1100149
+*   Saving - Primer Design System, accessed on January 7, 2026, https://primer.style/product/ui-patterns/saving/
+
 

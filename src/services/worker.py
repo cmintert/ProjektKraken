@@ -33,6 +33,7 @@ class DatabaseWorker(QObject):
     entities_loaded = Signal(list)  # List[Entity]
     maps_loaded = Signal(list)  # List[Map]
     markers_loaded = Signal(str, list)  # map_id, List[Marker]
+    trajectories_loaded = Signal(list)  # List[Tuple[str, str, List[Keyframe]]]
     longform_sequence_loaded = Signal(list)  # List[dict]
     calendar_config_loaded = Signal(object)  # CalendarConfig or None
     current_time_loaded = Signal(float)  # Current time in lore_date units
@@ -183,6 +184,100 @@ class DatabaseWorker(QObject):
         except Exception:
             logger.error(f"Failed to load markers: {traceback.format_exc()}")
             self.error_occurred.emit(f"Failed to load markers for map {map_id}.")
+
+    @Slot(str)
+    def load_trajectories(self, map_id: str) -> None:
+        """Loads trajectories for a specific map."""
+        if not self.db_service:
+            return
+
+        try:
+            # self.operation_started.emit(f"Loading Trajectories for Map {map_id}...")
+            # (Quiet operation)
+            trajectories = self.db_service.get_trajectories_by_map(map_id)
+            self.trajectories_loaded.emit(trajectories)
+            # self.operation_finished.emit("Trajectories Loaded.")
+        except Exception:
+            logger.error(f"Failed to load trajectories: {traceback.format_exc()}")
+            self.error_occurred.emit(f"Failed to load trajectories for map {map_id}.")
+
+    @Slot(str, str, float, float, float)
+    def add_keyframe(
+        self, map_id: str, marker_id: str, t: float, x: float, y: float
+    ) -> None:
+        """
+        Adds a keyframe to a marker's trajectory and reloads trajectories.
+
+        Args:
+            map_id: The map ID (for reloading).
+            marker_id: The marker ID.
+            t: Time timestamp.
+            x: Normalized X.
+            y: Normalized Y.
+        """
+        if not self.db_service:
+            return
+
+        try:
+            from src.core.trajectory import Keyframe
+
+            kf = Keyframe(t=t, x=x, y=y)
+            self.db_service.add_keyframe(map_id, marker_id, kf)
+            self.load_trajectories(map_id)
+            self.operation_finished.emit("Keyframe added.")
+        except Exception:
+            logger.error(f"Failed to add keyframe: {traceback.format_exc()}")
+            self.error_occurred.emit("Failed to add keyframe.")
+
+    @Slot(str, str, float, float)
+    def update_keyframe_time(
+        self, map_id: str, marker_id: str, old_t: float, new_t: float
+    ) -> None:
+        """
+        Updates a keyframe's timestamp (Clock Mode) and reloads trajectories.
+
+        Args:
+            map_id: The map ID (for reloading).
+            marker_id: The marker ID.
+            old_t: Original timestamp.
+            new_t: New timestamp.
+        """
+        if not self.db_service:
+            return
+
+        try:
+            self.db_service.update_keyframe_time(map_id, marker_id, old_t, new_t)
+            self.load_trajectories(map_id)
+            self.operation_finished.emit(
+                f"Keyframe time updated: {old_t:.1f} → {new_t:.1f}"
+            )
+        except Exception:
+            logger.error(f"Failed to update keyframe time: {traceback.format_exc()}")
+            self.error_occurred.emit("Failed to update keyframe timestamp.")
+
+    @Slot(str, str, float)
+    def delete_keyframe(self, map_id: str, marker_id: str, t: float) -> None:
+        """
+        Deletes a keyframe from a marker's trajectory and reloads trajectories.
+
+        Args:
+            map_id: The map ID (for reloading).
+            marker_id: The marker ID (object_id).
+            t: The timestamp of the keyframe to delete.
+        """
+        if not self.db_service:
+            return
+
+        try:
+            self.db_service.delete_keyframe(map_id, marker_id, t)
+            self.load_trajectories(map_id)
+            self.operation_finished.emit(f"Keyframe at t={t:.1f} deleted.")
+        except ValueError as e:
+            logger.warning(f"Keyframe delete failed: {e}")
+            self.error_occurred.emit(str(e))
+        except Exception:
+            logger.error(f"Failed to delete keyframe: {traceback.format_exc()}")
+            self.error_occurred.emit("Failed to delete keyframe.")
 
     @Slot(str)
     def load_event_details(self, event_id: str) -> None:

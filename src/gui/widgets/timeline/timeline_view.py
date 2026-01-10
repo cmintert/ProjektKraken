@@ -7,12 +7,13 @@ Provides the TimelineView class for rendering and interacting with the timeline.
 import logging
 from typing import Any
 
-from PySide6.QtCore import QPointF, QRectF, QSize, Qt, QTimer, Signal
+from PySide6.QtCore import QPointF, QRectF, QSettings, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import (
     QColor,
     QFont,
     QMouseEvent,
     QPainter,
+    QPainterPath,
     QPen,
     QResizeEvent,
     QTransform,
@@ -57,6 +58,15 @@ class TimelineView(QGraphicsView):
     # Zoom limits
     MIN_ZOOM = 0.01  # Maximum zoom out (1% of normal)
     MAX_ZOOM = 100.0  # Maximum zoom in (100x normal)
+
+    # Ruler & Playhead Constants
+    PLAYHEAD_COLOR = QColor(255, 100, 100)
+    PLAYHEAD_HANDLE_WIDTH = 20
+    PLAYHEAD_HANDLE_RECT_HEIGHT = 12
+    PLAYHEAD_HANDLE_TRI_HEIGHT = 8
+
+    MAJOR_TICK_HEIGHT = 12
+    MINOR_TICK_HEIGHT = 8
 
     # Special "All Events" group
     ALL_EVENTS_GROUP_NAME = "All events"
@@ -130,6 +140,17 @@ class TimelineView(QGraphicsView):
         self._playback_step = 1.0  # Default step: 1 day per tick
         self._playback_interval = 100  # Default: 100ms between ticks
 
+        # Restore persisted playhead time
+        settings = QSettings()
+        # Default to 0.0 only if not set
+        persisted_time = settings.value("timeline/playhead_time", 0.0, type=float)
+        logger.debug(
+            f"Persistence: Loaded playhead time from settings: {persisted_time}, filename={settings.fileName()}"
+        )
+        # Apply restoration
+        if persisted_time != 0.0:
+            self.set_playhead_time(persisted_time)
+
         # Group band manager (will be initialized when data provider is set)
         self._band_manager = None
         self._data_provider = None
@@ -164,6 +185,9 @@ class TimelineView(QGraphicsView):
         """
         from PySide6.QtCore import QSize
 
+        if self._playhead:
+            self._playhead.set_zoom(self._current_zoom * self.scale_factor)
+
         return QSize(200, 100)
 
     def _on_playhead_moved(self, x_pos: float) -> None:
@@ -171,7 +195,8 @@ class TimelineView(QGraphicsView):
         Called when playhead is dragged manually.
         Updates the internal time and emits signal.
         """
-        new_time = x_pos / self.scale_factor
+        # Round to 4 decimal places to prevent float precision drift
+        new_time = round(x_pos / self.scale_factor, 4)
         self._playhead._time = new_time  # Directly update internal state
         self.playhead_time_changed.emit(new_time)
 
@@ -208,6 +233,10 @@ class TimelineView(QGraphicsView):
             self.fit_all()
             self._initial_fit_pending = False
             self._has_done_initial_fit = True
+
+        # Ensure playhead zoom is updated if view size affects it
+        if self._playhead and hasattr(self, "_current_zoom"):
+            self._playhead.set_zoom(self._current_zoom * self.scale_factor)
 
         # Update label overlay geometry to match viewport
         if hasattr(self, "_label_overlay"):
@@ -292,13 +321,7 @@ class TimelineView(QGraphicsView):
         ticks = self._ruler.avoid_collisions(ticks, label_width=45)
 
         # 7. Setup fonts
-        major_font = QFont(painter.font())
-        major_font.setPointSize(9)
-        major_font.setBold(True)
-
-        minor_font = QFont(painter.font())
-        minor_font.setPointSize(8)
-        minor_font.setBold(False)
+        major_font, minor_font = self._setup_ruler_fonts(painter)
 
         # 8. Draw ticks with opacity
         for tick in ticks:
@@ -313,11 +336,11 @@ class TimelineView(QGraphicsView):
 
             # Determine tick styling
             if tick.is_major:
-                tick_height = 12
+                tick_height = self.MAJOR_TICK_HEIGHT
                 painter.setFont(major_font)
                 text_color = QColor(theme["text_main"])
             else:
-                tick_height = 8
+                tick_height = self.MINOR_TICK_HEIGHT
                 painter.setFont(minor_font)
                 text_color = QColor(theme["text_dim"])
 
@@ -350,8 +373,7 @@ class TimelineView(QGraphicsView):
                 )
 
         # 9. Draw sticky parent context label
-        context_label = self._ruler.get_parent_context(start_date)
-        if context_label:
+        if context_label := self._ruler.get_parent_context(start_date):
             painter.setFont(minor_font)
             painter.setPen(QColor(theme["primary"]))
             painter.drawText(
@@ -360,7 +382,66 @@ class TimelineView(QGraphicsView):
                 context_label,
             )
 
+        # 8. Draw Playhead Handle (on top of everything else)
+        self._draw_playhead_handle(painter, rect)
+
+        # 9. Clean up
         painter.restore()
+
+    def _draw_playhead_handle(self, painter: QPainter, rect: QRectF) -> None:
+        """
+        Draws a handle for the playhead in the ruler area.
+        """
+        playhead_time = self._playhead.get_time(self.scale_factor)
+
+        # Convert to screen coordinates
+        playhead_scene_x = playhead_time * self.scale_factor
+        playhead_screen_pos = self.mapFromScene(playhead_scene_x, 0)
+        screen_x = playhead_screen_pos.x()
+
+        # Check if visible
+        if screen_x < 0 or screen_x > rect.width():
+            return
+
+        # Draw Handle
+        # A pentagon shape pointing down
+        # Width: 14px, Height: 12px
+
+        handle_color = QColor(self.PLAYHEAD_COLOR)  # Match playhead red
+
+        # Check for hover/drag state to highlight
+        if hasattr(self, "_dragging_playhead") and self._dragging_playhead:
+            handle_color = handle_color.lighter(130)
+        elif self._playhead.isUnderMouse():
+            handle_color = handle_color.lighter(120)
+
+        painter.setBrush(handle_color)
+        painter.setPen(Qt.PenStyle.NoPen)
+
+        # Define shape: Pentagon
+        # Top-Left, Top-Right, Bottom-Tip
+        # Actually let's do a simple pentagon: rectangle top + triangle bottom
+        w = self.PLAYHEAD_HANDLE_WIDTH
+        h_rect = self.PLAYHEAD_HANDLE_RECT_HEIGHT
+        h_tri = self.PLAYHEAD_HANDLE_TRI_HEIGHT
+
+        x = screen_x
+
+        path = QPainterPath()
+        # Start top-left of the rect part
+        path.moveTo(x - w / 2, 0)
+        # Top-right
+        path.lineTo(x + w / 2, 0)
+        # Bottom-right of rect
+        path.lineTo(x + w / 2, h_rect)
+        # Tip
+        path.lineTo(x, h_rect + h_tri)
+        # Bottom-left of rect
+        path.lineTo(x - w / 2, h_rect)
+        # Close
+        path.closeSubpath()
+
+        painter.drawPath(path)
 
     def set_ruler_calendar(self, converter: Any) -> None:
         """
@@ -469,17 +550,6 @@ class TimelineView(QGraphicsView):
             f"{len([i for i in self.scene.items() if isinstance(i, EventItem)])}"
         )
 
-        # Remove items for events that no longer exist
-        for event_id, item in existing_items.items():
-            if event_id not in reused_ids and event_id not in [
-                e.id for e in sorted_events if e.id not in reused_ids
-            ]:
-                # Careful: reused_ids tracks updates.
-                # The else block adds new items which are not in
-                # reused_ids yet but are in sorted_events/existing_items.
-                # Simplest: "if event_id not in [e.id for e in sorted_events]"
-                pass
-
         # Clean up removed items
         current_ids = {e.id for e in sorted_events}
         for event_id, item in list(existing_items.items()):
@@ -505,52 +575,11 @@ class TimelineView(QGraphicsView):
                 line.setLine(item.x(), -self.RULER_HEIGHT, item.x(), item.y())
 
         if sorted_events:
-            # Calculate bounds from events for the scene rect.
-            # We want the scene rect defined by events + margin,
-            # ignoring infinite lines
-
-            # X bounds
-            min_date = sorted_events[0].lore_date
-            max_date = sorted_events[-1].lore_date
-            if min_date == max_date:
-                min_date -= 10
-                max_date += 10
-
-            margin_x = (max_date - min_date) * 0.1 or 100
-            start_x = (min_date - margin_x) * self.scale_factor
-            end_x = (max_date + margin_x) * self.scale_factor
-
-            # Y bounds
-            # Events start at 60. Max y is approx (num_lanes * 40) + 60
-            # Calculate max lane from assignments
-            # Calculate max lane from items or use a safe default
-            # We can't access event_lane_assignments here easily anymore.
-            # But the scene rect will be updated by repack_events calls anyway.
-            # However, for the initial scene rect, we should try to
-            # estimate or just rely on repack.
-            # Actually, repack_events sets the scene rect!
-            # Custom widgets might not need blocking
-            # if we don't connect to them directly
-            # or if they don't emit on programmatic set.
-
-            # Let's just set a safe default height here, and let repack fix it.
-            # Or better, just don't set Y bounds strictly here if repack does it.
-            # But we are setting the scene rect for the whole scene.
-
-            # Let's inspect items to find max Y
-            max_y_found = 60
-            for item in self.scene.items():
-                if isinstance(item, EventItem):
-                    max_y_found = max(max_y_found, item.y())
-
-            max_y = max_y_found + self.LANE_HEIGHT + 40
-
-            min_y = 0  # Ruler area
-
-            # Set Scene Rect explicitly to avoid infinite lines expanding it
-            self.scene.setSceneRect(start_x, min_y, end_x - start_x, max_y - min_y)
+            self._update_scene_rect_from_events(sorted_events)
 
             # Center Playhead and Current Time Line if they are at 0 (initial state)
+            min_date = sorted_events[0].lore_date
+            max_date = sorted_events[-1].lore_date
             center_date = (min_date + max_date) / 2
 
             # Check if they are at default 0 position or we want to force center on load
@@ -618,9 +647,13 @@ class TimelineView(QGraphicsView):
         )
 
         # Calculate cumulative Y offsets for each lane
-        lane_y_offsets = [80]  # Start at 80 (below ruler)
-        for height in lane_heights[:-1]:  # Don't need offset after last lane
-            lane_y_offsets.append(lane_y_offsets[-1] + height + 10)  # 10px padding
+        from itertools import accumulate
+
+        # Each offset is previous offset + previous height + padding
+        # Start at 80.
+        lane_y_offsets = list(
+            accumulate((h + 10 for h in lane_heights[:-1]), initial=80)
+        )
 
         # Update Y positions of existing items
         existing_items = {}
@@ -742,10 +775,7 @@ class TimelineView(QGraphicsView):
         # 2. Iterate Groups
         for tag in self._grouping_tag_order:
             events_in_group = groups[tag]
-            if self._band_manager:
-                band = self._band_manager.get_band(tag)
-            else:
-                band = None
+            band = self._band_manager.get_band(tag) if self._band_manager else None
 
             if not band:
                 continue
@@ -857,11 +887,10 @@ class TimelineView(QGraphicsView):
             )
             # Hide ungrouped events (their original items)
             for event in self.events:
-                if event.id not in grouped_event_ids:
-                    if event.id in event_items:
-                        event_items[event.id].setVisible(False)
-                        if event.id in drop_lines:
-                            drop_lines[event.id].setVisible(False)
+                if event.id not in grouped_event_ids and event.id in event_items:
+                    event_items[event.id].setVisible(False)
+                    if event.id in drop_lines:
+                        drop_lines[event.id].setVisible(False)
         else:
             # Band is expanded - show all events
             logger.debug(
@@ -874,9 +903,9 @@ class TimelineView(QGraphicsView):
 
             for event in self.events:
                 lane_idx = layout_map[event.id]
-                y_offset = 0
-                for i in range(lane_idx):
-                    y_offset += lane_heights[i] + self._lane_packer.LANE_PADDING
+                y_offset = sum(lane_heights[:lane_idx]) + (
+                    lane_idx * self._lane_packer.LANE_PADDING
+                )
 
                 target_y = current_y + y_offset
 
@@ -889,23 +918,11 @@ class TimelineView(QGraphicsView):
                     self.scene.addItem(duplicate_item)
                     self._duplicate_event_items.append(duplicate_item)
 
-                    duplicate_item.setY(target_y)
-                    duplicate_item.setVisible(True)
-                    duplicate_item._initial_y = target_y
-                else:
+                    self._position_event_item(duplicate_item, target_y)
+                elif event.id in event_items:
                     # Event was ungrouped - use its ORIGINAL item
-                    if event.id in event_items:
-                        item = event_items[event.id]
-                        item.setY(target_y)
-                        item.setVisible(True)
-                        item._initial_y = target_y
-
-                        # Update drop line for original item
-                        if event.id in drop_lines:
-                            line = drop_lines[event.id]
-                            line.setLine(
-                                item.x(), -self.RULER_HEIGHT, item.x(), item.y()
-                            )
+                    item = event_items[event.id]
+                    self._position_event_item(item, target_y, drop_lines)
 
             if lane_heights:
                 current_y += sum(lane_heights) + (
@@ -955,20 +972,10 @@ class TimelineView(QGraphicsView):
             # Enforce limits
             scale_x = max(self.MIN_ZOOM, min(scale_x, self.MAX_ZOOM))
 
-            # Apply Transform: Scale X, Reset Y to 1.0
-            self.setTransform(QTransform().scale(scale_x, 1.0))
-            self._current_zoom = scale_x
-
-            # Repack on new zoom
-            self.repack_events()
+            self._apply_zoom(scale_x)
 
             # Center X, Align Top Y
             center_x = (start_x + end_x) / 2
-
-            # centerOn(x, y) puts (x,y) in the center of the viewport
-            # We want Scene Top to be at Viewport Top.
-            # Viewport Center is at +vh/2 from Viewport Top.
-            # So Target Y = Scene Top + vh/2.
             vh = self.viewport().height()
             scene_top = self.scene.sceneRect().top()
 
@@ -1011,6 +1018,9 @@ class TimelineView(QGraphicsView):
                 self.scale(factor, 1.0)
                 self._current_zoom = new_zoom
 
+                # Update playhead zoom
+                self._playhead.set_zoom(new_zoom * self.scale_factor)
+
                 # Repack on new zoom
                 self.repack_events()
             finally:
@@ -1029,11 +1039,15 @@ class TimelineView(QGraphicsView):
             return
 
         # Find the item
-        found_item = None
-        for item in self.scene.items():
-            if isinstance(item, EventItem) and item.event.id == event_id:
-                found_item = item
-                break
+        # Find the item
+        found_item = next(
+            (
+                item
+                for item in self.scene.items()
+                if isinstance(item, EventItem) and item.event.id == event_id
+            ),
+            None,
+        )
 
         if not found_item:
             return
@@ -1089,10 +1103,18 @@ class TimelineView(QGraphicsView):
         super().mouseReleaseEvent(event)
 
         if hasattr(self, "_dragging_playhead") and self._dragging_playhead:
-            # Emit signal with new playhead time
-            new_time = self._playhead.get_time(self.scale_factor)
+            # Emit final authoritative signal with rounded playhead time
+            # This ensures markers snap to exact position after scrubbing
+            new_time = round(self._playhead.get_time(self.scale_factor), 4)
             self.playhead_time_changed.emit(new_time)
             self._dragging_playhead = False
+
+            # Persist the new time on release
+            settings = QSettings()
+            settings.setValue("timeline/playhead_time", new_time)
+            logger.debug(
+                f"Persistence: Saved playhead time on drag release: {new_time}, filename={settings.fileName()}"
+            )
 
     def focus_event(self, event_id: str) -> None:
         """Centers the view on the specified event."""
@@ -1101,6 +1123,44 @@ class TimelineView(QGraphicsView):
                 self.centerOn(item)
                 item.setSelected(True)
                 return
+
+    def _apply_zoom(self, zoom_level: float) -> None:
+        """
+        Applies a zoom level and updates related state.
+
+        Args:
+            zoom_level: The zoom level to apply.
+        """
+        self.setTransform(QTransform().scale(zoom_level, 1.0))
+        self._current_zoom = zoom_level
+        self._playhead.set_zoom(zoom_level * self.scale_factor)
+        self.repack_events()
+
+    def _setup_ruler_fonts(self, painter: QPainter) -> tuple[QFont, QFont]:
+        """Sets up major and minor fonts for the ruler."""
+        major_font = QFont(painter.font())
+        major_font.setPointSize(9)
+        major_font.setBold(True)
+
+        minor_font = QFont(painter.font())
+        minor_font.setPointSize(8)
+        minor_font.setBold(False)
+        return major_font, minor_font
+
+    def _position_event_item(
+        self, item: EventItem, y: float, drop_lines: dict | None = None
+    ) -> None:
+        """
+        Positions an event item and updates its associated drop line.
+        """
+        item.setY(y)
+        item.setVisible(True)
+        item._initial_y = y
+
+        if drop_lines and item.event.id in drop_lines:
+            line = drop_lines[item.event.id]
+            line.setLine(item.x(), -self.RULER_HEIGHT, item.x(), item.y())
+            line.setVisible(True)
 
     def start_playback(self) -> None:
         """
@@ -1114,6 +1174,14 @@ class TimelineView(QGraphicsView):
         Stops automatic playhead advancement.
         """
         self._playback_timer.stop()
+        self.save_state()
+
+    def save_state(self) -> None:
+        """Saves current state (playhead time) to settings."""
+        settings = QSettings()
+        time = self._playhead.get_time(self.scale_factor)
+        settings.setValue("timeline/playhead_time", time)
+        logger.debug(f"Persistence: Saved playhead time via save_state: {time}")
 
     def is_playing(self) -> bool:
         """
@@ -1387,7 +1455,7 @@ class TimelineView(QGraphicsView):
         # TODO: Show color picker dialog and update tag color
         # This should be handled by the main window/controller
         # For now, just log
-        pass
+        # For now, just log
 
     def _on_tag_rename_requested(self, tag_name: str) -> None:
         """
@@ -1400,7 +1468,7 @@ class TimelineView(QGraphicsView):
 
         # TODO: Show rename dialog
         # This should be handled by the main window/controller
-        pass
+        # This should be handled by the main window/controller
 
     def _on_remove_from_grouping_requested(self, tag_name: str) -> None:
         """
@@ -1413,4 +1481,29 @@ class TimelineView(QGraphicsView):
 
         # TODO: Update grouping configuration to exclude this tag
         # This should be handled by the main window/controller
-        pass
+        # This should be handled by the main window/controller
+
+    def _update_scene_rect_from_events(self, sorted_events: list) -> None:
+        """Updates the scene rectangle based on event bounds."""
+        # X bounds
+        min_date = sorted_events[0].lore_date
+        max_date = sorted_events[-1].lore_date
+        if min_date == max_date:
+            min_date -= 10
+            max_date += 10
+
+        margin_x = (max_date - min_date) * 0.1 or 100
+        start_x = (min_date - margin_x) * self.scale_factor
+        end_x = (max_date + margin_x) * self.scale_factor
+
+        # Y bounds - inspect items to find max Y
+        max_y_found = 60
+        for item in self.scene.items():
+            if isinstance(item, EventItem):
+                max_y_found = max(max_y_found, item.y())
+
+        max_y = max_y_found + self.LANE_HEIGHT + 40
+        min_y = 0
+
+        # Set Scene Rect explicitly to avoid infinite lines expanding it
+        self.scene.setSceneRect(start_x, min_y, end_x - start_x, max_y - min_y)

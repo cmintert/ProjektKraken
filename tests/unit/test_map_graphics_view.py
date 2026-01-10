@@ -165,3 +165,58 @@ class TestCoordinateSystemIntegration:
 
         assert norm_x == 0.0
         assert norm_y == 0.0
+
+
+def test_keyframe_gizmo_interaction(qtbot):
+    """Test KeyframeItem gizmo creation and mode switching."""
+    from unittest.mock import MagicMock
+
+    from PySide6.QtWidgets import QGraphicsScene, QGraphicsView
+
+    from src.gui.widgets.map.map_graphics_view import (
+        KEYFRAME_COLOR_SELECTED,
+        KeyframeItem,
+    )
+
+    scene = QGraphicsScene()
+    view = QGraphicsView(scene)
+    qtbot.addWidget(view)
+
+    # Spy on the signal payload rather than over-mocking internals
+    signal_spy = []
+    view.keyframe_clock_mode_requested = MagicMock()
+    view.keyframe_clock_mode_requested.emit.side_effect = (
+        lambda m, t: signal_spy.append((m, t))
+    )
+
+    # Create KeyframeItem
+    from PySide6.QtCore import QRectF
+
+    rect = QRectF(0, 0, 10, 10)
+    mock_callback = MagicMock()
+    # Note: Constructor args are (marker_id, t, x, y, rect, drop_cb, drag_cb)
+    keyframe = KeyframeItem("marker1", 100.0, 0.5, 0.5, rect, mock_callback)
+    scene.addItem(keyframe)
+
+    # 1. Hover Enter -> Gizmo should appear
+    keyframe.hoverEnterEvent(None)
+    assert keyframe.gizmo is not None
+    assert keyframe.gizmo.isVisible()
+
+    # 2. Click Clock Icon -> Signal emitted + Pinned State
+    # Simulate a click or direct call
+    keyframe.set_mode("clock")
+
+    # Verify signal emission
+    assert signal_spy == [("marker1", 100.0)]
+
+    # 3. Pin Keyframe
+    keyframe.set_pinned(True)
+    assert keyframe.is_pinned is True
+    # Initial highlight color check
+    pen = keyframe.pen()
+    assert pen.color().name() == KEYFRAME_COLOR_SELECTED
+
+    keyframe.set_pinned(False)
+    assert keyframe.is_pinned is False
+    assert keyframe.pen().color().name() != KEYFRAME_COLOR_SELECTED

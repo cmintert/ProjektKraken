@@ -114,6 +114,9 @@ class WorkerManager(QObject):
         self.window.worker.markers_loaded.connect(
             self.window.data_handler.on_markers_loaded
         )
+        self.window.worker.trajectories_loaded.connect(
+            self.window.data_handler.on_trajectories_loaded
+        )
         self.window.worker.filter_results_ready.connect(
             self.window._on_filter_results_ready
         )

@@ -237,6 +237,10 @@ class TimelineWidget(QWidget):
         """Clears the timeline grouping."""
         self.view.clear_grouping()
 
+    def save_state(self) -> None:
+        """Saves the current state of the timeline widget (e.g. playhead time)."""
+        self.view.save_state()
+
 
 __all__ = [
     "TimelineWidget",

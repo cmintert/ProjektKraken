@@ -535,6 +535,7 @@ class MainWindow(QMainWindow):
 
             self.event_editor.set_calendar_converter(converter)
             self.timeline.set_calendar_converter(converter)
+            self.map_widget.set_calendar_converter(converter)
 
             # Set calendar converter for timeline display in entity editor
             from src.gui.widgets.timeline_display_widget import TimelineDisplayWidget
@@ -680,6 +681,10 @@ class MainWindow(QMainWindow):
         # Save as Default Layout if requested
         if self.capture_layout_on_exit:
             self.ui_manager.save_as_default_layout()
+
+        # Save Persistent Widget States
+        if hasattr(self, "timeline"):
+            self.timeline.save_state()
 
         # Cleanup Worker
         QMetaObject.invokeMethod(

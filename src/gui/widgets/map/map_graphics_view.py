@@ -6,9 +6,19 @@ Provides the MapGraphicsView class for rendering and interacting with the map.
 
 import json
 import logging
-from typing import Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
-from PySide6.QtCore import QPoint, QPointF, QRectF, QSize, Qt, Signal
+from PySide6.QtCore import (
+    Property,
+    QPoint,
+    QPointF,
+    QPropertyAnimation,
+    QRectF,
+    QSettings,
+    QSize,
+    Qt,
+    Signal,
+)
 from PySide6.QtGui import (
     QAction,
     QBrush,
@@ -17,23 +27,42 @@ from PySide6.QtGui import (
     QDragEnterEvent,
     QDragMoveEvent,
     QDropEvent,
+    QFont,
     QMouseEvent,
     QPainter,
+    QPainterPath,
+    QPen,
     QPixmap,
     QResizeEvent,
+    QTransform,
     QWheelEvent,
 )
 from PySide6.QtWidgets import (
     QColorDialog,
     QDialog,
+    QGraphicsEllipseItem,
+    QGraphicsItem,
+    QGraphicsItemGroup,
+    QGraphicsObject,
+    QGraphicsPathItem,
     QGraphicsPixmapItem,
+    QGraphicsRectItem,
     QGraphicsScene,
+    QGraphicsSceneHoverEvent,
+    QGraphicsSimpleTextItem,
     QGraphicsView,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
     QMenu,
+    QPushButton,
+    QStyleOptionGraphicsItem,
+    QVBoxLayout,
     QWidget,
 )
 
 from src.core.theme_manager import ThemeManager
+from src.core.trajectory import KEYFRAME_TIME_EPSILON
 from src.gui.widgets.map.coordinate_system import MapCoordinateSystem
 from src.gui.widgets.map.icon_picker_dialog import IconPickerDialog
 from src.gui.widgets.map.marker_item import MarkerItem
@@ -46,6 +75,319 @@ LAYER_MAP_BG = 0
 LAYER_TRAJECTORIES = 5
 LAYER_MARKERS = 10
 LAYER_UI_OVERLAY = 100
+
+# Colors
+KEYFRAME_COLOR_DEFAULT = "#f1c40f"  # Yellow
+KEYFRAME_COLOR_SELECTED = "#e74c3c"  # Red
+KEYFRAME_LABEL_COLOR = "#000000"  # Black
+TRAJECTORY_PATH_COLOR = "#3498db"  # Blue
+GIZMO_TEXT_COLOR = "#ffffff"  # White
+
+# Layout Constants
+GIZMO_SIZE = 6
+GIZMO_FONT_FAMILY = "Segoe UI"
+GIZMO_FONT_SIZE = 6
+
+KEYFRAME_LABEL_FONT_FAMILY = "Segoe UI"
+KEYFRAME_LABEL_FONT_SIZE = 12
+KEYFRAME_LABEL_OFFSET_X = -10
+KEYFRAME_LABEL_OFFSET_Y = 10
+KEYFRAME_LABEL_MIN_SIZE_PT = 8
+KEYFRAME_LABEL_MAX_SIZE_PT = 10
+
+
+class KeyframeGizmo(QGraphicsItemGroup):
+    """
+    Hover gizmo for keyframe actions: Clock Mode and Delete.
+    Shows clickable icons for temporal editing (clock) and deletion (red X).
+    """
+
+    def __init__(
+        self, keyframe_item: "KeyframeItem", parent: Optional[QGraphicsItem] = None
+    ) -> None:
+        super().__init__(parent)
+        self.keyframe_item = keyframe_item
+        self.setZValue(LAYER_UI_OVERLAY)
+        self.setAcceptHoverEvents(True)
+
+        # Create Clock icon (left)
+        self.clock_icon = self._create_icon("🕐", 0, GIZMO_TEXT_COLOR)
+        self.addToGroup(self.clock_icon)
+
+        # Create Delete icon (right) - red X
+        self.delete_icon = self._create_icon("✕", GIZMO_SIZE + 4, "#FF4444")
+        self.addToGroup(self.delete_icon)
+
+        # Position gizmo to Northeast of keyframe (Right and Up)
+        self.setPos(3, -8)
+
+    def _create_icon(self, text: str, x_offset: float, color: str) -> QGraphicsRectItem:
+        """Creates a clickable icon button."""
+        from PySide6.QtCore import Qt
+
+        # Background rect (smaller)
+        size = GIZMO_SIZE
+        rect = QGraphicsRectItem(x_offset, 0, size, size)
+        rect.setBrush(Qt.NoBrush)
+        rect.setPen(Qt.NoPen)
+        rect.setZValue(LAYER_UI_OVERLAY)
+
+        # Icon text (smaller font)
+        label = QGraphicsSimpleTextItem(text, rect)
+        label.setPos(x_offset + 1, -3)
+        label.setBrush(QBrush(QColor(color)))
+        font = QFont(GIZMO_FONT_FAMILY, GIZMO_FONT_SIZE)
+        label.setFont(font)
+
+        # Make clickable
+        rect.setAcceptHoverEvents(True)
+        rect.setCursor(Qt.CursorShape.PointingHandCursor)
+
+        return rect
+
+    def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
+        """Keep gizmo visible while hovering over it."""
+        logger.debug(f"Gizmo hover enter for marker {self.keyframe_item.marker_id}")
+        super().hoverEnterEvent(event)
+        self.keyframe_item._gizmo_hovered = True
+
+    def hoverLeaveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
+        """Remove gizmo when mouse leaves."""
+        logger.debug(f"Gizmo hover leave for marker {self.keyframe_item.marker_id}")
+        super().hoverLeaveEvent(event)
+        self.keyframe_item._gizmo_hovered = False
+        if not self.keyframe_item.isUnderMouse():
+            self.keyframe_item._cleanup_gizmo()
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        """Handle icon clicks - clock for Clock Mode, X for delete."""
+        # Determine which icon was clicked based on x position
+        click_x = event.pos().x()
+
+        if click_x < GIZMO_SIZE + 1:
+            # Clock icon clicked - enter Clock Mode
+            logger.info(f"Clock icon clicked for marker {self.keyframe_item.marker_id}")
+            self.keyframe_item.set_mode("clock")
+        else:
+            # Delete icon clicked - request keyframe deletion
+            logger.info(
+                f"Delete icon clicked for keyframe {self.keyframe_item.marker_id} "
+                f"at t={self.keyframe_item.t}"
+            )
+            self.keyframe_item.request_delete()
+        event.accept()
+
+
+class KeyframeItem(QGraphicsObject):
+    """
+    A draggable keyframe dot on the trajectory.
+    """
+
+    def __init__(
+        self,
+        marker_id: str,
+        t: float,
+        x: float,
+        y: float,
+        rect: QRectF,
+        on_drop_callback: Callable[["KeyframeItem"], None],
+        on_drag_callback: Optional[Callable[[], None]] = None,
+    ) -> None:
+        super().__init__()
+        self._rect = rect
+        self.marker_id = marker_id
+        self.t = t
+        self.original_x = x  # Normalized X
+        self.original_y = y  # Normalized Y
+        self.on_drop_callback = on_drop_callback
+        self.on_drag_callback = on_drag_callback
+
+        # Mode state
+        self.mode: str = "transform"  # "transform" or "clock"
+        self.is_pinned: bool = False
+
+        # Visuals
+        self._brush = QBrush(QColor(KEYFRAME_COLOR_DEFAULT))
+        self._pen = QPen(Qt.PenStyle.NoPen)
+
+        # Gizmo (mode selector)
+        self.gizmo: Optional[KeyframeGizmo] = None
+        self._gizmo_hovered: bool = False
+
+        # Enable interaction
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges)
+        self.setAcceptHoverEvents(True)
+
+    def boundingRect(self) -> QRectF:
+        """Returns the bounding rectangle for the dot."""
+        return self._rect
+
+    def paint(
+        self,
+        painter: QPainter,
+        option: QStyleOptionGraphicsItem,
+        widget: Optional[QWidget] = None,
+    ) -> None:
+        """Paints the keyframe dot."""
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setBrush(self._brush)
+        painter.setPen(self._pen)
+        painter.drawEllipse(self._rect)
+
+    def setBrush(self, brush: QBrush) -> None:
+        """Sets the brush for the dot."""
+        self._brush = brush
+        self.update()
+
+    def brush(self) -> QBrush:
+        """Returns the brush for the dot."""
+        return self._brush
+
+    @Property(float)
+    def scale_val(self) -> float:
+        """Returns the scale for animation."""
+        return self.scale()
+
+    @scale_val.setter
+    def scale_val(self, value: float) -> None:
+        """Sets the scale for animation."""
+        self.setScale(value)
+        self.update()
+
+    def setPen(self, pen: QPen) -> None:
+        """Sets the pen for the dot."""
+        self._pen = pen
+        self.update()
+
+    def pen(self) -> QPen:
+        """Returns the pen for the dot."""
+        return self._pen
+
+    def set_mode(self, mode: str) -> None:
+        """Switch between transform and clock modes."""
+        logger.info(f"Keyframe {self.marker_id} mode set to: {mode}")
+        self.mode = mode
+        if mode == "clock":
+            # Emit signal to enter Clock Mode
+            view = self.scene().views()[0] if self.scene() else None
+            if view and hasattr(view, "keyframe_clock_mode_requested"):
+                logger.debug(f"Emitting clock mode for {self.marker_id} at t={self.t}")
+                view.keyframe_clock_mode_requested.emit(self.marker_id, self.t)
+        # Hide gizmo after selection
+        self._cleanup_gizmo()
+
+    def set_pinned(self, pinned: bool) -> None:
+        """Set visual state for pinned keyframe (Clock Mode)."""
+        self.is_pinned = pinned
+        color = KEYFRAME_COLOR_SELECTED if pinned else KEYFRAME_COLOR_DEFAULT
+        pen_width = 3 if pinned else 1
+
+        self.setPen(QPen(QColor(color), pen_width))
+        self.setBrush(QBrush(QColor(color)))
+
+        state = "pinned (highlighted)" if pinned else "unpinned"
+        logger.debug(f"Keyframe {self.marker_id} {state}")
+
+    def request_delete(self) -> None:
+        """Request deletion of this keyframe by emitting signal to view."""
+        view = self.scene().views()[0] if self.scene() else None
+        if view and hasattr(view, "keyframe_delete_requested"):
+            logger.info(
+                f"Requesting delete for keyframe {self.marker_id} at t={self.t}"
+            )
+            view.keyframe_delete_requested.emit(self.marker_id, self.t)
+        # Cleanup gizmo after action
+        self._cleanup_gizmo()
+
+    def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
+        """Show gizmo when hovering over keyframe."""
+        logger.debug(f"Keyframe hover enter for {self.marker_id}")
+        super().hoverEnterEvent(event)
+        if not self.gizmo and not self.is_pinned:
+            logger.debug(f"Creating gizmo for {self.marker_id}")
+            self.gizmo = KeyframeGizmo(self)
+            self.gizmo.setParentItem(self)  # Auto-cleanup when parent deleted
+            self.gizmo.setVisible(True)
+        elif self.gizmo:
+            self.gizmo.setVisible(True)
+
+        if self.mode == "transform":
+            self.setCursor(Qt.CursorShape.SizeAllCursor)
+
+        # Show Hint Tooltip if first-use
+        self._show_hover_hint()
+
+    def _show_hover_hint(self) -> None:
+        """Shows a one-time hint tooltip."""
+        settings = QSettings()
+        if not settings.value("map/onboarding_hover_hint_shown", False, type=bool):
+            self.setToolTip("💡 Tip: Hover keyframes to edit position or time")
+            # We can't easily dismiss it with "Don't show again" inside a native tooltip,
+            # but we can mark it as shown if it stays for a while.
+            # Using QToolTip.showText or similar might be better for floating UI.
+            # For now, let's use the standard tooltip and mark it as seen.
+            settings.setValue("map/onboarding_hover_hint_shown", True)
+
+    def _cleanup_gizmo(self) -> None:
+        """Remove gizmo if not being hovered."""
+        # Additional guard: check if gizmo itself thinks it's under mouse
+        # This handles the race condition where we leave keyframe but enter gizmo
+        gizmo_under_mouse = self.gizmo and self.gizmo.isUnderMouse()
+
+        logger.debug(
+            f"Cleanup gizmo: {self.marker_id}, "
+            f"has_gizmo={self.gizmo is not None}, "
+            f"hovered={self._gizmo_hovered}, pinned={self.is_pinned}, "
+            f"gizmo_under_mouse={gizmo_under_mouse}"
+        )
+
+        if (
+            self.gizmo
+            and not self._gizmo_hovered
+            and not self.is_pinned
+            and not gizmo_under_mouse
+        ):
+            logger.debug(f"Hiding gizmo for {self.marker_id}")
+            self.gizmo.setVisible(False)
+
+    def hoverLeaveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
+        """Hide gizmo when leaving keyframe."""
+        super().hoverLeaveEvent(event)
+        self.unsetCursor()
+        # Attempt cleanup when leaving the keyframe dot
+        self._cleanup_gizmo()
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        """Clear any existing selection before starting drag."""
+        logger.debug(
+            f"Keyframe mouse press for {self.marker_id}, "
+            f"mode={self.mode}, has_gizmo={self.gizmo is not None}"
+        )
+        if self.scene():
+            self.scene().clearSelection()
+        # Hide gizmo immediately when starting drag
+        if self.gizmo and self.mode == "transform":
+            logger.debug(f"Hiding gizmo before drag for {self.marker_id}")
+            self.gizmo.setVisible(False)
+        super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        """Handle drop event."""
+        super().mouseReleaseEvent(event)
+        if self.on_drop_callback:
+            self.on_drop_callback(self)
+
+    def itemChange(
+        self, change: QGraphicsEllipseItem.GraphicsItemChange, value: Any
+    ) -> Any:
+        """Handle position changes during drag."""
+        if (
+            change == QGraphicsEllipseItem.GraphicsItemChange.ItemPositionHasChanged
+            and self.on_drag_callback
+        ):
+            self.on_drag_callback()
+        return super().itemChange(change, value)
 
 
 class MapGraphicsView(QGraphicsView):
@@ -68,6 +410,10 @@ class MapGraphicsView(QGraphicsView):
     mouse_coordinates_changed = Signal(
         float, float, bool
     )  # x, y (normalized), in_bounds
+    keyframe_moved = Signal(str, float, float, float)  # marker_id, t, new_x, new_y
+    keyframe_clock_mode_requested = Signal(str, float)  # marker_id, t
+    keyframe_delete_requested = Signal(str, float)  # marker_id, t
+    keyframe_edit_requested = Signal(str, float, float, float)  # marker_id, t, x, y
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -139,6 +485,14 @@ class MapGraphicsView(QGraphicsView):
 
         # Temporal state (for future trajectory animation)
         self._current_time: float = 0.0
+
+        # Trajectory Visualization
+        self.trajectory_path_item: Optional[QGraphicsPathItem] = None
+        self.keyframe_items: list[KeyframeItem] = []
+        self.keyframe_label_items: list[QGraphicsSimpleTextItem] = []
+        self._calendar_converter: Optional[object] = None  # CalendarConverter instance
+        self.trigger_first_use_animation: bool = False
+        self._animations: list[QPropertyAnimation] = []  # Keep references
 
     def minimumSizeHint(self) -> QSize:
         """
@@ -267,6 +621,8 @@ class MapGraphicsView(QGraphicsView):
         y: float,
         icon: Optional[str] = None,
         color: Optional[str] = None,
+        description: Optional[str] = None,
+        lore_date: Optional[float] = None,
     ) -> None:
         """
         Adds a marker to the map at normalized coordinates.
@@ -278,6 +634,8 @@ class MapGraphicsView(QGraphicsView):
             x: Normalized X coordinate [0.0, 1.0].
             y: Normalized Y coordinate [0.0, 1.0].
             icon: Optional icon filename (e.g., 'castle.svg').
+            description: Optional description for tooltip.
+            lore_date: Optional lore timestamp for temporal filtering.
         """
         if not self.pixmap_item:
             logger.warning("Cannot add marker: no map loaded")
@@ -290,7 +648,14 @@ class MapGraphicsView(QGraphicsView):
 
         # Create new marker with optional icon and color
         marker = MarkerItem(
-            marker_id, object_type, label, self.pixmap_item, icon, color
+            marker_id,
+            object_type,
+            label,
+            self.pixmap_item,
+            icon,
+            color,
+            description,
+            lore_date,
         )
 
         # Convert normalized to scene coordinates
@@ -313,29 +678,21 @@ class MapGraphicsView(QGraphicsView):
     def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
         """
         Updates a marker's position to new normalized coordinates.
-
-        Args:
-            marker_id: Unique identifier for the marker.
-            x: Normalized X coordinate [0.0, 1.0].
-            y: Normalized Y coordinate [0.0, 1.0].
         """
         if marker_id not in self.markers:
             logger.warning(f"Cannot update: marker {marker_id} not found")
             return
 
         marker = self.markers[marker_id]
-        marker = self.markers[marker_id]
         scene_pos = self.coord_system.to_scene(x, y)
         marker.setPos(scene_pos)
 
-        logger.debug(f"Updated marker {marker_id} to normalized ({x:.3f}, {y:.3f})")
+        # Remove spammy log
+        # logger.debug(f"Updated marker {marker_id} to normalized ({x:.3f}, {y:.3f})")
 
     def remove_marker(self, marker_id: str) -> None:
         """
         Removes a marker from the map.
-
-        Args:
-            marker_id: Unique identifier for the marker to remove.
         """
         if marker_id in self.markers:
             self.scene.removeItem(self.markers[marker_id])
@@ -348,6 +705,37 @@ class MapGraphicsView(QGraphicsView):
             self.scene.removeItem(marker)
         self.markers.clear()
         logger.debug("Cleared all markers")
+
+    def update_markers_temporal_state(
+        self, playhead_time: float, current_time: float
+    ) -> None:
+        """
+        Updates the temporal visual state of all markers based on time.
+        """
+        for marker in self.markers.values():
+            if marker.lore_date is None:
+                # Timeless entities are always present/vivid
+                marker.set_temporal_state(is_future=False, is_past=False)
+                continue
+
+            # Determine State
+            # "Future": It hasn't happened yet in the playback AND hasn't happened in 'Now'.
+            # Usually, playhead is the view into history. If playhead < event_date, it's future relative to view.
+            is_future = marker.lore_date > playhead_time
+
+            # Optional: You could allow seeing "future relative to playhead but past relative to now" differently.
+            # But "Dull out markers in the future of the playhead OR in the future of the current time"
+            # suggests a strong condition.
+            # Let's interpret user request:
+            # "dull out markers that lie in the future of the playhead" -> Primary requirement.
+            # "or in the future of the current time" -> If playhead is dragged past 'Now', those potential future events are still future?
+            # actually usually 'Now' is the max valid time.
+            # Let's stick to Playhead as the primary visibility filter for "replaying history".
+
+            # Is Past: It has already happened.
+            is_past = marker.lore_date <= playhead_time
+
+            marker.set_temporal_state(is_future=is_future, is_past=is_past)
 
     def _normalized_to_scene(self, x: float, y: float) -> QPointF:
         """
@@ -366,6 +754,7 @@ class MapGraphicsView(QGraphicsView):
         factor = zoom_in_factor if event.angleDelta().y() > 0 else zoom_out_factor
 
         self.scale(factor, factor)
+        self._update_label_scales()
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """
@@ -608,3 +997,280 @@ class MapGraphicsView(QGraphicsView):
         )
         menu.addAction(add_action)
         menu.exec(global_pos)
+
+    def show_trajectory(self, marker_id: str, keyframes: list) -> None:
+        """
+        Visualizes the trajectory path and keyframes.
+
+        Args:
+            marker_id: The ID of the marker owning this trajectory.
+            keyframes: List of Keyframe objects.
+        """
+        self.clear_trajectory()
+        if not keyframes or len(keyframes) < 2:
+            return
+
+        # Create Keyframe Dots (store them first, then draw path)
+        # Scale with zoom: target 6px on screen, minimum 3 scene units for clickability
+        view_scale = self.transform().m11() if self.transform().m11() > 0 else 1.0
+        dot_radius = max(3.0 / view_scale, 3.0)
+
+        for kf in keyframes:
+            pos = self.coord_system.to_scene(kf.x, kf.y)
+            # Create interactive item
+            dot = KeyframeItem(
+                marker_id,
+                kf.t,
+                kf.x,
+                kf.y,
+                QRectF(-dot_radius, -dot_radius, dot_radius * 2, dot_radius * 2),
+                self._on_keyframe_dropped,
+                self._update_trajectory_path,  # Live update callback
+            )
+            dot.setPos(pos)
+            dot.setBrush(QBrush(QColor(KEYFRAME_COLOR_DEFAULT)))  # Yellow dots
+            dot.setPen(QPen(Qt.PenStyle.NoPen))
+            dot.setZValue(LAYER_MARKERS + 1)  # Above markers for editability
+            self.scene.addItem(dot)
+            self.keyframe_items.append(dot)
+
+            # Add date label if calendar converter is available
+            if self._calendar_converter:
+                try:
+                    date_str = self._calendar_converter.format_date(kf.t)
+                except Exception:
+                    date_str = f"{kf.t:.0f}"
+            else:
+                date_str = f"{kf.t:.0f}"
+
+            label = QGraphicsSimpleTextItem(date_str)
+            # Position at the dot center (scene coords)
+            label.setPos(pos)
+            label.setBrush(QBrush(QColor(KEYFRAME_LABEL_COLOR)))
+            font = QFont(KEYFRAME_LABEL_FONT_FAMILY, KEYFRAME_LABEL_FONT_SIZE)
+            label.setFont(font)
+            label.setZValue(LAYER_MARKERS + 2)
+            # Ignore transformations to keep constant screen size
+            label.setFlag(
+                QGraphicsSimpleTextItem.GraphicsItemFlag.ItemIgnoresTransformations
+            )
+            # Apply offset in screen pixels via transform
+            label.setTransform(
+                QTransform().translate(KEYFRAME_LABEL_OFFSET_X, KEYFRAME_LABEL_OFFSET_Y)
+            )
+            self.scene.addItem(label)
+            self.keyframe_label_items.append(label)
+
+        # Draw path initially
+        self._update_trajectory_path()
+        self._update_label_scales()
+
+        # Pulsing Animation on first use
+        if self.trigger_first_use_animation:
+            logger.debug(
+                f"Triggering pulsing animation for {len(self.keyframe_items)} keyframes"
+            )
+            self.trigger_first_use_animation = False
+            for dot in self.keyframe_items:
+                self._pulse_item(dot)
+
+    def _pulse_item(self, item: QGraphicsObject) -> None:
+        """Pulses the given item 3 times (scale 1.0 -> 1.1 -> 1.0)."""
+        # Ensure transformation origin is centered for scaling
+        item.setTransformOriginPoint(0, 0)
+
+        animation = QPropertyAnimation(item, b"scale_val")
+        animation.setDuration(600)
+        animation.setStartValue(1.0)
+        animation.setKeyValueAt(0.5, 1.1)
+        animation.setEndValue(1.0)
+        animation.setLoopCount(3)
+
+        # Store animation to prevent garbage collection before it finishes
+        self._animations.append(animation)
+        animation.finished.connect(lambda: self._animations.remove(animation))
+
+        animation.start()  # Keep alive until removal from self._animations
+
+    def _show_edit_keyframe_dialog(self, item: KeyframeItem) -> None:
+        """Shows a dialog to edit keyframe properties manually."""
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Edit Keyframe")
+        layout = QVBoxLayout(dialog)
+
+        # Position (X)
+        x_layout = QHBoxLayout()
+        x_layout.addWidget(QLabel("Position X:"))
+        x_input = QLineEdit(f"{item.original_x:.3f}")
+        x_layout.addWidget(x_input)
+        layout.addLayout(x_layout)
+
+        # Position (Y)
+        y_layout = QHBoxLayout()
+        y_layout.addWidget(QLabel("Position Y:"))
+        y_input = QLineEdit(f"{item.original_y:.3f}")
+        y_layout.addWidget(y_input)
+        layout.addLayout(y_layout)
+
+        # Time
+        t_layout = QHBoxLayout()
+        t_layout.addWidget(QLabel("Time:"))
+        t_input = QLineEdit(f"{item.t:.1f}")
+        t_layout.addWidget(t_input)
+        layout.addLayout(t_layout)
+
+        # Buttons
+        btn_layout = QHBoxLayout()
+        save_btn = QPushButton("Save")
+        save_btn.clicked.connect(dialog.accept)
+        btn_layout.addWidget(save_btn)
+
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(dialog.reject)
+        btn_layout.addWidget(cancel_btn)
+        layout.addLayout(btn_layout)
+
+        if dialog.exec() == QDialog.Accepted:
+            try:
+                new_x = float(x_input.text())
+                new_y = float(y_input.text())
+                new_t = float(t_input.text())
+                # Emit request to parent (MapWidget -> Controller)
+                # Since MapGraphicsView is internal, we can emit a signal
+                # and let MapWidget handle it.
+                self.keyframe_edit_requested.emit(item.marker_id, new_t, new_x, new_y)
+            except ValueError:
+                logger.error("Invalid input for keyframe edit")
+
+    def _update_label_scales(self) -> None:
+        """
+        Updates the scale of keyframe labels based on current zoom level.
+        Logic:
+        - Scale < 1 (Zoom Out): Keep constant screen size (s=1.0).
+        - Scale > 1 (Zoom In): Grow with map (s=scale), but cap at MAX_SCALE.
+        """
+        view_scale = self.transform().m11()
+        if view_scale <= 0:
+            return
+
+        # Calculate limits for scale factor s:
+        # eff_size = Base * s  =>  s = eff_size / Base
+        min_s = KEYFRAME_LABEL_MIN_SIZE_PT / KEYFRAME_LABEL_FONT_SIZE
+        max_s = KEYFRAME_LABEL_MAX_SIZE_PT / KEYFRAME_LABEL_FONT_SIZE
+
+        # Clamp view_scale within these bounds
+        s = max(min_s, min(view_scale, max_s))
+
+        logger.debug(
+            f"Zoom Level: {view_scale:.2f} | Label Scale: {s:.2f} | "
+            f"Effective Font Size: {KEYFRAME_LABEL_FONT_SIZE * s:.1f}pt"
+        )
+
+        transform = (
+            QTransform()
+            .translate(KEYFRAME_LABEL_OFFSET_X, KEYFRAME_LABEL_OFFSET_Y)
+            .scale(s, s)
+        )
+
+        for label in self.keyframe_label_items:
+            label.setTransform(transform)
+
+    def _update_trajectory_path(self) -> None:
+        """Re-draws the trajectory path based on current keyframe positions."""
+        if not self.keyframe_items or len(self.keyframe_items) < 2:
+            if self.trajectory_path_item:
+                self.scene.removeItem(self.trajectory_path_item)
+                self.trajectory_path_item = None
+            return
+
+        # Sort items by time to ensure correct path order
+        sorted_items = sorted(self.keyframe_items, key=lambda item: item.t)
+
+        path = QPainterPath()
+        start = sorted_items[0].scenePos()
+        path.moveTo(start)
+
+        for i in range(1, len(sorted_items)):
+            path.lineTo(sorted_items[i].scenePos())
+
+        # If path item doesn't exist, create it
+        if not self.trajectory_path_item:
+            self.trajectory_path_item = self._create_trajectory_item(path)
+            self.scene.addItem(self.trajectory_path_item)
+        else:
+            # Update existing item
+            self.trajectory_path_item.setPath(path)
+
+    def _create_trajectory_item(self, path: QPainterPath) -> QGraphicsPathItem:
+        """Creates and configures the trajectory path item."""
+        item = QGraphicsPathItem(path)
+        pen = QPen(QColor(TRAJECTORY_PATH_COLOR), 1)  # Blue path, thin line
+        pen.setStyle(Qt.PenStyle.DashLine)
+        item.setPen(pen)
+        item.setZValue(LAYER_TRAJECTORIES)
+        return item
+
+    def _on_keyframe_dropped(self, item: KeyframeItem) -> None:
+        """Callback when a keyframe dot is released after dragging."""
+        scene_pos = item.scenePos()
+        norm_pos = self.coord_system.to_normalized(scene_pos)
+        x, y = norm_pos
+
+        logger.info(
+            f"Keyframe dropped for {item.marker_id} at t={item.t}: ({x:.3f}, {y:.3f})"
+        )
+        self.keyframe_moved.emit(item.marker_id, item.t, x, y)
+
+    def clear_trajectory(self) -> None:
+        """Clears the rendered trajectory path, keyframes, and labels."""
+        if self.trajectory_path_item:
+            self.scene.removeItem(self.trajectory_path_item)
+            self.trajectory_path_item = None
+
+        for item in self.keyframe_items:
+            self.scene.removeItem(item)
+        self.keyframe_items.clear()
+
+        for label in self.keyframe_label_items:
+            self.scene.removeItem(label)
+        self.keyframe_label_items.clear()
+
+    def set_calendar_converter(self, converter: object) -> None:
+        """Sets the calendar converter for formatting keyframe date labels."""
+        self._calendar_converter = converter
+
+    def set_keyframe_pinned(self, marker_id: str, t: float, pinned: bool) -> None:
+        """Set visual pinned state for a specific keyframe."""
+        for item in self.keyframe_items:
+            if (
+                isinstance(item, KeyframeItem)
+                and item.marker_id == marker_id
+                and abs(item.t - t) < KEYFRAME_TIME_EPSILON
+            ):
+                item.set_pinned(pinned)
+                logger.debug(f"Set keyframe {marker_id} at t={t} pinned={pinned}")
+                return
+
+    def update_keyframe_label(self, marker_id: str, t: float, new_time: float) -> None:
+        """
+        Updates the label of a specific keyframe to show a new time/date.
+        Used for live feedback during Clock Mode.
+        """
+        for i, item in enumerate(self.keyframe_items):
+            if (
+                isinstance(item, KeyframeItem)
+                and item.marker_id == marker_id
+                and abs(item.t - t) < KEYFRAME_TIME_EPSILON
+            ):
+                # Found the item, update corresponding label
+                if i < len(self.keyframe_label_items):
+                    label = self.keyframe_label_items[i]
+                    if self._calendar_converter:
+                        try:
+                            text = self._calendar_converter.format_date(new_time)
+                        except Exception:
+                            text = f"{new_time:.0f}"
+                    else:
+                        text = f"{new_time:.0f}"
+                    label.setText(text)
+                return

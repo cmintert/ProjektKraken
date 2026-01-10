@@ -11,7 +11,7 @@ import json
 import logging
 import sqlite3
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
 
 from src.core.calendar import CalendarConfig
 from src.core.entities import Entity
@@ -27,9 +27,11 @@ from src.services.repositories import (
     EventRepository,
     MapRepository,
     RelationRepository,
+    TrajectoryRepository,
 )
 
 if TYPE_CHECKING:
+    from src.core.trajectory import Keyframe
     from src.services.attachment_service import AttachmentService
 
 logger = logging.getLogger(__name__)
@@ -60,6 +62,7 @@ class DatabaseService:
         self._map_repo = MapRepository()
         self._calendar_repo = CalendarRepository()
         self._attachment_repo = AttachmentRepository()
+        self._trajectory_repo = TrajectoryRepository()
         self.attachment_service: Optional["AttachmentService"] = None
 
         logger.info(f"DatabaseService initialized with path: {self.db_path}")
@@ -89,6 +92,7 @@ class DatabaseService:
             self._map_repo.set_connection(self._connection)
             self._calendar_repo.set_connection(self._connection)
             self._attachment_repo.set_connection(self._connection)
+            self._trajectory_repo.set_connection(self._connection)
 
         except sqlite3.Error as e:
             logger.critical(f"Failed to connect to database: {e}")
@@ -338,9 +342,57 @@ class DatabaseService:
                     logger.error(f"Failed to add color column to tags table: {e}")
                     raise
 
+            # Migrate trajectory data from old format to MF-JSON
+            self._migrate_trajectories_to_mfjson()
+
         except sqlite3.Error as e:
             logger.critical(f"Migration check failed: {e}")
             raise
+
+    def _migrate_trajectories_to_mfjson(self) -> None:
+        """Migrates old-format trajectories to MF-JSON format.
+
+        Old format: [[t, x, y], ...]
+        New format: {"type": "MovingPoint", "coordinates": [[x, y], ...], "datetimes": [...]}
+        """
+        assert self._connection is not None
+
+        cursor = self._connection.execute("SELECT id, trajectory FROM moving_features")
+        rows = cursor.fetchall()
+        migrated_count = 0
+
+        for row in rows:
+            traj_id = row["id"]
+            traj_json = row["trajectory"]
+            try:
+                data = json.loads(traj_json)
+                # Skip if already MF-JSON format
+                if isinstance(data, dict) and data.get("type") == "MovingPoint":
+                    continue
+
+                # Convert old format (list of [t, x, y])
+                if isinstance(data, list) and data:
+                    coordinates = [[item[1], item[2]] for item in data]
+                    datetimes = [item[0] for item in data]
+                    mfjson = {
+                        "type": "MovingPoint",
+                        "coordinates": coordinates,
+                        "datetimes": datetimes,
+                    }
+                    self._connection.execute(
+                        "UPDATE moving_features SET trajectory = ? WHERE id = ?",
+                        (json.dumps(mfjson), traj_id),
+                    )
+                    migrated_count += 1
+
+            except (json.JSONDecodeError, IndexError, TypeError) as e:
+                logger.warning(f"Skipping corrupt trajectory {traj_id}: {e}")
+
+        if migrated_count > 0:
+            self._connection.commit()
+            logger.info(
+                f"Migration: Converted {migrated_count} trajectories to MF-JSON format"
+            )
 
     # --------------------------------------------------------------------------
     # Event CRUD - Delegates to EventRepository
@@ -2060,3 +2112,113 @@ class DatabaseService:
             )
 
         logger.debug("Cleared timeline grouping config")
+
+    # --------------------------------------------------------------------------
+    # Temporal Trajectories - Delegates to TrajectoryRepository
+    # --------------------------------------------------------------------------
+
+    def insert_trajectory(
+        self,
+        marker_id: str,
+        trajectory: List["Keyframe"],
+        properties: Optional[dict] = None,
+    ) -> str:
+        """
+        Inserts a spatial trajectory for a marker.
+
+        Args:
+            marker_id: UUID of the marker.
+            trajectory: List of Keyframe objects.
+            properties: Optional JSON metadata.
+
+        Returns:
+            UUID of the inserted trajectory record.
+        """
+        if not self._connection:
+            self.connect()
+        return self._trajectory_repo.insert(marker_id, trajectory, properties)
+
+    def get_trajectories_by_map(
+        self, map_id: str
+    ) -> List[Tuple[str, str, List["Keyframe"]]]:
+        """
+        Retrieves all trajectories for a specific map.
+
+        Args:
+            map_id: UUID of the map.
+
+        Returns:
+            List of (marker_id, trajectory_id, List[Keyframe]) tuples.
+        """
+        if not self._connection:
+            self.connect()
+        return self._trajectory_repo.get_by_map_id(map_id)
+
+    def get_trajectories_by_marker(
+        self, marker_id: str
+    ) -> List[Tuple[str, List["Keyframe"]]]:
+        """
+        Retrieves all trajectories for a specific marker.
+
+        Args:
+            marker_id: UUID of the marker.
+
+        Returns:
+            List of (trajectory_id, List[Keyframe]) tuples.
+        """
+        if not self._connection:
+            self.connect()
+        return self._trajectory_repo.get_by_marker_db_id(marker_id)
+
+    def add_keyframe(self, map_id: str, object_id: str, keyframe: "Keyframe") -> str:
+        """
+        Adds a keyframe to the marker's trajectory.
+
+        Args:
+            map_id: The ID of the map.
+            object_id: The object ID (Entity/Event ID).
+            keyframe: The Keyframe object.
+
+        Returns:
+            The ID of the updated/created trajectory.
+        """
+        if not self._connection:
+            self.connect()
+        return self._trajectory_repo.add_keyframe(map_id, object_id, keyframe)
+
+    def update_keyframe_time(
+        self, map_id: str, object_id: str, old_t: float, new_t: float
+    ) -> str:
+        """
+        Updates a keyframe's timestamp (Clock Mode editing).
+
+        Args:
+            map_id: The ID of the map.
+            object_id: The object ID (Entity/Event ID).
+            old_t: Original timestamp.
+            new_t: New timestamp.
+
+        Returns:
+            The ID of the updated trajectory.
+        """
+        if not self._connection:
+            self.connect()
+        return self._trajectory_repo.update_keyframe_time(
+            map_id, object_id, old_t, new_t
+        )
+
+    def delete_keyframe(self, map_id: str, object_id: str, t: float) -> Optional[str]:
+        """
+        Deletes a keyframe from a marker's trajectory.
+
+        Args:
+            map_id: The ID of the map.
+            object_id: The object ID (Entity/Event ID).
+            t: The timestamp of the keyframe to delete.
+
+        Returns:
+            The ID of the updated trajectory, or None if trajectory was deleted.
+        """
+        if not self._connection:
+            self.connect()
+        return self._trajectory_repo.delete_keyframe(map_id, object_id, t)
