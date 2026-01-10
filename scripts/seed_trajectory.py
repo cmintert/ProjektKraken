@@ -6,7 +6,6 @@ Creates a test map, a marker, and a trajectory for verification.
 import sys
 import os
 import uuid
-import time
 import logging
 
 # Add project root to path
