@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-01-06  
-**Commit:** `cc8c64c`  
+**Last Updated:** 2026-01-10  
+**Commit:** `1c03151`  
 ---
 
 # Changelog
@@ -12,6 +12,18 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- *(2026-01-10)* **Feature**: Implemented persistent "Clock Mode" indicator with a toolbar status label and an interactive map overlay banner.
+  - Added keyboard shortcuts: `Esc` for cancel and `Enter`/`Return` for commit.
+  - Added `WaitCursor` feedback when entering Clock Mode.
+- *(2026-01-10)* **Feature**: Integrated a comprehensive progressive disclosure system for map UX.
+  - Added `OnboardingDialog` for first-time keyframe creation guidance.
+  - Added a subtle pulsing animation (1.1x scale, 3 loops) for trajectories on first load to improve discoverability.
+  - Added one-time 💡 hover hint tooltips for keyframes.
+- *(2026-01-10)* **UX**: Enhanced keyframe interaction with `SizeAllCursor` in spatial mode and optimized gizmo icon spacing for better click precision.
+- *(2026-01-09)* **Feature**: Implemented keyframe deletion support and hardened trajectory precision.
+  - Added context menu for keyframes with "Edit Keyframe..." and "Delete Keyframe" options.
+  - Hardened trajectory calculation by rounding to 4 decimal places to prevent float precision drift.
+  - Added description/tooltip support for markers, pulling from cached entity/event data.
 - *(2026-01-06)* **Feature**: Implemented live mouse coordinate display showing Normalized (0-1) and Real-World (Kilometers) values.
 - *(2026-01-06)* **Feature**: Added GIS-style `ScaleBarPainter` with automatic unit selection and configurable map width via settings dialog.
 - *(2026-01-06)* **Feature**: Added `moving_features` table for temporal map data with `ON DELETE CASCADE` on marker FK.
@@ -21,6 +33,7 @@ All notable changes to this project will be documented in this file.
 - *(2026-01-06)* **Testing**: Added ON DELETE CASCADE test for `moving_features.marker_id` FK.
 
 ### Fixed
+- *(2026-01-10)* **Bug**: Fixed onboarding dialog triggering incorrectly during keyframe movement.
 - *(2026-01-06)* **Bug**: Fixed `MarkerItem` ignoring clicks at (0,0) due to boolean trap with `QPointF(0,0)`.
 - *(2026-01-06)* **Bug**: Fixed `pixmap_item.contains()` using scene coords instead of item-local coords (4 locations).
 - *(2026-01-06)* **Bug**: Fixed context menu lambda closure bug accessing tuple with `.x()/.y()` methods.
@@ -31,6 +44,7 @@ All notable changes to this project will be documented in this file.
 - *(2026-01-04)* **Accessibility**: Enabled keyboard navigation in AI search panel (arrow keys + Enter).
 
 ### Changed
+- *(2026-01-10)* **Refactor**: Refactored `KeyframeItem` to `QGraphicsObject` for `QPropertyAnimation` support.
 - *(2026-01-06)* **Refactor**: Refactored `MapWidget` toolbar to use styled `QPushButton`s for theme consistency.
 - *(2026-01-06)* **Refactor**: Extracted drop handling and context menu logic in `MapGraphicsView`.
 - *(2026-01-04)* **Tooling**: Improved changelog workflow to analyze full commit messages, not just headers.
