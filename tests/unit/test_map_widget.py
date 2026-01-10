@@ -374,3 +374,30 @@ def test_clock_mode_jumps_time(map_widget, qtbot):
     # Verify signal emitted with correct time
     assert len(signal_spy) == 1
     assert signal_spy[0] == t
+
+
+def test_mode_indicator_ui(map_widget, qtbot):
+    """Test that the mode indicator and overlay banner update correctly."""
+    # 1. Initial State
+    assert map_widget.mode_indicator.text() == "Normal Mode"
+    # isVisible() might be False if the widget isn't fully shown yet in headless CI,
+    # but the explicit visibility bit should be correct.
+    assert not map_widget.overlay_banner.isVisible()
+
+    # 2. Enter Clock Mode
+    map_widget._on_clock_mode_requested("marker1", 100.0)
+
+    assert "CLOCK MODE" in map_widget.mode_indicator.text()
+    assert "marker1" in map_widget.mode_indicator.text()
+    # Manual show() sets the visibility bit
+    assert (
+        map_widget.overlay_banner.isVisible()
+        or not map_widget.overlay_banner.isHidden()
+    )
+    assert "CLOCK MODE ACTIVE" in map_widget.overlay_banner.text()
+
+    # 3. Exit Clock Mode (Cancel)
+    map_widget._cancel_clock_mode()
+
+    assert map_widget.mode_indicator.text() == "Normal Mode"
+    assert not map_widget.overlay_banner.isVisible()

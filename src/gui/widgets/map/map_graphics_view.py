@@ -245,6 +245,9 @@ class KeyframeItem(QGraphicsEllipseItem):
         elif self.gizmo:
             self.gizmo.setVisible(True)
 
+        if self.mode == "transform":
+            self.setCursor(Qt.CursorShape.SizeAllCursor)
+
     def _cleanup_gizmo(self) -> None:
         """Remove gizmo if not being hovered."""
         # Additional guard: check if gizmo itself thinks it's under mouse
@@ -270,6 +273,7 @@ class KeyframeItem(QGraphicsEllipseItem):
     def hoverLeaveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """Hide gizmo when leaving keyframe."""
         super().hoverLeaveEvent(event)
+        self.unsetCursor()
         # Attempt cleanup when leaving the keyframe dot
         self._cleanup_gizmo()
 

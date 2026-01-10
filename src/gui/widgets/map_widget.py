@@ -16,11 +16,13 @@ import os
 from typing import Iterator, List, Optional, Tuple
 
 from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtGui import QKeyEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QInputDialog,
     QLabel,
     QPushButton,
+    QSizePolicy,
     QToolBar,
     QVBoxLayout,
     QWidget,
@@ -136,8 +138,46 @@ class MapWidget(QWidget):
         self.btn_add_keyframe.clicked.connect(self._on_add_keyframe)
         self.toolbar.addWidget(self.btn_add_keyframe)
 
+        # Mode Indicator (right side)
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.toolbar.addWidget(spacer)
+
+        self.mode_indicator = QLabel("Normal Mode")
+        self.mode_indicator.setStyleSheet(
+            """
+            QLabel {
+                background: #2ecc71;
+                color: white;
+                padding: 5px 12px;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 11px;
+            }
+        """
+        )
+        self.toolbar.addWidget(self.mode_indicator)
+
         # Add View (after toolbar)
         layout.addWidget(self.view)
+
+        # Overlay Banner (Child of view, positioned at top)
+        self.overlay_banner = QLabel(self.view)
+        self.overlay_banner.setAlignment(Qt.AlignCenter)
+        self.overlay_banner.setStyleSheet(
+            """
+            QLabel {
+                background-color: rgba(0, 0, 0, 180);
+                color: white;
+                padding: 12px;
+                border-bottom-left-radius: 8px;
+                border-bottom-right-radius: 8px;
+                font-size: 13px;
+                font-weight: 500;
+            }
+        """
+        )
+        self.overlay_banner.hide()
 
         # Coordinate Label
         self.coord_label = QLabel("Ready")
@@ -568,6 +608,10 @@ class MapWidget(QWidget):
         self._pinned_marker_id = marker_id
         self._pinned_original_t = t
         self.view.set_keyframe_pinned(marker_id, t, True)
+
+        # Update UI state
+        self._update_mode_indicator("clock", marker_id)
+
         # Jump playhead to keyframe time
         self.jump_to_time_requested.emit(t)
 
@@ -599,7 +643,62 @@ class MapWidget(QWidget):
 
     def _cancel_clock_mode(self) -> None:
         """Transition: Clock Mode -> Default (Aborting change)."""
+        logger.info("Clock Mode cancelled")
         self._clear_clock_mode_visuals()
+
+    def _update_mode_indicator(
+        self, mode: str, marker_id: Optional[str] = None
+    ) -> None:
+        """Updates the toolbar status and map overlay."""
+        if mode == "clock":
+            # Toolbar Widget
+            self.mode_indicator.setText(f'🔴 CLOCK MODE: Editing "{marker_id}"')
+            self.mode_indicator.setStyleSheet(
+                """
+                QLabel {
+                    background: #e74c3c;
+                    color: white;
+                    padding: 5px 12px;
+                    border-radius: 4px;
+                    font-weight: bold;
+                    font-size: 11px;
+                }
+            """
+            )
+
+            # Overlay Banner
+            banner_text = (
+                "⏱ <b>CLOCK MODE ACTIVE</b><br/>"
+                "Scrub timeline to adjust keyframe timestamp<br/>"
+                "<small>[Esc to Cancel] [Enter to Commit]</small>"
+            )
+            self.overlay_banner.setText(banner_text)
+            self.overlay_banner.show()
+            self._update_overlay_position()
+
+            # Cursor Change
+            self.view.setCursor(Qt.CursorShape.WaitCursor)
+        else:
+            # Toolbar Widget
+            self.mode_indicator.setText("Normal Mode")
+            self.mode_indicator.setStyleSheet(
+                """
+                QLabel {
+                    background: #2ecc71;
+                    color: white;
+                    padding: 5px 12px;
+                    border-radius: 4px;
+                    font-weight: bold;
+                    font-size: 11px;
+                }
+            """
+            )
+
+            # Overlay Banner
+            self.overlay_banner.hide()
+
+            # Reset Cursor
+            self.view.unsetCursor()
 
     def _clear_clock_mode_visuals(self) -> None:
         """Resets visual pinned state and internal tracking."""
@@ -609,6 +708,7 @@ class MapWidget(QWidget):
             )
         self._pinned_marker_id = None
         self._pinned_original_t = None
+        self._update_mode_indicator("normal")
 
     def _handle_clock_mode_time_change(self, time: float) -> None:
         """Log or process time changes while in Clock Mode (without moving marker)."""
@@ -652,3 +752,31 @@ class MapWidget(QWidget):
 
         logger.info(f"Requesting keyframe delete: marker={marker_id}, t={t}")
         self.delete_keyframe_requested.emit(map_id, marker_id, t)
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        """Handle keyboard shortcuts for MapWidget."""
+        if self._pinned_marker_id:
+            if event.key() == Qt.Key_Escape:
+                self._cancel_clock_mode()
+                event.accept()
+                return
+            elif event.key() in (Qt.Key_Return, Qt.Key_Enter):
+                self._commit_clock_mode()
+                event.accept()
+                return
+
+        super().keyPressEvent(event)
+
+    def _update_overlay_position(self) -> None:
+        """Centers the overlay banner at the top of the view."""
+        if hasattr(self, "overlay_banner") and self.overlay_banner.isVisible():
+            view_width = self.view.width()
+            banner_width = self.overlay_banner.sizeHint().width()
+            x = (view_width - banner_width) // 2
+            self.overlay_banner.move(x, 0)
+            self.overlay_banner.setFixedWidth(banner_width)
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        """Handle resize to keep overlay centered."""
+        super().resizeEvent(event)
+        self._update_overlay_position()
