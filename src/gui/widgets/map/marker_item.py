@@ -231,8 +231,8 @@ class MarkerItem(QGraphicsObject):
 
         # Update visual properties based on state
         if is_future:
-            # Dulling effect: Reduced opacity
-            self.setOpacity(0.5)
+            # Dulling effect: Reduced opacity (1.0 - 0.3 = 0.7)
+            self.setOpacity(0.7)
             # Saturation change happens in paint() via color processing
         else:
             # Normal state: Vivid
@@ -249,8 +249,9 @@ class MarkerItem(QGraphicsObject):
         if self.is_future:
             # Desaturate significantly for future state
             h, s, lightness, a = color.getHslF()
-            # Reduce saturation by 60% and lightness slightly increased for "faded" look
-            s = max(0.0, s * 0.4)
+            # Reduce saturation by 20% (keep 80%) for a subtle fade
+            # without becoming grey
+            s = max(0.0, s * 0.8)
             lightness = min(1.0, lightness + 0.1)
             color = QColor.fromHslF(h, s, lightness, a)
 
