@@ -385,8 +385,6 @@ class MapWidget(QWidget):
         # Update marker visuals (dull/vivid) based on new time
         self.view.update_markers_temporal_state(self._playhead_time, self._current_time)
 
-        logger.debug(f"Map playhead time updated to {time:.2f}")
-
     @Slot(float)
     def on_current_time_changed(self, time: float) -> None:
         """
@@ -402,8 +400,6 @@ class MapWidget(QWidget):
 
         # Update marker visuals (dull/vivid) based on new 'Now'
         self.view.update_markers_temporal_state(self._playhead_time, self._current_time)
-
-        logger.debug(f"Map current time (Now) updated to {time:.2f}")
 
     def _update_time_display(self) -> None:
         """Updates the coord_label to include playhead and current time."""

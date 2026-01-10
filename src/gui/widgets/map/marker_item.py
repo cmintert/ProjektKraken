@@ -110,10 +110,6 @@ class MarkerItem(QGraphicsObject):
         # Load icon if specified
         self._load_icon(icon)
 
-        logger.debug(
-            f"Created MarkerItem {marker_id} with label: {label}, icon: {icon}"
-        )
-
         # Tooltip - use description if available, otherwise fall back to label
         self.setToolTip(description or label)
 

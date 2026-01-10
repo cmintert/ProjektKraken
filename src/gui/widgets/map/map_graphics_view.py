@@ -147,13 +147,13 @@ class KeyframeGizmo(QGraphicsItemGroup):
 
     def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """Keep gizmo visible while hovering over it."""
-        logger.debug(f"Gizmo hover enter for marker {self.keyframe_item.marker_id}")
+
         super().hoverEnterEvent(event)
         self.keyframe_item._gizmo_hovered = True
 
     def hoverLeaveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """Remove gizmo when mouse leaves."""
-        logger.debug(f"Gizmo hover leave for marker {self.keyframe_item.marker_id}")
+
         super().hoverLeaveEvent(event)
         self.keyframe_item._gizmo_hovered = False
         if not self.keyframe_item.isUnderMouse():
@@ -272,7 +272,7 @@ class KeyframeItem(QGraphicsObject):
             # Emit signal to enter Clock Mode
             view = self.scene().views()[0] if self.scene() else None
             if view and hasattr(view, "keyframe_clock_mode_requested"):
-                logger.debug(f"Emitting clock mode for {self.marker_id} at t={self.t}")
+
                 view.keyframe_clock_mode_requested.emit(self.marker_id, self.t)
         # Hide gizmo after selection
         self._cleanup_gizmo()
@@ -285,9 +285,6 @@ class KeyframeItem(QGraphicsObject):
 
         self.setPen(QPen(QColor(color), pen_width))
         self.setBrush(QBrush(QColor(color)))
-
-        state = "pinned (highlighted)" if pinned else "unpinned"
-        logger.debug(f"Keyframe {self.marker_id} {state}")
 
     def request_delete(self) -> None:
         """Request deletion of this keyframe by emitting signal to view."""
@@ -302,10 +299,10 @@ class KeyframeItem(QGraphicsObject):
 
     def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """Show gizmo when hovering over keyframe."""
-        logger.debug(f"Keyframe hover enter for {self.marker_id}")
+
         super().hoverEnterEvent(event)
         if not self.gizmo and not self.is_pinned:
-            logger.debug(f"Creating gizmo for {self.marker_id}")
+
             self.gizmo = KeyframeGizmo(self)
             self.gizmo.setParentItem(self)  # Auto-cleanup when parent deleted
             self.gizmo.setVisible(True)
@@ -323,8 +320,8 @@ class KeyframeItem(QGraphicsObject):
         settings = QSettings()
         if not settings.value("map/onboarding_hover_hint_shown", False, type=bool):
             self.setToolTip("💡 Tip: Hover keyframes to edit position or time")
-            # We can't easily dismiss it with "Don't show again" inside a native tooltip,
-            # but we can mark it as shown if it stays for a while.
+            # We can't easily dismiss it with "Don't show again" inside a native
+            # tooltip, but we can mark it as shown if it stays for a while.
             # Using QToolTip.showText or similar might be better for floating UI.
             # For now, let's use the standard tooltip and mark it as seen.
             settings.setValue("map/onboarding_hover_hint_shown", True)
@@ -335,20 +332,13 @@ class KeyframeItem(QGraphicsObject):
         # This handles the race condition where we leave keyframe but enter gizmo
         gizmo_under_mouse = self.gizmo and self.gizmo.isUnderMouse()
 
-        logger.debug(
-            f"Cleanup gizmo: {self.marker_id}, "
-            f"has_gizmo={self.gizmo is not None}, "
-            f"hovered={self._gizmo_hovered}, pinned={self.is_pinned}, "
-            f"gizmo_under_mouse={gizmo_under_mouse}"
-        )
-
         if (
             self.gizmo
             and not self._gizmo_hovered
             and not self.is_pinned
             and not gizmo_under_mouse
         ):
-            logger.debug(f"Hiding gizmo for {self.marker_id}")
+
             self.gizmo.setVisible(False)
 
     def hoverLeaveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
@@ -360,15 +350,12 @@ class KeyframeItem(QGraphicsObject):
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Clear any existing selection before starting drag."""
-        logger.debug(
-            f"Keyframe mouse press for {self.marker_id}, "
-            f"mode={self.mode}, has_gizmo={self.gizmo is not None}"
-        )
+
         if self.scene():
             self.scene().clearSelection()
         # Hide gizmo immediately when starting drag
         if self.gizmo and self.mode == "transform":
-            logger.debug(f"Hiding gizmo before drag for {self.marker_id}")
+
             self.gizmo.setVisible(False)
         super().mousePressEvent(event)
 
@@ -441,7 +428,7 @@ class MapGraphicsView(QGraphicsView):
                 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 
                 self.setViewport(QOpenGLWidget())
-                logger.debug("Initialized MapGraphicsView with OpenGL Viewport.")
+
             except ImportError:
                 logger.warning(
                     "QtOpenGLWidgets not available. Requesting software rendering."
@@ -568,7 +555,6 @@ class MapGraphicsView(QGraphicsView):
         """Fits the map to the current view size."""
         if self.pixmap_item:
             self.fitInView(self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
-            logger.debug("Fit map to view.")
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """
@@ -577,19 +563,18 @@ class MapGraphicsView(QGraphicsView):
         If clicking background, enable view panning.
         """
         item = self.itemAt(event.pos())
-        logger.debug(f"Mouse Press at {event.pos()}. Item found: {item}")
 
         if isinstance(item, MarkerItem):
-            logger.debug(f"Click on Marker {item.marker_id}. Setting NoDrag.")
+
             self.setDragMode(QGraphicsView.DragMode.NoDrag)
         else:
-            logger.debug("Click on background. Setting ScrollHandDrag.")
+
             self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Reset drag mode on release."""
-        logger.debug("Mouse Release. Resetting to ScrollHandDrag.")
+
         super().mouseReleaseEvent(event)
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
 
@@ -670,11 +655,6 @@ class MapGraphicsView(QGraphicsView):
         # Connect click signal
         marker.clicked.connect(self.marker_clicked.emit)
 
-        logger.debug(
-            f"Added marker {marker_id} ({label}) at normalized ({x:.3f}, {y:.3f}), "
-            f"icon={icon}"
-        )
-
     def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
         """
         Updates a marker's position to new normalized coordinates.
@@ -704,7 +684,6 @@ class MapGraphicsView(QGraphicsView):
         for marker in list(self.markers.values()):
             self.scene.removeItem(marker)
         self.markers.clear()
-        logger.debug("Cleared all markers")
 
     def update_markers_temporal_state(
         self, playhead_time: float, current_time: float
@@ -719,18 +698,14 @@ class MapGraphicsView(QGraphicsView):
                 continue
 
             # Determine State
-            # "Future": It hasn't happened yet in the playback AND hasn't happened in 'Now'.
-            # Usually, playhead is the view into history. If playhead < event_date, it's future relative to view.
+            # "Future": It hasn't happened yet in the playback.
+            # Usually, playhead is the view into history.
+            # If playhead < event_date, it's future relative to view.
             is_future = marker.lore_date > playhead_time
 
-            # Optional: You could allow seeing "future relative to playhead but past relative to now" differently.
-            # But "Dull out markers in the future of the playhead OR in the future of the current time"
-            # suggests a strong condition.
-            # Let's interpret user request:
-            # "dull out markers that lie in the future of the playhead" -> Primary requirement.
-            # "or in the future of the current time" -> If playhead is dragged past 'Now', those potential future events are still future?
-            # actually usually 'Now' is the max valid time.
-            # Let's stick to Playhead as the primary visibility filter for "replaying history".
+            # We use the Playhead as the primary visibility filter for
+            # "replaying history". Markers in the future of the playhead
+            # are considered "Not yet happened".
 
             # Is Past: It has already happened.
             is_past = marker.lore_date <= playhead_time
@@ -1160,11 +1135,6 @@ class MapGraphicsView(QGraphicsView):
 
         # Clamp view_scale within these bounds
         s = max(min_s, min(view_scale, max_s))
-
-        logger.debug(
-            f"Zoom Level: {view_scale:.2f} | Label Scale: {s:.2f} | "
-            f"Effective Font Size: {KEYFRAME_LABEL_FONT_SIZE * s:.1f}pt"
-        )
 
         transform = (
             QTransform()

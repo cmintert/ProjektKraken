@@ -144,9 +144,7 @@ class TimelineView(QGraphicsView):
         settings = QSettings()
         # Default to 0.0 only if not set
         persisted_time = settings.value("timeline/playhead_time", 0.0, type=float)
-        logger.debug(
-            f"Persistence: Loaded playhead time from settings: {persisted_time}, filename={settings.fileName()}"
-        )
+
         # Apply restoration
         if persisted_time != 0.0:
             self.set_playhead_time(persisted_time)
@@ -209,7 +207,7 @@ class TimelineView(QGraphicsView):
             event_id: The ID of the event that was moved.
             new_lore_date: The new lore_date value.
         """
-        logger.debug(f"Event {event_id} dragged to lore_date {new_lore_date}")
+
         self.event_date_changed.emit(event_id, new_lore_date)
 
     def _update_corner_widget(self, theme: dict) -> None:
@@ -471,10 +469,6 @@ class TimelineView(QGraphicsView):
         # Sort by Date
         sorted_events = sorted(events, key=lambda e: e.lore_date)
         self.events = sorted_events
-        logger.debug(
-            f"set_events: Received {len(events)} events, "
-            f"grouping_tag_order={getattr(self, '_grouping_tag_order', None)}"
-        )
 
         # Build a map of existing items by event ID
         existing_items = {}
@@ -543,12 +537,6 @@ class TimelineView(QGraphicsView):
                 )
                 line.setZValue(-1)
                 line.event_id = event.id  # Mark for tracking
-
-        logger.debug(
-            f"set_events: Created/updated items. Reused: {len(reused_ids)}, "
-            f"New: {len(sorted_events) - len(reused_ids)}, Total scene items: "
-            f"{len([i for i in self.scene.items() if isinstance(i, EventItem)])}"
-        )
 
         # Clean up removed items
         current_ids = {e.id for e in sorted_events}
@@ -622,11 +610,7 @@ class TimelineView(QGraphicsView):
 
         # Dispatch to swimlane layout if grouping is active
         grouping_active = getattr(self, "_grouping_tag_order", None)
-        logger.debug(
-            f"repack_events: grouping_active={bool(grouping_active)}, "
-            f"tag_order={grouping_active}, "
-            f"band_manager={self._band_manager is not None}"
-        )
+
         if grouping_active and self._band_manager:
             # Validate that bands actually exist - if not, clear stale state
             bands_exist = any(
@@ -743,7 +727,6 @@ class TimelineView(QGraphicsView):
 
     def _repack_grouped_events(self) -> None:
         """Repack events using swimlane layout (Band -> Events -> Band)."""
-        logger.debug("Repacking with swimlane layout")
 
         # Sort events by date first for proper packing
         self.events.sort(key=lambda e: e.lore_date)
@@ -756,11 +739,6 @@ class TimelineView(QGraphicsView):
                 event_items[item.event.id] = item
             elif hasattr(item, "setLine") and hasattr(item, "event_id"):
                 drop_lines[item.event_id] = item
-
-        logger.debug(
-            f"_repack_grouped_events: Found {len(event_items)} EventItems, "
-            f"{len(self.events)} events"
-        )
 
         # (Cleanup already done by caller: repack_events)
 
@@ -788,10 +766,7 @@ class TimelineView(QGraphicsView):
 
             # If band is collapsed, hide events and skip space
             if band.is_collapsed:
-                logger.debug(
-                    f"Band '{tag}' is COLLAPSED at Y={current_y}, "
-                    f"hiding {len(events_in_group)} events"
-                )
+
                 for event in events_in_group:
                     if event.id in event_items:
                         event_items[event.id].setVisible(False)
@@ -801,10 +776,7 @@ class TimelineView(QGraphicsView):
 
             # Band is expanded - pack and show events
             if events_in_group:
-                logger.debug(
-                    f"Band '{tag}' is EXPANDED at Y={current_y}, "
-                    f"showing {len(events_in_group)} events"
-                )
+
                 # Pack events for this group
                 layout_map, lane_heights = self._lane_packer.pack_events(
                     events_in_group
@@ -881,10 +853,7 @@ class TimelineView(QGraphicsView):
 
         # Check if "All events" band is collapsed - skip event positioning
         if all_events_band and all_events_band.is_collapsed:
-            logger.debug(
-                f"Band '{self.ALL_EVENTS_GROUP_NAME}' is COLLAPSED, "
-                f"hiding all events in this section"
-            )
+
             # Hide ungrouped events (their original items)
             for event in self.events:
                 if event.id not in grouped_event_ids and event.id in event_items:
@@ -893,10 +862,6 @@ class TimelineView(QGraphicsView):
                         drop_lines[event.id].setVisible(False)
         else:
             # Band is expanded - show all events
-            logger.debug(
-                f"Band '{self.ALL_EVENTS_GROUP_NAME}' is EXPANDED, "
-                f"showing {len(self.events)} events"
-            )
 
             # Pack ALL events for the "All events" section
             layout_map, lane_heights = self._lane_packer.pack_events(self.events)
@@ -1112,9 +1077,6 @@ class TimelineView(QGraphicsView):
             # Persist the new time on release
             settings = QSettings()
             settings.setValue("timeline/playhead_time", new_time)
-            logger.debug(
-                f"Persistence: Saved playhead time on drag release: {new_time}, filename={settings.fileName()}"
-            )
 
     def focus_event(self, event_id: str) -> None:
         """Centers the view on the specified event."""
@@ -1181,7 +1143,6 @@ class TimelineView(QGraphicsView):
         settings = QSettings()
         time = self._playhead.get_time(self.scale_factor)
         settings.setValue("timeline/playhead_time", time)
-        logger.debug(f"Persistence: Saved playhead time via save_state: {time}")
 
     def is_playing(self) -> bool:
         """
@@ -1375,7 +1336,6 @@ class TimelineView(QGraphicsView):
         Args:
             tag_name: The tag name that was expanded
         """
-        logger.debug(f"Band expanded: {tag_name}")
 
         # Repack events to update positions and show events in this group
         self.repack_events()
@@ -1387,7 +1347,6 @@ class TimelineView(QGraphicsView):
         Args:
             tag_name: The tag name that was collapsed
         """
-        logger.debug(f"Band collapsed: {tag_name}")
 
         # Repack events to update positions and hide events in this group
         self.repack_events()
@@ -1427,12 +1386,7 @@ class TimelineView(QGraphicsView):
                         "is_collapsed": band.is_collapsed,
                     }
                 )
-                logger.debug(
-                    f"Label '{tag}': y={y_in_overlay:.1f}, "
-                    f"collapsed={band.is_collapsed}"
-                )
 
-        logger.debug(f"Setting {len(labels)} labels on overlay")
         self._label_overlay.set_labels(labels)
 
     def scrollContentsBy(self, dx: int, dy: int) -> None:
@@ -1450,7 +1404,6 @@ class TimelineView(QGraphicsView):
         Args:
             tag_name: The tag name to change color for
         """
-        logger.debug(f"Color change requested for: {tag_name}")
 
         # TODO: Show color picker dialog and update tag color
         # This should be handled by the main window/controller
@@ -1464,7 +1417,6 @@ class TimelineView(QGraphicsView):
         Args:
             tag_name: The tag name to rename
         """
-        logger.debug(f"Rename requested for: {tag_name}")
 
         # TODO: Show rename dialog
         # This should be handled by the main window/controller
@@ -1477,7 +1429,6 @@ class TimelineView(QGraphicsView):
         Args:
             tag_name: The tag name to remove
         """
-        logger.debug(f"Remove from grouping requested: {tag_name}")
 
         # TODO: Update grouping configuration to exclude this tag
         # This should be handled by the main window/controller

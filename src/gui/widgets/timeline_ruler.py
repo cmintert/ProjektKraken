@@ -164,11 +164,6 @@ class TimelineRuler:
                     best_level = level
                     break  # Found finest acceptable level
 
-        # Calculate spacing for best level
-        step = self.NUMERIC_LEVEL_STEPS[best_level]
-        num_ticks = max(1, date_range / step)
-        best_spacing = viewport_width / num_ticks
-
         # Minor level is one step finer
         minor_level = self.get_finer_level(best_level)
 
@@ -185,12 +180,6 @@ class TimelineRuler:
             minor_opacity = (minor_spacing - self.THRESHOLD_SHOW) / (
                 self.THRESHOLD_FULL - self.THRESHOLD_SHOW
             )
-
-        logger.debug(
-            f"Active levels: date_range={date_range:.4f}, "
-            f"major={best_level.name}, minor={minor_level.name}, "
-            f"major_spacing={best_spacing:.1f}px, minor_spacing={minor_spacing:.1f}px"
-        )
 
         return best_level, minor_level, minor_opacity
 
@@ -316,15 +305,6 @@ class TimelineRuler:
             current += step
             count += 1
 
-        logger.debug(
-            f"Generated {len(ticks)} ticks for {level.name}: "
-            f"range=[{start_date:.4f}, {end_date:.4f}], step={step:.6f}"
-        )
-        if ticks:
-            logger.debug(
-                f"First tick: pos={ticks[0].position:.6f}, label='{ticks[0].label}'"
-            )
-
         return ticks
 
     def _format_label(self, position: float, level: TickLevel) -> str:
@@ -386,9 +366,10 @@ class TimelineRuler:
                         )
                         abbrev = week_config.day_abbreviations[day_idx]
                         return f"{day_str} {abbrev}"
-                except (AttributeError, ValueError, IndexError) as e:
+                except (AttributeError, ValueError, IndexError):
                     # Week config may be unavailable or misconfigured
-                    logger.debug(f"Day abbreviation lookup failed: {e}")
+                    pass
+
                 return day_str
             elif level == TickLevel.HOUR:
                 hours = int(date.time_fraction * 24)
@@ -517,16 +498,6 @@ class TimelineRuler:
                         (tick.screen_x, tick.screen_x + effective_width)
                     )
 
-        labels_kept = sum(1 for t in result if t.label)
-        labels_total = sum(1 for t in ticks if t.label)
-        if sorted_ticks:
-            screen_xs = [f"{t.screen_x:.1f}" for t in sorted_ticks[:5]]
-            logger.debug(f"First 5 screen_x values: {screen_xs}")
-        logger.debug(
-            f"Collision avoidance: {labels_kept}/{labels_total} labels kept, "
-            f"label_width={label_width}"
-        )
-
         return result
 
     def get_parent_context(self, start_date: float) -> str:
@@ -543,10 +514,9 @@ class TimelineRuler:
             try:
                 date = self._calendar.from_float(start_date)
                 return f"Year {date.year}"
-            except (AttributeError, ValueError) as e:
+            except (AttributeError, ValueError):
                 # Calendar conversion may fail for extreme dates
-                logger.debug(f"Calendar context formatting failed: {e}")
-
+                pass
         # Numeric fallback
         if abs(start_date) >= 1e6:
             return f"~{start_date / 1e6:.0f}M"
