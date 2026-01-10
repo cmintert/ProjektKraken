@@ -30,15 +30,17 @@ class TestInterpolatePosition:
         keyframes = [Keyframe(t=0.0, x=0.5, y=0.5)]
         assert interpolate_position(keyframes, 0.0) is None
 
-    def test_before_first_keyframe_returns_none(self) -> None:
-        """Time before first keyframe returns None."""
+    def test_before_first_keyframe_clamps_to_start(self) -> None:
+        """Time before first keyframe returns the first keyframe position."""
         keyframes = [Keyframe(t=10.0, x=0.0, y=0.0), Keyframe(t=20.0, x=1.0, y=1.0)]
-        assert interpolate_position(keyframes, 5.0) is None
+        result = interpolate_position(keyframes, 5.0)
+        assert result == (0.0, 0.0)
 
-    def test_after_last_keyframe_returns_none(self) -> None:
-        """Time after last keyframe returns None."""
+    def test_after_last_keyframe_clamps_to_end(self) -> None:
+        """Time after last keyframe returns the last keyframe position."""
         keyframes = [Keyframe(t=10.0, x=0.0, y=0.0), Keyframe(t=20.0, x=1.0, y=1.0)]
-        assert interpolate_position(keyframes, 25.0) is None
+        result = interpolate_position(keyframes, 25.0)
+        assert result == (1.0, 1.0)
 
     def test_exact_first_keyframe_time(self) -> None:
         """Exact match on first keyframe returns its position."""

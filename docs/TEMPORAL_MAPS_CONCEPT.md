@@ -297,12 +297,15 @@ Entities that "die" or haven't been "born" must be hidden.
 1. [x] Set up `QGraphicsScene` with `QOpenGLWidget` viewport.
 2. [x] Implement `TemporalMarker` item with `setPos` updates (`MarkerItem`).
 3. [x] Create the Timeline Widget with basic scrubbing.
+4. [x] Implement Clamped Persistence and Transient State logic.
 
 **Phase 3: Interaction & Recording (In Progress)**
 1. [x] Add Motion Path visualization (`QGraphicsPathItem`).
 2. [x] Implement node dragging and keyframe editing (Spatial & Temporal Modes).
-3. [ ] Implement "Record" mode with mouse sampling.
-4. [ ] Implement Bezier control points and interpolation.
+3. [x] Implement Draft Mode (Transient State) with Visual Feedback.
+4. [x] Implement Playhead Persistence.
+5. [ ] Implement "Record" mode with mouse sampling.
+6. [ ] Implement Bezier control points and interpolation.
 
 **Phase 4: Optimization & Scale (Pending)**
 1. [ ] Profile with 1,000 items.
@@ -345,8 +348,11 @@ Entities that "die" or haven't been "born" must be hidden.
 ### Interaction & Visualization
 * **Manual Keyframing (Snapshots)**: Added "Add Keyframe" button to the Map toolbar. This allows users to set precise snapshots of marker state at specific timeline moments.
 * **Constraint: Entity-Only Keyframes**: Keyframing is strictly reserved for **Entity** markers. **Event** markers are treated as static chronological pins without trajectories. UI controls (Add Keyframe button) automatically disable when an Event is selected.
-* **Trajectory Visualizer**:
+* **Trajectory Visualizer & Clamped Persistence**:
     *   **Visual Cues**: When a marker is selected, its entire trajectory is rendered as a dashed path.
+    *   **Clamped Persistence**: Trajectory authority is now absolute. If the playhead is before the first keyframe or after the last, the marker remains locked at that endpoint's position rather than returning to a static "home".
+    *   **Transient State**: Users can drag trajectory-based markers to "audition" new keyframe positions. This enters a "Transient State" (logged in UI) where the marker stays at the dropped position.
+    *   **Authority & Snap-Back**: Trajectory authority is enforced on **Time Change**. Scrubbing the timeline clears all transient offsets and snaps markers back to their mathematically defined paths.
     *   **Keyframe Indicators**: Individual keyframes are visualized as dots on the map, providing immediate visual feedback of the "history" of the entity.
     *   **Zoom-Aware Rendering**: Keyframe dots scale with zoom level to maintain visual consistency.
 * **Multi-Action Keyframe Gizmo** (Implemented):
@@ -370,6 +376,17 @@ Entities that "die" or haven't been "born" must be hidden.
     *   **Precision Standard**: All internal playhead calculations are now rounded to **4 decimal places**.
     *   **Consistency**: Rounding is applied during active scrubbing and authoritative mouse release in `TimelineView`, and enforced at the input level in `MapWidget`.
     *   **Benefit**: Eliminates floating-point drift and "jitter" in marker positions during rapid playhead interaction.
+* **Playhead Persistence** (New):
+    *   **State Saving**: The playhead time is now persisted across application restarts.
+    *   **Triggers**: Time is saved on **Drag Release** (scrubbing), **Playback Stop**, and **Application Exit** (robust backup).
+    *   **Restoration**: The app automatically restores the timeline to the last active moment on launch.
+* **Draft Mode & Visual Feedback** (New):
+    *   **Draft Indicator**: A distinct "Draft Mode" (Amber) is triggered when a marker is dragged but not committed.
+    *   **Visual Separator**: The Toolbar status and Map Overlay explicitly state the current mode (Normal vs. Draft vs. Clock).
+    *   **Snap-Back Logic**:
+        *   **Selection Change**: Selecting another item destroys the transient buffer, snapping the marker back.
+        *   **Esc Key**: Pressing Esc deselects the item and forces a snap-back.
+        *   **Scrubbing**: Moving the timeline enforces authority, clearing the draft.
 
 ### Core Component Stability & Refactoring
 * **TimelineView Hardening**:

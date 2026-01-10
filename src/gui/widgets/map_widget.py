@@ -218,12 +218,20 @@ class MapWidget(QWidget):
 
         self._active_trajectories: dict[str, list] = {}  # marker_id -> list[Keyframe]
         self._selected_marker_id: Optional[str] = None
+        self._transient_marker_ids: set[str] = set()  # Markers currently being dragged
 
         # Update all markers with active trajectories
         self._update_trajectory_positions()
 
     def _on_selection_changed(self) -> None:
         """Updates UI state based on selection."""
+        # Clear transient states on selection change to ensure markers snap back
+        if self._transient_marker_ids:
+            logger.debug("Selection changed: clearing transient marker states")
+            self._transient_marker_ids.clear()
+            self._update_trajectory_positions(force_all=True)
+            self._update_mode_indicator()
+
         selected_items = self.view.scene.selectedItems()
         should_enable = False
         if selected_items:
@@ -276,7 +284,9 @@ class MapWidget(QWidget):
 
         logger.debug(f"Loaded {count} temporal trajectories for map")
         # Force an update immediately so markers jump to correct spot for current time
+        self._transient_marker_ids.clear()
         self._update_trajectory_positions()
+        self._update_mode_indicator()
 
         # Update visualization if selection exists
         if self._selected_marker_id:
@@ -323,9 +333,17 @@ class MapWidget(QWidget):
                 x, y = position
                 yield marker_id, x, y
 
-    def _update_trajectory_positions(self) -> None:
-        """Updates all trajectory-based markers for the current playhead time."""
+    def _update_trajectory_positions(self, force_all: bool = False) -> None:
+        """
+        Updates all trajectory-based markers for the current playhead time.
+
+        Args:
+            force_all: If True, even markers in transient state are snapped back.
+        """
         for marker_id, x, y in self._iter_trajectory_positions():
+            if not force_all and marker_id in self._transient_marker_ids:
+                logger.debug(f"Skipping update for transient marker {marker_id}")
+                continue
             self.view.update_marker_position(marker_id, x, y)
 
     @Slot(float)
@@ -344,7 +362,6 @@ class MapWidget(QWidget):
         time = round(time, 4)
 
         self._playhead_time = time
-        self.view._current_time = time
         self._update_time_display()
 
         # In Clock Mode: don't update positions, just track time for later commit
@@ -361,7 +378,9 @@ class MapWidget(QWidget):
                 )
         else:
             # Normal Mode: update marker positions along trajectories
-            self._update_trajectory_positions()
+            # When playhead moves, we force a snap-back to the authoritative path
+            self._transient_marker_ids.clear()
+            self._update_trajectory_positions(force_all=True)
 
         logger.debug(f"Map playhead time updated to {time:.2f}")
 
@@ -447,7 +466,18 @@ class MapWidget(QWidget):
             x: New normalized X coordinate.
             y: New normalized Y coordinate.
         """
-        # Update marker position in widget
+        # If marker has a trajectory, we enter "Transient State" instead of persisting
+        if marker_id in self._active_trajectories:
+            self._transient_marker_ids.add(marker_id)
+            self.update_marker_position(marker_id, x, y)
+            self._update_mode_indicator()
+            logger.info(
+                f"Marker {marker_id} in Transient State (Draft Mode). "
+                "Click 'Add Keyframe' to save."
+            )
+            return
+
+        # No trajectory: update marker position in widget and persist
         self.update_marker_position(marker_id, x, y)
 
         # Emit signal so app layer can persist the change
@@ -642,7 +672,7 @@ class MapWidget(QWidget):
         self.view.set_keyframe_pinned(marker_id, t, True)
 
         # Update UI state
-        self._update_mode_indicator("clock", marker_id)
+        self._update_mode_indicator()
 
         # Jump playhead to keyframe time
         self.jump_to_time_requested.emit(t)
@@ -678,11 +708,11 @@ class MapWidget(QWidget):
         logger.info("Clock Mode cancelled")
         self._clear_clock_mode_visuals()
 
-    def _update_mode_indicator(
-        self, mode: str, marker_id: Optional[str] = None
-    ) -> None:
-        """Updates the toolbar status and map overlay."""
-        if mode == "clock":
+    def _update_mode_indicator(self) -> None:
+        """Updates the toolbar status and map overlay based on current state."""
+        if self._pinned_marker_id:
+            # Clock Mode (Priority)
+            marker_id = self._pinned_marker_id
             # Toolbar Widget
             self.mode_indicator.setText(f'🔴 CLOCK MODE: Editing "{marker_id}"')
             self.mode_indicator.setStyleSheet(
@@ -710,7 +740,39 @@ class MapWidget(QWidget):
 
             # Cursor Change
             self.view.setCursor(Qt.CursorShape.WaitCursor)
+
+        elif self._transient_marker_ids:
+            # Draft Mode
+            # Toolbar Widget
+            self.mode_indicator.setText("🟠 DRAFT MODE: Unsaved keys")
+            self.mode_indicator.setStyleSheet(
+                """
+                QLabel {
+                    background: #f39c12;
+                    color: white;
+                    padding: 5px 12px;
+                    border-radius: 4px;
+                    font-weight: bold;
+                    font-size: 11px;
+                }
+            """
+            )
+
+            # Overlay Banner
+            banner_text = (
+                "✍️ <b>DRAFT MODE ACTIVE</b><br/>"
+                "You have unsaved marker positions.<br/>"
+                "<small>[Add Keyframe to Save] [Esc to Discard]</small>"
+            )
+            self.overlay_banner.setText(banner_text)
+            self.overlay_banner.show()
+            self._update_overlay_position()
+
+            # Normal cursor
+            self.view.setCursor(Qt.CursorShape.ArrowCursor)
+
         else:
+            # Normal Mode
             # Toolbar Widget
             self.mode_indicator.setText("Normal Mode")
             self.mode_indicator.setStyleSheet(
@@ -729,8 +791,8 @@ class MapWidget(QWidget):
             # Overlay Banner
             self.overlay_banner.hide()
 
-            # Reset Cursor
-            self.view.unsetCursor()
+            # Normal cursor
+            self.view.setCursor(Qt.CursorShape.ArrowCursor)
 
     def _clear_clock_mode_visuals(self) -> None:
         """Resets visual pinned state and internal tracking."""
@@ -740,7 +802,7 @@ class MapWidget(QWidget):
             )
         self._pinned_marker_id = None
         self._pinned_original_t = None
-        self._update_mode_indicator("normal")
+        self._update_mode_indicator()
 
     def _handle_clock_mode_time_change(self, time: float) -> None:
         """Log or process time changes while in Clock Mode (without moving marker)."""
@@ -794,6 +856,13 @@ class MapWidget(QWidget):
                 return
             elif event.key() in (Qt.Key_Return, Qt.Key_Enter):
                 self._commit_clock_mode()
+                event.accept()
+                return
+        elif event.key() == Qt.Key_Escape:
+            # Deselect all items in the scene
+            if self.view.scene.selectedItems():
+                logger.debug("Esc pressed: Clearing selection")
+                self.view.scene.clearSelection()
                 event.accept()
                 return
 

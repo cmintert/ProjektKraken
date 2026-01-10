@@ -7,7 +7,7 @@ Provides the TimelineView class for rendering and interacting with the timeline.
 import logging
 from typing import Any
 
-from PySide6.QtCore import QPointF, QRectF, QSize, Qt, QTimer, Signal
+from PySide6.QtCore import QPointF, QRectF, QSettings, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import (
     QColor,
     QFont,
@@ -139,6 +139,17 @@ class TimelineView(QGraphicsView):
         self._playback_timer.timeout.connect(self._advance_playhead)
         self._playback_step = 1.0  # Default step: 1 day per tick
         self._playback_interval = 100  # Default: 100ms between ticks
+
+        # Restore persisted playhead time
+        settings = QSettings()
+        # Default to 0.0 only if not set
+        persisted_time = settings.value("timeline/playhead_time", 0.0, type=float)
+        logger.debug(
+            f"Persistence: Loaded playhead time from settings: {persisted_time}, filename={settings.fileName()}"
+        )
+        # Apply restoration
+        if persisted_time != 0.0:
+            self.set_playhead_time(persisted_time)
 
         # Group band manager (will be initialized when data provider is set)
         self._band_manager = None
@@ -1098,6 +1109,13 @@ class TimelineView(QGraphicsView):
             self.playhead_time_changed.emit(new_time)
             self._dragging_playhead = False
 
+            # Persist the new time on release
+            settings = QSettings()
+            settings.setValue("timeline/playhead_time", new_time)
+            logger.debug(
+                f"Persistence: Saved playhead time on drag release: {new_time}, filename={settings.fileName()}"
+            )
+
     def focus_event(self, event_id: str) -> None:
         """Centers the view on the specified event."""
         for item in self.scene.items():
@@ -1156,6 +1174,14 @@ class TimelineView(QGraphicsView):
         Stops automatic playhead advancement.
         """
         self._playback_timer.stop()
+        self.save_state()
+
+    def save_state(self) -> None:
+        """Saves current state (playhead time) to settings."""
+        settings = QSettings()
+        time = self._playhead.get_time(self.scale_factor)
+        settings.setValue("timeline/playhead_time", time)
+        logger.debug(f"Persistence: Saved playhead time via save_state: {time}")
 
     def is_playing(self) -> bool:
         """

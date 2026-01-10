@@ -682,6 +682,10 @@ class MainWindow(QMainWindow):
         if self.capture_layout_on_exit:
             self.ui_manager.save_as_default_layout()
 
+        # Save Persistent Widget States
+        if hasattr(self, "timeline"):
+            self.timeline.save_state()
+
         # Cleanup Worker
         QMetaObject.invokeMethod(
             self.worker, "cleanup", Qt.ConnectionType.BlockingQueuedConnection

@@ -25,7 +25,8 @@ class Keyframe:
     y: float
 
 
-# Shared tolerance for comparing keyframe timestamps (e.g. for UI selection vs DB lookup)
+# Shared tolerance for comparing keyframe timestamps
+# (e.g. for UI selection vs DB lookup)
 KEYFRAME_TIME_EPSILON: float = 0.01
 
 
@@ -69,9 +70,11 @@ def interpolate_position(
     idx = bisect.bisect_right(times, t)
 
     if idx == 0:
-        return None  # Before first keyframe
+        # Before first keyframe: clamp to start
+        return (keyframes[0].x, keyframes[0].y)
     if idx >= len(keyframes):
-        return None  # After last keyframe
+        # After last keyframe: clamp to end
+        return (keyframes[-1].x, keyframes[-1].y)
 
     # Get surrounding keyframes
     kf_start = keyframes[idx - 1]
