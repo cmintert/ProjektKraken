@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-01-10  
-**Commit:** `1038041`  
+**Commit:** `8776158`  
 ---
 
 # Changelog
@@ -12,12 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- *(2026-01-10)* **Feature**: Implemented "Dulling Future Markers" for temporal visualization. Markers in the future relative to the playhead are now rendered with reduced opacity (0.7) and desaturated colors (80% saturation), while past/present markers remain vivid.
 - *(2026-01-10)* **Architecture**: Migrated trajectory storage to OGC MF-JSON format for geospatial interoperability.
   - Added `geojson>=3.0.0` dependency.
   - Added `keyframes_to_mfjson()` and `mfjson_to_keyframes()` serialization helpers.
   - Added `_migrate_trajectories_to_mfjson()` for automatic one-time data migration on DB connect.
   - Structure: `{"type": "MovingPoint", "coordinates": [[x,y],...], "datetimes": [t,...]}`.
-- *(2026-01-10)* **Feature**: Implemented persistent \"Clock Mode\" indicator with a toolbar status label and an interactive map overlay banner.
+- *(2026-01-10)* **Feature**: Implemented persistent "Clock Mode" indicator with a toolbar status label and an interactive map overlay banner.
   - Added keyboard shortcuts: `Esc` for cancel and `Enter`/`Return` for commit.
   - Added `WaitCursor` feedback when entering Clock Mode.
 - *(2026-01-10)* **Feature**: Integrated a comprehensive progressive disclosure system for map UX.
@@ -25,10 +26,10 @@ All notable changes to this project will be documented in this file.
   - Added a subtle pulsing animation (1.1x scale, 3 loops) for trajectories on first load to improve discoverability.
   - Added one-time 💡 hover hint tooltips for keyframes.
 - *(2026-01-10)* **Feature**: Implemented Playhead Persistence, saving state on drag release, stop, and exit.
-- *(2026-01-10)* **Feature**: Implemented \"Draft Mode\" (Amber) for transient marker states with visual snap-back on selection change or scrubbing.
+- *(2026-01-10)* **Feature**: Implemented "Draft Mode" (Amber) for transient marker states with visual snap-back on selection change or scrubbing.
 - *(2026-01-10)* **UX**: Enhanced keyframe interaction with `SizeAllCursor` in spatial mode and optimized gizmo icon spacing for better click precision.
 - *(2026-01-09)* **Feature**: Implemented keyframe deletion support and hardened trajectory precision.
-  - Added context menu for keyframes with \"Edit Keyframe...\" and \"Delete Keyframe\" options.
+  - Added context menu for keyframes with "Edit Keyframe..." and "Delete Keyframe" options.
   - Hardened trajectory calculation by rounding to 4 decimal places to prevent float precision drift.
   - Added description/tooltip support for markers, pulling from cached entity/event data.
 - *(2026-01-09)* **Refactor**: Improved TimelineView code quality with 10 helper extractions and 18 new tests.
@@ -42,16 +43,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - *(2026-01-10)* **Bug**: Fixed onboarding dialog triggering incorrectly during keyframe movement.
-- *(2026-01-06)* **Bug**: Fixed `MarkerItem` ignoring clicks at (0,0) due to boolean trap with `QPointF(0,0)`.
-- *(2026-01-06)* **Bug**: Fixed `pixmap_item.contains()` using scene coords instead of item-local coords (4 locations).
-- *(2026-01-06)* **Bug**: Fixed context menu lambda closure bug accessing tuple with `.x()/.y()` methods.
-- *(2026-01-06)* **Bug**: Fixed aspect ratio calculation using dynamic `sceneRect()` instead of pixmap bounds.
-- *(2026-01-04)* **Quality**: Applied PySide6 type annotations to entire `src/gui` module (49 files).
-- *(2026-01-04)* **Quality**: Fixed ambiguous variable names and missing annotations in test files.
-- *(2026-01-04)* **Bug**: Fixed AI search panel stylesheet selector (hover effects now work).
-- *(2026-01-04)* **Accessibility**: Enabled keyboard navigation in AI search panel (arrow keys + Enter).
 
 ### Changed
+- *(2026-01-10)* **UX**: Removed legacy background circle from map markers for a cleaner aesthetic.
 - *(2026-01-10)* **Refactor**: Refactored `MapWidget` mode indicator to support Normal, Clock, and Draft modes.
 - *(2026-01-10)* **Refactor**: Refactored `KeyframeItem` to `QGraphicsObject` for `QPropertyAnimation` support.
 - *(2026-01-06)* **Refactor**: Refactored `MapWidget` toolbar to use styled `QPushButton`s for theme consistency.
