@@ -86,6 +86,7 @@ from src.gui.dialogs.filter_dialog import FilterDialog
 from src.gui.widgets.ai_search_panel import AISearchPanelWidget
 from src.gui.widgets.entity_editor import EntityEditorWidget
 from src.gui.widgets.event_editor import EventEditorWidget
+from src.gui.widgets.graph_view import GraphWidget
 from src.gui.widgets.longform_editor import LongformEditorWidget
 from src.gui.widgets.map_widget import MapWidget
 from src.gui.widgets.timeline import TimelineWidget
@@ -110,6 +111,10 @@ class MainWindow(QMainWindow):
     command_requested = Signal(object)
     # Signal to request filtering
     filter_requested = Signal(dict)
+    # Signal to request graph data load
+    load_graph_data_requested = Signal(
+        object, object
+    )  # (tags: list|None, rel_types: list|None)
 
     def __init__(self, capture_layout_on_exit: bool = False) -> None:
         """
@@ -155,6 +160,10 @@ class MainWindow(QMainWindow):
 
         # AI Search Panel
         self.ai_search_panel = AISearchPanelWidget()
+
+        # Graph Widget
+        self.graph_widget = GraphWidget()
+
         self.cached_event_count: Optional[int] = None
 
         # Filter Configuration
@@ -205,6 +214,7 @@ class MainWindow(QMainWindow):
                 "longform_editor": self.longform_editor,
                 "map_widget": self.map_widget,
                 "ai_search_panel": self.ai_search_panel,
+                "graph_widget": self.graph_widget,
             }
         )
 
@@ -344,6 +354,7 @@ class MainWindow(QMainWindow):
         self.load_events()
         self.load_entities()
         self.load_longform_sequence()
+        self.load_graph_data()
 
     def load_longform_sequence(self) -> None:
         """
@@ -794,6 +805,36 @@ class MainWindow(QMainWindow):
             Qt.ConnectionType.QueuedConnection,
             Q_ARG(str, entity_id),
         )
+
+    def load_graph_data(self, filter_config: Optional[dict] = None) -> None:
+        """
+        Requests loading of graph data, optionally filtered.
+
+        Args:
+            filter_config: Optional dictionary with 'tags' and 'rel_types'.
+                           If not provided, uses current widget config.
+        """
+        # Get config from widget if not provided
+        if filter_config is None and self.graph_widget:
+            filter_config = self.graph_widget.get_filter_config()
+
+        tags = filter_config.get("tags") if filter_config else None
+        rel_types = filter_config.get("rel_types") if filter_config else None
+
+        # Emit signal with None supported (handled by Signal(object, object))
+        self.load_graph_data_requested.emit(tags, rel_types)
+
+    @Slot(list, list)
+    def _on_graph_data_ready(self, nodes: list[dict], edges: list[dict]) -> None:
+        """
+        Updates the graph widget with loaded data.
+
+        Args:
+            nodes: List of node dictionaries.
+            edges: List of edge dictionaries.
+        """
+        if self.graph_widget:
+            self.graph_widget.display_graph(nodes, edges)
 
     # DataHandler signal handlers (loose coupling via signals)
     @Slot(list)

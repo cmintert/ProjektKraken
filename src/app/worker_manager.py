@@ -123,11 +123,17 @@ class WorkerManager(QObject):
         self.window.worker.entity_state_resolved.connect(
             self.window.data_handler.on_entity_state_resolved
         )
+        self.window.worker.graph_data_loaded.connect(
+            self.window.data_handler.on_graph_data_loaded
+        )
         # Connect filtering request
         self.window.filter_requested.connect(self.window.worker.apply_filter)
 
         # Connect MainWindow signal for sending commands to worker thread
         self.window.command_requested.connect(self.window.worker.run_command)
+        self.window.load_graph_data_requested.connect(
+            self.window.worker.load_graph_data
+        )
 
         # Connect Thread Start
         self.window.worker_thread.start()

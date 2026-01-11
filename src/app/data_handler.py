@@ -43,6 +43,7 @@ class DataHandler(QObject):
     markers_ready = Signal(str, list)  # (map_id, markers)
     trajectories_ready = Signal(list)  # (trajectories)
     entity_state_resolved = Signal(str, dict)  # (entity_id, attributes)
+    graph_data_ready = Signal(list, list)  # (nodes, edges)
 
     # Signals for UI actions
     status_message = Signal(str)  # Status bar message updates
@@ -310,3 +311,15 @@ class DataHandler(QObject):
         Emits signal when entity state is resolved.
         """
         self.entity_state_resolved.emit(entity_id, attributes)
+
+    @Slot(list, list)
+    def on_graph_data_loaded(self, nodes: List[Any], edges: List[Any]) -> None:
+        """
+        Emits signal for graph widget to be updated with loaded data.
+
+        Args:
+            nodes: List of node dictionaries.
+            edges: List of edge dictionaries.
+        """
+        self.graph_data_ready.emit(nodes, edges)
+        self.status_message.emit(f"Loaded {len(nodes)} nodes and {len(edges)} edges.")

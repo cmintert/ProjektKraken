@@ -41,6 +41,7 @@ class ConnectionManager:
         self.connect_longform_editor()
         self.connect_map_widget()
         self.connect_ai_search_panel()
+        self.connect_graph_widget()
         logger.debug("All signal/slot connections established")
 
     def connect_data_handler(self) -> None:
@@ -60,6 +61,7 @@ class ConnectionManager:
         dh.markers_ready.connect(self.window.map_handler.on_markers_ready)
         dh.trajectories_ready.connect(self.window.map_handler.on_trajectories_ready)
         dh.entity_state_resolved.connect(self.window._on_entity_state_resolved)
+        dh.graph_data_ready.connect(self.window._on_graph_data_ready)
 
         # UI action signals
         dh.status_message.connect(self.window.status_bar.showMessage)
@@ -198,3 +200,10 @@ class ConnectionManager:
         # Search and index operations
         panel.search_requested.connect(self.window.perform_semantic_search)
         panel.result_selected.connect(self.window._on_search_result_selected)
+
+    def connect_graph_widget(self) -> None:
+        """Connect signals from the graph widget."""
+        graph = self.window.graph_widget
+        graph.refresh_requested.connect(self.window.load_graph_data)
+        graph.filter_changed.connect(self.window.load_graph_data)
+        graph.node_clicked.connect(self.window._on_item_selected)

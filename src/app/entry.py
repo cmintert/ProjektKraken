@@ -14,11 +14,18 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Imports after load_dotenv() to allow modules to access environment variables
+# CRITICAL: Set OpenGL context sharing BEFORE any other Qt imports.
+# This is required for QWebEngineView + QQuickWidget compatibility.
 from PySide6.QtCore import Qt  # noqa: E402
+from PySide6.QtQuick import QQuickWindow, QSGRendererInterface  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
+# Force QQuickWidget to use OpenGL to match QWebEngineView
+QQuickWindow.setGraphicsApi(QSGRendererInterface.GraphicsApi.OpenGLRhi)
+QApplication.setAttribute(Qt.ApplicationAttribute.AA_ShareOpenGLContexts)
+
+# Now safe to import other modules that may use Qt widgets
 from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY  # noqa: E402
-from src.app.main_window import MainWindow  # noqa: E402
 from src.core.logging_config import (  # noqa: E402
     get_logger,
     setup_logging,
@@ -34,6 +41,9 @@ logger = get_logger(__name__)
 
 def main() -> None:
     """Application entry point."""
+    # Defer MainWindow import to ensure AA_ShareOpenGLContexts is already set
+    from src.app.main_window import MainWindow
+
     setup_logging(debug_mode=True)
     from datetime import datetime
 
