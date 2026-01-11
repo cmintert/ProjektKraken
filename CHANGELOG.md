@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-01-10  
-**Commit:** `8776158`  
+**Last Updated:** 2026-01-11  
+**Commit:** `0076ace`  
 ---
 
 # Changelog
@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- *(2026-01-11)* **Architecture**: Decoupled `DataHandler` from UI focus control to prevent background data refreshes from stealing user focus.
 - *(2026-01-10)* **Feature**: Implemented "Dulling Future Markers" for temporal visualization. Markers in the future relative to the playhead are now rendered with reduced opacity (0.7) and desaturated colors (80% saturation), while past/present markers remain vivid.
 - *(2026-01-10)* **Architecture**: Migrated trajectory storage to OGC MF-JSON format for geospatial interoperability.
   - Added `geojson>=3.0.0` dependency.
@@ -42,9 +43,12 @@ All notable changes to this project will be documented in this file.
 - *(2026-01-06)* **Testing**: Added ON DELETE CASCADE test for `moving_features.marker_id` FK.
 
 ### Fixed
+- *(2026-01-11)* **Bug**: Fixed editor focus jumping to Entity Inspector when saving an Event.
+- *(2026-01-11)* **Bug**: Fixed stale graph selection and camera reset issues on data reload.
 - *(2026-01-10)* **Bug**: Fixed onboarding dialog triggering incorrectly during keyframe movement.
 
 ### Changed
+- *(2026-01-11)* **Refactor**: Centralized global selection logic in `MainWindow` to synchronize Project Explorer, Graph, and Editors.
 - *(2026-01-10)* **UX**: Removed legacy background circle from map markers for a cleaner aesthetic.
 - *(2026-01-10)* **Refactor**: Refactored `MapWidget` mode indicator to support Normal, Clock, and Draft modes.
 - *(2026-01-10)* **Refactor**: Refactored `KeyframeItem` to `QGraphicsObject` for `QPropertyAnimation` support.
