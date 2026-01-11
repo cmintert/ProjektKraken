@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 - *(2026-01-11)* **Architecture**: Decoupled `DataHandler` from UI focus control to prevent background data refreshes from stealing user focus.
+- *(2026-01-11)* **Feature**: Implemented full Theme Integration for Graph View, enabling dynamic color updates and background synchronization with the application theme.
 - *(2026-01-10)* **Feature**: Implemented "Dulling Future Markers" for temporal visualization. Markers in the future relative to the playhead are now rendered with reduced opacity (0.7) and desaturated colors (80% saturation), while past/present markers remain vivid.
 - *(2026-01-10)* **Architecture**: Migrated trajectory storage to OGC MF-JSON format for geospatial interoperability.
   - Added `geojson>=3.0.0` dependency.
@@ -45,6 +46,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - *(2026-01-11)* **Bug**: Fixed editor focus jumping to Entity Inspector when saving an Event.
 - *(2026-01-11)* **Bug**: Fixed stale graph selection and camera reset issues on data reload.
+- *(2026-01-11)* **Bug**: Improved Graph View focus restoration reliability after stabilization.
 - *(2026-01-10)* **Bug**: Fixed onboarding dialog triggering incorrectly during keyframe movement.
 
 ### Changed
