@@ -12,6 +12,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- *(2026-01-11)* **Feature**: Introduced Interactive Graph Visualization system.
+  - Added `GraphWidget` and `GraphWebView` for PyVis/vis.js integration.
+  - Added `GraphDataService` for efficient relationship graph calculation.
+  - Features: Fluid zoom/pan, node dragging, and double-click navigation.
+  - Integrated filtering via `GraphFilterBar` for Tags and Relationship types.
 - *(2026-01-11)* **Feature**: Implemented Graph View Auto-Update. The graph now automatically refreshes relationships and nodes when data changes in the application.
 - *(2026-01-11)* **Feature**: Implemented Graph Filtering Logic. The filter panel now correctly populates with available Tags and Relation Types fetched from the database.
 - *(2026-01-11)* **Architecture**: Decoupled `DataHandler` from UI focus control to prevent background data refreshes from stealing user focus.
