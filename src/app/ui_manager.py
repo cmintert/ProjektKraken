@@ -24,6 +24,7 @@ from src.app.constants import (
     DOCK_OBJ_AI_SEARCH,
     DOCK_OBJ_ENTITY_INSPECTOR,
     DOCK_OBJ_EVENT_INSPECTOR,
+    DOCK_OBJ_GRAPH,
     DOCK_OBJ_LONGFORM,
     DOCK_OBJ_MAP,
     DOCK_OBJ_PROJECT,
@@ -31,6 +32,7 @@ from src.app.constants import (
     DOCK_TITLE_AI_SEARCH,
     DOCK_TITLE_ENTITY_INSPECTOR,
     DOCK_TITLE_EVENT_INSPECTOR,
+    DOCK_TITLE_GRAPH,
     DOCK_TITLE_LONGFORM,
     DOCK_TITLE_MAP,
     DOCK_TITLE_PROJECT,
@@ -170,6 +172,24 @@ class UIManager:
             self.main_window.tabifyDockWidget(
                 self.docks["entity"], self.docks["ai_search"]
             )
+
+        # 8. Graph Widget (Bottom, tabbed with Map)
+        if "graph_widget" in widgets:
+            self.docks["graph"] = self._create_dock(
+                DOCK_TITLE_GRAPH, DOCK_OBJ_GRAPH, widgets["graph_widget"]
+            )
+            self.main_window.addDockWidget(
+                Qt.DockWidgetArea.BottomDockWidgetArea, self.docks["graph"]
+            )
+            # Tabify with map if it exists, otherwise with timeline
+            if "map" in self.docks:
+                self.main_window.tabifyDockWidget(
+                    self.docks["map"], self.docks["graph"]
+                )
+            else:
+                self.main_window.tabifyDockWidget(
+                    self.docks["timeline"], self.docks["graph"]
+                )
 
     def _create_dock(self, title: str, obj_name: str, widget: QWidget) -> QDockWidget:
         """

@@ -6,6 +6,7 @@ filtering and color-coded differentiation.
 """
 
 import json
+import logging
 from typing import List, Union
 
 from PySide6.QtCore import QMimeData, QSize, Qt, Signal, Slot
@@ -27,8 +28,9 @@ from src.core.entities import Entity
 from src.core.events import Event
 from src.gui.utils.style_helper import StyleHelper
 
-# Custom MIME type for Kraken items (DRY: reusable across drop targets)
 KRAKEN_ITEM_MIME_TYPE = "application/x-kraken-item"
+
+logger = logging.getLogger(__name__)
 
 
 class DraggableListWidget(QListWidget):
@@ -209,6 +211,10 @@ class UnifiedListWidget(QWidget):
             events (List[Event]): List of events to display.
             entities (List[Entity]): List of entities to display.
         """
+        logger.debug(
+            f"[UnifiedList] set_data called with {len(events)} events, "
+            f"{len(entities)} entities"
+        )
         self._events = events
         self._entities = entities
 
@@ -255,6 +261,10 @@ class UnifiedListWidget(QWidget):
         if selected_items:
             current_id = selected_items[0].data(Qt.ItemDataRole.UserRole)
             current_type = selected_items[0].data(Qt.ItemDataRole.UserRole + 1)
+            logger.debug(
+                f"[UnifiedList] Capturing current selection: "
+                f"{current_type}/{current_id}"
+            )
 
         self.list_widget.clear()
 
@@ -328,14 +338,29 @@ class UnifiedListWidget(QWidget):
 
             # Restore selection if possible
             if current_id and current_type:
+                found = False
                 for index in range(self.list_widget.count()):
                     item = self.list_widget.item(index)
                     if (
                         item.data(Qt.ItemDataRole.UserRole) == current_id
                         and item.data(Qt.ItemDataRole.UserRole + 1) == current_type
                     ):
+                        # Block signals to prevent re-triggering selection logic
+                        self.list_widget.blockSignals(True)
                         self.list_widget.setCurrentItem(item)
+                        self.list_widget.blockSignals(False)
+
+                        logger.debug(
+                            f"[UnifiedList] Restored selection: "
+                            f"{current_type}/{current_id}"
+                        )
+                        found = True
                         break
+                if not found:
+                    logger.debug(
+                        f"[UnifiedList] Could not restore selection: "
+                        f"{current_type}/{current_id}"
+                    )
         else:
             self.list_widget.hide()
             self.empty_label.show()
@@ -355,7 +380,7 @@ class UnifiedListWidget(QWidget):
     def _matches_search(self, obj: Union[Event, Entity]) -> bool:
         """
         Checks if an object matches the current search term.
-        Performs full text search on name, type, description, tags, and attributes.
+        Delegates to shared SearchUtils.
 
         Args:
             obj: Event or Entity object.
@@ -363,36 +388,9 @@ class UnifiedListWidget(QWidget):
         Returns:
             bool: True if matches search (or no search active).
         """
-        if not self._search_term:
-            return True
+        from src.core.search_utils import SearchUtils
 
-        term = self._search_term
-
-        # 1. Name
-        if term in obj.name.lower():
-            return True
-
-        # 2. Type
-        if hasattr(obj, "type") and term in obj.type.lower():
-            return True
-
-        # 3. Description
-        if hasattr(obj, "description") and term in obj.description.lower():
-            return True
-
-        # 4. Tags
-        if hasattr(obj, "tags"):
-            for tag in obj.tags:
-                if term in tag.lower():
-                    return True
-
-        # 5. String Attributes
-        if hasattr(obj, "attributes"):
-            for value in obj.attributes.values():
-                if isinstance(value, str) and term in value.lower():
-                    return True
-
-        return False
+        return SearchUtils.matches_search(obj, self._search_term)
 
     def _passes_filters(self, obj: Union[Event, Entity]) -> bool:
         """
@@ -435,6 +433,7 @@ class UnifiedListWidget(QWidget):
             item = items[0]
             item_id = item.data(Qt.ItemDataRole.UserRole)
             item_type = item.data(Qt.ItemDataRole.UserRole + 1)
+            logger.debug(f"[UnifiedList] Selection changed to: {item_type}/{item_id}")
             self.item_selected.emit(item_type, item_id)
             self.btn_delete.setEnabled(True)
         else:

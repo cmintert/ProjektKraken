@@ -5,6 +5,8 @@ Provides a GUI form for creating and editing Entity objects with support
 for wiki-style text editing, custom attributes, tags, and relationship management.
 """
 
+import logging
+import traceback
 from typing import Optional
 
 from PySide6.QtCore import QPoint, QSize, Qt, Signal, Slot
@@ -29,6 +31,8 @@ from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
 from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
 from src.gui.widgets.tag_editor import TagEditorWidget
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
+
+logger = logging.getLogger(__name__)
 
 
 class EntityEditorWidget(QWidget):
@@ -239,6 +243,7 @@ class EntityEditorWidget(QWidget):
         self._current_entity_id = None
         self._current_created_at = 0.0
         self._is_dirty = False
+        self._is_loading = False  # Guard against dirty during load
 
         self._connect_dirty_signals()
 
@@ -255,10 +260,30 @@ class EntityEditorWidget(QWidget):
 
     def set_dirty(self, dirty: bool) -> None:
         """Sets dirty state and updates UI."""
+        # Don't set dirty during loading
+        if self._is_loading and dirty:
+            logger.debug(
+                f"[EntityEditor] set_dirty({dirty}) ignored - loading in progress"
+            )
+            return
+
         if self._current_entity_id is None and dirty:
+            logger.debug(
+                f"[EntityEditor] set_dirty({dirty}) ignored - no entity loaded"
+            )
             return
 
         if self._is_dirty != dirty:
+            logger.info(
+                f"[EntityEditor] set_dirty: {self._is_dirty} -> {dirty} "
+                f"(entity_id={self._current_entity_id})"
+            )
+            if not dirty:
+                # Log stack trace when clearing dirty to trace the source
+                logger.debug(
+                    f"[EntityEditor] Clearing dirty state. Stack trace:\n"
+                    f"{traceback.format_stack(limit=10)}"
+                )
             self._is_dirty = dirty
             self.dirty_changed.emit(dirty)
             self.btn_save.setEnabled(dirty)
@@ -304,121 +329,150 @@ class EntityEditorWidget(QWidget):
         """
         Populates the form with entity data and relations.
         """
-        self._current_entity_id = entity.id
-        self._current_created_at = entity.created_at
+        self._is_loading = True
+        try:
+            self._current_entity_id = entity.id
+            self._current_created_at = entity.created_at
 
-        # Block signals
-        self.name_edit.blockSignals(True)
-        self.type_edit.blockSignals(True)
-        self.desc_edit.blockSignals(True)
+            # Block signals
+            self.name_edit.blockSignals(True)
+            self.type_edit.blockSignals(True)
+            self.desc_edit.blockSignals(True)
 
-        self.name_edit.setText(entity.name)
-        self.type_edit.setCurrentText(entity.type)
-        self.desc_edit.set_wiki_text(entity.description)
+            self.name_edit.setText(entity.name)
+            self.type_edit.setCurrentText(entity.type)
+            self.desc_edit.set_wiki_text(entity.description)
 
-        # Load Attributes (filter out _tags for display)
-        display_attrs = {k: v for k, v in entity.attributes.items() if k != "_tags"}
-        self.attribute_editor.load_attributes(display_attrs)
+            # Load Attributes (filter out _tags for display)
+            display_attrs = {k: v for k, v in entity.attributes.items() if k != "_tags"}
+            self.attribute_editor.load_attributes(display_attrs)
 
-        # Load Tags
-        self.tag_editor.load_tags(entity.tags)
+            # Load Tags
+            self.tag_editor.load_tags(entity.tags)
 
-        # Load Gallery
-        self.gallery.set_owner("entity", entity.id)
+            # Load Gallery
+            self.gallery.set_owner("entity", entity.id)
 
-        # Reset Read-Only mode (in case we were in temporal view)
-        self.exit_read_only_mode()
+            # Reset Read-Only mode (in case we were in temporal view)
+            self.exit_read_only_mode()
 
-        self.rel_list.clear()
+            self.rel_list.clear()
 
-        # Outgoing
-        if relations:
-            for rel in relations:
-                target_display = rel.get("target_name") or rel["target_id"]
-                label = f"→ {target_display} [{rel['rel_type']}]"
+            # Outgoing
+            if relations:
+                for rel in relations:
+                    target_display = rel.get("target_name") or rel["target_id"]
+                    label = f"→ {target_display} [{rel['rel_type']}]"
 
-                # Create custom widget with Go to button
-                widget = RelationItemWidget(
-                    label=label,
-                    target_id=rel["target_id"],
-                    target_name=target_display,
-                    attributes=rel.get("attributes"),
-                )
-                widget.go_to_clicked.connect(
-                    lambda tid, tn: self.navigate_to_relation.emit(tid)
-                )
+                    # Create custom widget with Go to button
+                    widget = RelationItemWidget(
+                        label=label,
+                        target_id=rel["target_id"],
+                        target_name=target_display,
+                        attributes=rel.get("attributes"),
+                    )
+                    widget.go_to_clicked.connect(
+                        lambda tid, tn: self.navigate_to_relation.emit(tid)
+                    )
 
-                # Create list item with explicit size hint BEFORE adding
-                item = QListWidgetItem()
-                item.setData(Qt.ItemDataRole.UserRole, rel)
-                item.setSizeHint(QSize(200, 36))  # Explicit height for button
-                self.rel_list.addItem(item)
-                self.rel_list.setItemWidget(item, widget)
+                    # Create list item with explicit size hint BEFORE adding
+                    item = QListWidgetItem()
+                    item.setData(Qt.ItemDataRole.UserRole, rel)
+                    item.setSizeHint(QSize(200, 36))  # Explicit height for button
+                    self.rel_list.addItem(item)
+                    self.rel_list.setItemWidget(item, widget)
 
-        # Incoming
-        if incoming_relations:
-            for rel in incoming_relations:
-                source_display = rel.get("source_name") or rel["source_id"]
-                label = f"← {source_display} [{rel['rel_type']}]"
+            # Incoming
+            if incoming_relations:
+                for rel in incoming_relations:
+                    source_display = rel.get("source_name") or rel["source_id"]
+                    label = f"← {source_display} [{rel['rel_type']}]"
 
-                # Create custom widget - navigate to source for incoming
-                widget = RelationItemWidget(
-                    label=label,
-                    target_id=rel["source_id"],
-                    target_name=source_display,
-                    attributes=rel.get("attributes"),
-                )
-                widget.go_to_clicked.connect(
-                    lambda tid, tn: self.navigate_to_relation.emit(tid)
-                )
-                widget.label.setStyleSheet("color: gray;")
+                    # Create custom widget - navigate to source for incoming
+                    widget = RelationItemWidget(
+                        label=label,
+                        target_id=rel["source_id"],
+                        target_name=source_display,
+                        attributes=rel.get("attributes"),
+                    )
+                    widget.go_to_clicked.connect(
+                        lambda tid, tn: self.navigate_to_relation.emit(tid)
+                    )
+                    widget.label.setStyleSheet("color: gray;")
 
-                # Create list item with explicit size hint BEFORE adding
-                item = QListWidgetItem()
-                item.setData(Qt.ItemDataRole.UserRole, rel)
-                item.setSizeHint(QSize(200, 36))  # Explicit height for button
-                self.rel_list.addItem(item)
-                self.rel_list.setItemWidget(item, widget)
+                    # Create list item with explicit size hint BEFORE adding
+                    item = QListWidgetItem()
+                    item.setData(Qt.ItemDataRole.UserRole, rel)
+                    item.setSizeHint(QSize(200, 36))  # Explicit height for button
+                    self.rel_list.addItem(item)
+                    self.rel_list.setItemWidget(item, widget)
 
-        # Populate Timeline Display with incoming relations (sorted by date)
-        self.timeline_display.set_relations(incoming_relations or [])
+            # Populate Timeline Display with incoming relations (sorted by date)
+            self.timeline_display.set_relations(incoming_relations or [])
 
-        self.setEnabled(True)
+            self.setEnabled(True)
 
-        # Unblock & Reset
-        self.name_edit.blockSignals(False)
-        self.type_edit.blockSignals(False)
-        self.desc_edit.blockSignals(False)
-        self.set_dirty(False)
+            # Unblock & Reset
+            self.name_edit.blockSignals(False)
+            self.type_edit.blockSignals(False)
+            self.desc_edit.blockSignals(False)
+            self.set_dirty(False)
+        finally:
+            self._is_loading = False
 
     @Slot()
     def _on_save(self) -> None:
         """
         Collects data and emits save signal.
         """
+        logger.info(
+            f"[EntityEditor] _on_save() called (entity_id={self._current_entity_id})"
+        )
+
         # Handle "Return to Present" action in special read-only mode
         if self.btn_save.text() == "Return to Present":
+            logger.debug("[EntityEditor] Return to Present action triggered")
             self.return_to_present_requested.emit()
             return
 
         if not self._current_entity_id:
+            logger.warning("[EntityEditor] _on_save aborted - no current entity ID")
             return
 
-        # Merge tags into attributes
-        base_attrs = self.attribute_editor.get_attributes()
-        base_attrs["_tags"] = self.tag_editor.get_tags()
+        try:
+            # Merge tags into attributes
+            base_attrs = self.attribute_editor.get_attributes()
+            base_attrs["_tags"] = self.tag_editor.get_tags()
 
-        entity_data = {
-            "id": self._current_entity_id,
-            "name": self.name_edit.text(),
-            "type": self.type_edit.currentText(),
-            "description": self.desc_edit.get_wiki_text(),
-            "attributes": base_attrs,
-            "tags": self.tag_editor.get_tags(),
-        }
+            entity_data = {
+                "id": self._current_entity_id,
+                "name": self.name_edit.text(),
+                "type": self.type_edit.currentText(),
+                "description": self.desc_edit.get_wiki_text(),
+                "attributes": base_attrs,
+                "tags": self.tag_editor.get_tags(),
+            }
 
-        self.save_requested.emit(entity_data)
-        self.set_dirty(False)
+            logger.info(
+                f"[EntityEditor] Emitting save_requested for entity '{entity_data['name']}' "
+                f"(id={entity_data['id']}, desc_len={len(entity_data['description'])})"
+            )
+            self.save_requested.emit(entity_data)
+
+            # NOTE: We do NOT call set_dirty(False) here.
+            # The Save command triggers a reload of the entity data.
+            # load_entity() will be called, and THAT is where set_dirty(False) happens.
+            # This prevents race conditions where we clear dirty, but signals from
+            # widgets (processing the current data) fire before the reload completes.
+            logger.debug(
+                "[EntityEditor] _on_save emitted signal. Waiting for reload to clear dirty state."
+            )
+
+        except Exception as e:
+            logger.error(
+                f"[EntityEditor] Exception in _on_save: {e}\n{traceback.format_exc()}"
+            )
+            raise
 
     @Slot()
     def _on_discard(self) -> None:

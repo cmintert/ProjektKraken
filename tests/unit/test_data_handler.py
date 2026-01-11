@@ -130,8 +130,8 @@ class TestDataHandlerSignals:
         data_handler.on_event_details_loaded(event, relations, incoming)
 
         # Verify signals were emitted
-        assert len(dock_raise_signal) == 1
-        assert dock_raise_signal[0] == "event"
+        # Dock raise shouldn't be emitted anymore to prevent focus stealing
+        assert len(dock_raise_signal) == 0
         assert len(event_details_signal) == 1
         assert event_details_signal[0] == (event, relations, incoming)
 

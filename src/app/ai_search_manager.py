@@ -176,13 +176,8 @@ class AISearchManager(QObject):
             object_type: 'entity' or 'event'.
             object_id: Object UUID.
         """
-        # Navigate to the selected item
-        if object_type == "entity":
-            self.window.load_entity_details(object_id)
-            self.window._on_dock_raise_requested("entity")
-        elif object_type == "event":
-            self.window.load_event_details(object_id)
-            self.window._on_dock_raise_requested("event")
+        # Navigate to the selected item using centralized global selection
+        self.window.set_global_selection(object_type, object_id)
 
     @Slot()
     def refresh_search_index_status(self) -> None:

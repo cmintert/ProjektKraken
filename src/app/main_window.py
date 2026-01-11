@@ -86,6 +86,7 @@ from src.gui.dialogs.filter_dialog import FilterDialog
 from src.gui.widgets.ai_search_panel import AISearchPanelWidget
 from src.gui.widgets.entity_editor import EntityEditorWidget
 from src.gui.widgets.event_editor import EventEditorWidget
+from src.gui.widgets.graph_view import GraphWidget
 from src.gui.widgets.longform_editor import LongformEditorWidget
 from src.gui.widgets.map_widget import MapWidget
 from src.gui.widgets.timeline import TimelineWidget
@@ -110,6 +111,10 @@ class MainWindow(QMainWindow):
     command_requested = Signal(object)
     # Signal to request filtering
     filter_requested = Signal(dict)
+    # Signal to request graph data load
+    load_graph_data_requested = Signal(
+        object, object
+    )  # (tags: list|None, rel_types: list|None)
 
     def __init__(self, capture_layout_on_exit: bool = False) -> None:
         """
@@ -155,6 +160,11 @@ class MainWindow(QMainWindow):
 
         # AI Search Panel
         self.ai_search_panel = AISearchPanelWidget()
+
+        # Graph Widget
+        self.graph_widget = GraphWidget()
+        self.graph_widget.node_clicked.connect(self._on_item_selected)
+
         self.cached_event_count: Optional[int] = None
 
         # Filter Configuration
@@ -175,6 +185,9 @@ class MainWindow(QMainWindow):
         # Track last selection for undoing on cancel
         self._last_selected_id = None
         self._last_selected_type = None
+
+        # Debounce timer for graph reload
+        self._graph_reload_timer: QTimer | None = None
 
         self.longform_editor = LongformEditorWidget(db_path=self.db_path)
 
@@ -205,6 +218,7 @@ class MainWindow(QMainWindow):
                 "longform_editor": self.longform_editor,
                 "map_widget": self.map_widget,
                 "ai_search_panel": self.ai_search_panel,
+                "graph_widget": self.graph_widget,
             }
         )
 
@@ -344,6 +358,7 @@ class MainWindow(QMainWindow):
         self.load_events()
         self.load_entities()
         self.load_longform_sequence()
+        self.load_graph_data()
 
     def load_longform_sequence(self) -> None:
         """
@@ -358,37 +373,74 @@ class MainWindow(QMainWindow):
         """
         self.longform_manager.on_longform_sequence_loaded(sequence)
 
-    def _on_item_selected(self, item_type: str, item_id: str) -> None:
-        """Handles selection from unified list or longform editor."""
-        # Handle plural table names from longform editor
+    def set_global_selection(self, item_type: str, item_id: str) -> None:
+        """
+        Centralized method to handle global item selection.
+
+        Synchronizes all UI components:
+        - Editors
+        - Unified List (Project Explorer)
+        - Graph Focus
+        - Timeline Selection
+        - Last Selected State
+
+        Args:
+            item_type (str): 'event' or 'entity' (or 'events'/'entities').
+            item_id (str): The ID of the item to select.
+        """
+        # 1. Normalize type
         if item_type == "events":
             item_type = "event"
         elif item_type == "entities":
             item_type = "entity"
 
-        # Avoid redundant reloading and unsaved changes checks if selecting the same item
+        # 2. Avoid redundant updates if already selected
         if item_id == self._last_selected_id and item_type == self._last_selected_type:
             return
 
-        if item_type == "event":
-            if not self.check_unsaved_changes(self.event_editor):
-                # Attempt to revert - simplified for now, strictly just return
-                # Visually the list might differ from detailed view if we just return
-                return
+        # 3. Check for unsaved changes before switching context
+        # Determine target editor to check
+        target_editor = (
+            self.event_editor if item_type == "event" else self.entity_editor
+        )
+        if not self.check_unsaved_changes(target_editor):
+            return
 
+        # 4. Perform Selection & UI Updates
+        logger.debug(f"[MainWindow] Global selection: {item_type}/{item_id}")
+
+        self._last_selected_id = item_id
+        self._last_selected_type = item_type
+
+        # Update Settings
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        settings.setValue(SETTINGS_LAST_ITEM_ID_KEY, item_id)
+        settings.setValue(SETTINGS_LAST_ITEM_TYPE_KEY, item_type)
+
+        if item_type == "event":
             self.ui_manager.docks["event"].raise_()
             self.load_event_details(item_id)
-            self._last_selected_id = item_id
-            self._last_selected_type = "event"
+            # Sync Timeline (if method exists)
+            # if hasattr(self.timeline, "select_event"):
+            #     self.timeline.select_event(item_id)
 
         elif item_type == "entity":
-            if not self.check_unsaved_changes(self.entity_editor):
-                return
-
             self.ui_manager.docks["entity"].raise_()
             self.load_entity_details(item_id)
-            self._last_selected_id = item_id
-            self._last_selected_type = "entity"
+
+        # 5. Sync Project Explorer (Unified List)
+        # This ensures the list highlights the item even if selected via Graph/Link
+        self.unified_list.select_item(item_type, item_id)
+
+        # 6. Sync Graph (Focus Node)
+        # Prevent infinite loop if this call came from graph click?
+        # GraphWidget.focus_node usually checks if already focused.
+        # But we need to be careful. For now, we trust the graph to handle re-focus efficiently.
+        # self.graph_widget.focus_node(item_id) # TO BE IMPLEMENTED in GraphWidget if needed
+
+    def _on_item_selected(self, item_type: str, item_id: str) -> None:
+        """Handles selection from unified list or longform editor."""
+        self.set_global_selection(item_type, item_id)
 
         # Save selection for persistence
         if self._last_selected_id and self._last_selected_type:
@@ -686,6 +738,10 @@ class MainWindow(QMainWindow):
         if hasattr(self, "timeline"):
             self.timeline.save_state()
 
+        # Stop debounce timer to prevent callbacks during shutdown
+        if self._graph_reload_timer is not None:
+            self._graph_reload_timer.stop()
+
         # Cleanup Worker
         QMetaObject.invokeMethod(
             self.worker, "cleanup", Qt.ConnectionType.BlockingQueuedConnection
@@ -715,7 +771,9 @@ class MainWindow(QMainWindow):
 
     # TimelineDataProvider interface implementation
     def get_group_metadata(
-        self, tag_order: list[str], date_range: tuple[float, float] | None = None
+        self,
+        tag_order: list[str],
+        date_range: tuple[float, float] | None = None,
     ) -> list[dict]:
         """
         Get metadata for timeline grouping tags.
@@ -795,6 +853,51 @@ class MainWindow(QMainWindow):
             Q_ARG(str, entity_id),
         )
 
+    def load_graph_data(self, filter_config: Optional[dict] = None) -> None:
+        """
+        Requests loading of graph data, optionally filtered.
+
+        Args:
+            filter_config: Optional dictionary with 'tags' and 'rel_types'.
+                           If not provided, uses current widget config.
+        """
+        # Get config from widget if not provided
+        if filter_config is None and self.graph_widget:
+            filter_config = self.graph_widget.get_filter_config()
+
+        tags = filter_config.get("tags") if filter_config else None
+        rel_types = filter_config.get("rel_types") if filter_config else None
+
+        # Emit signal with None supported (handled by Signal(object, object))
+        self.load_graph_data_requested.emit(tags, rel_types)
+
+    @Slot(list, list)
+    def _on_graph_data_ready(self, nodes: list[dict], edges: list[dict]) -> None:
+        """
+        Updates the graph widget with loaded data.
+
+        Args:
+            nodes: List of node dictionaries.
+            edges: List of edge dictionaries.
+        """
+        if self.graph_widget:
+            # Pass the last selected ID to preserve focus
+            focus_id = self._last_selected_id
+            self.graph_widget.display_graph(nodes, edges, focus_node_id=focus_id)
+
+    @Slot(list, list)
+    def _on_graph_metadata_ready(self, tags: list[str], rel_types: list[str]) -> None:
+        """
+        Updates the graph widget with available metadata.
+
+        Args:
+            tags: List of available tags.
+            rel_types: List of available relation types.
+        """
+        if self.graph_widget:
+            self.graph_widget.set_available_tags(tags)
+            self.graph_widget.set_available_relation_types(rel_types)
+
     # DataHandler signal handlers (loose coupling via signals)
     @Slot(list)
     def _on_events_ready(self, events: list) -> None:
@@ -808,6 +911,9 @@ class MainWindow(QMainWindow):
         self.unified_list.set_data(self._cached_events, self._cached_entities)
         self.timeline.set_events(events)
 
+        # Refresh graph to reflect changes (debounced)
+        self._schedule_graph_refresh()
+
     @Slot(list)
     def _on_entities_ready(self, entities: list) -> None:
         """
@@ -818,6 +924,18 @@ class MainWindow(QMainWindow):
         """
         self._cached_entities = entities
         self.unified_list.set_data(self._cached_events, self._cached_entities)
+
+        # Refresh graph to reflect changes (debounced)
+        self._schedule_graph_refresh()
+
+    def _schedule_graph_refresh(self) -> None:
+        """Schedules a debounced graph refresh to avoid double-loading."""
+        if self._graph_reload_timer is None:
+            self._graph_reload_timer = QTimer()
+            self._graph_reload_timer.setSingleShot(True)
+            self._graph_reload_timer.timeout.connect(self.load_graph_data)
+        # Reset timer on each call (debounce)
+        self._graph_reload_timer.start(100)  # 100ms debounce
 
     @Slot(list)
     def _on_suggestions_update(self, items: list) -> None:
@@ -929,10 +1047,29 @@ class MainWindow(QMainWindow):
 
         This is called after relation or wiki link commands complete.
         """
-        if self.event_editor._current_event_id:
+        logger.debug(
+            f"[MainWindow] _on_reload_active_editor_relations: "
+            f"event_id={self.event_editor._current_event_id}, "
+            f"entity_id={self.entity_editor._current_entity_id}, "
+            f"active_type={self._last_selected_type}"
+        )
+
+        # Only reload the currently selected type to prevent focus jumping
+        # If we reload both, the DataHandler triggers 'raise_dock' for each,
+        # causing the last one loaded (usually Entity) to steal focus.
+        if self._last_selected_type == "event" and self.event_editor._current_event_id:
+            logger.debug("[MainWindow] Reloading active event details")
             self.load_event_details(self.event_editor._current_event_id)
-        if self.entity_editor._current_entity_id:
+
+        elif (
+            self._last_selected_type == "entity"
+            and self.entity_editor._current_entity_id
+        ):
+            logger.debug("[MainWindow] Reloading active entity details")
             self.load_entity_details(self.entity_editor._current_entity_id)
+
+        # If active type is none or mismatch, we might want to reload both safely?
+        # But generally, we only care about what the user is looking at.
 
     def delete_event(self, event_id: str) -> None:
         """
@@ -953,15 +1090,21 @@ class MainWindow(QMainWindow):
                 including the 'id' field.
         """
         event_id = event_data.get("id")
+        logger.info(
+            f"[MainWindow] update_event: id={event_id}, "
+            f"name='{event_data.get('name', '?')}'"
+        )
         if not event_id:
-            logger.error("Attempted to update event without ID.")
+            logger.error("[MainWindow] update_event aborted - no ID")
             return
 
         cmd = UpdateEventCommand(event_id, event_data)
+        logger.debug("[MainWindow] Emitting UpdateEventCommand")
         self.command_requested.emit(cmd)
 
         if "description" in event_data:
             wiki_cmd = ProcessWikiLinksCommand(event_id, event_data["description"])
+            logger.debug("[MainWindow] Emitting ProcessWikiLinksCommand")
             self.command_requested.emit(wiki_cmd)
 
     @Slot(str, float)
@@ -1025,15 +1168,31 @@ class MainWindow(QMainWindow):
                 including the 'id' field.
         """
         entity_id = entity_data.get("id")
+        logger.info(
+            f"[MainWindow] update_entity: id={entity_id}, "
+            f"name='{entity_data.get('name', '?')}'"
+        )
+        # Log full data for debugging
+        logger.debug(f"[MainWindow] Entity data keys: {list(entity_data.keys())}")
+        if "description" in entity_data:
+            desc_preview = (
+                entity_data["description"][:100]
+                if entity_data["description"]
+                else "(empty)"
+            )
+            logger.debug(f"[MainWindow] Description preview: {desc_preview}")
+
         if not entity_id:
-            logger.error("Attempted to update entity without ID.")
+            logger.error("[MainWindow] update_entity aborted - no ID")
             return
 
         cmd = UpdateEntityCommand(entity_id, entity_data)
+        logger.debug("[MainWindow] Emitting UpdateEntityCommand")
         self.command_requested.emit(cmd)
 
         if "description" in entity_data:
             wiki_cmd = ProcessWikiLinksCommand(entity_id, entity_data["description"])
+            logger.debug("[MainWindow] Emitting ProcessWikiLinksCommand")
             self.command_requested.emit(wiki_cmd)
 
     def add_relation(
@@ -1334,16 +1493,12 @@ class MainWindow(QMainWindow):
             # ID-based navigation - direct lookup
             entity = next((e for e in self._cached_entities if e.id == target), None)
             if entity:
-                if not self.check_unsaved_changes(self.entity_editor):
-                    return
-                self.load_entity_details(entity.id)
+                self.set_global_selection("entity", entity.id)
                 return
 
             event = next((e for e in self._cached_events if e.id == target), None)
             if event:
-                if not self.check_unsaved_changes(self.event_editor):
-                    return
-                self.load_event_details(event.id)
+                self.set_global_selection("event", event.id)
                 return
 
             # ID not found - broken link
@@ -1360,9 +1515,7 @@ class MainWindow(QMainWindow):
             )
 
             if entity:
-                if not self.check_unsaved_changes(self.entity_editor):
-                    return
-                self.load_entity_details(entity.id)
+                self.set_global_selection("entity", entity.id)
                 return
 
             # Also check events for name-based links
@@ -1372,9 +1525,7 @@ class MainWindow(QMainWindow):
             )
 
             if event:
-                if not self.check_unsaved_changes(self.event_editor):
-                    return
-                self.load_event_details(event.id)
+                self.set_global_selection("event", event.id)
                 return
 
             # Name not found - Prompt for Creation

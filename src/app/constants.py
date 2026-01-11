@@ -27,6 +27,7 @@ DOCK_OBJ_TIMELINE = "TimelineDock"
 DOCK_OBJ_LONGFORM = "LongformDock"
 DOCK_OBJ_MAP = "MapDock"
 DOCK_OBJ_AI_SEARCH = "AISearchDock"
+DOCK_OBJ_GRAPH = "GraphDock"
 
 # Dock Titles
 DOCK_TITLE_PROJECT = "Project Explorer"
@@ -36,6 +37,7 @@ DOCK_TITLE_TIMELINE = "Timeline"
 DOCK_TITLE_LONGFORM = "Longform Document"
 DOCK_TITLE_MAP = "Map"
 DOCK_TITLE_AI_SEARCH = "AI Search"
+DOCK_TITLE_GRAPH = "Relationship Graph"
 
 # Status Messages
 STATUS_DB_INIT_FAIL = "Database Initialization Failed!"

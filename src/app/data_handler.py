@@ -43,6 +43,8 @@ class DataHandler(QObject):
     markers_ready = Signal(str, list)  # (map_id, markers)
     trajectories_ready = Signal(list)  # (trajectories)
     entity_state_resolved = Signal(str, dict)  # (entity_id, attributes)
+    graph_data_ready = Signal(list, list)  # (nodes, edges)
+    graph_metadata_ready = Signal(list, list)  # (tags, rel_types)
 
     # Signals for UI actions
     status_message = Signal(str)  # Status bar message updates
@@ -122,13 +124,15 @@ class DataHandler(QObject):
 
         # Add entities: (id, name, type)
         if self._cached_entities:
-            for entity in self._cached_entities:
-                items.append((entity.id, entity.name, "entity"))
+            items.extend(
+                (entity.id, entity.name, "entity") for entity in self._cached_entities
+            )
 
         # Add events: (id, name, type)
         if self._cached_events:
-            for event in self._cached_events:
-                items.append((event.id, event.name, "event"))
+            items.extend(
+                (event.id, event.name, "event") for event in self._cached_events
+            )
 
         # Sort by name for better UX
         items.sort(key=lambda x: x[1].lower())
@@ -148,7 +152,9 @@ class DataHandler(QObject):
             relations: Outgoing relations.
             incoming: Incoming relations.
         """
-        self.dock_raise_requested.emit("event")
+        # Dock raising is now handled by the Controller (MainWindow) via user actions,
+        # not automatically on data load. This prevents focus stealing during
+        # background refreshes.
         self.event_details_ready.emit(event, relations, incoming)
 
     @Slot(object, list, list)
@@ -163,7 +169,7 @@ class DataHandler(QObject):
             relations: Outgoing relations.
             incoming: Incoming relations.
         """
-        self.dock_raise_requested.emit("entity")
+        # Dock raising is now handled by the Controller (MainWindow) via user actions.
         self.entity_details_ready.emit(entity, relations, incoming)
 
     @Slot(list)
@@ -206,11 +212,10 @@ class DataHandler(QObject):
             lore_date = None
 
             if marker.object_type == "entity" and self._cached_entities:
-                entity = next(
+                if entity := next(
                     (e for e in self._cached_entities if e.id == marker.object_id),
                     None,
-                )
-                if entity:
+                ):
                     label = getattr(entity, "name", "Unknown Entity")
                     description = getattr(entity, "description", "") or ""
                     # Entities don't have a single specific date usually,
@@ -218,11 +223,10 @@ class DataHandler(QObject):
                     lore_date = None
 
             elif marker.object_type == "event" and self._cached_events:
-                event = next(
+                if event := next(
                     (e for e in self._cached_events if e.id == marker.object_id),
                     None,
-                )
-                if event:
+                ):
                     label = getattr(event, "name", "Unknown Event")
                     description = getattr(event, "description", "") or ""
                     lore_date = getattr(event, "lore_date", None)
@@ -261,7 +265,13 @@ class DataHandler(QObject):
         Args:
             result: CommandResult object containing execution status.
         """
+        logger.info(
+            f"[DataHandler] on_command_finished: {result.command_name} "
+            f"success={result.success}"
+        )
+
         if not isinstance(result, CommandResult):
+            logger.warning("[DataHandler] Received non-CommandResult object")
             return
 
         command_name = result.command_name
@@ -270,39 +280,52 @@ class DataHandler(QObject):
 
         # Determine what to reload based on command
         if not success:
+            logger.warning(f"[DataHandler] Command failed: {message}")
             if message:
                 # Emit failure signal for MainWindow to show dialog
                 self.command_failed.emit(message)
             return
 
-        if command_name == "CreateEventCommand" and result.data.get("id"):
-            self._pending_select_type = "event"
-            self._pending_select_id = result.data["id"]
-        elif command_name == "CreateEntityCommand" and result.data.get("id"):
-            self._pending_select_type = "entity"
-            self._pending_select_id = result.data["id"]
+        try:
+            if command_name == "CreateEventCommand" and result.data.get("id"):
+                self._pending_select_type = "event"
+                self._pending_select_id = result.data["id"]
+            elif command_name == "CreateEntityCommand" and result.data.get("id"):
+                self._pending_select_type = "entity"
+                self._pending_select_id = result.data["id"]
 
-        if "Map" in command_name:
-            self.reload_maps.emit()
+            if "Map" in command_name:
+                logger.debug("[DataHandler] Emitting reload_maps")
+                self.reload_maps.emit()
 
-        if "Marker" in command_name and "Update" not in command_name:
-            # Reload markers for the currently selected map
-            # We don't have map_id in the result, so emit signal for map handler
-            # to reload markers for whichever map is currently selected
-            self.reload_markers_for_current_map.emit()
+            if "Marker" in command_name and "Update" not in command_name:
+                logger.debug("[DataHandler] Emitting reload_markers_for_current_map")
+                self.reload_markers_for_current_map.emit()
 
-        if "Event" in command_name:
-            self.reload_events.emit()
-            self.reload_markers_for_current_map.emit()
-        if "Entity" in command_name:
-            self.reload_entities.emit()
-            self.reload_markers_for_current_map.emit()
-        if "Relation" in command_name or "WikiLinks" in command_name:
-            # Signal to reload editor relations if an editor is active
-            self.reload_active_editor_relations.emit()
+            if "Event" in command_name:
+                logger.debug("[DataHandler] Emitting reload_events (Event command)")
+                self.reload_events.emit()
+                self.reload_markers_for_current_map.emit()
+            if "Entity" in command_name:
+                logger.debug("[DataHandler] Emitting reload_entities (Entity command)")
+                self.reload_entities.emit()
+                self.reload_markers_for_current_map.emit()
+            if "Relation" in command_name or "WikiLinks" in command_name:
+                logger.debug(
+                    "[DataHandler] Emitting reload signals (WikiLinks/Relation)"
+                )
+                self.reload_active_editor_relations.emit()
+                self.reload_events.emit()
+                self.reload_entities.emit()
 
-        if "Longform" in command_name:
-            self.reload_longform.emit()
+            if "Longform" in command_name:
+                logger.debug("[DataHandler] Emitting reload_longform")
+                self.reload_longform.emit()
+
+            logger.debug(f"[DataHandler] on_command_finished completed: {command_name}")
+
+        except Exception as e:
+            logger.error(f"[DataHandler] Exception in on_command_finished: {e}")
 
     @Slot(str, dict)
     def on_entity_state_resolved(self, entity_id: str, attributes: dict) -> None:
@@ -310,3 +333,26 @@ class DataHandler(QObject):
         Emits signal when entity state is resolved.
         """
         self.entity_state_resolved.emit(entity_id, attributes)
+
+    @Slot(list, list)
+    def on_graph_data_loaded(self, nodes: List[Any], edges: List[Any]) -> None:
+        """
+        Emits signal for graph widget to be updated with loaded data.
+
+        Args:
+            nodes: List of node dictionaries.
+            edges: List of edge dictionaries.
+        """
+        self.graph_data_ready.emit(nodes, edges)
+        self.status_message.emit(f"Loaded {len(nodes)} nodes and {len(edges)} edges.")
+
+    @Slot(list, list)
+    def on_graph_metadata_loaded(self, tags: List[str], rel_types: List[str]) -> None:
+        """
+        Emits signal for graph widget to be updated with metadata.
+
+        Args:
+            tags: List of tag strings.
+            rel_types: List of relation type strings.
+        """
+        self.graph_metadata_ready.emit(tags, rel_types)

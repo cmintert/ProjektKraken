@@ -106,7 +106,7 @@ class MockQSettings:
         val = self._storage.get(full_key, default)
         if type is not None and val is not None:
             try:
-                if type == bool and isinstance(val, str):
+                if type is bool and isinstance(val, str):
                     return val.lower() == "true"
                 return type(val)
             except (ValueError, TypeError):

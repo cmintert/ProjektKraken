@@ -38,6 +38,8 @@ class DatabaseWorker(QObject):
     calendar_config_loaded = Signal(object)  # CalendarConfig or None
     current_time_loaded = Signal(float)  # Current time in lore_date units
     grouping_dialog_data_loaded = Signal(list, object)  # tags_data, current_config
+    graph_data_loaded = Signal(list, list)  # nodes, edges
+    graph_metadata_loaded = Signal(list, list)  # tags, rel_types
 
     event_details_loaded = Signal(object, list, list)  # Event, relations, incoming
     entity_details_loaded = Signal(object, list, list)  # Entity, relations, incoming
@@ -682,3 +684,40 @@ class DatabaseWorker(QObject):
             )
             # Emit empty state or handle error?
             # For now, just log.
+
+    @Slot(object, object)
+    def load_graph_data(
+        self, tags: list[str] | None = None, rel_types: list[str] | None = None
+    ) -> None:
+        """
+        Loads graph data filtered by tags and relation types.
+
+        Args:
+            tags: List of tags to include.
+            rel_types: List of relation types to include.
+        """
+        if not self.db_service:
+            return
+
+        try:
+            from src.services.graph_data_service import GraphDataService
+
+            self.operation_started.emit("Loading Graph Data...")
+            graph_service = GraphDataService()
+            nodes, edges = graph_service.get_graph_data(
+                self.db_service, tags, rel_types
+            )
+
+            # Fetch metadata
+            all_tags = graph_service.get_all_tags(self.db_service)
+            all_rel_types = graph_service.get_all_relation_types(self.db_service)
+
+            self.graph_data_loaded.emit(nodes, edges)
+            self.graph_metadata_loaded.emit(all_tags, all_rel_types)
+
+            self.operation_finished.emit(
+                f"Graph Data Loaded ({len(nodes)} nodes, {len(edges)} edges)."
+            )
+        except Exception:
+            logger.error(f"Failed to load graph data: {traceback.format_exc()}")
+            self.error_occurred.emit("Failed to load graph data.")
