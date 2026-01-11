@@ -3,25 +3,25 @@ Seed Trajectory Script
 Creates a test map, a marker, and a trajectory for verification.
 """
 
-import sys
-import os
-import uuid
 import logging
+import os
+import sys
+import uuid
 
 # Add project root to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from src.services.db_service import DatabaseService
 from src.app.constants import DEFAULT_DB_NAME
-from src.core.trajectory import Keyframe
 from src.core.map import Map
 from src.core.marker import Marker
+from src.core.trajectory import Keyframe
+from src.services.db_service import DatabaseService
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def seed_data():
+def seed_data() -> None:
     db_path = DEFAULT_DB_NAME  # or specific path if needed
     db = DatabaseService(db_path)
     db.connect()

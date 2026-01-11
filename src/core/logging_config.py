@@ -80,6 +80,9 @@ def setup_logging(debug_mode: bool = False, log_to_console: bool = True) -> None
     logging.info(f"Project Kraken Session Started at {datetime.now().isoformat()}")
     logging.info("=" * 60)
 
+    # Force DEBUG for UnifiedList to troubleshoot focus issue
+    logging.getLogger("src.gui.widgets.unified_list").setLevel(logging.DEBUG)
+
 
 def get_logger(name: str) -> logging.Logger:
     """

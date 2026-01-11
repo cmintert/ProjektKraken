@@ -225,6 +225,7 @@ def test_wikilink_completion_refreshes_ui(main_window):
 
     # Setup active event in editor
     main_window.event_editor._current_event_id = "evt1"
+    main_window._last_selected_type = "event"
 
     # Simulate WikiLink command completion
     # Simulate WikiLink command completion

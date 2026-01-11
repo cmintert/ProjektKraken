@@ -373,37 +373,74 @@ class MainWindow(QMainWindow):
         """
         self.longform_manager.on_longform_sequence_loaded(sequence)
 
-    def _on_item_selected(self, item_type: str, item_id: str) -> None:
-        """Handles selection from unified list or longform editor."""
-        # Handle plural table names from longform editor
+    def set_global_selection(self, item_type: str, item_id: str) -> None:
+        """
+        Centralized method to handle global item selection.
+
+        Synchronizes all UI components:
+        - Editors
+        - Unified List (Project Explorer)
+        - Graph Focus
+        - Timeline Selection
+        - Last Selected State
+
+        Args:
+            item_type (str): 'event' or 'entity' (or 'events'/'entities').
+            item_id (str): The ID of the item to select.
+        """
+        # 1. Normalize type
         if item_type == "events":
             item_type = "event"
         elif item_type == "entities":
             item_type = "entity"
 
-        # Avoid redundant reloading and unsaved changes checks if selecting the same item
+        # 2. Avoid redundant updates if already selected
         if item_id == self._last_selected_id and item_type == self._last_selected_type:
             return
 
-        if item_type == "event":
-            if not self.check_unsaved_changes(self.event_editor):
-                # Attempt to revert - simplified for now, strictly just return
-                # Visually the list might differ from detailed view if we just return
-                return
+        # 3. Check for unsaved changes before switching context
+        # Determine target editor to check
+        target_editor = (
+            self.event_editor if item_type == "event" else self.entity_editor
+        )
+        if not self.check_unsaved_changes(target_editor):
+            return
 
+        # 4. Perform Selection & UI Updates
+        logger.debug(f"[MainWindow] Global selection: {item_type}/{item_id}")
+
+        self._last_selected_id = item_id
+        self._last_selected_type = item_type
+
+        # Update Settings
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        settings.setValue(SETTINGS_LAST_ITEM_ID_KEY, item_id)
+        settings.setValue(SETTINGS_LAST_ITEM_TYPE_KEY, item_type)
+
+        if item_type == "event":
             self.ui_manager.docks["event"].raise_()
             self.load_event_details(item_id)
-            self._last_selected_id = item_id
-            self._last_selected_type = "event"
+            # Sync Timeline (if method exists)
+            # if hasattr(self.timeline, "select_event"):
+            #     self.timeline.select_event(item_id)
 
         elif item_type == "entity":
-            if not self.check_unsaved_changes(self.entity_editor):
-                return
-
             self.ui_manager.docks["entity"].raise_()
             self.load_entity_details(item_id)
-            self._last_selected_id = item_id
-            self._last_selected_type = "entity"
+
+        # 5. Sync Project Explorer (Unified List)
+        # This ensures the list highlights the item even if selected via Graph/Link
+        self.unified_list.select_item(item_type, item_id)
+
+        # 6. Sync Graph (Focus Node)
+        # Prevent infinite loop if this call came from graph click?
+        # GraphWidget.focus_node usually checks if already focused.
+        # But we need to be careful. For now, we trust the graph to handle re-focus efficiently.
+        # self.graph_widget.focus_node(item_id) # TO BE IMPLEMENTED in GraphWidget if needed
+
+    def _on_item_selected(self, item_type: str, item_id: str) -> None:
+        """Handles selection from unified list or longform editor."""
+        self.set_global_selection(item_type, item_id)
 
         # Save selection for persistence
         if self._last_selected_id and self._last_selected_type:
@@ -1010,10 +1047,29 @@ class MainWindow(QMainWindow):
 
         This is called after relation or wiki link commands complete.
         """
-        if self.event_editor._current_event_id:
+        logger.debug(
+            f"[MainWindow] _on_reload_active_editor_relations: "
+            f"event_id={self.event_editor._current_event_id}, "
+            f"entity_id={self.entity_editor._current_entity_id}, "
+            f"active_type={self._last_selected_type}"
+        )
+
+        # Only reload the currently selected type to prevent focus jumping
+        # If we reload both, the DataHandler triggers 'raise_dock' for each,
+        # causing the last one loaded (usually Entity) to steal focus.
+        if self._last_selected_type == "event" and self.event_editor._current_event_id:
+            logger.debug("[MainWindow] Reloading active event details")
             self.load_event_details(self.event_editor._current_event_id)
-        if self.entity_editor._current_entity_id:
+
+        elif (
+            self._last_selected_type == "entity"
+            and self.entity_editor._current_entity_id
+        ):
+            logger.debug("[MainWindow] Reloading active entity details")
             self.load_entity_details(self.entity_editor._current_entity_id)
+
+        # If active type is none or mismatch, we might want to reload both safely?
+        # But generally, we only care about what the user is looking at.
 
     def delete_event(self, event_id: str) -> None:
         """
@@ -1034,15 +1090,21 @@ class MainWindow(QMainWindow):
                 including the 'id' field.
         """
         event_id = event_data.get("id")
+        logger.info(
+            f"[MainWindow] update_event: id={event_id}, "
+            f"name='{event_data.get('name', '?')}'"
+        )
         if not event_id:
-            logger.error("Attempted to update event without ID.")
+            logger.error("[MainWindow] update_event aborted - no ID")
             return
 
         cmd = UpdateEventCommand(event_id, event_data)
+        logger.debug("[MainWindow] Emitting UpdateEventCommand")
         self.command_requested.emit(cmd)
 
         if "description" in event_data:
             wiki_cmd = ProcessWikiLinksCommand(event_id, event_data["description"])
+            logger.debug("[MainWindow] Emitting ProcessWikiLinksCommand")
             self.command_requested.emit(wiki_cmd)
 
     @Slot(str, float)
@@ -1106,15 +1168,31 @@ class MainWindow(QMainWindow):
                 including the 'id' field.
         """
         entity_id = entity_data.get("id")
+        logger.info(
+            f"[MainWindow] update_entity: id={entity_id}, "
+            f"name='{entity_data.get('name', '?')}'"
+        )
+        # Log full data for debugging
+        logger.debug(f"[MainWindow] Entity data keys: {list(entity_data.keys())}")
+        if "description" in entity_data:
+            desc_preview = (
+                entity_data["description"][:100]
+                if entity_data["description"]
+                else "(empty)"
+            )
+            logger.debug(f"[MainWindow] Description preview: {desc_preview}")
+
         if not entity_id:
-            logger.error("Attempted to update entity without ID.")
+            logger.error("[MainWindow] update_entity aborted - no ID")
             return
 
         cmd = UpdateEntityCommand(entity_id, entity_data)
+        logger.debug("[MainWindow] Emitting UpdateEntityCommand")
         self.command_requested.emit(cmd)
 
         if "description" in entity_data:
             wiki_cmd = ProcessWikiLinksCommand(entity_id, entity_data["description"])
+            logger.debug("[MainWindow] Emitting ProcessWikiLinksCommand")
             self.command_requested.emit(wiki_cmd)
 
     def add_relation(
@@ -1415,16 +1493,12 @@ class MainWindow(QMainWindow):
             # ID-based navigation - direct lookup
             entity = next((e for e in self._cached_entities if e.id == target), None)
             if entity:
-                if not self.check_unsaved_changes(self.entity_editor):
-                    return
-                self.load_entity_details(entity.id)
+                self.set_global_selection("entity", entity.id)
                 return
 
             event = next((e for e in self._cached_events if e.id == target), None)
             if event:
-                if not self.check_unsaved_changes(self.event_editor):
-                    return
-                self.load_event_details(event.id)
+                self.set_global_selection("event", event.id)
                 return
 
             # ID not found - broken link
@@ -1441,9 +1515,7 @@ class MainWindow(QMainWindow):
             )
 
             if entity:
-                if not self.check_unsaved_changes(self.entity_editor):
-                    return
-                self.load_entity_details(entity.id)
+                self.set_global_selection("entity", entity.id)
                 return
 
             # Also check events for name-based links
@@ -1453,9 +1525,7 @@ class MainWindow(QMainWindow):
             )
 
             if event:
-                if not self.check_unsaved_changes(self.event_editor):
-                    return
-                self.load_event_details(event.id)
+                self.set_global_selection("event", event.id)
                 return
 
             # Name not found - Prompt for Creation

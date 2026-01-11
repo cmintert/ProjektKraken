@@ -152,7 +152,9 @@ class DataHandler(QObject):
             relations: Outgoing relations.
             incoming: Incoming relations.
         """
-        self.dock_raise_requested.emit("event")
+        # Dock raising is now handled by the Controller (MainWindow) via user actions,
+        # not automatically on data load. This prevents focus stealing during
+        # background refreshes.
         self.event_details_ready.emit(event, relations, incoming)
 
     @Slot(object, list, list)
@@ -167,7 +169,7 @@ class DataHandler(QObject):
             relations: Outgoing relations.
             incoming: Incoming relations.
         """
-        self.dock_raise_requested.emit("entity")
+        # Dock raising is now handled by the Controller (MainWindow) via user actions.
         self.entity_details_ready.emit(entity, relations, incoming)
 
     @Slot(list)
@@ -263,7 +265,13 @@ class DataHandler(QObject):
         Args:
             result: CommandResult object containing execution status.
         """
+        logger.info(
+            f"[DataHandler] on_command_finished: {result.command_name} "
+            f"success={result.success}"
+        )
+
         if not isinstance(result, CommandResult):
+            logger.warning("[DataHandler] Received non-CommandResult object")
             return
 
         command_name = result.command_name
@@ -272,42 +280,52 @@ class DataHandler(QObject):
 
         # Determine what to reload based on command
         if not success:
+            logger.warning(f"[DataHandler] Command failed: {message}")
             if message:
                 # Emit failure signal for MainWindow to show dialog
                 self.command_failed.emit(message)
             return
 
-        if command_name == "CreateEventCommand" and result.data.get("id"):
-            self._pending_select_type = "event"
-            self._pending_select_id = result.data["id"]
-        elif command_name == "CreateEntityCommand" and result.data.get("id"):
-            self._pending_select_type = "entity"
-            self._pending_select_id = result.data["id"]
+        try:
+            if command_name == "CreateEventCommand" and result.data.get("id"):
+                self._pending_select_type = "event"
+                self._pending_select_id = result.data["id"]
+            elif command_name == "CreateEntityCommand" and result.data.get("id"):
+                self._pending_select_type = "entity"
+                self._pending_select_id = result.data["id"]
 
-        if "Map" in command_name:
-            self.reload_maps.emit()
+            if "Map" in command_name:
+                logger.debug("[DataHandler] Emitting reload_maps")
+                self.reload_maps.emit()
 
-        if "Marker" in command_name and "Update" not in command_name:
-            # Reload markers for the currently selected map
-            # We don't have map_id in the result, so emit signal for map handler
-            # to reload markers for whichever map is currently selected
-            self.reload_markers_for_current_map.emit()
+            if "Marker" in command_name and "Update" not in command_name:
+                logger.debug("[DataHandler] Emitting reload_markers_for_current_map")
+                self.reload_markers_for_current_map.emit()
 
-        if "Event" in command_name:
-            self.reload_events.emit()
-            self.reload_markers_for_current_map.emit()
-        if "Entity" in command_name:
-            self.reload_entities.emit()
-            self.reload_markers_for_current_map.emit()
-        if "Relation" in command_name or "WikiLinks" in command_name:
-            # Signal to reload editor relations if an editor is active
-            self.reload_active_editor_relations.emit()
-            # Also reload events and entities to update the graph info (and other views)
-            self.reload_events.emit()
-            self.reload_entities.emit()
+            if "Event" in command_name:
+                logger.debug("[DataHandler] Emitting reload_events (Event command)")
+                self.reload_events.emit()
+                self.reload_markers_for_current_map.emit()
+            if "Entity" in command_name:
+                logger.debug("[DataHandler] Emitting reload_entities (Entity command)")
+                self.reload_entities.emit()
+                self.reload_markers_for_current_map.emit()
+            if "Relation" in command_name or "WikiLinks" in command_name:
+                logger.debug(
+                    "[DataHandler] Emitting reload signals (WikiLinks/Relation)"
+                )
+                self.reload_active_editor_relations.emit()
+                self.reload_events.emit()
+                self.reload_entities.emit()
 
-        if "Longform" in command_name:
-            self.reload_longform.emit()
+            if "Longform" in command_name:
+                logger.debug("[DataHandler] Emitting reload_longform")
+                self.reload_longform.emit()
+
+            logger.debug(f"[DataHandler] on_command_finished completed: {command_name}")
+
+        except Exception as e:
+            logger.error(f"[DataHandler] Exception in on_command_finished: {e}")
 
     @Slot(str, dict)
     def on_entity_state_resolved(self, entity_id: str, attributes: dict) -> None:

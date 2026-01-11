@@ -35,7 +35,7 @@ def mock_conn():
     }
 
     # Setup cursor behavior
-    cursor = MagicMock()
+    # cursor = MagicMock() # Unused
 
     # We need to handle multiple execute calls differently
     def side_effect(query, params=()):

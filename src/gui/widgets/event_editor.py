@@ -6,6 +6,7 @@ description, attributes, and relations.
 """
 
 import logging
+import traceback
 from typing import Any, Optional
 
 from PySide6.QtCore import QPoint, QSize, Qt, Signal, Slot
@@ -350,14 +351,24 @@ class EventEditorWidget(QWidget):
             dirty (bool): True if changes are unsaved, False otherwise.
         """
         if self._current_event_id is None and dirty:
+            logger.debug(f"[EventEditor] set_dirty({dirty}) ignored - no event loaded")
             return
 
         if self._is_dirty != dirty:
+            logger.info(
+                f"[EventEditor] set_dirty: {self._is_dirty} -> {dirty} "
+                f"(event_id={self._current_event_id})"
+            )
+            if not dirty:
+                # Log stack trace when clearing dirty to trace the source
+                logger.debug(
+                    f"[EventEditor] Clearing dirty state. Stack trace:\n"
+                    f"{traceback.format_stack(limit=10)}"
+                )
             self._is_dirty = dirty
             self.dirty_changed.emit(dirty)
             self.btn_save.setEnabled(dirty)
             self.btn_discard.setEnabled(dirty)
-            # Maybe change button text or style?
             if dirty:
                 self.btn_save.setText("Save Changes *")
             else:
@@ -562,26 +573,45 @@ class EventEditorWidget(QWidget):
         Collects data from form fields and emits the `save_requested` signal.
         Emits a dictionary with the updated properties and the ID.
         """
+        logger.info(
+            f"[EventEditor] _on_save() called (event_id={self._current_event_id})"
+        )
+
         if not self._current_event_id:
+            logger.warning("[EventEditor] _on_save aborted - no current event ID")
             return
 
-        # Merge tags into attributes
-        base_attrs = self.attribute_editor.get_attributes()
-        base_attrs["_tags"] = self.tag_editor.get_tags()
+        try:
+            # Merge tags into attributes
+            base_attrs = self.attribute_editor.get_attributes()
+            base_attrs["_tags"] = self.tag_editor.get_tags()
 
-        event_data = {
-            "id": self._current_event_id,
-            "name": self.name_edit.text(),
-            "lore_date": self.date_edit.get_value(),
-            "lore_duration": self.duration_widget.get_value(),
-            "type": self.type_edit.currentText(),
-            "description": self.desc_edit.get_wiki_text(),
-            "attributes": base_attrs,
-            "tags": self.tag_editor.get_tags(),
-        }
+            event_data = {
+                "id": self._current_event_id,
+                "name": self.name_edit.text(),
+                "lore_date": self.date_edit.get_value(),
+                "lore_duration": self.duration_widget.get_value(),
+                "type": self.type_edit.currentText(),
+                "description": self.desc_edit.get_wiki_text(),
+                "attributes": base_attrs,
+                "tags": self.tag_editor.get_tags(),
+            }
 
-        self.save_requested.emit(event_data)
-        self.set_dirty(False)
+            logger.info(
+                f"[EventEditor] Emitting save_requested for event "
+                f"'{event_data['name']}' (id={event_data['id']})"
+            )
+            self.save_requested.emit(event_data)
+
+            logger.debug("[EventEditor] About to call set_dirty(False) after emit")
+            self.set_dirty(False)
+            logger.debug("[EventEditor] _on_save completed successfully")
+
+        except Exception as e:
+            logger.error(
+                f"[EventEditor] Exception in _on_save: {e}\n{traceback.format_exc()}"
+            )
+            raise
 
     @Slot()
     def _on_discard(self) -> None:

@@ -9,6 +9,7 @@ Strictly Cartesian. No spherical projections or geodetic logic.
 """
 
 from typing import Tuple
+
 from PySide6.QtCore import QPointF, QRectF
 
 

@@ -62,7 +62,7 @@ class GraphWebView(QWidget):
         self._web_view.setMinimumSize(400, 300)
 
         # Setup WebChannel
-        self._channel = QWebChannel()
+        self._channel = QWebChannel(self)
         self._channel.registerObject("bridge", self._bridge)
         self._web_view.page().setWebChannel(self._channel)
 

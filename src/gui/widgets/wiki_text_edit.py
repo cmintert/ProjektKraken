@@ -340,7 +340,13 @@ class WikiTextEdit(QTextEdit):
         )
 
         logger.debug(f"Setting HTML with embedded CSS (body length: {len(html_body)})")
-        self.setHtml(html_content)
+
+        # Block signals to prevent textChanged during programmatic update
+        was_blocked = self.blockSignals(True)
+        try:
+            self.setHtml(html_content)
+        finally:
+            self.blockSignals(was_blocked)
 
     def get_wiki_text(self) -> str:
         """
@@ -630,9 +636,15 @@ class WikiTextEdit(QTextEdit):
         logger.debug("Theme changed, re-rendering content")
         # Update widget styling (scrollbars, borders)
         self._apply_widget_style()
-        # Re-render with stored text to apply new stylesheet
-        if self._current_wiki_text:
-            self.set_wiki_text(self._current_wiki_text)
-        else:
-            # Just update stylesheet for empty or non-wiki content
-            self._apply_theme_stylesheet()
+
+        # Block signals to prevent textChanged from triggering dirty state
+        was_blocked = self.blockSignals(True)
+        try:
+            # Re-render with stored text to apply new stylesheet
+            if self._current_wiki_text:
+                self.set_wiki_text(self._current_wiki_text)
+            else:
+                # Just update stylesheet for empty or non-wiki content
+                self._apply_theme_stylesheet()
+        finally:
+            self.blockSignals(was_blocked)

@@ -5,7 +5,9 @@ Business logic layer for building PyVis networks from graph data.
 Stateless utility class that transforms node/edge data into HTML output.
 """
 
+import json
 import logging
+import os
 import tempfile
 from typing import Any
 
@@ -57,7 +59,6 @@ class GraphBuilder:
             nodes: List of node dicts with id, name, type, object_type keys.
             edges: List of edge dicts with source_id, target_id, rel_type keys.
             height: Height of the graph visualization.
-            width: Width of the graph visualization.
             width: Width of the graph visualization.
             theme_config: Optional dictionary with color settings.
             focus_node_id: Optional ID of the node to focus on stabilize.
@@ -195,12 +196,16 @@ class GraphBuilder:
         """
         # PyVis requires writing to a file, so we use a temp file
         with tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False) as f:
-            network.save_graph(f.name)
+            temp_path = f.name
+            network.save_graph(temp_path)
             f.flush()
 
-            # Read back the HTML
-            with open(f.name, encoding="utf-8") as html_file:
+        # Read back the HTML and clean up
+        try:
+            with open(temp_path, encoding="utf-8") as html_file:
                 html_content = html_file.read()
+        finally:
+            os.unlink(temp_path)
 
         # Inject CSS to set background color and ensure full container height
         bg_color = theme.get("background_color", "#1e1e1e")
@@ -289,10 +294,10 @@ class GraphBuilder:
 
                     // Interaction: Restore Focus
                     // Use 'stabilized' event which fires when physics stops
-                    var focusId = "%FOCUS_ID%";
+                    var focusId = %FOCUS_ID%;
                     
                     function restoreFocus() {
-                        if (focusId && focusId !== "None") {
+                        if (focusId !== null) {
                             // Check if node exists in dataset
                             var nodeData = nodes.get(focusId);
                             if (nodeData) {
@@ -334,9 +339,9 @@ class GraphBuilder:
         </script>
         """
 
-        # Replace placeholder with actual ID (or "None")
-        focus_str = focus_node_id if focus_node_id else "None"
-        interaction_script = interaction_script.replace("%FOCUS_ID%", focus_str)
+        # Replace placeholder with JSON-serialized ID for safe JS injection
+        focus_json = json.dumps(focus_node_id) if focus_node_id else "null"
+        interaction_script = interaction_script.replace("%FOCUS_ID%", focus_json)
 
         html_content = html_content.replace(
             "</body>", f"{qwebchannel_script}\n{interaction_script}\n</body>"

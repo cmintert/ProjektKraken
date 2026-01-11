@@ -15,6 +15,7 @@ def mock_main_window():
         window.event_editor = MagicMock()
         window.entity_editor = MagicMock()
         window.ui_manager = MagicMock()
+        window.unified_list = MagicMock()
         window.load_event_details = MagicMock()
         window.load_entity_details = MagicMock()
         window.check_unsaved_changes = MagicMock(return_value=True)
