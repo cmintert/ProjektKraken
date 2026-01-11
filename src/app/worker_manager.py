@@ -126,6 +126,9 @@ class WorkerManager(QObject):
         self.window.worker.graph_data_loaded.connect(
             self.window.data_handler.on_graph_data_loaded
         )
+        self.window.worker.graph_metadata_loaded.connect(
+            self.window.data_handler.on_graph_metadata_loaded
+        )
         # Connect filtering request
         self.window.filter_requested.connect(self.window.worker.apply_filter)
 

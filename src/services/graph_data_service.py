@@ -222,32 +222,68 @@ class GraphDataService:
         return nodes
 
     def _entity_to_node(self, entity: Any) -> dict[str, Any]:
-        """Converts an Entity object to a node dict."""
+        """
+        Converts an Entity object to a node dictionary.
+
+        Args:
+            entity: The Entity object to convert.
+
+        Returns:
+            A dictionary with id, name, type, object_type, and tags keys.
+        """
         return {
             "id": entity.id,
             "name": getattr(entity, "name", "Unnamed"),
             "type": getattr(entity, "type", "entity"),
             "object_type": "entity",
+            "tags": getattr(entity, "tags", []),
         }
 
     def _event_to_node(self, event: Any) -> dict[str, Any]:
-        """Converts an Event object to a node dict."""
+        """
+        Converts an Event object to a node dictionary.
+
+        Args:
+            event: The Event object to convert.
+
+        Returns:
+            A dictionary with id, name, type, object_type, and tags keys.
+        """
         return {
             "id": event.id,
             "name": getattr(event, "name", "Unnamed"),
             "type": getattr(event, "type", "event"),
             "object_type": "event",
+            "tags": getattr(event, "tags", []),
         }
 
     def _entity_matches_tags(self, entity: Any, include_tags: list[str] | None) -> bool:
-        """Checks if an entity matches the tag filter (OR semantics)."""
+        """
+        Checks if an entity matches the tag filter (OR semantics).
+
+        Args:
+            entity: The Entity object to check.
+            include_tags: List of tags to match (any). None or empty means no filter.
+
+        Returns:
+            True if the entity has at least one of the specified tags, or if no filter.
+        """
         if not include_tags:  # None or empty list = no filter
             return True
         entity_tags = getattr(entity, "tags", [])
         return any(tag in entity_tags for tag in include_tags)
 
     def _event_matches_tags(self, event: Any, include_tags: list[str] | None) -> bool:
-        """Checks if an event matches the tag filter (OR semantics)."""
+        """
+        Checks if an event matches the tag filter (OR semantics).
+
+        Args:
+            event: The Event object to check.
+            include_tags: List of tags to match (any). None or empty means no filter.
+
+        Returns:
+            True if the event has at least one of the specified tags, or if no filter.
+        """
         if not include_tags:  # None or empty list = no filter
             return True
         event_tags = getattr(event, "tags", [])

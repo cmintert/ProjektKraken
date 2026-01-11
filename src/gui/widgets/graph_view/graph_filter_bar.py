@@ -33,6 +33,8 @@ class GraphFilterBar(QWidget):
 
     filters_changed = Signal()
     refresh_requested = Signal()
+    search_text_changed = Signal(str)
+    show_advanced_filter_requested = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -46,12 +48,27 @@ class GraphFilterBar(QWidget):
 
     def _setup_ui(self) -> None:
         """Sets up the filter bar UI."""
+        from PySide6.QtWidgets import QLineEdit
+
         layout = QHBoxLayout(self)
         layout.setContentsMargins(4, 4, 4, 4)
         layout.setSpacing(8)
 
-        # Tag filter
-        layout.addWidget(QLabel("Tags:"))
+        # Search Bar
+        self._search_input = QLineEdit()
+        self._search_input.setPlaceholderText("Search nodes...")
+        self._search_input.setMinimumWidth(150)
+        self._search_input.setClearButtonEnabled(True)
+        self._search_input.textChanged.connect(self.search_text_changed.emit)
+        layout.addWidget(self._search_input)
+
+        # Advanced Filter Button
+        self._adv_filter_btn = QPushButton("Advanced Filter...")
+        self._adv_filter_btn.clicked.connect(self.show_advanced_filter_requested.emit)
+        layout.addWidget(self._adv_filter_btn)
+
+        # Simple Tag filter (Quick access)
+        layout.addWidget(QLabel("Quick Tag:"))
         self._tag_combo = QComboBox()
         self._tag_combo.setMinimumWidth(150)
         self._tag_combo.setEditable(False)

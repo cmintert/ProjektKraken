@@ -39,6 +39,7 @@ class DatabaseWorker(QObject):
     current_time_loaded = Signal(float)  # Current time in lore_date units
     grouping_dialog_data_loaded = Signal(list, object)  # tags_data, current_config
     graph_data_loaded = Signal(list, list)  # nodes, edges
+    graph_metadata_loaded = Signal(list, list)  # tags, rel_types
 
     event_details_loaded = Signal(object, list, list)  # Event, relations, incoming
     entity_details_loaded = Signal(object, list, list)  # Entity, relations, incoming
@@ -706,7 +707,14 @@ class DatabaseWorker(QObject):
             nodes, edges = graph_service.get_graph_data(
                 self.db_service, tags, rel_types
             )
+
+            # Fetch metadata
+            all_tags = graph_service.get_all_tags(self.db_service)
+            all_rel_types = graph_service.get_all_relation_types(self.db_service)
+
             self.graph_data_loaded.emit(nodes, edges)
+            self.graph_metadata_loaded.emit(all_tags, all_rel_types)
+
             self.operation_finished.emit(
                 f"Graph Data Loaded ({len(nodes)} nodes, {len(edges)} edges)."
             )

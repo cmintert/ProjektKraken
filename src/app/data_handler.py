@@ -44,6 +44,7 @@ class DataHandler(QObject):
     trajectories_ready = Signal(list)  # (trajectories)
     entity_state_resolved = Signal(str, dict)  # (entity_id, attributes)
     graph_data_ready = Signal(list, list)  # (nodes, edges)
+    graph_metadata_ready = Signal(list, list)  # (tags, rel_types)
 
     # Signals for UI actions
     status_message = Signal(str)  # Status bar message updates
@@ -323,3 +324,14 @@ class DataHandler(QObject):
         """
         self.graph_data_ready.emit(nodes, edges)
         self.status_message.emit(f"Loaded {len(nodes)} nodes and {len(edges)} edges.")
+
+    @Slot(list, list)
+    def on_graph_metadata_loaded(self, tags: List[str], rel_types: List[str]) -> None:
+        """
+        Emits signal for graph widget to be updated with metadata.
+
+        Args:
+            tags: List of tag strings.
+            rel_types: List of relation type strings.
+        """
+        self.graph_metadata_ready.emit(tags, rel_types)

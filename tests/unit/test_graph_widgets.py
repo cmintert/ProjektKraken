@@ -5,8 +5,6 @@ Tests the widget layer components for graph visualization.
 """
 
 import pytest
-from unittest.mock import MagicMock, patch
-
 from PySide6.QtWidgets import QApplication
 
 

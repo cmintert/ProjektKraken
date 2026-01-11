@@ -355,7 +355,7 @@ class UnifiedListWidget(QWidget):
     def _matches_search(self, obj: Union[Event, Entity]) -> bool:
         """
         Checks if an object matches the current search term.
-        Performs full text search on name, type, description, tags, and attributes.
+        Delegates to shared SearchUtils.
 
         Args:
             obj: Event or Entity object.
@@ -363,36 +363,9 @@ class UnifiedListWidget(QWidget):
         Returns:
             bool: True if matches search (or no search active).
         """
-        if not self._search_term:
-            return True
+        from src.core.search_utils import SearchUtils
 
-        term = self._search_term
-
-        # 1. Name
-        if term in obj.name.lower():
-            return True
-
-        # 2. Type
-        if hasattr(obj, "type") and term in obj.type.lower():
-            return True
-
-        # 3. Description
-        if hasattr(obj, "description") and term in obj.description.lower():
-            return True
-
-        # 4. Tags
-        if hasattr(obj, "tags"):
-            for tag in obj.tags:
-                if term in tag.lower():
-                    return True
-
-        # 5. String Attributes
-        if hasattr(obj, "attributes"):
-            for value in obj.attributes.values():
-                if isinstance(value, str) and term in value.lower():
-                    return True
-
-        return False
+        return SearchUtils.matches_search(obj, self._search_term)
 
     def _passes_filters(self, obj: Union[Event, Entity]) -> bool:
         """

@@ -62,9 +62,11 @@ class ConnectionManager:
         dh.trajectories_ready.connect(self.window.map_handler.on_trajectories_ready)
         dh.entity_state_resolved.connect(self.window._on_entity_state_resolved)
         dh.graph_data_ready.connect(self.window._on_graph_data_ready)
+        dh.graph_metadata_ready.connect(self.window._on_graph_metadata_ready)
 
         # UI action signals
         dh.status_message.connect(self.window.status_bar.showMessage)
+
         dh.command_failed.connect(self.window._on_command_failed)
         dh.dock_raise_requested.connect(self.window._on_dock_raise_requested)
         dh.selection_requested.connect(self.window._on_selection_requested)

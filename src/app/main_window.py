@@ -836,6 +836,19 @@ class MainWindow(QMainWindow):
         if self.graph_widget:
             self.graph_widget.display_graph(nodes, edges)
 
+    @Slot(list, list)
+    def _on_graph_metadata_ready(self, tags: list[str], rel_types: list[str]) -> None:
+        """
+        Updates the graph widget with available metadata.
+
+        Args:
+            tags: List of available tags.
+            rel_types: List of available relation types.
+        """
+        if self.graph_widget:
+            self.graph_widget.set_available_tags(tags)
+            self.graph_widget.set_available_relation_types(rel_types)
+
     # DataHandler signal handlers (loose coupling via signals)
     @Slot(list)
     def _on_events_ready(self, events: list) -> None:
