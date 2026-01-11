@@ -12,6 +12,8 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- *(2026-01-11)* **Feature**: Implemented Graph View Auto-Update. The graph now automatically refreshes relationships and nodes when data changes in the application.
+- *(2026-01-11)* **Feature**: Implemented Graph Filtering Logic. The filter panel now correctly populates with available Tags and Relation Types fetched from the database.
 - *(2026-01-11)* **Architecture**: Decoupled `DataHandler` from UI focus control to prevent background data refreshes from stealing user focus.
 - *(2026-01-11)* **Feature**: Implemented full Theme Integration for Graph View, enabling dynamic color updates and background synchronization with the application theme.
 - *(2026-01-10)* **Feature**: Implemented "Dulling Future Markers" for temporal visualization. Markers in the future relative to the playhead are now rendered with reduced opacity (0.7) and desaturated colors (80% saturation), while past/present markers remain vivid.
