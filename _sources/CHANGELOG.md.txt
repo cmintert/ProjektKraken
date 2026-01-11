@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-01-10
+## [Development] - 2026-01-11
 ### Internal
-- Cleanup: Remove verbose debug logging from map and timeline widgets to reduce console noise during runtime
+- Merge pull request #50 from cmintert/graph-view
 
 
 *This changelog was automatically generated.*

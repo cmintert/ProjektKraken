@@ -236,6 +236,7 @@
 <p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../LICENSE.html">GNU AFFERO GENERAL PUBLIC LICENSE</a></li>
 </ul>
 
 </div>
@@ -311,6 +312,8 @@
     <span class="n">calendar_config_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>  <span class="c1"># CalendarConfig or None</span>
     <span class="n">current_time_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>  <span class="c1"># Current time in lore_date units</span>
     <span class="n">grouping_dialog_data_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>  <span class="c1"># tags_data, current_config</span>
+    <span class="n">graph_data_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>  <span class="c1"># nodes, edges</span>
+    <span class="n">graph_metadata_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>  <span class="c1"># tags, rel_types</span>
 
     <span class="n">event_details_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>  <span class="c1"># Event, relations, incoming</span>
     <span class="n">entity_details_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>  <span class="c1"># Entity, relations, incoming</span>
@@ -1021,10 +1024,50 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Failed to resolve state for </span><span class="si">{</span><span class="n">entity_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span></div>
-</div>
 
             <span class="c1"># Emit empty state or handle error?</span>
             <span class="c1"># For now, just log.</span>
+
+<div class="viewcode-block" id="DatabaseWorker.load_graph_data">
+<a class="viewcode-back" href="../../services.html#services.worker.DatabaseWorker.load_graph_data">[docs]</a>
+    <span class="nd">@Slot</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_graph_data</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">tags</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">rel_types</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads graph data filtered by tags and relation types.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tags: List of tags to include.</span>
+<span class="sd">            rel_types: List of relation types to include.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.graph_data_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">GraphDataService</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">operation_started</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s2">&quot;Loading Graph Data...&quot;</span><span class="p">)</span>
+            <span class="n">graph_service</span> <span class="o">=</span> <span class="n">GraphDataService</span><span class="p">()</span>
+            <span class="n">nodes</span><span class="p">,</span> <span class="n">edges</span> <span class="o">=</span> <span class="n">graph_service</span><span class="o">.</span><span class="n">get_graph_data</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">,</span> <span class="n">tags</span><span class="p">,</span> <span class="n">rel_types</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Fetch metadata</span>
+            <span class="n">all_tags</span> <span class="o">=</span> <span class="n">graph_service</span><span class="o">.</span><span class="n">get_all_tags</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">)</span>
+            <span class="n">all_rel_types</span> <span class="o">=</span> <span class="n">graph_service</span><span class="o">.</span><span class="n">get_all_relation_types</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">graph_data_loaded</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="n">edges</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">graph_metadata_loaded</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">all_tags</span><span class="p">,</span> <span class="n">all_rel_types</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">operation_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Graph Data Loaded (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span><span class="si">}</span><span class="s2"> nodes, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">edges</span><span class="p">)</span><span class="si">}</span><span class="s2"> edges).&quot;</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load graph data: </span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s2">&quot;Failed to load graph data.&quot;</span><span class="p">)</span></div>
+</div>
+
 </pre></div>
         </article>
       </div>

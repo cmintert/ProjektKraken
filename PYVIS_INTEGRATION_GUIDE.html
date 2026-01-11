@@ -3,10 +3,10 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Database Schema Reference" href="SCHEMA_REFERENCE.html"><link rel="prev" title="Database Architecture and Best Practices" href="DATABASE.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
-        <title>Development Guide - Project Kraken 0.5.0 documentation</title>
+        <title>PyVis Integration Guide - Project Kraken 0.5.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -203,9 +203,9 @@
 <li class="toctree-l1"><a class="reference internal" href="LONGFORM.html">Longform Document Feature</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
-<ul class="current">
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="DATABASE.html">Database Architecture and Best Practices</a></li>
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DEVELOPMENT.html">Development Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security Best Practices</a></li>
 </ul>
@@ -258,7 +258,7 @@
         </a>
         <div class="content-icon-container">
           <div class="view-this-page">
-  <a class="muted-link" href="_sources/DEVELOPMENT.md.txt" title="View this page">
+  <a class="muted-link" href="_sources/PYVIS_INTEGRATION_GUIDE.md.txt" title="View this page">
     <svg><use href="#svg-eye"></use></svg>
     <span class="visually-hidden">View this page</span>
   </a>
@@ -276,47 +276,97 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="development-guide">
-<h1>Development Guide<a class="headerlink" href="#development-guide" title="Link to this heading">¶</a></h1>
-<section id="environment-setup">
-<h2>Environment Setup<a class="headerlink" href="#environment-setup" title="Link to this heading">¶</a></h2>
-<p>This project uses a local virtual environment (<code class="docutils literal notranslate"><span class="pre">.venv</span></code>) on Windows.</p>
-</section>
-<section id="pre-commit-hooks">
-<h2>Pre-commit Hooks<a class="headerlink" href="#pre-commit-hooks" title="Link to this heading">¶</a></h2>
-<p>We use <code class="docutils literal notranslate"><span class="pre">pre-commit</span></code> to ensure code quality with <code class="docutils literal notranslate"><span class="pre">ruff</span></code> and <code class="docutils literal notranslate"><span class="pre">pytest</span></code>.</p>
-<section id="configuration-rules">
-<h3>Configuration Rules<a class="headerlink" href="#configuration-rules" title="Link to this heading">¶</a></h3>
-<p>When modifying <code class="docutils literal notranslate"><span class="pre">.pre-commit-config.yaml</span></code>, always define hooks using <code class="docutils literal notranslate"><span class="pre">entry:</span> <span class="pre">python</span> <span class="pre">-m</span> <span class="pre">&lt;module&gt;</span></code>.</p>
-<p><strong>Correct:</strong></p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ruff-check</span>
-<span class="w">  </span><span class="nt">entry</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">python -m ruff check --fix</span>
-</pre></div>
-</div>
-<p><strong>Incorrect:</strong></p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ruff-check</span>
-<span class="w">  </span><span class="nt">entry</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ruff check --fix</span>
-</pre></div>
-</div>
-<p><strong>Reason:</strong>
-On Windows, executing the module via <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span></code> ensures that the command runs within the correct Python environment (the active <code class="docutils literal notranslate"><span class="pre">.venv</span></code>), resolving imports and paths correctly. Direct executable calls may fail or pick up the wrong environment.</p>
-</section>
-<section id="running-hooks">
-<h3>Running Hooks<a class="headerlink" href="#running-hooks" title="Link to this heading">¶</a></h3>
-<p>The hooks run automatically on <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">commit</span></code>. To run them manually:</p>
-<ol class="arabic">
-<li><p>Activate the virtual environment:</p>
-<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="p">.</span> <span class="p">.\.</span><span class="n">venv</span><span class="p">\</span><span class="n">Scripts</span><span class="p">\</span><span class="n">activate</span><span class="p">.</span><span class="n">ps1</span>
-</pre></div>
-</div>
-</li>
-<li><p>Run the hooks:</p>
-<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="n">pre-commit</span> <span class="n">run</span> <span class="p">-</span><span class="n">-all-files</span>
-</pre></div>
-</div>
-</li>
+          <section id="pyvis-integration-guide">
+<h1>PyVis Integration Guide<a class="headerlink" href="#pyvis-integration-guide" title="Link to this heading">¶</a></h1>
+<p>This document details the configuration and workarounds required to integrate <code class="docutils literal notranslate"><span class="pre">pyvis</span></code> network graphs into the ProjektKraken <code class="docutils literal notranslate"><span class="pre">QWebEngineView</span></code> environment.</p>
+<section id="full-screen-layout">
+<h2>1. Full-Screen Layout<a class="headerlink" href="#full-screen-layout" title="Link to this heading">¶</a></h2>
+<section id="the-problem">
+<h3>The Problem<a class="headerlink" href="#the-problem" title="Link to this heading">¶</a></h3>
+<p>By default, <code class="docutils literal notranslate"><span class="pre">pyvis</span></code> generates an HTML file suitable for standalone viewing. When embedded in a <code class="docutils literal notranslate"><span class="pre">QWebEngineView</span></code>, the graph often fails to fill the viewport height, creating white borders or a collapsed view. This happens because:</p>
+<ol class="arabic simple">
+<li><p>The <code class="docutils literal notranslate"><span class="pre">pyvis</span></code> template wraps the network in a Bootstrap <code class="docutils literal notranslate"><span class="pre">.card</span></code> container.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">.card</span></code> container does not have an explicit height set, so it collapses to fit content or uses default spacing.</p></li>
+<li><p>Setting <code class="docutils literal notranslate"><span class="pre">height=&quot;100%&quot;</span></code> on the <code class="docutils literal notranslate"><span class="pre">Network</span></code> object only affects the inner <code class="docutils literal notranslate"><span class="pre">div</span></code>, which is constrained by the parent <code class="docutils literal notranslate"><span class="pre">.card</span></code>.</p></li>
+<li><p>Standard resets like <code class="docutils literal notranslate"><span class="pre">margin:</span> <span class="pre">0</span></code> on <code class="docutils literal notranslate"><span class="pre">body</span></code> are insufficient because of the intermediate container structure.</p></li>
 </ol>
 </section>
+<section id="the-solution">
+<h3>The Solution<a class="headerlink" href="#the-solution" title="Link to this heading">¶</a></h3>
+<p>To force the graph to fill the entire application pane (100% width and height) without scrollbars or margins, we must inject specific CSS that targets the entire hierarchy:</p>
+<ol class="arabic simple">
+<li><p><strong>HTML &amp; Body</strong>: Must be <code class="docutils literal notranslate"><span class="pre">100%</span></code> height/width with <code class="docutils literal notranslate"><span class="pre">overflow:</span> <span class="pre">hidden</span></code> to prevent scrollbars.</p></li>
+<li><p><strong>Parent Containers (.card, .card-body)</strong>: Must be explicitly forced to <code class="docutils literal notranslate"><span class="pre">100%</span></code> height/width with <code class="docutils literal notranslate"><span class="pre">!important</span></code> to override Bootstrap defaults.</p></li>
+<li><p><strong>Network Div (#mynetwork)</strong>: Must be <code class="docutils literal notranslate"><span class="pre">100%</span></code> height/width.</p></li>
+<li><p><strong>Header Elements</strong>: Unused elements like <code class="docutils literal notranslate"><span class="pre">h1</span></code> (heading) and <code class="docutils literal notranslate"><span class="pre">center</span></code> tags generated by the template must be hidden (<code class="docutils literal notranslate"><span class="pre">display:</span> <span class="pre">none</span></code>) to prevent layout shifts or “white slivers” at the top.</p></li>
+</ol>
+<p><strong>CSS Snippet used in <code class="docutils literal notranslate"><span class="pre">GraphBuilder</span></code>:</strong></p>
+<div class="highlight-css notranslate"><div class="highlight"><pre><span></span><span class="nt">html</span><span class="o">,</span><span class="w"> </span><span class="nt">body</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">width</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="kt">%</span><span class="p">;</span>
+<span class="w">    </span><span class="k">height</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="kt">%</span><span class="p">;</span>
+<span class="w">    </span><span class="k">margin</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">padding</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="k">background-color</span><span class="p">:</span><span class="w"> </span><span class="mh">#1e1e1e</span><span class="p">;</span><span class="w"> </span><span class="c">/* Match app theme */</span>
+<span class="w">    </span><span class="k">overflow</span><span class="p">:</span><span class="w"> </span><span class="kc">hidden</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="p">.</span><span class="nc">card</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">width</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="kt">%</span><span class="w"> </span><span class="cp">!important</span><span class="p">;</span>
+<span class="w">    </span><span class="k">height</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="kt">%</span><span class="w"> </span><span class="cp">!important</span><span class="p">;</span>
+<span class="w">    </span><span class="k">background-color</span><span class="p">:</span><span class="w"> </span><span class="mh">#1e1e1e</span><span class="p">;</span>
+<span class="w">    </span><span class="k">border</span><span class="p">:</span><span class="w"> </span><span class="kc">none</span><span class="w"> </span><span class="cp">!important</span><span class="p">;</span>
+<span class="w">    </span><span class="k">margin</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="cp">!important</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="p">.</span><span class="nc">card-body</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">width</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="kt">%</span><span class="w"> </span><span class="cp">!important</span><span class="p">;</span>
+<span class="w">    </span><span class="k">height</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="kt">%</span><span class="w"> </span><span class="cp">!important</span><span class="p">;</span>
+<span class="w">    </span><span class="k">padding</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="cp">!important</span><span class="p">;</span>
+<span class="w">    </span><span class="k">margin</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="cp">!important</span><span class="p">;</span>
+<span class="w">    </span><span class="k">background-color</span><span class="p">:</span><span class="w"> </span><span class="mh">#1e1e1e</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="p">#</span><span class="nn">mynetwork</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">width</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="kt">%</span><span class="w"> </span><span class="cp">!important</span><span class="p">;</span>
+<span class="w">    </span><span class="k">height</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="kt">%</span><span class="w"> </span><span class="cp">!important</span><span class="p">;</span>
+<span class="w">    </span><span class="k">background-color</span><span class="p">:</span><span class="w"> </span><span class="mh">#1e1e1e</span><span class="p">;</span>
+<span class="w">    </span><span class="k">border</span><span class="p">:</span><span class="w"> </span><span class="kc">none</span><span class="w"> </span><span class="cp">!important</span><span class="p">;</span>
+<span class="w">    </span><span class="k">margin</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="cp">!important</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="c">/* Hide unused header elements to prevent top margin slivers */</span>
+<span class="nt">h1</span><span class="o">,</span><span class="w"> </span><span class="nt">center</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">display</span><span class="p">:</span><span class="w"> </span><span class="kc">none</span><span class="w"> </span><span class="cp">!important</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="id-formatting">
+<h2>2. ID Formatting<a class="headerlink" href="#id-formatting" title="Link to this heading">¶</a></h2>
+<section id="id1">
+<h3>The Problem<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Database</strong>: Stores relations with source/target IDs prefixed with <code class="docutils literal notranslate"><span class="pre">id:</span></code> (e.g., <code class="docutils literal notranslate"><span class="pre">id:c13f69-...</span></code>).</p></li>
+<li><p><strong>Application</strong>: Reference entities/events using raw UUIDs (e.g., <code class="docutils literal notranslate"><span class="pre">c13f69-...</span></code>).</p></li>
+<li><p><strong>PyVis</strong>: Requires that edge <code class="docutils literal notranslate"><span class="pre">source</span></code>/<code class="docutils literal notranslate"><span class="pre">to</span></code> match node <code class="docutils literal notranslate"><span class="pre">id</span></code>s exactly.</p></li>
+</ul>
+<p>Mismatching IDs results in <code class="docutils literal notranslate"><span class="pre">AssertionError:</span> <span class="pre">non</span> <span class="pre">existent</span> <span class="pre">node</span></code> or edges not appearing.</p>
+</section>
+<section id="id2">
+<h3>The Solution<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<p>When building the graph data in <code class="docutils literal notranslate"><span class="pre">GraphDataService</span></code>, we must normalize IDs by stripping the <code class="docutils literal notranslate"><span class="pre">id:</span></code> prefix from relation source/target fields to match the raw UUIDs used for nodes.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">strip_id_prefix</span><span class="p">(</span><span class="n">id_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">id_str</span><span class="p">[</span><span class="mi">3</span><span class="p">:]</span> <span class="k">if</span> <span class="n">id_str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;id:&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">id_str</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="background-color">
+<h2>3. Background Color<a class="headerlink" href="#background-color" title="Link to this heading">¶</a></h2>
+<p>To ensure a seamless look, the background color must be set at multiple levels:</p>
+<ol class="arabic simple">
+<li><p><strong>QWebEngineView Widget</strong>: <code class="docutils literal notranslate"><span class="pre">setStyleSheet(&quot;background-color:</span> <span class="pre">#1e1e1e;&quot;)</span></code></p></li>
+<li><p><strong>QWebEnginePage</strong>: <code class="docutils literal notranslate"><span class="pre">page().setBackgroundColor(QColor(&quot;#1e1e1e&quot;))</span></code> (fills empty space before load)</p></li>
+<li><p><strong>PyVis Network</strong>: <code class="docutils literal notranslate"><span class="pre">bgcolor=&quot;#1e1e1e&quot;</span></code> in Python config.</p></li>
+<li><p><strong>CSS</strong>: <code class="docutils literal notranslate"><span class="pre">background-color:</span> <span class="pre">#1e1e1e</span></code> on <code class="docutils literal notranslate"><span class="pre">html</span></code>, <code class="docutils literal notranslate"><span class="pre">body</span></code>, and container divs.</p></li>
+</ol>
 </section>
 </section>
 
@@ -325,26 +375,8 @@ On Windows, executing the module via <code class="docutils literal notranslate">
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="SCHEMA_REFERENCE.html">
-              <div class="page-info">
-                <div class="context">
-                  <span>Next</span>
-                </div>
-                <div class="title">Database Schema Reference</div>
-              </div>
-              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
-            </a>
-          <a class="prev-page" href="DATABASE.html">
-              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
-              <div class="page-info">
-                <div class="context">
-                  <span>Previous</span>
-                </div>
-                
-                <div class="title">Database Architecture and Best Practices</div>
-                
-              </div>
-            </a>
+          
+          
         </div>
         <div class="bottom-of-page">
           <div class="left-details">
@@ -375,13 +407,18 @@ On Windows, executing the module via <code class="docutils literal notranslate">
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Development Guide</a><ul>
-<li><a class="reference internal" href="#environment-setup">Environment Setup</a></li>
-<li><a class="reference internal" href="#pre-commit-hooks">Pre-commit Hooks</a><ul>
-<li><a class="reference internal" href="#configuration-rules">Configuration Rules</a></li>
-<li><a class="reference internal" href="#running-hooks">Running Hooks</a></li>
+<li><a class="reference internal" href="#">PyVis Integration Guide</a><ul>
+<li><a class="reference internal" href="#full-screen-layout">1. Full-Screen Layout</a><ul>
+<li><a class="reference internal" href="#the-problem">The Problem</a></li>
+<li><a class="reference internal" href="#the-solution">The Solution</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#id-formatting">2. ID Formatting</a><ul>
+<li><a class="reference internal" href="#id1">The Problem</a></li>
+<li><a class="reference internal" href="#id2">The Solution</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#background-color">3. Background Color</a></li>
 </ul>
 </li>
 </ul>
