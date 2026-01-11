@@ -175,7 +175,7 @@ class GraphWidget(QWidget):
             # we request a refresh.
             self.filter_changed.emit()
 
-    def _refresh_display_locally(self) -> None:
+    def _refresh_display_locally(self, focus_node_id: str | None = None) -> None:
         """Refreshes the graph display using cached data and local filters."""
         if not self._all_nodes and not self._all_edges:
             self._web_view.load_html(
@@ -234,11 +234,15 @@ class GraphWidget(QWidget):
             )
         else:
             html = self._builder.build_html(
-                filtered_nodes, filtered_edges, theme_config=self._current_theme_config
+                filtered_nodes,
+                filtered_edges,
+                theme_config=self._current_theme_config,
+                focus_node_id=focus_node_id,
             )
             self._web_view.load_html(html)
             logger.debug(
-                f"Refreshed graph: {len(filtered_nodes)} nodes, {len(filtered_edges)} edges"
+                f"Refreshed graph: {len(filtered_nodes)} nodes, "
+                f"{len(filtered_edges)} edges, focus_id={focus_node_id}"
             )
 
     def _passes_tag_filter(self, node: dict, config: dict) -> bool:
@@ -328,7 +332,10 @@ class GraphWidget(QWidget):
         }
 
     def display_graph(
-        self, nodes: list[dict[str, Any]], edges: list[dict[str, Any]]
+        self,
+        nodes: list[dict[str, Any]],
+        edges: list[dict[str, Any]],
+        focus_node_id: str | None = None,
     ) -> None:
         """
         Receives data from Main Window, caches it, and triggers rendering.
@@ -341,7 +348,7 @@ class GraphWidget(QWidget):
 
         # We need to update SearchUtils to handle dicts before this works.
         # I will do that in the next step.
-        self._refresh_display_locally()
+        self._refresh_display_locally(focus_node_id)
 
     def _show_empty_state(self) -> None:
         """Displays the empty state message."""

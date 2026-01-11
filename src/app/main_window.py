@@ -186,6 +186,9 @@ class MainWindow(QMainWindow):
         self._last_selected_id = None
         self._last_selected_type = None
 
+        # Debounce timer for graph reload
+        self._graph_reload_timer: QTimer | None = None
+
         self.longform_editor = LongformEditorWidget(db_path=self.db_path)
 
         # Initialize Map Handler
@@ -698,6 +701,10 @@ class MainWindow(QMainWindow):
         if hasattr(self, "timeline"):
             self.timeline.save_state()
 
+        # Stop debounce timer to prevent callbacks during shutdown
+        if self._graph_reload_timer is not None:
+            self._graph_reload_timer.stop()
+
         # Cleanup Worker
         QMetaObject.invokeMethod(
             self.worker, "cleanup", Qt.ConnectionType.BlockingQueuedConnection
@@ -837,7 +844,9 @@ class MainWindow(QMainWindow):
             edges: List of edge dictionaries.
         """
         if self.graph_widget:
-            self.graph_widget.display_graph(nodes, edges)
+            # Pass the last selected ID to preserve focus
+            focus_id = self._last_selected_id
+            self.graph_widget.display_graph(nodes, edges, focus_node_id=focus_id)
 
     @Slot(list, list)
     def _on_graph_metadata_ready(self, tags: list[str], rel_types: list[str]) -> None:
@@ -865,8 +874,8 @@ class MainWindow(QMainWindow):
         self.unified_list.set_data(self._cached_events, self._cached_entities)
         self.timeline.set_events(events)
 
-        # Refresh graph to reflect changes
-        self.load_graph_data()
+        # Refresh graph to reflect changes (debounced)
+        self._schedule_graph_refresh()
 
     @Slot(list)
     def _on_entities_ready(self, entities: list) -> None:
@@ -879,8 +888,17 @@ class MainWindow(QMainWindow):
         self._cached_entities = entities
         self.unified_list.set_data(self._cached_events, self._cached_entities)
 
-        # Refresh graph to reflect changes
-        self.load_graph_data()
+        # Refresh graph to reflect changes (debounced)
+        self._schedule_graph_refresh()
+
+    def _schedule_graph_refresh(self) -> None:
+        """Schedules a debounced graph refresh to avoid double-loading."""
+        if self._graph_reload_timer is None:
+            self._graph_reload_timer = QTimer()
+            self._graph_reload_timer.setSingleShot(True)
+            self._graph_reload_timer.timeout.connect(self.load_graph_data)
+        # Reset timer on each call (debounce)
+        self._graph_reload_timer.start(100)  # 100ms debounce
 
     @Slot(list)
     def _on_suggestions_update(self, items: list) -> None:

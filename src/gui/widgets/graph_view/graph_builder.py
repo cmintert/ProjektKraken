@@ -48,6 +48,7 @@ class GraphBuilder:
         height: str = "100%",
         width: str = "100%",
         theme_config: dict[str, str] = None,
+        focus_node_id: str | None = None,
     ) -> str:
         """
         Builds a PyVis network and returns HTML string.
@@ -57,14 +58,16 @@ class GraphBuilder:
             edges: List of edge dicts with source_id, target_id, rel_type keys.
             height: Height of the graph visualization.
             width: Width of the graph visualization.
+            width: Width of the graph visualization.
             theme_config: Optional dictionary with color settings.
+            focus_node_id: Optional ID of the node to focus on stabilize.
 
         Returns:
             HTML string for embedding in QWebEngineView.
         """
         theme = theme_config or self.DEFAULT_THEME
         network = self._build_network(nodes, edges, height, width, theme)
-        return self._generate_html(network, theme)
+        return self._generate_html(network, theme, focus_node_id)
 
     def _build_network(
         self,
@@ -177,7 +180,9 @@ class GraphBuilder:
 
         return net
 
-    def _generate_html(self, network: Network, theme: dict[str, str]) -> str:
+    def _generate_html(
+        self, network: Network, theme: dict[str, str], focus_node_id: str | None = None
+    ) -> str:
         """
         Generates HTML string from a PyVis network.
 
@@ -266,6 +271,7 @@ class GraphBuilder:
                 if (typeof network !== 'undefined') {
                     clearInterval(checkNetwork);
                     
+                    // Interaction: Click
                     network.on("click", function (params) {
                         if (params.nodes.length > 0) {
                             var nodeId = params.nodes[0];
@@ -280,10 +286,57 @@ class GraphBuilder:
                             }
                         }
                     });
+
+                    // Interaction: Restore Focus
+                    // Use 'stabilized' event which fires when physics stops
+                    var focusId = "%FOCUS_ID%";
+                    
+                    function restoreFocus() {
+                        if (focusId && focusId !== "None") {
+                            // Check if node exists in dataset
+                            var nodeData = nodes.get(focusId);
+                            if (nodeData) {
+                                // Select node visually
+                                network.selectNodes([focusId]);
+                                // Focus view on node
+                                network.focus(focusId, {
+                                    scale: 1.0,
+                                    animation: {
+                                        duration: 500,
+                                        easingFunction: "easeInOutQuad"
+                                    }
+                                });
+                                console.log("Graph: Focused on node", focusId);
+                            } else {
+                                console.log("Graph: Focus node not found", focusId);
+                            }
+                        }
+                    }
+                    
+                    // Try stabilized event first, with timeout fallback
+                    var focusRestored = false;
+                    network.once("stabilized", function() {
+                        if (!focusRestored) {
+                            focusRestored = true;
+                            restoreFocus();
+                        }
+                    });
+                    
+                    // Fallback: if stabilized doesn't fire within 2s, force focus
+                    setTimeout(function() {
+                        if (!focusRestored) {
+                            focusRestored = true;
+                            restoreFocus();
+                        }
+                    }, 2000);
                 }
             }, 100);
         </script>
         """
+
+        # Replace placeholder with actual ID (or "None")
+        focus_str = focus_node_id if focus_node_id else "None"
+        interaction_script = interaction_script.replace("%FOCUS_ID%", focus_str)
 
         html_content = html_content.replace(
             "</body>", f"{qwebchannel_script}\n{interaction_script}\n</body>"
