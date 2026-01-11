@@ -124,13 +124,15 @@ class DataHandler(QObject):
 
         # Add entities: (id, name, type)
         if self._cached_entities:
-            for entity in self._cached_entities:
-                items.append((entity.id, entity.name, "entity"))
+            items.extend(
+                (entity.id, entity.name, "entity") for entity in self._cached_entities
+            )
 
         # Add events: (id, name, type)
         if self._cached_events:
-            for event in self._cached_events:
-                items.append((event.id, event.name, "event"))
+            items.extend(
+                (event.id, event.name, "event") for event in self._cached_events
+            )
 
         # Sort by name for better UX
         items.sort(key=lambda x: x[1].lower())
@@ -208,11 +210,10 @@ class DataHandler(QObject):
             lore_date = None
 
             if marker.object_type == "entity" and self._cached_entities:
-                entity = next(
+                if entity := next(
                     (e for e in self._cached_entities if e.id == marker.object_id),
                     None,
-                )
-                if entity:
+                ):
                     label = getattr(entity, "name", "Unknown Entity")
                     description = getattr(entity, "description", "") or ""
                     # Entities don't have a single specific date usually,
@@ -220,11 +221,10 @@ class DataHandler(QObject):
                     lore_date = None
 
             elif marker.object_type == "event" and self._cached_events:
-                event = next(
+                if event := next(
                     (e for e in self._cached_events if e.id == marker.object_id),
                     None,
-                )
-                if event:
+                ):
                     label = getattr(event, "name", "Unknown Event")
                     description = getattr(event, "description", "") or ""
                     lore_date = getattr(event, "lore_date", None)
@@ -302,6 +302,9 @@ class DataHandler(QObject):
         if "Relation" in command_name or "WikiLinks" in command_name:
             # Signal to reload editor relations if an editor is active
             self.reload_active_editor_relations.emit()
+            # Also reload events and entities to update the graph info (and other views)
+            self.reload_events.emit()
+            self.reload_entities.emit()
 
         if "Longform" in command_name:
             self.reload_longform.emit()

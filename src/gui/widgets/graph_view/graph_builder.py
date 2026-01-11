@@ -162,6 +162,7 @@ class GraphBuilder:
                 color=color,
                 shape=shape,
                 size=20,
+                object_type=node.get("object_type", "entity"),
             )
 
         # Add edges
@@ -238,6 +239,55 @@ class GraphBuilder:
         """
         # Insert CSS right after <head>
         html_content = html_content.replace("<head>", f"<head>{background_fix_css}")
+
+        # Inject QWebChannel script and interaction logic
+        qwebchannel_script = (
+            '<script src="qrc:///qtwebchannel/qwebchannel.js"></script>'
+        )
+
+        # We need to hook into the pyvis generated script.
+        # PyVis creates a variable 'network' (the vis.Network instance) and 'nodes'.
+        # We append our script at the end of the body to ensure variable exists.
+
+        interaction_script = """
+        <script type="text/javascript">
+            // Setup QWebChannel
+            document.addEventListener("DOMContentLoaded", function() {
+                new QWebChannel(qt.webChannelTransport, function(channel) {
+                    window.bridge = channel.objects.bridge;
+                });
+            });
+
+            // Wait for network to be initialized (PyVis usually inits at bottom).
+            // Safer to set timeout or check if network is defined.
+            // PyVis 0.3.2+ typically matches 'network' variable name.
+            
+            var checkNetwork = setInterval(function() {
+                if (typeof network !== 'undefined') {
+                    clearInterval(checkNetwork);
+                    
+                    network.on("click", function (params) {
+                        if (params.nodes.length > 0) {
+                            var nodeId = params.nodes[0];
+                            // We need to look up object_type.
+                            // PyVis 'nodes' is a vis.DataSet or DataView.
+                            var nodeData = nodes.get(nodeId);
+                            
+                            if (nodeData && window.bridge) {
+                                // Default to 'entity' if missing, but should be there
+                                var objType = nodeData.object_type || "entity";
+                                window.bridge.nodeClicked(objType, String(nodeId));
+                            }
+                        }
+                    });
+                }
+            }, 100);
+        </script>
+        """
+
+        html_content = html_content.replace(
+            "</body>", f"{qwebchannel_script}\n{interaction_script}\n</body>"
+        )
 
         return html_content
 

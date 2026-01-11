@@ -163,6 +163,7 @@ class MainWindow(QMainWindow):
 
         # Graph Widget
         self.graph_widget = GraphWidget()
+        self.graph_widget.node_clicked.connect(self._on_item_selected)
 
         self.cached_event_count: Optional[int] = None
 
@@ -726,7 +727,9 @@ class MainWindow(QMainWindow):
 
     # TimelineDataProvider interface implementation
     def get_group_metadata(
-        self, tag_order: list[str], date_range: tuple[float, float] | None = None
+        self,
+        tag_order: list[str],
+        date_range: tuple[float, float] | None = None,
     ) -> list[dict]:
         """
         Get metadata for timeline grouping tags.
@@ -862,6 +865,9 @@ class MainWindow(QMainWindow):
         self.unified_list.set_data(self._cached_events, self._cached_entities)
         self.timeline.set_events(events)
 
+        # Refresh graph to reflect changes
+        self.load_graph_data()
+
     @Slot(list)
     def _on_entities_ready(self, entities: list) -> None:
         """
@@ -872,6 +878,9 @@ class MainWindow(QMainWindow):
         """
         self._cached_entities = entities
         self.unified_list.set_data(self._cached_events, self._cached_entities)
+
+        # Refresh graph to reflect changes
+        self.load_graph_data()
 
     @Slot(list)
     def _on_suggestions_update(self, items: list) -> None:

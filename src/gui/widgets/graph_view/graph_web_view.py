@@ -7,12 +7,25 @@ Private internal component encapsulating QWebEngineView for graph display.
 import logging
 from typing import Optional
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QObject, Signal, Slot
 from PySide6.QtGui import QColor
+from PySide6.QtWebChannel import QWebChannel
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
 logger = logging.getLogger(__name__)
+
+
+class GraphBridge(QObject):
+    """Bridge for communication between JS/PyVis and Python."""
+
+    # Signal emitted when JS calls nodeClicked
+    node_clicked = Signal(str, str)  # (object_type, object_id)
+
+    @Slot(str, str)
+    def nodeClicked(self, object_type: str, object_id: str) -> None:
+        """Called from JavaScript when a node is clicked."""
+        self.node_clicked.emit(object_type, object_id)
 
 
 class GraphWebView(QWidget):
@@ -36,6 +49,8 @@ class GraphWebView(QWidget):
             parent: Parent widget.
         """
         super().__init__(parent)
+        self._bridge = GraphBridge()
+        self._bridge.node_clicked.connect(self.node_clicked.emit)
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -45,6 +60,11 @@ class GraphWebView(QWidget):
 
         self._web_view = QWebEngineView()
         self._web_view.setMinimumSize(400, 300)
+
+        # Setup WebChannel
+        self._channel = QWebChannel()
+        self._channel.registerObject("bridge", self._bridge)
+        self._web_view.page().setWebChannel(self._channel)
 
         # Set a dark background before content loads (widget background)
         self._web_view.setStyleSheet("background-color: #1e1e1e;")
