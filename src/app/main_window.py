@@ -1827,11 +1827,11 @@ class MainWindow(QMainWindow):
         # Open directory in file explorer
         try:
             if sys.platform == "win32":
-                subprocess.run(["explorer", str(backup_dir)])
+                subprocess.run(["explorer", str(backup_dir)], check=False)
             elif sys.platform == "darwin":
-                subprocess.run(["open", str(backup_dir)])
+                subprocess.run(["open", str(backup_dir)], check=False)
             else:  # Linux
-                subprocess.run(["xdg-open", str(backup_dir)])
+                subprocess.run(["xdg-open", str(backup_dir)], check=False)
         except Exception as e:
             logger.error(f"Failed to open backup directory: {e}")
             QMessageBox.information(

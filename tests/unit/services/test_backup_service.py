@@ -326,9 +326,9 @@ def test_backup_naming_convention(backup_service, temp_db):
         db_path=temp_db, backup_type=BackupType.AUTO_SAVE
     )
     assert "auto" in str(auto_backup.backup_path)
-    assert "autosave" in str(auto_backup.backup_path) or "auto_" in str(
-        auto_backup.backup_path
-    )
+    # Should contain autosave or auto in the filename
+    filename = auto_backup.backup_path.name.lower()
+    assert "autosave" in filename or "_auto_" in filename
 
     # Daily backup
     daily_backup = backup_service.create_backup(

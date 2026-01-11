@@ -21,6 +21,7 @@ try:
     HAS_QT = True
 except ImportError:
     HAS_QT = False
+    logger.debug("Qt not available - backup service will run without auto-backup timer")
 
 from src.core.backup_config import BackupConfig
 from src.core.paths import get_backup_directory
@@ -332,6 +333,8 @@ class BackupService:
             logger.error(f"Backup file not found: {backup_path}")
             return False
 
+        temp_path = None  # Initialize to None for cleanup handling
+
         try:
             # Verify backup integrity
             if not self._verify_backup_file(backup_path):
@@ -340,7 +343,10 @@ class BackupService:
 
             # Create safety backup of current database
             if target_path.exists():
-                safety_backup = target_path.parent / f"pre_restore_{int(time.time())}.kraken"
+                from datetime import datetime
+
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                safety_backup = target_path.parent / f"pre_restore_{timestamp}.kraken"
                 shutil.copy2(target_path, safety_backup)
                 logger.info(f"Created safety backup: {safety_backup}")
 
