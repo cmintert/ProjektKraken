@@ -139,6 +139,9 @@ class MainWindow(QMainWindow):
         # 0. Initialize Data Handler (signals-based, no window reference)
         self.data_handler = DataHandler()
 
+        # Initialize backup service (will be properly connected after DB init)
+        self.backup_service = None
+
         # 1. Init Services (Worker Thread)
         self.worker_manager = WorkerManager(self)
         self.worker_manager.init_worker()
@@ -741,6 +744,10 @@ class MainWindow(QMainWindow):
         # Stop debounce timer to prevent callbacks during shutdown
         if self._graph_reload_timer is not None:
             self._graph_reload_timer.stop()
+
+        # Stop auto-backup timer if running
+        if self.backup_service is not None:
+            self.backup_service.stop_auto_backup()
 
         # Cleanup Worker
         QMetaObject.invokeMethod(
@@ -1694,6 +1701,142 @@ class MainWindow(QMainWindow):
             # qApp.quit()
             # QProcess.startDetached(sys.executable, sys.argv)
             pass
+
+    @Slot()
+    def create_manual_backup(self) -> None:
+        """Creates a manual backup with optional description."""
+        if self.backup_service is None:
+            QMessageBox.warning(
+                self, "Backup Unavailable", "Backup service is not initialized."
+            )
+            return
+
+        # Ask user for optional description
+        description, ok = QInputDialog.getText(
+            self, "Create Backup", "Backup description (optional):"
+        )
+        if not ok:
+            return  # User cancelled
+
+        from src.services.backup_service import BackupType
+
+        # Create backup
+        self.status_bar.showMessage("Creating backup...")
+        QApplication.processEvents()
+
+        metadata = self.backup_service.create_backup(
+            backup_type=BackupType.MANUAL, description=description
+        )
+
+        if metadata:
+            self.status_bar.showMessage(
+                f"Backup created: {metadata.backup_path.name}", 5000
+            )
+            QMessageBox.information(
+                self,
+                "Backup Created",
+                f"Backup created successfully!\n\n"
+                f"Location: {metadata.backup_path}\n"
+                f"Size: {metadata.size / 1024:.1f} KB",
+            )
+        else:
+            self.status_bar.showMessage("Backup failed", 5000)
+            QMessageBox.critical(
+                self, "Backup Failed", "Failed to create backup. Check logs for details."
+            )
+
+    @Slot()
+    def restore_from_backup(self) -> None:
+        """Restores database from a backup file."""
+        if self.backup_service is None:
+            QMessageBox.warning(
+                self, "Backup Unavailable", "Backup service is not initialized."
+            )
+            return
+
+        from PySide6.QtWidgets import QFileDialog
+
+        # Get backup file from user
+        backup_file, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select Backup File",
+            str(self.backup_service.config.backup_dir or ""),
+            "Kraken Database (*.kraken)",
+        )
+
+        if not backup_file:
+            return  # User cancelled
+
+        from pathlib import Path
+
+        # Warn user about restoration
+        reply = QMessageBox.question(
+            self,
+            "Restore Backup",
+            "Restoring will replace the current database.\n"
+            "A safety backup will be created first.\n\n"
+            "Do you want to continue?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        # Restore backup
+        self.status_bar.showMessage("Restoring from backup...")
+        QApplication.processEvents()
+
+        success = self.backup_service.restore_backup(
+            Path(backup_file), Path(self.db_path)
+        )
+
+        if success:
+            self.status_bar.showMessage("Restore completed", 5000)
+            QMessageBox.information(
+                self,
+                "Restore Complete",
+                "Database restored successfully!\n\n"
+                "The application will now close. Please restart to use the restored database.",
+            )
+            # Close application so user can restart
+            self.close()
+        else:
+            self.status_bar.showMessage("Restore failed", 5000)
+            QMessageBox.critical(
+                self,
+                "Restore Failed",
+                "Failed to restore backup. Check logs for details.",
+            )
+
+    @Slot()
+    def show_backup_location(self) -> None:
+        """Opens the backup directory in the system file explorer."""
+        if self.backup_service is None:
+            QMessageBox.warning(
+                self, "Backup Unavailable", "Backup service is not initialized."
+            )
+            return
+
+        from src.core.paths import get_backup_directory
+        import subprocess
+        import sys
+
+        backup_dir = get_backup_directory()
+
+        # Open directory in file explorer
+        try:
+            if sys.platform == "win32":
+                subprocess.run(["explorer", str(backup_dir)])
+            elif sys.platform == "darwin":
+                subprocess.run(["open", str(backup_dir)])
+            else:  # Linux
+                subprocess.run(["xdg-open", str(backup_dir)])
+        except Exception as e:
+            logger.error(f"Failed to open backup directory: {e}")
+            QMessageBox.information(
+                self, "Backup Location", f"Backup directory:\n{backup_dir}"
+            )
 
     @Slot(float)
     def _on_playhead_changed(self, time: float) -> None:

@@ -194,6 +194,38 @@ class WorkerManager(QObject):
             except Exception as e:
                 logger.error(f"Failed to initialize GUI database service: {e}")
 
+            # Initialize backup service
+            try:
+                from src.core.backup_config import BackupConfig
+                from src.services.backup_service import BackupService
+
+                # Load backup config from settings or use defaults
+                backup_config = BackupConfig()
+
+                # Initialize backup service
+                self.window.backup_service = BackupService(backup_config)
+                self.window.backup_service.set_database_path(self.window.db_path)
+
+                # Register with database service for integration
+                if hasattr(self.window, "gui_db_service"):
+                    self.window.gui_db_service.register_backup_service(
+                        self.window.backup_service
+                    )
+
+                logger.info("Backup service initialized successfully")
+
+                # Start auto-backup if enabled
+                if backup_config.enabled and backup_config.auto_save_interval_minutes > 0:
+                    self.window.backup_service.start_auto_backup()
+                    logger.info(
+                        f"Auto-backup enabled with {backup_config.auto_save_interval_minutes} minute interval"
+                    )
+
+            except Exception as e:
+                logger.error(f"Failed to initialize backup service: {e}")
+                # Don't fail the entire app if backup service fails to init
+                self.window.backup_service = None
+
             self.window.load_data()
             self.window._request_calendar_config()
             self.window._request_current_time()
