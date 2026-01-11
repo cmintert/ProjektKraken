@@ -61,3 +61,15 @@ def get_default_layout_path() -> str:
     Default layout is stored in src/assets/default_layout.json.
     """
     return get_resource_path(os.path.join("src", "assets", "default_layout.json"))
+
+
+def get_backup_directory() -> Path:
+    """
+    Returns the backup directory, creating it if necessary.
+
+    Returns:
+        Path: Path to the backups directory in user data folder.
+    """
+    backup_dir = Path(get_user_data_path()) / "backups"
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    return backup_dir

@@ -54,6 +54,7 @@ class DatabaseService:
         """
         self.db_path = db_path
         self._connection: Optional[sqlite3.Connection] = None
+        self._backup_service = None  # Optional backup service integration
 
         # Initialize repositories (will be connected after connection is established)
         self._event_repo = EventRepository()
@@ -2222,3 +2223,47 @@ class DatabaseService:
         if not self._connection:
             self.connect()
         return self._trajectory_repo.delete_keyframe(map_id, object_id, t)
+
+    def register_backup_service(self, backup_service) -> None:
+        """
+        Registers a backup service for integration with database operations.
+
+        Args:
+            backup_service: The BackupService instance to register.
+        """
+        self._backup_service = backup_service
+        logger.debug("Backup service registered with DatabaseService")
+
+    def get_db_file_path(self) -> str:
+        """
+        Returns the current database file path.
+
+        Returns:
+            str: Path to the database file.
+        """
+        return self.db_path
+
+    def vacuum(self) -> bool:
+        """
+        Runs VACUUM on the database to reclaim space and optimize storage.
+        This can be slow for large databases and should be run infrequently.
+
+        Returns:
+            bool: True if successful, False otherwise.
+        """
+        if not self._connection:
+            logger.error("Cannot vacuum: no database connection")
+            return False
+
+        if self.db_path == ":memory:":
+            logger.warning("Skipping vacuum on in-memory database")
+            return True
+
+        try:
+            logger.info("Running VACUUM on database...")
+            self._connection.execute("VACUUM")
+            logger.info("VACUUM completed successfully")
+            return True
+        except sqlite3.Error as e:
+            logger.error(f"VACUUM failed: {e}")
+            return False
