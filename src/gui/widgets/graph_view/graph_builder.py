@@ -32,12 +32,22 @@ class GraphBuilder:
     DEFAULT_HEIGHT = "100%"
     DEFAULT_WIDTH = "100%"
 
+    # Default Theme Config
+    DEFAULT_THEME = {
+        "background_color": "#1e1e1e",
+        "text_color": "#ffffff",
+        "node_entity_color": "#4A90D9",
+        "node_event_color": "#E67E22",
+        "edge_color": "#888888",
+    }
+
     def build_html(
         self,
         nodes: list[dict[str, Any]],
         edges: list[dict[str, Any]],
         height: str = "100%",
         width: str = "100%",
+        theme_config: dict[str, str] = None,
     ) -> str:
         """
         Builds a PyVis network and returns HTML string.
@@ -47,12 +57,14 @@ class GraphBuilder:
             edges: List of edge dicts with source_id, target_id, rel_type keys.
             height: Height of the graph visualization.
             width: Width of the graph visualization.
+            theme_config: Optional dictionary with color settings.
 
         Returns:
             HTML string for embedding in QWebEngineView.
         """
-        network = self._build_network(nodes, edges, height, width)
-        return self._generate_html(network)
+        theme = theme_config or self.DEFAULT_THEME
+        network = self._build_network(nodes, edges, height, width, theme)
+        return self._generate_html(network, theme)
 
     def _build_network(
         self,
@@ -60,6 +72,7 @@ class GraphBuilder:
         edges: list[dict[str, Any]],
         height: str,
         width: str,
+        theme: dict[str, str],
     ) -> Network:
         """
         Creates a PyVis Network from node/edge data.
@@ -69,6 +82,7 @@ class GraphBuilder:
             edges: List of edge dicts.
             height: Graph height.
             width: Graph width.
+            theme: Theme configuration dictionary.
 
         Returns:
             Configured PyVis Network.
@@ -76,8 +90,8 @@ class GraphBuilder:
         net = Network(
             height=height,
             width=width,
-            bgcolor="#1e1e1e",  # Dark background
-            font_color="white",
+            bgcolor=theme.get("background_color", "#1e1e1e"),
+            font_color=theme.get("text_color", "white"),
             directed=True,
         )
 
@@ -129,12 +143,12 @@ class GraphBuilder:
         )
 
         # Add nodes
+        entity_color = theme.get("node_entity_color", self.ENTITY_COLOR)
+        event_color = theme.get("node_event_color", self.EVENT_COLOR)
+        edge_color = theme.get("edge_color", "#888888")
+
         for node in nodes:
-            color = (
-                self.ENTITY_COLOR
-                if node.get("object_type") == "entity"
-                else self.EVENT_COLOR
-            )
+            color = entity_color if node.get("object_type") == "entity" else event_color
             shape = (
                 self.ENTITY_SHAPE
                 if node.get("object_type") == "entity"
@@ -157,17 +171,18 @@ class GraphBuilder:
                 edge["target_id"],
                 title=edge.get("rel_type", ""),
                 label=edge.get("rel_type", ""),
-                color="#888888",
+                color=edge_color,
             )
 
         return net
 
-    def _generate_html(self, network: Network) -> str:
+    def _generate_html(self, network: Network, theme: dict[str, str]) -> str:
         """
         Generates HTML string from a PyVis network.
 
         Args:
             network: Configured PyVis Network.
+            theme: Theme configuration dictionary.
 
         Returns:
             HTML string.
@@ -182,43 +197,43 @@ class GraphBuilder:
                 html_content = html_file.read()
 
         # Inject CSS to set background color and ensure full container height
-        # PyVis uses a .card container, so we must force it to full height
-        # Also hide header elements that might cause white slivers
-        background_fix_css = """
+        bg_color = theme.get("background_color", "#1e1e1e")
+
+        background_fix_css = f"""
         <style>
-            html, body {
+            html, body {{
                 width: 100%;
                 height: 100%;
                 margin: 0;
                 padding: 0;
-                background-color: #1e1e1e;
+                background-color: {bg_color};
                 overflow: hidden;
-            }
-            .card {
+            }}
+            .card {{
                 width: 100% !important;
                 height: 100% !important;
-                background-color: #1e1e1e;
+                background-color: {bg_color};
                 border: none !important;
                 margin: 0 !important;
-            }
-            .card-body {
+            }}
+            .card-body {{
                 width: 100% !important;
                 height: 100% !important;
                 padding: 0 !important;
                 margin: 0 !important;
-                background-color: #1e1e1e;
-            }
-            #mynetwork {
+                background-color: {bg_color};
+            }}
+            #mynetwork {{
                 width: 100% !important;
                 height: 100% !important;
-                background-color: #1e1e1e;
+                background-color: {bg_color};
                 border: none !important;
                 margin: 0 !important;
-            }
+            }}
             /* Hide unused header elements */
-            h1, center {
+            h1, center {{
                 display: none !important;
-            }
+            }}
         </style>
         """
         # Insert CSS right after <head>
@@ -226,32 +241,39 @@ class GraphBuilder:
 
         return html_content
 
-    def build_empty_html(self) -> str:
+    def build_empty_html(self, theme_config: dict[str, str] = None) -> str:
         """
         Returns HTML for an empty state message.
+
+        Args:
+            theme_config: Optional dictionary with color settings.
 
         Returns:
             HTML string with empty state message.
         """
-        return """
+        theme = theme_config or self.DEFAULT_THEME
+        bg_color = theme.get("background_color", "#1e1e1e")
+        text_color = theme.get("text_color", "#888888")
+
+        return f"""
         <!DOCTYPE html>
         <html>
         <head>
             <style>
-                body {
-                    background-color: #1e1e1e;
-                    color: #888;
+                body {{
+                    background-color: {bg_color};
+                    color: {text_color};
                     font-family: 'Segoe UI', sans-serif;
                     display: flex;
                     justify-content: center;
                     align-items: center;
                     height: 100vh;
                     margin: 0;
-                }
-                .message {
+                }}
+                .message {{
                     text-align: center;
-                }
-                h2 { color: #aaa; }
+                }}
+                h2 {{ color: {text_color}; opacity: 0.7; }}
             </style>
         </head>
         <body>

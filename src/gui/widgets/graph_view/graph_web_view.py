@@ -63,6 +63,16 @@ class GraphWebView(QWidget):
         """
         self._web_view.setHtml(html)
 
+    def set_background_color(self, color: str) -> None:
+        """
+        Sets the background color of the web view.
+
+        Args:
+            color: Hex color string (e.g. "#1e1e1e").
+        """
+        self._web_view.setStyleSheet(f"background-color: {color};")
+        self._web_view.page().setBackgroundColor(QColor(color))
+
     def clear(self) -> None:
         """Clears the web view content."""
         self._web_view.setHtml("")

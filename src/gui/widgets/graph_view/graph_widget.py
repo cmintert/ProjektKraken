@@ -70,6 +70,13 @@ class GraphWidget(QWidget):
         self._available_tags: list[str] = []
         self._available_rel_types: list[str] = []
 
+        # Theme Handling
+        from src.core.theme_manager import ThemeManager
+
+        self._theme_manager = ThemeManager()
+        self._current_theme_config = self._get_current_theme_config()
+        self._theme_manager.theme_changed.connect(self._on_theme_changed)
+
         self._setup_ui()
         self._connect_internal_signals()
 
@@ -99,6 +106,32 @@ class GraphWidget(QWidget):
         self._filter_bar.filters_changed.connect(self._on_toolbar_filter_changed)
         self._filter_bar.search_text_changed.connect(self._on_search_text_changed)
         self._filter_bar.show_advanced_filter_requested.connect(self.show_filter_dialog)
+
+    def _on_theme_changed(self, theme_data: dict[str, Any]) -> None:
+        """Handles theme changes by refreshing the graph."""
+        self._current_theme_config = self._get_current_theme_config()
+
+        # Update Web View background to match theme immediately
+        bg_color = self._current_theme_config.get("background_color", "#1e1e1e")
+        self._web_view.set_background_color(bg_color)
+
+        # Refresh display with new colors
+        self._refresh_display_locally()
+
+    def _get_current_theme_config(self) -> dict[str, str]:
+        """Extracts relevant colors from the current theme."""
+        theme = self._theme_manager.get_theme()
+
+        # Map BaseThemeManager keys to GraphBuilder keys
+        return {
+            "background_color": theme.get("app_bg", "#1e1e1e"),
+            "text_color": theme.get("text_main", "#ffffff"),
+            # Entity -> Accent/Primary (e.g. "#4A90D9" or "#FF9900")
+            "node_entity_color": theme.get("accent_secondary", "#4A90D9"),
+            # Event -> Primary (e.g. "#E67E22")
+            "node_event_color": theme.get("primary", "#E67E22"),
+            "edge_color": theme.get("text_dim", "#888888"),
+        }
 
     # --- Internal Logic ---
 
@@ -145,7 +178,9 @@ class GraphWidget(QWidget):
     def _refresh_display_locally(self) -> None:
         """Refreshes the graph display using cached data and local filters."""
         if not self._all_nodes and not self._all_edges:
-            self._web_view.load_html(self._builder.build_empty_html())
+            self._web_view.load_html(
+                self._builder.build_empty_html(self._current_theme_config)
+            )
             return
 
         filtered_nodes = []
@@ -194,9 +229,13 @@ class GraphWidget(QWidget):
 
         # -- Step 3: Render --
         if not filtered_nodes:
-            self._web_view.load_html(self._builder.build_empty_html())
+            self._web_view.load_html(
+                self._builder.build_empty_html(self._current_theme_config)
+            )
         else:
-            html = self._builder.build_html(filtered_nodes, filtered_edges)
+            html = self._builder.build_html(
+                filtered_nodes, filtered_edges, theme_config=self._current_theme_config
+            )
             self._web_view.load_html(html)
             logger.debug(
                 f"Refreshed graph: {len(filtered_nodes)} nodes, {len(filtered_edges)} edges"
