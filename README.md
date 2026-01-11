@@ -17,6 +17,7 @@ commit: fae25d5
 - **Custom Calendar System**: Define worlds with custom months, weeks, and time tracking
 - **Wiki-Style Linking**: `[[Entity Name]]` syntax with auto-completion and navigation
 - **Relation Mapping**: Track relationships between events and entities with typed connections
+- **Automated Backups**: Continuous auto-save with manual backup/restore functionality
 
 ### Visualization
 - **Dual Timeline Views**: Lane-based graphic timeline + card-style text timeline
@@ -157,6 +158,7 @@ pytest --cov=src --cov-report=term-missing
 
 - **[CLI Tools](src/cli/README.md)** - Command-line interface reference
 - **[Database Architecture](docs/DATABASE.md)** - Schema and data model
+- **[Backup Strategy](docs/BACKUP_STRATEGY.md)** - Backup and restore guide
 - **[Temporal Relations](docs/TEMPORAL_RELATIONS.md)** - Timeline logic and staging system
 - **[Semantic Search](docs/SEMANTIC_SEARCH.md)** - AI search and embeddings setup
 - **[Security Guidelines](docs/SECURITY.md)** - Security best practices
