@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-01-11  
-**Commit:** `0076ace`  
+**Commit:** `8b6394e`  
 ---
 
 # Changelog
@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- *(2026-01-11)* **Docs**: Standardized schema documentation and fixed missing title in `LICENSE.md`.
 - *(2026-01-11)* **Feature**: Introduced Interactive Graph Visualization system.
   - Added `GraphWidget` and `GraphWebView` for PyVis/vis.js integration.
   - Added `GraphDataService` for efficient relationship graph calculation.

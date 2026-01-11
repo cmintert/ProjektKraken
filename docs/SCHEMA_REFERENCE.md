@@ -76,6 +76,16 @@ erDiagram
         REAL modified_at
     }
 
+    moving_features {
+        TEXT id PK
+        TEXT marker_id
+        REAL t_start
+        REAL t_end
+        JSON trajectory
+        JSON properties
+        REAL created_at
+    }
+
     image_attachments {
         TEXT id PK
         TEXT owner_type
@@ -85,7 +95,7 @@ erDiagram
         TEXT caption
         INTEGER order_index
         REAL created_at
-        TEXT, resolution
+        TEXT resolution
         TEXT source
     }
 
@@ -122,6 +132,7 @@ erDiagram
     }
 
     markers }o--|| maps : "map_id"
+    moving_features }o--|| markers : "marker_id"
     event_tags }o--|| events : "event_id"
     event_tags }o--|| tags : "tag_id"
     entity_tags }o--|| entities : "entity_id"
@@ -218,6 +229,18 @@ erDiagram
 
 **Indexes:** `idx_markers_map`
 
+### `moving_features`
+
+| Column | Type | Constraints |
+|--------|------|-------------|
+| `id` | TEXT | PRIMARY KEY |
+| `marker_id` | TEXT | NOT NULL |
+| `t_start` | REAL | NOT NULL |
+| `t_end` | REAL | NOT NULL |
+| `trajectory` | JSON | NOT NULL, -- List of [t, x, y] |
+| `properties` | JSON | DEFAULT '{}', -- Changing properties over time |
+| `created_at` | REAL |  |
+
 ### `image_attachments`
 
 | Column | Type | Constraints |
@@ -230,7 +253,7 @@ erDiagram
 | `caption` | TEXT |  |
 | `order_index` | INTEGER | DEFAULT 0 |
 | `created_at` | REAL |  |
-| `resolution` | TEXT, | -- Stored as "widthxheight" or JSON [w, h] |
+| `resolution` | TEXT |  |
 | `source` | TEXT |  |
 
 ### `tags`
