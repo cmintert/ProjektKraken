@@ -187,6 +187,7 @@ class UnifiedListWidget(QWidget):
         self._events: List[Event] = []
         self._entities: List[Entity] = []
         self._search_term = ""  # Track current search term
+        self._advanced_filter_config: dict = {}  # Advanced filter settings (tags)
 
         # Filter State
         # self._active_types: set = set()  # Removed: Backend handled
@@ -246,6 +247,27 @@ class UnifiedListWidget(QWidget):
         else:
             self.btn_filter.setStyleSheet("")
             self.btn_filter.setText("Filter...")
+
+    def set_advanced_filter(self, config: dict) -> None:
+        """
+        Sets the advanced filter configuration (tags) and re-renders the list.
+
+        Args:
+            config: Filter configuration dict with 'include', 'exclude', 'match_all' keys.
+        """
+        self._advanced_filter_config = config or {}
+        has_filter = bool(config.get("include") or config.get("exclude"))
+        self.set_filter_active(has_filter)
+        self._render_list()
+
+    def get_advanced_filter_config(self) -> dict:
+        """
+        Returns the current advanced filter configuration.
+
+        Returns:
+            dict: The current filter configuration.
+        """
+        return self._advanced_filter_config
 
     # _clear_filters removed as it's replaced by backend refresh
 
@@ -392,12 +414,44 @@ class UnifiedListWidget(QWidget):
 
         return SearchUtils.matches_search(obj, self._search_term)
 
+    def _passes_advanced_filters(self, obj: Union[Event, Entity]) -> bool:
+        """
+        Checks if an object passes the advanced tag filters.
+
+        Args:
+            obj: Event or Entity object.
+
+        Returns:
+            bool: True if passes all advanced filters.
+        """
+        if not self._advanced_filter_config:
+            return True
+
+        include_tags = self._advanced_filter_config.get("include", [])
+        exclude_tags = self._advanced_filter_config.get("exclude", [])
+        match_all = self._advanced_filter_config.get("match_all", False)
+
+        if not include_tags and not exclude_tags:
+            return True
+
+        item_tags = set(getattr(obj, "tags", []))
+
+        # Exclude check first
+        if exclude_tags and any(tag in item_tags for tag in exclude_tags):
+            return False
+
+        # Include check
+        if include_tags:
+            if match_all and not all(tag in item_tags for tag in include_tags):
+                return False
+            if not match_all and not any(tag in item_tags for tag in include_tags):
+                return False
+
+        return True
+
     def _passes_filters(self, obj: Union[Event, Entity]) -> bool:
         """
-        Checks if an object passes all active filters (search).
-
-        Note: Backend filtering (tags/types) is already applied to
-        self._events/_entities. This only checks local text search.
+        Checks if an object passes all active filters (search + advanced tags).
 
         Args:
             obj: Event or Entity object.
@@ -405,7 +459,11 @@ class UnifiedListWidget(QWidget):
         Returns:
             bool: True if passes all filters.
         """
-        # Only check search term
+        # Check advanced tag filters
+        if not self._passes_advanced_filters(obj):
+            return False
+
+        # Check search term
         if not self._matches_search(obj):
             return False
 
@@ -498,6 +556,11 @@ class UnifiedListWidget(QWidget):
             self.filter_combo.setCurrentText("All Items")
             # Signal should trigger _render_list synchronously
             find_and_select()
+        else:
+            # If we didn't switch filters (or even if we did and it's still not there due to another reason),
+            # validation failed or item is truly gone/filtered by search.
+            # We MUST clear selection to prevent "stale" selection from persisting.
+            self.list_widget.clearSelection()
 
     def minimumSizeHint(self) -> QSize:
         """

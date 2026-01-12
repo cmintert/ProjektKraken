@@ -172,7 +172,9 @@ class MainWindow(QMainWindow):
         self.cached_event_count: Optional[int] = None
 
         # Filter Configuration
-        self.filter_config: dict = {}  # For Project Explorer
+        # Filter Configuration
+        # self.filter_config removed - delegated to UnifiedList
+        self.longform_filter_config: dict = {}  # For Longform editor
         self.longform_filter_config: dict = {}  # For Longform editor
 
         # Data Cache for Unified List
@@ -348,6 +350,11 @@ class MainWindow(QMainWindow):
             self.restoreState(state)
         else:
             self.ui_manager.reset_layout()
+
+        # Restore Advanced Filter for Unified List
+        filter_config = settings.value(SETTINGS_FILTER_CONFIG_KEY)
+        if filter_config:
+            self.unified_list.set_advanced_filter(filter_config)
 
     def update_item(self, data: dict) -> None:
         """
@@ -1394,38 +1401,50 @@ class MainWindow(QMainWindow):
             tags = [t["name"] for t in tag_dicts]
 
         dialog = FilterDialog(
-            self, available_tags=tags, current_config=self.filter_config
+            self,
+            available_tags=tags,
+            current_config=self.unified_list.get_advanced_filter_config(),
         )
         if dialog.exec() == QDialog.DialogCode.Accepted:
             config = dialog.get_filter_config()
-            self.filter_config = config  # Update local state
+            # self.filter_config = config  # Removed
 
             # Save to settings
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
             settings.setValue(SETTINGS_FILTER_CONFIG_KEY, config)
 
             logger.info(f"Applying filter: {config}")
-            # Send to worker via signal (safer than invokeMethod for dicts)
-            self.filter_requested.emit(config)
+            # Send to worker via signal if needed, but for now UnifiedList handles it locally
+            # self.filter_requested.emit(config) # kept if other widgets need it?
+            # Actually, user wants widgets to maintain own settings.
+            # If Graph/Timeline need it, they should have their own.
+            # For now, we update UnifiedList directly.
+            self.unified_list.set_advanced_filter(config)
 
-            # Update UI state
-            has_filter = bool(config.get("include") or config.get("exclude"))
-            self.unified_list.set_filter_active(has_filter)
+            # Update UI state (handled by set_advanced_filter)
+            # has_filter = bool(config.get("include") or config.get("exclude"))
+            # self.unified_list.set_filter_active(has_filter)
 
-    @Slot()
     def clear_filter(self) -> None:
         """
         Clears the current filter configuration and reloads data.
         """
         logger.info("Clearing filters")
-        self.filter_config = {}
+        self.unified_list.set_advanced_filter({})
 
         # Clear settings
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         settings.remove(SETTINGS_FILTER_CONFIG_KEY)
 
-        # Update UI state
-        self.unified_list.set_filter_active(False)
+        # Update UI state - handled by set_advanced_filter
+        self.status_bar.showMessage("Filters cleared.")
+
+        # Reload full data? Not strictly needed if we just clear the filter,
+        # but if we want to ensure sync...
+        # Actually set_advanced_filter triggers re-render.
+        # But if the user expects a "Reload", we can keep it.
+        # Let's keep load_data() to be safe, though likely redundant for the list itself.
+        self.load_data()
         self.status_bar.showMessage("Filters cleared.")
 
         # Reload full data
