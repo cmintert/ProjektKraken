@@ -9,6 +9,7 @@ import json
 import logging
 import os
 import tempfile
+import re
 from typing import Any
 
 from pyvis.network import Network
@@ -207,7 +208,62 @@ class GraphBuilder:
         finally:
             os.unlink(temp_path)
 
-        # Inject CSS to set background color and ensure full container height
+        # -------------------------------------------------------------------
+        # 1. EMBED VIS-NETWORK JS (OFFLINE SUPPORT)
+        # -------------------------------------------------------------------
+        from src.core.paths import get_resource_path
+
+        vis_js_content = ""
+        try:
+            vis_path = get_resource_path(
+                os.path.join("src", "resources", "vis-network.min.js")
+            )
+            if os.path.exists(vis_path):
+                with open(vis_path, "r", encoding="utf-8") as f:
+                    vis_js_content = f.read()
+
+                # Verify content isn't an error message
+                if (
+                    "Redirecting" in vis_js_content[:100]
+                    or "Moved" in vis_js_content[:100]
+                ):
+                    logger.warning(
+                        f"Local vis-network.min.js looks corrupt (size: {len(vis_js_content)})"
+                    )
+                    vis_js_content = ""
+                else:
+                    logger.info(
+                        f"Successfully embedded local vis-network.min.js ({len(vis_js_content)} bytes)"
+                    )
+            else:
+                logger.warning(f"Local vis-network.min.js NOT found at {vis_path}")
+        except Exception as e:
+            logger.error(f"Failed to load vis-network script: {e}")
+
+        # PyVis typically injects a link to unpkg.com
+        # We replace the script tag containing unpkg with our literal content
+        if vis_js_content:
+            # More robust replacement for the unpkg script tag
+            # Matches variations in quotes and whitespace
+            pattern = (
+                r'<script[^>]*src="[^"]*unpkg\.com/vis-network[^"]*"[^>]*></script>'
+            )
+            replacement = f'<script type="text/javascript">{vis_js_content}</script>'
+
+            if re.search(pattern, html_content):
+                html_content = re.sub(pattern, replacement, html_content)
+            else:
+                # Fallback: Just append before head or as first child of head
+                html_content = html_content.replace(
+                    "<head>",
+                    f"<head><script type='text/javascript'>{vis_js_content}</script>",
+                )
+        else:
+            logger.warning("Falling back to CDN for vis-network.js")
+
+        # -------------------------------------------------------------------
+        # 2. INJECT CSS
+        # -------------------------------------------------------------------
         bg_color = theme.get("background_color", "#1e1e1e")
 
         background_fix_css = f"""
@@ -240,6 +296,9 @@ class GraphBuilder:
                 background-color: {bg_color};
                 border: none !important;
                 margin: 0 !important;
+                position: absolute;
+                top: 0;
+                left: 0;
             }}
             /* Hide unused header elements */
             h1, center {{
@@ -247,31 +306,27 @@ class GraphBuilder:
             }}
         </style>
         """
-        # Insert CSS right after <head>
         html_content = html_content.replace("<head>", f"<head>{background_fix_css}")
 
-        # Inject QWebChannel script and interaction logic
+        # -------------------------------------------------------------------
+        # 3. INJECT INTERACTION SCRIPTS (QWebChannel)
+        # -------------------------------------------------------------------
         qwebchannel_script = (
             '<script src="qrc:///qtwebchannel/qwebchannel.js"></script>'
         )
-
-        # We need to hook into the pyvis generated script.
-        # PyVis creates a variable 'network' (the vis.Network instance) and 'nodes'.
-        # We append our script at the end of the body to ensure variable exists.
 
         interaction_script = """
         <script type="text/javascript">
             // Setup QWebChannel
             document.addEventListener("DOMContentLoaded", function() {
-                new QWebChannel(qt.webChannelTransport, function(channel) {
-                    window.bridge = channel.objects.bridge;
-                });
+                if (typeof qt !== 'undefined') {
+                    new QWebChannel(qt.webChannelTransport, function(channel) {
+                        window.bridge = channel.objects.bridge;
+                    });
+                }
             });
 
-            // Wait for network to be initialized (PyVis usually inits at bottom).
-            // Safer to set timeout or check if network is defined.
-            // PyVis 0.3.2+ typically matches 'network' variable name.
-            
+            // Wait for network to be initialized
             var checkNetwork = setInterval(function() {
                 if (typeof network !== 'undefined') {
                     clearInterval(checkNetwork);
@@ -280,12 +335,9 @@ class GraphBuilder:
                     network.on("click", function (params) {
                         if (params.nodes.length > 0) {
                             var nodeId = params.nodes[0];
-                            // We need to look up object_type.
-                            // PyVis 'nodes' is a vis.DataSet or DataView.
                             var nodeData = nodes.get(nodeId);
                             
                             if (nodeData && window.bridge) {
-                                // Default to 'entity' if missing, but should be there
                                 var objType = nodeData.object_type || "entity";
                                 window.bridge.nodeClicked(objType, String(nodeId));
                             }
@@ -293,17 +345,13 @@ class GraphBuilder:
                     });
 
                     // Interaction: Restore Focus
-                    // Use 'stabilized' event which fires when physics stops
                     var focusId = %FOCUS_ID%;
                     
                     function restoreFocus() {
                         if (focusId !== null) {
-                            // Check if node exists in dataset
                             var nodeData = nodes.get(focusId);
                             if (nodeData) {
-                                // Select node visually
                                 network.selectNodes([focusId]);
-                                // Focus view on node
                                 network.focus(focusId, {
                                     scale: 1.0,
                                     animation: {
@@ -311,14 +359,10 @@ class GraphBuilder:
                                         easingFunction: "easeInOutQuad"
                                     }
                                 });
-                                console.log("Graph: Focused on node", focusId);
-                            } else {
-                                console.log("Graph: Focus node not found", focusId);
                             }
                         }
                     }
                     
-                    // Try stabilized event first, with timeout fallback
                     var focusRestored = false;
                     network.once("stabilized", function() {
                         if (!focusRestored) {
@@ -327,7 +371,6 @@ class GraphBuilder:
                         }
                     });
                     
-                    // Fallback: if stabilized doesn't fire within 2s, force focus
                     setTimeout(function() {
                         if (!focusRestored) {
                             focusRestored = true;
@@ -339,7 +382,6 @@ class GraphBuilder:
         </script>
         """
 
-        # Replace placeholder with JSON-serialized ID for safe JS injection
         focus_json = json.dumps(focus_node_id) if focus_node_id else "null"
         interaction_script = interaction_script.replace("%FOCUS_ID%", focus_json)
 

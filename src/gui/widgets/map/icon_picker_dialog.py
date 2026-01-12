@@ -21,10 +21,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.paths import get_resource_path
+
 # Define locally to avoid circular import
-MARKER_ICONS_PATH = os.path.join(
-    os.path.dirname(__file__), "..", "..", "..", "..", "assets", "icons", "markers"
-)
+MARKER_ICONS_PATH = get_resource_path(os.path.join("assets", "icons", "markers"))
 
 
 def get_available_icons() -> List[str]:

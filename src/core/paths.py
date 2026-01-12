@@ -20,8 +20,50 @@ def get_resource_path(relative_path: str) -> str:
     Returns:
         str: The absolute path to the resource.
     """
-    # PyInstaller creates a temp folder and stores path in _MEIPASS
-    base_path = getattr(sys, "_MEIPASS", os.path.abspath("."))
+    if getattr(sys, "frozen", False):
+        try:
+            # Debug logging to identify why paths fail
+            # We use a try-block to ensure logging never crashes the app
+            log_path = os.path.join(os.path.dirname(sys.executable), "paths_debug.log")
+
+            # Use append mode
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(f"Request: {relative_path}\n")
+
+                root_path = os.path.dirname(sys.executable)
+                f.write(f"  Root: {root_path}\n")
+
+                full_path_root = os.path.join(root_path, relative_path)
+                exists_root = os.path.exists(full_path_root)
+                f.write(f"  Check Root: {full_path_root} -> {exists_root}\n")
+
+                if exists_root:
+                    return full_path_root
+
+                internal_path = os.path.join(root_path, "_internal")
+                full_path_internal = os.path.join(internal_path, relative_path)
+                exists_internal = os.path.exists(full_path_internal)
+                f.write(
+                    f"  Check Internal: {full_path_internal} -> {exists_internal}\n"
+                )
+
+                if exists_internal:
+                    return full_path_internal
+
+                f.write("  FAILED both checks, defaulting to root\n")
+                return full_path_root
+        except Exception:
+            # If logging fails, just fall back to standard behavior (root path)
+            pass
+
+        return os.path.join(os.path.dirname(sys.executable), relative_path)
+    else:
+        # Development mode: resolve relative to this file
+        # src/core/paths.py -> src/core -> src -> root
+        base_path = os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        )
+
     return os.path.join(base_path, relative_path)
 
 

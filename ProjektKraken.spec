@@ -2,11 +2,22 @@
 
 block_cipher = None
 
+import os
+import shutil
+
+project_dir = os.getcwd()
+
+# Explicitly clean the dist/ProjektKraken directory to satisfy user request for a clean slate
+dist_dir = os.path.join(project_dir, 'dist', 'ProjektKraken')
+if os.path.exists(dist_dir):
+    print(f"Cleaning build directory: {dist_dir}")
+    shutil.rmtree(dist_dir)
+
 added_files = [
-    ('assets', 'assets'),
-    ('themes.json', '.'),
-    ('migrations', 'migrations'),
-    ('src/resources', 'src/resources'),
+    (os.path.join(project_dir, 'assets'), 'assets'),
+    (os.path.join(project_dir, 'themes.json'), '.'),
+    (os.path.join(project_dir, 'migrations'), 'migrations'),
+    (os.path.join(project_dir, 'src', 'resources'), 'src/resources'),
 ]
 
 a = Analysis(
@@ -14,7 +25,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=added_files,
-    hiddenimports=['PySide6.QtSvg'],
+    hiddenimports=['PySide6.QtSvg', 'PySide6.QtWebChannel'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
