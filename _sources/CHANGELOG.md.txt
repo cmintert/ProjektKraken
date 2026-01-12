@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-12
-### Internal
-- Merge pull request #52 from cmintert/copilot/implement-backup-schema
+### Fixed
+- Fix: Project Explorer Selection Jump and Filter Persistence
 
 
 *This changelog was automatically generated.*
