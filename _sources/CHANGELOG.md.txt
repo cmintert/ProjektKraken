@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-12
-### Documentation
-- docs: Update changelog for filter fixes
+### Internal
+- chore(release): version 0.6.0
 
 
 *This changelog was automatically generated.*
