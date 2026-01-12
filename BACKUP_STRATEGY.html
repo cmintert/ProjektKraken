@@ -1,0 +1,777 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
+        <title>Backup Strategy Guide - Project Kraken 0.5.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">Project Kraken 0.5.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  <span class="sidebar-brand-text">Project Kraken 0.5.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="WIKI_LINKING.html">ID-Based Wiki Linking Implementation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MAP_USAGE_EXAMPLES.html">Map System Usage Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="LONGFORM.html">Longform Document Feature</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="DATABASE.html">Database Architecture and Best Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DEVELOPMENT.html">Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security Best Practices</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
+<li class="toctree-l1"><a class="reference internal" href="LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html">Tag Normalization Migration Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="modules.html">src</a><input aria-label="Toggle navigation of src" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="app.html">app package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html">cli package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="commands.html">commands package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core.html">core package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="gui.html">gui package</a><input aria-label="Toggle navigation of gui package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui.widgets.html">gui.widgets package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui.dialogs.html">gui.dialogs package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="services.html">services package</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="LICENSE.html">GNU AFFERO GENERAL PUBLIC LICENSE</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/BACKUP_STRATEGY.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="backup-strategy-guide">
+<h1>Backup Strategy Guide<a class="headerlink" href="#backup-strategy-guide" title="Link to this heading">¶</a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>ProjektKraken includes a comprehensive automated backup system to protect your worldbuilding data. This guide explains how backups work, how to configure them, and how to restore your data when needed.</p>
+</section>
+<section id="backup-types">
+<h2>Backup Types<a class="headerlink" href="#backup-types" title="Link to this heading">¶</a></h2>
+<p>The system supports four types of backups:</p>
+<section id="auto-save-backups">
+<h3>1. Auto-Save Backups<a class="headerlink" href="#auto-save-backups" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Frequency</strong>: Every 5 minutes (configurable)</p></li>
+<li><p><strong>Retention</strong>: Last 12 backups (1 hour of history)</p></li>
+<li><p><strong>Purpose</strong>: Protect against accidental data loss during active editing</p></li>
+<li><p><strong>Location</strong>: <code class="docutils literal notranslate"><span class="pre">backups/auto/</span></code></p></li>
+<li><p><strong>Naming</strong>: <code class="docutils literal notranslate"><span class="pre">{database}_autosave_{timestamp}.kraken</span></code></p></li>
+</ul>
+</section>
+<section id="daily-backups">
+<h3>2. Daily Backups<a class="headerlink" href="#daily-backups" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Frequency</strong>: Once per day</p></li>
+<li><p><strong>Retention</strong>: Last 7 days</p></li>
+<li><p><strong>Purpose</strong>: Daily snapshots for short-term recovery</p></li>
+<li><p><strong>Location</strong>: <code class="docutils literal notranslate"><span class="pre">backups/daily/</span></code></p></li>
+<li><p><strong>Naming</strong>: <code class="docutils literal notranslate"><span class="pre">{database}_daily_{date}.kraken</span></code></p></li>
+</ul>
+</section>
+<section id="weekly-backups">
+<h3>3. Weekly Backups<a class="headerlink" href="#weekly-backups" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Frequency</strong>: Once per week</p></li>
+<li><p><strong>Retention</strong>: Last 4 weeks</p></li>
+<li><p><strong>Purpose</strong>: Long-term archival and version history</p></li>
+<li><p><strong>Location</strong>: <code class="docutils literal notranslate"><span class="pre">backups/weekly/</span></code></p></li>
+<li><p><strong>Naming</strong>: <code class="docutils literal notranslate"><span class="pre">{database}_weekly_{year}_W{week}.kraken</span></code></p></li>
+</ul>
+</section>
+<section id="manual-backups">
+<h3>4. Manual Backups<a class="headerlink" href="#manual-backups" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Frequency</strong>: On-demand (user-initiated)</p></li>
+<li><p><strong>Retention</strong>: Unlimited (never auto-deleted)</p></li>
+<li><p><strong>Purpose</strong>: Important milestones, before major changes</p></li>
+<li><p><strong>Location</strong>: <code class="docutils literal notranslate"><span class="pre">backups/manual/</span></code></p></li>
+<li><p><strong>Naming</strong>: <code class="docutils literal notranslate"><span class="pre">{database}_manual_{timestamp}_{description}.kraken</span></code></p></li>
+</ul>
+</section>
+</section>
+<section id="backup-location">
+<h2>Backup Location<a class="headerlink" href="#backup-location" title="Link to this heading">¶</a></h2>
+<section id="default-location">
+<h3>Default Location<a class="headerlink" href="#default-location" title="Link to this heading">¶</a></h3>
+<p>Backups are stored in your application data directory:</p>
+<ul class="simple">
+<li><p><strong>Windows</strong>: <code class="docutils literal notranslate"><span class="pre">C:\Users\{username}\AppData\Roaming\ProjektKraken\backups\</span></code></p></li>
+<li><p><strong>macOS</strong>: <code class="docutils literal notranslate"><span class="pre">~/Library/Application</span> <span class="pre">Support/ProjektKraken/backups/</span></code></p></li>
+<li><p><strong>Linux</strong>: <code class="docutils literal notranslate"><span class="pre">~/.local/share/ProjektKraken/backups/</span></code></p></li>
+</ul>
+</section>
+<section id="accessing-backups">
+<h3>Accessing Backups<a class="headerlink" href="#accessing-backups" title="Link to this heading">¶</a></h3>
+<p>To open the backup directory:</p>
+<ol class="arabic simple">
+<li><p>Open ProjektKraken</p></li>
+<li><p>Go to <strong>File → Backup &amp; Restore → Show Backup Location</strong></p></li>
+<li><p>Your file explorer will open to the backups folder</p></li>
+</ol>
+</section>
+</section>
+<section id="creating-backups">
+<h2>Creating Backups<a class="headerlink" href="#creating-backups" title="Link to this heading">¶</a></h2>
+<section id="manual-backup">
+<h3>Manual Backup<a class="headerlink" href="#manual-backup" title="Link to this heading">¶</a></h3>
+<p>To create a manual backup:</p>
+<ol class="arabic simple">
+<li><p>Go to <strong>File → Backup &amp; Restore → Create Backup…</strong></p></li>
+<li><p>(Optional) Enter a description for the backup</p></li>
+<li><p>Click <strong>OK</strong></p></li>
+<li><p>A confirmation dialog will show the backup location and size</p></li>
+</ol>
+<p><strong>When to create manual backups:</strong></p>
+<ul class="simple">
+<li><p>Before making major structural changes</p></li>
+<li><p>After completing a significant milestone</p></li>
+<li><p>Before experimenting with new features</p></li>
+<li><p>When you want a named checkpoint</p></li>
+</ul>
+</section>
+<section id="automatic-backups">
+<h3>Automatic Backups<a class="headerlink" href="#automatic-backups" title="Link to this heading">¶</a></h3>
+<p>Auto-save backups run automatically in the background every 5 minutes by default. You’ll see a brief status message when a backup is created, but it won’t interrupt your work.</p>
+<p><strong>Note</strong>: Daily and weekly backups are planned for future releases.</p>
+</section>
+</section>
+<section id="restoring-from-backup">
+<h2>Restoring from Backup<a class="headerlink" href="#restoring-from-backup" title="Link to this heading">¶</a></h2>
+<section id="restore-process">
+<h3>Restore Process<a class="headerlink" href="#restore-process" title="Link to this heading">¶</a></h3>
+<p>To restore from a backup:</p>
+<ol class="arabic simple">
+<li><p>Go to <strong>File → Backup &amp; Restore → Restore from Backup…</strong></p></li>
+<li><p>Select the backup file you want to restore</p></li>
+<li><p>Confirm the restoration (a safety backup of your current database will be created first)</p></li>
+<li><p>The application will close - restart to use the restored database</p></li>
+</ol>
+<p><strong>Important</strong>: Restoring replaces your current database. Make sure you select the correct backup file!</p>
+</section>
+<section id="safety-features">
+<h3>Safety Features<a class="headerlink" href="#safety-features" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Pre-restore backup</strong>: Before restoring, the system creates a safety backup of your current database (named <code class="docutils literal notranslate"><span class="pre">pre_restore_{timestamp}.kraken</span></code>)</p></li>
+<li><p><strong>Integrity verification</strong>: All backups are verified before restoration to ensure they’re not corrupted</p></li>
+<li><p><strong>Application restart</strong>: The app closes after restoration to ensure a clean state</p></li>
+</ul>
+</section>
+</section>
+<section id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading">¶</a></h2>
+<section id="backup-settings">
+<h3>Backup Settings<a class="headerlink" href="#backup-settings" title="Link to this heading">¶</a></h3>
+<p>Currently, backup settings use sensible defaults:</p>
+<ul class="simple">
+<li><p><strong>Auto-save</strong>: Enabled, 5-minute interval, keeps 12 backups</p></li>
+<li><p><strong>Verification</strong>: All backups are verified after creation</p></li>
+<li><p><strong>External backup</strong>: Optional (see below)</p></li>
+</ul>
+<p>Future releases will include a settings dialog to customize these options.</p>
+</section>
+<section id="external-backup-location">
+<h3>External Backup Location<a class="headerlink" href="#external-backup-location" title="Link to this heading">¶</a></h3>
+<p>For additional safety, you can configure backups to be copied to an external location (like a cloud-synced folder). This is currently done via configuration file but will have a UI in future releases.</p>
+</section>
+</section>
+<section id="best-practices">
+<h2>Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading">¶</a></h2>
+<section id="verify-backups-periodically">
+<h3>1. Verify Backups Periodically<a class="headerlink" href="#verify-backups-periodically" title="Link to this heading">¶</a></h3>
+<p>Occasionally test restoring from a backup to ensure the process works:</p>
+<ol class="arabic simple">
+<li><p>Note your current data state</p></li>
+<li><p>Restore from a recent backup</p></li>
+<li><p>Verify the data is correct</p></li>
+<li><p>Close and restart to return to your current database</p></li>
+</ol>
+</section>
+<section id="keep-important-manual-backups-safe">
+<h3>2. Keep Important Manual Backups Safe<a class="headerlink" href="#keep-important-manual-backups-safe" title="Link to this heading">¶</a></h3>
+<p>Manual backups are never auto-deleted. Create them at important milestones:</p>
+<ul class="simple">
+<li><p>Project inception</p></li>
+<li><p>Major story arcs completed</p></li>
+<li><p>Before large refactoring efforts</p></li>
+<li><p>Before installing ProjektKraken updates</p></li>
+</ul>
+</section>
+<section id="use-cloud-storage-for-off-site-backups">
+<h3>3. Use Cloud Storage for Off-Site Backups<a class="headerlink" href="#use-cloud-storage-for-off-site-backups" title="Link to this heading">¶</a></h3>
+<p>Consider copying important backups to cloud storage:</p>
+<ol class="arabic simple">
+<li><p>Open the backup location (File → Backup &amp; Restore → Show Backup Location)</p></li>
+<li><p>Copy manual backups to Dropbox, OneDrive, Google Drive, etc.</p></li>
+<li><p>Keep backups of different projects separate</p></li>
+</ol>
+</section>
+<section id="monitor-backup-health">
+<h3>4. Monitor Backup Health<a class="headerlink" href="#monitor-backup-health" title="Link to this heading">¶</a></h3>
+<p>Check the backup location occasionally to ensure:</p>
+<ul class="simple">
+<li><p>Backups are being created regularly</p></li>
+<li><p>Backup files aren’t corrupted (system verifies on creation)</p></li>
+<li><p>You have recent backups before making major changes</p></li>
+</ul>
+</section>
+</section>
+<section id="disaster-recovery">
+<h2>Disaster Recovery<a class="headerlink" href="#disaster-recovery" title="Link to this heading">¶</a></h2>
+<section id="database-corruption">
+<h3>Database Corruption<a class="headerlink" href="#database-corruption" title="Link to this heading">¶</a></h3>
+<p>If your database becomes corrupted:</p>
+<ol class="arabic simple">
+<li><p>Open ProjektKraken</p></li>
+<li><p>Go to File → Backup &amp; Restore → Restore from Backup…</p></li>
+<li><p>Select the most recent backup before corruption occurred</p></li>
+<li><p>Restart the application</p></li>
+</ol>
+</section>
+<section id="accidental-deletion">
+<h3>Accidental Deletion<a class="headerlink" href="#accidental-deletion" title="Link to this heading">¶</a></h3>
+<p>If you accidentally deleted important data:</p>
+<ol class="arabic simple">
+<li><p><strong>Don’t save!</strong> The auto-save system may have a backup from before deletion</p></li>
+<li><p>Check auto-save backups (most recent ones)</p></li>
+<li><p>Restore from the backup immediately before the deletion</p></li>
+<li><p>Restart the application</p></li>
+</ol>
+</section>
+<section id="complete-data-loss">
+<h3>Complete Data Loss<a class="headerlink" href="#complete-data-loss" title="Link to this heading">¶</a></h3>
+<p>If your entire database is lost:</p>
+<ol class="arabic simple">
+<li><p>Check your backup folder for the most recent backup</p></li>
+<li><p>If you enabled external backups, check your cloud storage</p></li>
+<li><p>Restore from the most recent available backup</p></li>
+<li><p>Consider your disaster recovery practices going forward</p></li>
+</ol>
+</section>
+<section id="hardware-failure">
+<h3>Hardware Failure<a class="headerlink" href="#hardware-failure" title="Link to this heading">¶</a></h3>
+<p><strong>Prevention</strong>:</p>
+<ul class="simple">
+<li><p>Enable external backups to cloud storage</p></li>
+<li><p>Regularly copy manual backups to external drives</p></li>
+<li><p>Use cloud-synced backup locations (Dropbox folder, etc.)</p></li>
+</ul>
+<p><strong>Recovery</strong>:</p>
+<ol class="arabic simple">
+<li><p>Install ProjektKraken on new hardware</p></li>
+<li><p>Copy backups from cloud storage to local machine</p></li>
+<li><p>Use File → Backup &amp; Restore → Restore from Backup…</p></li>
+</ol>
+</section>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">¶</a></h2>
+<section id="backup-creation-fails">
+<h3>Backup Creation Fails<a class="headerlink" href="#backup-creation-fails" title="Link to this heading">¶</a></h3>
+<p><strong>Symptoms</strong>: Error message when creating backup</p>
+<p><strong>Possible causes</strong>:</p>
+<ul class="simple">
+<li><p>Insufficient disk space</p></li>
+<li><p>Write permissions issues</p></li>
+<li><p>Database is corrupted</p></li>
+</ul>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic simple">
+<li><p>Check available disk space</p></li>
+<li><p>Verify backup directory permissions</p></li>
+<li><p>Try running ProjektKraken as administrator (Windows) or with appropriate permissions</p></li>
+<li><p>Check application logs for detailed error messages</p></li>
+</ol>
+</section>
+<section id="restore-fails">
+<h3>Restore Fails<a class="headerlink" href="#restore-fails" title="Link to this heading">¶</a></h3>
+<p><strong>Symptoms</strong>: Error during restoration, database not restored</p>
+<p><strong>Possible causes</strong>:</p>
+<ul class="simple">
+<li><p>Corrupted backup file</p></li>
+<li><p>Insufficient disk space</p></li>
+<li><p>Permission issues</p></li>
+</ul>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic simple">
+<li><p>Try a different backup file</p></li>
+<li><p>Check if the backup file is corrupted (try opening with SQLite browser)</p></li>
+<li><p>Verify sufficient disk space</p></li>
+<li><p>Check application logs for detailed error messages</p></li>
+</ol>
+</section>
+<section id="auto-backup-not-working">
+<h3>Auto-Backup Not Working<a class="headerlink" href="#auto-backup-not-working" title="Link to this heading">¶</a></h3>
+<p><strong>Symptoms</strong>: No recent auto-save backups in backup folder</p>
+<p><strong>Possible causes</strong>:</p>
+<ul class="simple">
+<li><p>Auto-backup disabled in configuration</p></li>
+<li><p>Application not running long enough</p></li>
+<li><p>Permission issues writing to backup directory</p></li>
+</ul>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic simple">
+<li><p>Verify auto-save is enabled (check logs on startup)</p></li>
+<li><p>Keep application running for at least 5 minutes to trigger first auto-save</p></li>
+<li><p>Check backup directory permissions</p></li>
+<li><p>Review application logs for errors</p></li>
+</ol>
+</section>
+<section id="backup-file-too-large">
+<h3>Backup File Too Large<a class="headerlink" href="#backup-file-too-large" title="Link to this heading">¶</a></h3>
+<p><strong>Symptoms</strong>: Backup files taking up too much disk space</p>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic simple">
+<li><p>This is normal - SQLite databases grow with data</p></li>
+<li><p>Use the retention policies to limit backup count</p></li>
+<li><p>Delete old manual backups you no longer need</p></li>
+<li><p>Consider enabling database VACUUM (future feature) to compress database</p></li>
+</ol>
+</section>
+</section>
+<section id="technical-details">
+<h2>Technical Details<a class="headerlink" href="#technical-details" title="Link to this heading">¶</a></h2>
+<section id="backup-algorithm">
+<h3>Backup Algorithm<a class="headerlink" href="#backup-algorithm" title="Link to this heading">¶</a></h3>
+<p>The backup system uses a robust atomic copy process:</p>
+<ol class="arabic simple">
+<li><p><strong>Preparation</strong>: Verify database is not in transaction</p></li>
+<li><p><strong>Copy</strong>: Copy database file to temporary location</p></li>
+<li><p><strong>Verify</strong>: Check integrity using SQLite PRAGMA commands</p></li>
+<li><p><strong>Checksum</strong>: Calculate SHA256 hash for corruption detection</p></li>
+<li><p><strong>Atomic Rename</strong>: Move temporary file to final backup location</p></li>
+<li><p><strong>Metadata</strong>: Record backup metadata (size, timestamp, checksum)</p></li>
+<li><p><strong>Cleanup</strong>: Enforce retention policies, delete old backups</p></li>
+</ol>
+</section>
+<section id="file-format">
+<h3>File Format<a class="headerlink" href="#file-format" title="Link to this heading">¶</a></h3>
+<p>Backups are standard SQLite database files with <code class="docutils literal notranslate"><span class="pre">.kraken</span></code> extension. They can be:</p>
+<ul class="simple">
+<li><p>Opened with SQLite browsers for inspection</p></li>
+<li><p>Copied manually for additional backups</p></li>
+<li><p>Shared with other ProjektKraken users</p></li>
+<li><p>Restored on any platform (Windows, macOS, Linux)</p></li>
+</ul>
+</section>
+<section id="performance-impact">
+<h3>Performance Impact<a class="headerlink" href="#performance-impact" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Backup creation</strong>: Minimal impact, runs in background</p></li>
+<li><p><strong>Auto-save</strong>: Brief pause (&lt;1 second for typical databases)</p></li>
+<li><p><strong>Restoration</strong>: Requires application restart</p></li>
+<li><p><strong>Storage</strong>: Each backup is ~200KB (grows with your data)</p></li>
+</ul>
+</section>
+<section id="security-considerations">
+<h3>Security Considerations<a class="headerlink" href="#security-considerations" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Encryption</strong>: Backups are not encrypted (planned feature)</p></li>
+<li><p><strong>Permissions</strong>: Use operating system file permissions to protect backups</p></li>
+<li><p><strong>Cloud storage</strong>: If using cloud sync, ensure your cloud provider uses encryption</p></li>
+<li><p><strong>Sensitive data</strong>: Consider using encrypted folders for backup storage</p></li>
+</ul>
+</section>
+</section>
+<section id="faq">
+<h2>FAQ<a class="headerlink" href="#faq" title="Link to this heading">¶</a></h2>
+<p><strong>Q: Can I disable auto-backup?</strong>
+A: Yes, through configuration file (UI coming in future release). Not recommended.</p>
+<p><strong>Q: How much disk space do backups use?</strong>
+A: Each backup is roughly the size of your database (~200KB base + your data). With default settings, auto-saves use ~2.4 MB maximum.</p>
+<p><strong>Q: Can I backup to a network drive?</strong>
+A: Yes, but network reliability may affect backup success. Local backups are recommended.</p>
+<p><strong>Q: What happens if backup fails?</strong>
+A: The system logs the error and continues running. Your data remains safe, just that particular backup won’t be created.</p>
+<p><strong>Q: Can I restore to a different computer?</strong>
+A: Yes! Copy the backup file to the new computer and use Restore from Backup.</p>
+<p><strong>Q: Are backups cross-platform?</strong>
+A: Yes, SQLite databases work on all platforms (Windows, macOS, Linux).</p>
+<p><strong>Q: How do I export my data to another format?</strong>
+A: Backup files are SQLite databases. You can export to JSON, CSV, or other formats using SQLite tools or future ProjektKraken export features.</p>
+</section>
+<section id="future-enhancements">
+<h2>Future Enhancements<a class="headerlink" href="#future-enhancements" title="Link to this heading">¶</a></h2>
+<p>Planned features for future releases:</p>
+<ul class="simple">
+<li><p><strong>Settings dialog</strong> for backup configuration</p></li>
+<li><p><strong>Backup browser</strong> to preview and compare backups</p></li>
+<li><p><strong>Incremental backups</strong> for larger databases</p></li>
+<li><p><strong>Compression</strong> for long-term archives</p></li>
+<li><p><strong>Encryption</strong> for sensitive projects</p></li>
+<li><p><strong>Cloud integration</strong> for seamless off-site backups</p></li>
+<li><p><strong>Backup scheduling</strong> for daily and weekly backups</p></li>
+<li><p><strong>Multi-database backup</strong> for backing up all projects at once</p></li>
+</ul>
+</section>
+<section id="support">
+<h2>Support<a class="headerlink" href="#support" title="Link to this heading">¶</a></h2>
+<p>If you encounter issues with the backup system:</p>
+<ol class="arabic simple">
+<li><p>Check application logs (Help → View Logs)</p></li>
+<li><p>Review this documentation</p></li>
+<li><p>Check GitHub issues for known problems</p></li>
+<li><p>Open a new issue with detailed error information</p></li>
+</ol>
+</section>
+<section id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="DATABASE.html"><span class="std std-doc">Database Schema Documentation</span></a></p></li>
+<li><p><a class="reference internal" href="#README.md"><span class="xref myst">User Guide</span></a></p></li>
+<li><p><a class="reference internal" href="#TROUBLESHOOTING.md"><span class="xref myst">Troubleshooting Guide</span></a></p></li>
+</ul>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, Christian Mintert
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Backup Strategy Guide</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#backup-types">Backup Types</a><ul>
+<li><a class="reference internal" href="#auto-save-backups">1. Auto-Save Backups</a></li>
+<li><a class="reference internal" href="#daily-backups">2. Daily Backups</a></li>
+<li><a class="reference internal" href="#weekly-backups">3. Weekly Backups</a></li>
+<li><a class="reference internal" href="#manual-backups">4. Manual Backups</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#backup-location">Backup Location</a><ul>
+<li><a class="reference internal" href="#default-location">Default Location</a></li>
+<li><a class="reference internal" href="#accessing-backups">Accessing Backups</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#creating-backups">Creating Backups</a><ul>
+<li><a class="reference internal" href="#manual-backup">Manual Backup</a></li>
+<li><a class="reference internal" href="#automatic-backups">Automatic Backups</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#restoring-from-backup">Restoring from Backup</a><ul>
+<li><a class="reference internal" href="#restore-process">Restore Process</a></li>
+<li><a class="reference internal" href="#safety-features">Safety Features</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#configuration">Configuration</a><ul>
+<li><a class="reference internal" href="#backup-settings">Backup Settings</a></li>
+<li><a class="reference internal" href="#external-backup-location">External Backup Location</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#best-practices">Best Practices</a><ul>
+<li><a class="reference internal" href="#verify-backups-periodically">1. Verify Backups Periodically</a></li>
+<li><a class="reference internal" href="#keep-important-manual-backups-safe">2. Keep Important Manual Backups Safe</a></li>
+<li><a class="reference internal" href="#use-cloud-storage-for-off-site-backups">3. Use Cloud Storage for Off-Site Backups</a></li>
+<li><a class="reference internal" href="#monitor-backup-health">4. Monitor Backup Health</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#disaster-recovery">Disaster Recovery</a><ul>
+<li><a class="reference internal" href="#database-corruption">Database Corruption</a></li>
+<li><a class="reference internal" href="#accidental-deletion">Accidental Deletion</a></li>
+<li><a class="reference internal" href="#complete-data-loss">Complete Data Loss</a></li>
+<li><a class="reference internal" href="#hardware-failure">Hardware Failure</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
+<li><a class="reference internal" href="#backup-creation-fails">Backup Creation Fails</a></li>
+<li><a class="reference internal" href="#restore-fails">Restore Fails</a></li>
+<li><a class="reference internal" href="#auto-backup-not-working">Auto-Backup Not Working</a></li>
+<li><a class="reference internal" href="#backup-file-too-large">Backup File Too Large</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#technical-details">Technical Details</a><ul>
+<li><a class="reference internal" href="#backup-algorithm">Backup Algorithm</a></li>
+<li><a class="reference internal" href="#file-format">File Format</a></li>
+<li><a class="reference internal" href="#performance-impact">Performance Impact</a></li>
+<li><a class="reference internal" href="#security-considerations">Security Considerations</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#faq">FAQ</a></li>
+<li><a class="reference internal" href="#future-enhancements">Future Enhancements</a></li>
+<li><a class="reference internal" href="#support">Support</a></li>
+<li><a class="reference internal" href="#see-also">See Also</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=70f82a29"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

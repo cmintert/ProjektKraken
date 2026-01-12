@@ -330,6 +330,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">db_path</span> <span class="o">=</span> <span class="n">db_path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">sqlite3</span><span class="o">.</span><span class="n">Connection</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_backup_service</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Optional backup service integration</span>
 
         <span class="c1"># Initialize repositories (will be connected after connection is established)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_event_repo</span> <span class="o">=</span> <span class="n">EventRepository</span><span class="p">()</span>
@@ -2711,6 +2712,59 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trajectory_repo</span><span class="o">.</span><span class="n">delete_keyframe</span><span class="p">(</span><span class="n">map_id</span><span class="p">,</span> <span class="n">object_id</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.register_backup_service">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.register_backup_service">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register_backup_service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backup_service</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Registers a backup service for integration with database operations.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            backup_service: The BackupService instance to register.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_backup_service</span> <span class="o">=</span> <span class="n">backup_service</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Backup service registered with DatabaseService&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.get_db_file_path">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_db_file_path">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_db_file_path</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the current database file path.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Path to the database file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_path</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.vacuum">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.vacuum">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">vacuum</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Runs VACUUM on the database to reclaim space and optimize storage.</span>
+<span class="sd">        This can be slow for large databases and should be run infrequently.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if successful, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Cannot vacuum: no database connection&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_path</span> <span class="o">==</span> <span class="s2">&quot;:memory:&quot;</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Skipping vacuum on in-memory database&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Running VACUUM on database...&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;VACUUM&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;VACUUM completed successfully&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;VACUUM failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
 </div>
 
 </pre></div>

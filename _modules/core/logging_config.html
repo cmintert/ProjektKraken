@@ -279,6 +279,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">logging.handlers</span><span class="w"> </span><span class="kn">import</span> <span class="n">RotatingFileHandler</span>
 
@@ -289,6 +290,38 @@
 <span class="n">BACKUP_COUNT</span> <span class="o">=</span> <span class="mi">5</span>
 <span class="n">LOG_FORMAT</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%(asctime)s</span><span class="s2"> - </span><span class="si">%(name)s</span><span class="s2"> - </span><span class="si">%(levelname)s</span><span class="s2"> - </span><span class="si">%(message)s</span><span class="s2">&quot;</span>
 <span class="n">DATE_FORMAT</span> <span class="o">=</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span>
+
+
+<div class="viewcode-block" id="SafeRotatingFileHandler">
+<a class="viewcode-back" href="../../core.html#core.logging_config.SafeRotatingFileHandler">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SafeRotatingFileHandler</span><span class="p">(</span><span class="n">RotatingFileHandler</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A RotatingFileHandler that handles Windows file locking errors gracefully.</span>
+
+<span class="sd">    On Windows, log rotation can fail with PermissionError if the file is still</span>
+<span class="sd">    in use by another process or handler. This handler catches those errors</span>
+<span class="sd">    and continues logging without crashing.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SafeRotatingFileHandler.doRollover">
+<a class="viewcode-back" href="../../core.html#core.logging_config.SafeRotatingFileHandler.doRollover">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">doRollover</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform log file rotation, catching Windows file locking errors.</span>
+
+<span class="sd">        If rotation fails due to file locking (common on Windows), the handler</span>
+<span class="sd">        continues using the current log file instead of crashing.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">doRollover</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">PermissionError</span><span class="p">:</span>
+            <span class="c1"># On Windows, file may still be locked by another process</span>
+            <span class="c1"># Just continue with the current file</span>
+            <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span> <span class="o">!=</span> <span class="s2">&quot;win32&quot;</span><span class="p">:</span>
+                <span class="k">raise</span></div>
+</div>
+
+            <span class="c1"># On Windows, silently skip rotation - will retry next opportunity</span>
 
 
 <div class="viewcode-block" id="setup_logging">
@@ -327,9 +360,9 @@
     <span class="c1"># 3. Formatter</span>
     <span class="n">formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="n">LOG_FORMAT</span><span class="p">,</span> <span class="n">datefmt</span><span class="o">=</span><span class="n">DATE_FORMAT</span><span class="p">)</span>
 
-    <span class="c1"># 4. File Handler (Rotating)</span>
+    <span class="c1"># 4. File Handler (Safe Rotating - handles Windows file locking)</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">file_handler</span> <span class="o">=</span> <span class="n">RotatingFileHandler</span><span class="p">(</span>
+        <span class="n">file_handler</span> <span class="o">=</span> <span class="n">SafeRotatingFileHandler</span><span class="p">(</span>
             <span class="n">log_path</span><span class="p">,</span>
             <span class="n">maxBytes</span><span class="o">=</span><span class="n">MAX_BYTES</span><span class="p">,</span>
             <span class="n">backupCount</span><span class="o">=</span><span class="n">BACKUP_COUNT</span><span class="p">,</span>

@@ -1221,6 +1221,24 @@ Core unit of the Timeline.</p>
 <p>Logging Configuration Module.</p>
 <p>This module provides centralized logging configuration for the application,
 including rotating file handlers and console output.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="core.logging_config.SafeRotatingFileHandler">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.logging_config.</span></span><span class="sig-name descname"><span class="pre">SafeRotatingFileHandler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'a'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxBytes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backupCount</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/logging_config.html#SafeRotatingFileHandler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.logging_config.SafeRotatingFileHandler" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">RotatingFileHandler</span></code></p>
+<p>A RotatingFileHandler that handles Windows file locking errors gracefully.</p>
+<p>On Windows, log rotation can fail with PermissionError if the file is still
+in use by another process or handler. This handler catches those errors
+and continues logging without crashing.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.logging_config.SafeRotatingFileHandler.doRollover">
+<span class="sig-name descname"><span class="pre">doRollover</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/core/logging_config.html#SafeRotatingFileHandler.doRollover"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.logging_config.SafeRotatingFileHandler.doRollover" title="Link to this definition">¶</a></dt>
+<dd><p>Perform log file rotation, catching Windows file locking errors.</p>
+<p>If rotation fails due to file locking (common on Windows), the handler
+continues using the current log file instead of crashing.</p>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="core.logging_config.get_logger">
 <span class="sig-prename descclassname"><span class="pre">core.logging_config.</span></span><span class="sig-name descname"><span class="pre">get_logger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Logger</span></span></span><a class="reference internal" href="_modules/core/logging_config.html#get_logger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.logging_config.get_logger" title="Link to this definition">¶</a></dt>
@@ -1447,6 +1465,10 @@ logging configuration, and theme management.</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-core.logging_config">core.logging_config module</a><ul>
+<li><a class="reference internal" href="#core.logging_config.SafeRotatingFileHandler"><code class="docutils literal notranslate"><span class="pre">SafeRotatingFileHandler</span></code></a><ul>
+<li><a class="reference internal" href="#core.logging_config.SafeRotatingFileHandler.doRollover"><code class="docutils literal notranslate"><span class="pre">SafeRotatingFileHandler.doRollover()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#core.logging_config.get_logger"><code class="docutils literal notranslate"><span class="pre">get_logger()</span></code></a></li>
 <li><a class="reference internal" href="#core.logging_config.setup_logging"><code class="docutils literal notranslate"><span class="pre">setup_logging()</span></code></a></li>
 <li><a class="reference internal" href="#core.logging_config.shutdown_logging"><code class="docutils literal notranslate"><span class="pre">shutdown_logging()</span></code></a></li>

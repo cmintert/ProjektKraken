@@ -702,6 +702,20 @@ case-insensitive.</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_db_file_path">
+<span class="sig-name descname"><span class="pre">get_db_file_path</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_db_file_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_db_file_path" title="Link to this definition">¶</a></dt>
+<dd><p>Returns the current database file path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Path to the database file.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.get_entities">
 <span class="sig-name descname"><span class="pre">get_entities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Entity</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_entities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_entities" title="Link to this definition">¶</a></dt>
 <dd><p>Retrieves entities, optionally filtered by type.</p>
@@ -1363,6 +1377,17 @@ the existing row’s id is retained.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.register_backup_service">
+<span class="sig-name descname"><span class="pre">register_backup_service</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backup_service</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.register_backup_service"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.register_backup_service" title="Link to this definition">¶</a></dt>
+<dd><p>Registers a backup service for integration with database operations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>backup_service</strong> – The BackupService instance to register.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.remove_tag_from_entity">
 <span class="sig-name descname"><span class="pre">remove_tag_from_entity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.remove_tag_from_entity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.remove_tag_from_entity" title="Link to this definition">¶</a></dt>
 <dd><p>Removes a tag from an entity.</p>
@@ -1499,6 +1524,21 @@ the existing row’s id is retained.</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>sqlite3.Error</strong> – If DB fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.vacuum">
+<span class="sig-name descname"><span class="pre">vacuum</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.vacuum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.vacuum" title="Link to this definition">¶</a></dt>
+<dd><p>Runs VACUUM on the database to reclaim space and optimize storage.
+This can be slow for large databases and should be run infrequently.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if successful, False otherwise.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2468,6 +2508,7 @@ text parsing, and background workers.</p>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_all_tags"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_all_tags()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_calendar_config()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_current_time"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_current_time()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_db_file_path"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_db_file_path()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_entities"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_entities()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_entities_by_tag"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_entities_by_tag()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_entity()</span></code></a></li>
@@ -2505,6 +2546,7 @@ text parsing, and background workers.</p>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.insert_marker"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_marker()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.insert_relation"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_relation()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.insert_trajectory"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_trajectory()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.register_backup_service"><code class="docutils literal notranslate"><span class="pre">DatabaseService.register_backup_service()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.remove_tag_from_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.remove_tag_from_entity()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.remove_tag_from_event"><code class="docutils literal notranslate"><span class="pre">DatabaseService.remove_tag_from_event()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.set_active_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.set_active_calendar_config()</span></code></a></li>
@@ -2514,6 +2556,7 @@ text parsing, and background workers.</p>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.transaction"><code class="docutils literal notranslate"><span class="pre">DatabaseService.transaction()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.update_keyframe_time"><code class="docutils literal notranslate"><span class="pre">DatabaseService.update_keyframe_time()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.update_relation"><code class="docutils literal notranslate"><span class="pre">DatabaseService.update_relation()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.vacuum"><code class="docutils literal notranslate"><span class="pre">DatabaseService.vacuum()</span></code></a></li>
 </ul>
 </li>
 </ul>
