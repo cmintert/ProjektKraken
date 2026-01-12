@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-01-12  
-**Commit:** `bf4b13a`  
+**Commit:** `09d1a5f`  
 ---
 
 # Changelog
@@ -57,6 +57,8 @@ All notable changes to this project will be documented in this file.
 - *(2026-01-06)* **Testing**: Added ON DELETE CASCADE test for `moving_features.marker_id` FK.
 
 ### Fixed
+- *(2026-01-12)* **Bug**: Fixed persistent bug where Project Explorer filter state (tags) was lost upon item save/reload.
+- *(2026-01-12)* **Bug**: Fixed Project Explorer selection incorrectly jumping to random items when the selected item becomes filtered out.
 - *(2026-01-12)* **Stability**: Fixed Windows-specific AppData path virtualization issues for Microsoft Store Python installations.
 - *(2026-01-12)* **Stability**: Implemented `SafeRotatingFileHandler` to resolve "file in use" errors during log rotation on Windows.
 - *(2026-01-11)* **Bug**: Fixed editor focus jumping to Entity Inspector when saving an Event.
@@ -65,6 +67,7 @@ All notable changes to this project will be documented in this file.
 - *(2026-01-10)* **Bug**: Fixed onboarding dialog triggering incorrectly during keyframe movement.
 
 ### Changed
+- *(2026-01-12)* **Refactor**: Encapsulated advanced filtering logic within `UnifiedListWidget`, removing dependency on `MainWindow` logic.
 - *(2026-01-11)* **Refactor**: Centralized global selection logic in `MainWindow` to synchronize Project Explorer, Graph, and Editors.
 - *(2026-01-10)* **UX**: Removed legacy background circle from map markers for a cleaner aesthetic.
 - *(2026-01-10)* **Refactor**: Refactored `MapWidget` mode indicator to support Normal, Clock, and Draft modes.
