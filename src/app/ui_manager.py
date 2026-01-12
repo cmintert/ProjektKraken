@@ -257,6 +257,10 @@ class UIManager:
         location_action = backup_menu.addAction("Show Backup Location")
         location_action.triggered.connect(self.main_window.show_backup_location)
 
+        # Backup Settings
+        settings_action = backup_menu.addAction("Backup Settings...")
+        settings_action.triggered.connect(self.main_window.show_backup_settings)
+
         file_menu.addSeparator()
 
         # Exit

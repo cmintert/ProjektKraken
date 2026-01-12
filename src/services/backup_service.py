@@ -8,8 +8,7 @@ import json
 import logging
 import shutil
 import sqlite3
-import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
@@ -21,7 +20,8 @@ try:
     HAS_QT = True
 except ImportError:
     HAS_QT = False
-    logger.debug("Qt not available - backup service will run without auto-backup timer")
+    # logger not yet defined; use print for ImportError case
+    print("Qt not available - backup service will run without auto-backup timer")
 
 from src.core.backup_config import BackupConfig
 from src.core.paths import get_backup_directory
@@ -161,7 +161,7 @@ if HAS_QT:
                 self.backup_progress.emit("Backup created successfully")
                 self.backup_completed.emit(True, str(self.backup_path))
 
-            except Exception as e:
+            except Exception:
                 # Clean up temp file on error
                 if temp_path.exists():
                     temp_path.unlink()
@@ -189,7 +189,7 @@ if HAS_QT:
                 self.backup_progress.emit("Restore completed successfully")
                 self.backup_completed.emit(True, "Database restored successfully")
 
-            except Exception as e:
+            except Exception:
                 # Clean up temp file on error
                 if temp_path.exists():
                     temp_path.unlink()
@@ -220,7 +220,35 @@ class BackupService:
         self._metadata_cache: List[BackupMetadata] = []
         self._current_db_path: Optional[Path] = None
 
+        # Ensure backup directory exists at service startup
+        self._ensure_backup_directory_exists()
+
         logger.info("BackupService initialized")
+
+    def _ensure_backup_directory_exists(self) -> None:
+        """
+        Ensures the backup directory and its subdirectories exist.
+
+        Creates the main backup directory and subdirectories for each
+        backup type (auto, daily, weekly, manual).
+        """
+        import os
+
+        # Get the base backup directory
+        if self.config.backup_dir:
+            backup_dir = Path(self.config.backup_dir)
+        else:
+            backup_dir = get_backup_directory()
+
+        # Create base directory and all subdirectories for backup types
+        subdirs = ["auto", "daily", "weekly", "manual"]
+        for subdir in subdirs:
+            subdir_path = backup_dir / subdir
+            try:
+                os.makedirs(str(subdir_path), exist_ok=True)
+                logger.debug(f"Ensured backup subdirectory exists: {subdir_path}")
+            except OSError as e:
+                logger.error(f"Failed to create backup subdirectory {subdir_path}: {e}")
 
     def set_database_path(self, db_path: str) -> None:
         """
@@ -231,6 +259,34 @@ class BackupService:
         """
         self._current_db_path = Path(db_path) if db_path != ":memory:" else None
         logger.debug(f"Database path set to: {self._current_db_path}")
+
+    def update_config(self, config: BackupConfig) -> None:
+        """
+        Updates the backup configuration at runtime.
+
+        Applies new settings and restarts auto-backup if interval changed.
+
+        Args:
+            config: New backup configuration to apply.
+        """
+        old_enabled = self.config.enabled
+        old_interval = self.config.auto_save_interval_minutes
+
+        self.config = config
+        logger.info(
+            f"Backup config updated: enabled={config.enabled}, "
+            f"interval={config.auto_save_interval_minutes}min"
+        )
+
+        # Handle auto-backup state changes
+        if config.enabled:
+            if not old_enabled or old_interval != config.auto_save_interval_minutes:
+                # Restart with new interval
+                self.stop_auto_backup()
+                self.start_auto_backup(config.auto_save_interval_minutes)
+        else:
+            # Backup disabled - stop timer
+            self.stop_auto_backup()
 
     def create_backup(
         self,
@@ -501,6 +557,14 @@ class BackupService:
         """
         Verifies that a backup file is a valid SQLite database.
 
+        Performs two checks:
+        1. SQLite's internal PRAGMA integrity_check
+        2. File size matches expected size (page_count * page_size)
+
+        The file size check detects corruption from appended data, which
+        SQLite's integrity_check doesn't catch because SQLite ignores
+        data beyond its expected page boundaries.
+
         Args:
             backup_path: Path to backup file to verify.
 
@@ -510,9 +574,31 @@ class BackupService:
         try:
             conn = sqlite3.connect(str(backup_path))
             cursor = conn.cursor()
+
+            # Check internal SQLite integrity
             result = cursor.execute("PRAGMA integrity_check").fetchone()
+            if result[0] != "ok":
+                conn.close()
+                logger.error(f"Backup integrity check failed: {result[0]}")
+                return False
+
+            # Check file size matches expected size
+            # SQLite ignores data appended beyond its pages, so we must verify
+            page_count = cursor.execute("PRAGMA page_count").fetchone()[0]
+            page_size = cursor.execute("PRAGMA page_size").fetchone()[0]
+            expected_size = page_count * page_size
+            actual_size = backup_path.stat().st_size
+
             conn.close()
-            return result[0] == "ok"
+
+            if actual_size != expected_size:
+                logger.error(
+                    f"Backup file size mismatch: expected {expected_size}, "
+                    f"actual {actual_size}"
+                )
+                return False
+
+            return True
         except Exception as e:
             logger.error(f"Backup verification failed: {e}")
             return False

@@ -72,12 +72,14 @@ class DatabaseManagerDialog(QDialog):
         btn_layout = QHBoxLayout()
         self.btn_create = QPushButton("Create New")
         self.btn_browse = QPushButton("Browse...")
+        self.btn_open_folder = QPushButton("Open Folder")
         self.btn_delete = QPushButton("Delete")
         self.btn_select = QPushButton("Select && Restart")  # && escapes to &
         self.btn_close = QPushButton("Cancel")
 
         btn_layout.addWidget(self.btn_create)
         btn_layout.addWidget(self.btn_browse)
+        btn_layout.addWidget(self.btn_open_folder)
         btn_layout.addWidget(self.btn_delete)
         btn_layout.addWidget(self.btn_select)
         btn_layout.addStretch()
@@ -88,6 +90,7 @@ class DatabaseManagerDialog(QDialog):
         # Connections
         self.btn_create.clicked.connect(self._create_db)
         self.btn_browse.clicked.connect(self._browse_db)
+        self.btn_open_folder.clicked.connect(self._open_folder)
         self.btn_delete.clicked.connect(self._delete_db)
         self.btn_select.clicked.connect(self._select_db)
         self.btn_close.clicked.connect(self.reject)
@@ -118,6 +121,26 @@ class DatabaseManagerDialog(QDialog):
                 # Pre-select active
                 self.db_list.setCurrentItem(item)
             self.db_list.addItem(item)
+
+    @Slot()
+    def _open_folder(self) -> None:
+        """Open the database directory in the system file explorer."""
+        import subprocess
+        import sys
+
+        try:
+            if sys.platform == "win32":
+                # Use os.startfile on Windows - more reliable than subprocess
+                os.startfile(self.data_dir)
+            elif sys.platform == "darwin":
+                subprocess.run(["open", self.data_dir], check=False)
+            else:  # Linux
+                subprocess.run(["xdg-open", self.data_dir], check=False)
+        except Exception as e:
+            logger.error(f"Failed to open database directory: {e}")
+            QMessageBox.information(
+                self, "Database Location", f"Database directory:\n{self.data_dir}"
+            )
 
     @Slot()
     def _create_db(self) -> None:
