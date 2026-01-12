@@ -4,7 +4,7 @@ Stores default values for UI configuration and magic numbers.
 """
 
 # Window Configuration
-WINDOW_TITLE = "Project Kraken - v0.5.0 (Beta)"
+WINDOW_TITLE = "Project Kraken - v0.6.0 (Beta)"
 DEFAULT_WINDOW_WIDTH = 1280
 DEFAULT_WINDOW_HEIGHT = 720
 WINDOW_SETTINGS_KEY = "ChristianMintert"
@@ -46,5 +46,5 @@ STATUS_ERROR_PREFIX = "Error: "
 # File Dialog Filters
 SUPPORTED_IMAGE_FORMATS = ["png", "jpg", "jpeg", "bmp", "webp"]
 IMAGE_FILE_FILTER = (
-    f"Images ({' '.join(['*.' + ext for ext in SUPPORTED_IMAGE_FORMATS])})"
+    f"Images ({' '.join([f'*.{ext}' for ext in SUPPORTED_IMAGE_FORMATS])})"
 )

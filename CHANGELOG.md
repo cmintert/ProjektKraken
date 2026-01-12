@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+## [0.6.0]
+
+### Added
 - *(2026-01-12)* **Feature**: Implemented complete Backup System with auto-save, retention policies, and integrity verification.
   - Added `BackupSettingsDialog` for runtime configuration of intervals and locations.
   - Integrated "Backup & Restore" menu with options for manual creation and folder access.

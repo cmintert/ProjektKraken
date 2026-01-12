@@ -1,6 +1,6 @@
 [project]
 name = "ProjektKraken"
-version = "0.5.0"
+version = "0.6.0"
 description = "Project Kraken - A Timeline/Wiki Application"
 requires-python = ">=3.13"
 authors = [
