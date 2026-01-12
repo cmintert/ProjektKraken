@@ -72,9 +72,6 @@ def get_user_data_path(filename: str = "") -> str:
     Returns the absolute path to a file in the user's application data directory.
     Creates the directory if it doesn't exist.
 
-    Note: For Microsoft Store Python installations, APPDATA is virtualized.
-    We detect and resolve the actual path to handle this correctly.
-
     Args:
         filename: Optional filename to append to the directory path.
 
@@ -95,60 +92,7 @@ def get_user_data_path(filename: str = "") -> str:
     data_dir = base_dir / app_name
     data_dir.mkdir(parents=True, exist_ok=True)
 
-    # Check for Microsoft Store Python sandbox on Windows
-    real_data_dir = (
-        _resolve_ms_store_path(data_dir) if sys.platform == "win32" else data_dir
-    )
-
-    if filename:
-        return str(real_data_dir / filename)
-    return str(real_data_dir)
-
-
-def _resolve_ms_store_path(virtualized_path: Path) -> Path:
-    """
-    Resolves virtualized AppData path to actual filesystem path.
-
-    Microsoft Store Python redirects APPDATA writes to a sandboxed
-    LocalCache folder. This function detects and returns the real path.
-
-    Args:
-        virtualized_path: The virtualized path Python sees.
-
-    Returns:
-        Path: The actual filesystem path (either sandboxed or original).
-    """
-    # Create a temporary marker file to find the real location
-    marker_name = ".path_marker_temp"
-    marker = virtualized_path / marker_name
-
-    try:
-        marker.touch()
-
-        # Check if we're running in MS Store Python sandbox
-        local_appdata = Path(os.environ.get("LOCALAPPDATA", ""))
-        packages_dir = local_appdata / "Packages"
-
-        if packages_dir.exists():
-            for pkg in packages_dir.iterdir():
-                if "PythonSoftwareFoundation" in pkg.name:
-                    # Check for the marker in the sandbox location
-                    sandbox_path = (
-                        pkg / "LocalCache" / "Roaming" / virtualized_path.name
-                    )
-                    sandbox_marker = sandbox_path / marker_name
-                    if sandbox_marker.exists():
-                        # Clean up marker and return the real path
-                        marker.unlink(missing_ok=True)
-                        return sandbox_path
-
-        # No sandbox detected, use original path
-        marker.unlink(missing_ok=True)
-        return virtualized_path
-
-    except (OSError, PermissionError):
-        # If we can't create marker, just return the original path
-        return virtualized_path
+    return str(data_dir / filename) if filename else str(data_dir)
 
 
 def get_default_layout_path() -> str:
