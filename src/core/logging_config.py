@@ -7,6 +7,7 @@ including rotating file handlers and console output.
 
 import logging
 import os
+import sys
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 
@@ -17,6 +18,32 @@ MAX_BYTES = 5 * 1024 * 1024  # 5 MB
 BACKUP_COUNT = 5
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+
+class SafeRotatingFileHandler(RotatingFileHandler):
+    """
+    A RotatingFileHandler that handles Windows file locking errors gracefully.
+
+    On Windows, log rotation can fail with PermissionError if the file is still
+    in use by another process or handler. This handler catches those errors
+    and continues logging without crashing.
+    """
+
+    def doRollover(self) -> None:
+        """
+        Perform log file rotation, catching Windows file locking errors.
+
+        If rotation fails due to file locking (common on Windows), the handler
+        continues using the current log file instead of crashing.
+        """
+        try:
+            super().doRollover()
+        except PermissionError:
+            # On Windows, file may still be locked by another process
+            # Just continue with the current file
+            if sys.platform != "win32":
+                raise
+            # On Windows, silently skip rotation - will retry next opportunity
 
 
 def setup_logging(debug_mode: bool = False, log_to_console: bool = True) -> None:
@@ -53,9 +80,9 @@ def setup_logging(debug_mode: bool = False, log_to_console: bool = True) -> None
     # 3. Formatter
     formatter = logging.Formatter(LOG_FORMAT, datefmt=DATE_FORMAT)
 
-    # 4. File Handler (Rotating)
+    # 4. File Handler (Safe Rotating - handles Windows file locking)
     try:
-        file_handler = RotatingFileHandler(
+        file_handler = SafeRotatingFileHandler(
             log_path,
             maxBytes=MAX_BYTES,
             backupCount=BACKUP_COUNT,

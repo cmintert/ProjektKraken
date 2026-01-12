@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-01-11  
-**Commit:** `8b6394e`  
+**Last Updated:** 2026-01-12  
+**Commit:** `bf4b13a`  
 ---
 
 # Changelog
@@ -12,6 +12,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- *(2026-01-12)* **Feature**: Implemented complete Backup System with auto-save, retention policies, and integrity verification.
+  - Added `BackupSettingsDialog` for runtime configuration of intervals and locations.
+  - Integrated "Backup & Restore" menu with options for manual creation and folder access.
+  - Implemented `BackupService` with automated background processing and robust error handling.
+- *(2026-01-11)* **Docs**: Added comprehensive internal documentation for the Backup system.
 - *(2026-01-11)* **Docs**: Standardized schema documentation and fixed missing title in `LICENSE.md`.
 - *(2026-01-11)* **Feature**: Introduced Interactive Graph Visualization system.
   - Added `GraphWidget` and `GraphWebView` for PyVis/vis.js integration.
@@ -52,6 +57,8 @@ All notable changes to this project will be documented in this file.
 - *(2026-01-06)* **Testing**: Added ON DELETE CASCADE test for `moving_features.marker_id` FK.
 
 ### Fixed
+- *(2026-01-12)* **Stability**: Fixed Windows-specific AppData path virtualization issues for Microsoft Store Python installations.
+- *(2026-01-12)* **Stability**: Implemented `SafeRotatingFileHandler` to resolve "file in use" errors during log rotation on Windows.
 - *(2026-01-11)* **Bug**: Fixed editor focus jumping to Entity Inspector when saving an Event.
 - *(2026-01-11)* **Bug**: Fixed stale graph selection and camera reset issues on data reload.
 - *(2026-01-11)* **Bug**: Improved Graph View focus restoration reliability after stabilization.
