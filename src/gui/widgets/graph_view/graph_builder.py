@@ -8,8 +8,8 @@ Stateless utility class that transforms node/edge data into HTML output.
 import json
 import logging
 import os
-import tempfile
 import re
+import tempfile
 from typing import Any
 
 from pyvis.network import Network
