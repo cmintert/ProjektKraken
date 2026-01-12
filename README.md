@@ -1,8 +1,8 @@
 ---
 project: ProjektKraken
 document: Main Project README
-last_updated: 2026-01-04
-commit: fae25d5
+last_updated: 2026-01-12
+commit: 0.6.0
 ---
 
 # Projekt Kraken
@@ -20,8 +20,9 @@ commit: fae25d5
 - **Automated Backups**: Continuous auto-save with manual backup/restore functionality
 
 ### Visualization
+- **Interactive Graph View**: Physics-based node graph with filtering, auto-updates, and force-directed layout
+- **Temporal Maps 2.0**: Trajectory visualization (MF-JSON), reliable playhead persistence, and "Clock Mode" for precise temporal editing
 - **Dual Timeline Views**: Lane-based graphic timeline + card-style text timeline
-- **Interactive Maps**: Place markers on custom map images, link to entities/events
 - **Longform Documents**: Hierarchical document structure for narrative prose
 - **Return to Present**: Quick navigation to current timeline position
 
@@ -36,11 +37,10 @@ commit: fae25d5
 - **Hybrid Data Model**: Strict SQL schema for relationships + flexible JSON attributes
 - **Dockable Workspace**: Configurable panels with state persistence and layout management
 - **Theme Support**: Dark mode and custom themes via `ThemeManager`
-- **Image Gallery**: Attach images to events and entities
 
 ## Installation
 
-For windows use the Release Projekt Kraken v0.5.0
+For windows use the Release Projekt Kraken v0.6.0
 It will persist setting in user directory.
 
 or
@@ -193,7 +193,7 @@ src/
 
 ## Version
 
-**v0.5.0 (Beta)**
+**v0.6.0 (Beta)**
 
 ## License
 
