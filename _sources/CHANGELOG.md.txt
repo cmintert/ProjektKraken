@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-13
-### Internal
-- chore: update build config and changelog for 0.6.0 portable world model
+### Fixed
+- fix: remove missing migrations dir from build config
 
 
 *This changelog was automatically generated.*
