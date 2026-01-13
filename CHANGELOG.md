@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-01-12  
-**Commit:** `09d1a5f`  
+**Last Updated:** 2026-01-13  
+**Commit:** `116e32c`  
 ---
 
 # Changelog
@@ -11,7 +11,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-### Added
+### Architecture
+- *(2026-01-13)* **Feature**: Implemented portable-only World/Workspace model to decouple user data from application files.
+  - Renamed root `assets` directory to `default_assets`.
+  - Updated resource loading logic to support the new directory structure.
+  - Enforced separation of user data by adding `worlds/` to `.gitignore`.
 
 ## [0.6.0]
 
