@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-13
-### Documentation
-- docs: update README for v0.6.0 features
+### Internal
+- Merge pull request #53 from cmintert/copilot/implement-portable-world-model
 
 
 *This changelog was automatically generated.*

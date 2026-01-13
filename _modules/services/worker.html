@@ -283,7 +283,6 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">QObject</span><span class="p">,</span> <span class="n">Signal</span><span class="p">,</span> <span class="n">Slot</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">src.app.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">DEFAULT_DB_NAME</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.commands.base_command</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseCommand</span><span class="p">,</span> <span class="n">CommandResult</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.services</span><span class="w"> </span><span class="kn">import</span> <span class="n">longform_builder</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.asset_store</span><span class="w"> </span><span class="kn">import</span> <span class="n">AssetStore</span>
@@ -333,17 +332,15 @@
 
 <div class="viewcode-block" id="DatabaseWorker.__init__">
 <a class="viewcode-back" href="../../services.html#services.worker.DatabaseWorker.__init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_DB_NAME</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initializes the worker.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            db_path (str): Path to the database file.</span>
+<span class="sd">            db_path: Path to the database file.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">db_path</span> <span class="o">=</span> <span class="n">db_path</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">asset_store</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">asset_store</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attachment_service</span> <span class="o">=</span> <span class="kc">None</span>
