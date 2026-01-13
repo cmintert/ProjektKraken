@@ -48,7 +48,6 @@ from src.app.ai_search_manager import AISearchManager
 from src.app.command_coordinator import CommandCoordinator
 from src.app.connection_manager import ConnectionManager
 from src.app.constants import (
-    DEFAULT_DB_NAME,
     DEFAULT_WINDOW_HEIGHT,
     DEFAULT_WINDOW_WIDTH,
     SETTINGS_ACTIVE_DB_KEY,

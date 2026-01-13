@@ -11,7 +11,6 @@ from typing import List, Optional, Set
 
 from PySide6.QtCore import QObject, Signal, Slot
 
-from src.app.constants import DEFAULT_DB_NAME
 from src.commands.base_command import BaseCommand, CommandResult
 from src.services import longform_builder
 from src.services.asset_store import AssetStore
@@ -57,17 +56,15 @@ class DatabaseWorker(QObject):
     operation_started = Signal(str)
     operation_finished = Signal(str)
 
-    def __init__(self, db_path: str = DEFAULT_DB_NAME) -> None:
+    def __init__(self, db_path: str) -> None:
         """
         Initializes the worker.
 
         Args:
-            db_path (str): Path to the database file.
+            db_path: Path to the database file.
         """
         super().__init__()
         self.db_path = db_path
-        self.db_service = None
-        self.asset_store = None
         self.db_service = None
         self.asset_store = None
         self.attachment_service = None

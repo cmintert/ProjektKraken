@@ -18,7 +18,6 @@ from PySide6.QtCore import (
 from PySide6.QtWidgets import QApplication
 
 from src.app.constants import (
-    DEFAULT_DB_NAME,
     SETTINGS_ACTIVE_DB_KEY,
     SETTINGS_FILTER_CONFIG_KEY,
     STATUS_DB_INIT_FAIL,
