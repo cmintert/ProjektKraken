@@ -15,20 +15,19 @@ import re
 import tempfile
 from typing import Any
 
+logger = logging.getLogger(__name__)
+
 try:
     from pyvis.network import Network
     PYVIS_AVAILABLE = True
 except ImportError:
     PYVIS_AVAILABLE = False
-    logger = logging.getLogger(__name__)
     logger.warning(
         "PyVis not available. Graph visualization disabled. "
         "Install with: pip install -e .[graph]"
     )
 
 from src.core.paths import get_resource_path
-
-logger = logging.getLogger(__name__)
 
 
 class GraphBuilder:
