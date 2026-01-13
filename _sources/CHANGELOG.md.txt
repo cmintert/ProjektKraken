@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-13
 ### Internal
-- Merge pull request #53 from cmintert/copilot/implement-portable-world-model
+- chore: update build config and changelog for 0.6.0 portable world model
 
 
 *This changelog was automatically generated.*
