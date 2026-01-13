@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-01-13  
-**Commit:** `9a02d88`  
+**Commit:** `4d6c077`  
 ---
 
 # Changelog
@@ -10,6 +10,13 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Added
+- *(2026-01-13)* **Feature**: Implemented Autocompletion for Tags, Attribute Keys, Relation Types, and Entity Types.
+  - Added `GraphDataService` methods to fetch unique types and keys from the database.
+  - Integrated `QCompleter` into `TagEditorWidget`, `AttributeEditorWidget`, and `RelationEditDialog`.
+  - Added `update_suggestions` methods to `EntityEditorWidget` and `EventEditorWidget` to propagate data.
+  - Added `completer_data_loaded` signal to `DatabaseWorker` for asynchronous data loading.
 
 ### Fixed
 - *(2026-01-13)* **Bug**: Fixed `AttributeError` in `MainWindow` when opening AI Settings dialog.
