@@ -11,7 +11,13 @@ project_dir = os.getcwd()
 dist_dir = os.path.join(project_dir, 'dist', 'ProjektKraken')
 if os.path.exists(dist_dir):
     print(f"Cleaning build directory: {dist_dir}")
-    shutil.rmtree(dist_dir)
+    try:
+        shutil.rmtree(dist_dir)
+    except OSError as e:
+        print(f"WARNING: Could not clean build directory completely: {e}")
+        print("Please ensure ProjektKraken is not running.")
+
+from PyInstaller.utils.hooks import collect_data_files
 
 added_files = [
     (os.path.join(project_dir, 'assets'), 'assets'),
@@ -19,6 +25,7 @@ added_files = [
     (os.path.join(project_dir, 'migrations'), 'migrations'),
     (os.path.join(project_dir, 'src', 'resources'), 'src/resources'),
 ]
+added_files += collect_data_files('pyvis')
 
 a = Analysis(
     ['launcher.py'],

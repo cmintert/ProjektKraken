@@ -248,15 +248,19 @@ class GraphBuilder:
             pattern = (
                 r'<script[^>]*src="[^"]*unpkg\.com/vis-network[^"]*"[^>]*></script>'
             )
-            replacement = f'<script type="text/javascript">{vis_js_content}</script>'
+            # Use concatenation to avoid f-string string interpolation issues with {} in JS
+            replacement = (
+                '<script type="text/javascript">' + vis_js_content + "</script>"
+            )
 
             if re.search(pattern, html_content):
-                html_content = re.sub(pattern, replacement, html_content)
+                # Use lambda to prevent re.sub from interpreting backslashes in JS code
+                html_content = re.sub(pattern, lambda match: replacement, html_content)
             else:
                 # Fallback: Just append before head or as first child of head
                 html_content = html_content.replace(
                     "<head>",
-                    f"<head><script type='text/javascript'>{vis_js_content}</script>",
+                    "<head>" + replacement,
                 )
         else:
             logger.warning("Falling back to CDN for vis-network.js")

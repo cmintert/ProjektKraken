@@ -178,10 +178,15 @@ class GraphWidget(QWidget):
     def _refresh_display_locally(self, focus_node_id: str | None = None) -> None:
         """Refreshes the graph display using cached data and local filters."""
         if not self._all_nodes and not self._all_edges:
+            logger.debug("GraphWidget: No nodes or edges to display (empty source).")
             self._web_view.load_html(
                 self._builder.build_empty_html(self._current_theme_config)
             )
             return
+
+        logger.debug(
+            f"GraphWidget: Filtering {len(self._all_nodes)} nodes. Search='{self._search_term}'"
+        )
 
         filtered_nodes = []
         filtered_ids = set()
@@ -196,14 +201,20 @@ class GraphWidget(QWidget):
         for node in self._all_nodes:
             # 1. Search Filter
             if not SearchUtils.matches_search(node, self._search_term):
+                # logger.debug(f"Node {node.get('id')} skipped by search")
                 continue
 
             # 2. Tag Filter (Advanced)
             if not self._passes_tag_filter(node, tag_config):
+                # logger.debug(f"Node {node.get('id')} skipped by tag filter")
                 continue
 
             filtered_nodes.append(node)
             filtered_ids.add(node["id"])
+
+        logger.debug(
+            f"GraphWidget: Filter pass resulted in {len(filtered_nodes)} nodes."
+        )
 
         # -- Step 2: Filter Edges (Rel Types & node existence) --
         filtered_edges = []
@@ -233,17 +244,27 @@ class GraphWidget(QWidget):
                 self._builder.build_empty_html(self._current_theme_config)
             )
         else:
-            html = self._builder.build_html(
-                filtered_nodes,
-                filtered_edges,
-                theme_config=self._current_theme_config,
-                focus_node_id=focus_node_id,
-            )
-            self._web_view.load_html(html)
-            logger.debug(
-                f"Refreshed graph: {len(filtered_nodes)} nodes, "
-                f"{len(filtered_edges)} edges, focus_id={focus_node_id}"
-            )
+            try:
+                html = self._builder.build_html(
+                    filtered_nodes,
+                    filtered_edges,
+                    theme_config=self._current_theme_config,
+                    focus_node_id=focus_node_id,
+                )
+                self._web_view.load_html(html)
+                logger.debug(
+                    f"Refreshed graph: {len(filtered_nodes)} nodes, "
+                    f"{len(filtered_edges)} edges, focus_id={focus_node_id}"
+                )
+            except Exception as e:
+                logger.critical(
+                    f"GraphWidget: Failed to build graph HTML: {e}", exc_info=True
+                )
+                # Show error state in view
+                error_html = self._builder.build_empty_html(
+                    self._current_theme_config
+                ).replace("No Data to Display", f"Error Loading Graph: {e}")
+                self._web_view.load_html(error_html)
 
     def _passes_tag_filter(self, node: dict, config: dict) -> bool:
         """Checks if a node passes the tag filter config."""
