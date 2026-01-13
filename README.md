@@ -1,13 +1,63 @@
 ---
 project: ProjektKraken
 document: Main Project README
-last_updated: 2026-01-12
+last_updated: 2026-01-13
 commit: 0.6.0
 ---
 
 # Projekt Kraken
 
 **Projekt Kraken** is a desktop worldbuilding environment designed for the "Architect" persona. It treats history as the primary axis of the world, offering a timeline-first approach to lore creation.
+
+## Portable-Only Architecture (v0.6.0+)
+
+Starting with version 0.6.0, ProjektKraken uses a **portable-only architecture** where all worlds are stored next to the executable in a `worlds/` directory. Each world is completely self-contained.
+
+### World Structure
+
+```
+ProjektKraken.exe              # Application executable (or project root in dev)
+worlds/                        # Worlds directory (created automatically)
+  My Fantasy World/            # World directory
+    world.json                 # World manifest (metadata)
+    My Fantasy World.kraken    # SQLite database
+    assets/                    # World assets
+      images/                  # Full-size images
+        events/                # Event images by ID
+        entities/              # Entity images by ID
+      thumbnails/              # Image thumbnails
+      .trash/                  # Deleted files (for undo)
+  Another Campaign/            # Another world
+    world.json
+    Another Campaign.kraken
+    assets/
+      ...
+```
+
+### World Manifest (world.json)
+
+Each world contains a `world.json` manifest file with metadata:
+
+```json
+{
+  "id": "unique-uuid",
+  "name": "My Fantasy World",
+  "description": "An epic fantasy setting",
+  "created_at": 1234567890.0,
+  "modified_at": 1234567890.0,
+  "version": "0.6.0",
+  "db_filename": "My Fantasy World.kraken"
+}
+```
+
+### User Preferences
+
+User preferences (window layouts, settings) remain stored in the system's standard application data directory using QSettings:
+- **Windows**: `%APPDATA%\ProjektKraken\`
+- **macOS**: `~/Library/Application Support/ProjektKraken/`
+- **Linux**: `~/.local/share/ProjektKraken/`
+
+Backups and AI search indexes are also stored in the user data directory.
 
 ## Key Features
 
@@ -40,10 +90,11 @@ commit: 0.6.0
 
 ## Installation
 
-For windows use the Release Projekt Kraken v0.6.0
-It will persist setting in user directory.
+### Windows Executable (Recommended)
 
-or
+Download the latest release from GitHub Releases. The application is portable - simply extract and run `ProjektKraken.exe`. The `worlds/` directory will be created automatically next to the executable on first run.
+
+### From Source
 
 1. Clone the repository
 2. Create a virtual environment:
@@ -72,40 +123,48 @@ python -m src.app.main
 
 ### CLI Tools
 
-ProjektKraken includes comprehensive command-line tools for headless operations:
+ProjektKraken includes comprehensive command-line tools for headless operations.
+
+**Note:** In portable mode (v0.6.0+), database paths should point to the `.kraken` file within a world directory:
 
 ```bash
+# Example world structure:
+# worlds/My Campaign/My Campaign.kraken
+
 # Events
-python -m src.cli.event create --database world.kraken --name "Event" --date 100.0
-python -m src.cli.event list --database world.kraken
+python -m src.cli.event create --database "worlds/My Campaign/My Campaign.kraken" --name "Event" --date 100.0
+python -m src.cli.event list --database "worlds/My Campaign/My Campaign.kraken"
+
+# Or use shorter paths if you're in the project directory:
+python -m src.cli.event list --database "worlds/My Campaign/My Campaign.kraken"
 
 # Entities  
-python -m src.cli.entity create --database world.kraken --name "Character" --type character
-python -m src.cli.entity list --database world.kraken
+python -m src.cli.entity create --database "worlds/My Campaign/My Campaign.kraken" --name "Character" --type character
+python -m src.cli.entity list --database "worlds/My Campaign/My Campaign.kraken"
 
 # Relations
-python -m src.cli.relation add --database world.kraken --source <id> --target <id> --type "caused"
+python -m src.cli.relation add --database "worlds/My Campaign/My Campaign.kraken" --source <id> --target <id> --type "caused"
 
 # Calendar Configuration
-python -m src.cli.calendar show --database world.kraken
-python -m src.cli.calendar set --database world.kraken --config calendar.json
+python -m src.cli.calendar show --database "worlds/My Campaign/My Campaign.kraken"
+python -m src.cli.calendar set --database "worlds/My Campaign/My Campaign.kraken" --config calendar.json
 
 # Maps
-python -m src.cli.map list --database world.kraken
-python -m src.cli.map create --database world.kraken --name "World Map" --image map.png
+python -m src.cli.map list --database "worlds/My Campaign/My Campaign.kraken"
+python -m src.cli.map create --database "worlds/My Campaign/My Campaign.kraken" --name "World Map" --image map.png
 
 # Attachments
-python -m src.cli.attachment list --database world.kraken --owner-type event --owner-id <id>
+python -m src.cli.attachment list --database "worlds/My Campaign/My Campaign.kraken" --owner-type event --owner-id <id>
 
 # Longform Export
-python -m src.cli.longform export --database world.kraken --output document.md
+python -m src.cli.longform export --database "worlds/My Campaign/My Campaign.kraken" --output document.md
 
 # Wiki Link Scanning
-python -m src.cli.wiki scan --database world.kraken --text "The [[Hero]] met [[Villain]]"
+python -m src.cli.wiki scan --database "worlds/My Campaign/My Campaign.kraken" --text "The [[Hero]] met [[Villain]]"
 
 # Semantic Search
-python -m src.cli.index rebuild --database world.kraken
-python -m src.cli.index query --database world.kraken --text "find the wizard"
+python -m src.cli.index rebuild --database "worlds/My Campaign/My Campaign.kraken"
+python -m src.cli.index query --database "worlds/My Campaign/My Campaign.kraken" --text "find the wizard"
 ```
 
 See **[CLI Documentation](src/cli/README.md)** for complete reference.
