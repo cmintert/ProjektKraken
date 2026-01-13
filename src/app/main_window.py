@@ -206,6 +206,7 @@ class MainWindow(QMainWindow):
         self.grouping_manager = TimelineGroupingManager(self)
 
         # Initialize AI Search Manager
+        self.ai_settings_dialog = None
         self.ai_search_manager = AISearchManager(self)
 
         # Initialize Longform Manager
