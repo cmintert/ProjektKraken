@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-13
 ### Fixed
-- fix(graph): Bundle PyVis templates and vis-network for offline rendering - Add pyvis/templates to PyInstaller bundle for Jinja2 templates - Add lib/vis-9.1.2 and lib/bindings to bundle for offline assets - Replace CDN-loaded vis-network.js/css with inline local content - Add error handling to show helpful messages if graph build fails Fixes graph not displaying in deployed builds due to missing templates and CDN resources being unavailable offline.
+- Fix AttributeError in MainWindow on AI Settings dialog open
 
 
 *This changelog was automatically generated.*
