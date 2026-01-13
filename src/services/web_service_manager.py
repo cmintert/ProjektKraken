@@ -122,10 +122,10 @@ class WebServiceManager(QObject):
         """
         super().__init__(parent)
         self._thread: Optional[WebServerThread] = None
+        # Type annotation for _config - it's only valid when WEBSERVER_AVAILABLE
+        self._config: Optional[object] = None
         if WEBSERVER_AVAILABLE:
             self._config = ServerConfig()  # Default config
-        else:
-            self._config = None  # type: ignore
 
     @property
     def is_running(self) -> bool:
@@ -162,6 +162,7 @@ class WebServiceManager(QObject):
         if self.is_running:
             return
 
+        assert self._config is not None, "Config should be set when WEBSERVER_AVAILABLE"
         self._config.port = port
         if db_path:
             self._config.db_path = db_path
