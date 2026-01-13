@@ -8,14 +8,42 @@ authors = [
 ]
 
 dependencies = [
-    "PySide6",
-    "Pillow",
-    "fastapi",
-    "uvicorn[standard]",
-    "python-multipart",
-    "geojson>=3.0.0",
-    "pyvis",
+    "PySide6>=6.10.0",
+    "Pillow>=12.0.0",
+    "python-dotenv>=1.0.0",
 ]
+
+[project.optional-dependencies]
+search = [
+    "numpy>=2.2.0",
+    "requests>=2.32.0",
+]
+webserver = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "python-multipart>=0.0.20",
+]
+graph = [
+    "pyvis>=0.3.2",
+]
+# All optional features
+all = [
+    "ProjektKraken[search,webserver,graph]",
+]
+# Development dependencies
+dev = [
+    "pytest>=9.0.0",
+    "pytest-qt>=4.5.0",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.14.0",
+    "mypy>=1.19.0",
+    "Sphinx>=8.2.0",
+    "myst-parser>=4.0.0",
+    "furo>=2025.9.0",
+    "sphinxcontrib-mermaid>=1.0.0",
+    "pyinstaller>=6.17.0",
+]
+
 license = {text = "AGPL-3.0-only"}
 
 

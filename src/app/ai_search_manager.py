@@ -86,8 +86,20 @@ class AISearchManager(QObject):
 
             self.window.ai_search_panel.set_searching(True)
 
-            # Import search service
-            from src.services.search_service import create_search_service
+            # Import search service (requires optional dependencies)
+            try:
+                from src.services.search_service import create_search_service
+            except ImportError as e:
+                logger.error(
+                    "Semantic search requires optional dependencies. "
+                    "Install with: pip install -e .[search]"
+                )
+                self.window.ai_search_panel.set_searching(False)
+                self.window.ai_search_panel.display_results([])
+                self.window.set_status_message(
+                    "Semantic search unavailable: missing dependencies", 5000
+                )
+                return
 
             # Create search service with GUI thread connection
             assert self.window.gui_db_service._connection is not None
@@ -126,8 +138,18 @@ class AISearchManager(QObject):
 
             self.window.status_bar.showMessage(f"Rebuilding {object_type} index...", 0)
 
-            # Import search service
-            from src.services.search_service import create_search_service
+            # Import search service (requires optional dependencies)
+            try:
+                from src.services.search_service import create_search_service
+            except ImportError:
+                logger.error(
+                    "Semantic search requires optional dependencies. "
+                    "Install with: pip install -e .[search]"
+                )
+                self.window.set_status_message(
+                    "Semantic search unavailable: missing dependencies", 5000
+                )
+                return
 
             # Create search service with GUI thread connection
             assert self.window.gui_db_service._connection is not None

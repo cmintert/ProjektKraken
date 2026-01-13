@@ -3,6 +3,9 @@ Graph Builder Module.
 
 Business logic layer for building PyVis networks from graph data.
 Stateless utility class that transforms node/edge data into HTML output.
+
+Note: Requires optional graph dependency (pyvis).
+Install with: pip install -e .[graph]
 """
 
 import json
@@ -12,7 +15,16 @@ import re
 import tempfile
 from typing import Any
 
-from pyvis.network import Network
+try:
+    from pyvis.network import Network
+    PYVIS_AVAILABLE = True
+except ImportError:
+    PYVIS_AVAILABLE = False
+    logger = logging.getLogger(__name__)
+    logger.warning(
+        "PyVis not available. Graph visualization disabled. "
+        "Install with: pip install -e .[graph]"
+    )
 
 from src.core.paths import get_resource_path
 
@@ -119,6 +131,16 @@ class GraphBuilder:
         Returns:
             HTML string for embedding in QWebEngineView.
         """
+        if not PYVIS_AVAILABLE:
+            error_msg = "PyVis not installed. Install with: pip install -e .[graph]"
+            logger.error(error_msg)
+            return f"""
+            <html><body style="background:#1e1e1e;color:#fff;padding:20px;">
+            <h2>Graph Visualization Unavailable</h2>
+            <p>{error_msg}</p>
+            </body></html>
+            """
+        
         try:
             theme = theme_config or self.DEFAULT_THEME
             network = self._build_network(nodes, edges, height, width, theme)

@@ -96,17 +96,37 @@ Download the latest release from GitHub Releases. The application is portable - 
 
 ### From Source
 
-1. Clone the repository
-2. Create a virtual environment:
-   ```bash
-   python -m venv .venv
-   .venv\Scripts\activate  # Windows
-   source .venv/bin/activate  # Linux/Mac
-   ```
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+#### Minimal Installation
+
+For basic functionality (timeline, entities, events):
+
+```bash
+# Clone and setup
+git clone https://github.com/cmintert/ProjektKraken.git
+cd ProjektKraken
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+.venv\Scripts\activate     # Windows
+
+# Install core dependencies only
+pip install -r requirements-core.txt
+```
+
+#### Full Installation
+
+For all features including semantic search, web server, and graph view:
+
+```bash
+# Install all dependencies
+pip install -r requirements.txt
+# or selectively:
+pip install -e .[all]  # All optional features
+pip install -e .[search]  # Just semantic search
+pip install -e .[webserver]  # Just web server
+pip install -e .[graph]  # Just graph visualization
+```
+
+**See [INSTALLATION.md](docs/INSTALLATION.md) for detailed installation options and dependency information.**
 
 ## Usage
 

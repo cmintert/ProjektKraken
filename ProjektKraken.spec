@@ -2,18 +2,22 @@
 
 block_cipher = None
 
-# Find PyVis templates directory
-import pyvis
-import os
-pyvis_templates = os.path.join(os.path.dirname(pyvis.__file__), 'templates')
-
+# Find PyVis templates directory (only if pyvis is installed)
 added_files = [
     ('default_assets', 'default_assets'),
     ('themes.json', '.'),
     ('src/resources', 'src/resources'),
     ('lib', 'lib'),  # vis-network for offline graph rendering
-    (pyvis_templates, 'pyvis/templates'),  # PyVis Jinja2 templates
 ]
+
+# Add PyVis templates if available (optional dependency)
+try:
+    import pyvis
+    import os
+    pyvis_templates = os.path.join(os.path.dirname(pyvis.__file__), 'templates')
+    added_files.append((pyvis_templates, 'pyvis/templates'))
+except ImportError:
+    print("PyVis not installed - graph features will be unavailable")
 
 a = Analysis(
     ['launcher.py'],
@@ -24,7 +28,41 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=[
+        # Testing frameworks
+        'pytest',
+        'pytest_qt',
+        'pytest_cov',
+        '_pytest',
+        'py.test',
+        # Documentation
+        'sphinx',
+        'docutils',
+        'alabaster',
+        'babel',
+        'myst_parser',
+        'furo',
+        'sphinxcontrib',
+        # Development tools
+        'ruff',
+        'mypy',
+        'black',
+        'flake8',
+        'pylint',
+        'coverage',
+        # Unused standard library modules
+        'tkinter',
+        'tcl',
+        'tk',
+        '_tkinter',
+        'turtle',
+        'test',
+        'unittest',
+        'doctest',
+        'pdb',
+        'pydoc',
+        'pydoc_data',
+    ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,

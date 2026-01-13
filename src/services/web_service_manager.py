@@ -1,6 +1,9 @@
 """
 Web Service Manager Module.
 Handles the lifecycle of the embedded Uvicorn server within a QThread.
+
+Note: Requires optional webserver dependencies (fastapi, uvicorn).
+Install with: pip install -e .[webserver]
 """
 
 import logging
@@ -8,73 +11,98 @@ import socket
 import threading
 from typing import Optional
 
-import uvicorn
 from PySide6.QtCore import QObject, QThread, Signal
-
-from src.webserver.config import ServerConfig
-from src.webserver.server import create_app
 
 logger = logging.getLogger(__name__)
 
+# Check for optional dependencies
+try:
+    import uvicorn
+    from src.webserver.config import ServerConfig
+    from src.webserver.server import create_app
+    WEBSERVER_AVAILABLE = True
+except ImportError:
+    WEBSERVER_AVAILABLE = False
+    logger.warning(
+        "Web server dependencies not available. "
+        "Install with: pip install -e .[webserver]"
+    )
 
-class WebServerThread(QThread):
-    """
-    Background thread to run the Uvicorn server.
-    """
 
-    error_occurred = Signal(str)
-
-    def __init__(self, config: ServerConfig, parent: Optional[QObject] = None) -> None:
-        """Initialize the web server thread.
-
-        Args:
-            config: Server configuration (host, port, db_path).
-            parent: Optional parent QObject for Qt parent-child relationship.
+if WEBSERVER_AVAILABLE:
+    class WebServerThread(QThread):
         """
-        super().__init__(parent)
-        self.config = config
-        self._server: Optional[uvicorn.Server] = None
-        self._stop_event = threading.Event()
+        Background thread to run the Uvicorn server.
+        """
 
-    def run(self) -> None:
-        """Run the server."""
-        try:
-            # Configure Uvicorn
-            uv_config = uvicorn.Config(
-                create_app(self.config),
-                host=self.config.host,
-                port=self.config.port,
-                log_level="info",
-                loop="asyncio",
-            )
+        error_occurred = Signal(str)
 
-            # Create server instance
-            self._server = uvicorn.Server(uv_config)
+        def __init__(self, config: "ServerConfig", parent: Optional[QObject] = None) -> None:
+            """Initialize the web server thread.
 
-            # Allow clean shutdown from other threads
-            # Uvicorn's server.run() handles signals, but in a thread we need to trigger
-            # it manually. We override 'install_signal_handlers' to False to prevent
-            # it interfering with main thread.
-            uv_config.install_signal_handlers = False  # type: ignore
+            Args:
+                config: Server configuration (host, port, db_path).
+                parent: Optional parent QObject for Qt parent-child relationship.
+            """
+            super().__init__(parent)
+            self.config = config
+            self._server: Optional["uvicorn.Server"] = None
+            self._stop_event = threading.Event()
 
-            logger.info("Starting Web Server Thread...")
-            self._server.run()
-            logger.info("Web Server Thread stopped.")
+        def run(self) -> None:
+            """Run the server."""
+            try:
+                # Configure Uvicorn
+                uv_config = uvicorn.Config(
+                    create_app(self.config),
+                    host=self.config.host,
+                    port=self.config.port,
+                    log_level="info",
+                    loop="asyncio",
+                )
 
-        except OSError as e:
-            if e.errno == 98 or e.errno == 10048:  # Address in use
-                self.error_occurred.emit(f"Port {self.config.port} is already in use.")
-            else:
+                # Create server instance
+                self._server = uvicorn.Server(uv_config)
+
+                # Allow clean shutdown from other threads
+                # Uvicorn's server.run() handles signals, but in a thread we need to trigger
+                # it manually. We override 'install_signal_handlers' to False to prevent
+                # it interfering with main thread.
+                uv_config.install_signal_handlers = False  # type: ignore
+
+                logger.info("Starting Web Server Thread...")
+                self._server.run()
+                logger.info("Web Server Thread stopped.")
+
+            except OSError as e:
+                if e.errno == 98 or e.errno == 10048:  # Address in use
+                    self.error_occurred.emit(f"Port {self.config.port} is already in use.")
+                else:
+                    self.error_occurred.emit(str(e))
+            except Exception as e:
+                logger.error(f"Web server error: {e}", exc_info=True)
                 self.error_occurred.emit(str(e))
-        except Exception as e:
-            logger.error(f"Web server error: {e}", exc_info=True)
-            self.error_occurred.emit(str(e))
 
-    def stop(self) -> None:
-        """Request the server to stop."""
-        if self._server:
-            self._server.should_exit = True
-            self.wait()  # Wait for thread to finish
+        def stop(self) -> None:
+            """Request the server to stop."""
+            if self._server:
+                self._server.should_exit = True
+                self.wait()  # Wait for thread to finish
+else:
+    # Stub class when webserver dependencies are not available
+    class WebServerThread(QThread):
+        """Stub class - webserver dependencies not installed."""
+        error_occurred = Signal(str)
+        
+        def __init__(self, config: object, parent: Optional[QObject] = None) -> None:
+            super().__init__(parent)
+            logger.error("WebServerThread requires optional dependencies")
+        
+        def run(self) -> None:
+            self.error_occurred.emit("Web server dependencies not installed")
+        
+        def stop(self) -> None:
+            pass
 
 
 class WebServiceManager(QObject):
@@ -94,7 +122,10 @@ class WebServiceManager(QObject):
         """
         super().__init__(parent)
         self._thread: Optional[WebServerThread] = None
-        self._config = ServerConfig()  # Default config
+        if WEBSERVER_AVAILABLE:
+            self._config = ServerConfig()  # Default config
+        else:
+            self._config = None  # type: ignore
 
     @property
     def is_running(self) -> bool:
@@ -120,6 +151,14 @@ class WebServiceManager(QObject):
 
     def start_server(self, port: int = 8000, db_path: Optional[str] = None) -> None:
         """Start the web server."""
+        if not WEBSERVER_AVAILABLE:
+            logger.error(
+                "Web server requires optional dependencies. "
+                "Install with: pip install -e .[webserver]"
+            )
+            self.error_occurred.emit("Web server dependencies not installed")
+            return
+            
         if self.is_running:
             return
 

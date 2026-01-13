@@ -1,0 +1,13 @@
+# Optional feature dependencies
+
+# Semantic Search (AI Search Panel, CLI semantic search)
+numpy==2.2.1
+requests==2.32.3
+
+# Web Server (Longform editor web view)
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+
+# Graph Visualization (Network graph widget)
+pyvis==0.3.2

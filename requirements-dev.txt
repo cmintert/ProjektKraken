@@ -1,0 +1,19 @@
+# Development dependencies (testing, linting, documentation)
+
+# Testing
+pytest==9.0.2
+pytest-qt==4.5.0
+pytest-cov==7.0.0
+
+# Documentation
+Sphinx==8.2.3
+myst-parser==4.0.1
+furo==2025.9.25
+sphinxcontrib-mermaid>=1.0.0
+
+# Code Quality
+ruff==0.14.10
+mypy==1.19.0
+
+# Packaging
+pyinstaller==6.17.0

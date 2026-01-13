@@ -1,0 +1,4 @@
+# Core application dependencies (required for basic functionality)
+PySide6==6.10.1
+Pillow==12.0.0
+python-dotenv==1.0.1
