@@ -2,10 +2,17 @@
 
 block_cipher = None
 
+# Find PyVis templates directory
+import pyvis
+import os
+pyvis_templates = os.path.join(os.path.dirname(pyvis.__file__), 'templates')
+
 added_files = [
     ('default_assets', 'default_assets'),
     ('themes.json', '.'),
     ('src/resources', 'src/resources'),
+    ('lib', 'lib'),  # vis-network for offline graph rendering
+    (pyvis_templates, 'pyvis/templates'),  # PyVis Jinja2 templates
 ]
 
 a = Analysis(

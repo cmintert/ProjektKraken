@@ -208,11 +208,6 @@ class GraphWidget(QWidget):
         # -- Step 2: Filter Edges (Rel Types & node existence) --
         filtered_edges = []
 
-        # We also need to respect "Exclude Relation Node Types" implicitly?
-        # Usually relation type filter just hides the edge.
-        # But if we hide edges, do we hide isolated nodes?
-        # PyVis handles isolated nodes fine.
-
         for edge in self._all_edges:
             # Check if source and target are in filtered nodes
             if (

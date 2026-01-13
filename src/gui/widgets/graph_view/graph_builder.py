@@ -8,10 +8,13 @@ Stateless utility class that transforms node/edge data into HTML output.
 import json
 import logging
 import os
+import re
 import tempfile
 from typing import Any
 
 from pyvis.network import Network
+
+from src.core.paths import get_resource_path
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +46,56 @@ class GraphBuilder:
         "edge_color": "#888888",
     }
 
+    # Cached local vis-network library content
+    _vis_js_content: str | None = None
+    _vis_css_content: str | None = None
+    _vis_utils_content: str | None = None
+
+    @classmethod
+    def _load_local_vis_assets(cls) -> tuple[str, str, str]:
+        """
+        Loads local vis-network JS, CSS, and PyVis utils files for offline use.
+
+        Caches the content on first load to avoid repeated file I/O.
+
+        Returns:
+            Tuple of (js_content, css_content, utils_content) strings.
+        """
+        if cls._vis_js_content is None or cls._vis_css_content is None:
+            try:
+                vis_js_path = get_resource_path(
+                    os.path.join("lib", "vis-9.1.2", "vis-network.min.js")
+                )
+                vis_css_path = get_resource_path(
+                    os.path.join("lib", "vis-9.1.2", "vis-network.css")
+                )
+                vis_utils_path = get_resource_path(
+                    os.path.join("lib", "bindings", "utils.js")
+                )
+
+                with open(vis_js_path, encoding="utf-8") as f:
+                    cls._vis_js_content = f.read()
+
+                with open(vis_css_path, encoding="utf-8") as f:
+                    cls._vis_css_content = f.read()
+
+                with open(vis_utils_path, encoding="utf-8") as f:
+                    cls._vis_utils_content = f.read()
+
+                logger.debug(
+                    f"Loaded vis-network assets: JS={len(cls._vis_js_content)} bytes, "
+                    f"CSS={len(cls._vis_css_content)} bytes, "
+                    f"Utils={len(cls._vis_utils_content)} bytes"
+                )
+
+            except FileNotFoundError as e:
+                logger.error(f"Local vis-network assets not found: {e}")
+                cls._vis_js_content = ""
+                cls._vis_css_content = ""
+                cls._vis_utils_content = ""
+
+        return cls._vis_js_content, cls._vis_css_content, cls._vis_utils_content
+
     def build_html(
         self,
         nodes: list[dict[str, Any]],
@@ -66,9 +119,24 @@ class GraphBuilder:
         Returns:
             HTML string for embedding in QWebEngineView.
         """
-        theme = theme_config or self.DEFAULT_THEME
-        network = self._build_network(nodes, edges, height, width, theme)
-        return self._generate_html(network, theme, focus_node_id)
+        try:
+            theme = theme_config or self.DEFAULT_THEME
+            network = self._build_network(nodes, edges, height, width, theme)
+            html = self._generate_html(network, theme, focus_node_id)
+            logger.debug(
+                f"Generated graph HTML: {len(nodes)} nodes, {len(edges)} edges"
+            )
+            return html
+        except Exception as e:
+            logger.error(f"Failed to build graph: {type(e).__name__}: {e}")
+            # Return error HTML so user can see the problem
+            error_msg = str(e).replace('"', "&quot;")
+            return f"""
+            <html><body style="background:#1e1e1e;color:#fff;padding:20px;">
+            <h2>Graph Error</h2>
+            <p>Failed to build graph: {type(e).__name__}: {error_msg}</p>
+            </body></html>
+            """
 
     def _build_network(
         self,
@@ -206,6 +274,48 @@ class GraphBuilder:
                 html_content = html_file.read()
         finally:
             os.unlink(temp_path)
+
+        # Replace CDN-loaded vis-network with inline local assets for offline use
+        vis_js, vis_css, vis_utils = self._load_local_vis_assets()
+        if vis_js and vis_css:
+            # Remove CDN script tags for vis-network
+            html_content = re.sub(
+                r'<script[^>]*src="[^"]*vis-network[^"]*"[^>]*>\s*</script>',
+                "",
+                html_content,
+            )
+            # Remove CDN link tags for vis-network CSS
+            html_content = re.sub(
+                r'<link[^>]*href="[^"]*vis-network[^"]*"[^>]*/?>',
+                "",
+                html_content,
+            )
+            # Remove Bootstrap CDN (not needed for embedded graph)
+            html_content = re.sub(
+                r'<link[^>]*href="[^"]*bootstrap[^"]*"[^>]*/?>',
+                "",
+                html_content,
+            )
+            html_content = re.sub(
+                r'<script[^>]*src="[^"]*bootstrap[^"]*"[^>]*>\s*</script>',
+                "",
+                html_content,
+            )
+            # Remove PyVis utils.js relative path reference (doesn't work with setHtml)
+            html_content = re.sub(
+                r'<script[^>]*src="lib/bindings/utils\.js"[^>]*>\s*</script>',
+                "",
+                html_content,
+            )
+
+            # Inject local vis-network CSS, JS, and utils inline
+            inline_vis = f"""
+            <style type="text/css">{vis_css}</style>
+            <script type="text/javascript">{vis_js}</script>
+            <script type="text/javascript">{vis_utils}</script>
+            """
+            # Insert after <head>
+            html_content = html_content.replace("<head>", f"<head>{inline_vis}")
 
         # Inject CSS to set background color and ensure full container height
         bg_color = theme.get("background_color", "#1e1e1e")
