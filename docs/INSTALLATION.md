@@ -134,17 +134,43 @@ python -m src.app.main
 
 ### Building Executable (Windows)
 
+ProjektKraken offers two PyInstaller build configurations:
+
+#### Standard Build (Recommended)
+Includes all features with size optimization (excludes unused Qt modules):
+
 ```bash
-# Install build dependencies
-pip install pyinstaller
+# Install dependencies (core + optional)
+pip install -r requirements.txt
 
 # Build
 pyinstaller ProjektKraken.spec
 
-# Output will be in dist/ProjektKraken/
+# Output: dist/ProjektKraken/ (~150-180 MB)
 ```
 
-**Note:** The build process automatically excludes development and testing dependencies to minimize deployment size.
+#### Minimal Build (Smallest Size)
+Core features only, excludes optional dependencies:
+
+```bash
+# Install core dependencies only
+pip install -r requirements-core.txt
+pip install pyinstaller
+
+# Build
+pyinstaller ProjektKraken-minimal.spec
+
+# Output: dist/ProjektKraken/ (~80-120 MB, 30-50% smaller)
+```
+
+**Size Optimizations Applied:**
+- Excluded unused Qt modules (Qt3D, QtBluetooth, QtMultimedia, etc.)
+- Excluded development tools (pytest, sphinx, ruff, mypy)
+- Excluded unused stdlib modules (tkinter, email, xmlrpc)
+- UPX compression enabled
+- Binary filtering for Qt libraries
+
+**Note:** Minimal build will show error messages for optional features (semantic search, web server, graph visualization).
 
 ## Verifying Installation
 

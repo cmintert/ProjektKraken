@@ -1,33 +1,30 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 """
-PyInstaller spec for ProjektKraken with optimized size.
+PyInstaller spec for ProjektKraken - MINIMAL BUILD (core features only).
 
-This configuration excludes optional dependencies and unused Qt modules
-to minimize the build size. For a full build with all features, use
-ProjektKraken-full.spec instead.
+This configuration excludes ALL optional dependencies to create the
+smallest possible build. Optional features (semantic search, web server,
+graph visualization) will show error messages when accessed.
 
-Estimated size reduction: 30-50% compared to unoptimized build.
+To build: pyinstaller ProjektKraken-minimal.spec
+
+Estimated size: 30-50% smaller than full build
+Features excluded:
+- Semantic search (numpy, requests)
+- Web server (fastapi, uvicorn)
+- Graph visualization (pyvis)
 """
 
 block_cipher = None
 
-# Find PyVis templates directory (only if pyvis is installed)
+# Minimal data files (core only)
 added_files = [
     ('default_assets', 'default_assets'),
     ('themes.json', '.'),
     ('src/resources', 'src/resources'),
-    ('lib', 'lib'),  # vis-network for offline graph rendering
+    # Exclude lib/ since it's only needed for graph visualization
 ]
-
-# Add PyVis templates if available (optional dependency)
-try:
-    import pyvis
-    import os
-    pyvis_templates = os.path.join(os.path.dirname(pyvis.__file__), 'templates')
-    added_files.append((pyvis_templates, 'pyvis/templates'))
-except ImportError:
-    print("PyVis not installed - graph features will be unavailable")
 
 a = Analysis(
     ['launcher.py'],
@@ -41,6 +38,22 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
+        # Optional dependencies (excluded for minimal build)
+        'numpy',
+        'requests',
+        'urllib3',
+        'charset_normalizer',
+        'certifi',
+        'idna',
+        'fastapi',
+        'uvicorn',
+        'starlette',
+        'pydantic',
+        'anyio',
+        'sniffio',
+        'pyvis',
+        'jinja2',
+        'networkx',
         # Testing frameworks
         'pytest',
         'pytest_qt',
@@ -62,6 +75,10 @@ a = Analysis(
         'flake8',
         'pylint',
         'coverage',
+        'setuptools',
+        'pip',
+        'wheel',
+        'pkg_resources',
         # Unused standard library modules
         'tkinter',
         'tcl',
@@ -80,6 +97,8 @@ a = Analysis(
         'xml.sax',
         'distutils',
         'lib2to3',
+        'multiprocessing',
+        'concurrent',
         # Unused PySide6/Qt modules (significant size reduction)
         'PySide6.Qt3DAnimation',
         'PySide6.Qt3DCore',
@@ -99,6 +118,8 @@ a = Analysis(
         'PySide6.QtPositioning',
         'PySide6.QtPrintSupport',
         'PySide6.QtQml',
+        'PySide6.QtQuick',
+        'PySide6.QtQuickWidgets',
         'PySide6.QtRemoteObjects',
         'PySide6.QtScxml',
         'PySide6.QtSensors',
@@ -108,6 +129,9 @@ a = Analysis(
         'PySide6.QtTest',
         'PySide6.QtTextToSpeech',
         'PySide6.QtUiTools',
+        'PySide6.QtWebChannel',
+        'PySide6.QtWebEngineCore',
+        'PySide6.QtWebEngineWidgets',
         'PySide6.QtWebSockets',
         'PySide6.QtXml',
     ],
@@ -117,20 +141,32 @@ a = Analysis(
     noarchive=False,
 )
 
-# Remove duplicate and unwanted binaries to reduce size
-# Filter out debug symbols and unnecessary Qt plugins
+# Aggressive binary filtering for minimal build
 a.binaries = [x for x in a.binaries if not (
+    # Qt modules we don't use
     x[0].startswith('Qt6Bluetooth') or
     x[0].startswith('Qt6Charts') or
     x[0].startswith('Qt6DataVisualization') or
+    x[0].startswith('Qt6Designer') or
+    x[0].startswith('Qt6Help') or
+    x[0].startswith('Qt6Multimedia') or
     x[0].startswith('Qt6Nfc') or
     x[0].startswith('Qt6Positioning') or
+    x[0].startswith('Qt6PrintSupport') or
+    x[0].startswith('Qt6Qml') or
+    x[0].startswith('Qt6Quick') or
     x[0].startswith('Qt6Sensors') or
     x[0].startswith('Qt6SerialPort') or
     x[0].startswith('Qt6Sql') or
     x[0].startswith('Qt6Test') or
+    x[0].startswith('Qt6WebChannel') or
+    x[0].startswith('Qt6WebEngine') or
     x[0].startswith('Qt6WebSockets') or
-    x[0].startswith('Qt63D')
+    x[0].startswith('Qt63D') or
+    # Optional dependencies
+    'numpy' in x[0].lower() or
+    'mkl' in x[0].lower() or
+    'openblas' in x[0].lower()
 )]
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
@@ -143,7 +179,7 @@ exe = EXE(
     name='ProjektKraken',
     debug=False,
     bootloader_ignore_signals=False,
-    strip=False,  # Windows: strip has limited effect, use UPX instead
+    strip=False,
     upx=True,
     console=False,
     disable_windowed_traceback=False,
@@ -152,6 +188,7 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
 )
+
 coll = COLLECT(
     exe,
     a.binaries,
