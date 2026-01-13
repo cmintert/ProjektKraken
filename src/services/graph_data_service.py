@@ -127,6 +127,19 @@ class GraphDataService:
         all_relations = self._collect_all_relations(db_service)
         return sorted({r.get("rel_type", "") for r in all_relations})
 
+    def get_all_entity_types(self, db_service: "DatabaseService") -> list[str]:
+        """
+        Returns all unique entity types.
+
+        Args:
+            db_service: Database service instance.
+
+        Returns:
+            List of unique entity type strings, sorted alphabetically.
+        """
+        types = {getattr(e, "type", "entity") for e in db_service.get_all_entities()}
+        return sorted(types)
+
     def get_all_attribute_keys(self, db_service: "DatabaseService") -> list[str]:
         """
         Returns all unique attribute keys across entities and events.

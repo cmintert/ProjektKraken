@@ -335,6 +335,22 @@ class EntityEditorWidget(QWidget):
         """Updates relation type suggestions."""
         self._suggestion_types = types
 
+    def update_entity_type_suggestions(self, types: list[str]) -> None:
+        """
+        Updates entity type suggestions.
+
+        Merges fetched types with default types and updates the combobox.
+        """
+        current = self.type_edit.currentText()
+        default_types = ["Character", "Location", "Faction", "Item", "Concept"]
+        all_types = sorted(list(set(default_types + types)))
+
+        self.type_edit.blockSignals(True)
+        self.type_edit.clear()
+        self.type_edit.addItems(all_types)
+        self.type_edit.setCurrentText(current)
+        self.type_edit.blockSignals(False)
+
     def load_entity(
         self, entity: Entity, relations: list = None, incoming_relations: list = None
     ) -> None:

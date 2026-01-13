@@ -39,7 +39,9 @@ class DatabaseWorker(QObject):
     grouping_dialog_data_loaded = Signal(list, object)  # tags_data, current_config
     graph_data_loaded = Signal(list, list)  # nodes, edges
     graph_metadata_loaded = Signal(list, list)  # tags, rel_types
-    completer_data_loaded = Signal(list, list, list)  # tags, rel_types, attribute_keys
+    completer_data_loaded = Signal(
+        list, list, list, list
+    )  # tags, rel_types, attr_keys, entity_types
 
     event_details_loaded = Signal(object, list, list)  # Event, relations, incoming
     entity_details_loaded = Signal(object, list, list)  # Entity, relations, incoming
@@ -737,8 +739,9 @@ class DatabaseWorker(QObject):
             tags = graph_service.get_all_tags(self.db_service)
             rel_types = graph_service.get_all_relation_types(self.db_service)
             attr_keys = graph_service.get_all_attribute_keys(self.db_service)
+            entity_types = graph_service.get_all_entity_types(self.db_service)
 
-            self.completer_data_loaded.emit(tags, rel_types, attr_keys)
+            self.completer_data_loaded.emit(tags, rel_types, attr_keys, entity_types)
             # self.operation_finished.emit("Completer Data Loaded.")
         except Exception:
             logger.error(f"Failed to load completer data: {traceback.format_exc()}")

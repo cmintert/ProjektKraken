@@ -1353,7 +1353,11 @@ class MainWindow(QMainWindow):
         self.grouping_manager.on_configure_grouping_requested()
 
     def on_completer_data_loaded(
-        self, tags: list[str], rel_types: list[str], attr_keys: list[str]
+        self,
+        tags: list[str],
+        rel_types: list[str],
+        attr_keys: list[str],
+        entity_types: list[str],
     ) -> None:
         """
         Handler for completer data loaded from worker.
@@ -1363,6 +1367,7 @@ class MainWindow(QMainWindow):
         self.entity_editor.update_tag_suggestions(tags)
         self.entity_editor.update_attribute_suggestions(attr_keys)
         self.entity_editor.update_relation_type_suggestions(rel_types)
+        self.entity_editor.update_entity_type_suggestions(entity_types)
 
         # Update Event Editor
         self.event_editor.update_tag_suggestions(tags)
