@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-13
-### Fixed
-- Fix AttributeError in MainWindow on AI Settings dialog open
+### Internal
+- Update Changelog
 
 
 *This changelog was automatically generated.*
