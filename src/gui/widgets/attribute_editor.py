@@ -5,7 +5,7 @@ Provides a table-based interface for editing key-value attribute pairs
 with support for different data types.
 """
 
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import (
@@ -145,6 +145,15 @@ class AttributeEditorWidget(QWidget):
         combo.currentTextChanged.connect(lambda: self._on_type_changed(row))
         self.table.setCellWidget(row, 2, combo)
 
+    def update_suggestions(self, keys: List[str]) -> None:
+        """
+        Updates the attribute key suggestions.
+
+        Args:
+            keys: List of existing attribute keys.
+        """
+        self._suggestion_keys = keys
+
     @Slot()
     def _on_add(self) -> None:
         """
@@ -152,9 +161,13 @@ class AttributeEditorWidget(QWidget):
 
         Prompts for the attribute key and adds a new row.
         """
-        key, ok = QInputDialog.getText(self, "New Attribute", "Attribute Key:")
+        suggestions = getattr(self, "_suggestion_keys", [])
+        key, ok = QInputDialog.getItem(
+            self, "New Attribute", "Attribute Key:", suggestions, 0, True
+        )
         if ok and key:
-            # Check for duplicates?
+            key = key.strip()
+            # Check for duplicates
             existing_keys = self.get_attributes().keys()
             if key in existing_keys:
                 QMessageBox.warning(self, "Duplicate", f"Key '{key}' already exists.")

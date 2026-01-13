@@ -8,6 +8,7 @@ from typing import List, Optional
 
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import (
+    QCompleter,
     QHBoxLayout,
     QLineEdit,
     QListWidget,
@@ -96,6 +97,18 @@ class TagEditorWidget(QWidget):
             item = self.tag_list.item(i)
             tags.append(item.data(Qt.ItemDataRole.UserRole))
         return tags
+
+    def update_suggestions(self, tags: List[str]) -> None:
+        """
+        Updates the tag completer with new suggestions.
+
+        Args:
+            tags: List of existing tags for completion.
+        """
+        completer = QCompleter(tags, self)
+        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        completer.setFilterMode(Qt.MatchFlag.MatchContains)
+        self.tag_input.setCompleter(completer)
 
     @Slot()
     def _on_add(self) -> None:

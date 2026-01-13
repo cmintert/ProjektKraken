@@ -442,6 +442,18 @@ class EventEditorWidget(QWidget):
         else:
             self._suggestion_items = []
 
+    def update_tag_suggestions(self, tags: list[str]) -> None:
+        """Updates tag suggestions."""
+        self.tag_editor.update_suggestions(tags)
+
+    def update_attribute_suggestions(self, keys: list[str]) -> None:
+        """Updates attribute key suggestions."""
+        self.attribute_editor.update_suggestions(keys)
+
+    def update_relation_type_suggestions(self, types: list[str]) -> None:
+        """Updates relation type suggestions."""
+        self._suggestion_types = types
+
     def load_event(
         self, event: Event, relations: list = None, incoming_relations: list = None
     ) -> None:
@@ -647,6 +659,7 @@ class EventEditorWidget(QWidget):
                 self.date_edit.get_value() if self._current_event_id else None
             ),
             source_event_name=self.name_edit.text() if self._current_event_id else None,
+            known_types=getattr(self, "_suggestion_types", []),
         )
 
         if dlg.exec():
@@ -715,6 +728,7 @@ class EventEditorWidget(QWidget):
             source_event_name=(
                 self.name_edit.text() if self._current_event_id else None
             ),
+            known_types=getattr(self, "_suggestion_types", []),
         )
 
         # Hide bidirectional check for editing
@@ -867,7 +881,11 @@ class EventEditorWidget(QWidget):
 
         # Open Dialog
         dialog = RelationEditDialog(
-            self, target_id=target_id, rel_type="mentions", is_bidirectional=False
+            self,
+            target_id=target_id,
+            rel_type="mentions",
+            is_bidirectional=False,
+            known_types=getattr(self, "_suggestion_types", []),
         )
         # Lock target field since it comes from the link
         dialog.target_edit.setEnabled(False)

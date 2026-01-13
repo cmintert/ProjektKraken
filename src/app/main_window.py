@@ -373,6 +373,13 @@ class MainWindow(QMainWindow):
         self.load_entities()
         self.load_longform_sequence()
         self.load_graph_data()
+        self.load_completer_data()
+
+    def load_completer_data(self) -> None:
+        """Requests loading of completer data."""
+        QMetaObject.invokeMethod(
+            self.worker, "load_completer_data", Qt.ConnectionType.QueuedConnection
+        )
 
     def load_longform_sequence(self) -> None:
         """
@@ -1344,6 +1351,23 @@ class MainWindow(QMainWindow):
     def _on_configure_grouping_requested(self) -> None:
         """Opens grouping configuration dialog by requesting data from worker thread."""
         self.grouping_manager.on_configure_grouping_requested()
+
+    def on_completer_data_loaded(
+        self, tags: list[str], rel_types: list[str], attr_keys: list[str]
+    ) -> None:
+        """
+        Handler for completer data loaded from worker.
+        Updates suggestions in both Entity and Event editors.
+        """
+        # Update Entity Editor
+        self.entity_editor.update_tag_suggestions(tags)
+        self.entity_editor.update_attribute_suggestions(attr_keys)
+        self.entity_editor.update_relation_type_suggestions(rel_types)
+
+        # Update Event Editor
+        self.event_editor.update_tag_suggestions(tags)
+        self.event_editor.update_attribute_suggestions(attr_keys)
+        self.event_editor.update_relation_type_suggestions(rel_types)
 
     @Slot(list, object)
     def on_grouping_dialog_data_loaded(

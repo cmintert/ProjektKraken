@@ -26,7 +26,7 @@ from src.app.constants import (
     WINDOW_SETTINGS_KEY,
 )
 from src.core.logging_config import get_logger
-from src.core.paths import ensure_worlds_directory, get_worlds_dir
+from src.core.paths import ensure_worlds_directory
 from src.core.world import WorldManager
 from src.services.db_service import DatabaseService
 from src.services.worker import DatabaseWorker
@@ -62,7 +62,7 @@ class WorkerManager(QObject):
         """
         Initializes the DatabaseWorker and moves it to a separate thread.
         Connects all worker signals to MainWindow slots.
-        
+
         Uses portable-only mode: worlds are stored in worlds/ directory
         next to the executable.
         """
@@ -82,16 +82,16 @@ class WorkerManager(QObject):
 
         # Initialize world manager
         world_manager = WorldManager(worlds_dir)
-        
+
         # Load active world name from settings
         settings = QSettings()
         active_world_name = settings.value(SETTINGS_ACTIVE_DB_KEY, None)
-        
+
         # Get or create default world
         world = None
         if active_world_name:
             world = world_manager.get_world(active_world_name)
-        
+
         if world is None:
             # No active world or world not found - discover or create default
             worlds = world_manager.discover_worlds()
@@ -102,13 +102,12 @@ class WorkerManager(QObject):
                 # Create default world
                 logger.info("No worlds found, creating default world")
                 world = world_manager.create_world(
-                    name="Default World",
-                    description="Default worldbuilding workspace"
+                    name="Default World", description="Default worldbuilding workspace"
                 )
-            
+
             # Save as active world
             settings.setValue(SETTINGS_ACTIVE_DB_KEY, world.name)
-        
+
         # Get database path from world
         db_path = str(world.db_path)
         logger.info(f"Initializing DatabaseWorker with: {db_path}")
@@ -170,6 +169,9 @@ class WorkerManager(QObject):
         )
         self.window.worker.graph_metadata_loaded.connect(
             self.window.data_handler.on_graph_metadata_loaded
+        )
+        self.window.worker.completer_data_loaded.connect(
+            self.window.on_completer_data_loaded
         )
         # Connect filtering request
         self.window.filter_requested.connect(self.window.worker.apply_filter)
@@ -257,7 +259,10 @@ class WorkerManager(QObject):
                 logger.info("Backup service initialized successfully")
 
                 # Start auto-backup if enabled
-                if backup_config.enabled and backup_config.auto_save_interval_minutes > 0:
+                if (
+                    backup_config.enabled
+                    and backup_config.auto_save_interval_minutes > 0
+                ):
                     self.window.backup_service.start_auto_backup()
                     logger.info(
                         f"Auto-backup enabled with {backup_config.auto_save_interval_minutes} minute interval"

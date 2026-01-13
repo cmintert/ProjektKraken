@@ -45,6 +45,7 @@ class RelationEditDialog(QDialog):
         calendar_converter: Any = None,
         source_event_date: Optional[float] = None,
         source_event_name: Optional[str] = None,
+        known_types: list[str] = None,
     ) -> None:
         """
         Initializes the dialog.
@@ -58,6 +59,7 @@ class RelationEditDialog(QDialog):
             suggestion_items: List of (id, name, type) for autocompletion.
             source_event_date: Optional lore_date of the source event.
             source_event_name: Optional name of the source event.
+            known_types: Optional list of known relation types for suggestions.
         """
         super().__init__(parent)
         self.setWindowTitle("Edit Relation")
@@ -106,9 +108,24 @@ class RelationEditDialog(QDialog):
 
         # 2. Relation Type
         self.type_edit = QComboBox()
-        self.type_edit.addItems(
-            ["caused", "involved", "located_at", "parent_of", "member_of", "owns"]
-        )
+        default_types = [
+            "caused",
+            "involved",
+            "located_at",
+            "parent_of",
+            "member_of",
+            "owns",
+        ]
+
+        # Merge with known types
+        if known_types:
+            # Use set to unique, but keep defaults if we want specific order?
+            # Or just sort everything.
+            all_types = sorted(list(set(default_types + known_types)))
+        else:
+            all_types = default_types
+
+        self.type_edit.addItems(all_types)
         self.type_edit.setEditable(True)
         self.type_edit.setCurrentText(rel_type)
         self.form_layout.addRow("Type:", self.type_edit)

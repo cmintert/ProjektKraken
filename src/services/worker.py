@@ -39,6 +39,7 @@ class DatabaseWorker(QObject):
     grouping_dialog_data_loaded = Signal(list, object)  # tags_data, current_config
     graph_data_loaded = Signal(list, list)  # nodes, edges
     graph_metadata_loaded = Signal(list, list)  # tags, rel_types
+    completer_data_loaded = Signal(list, list, list)  # tags, rel_types, attribute_keys
 
     event_details_loaded = Signal(object, list, list)  # Event, relations, incoming
     entity_details_loaded = Signal(object, list, list)  # Entity, relations, incoming
@@ -718,3 +719,27 @@ class DatabaseWorker(QObject):
         except Exception:
             logger.error(f"Failed to load graph data: {traceback.format_exc()}")
             self.error_occurred.emit("Failed to load graph data.")
+
+    @Slot()
+    def load_completer_data(self) -> None:
+        """
+        Loads data for autocompleters (tags, relation types, attribute keys).
+        """
+        if not self.db_service:
+            return
+
+        try:
+            from src.services.graph_data_service import GraphDataService
+
+            # self.operation_started.emit("Loading Completer Data...") # Quiet
+            graph_service = GraphDataService()
+
+            tags = graph_service.get_all_tags(self.db_service)
+            rel_types = graph_service.get_all_relation_types(self.db_service)
+            attr_keys = graph_service.get_all_attribute_keys(self.db_service)
+
+            self.completer_data_loaded.emit(tags, rel_types, attr_keys)
+            # self.operation_finished.emit("Completer Data Loaded.")
+        except Exception:
+            logger.error(f"Failed to load completer data: {traceback.format_exc()}")
+            # self.error_occurred.emit("Failed to load completer data.")
