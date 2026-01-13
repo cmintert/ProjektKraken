@@ -19,7 +19,34 @@ def main_window(qtbot):
         patch(
             "src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard
         ),
+        patch("src.app.worker_manager.QSettings") as MockSettings,
+        patch("src.app.main_window.QSettings") as MockMainWindowSettings,
+        patch("src.app.worker_manager.WorldManager") as MockWorldManager,
+        patch("src.app.worker_manager.ensure_worlds_directory", return_value="."),
     ):
+        # Setup Settings (Worker)
+        mock_settings = MockSettings.return_value
+        mock_settings.value.return_value = "world.kraken"
+
+        # Setup Settings (MainWindow)
+        mock_mw_settings = MockMainWindowSettings.return_value
+
+        def settings_side_effect(key, default=None):
+            from src.app.constants import SETTINGS_ACTIVE_DB_KEY
+
+            if key == SETTINGS_ACTIVE_DB_KEY:
+                return "world.kraken"
+            return default
+
+        mock_mw_settings.value.side_effect = settings_side_effect
+
+        # Setup World Manager
+        mock_wm = MockWorldManager.return_value
+        mock_world = MagicMock()
+        mock_world.name = "world.kraken"
+        mock_world.db_path = "world.kraken"
+        mock_wm.get_world.return_value = mock_world
+
         mock_worker = MockWorker.return_value
         mock_db = mock_worker.db_service
         mock_db.get_all_events.return_value = []

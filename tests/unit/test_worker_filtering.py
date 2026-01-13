@@ -15,7 +15,7 @@ class TestWorkerFiltering:
     def worker(self):
         """Creates a worker with a mocked db_service."""
         db_mock = MagicMock()
-        worker = DatabaseWorker()
+        worker = DatabaseWorker("dummy.db")
         worker.db_service = db_mock  # Inject mock specifically
         return worker
 
