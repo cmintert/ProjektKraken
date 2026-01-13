@@ -38,7 +38,9 @@ from src.gui.widgets.map.marker_item import MarkerItem
 logger = logging.getLogger(__name__)
 
 # Path to marker icons
-MARKER_ICONS_PATH = get_resource_path(os.path.join("assets", "icons", "markers"))
+MARKER_ICONS_PATH = get_resource_path(
+    os.path.join("default_assets", "icons", "markers")
+)
 
 
 def get_available_icons() -> List[str]:
