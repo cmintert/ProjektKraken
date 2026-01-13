@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-01-13  
-**Commit:** `116e32c`  
+**Commit:** `9a02d88`  
 ---
 
 # Changelog
@@ -10,6 +10,15 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Fixed
+- *(2026-01-13)* **Bug**: Fixed `AttributeError` in `MainWindow` when opening AI Settings dialog.
+- *(2026-01-13)* **Graph**: Fixed offline graph rendering by bundling PyVis templates and local assets.
+- *(2026-01-13)* **Build**: Removed missing migrations directory from build configuration to fix PyInstaller builds.
+
+### Documentation
+- *(2026-01-13)* **Design**: Updated `Design.md` to reflect v0.6.0 changes and portable world model.
+- *(2026-01-12)* **Docs**: Updated `README.md` for v0.6.0 features.
 
 ### Architecture
 - *(2026-01-13)* **Feature**: Implemented portable-only World/Workspace model to decouple user data from application files.
