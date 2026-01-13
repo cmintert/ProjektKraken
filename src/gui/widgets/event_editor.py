@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.events import Event
+from src.gui.mixins.autosave_mixin import AutoSaveManager
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.compact_duration_widget import CompactDurationWidget
@@ -68,7 +69,8 @@ class EventEditorWidget(QWidget):
         Args:
             parent: The parent widget, if any.
         """
-        super().__init__(parent)
+        QWidget.__init__(self, parent)
+        self.autosave_manager = AutoSaveManager(self)
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
@@ -371,8 +373,10 @@ class EventEditorWidget(QWidget):
             self.btn_discard.setEnabled(dirty)
             if dirty:
                 self.btn_save.setText("Save Changes *")
+                self.autosave_manager.start_timer()
             else:
                 self.btn_save.setText("Save Changes")
+                self.autosave_manager.stop_timer()
 
     def has_unsaved_changes(self) -> bool:
         """Returns True if the editor has unsaved changes."""
@@ -478,23 +482,36 @@ class EventEditorWidget(QWidget):
             self.end_date_edit.blockSignals(True)
             self.type_edit.blockSignals(True)
             self.desc_edit.blockSignals(True)
-            # Custom widgets might not need blocking if we don't
-            # connect to them directly or emit on programmatic set.
-            # TagEditor and AttributeEditor emit on programmatic load usually?
-            # Let's check their code.. load_tags calls clear() -> might trigger?
-            # TagEditor.load_tags clears and adds items. It does NOT emit tags_changed.
-            # AttributeEditor.load_attributes sets _block_signals=True internally.
 
-            self.name_edit.setText(event.name)
-            self.date_edit.set_value(event.lore_date)
+            if self.name_edit.text() != event.name:
+                self.name_edit.setText(event.name)
+
+            # Date/Time widgets have set_value which triggers internal updates
+            # Ideally we check value equality first.
+            # LoreDate and LoreDuration override __eq__? Assuming they do or are value types.
+            if self.date_edit.get_value() != event.lore_date:
+                self.date_edit.set_value(event.lore_date)
 
             # Initialize duration widgets
+            # Duration widget logic is complex (updates end date etc).
+            # Safer to check value match before setting.
             self.duration_widget.set_start_date(event.lore_date)
-            self.duration_widget.set_value(event.lore_duration)
-            self.end_date_edit.set_value(event.lore_date + event.lore_duration)
+            if self.duration_widget.get_value() != event.lore_duration:
+                self.duration_widget.set_value(event.lore_duration)
 
-            self.type_edit.setCurrentText(event.type)
-            self.desc_edit.set_wiki_text(event.description)
+            # End date follows start + duration unless manually set differently?
+            # Usually end date is derived. load_event sets it explicitly.
+            # If duration matches, end date match is implied if logic is consistent.
+            # But let's check.
+            target_end = event.lore_date + event.lore_duration
+            if self.end_date_edit.get_value() != target_end:
+                self.end_date_edit.set_value(target_end)
+
+            if self.type_edit.currentText() != event.type:
+                self.type_edit.setCurrentText(event.type)
+
+            if getattr(self.desc_edit, "_current_wiki_text", None) != event.description:
+                self.desc_edit.set_wiki_text(event.description)
 
             # Load Attributes (filter out _tags for display)
             display_attrs = {k: v for k, v in event.attributes.items() if k != "_tags"}

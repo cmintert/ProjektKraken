@@ -42,8 +42,12 @@ DOCK_TITLE_GRAPH = "Relationship Graph"
 STATUS_DB_INIT_FAIL = "Database Initialization Failed!"
 STATUS_ERROR_PREFIX = "Error: "
 
+
 # File Dialog Filters
 SUPPORTED_IMAGE_FORMATS = ["png", "jpg", "jpeg", "bmp", "webp"]
 IMAGE_FILE_FILTER = (
     f"Images ({' '.join([f'*.{ext}' for ext in SUPPORTED_IMAGE_FORMATS])})"
 )
+
+# Autosave Configuration
+AUTOSAVE_DELAY_MS = 2000  # 2 seconds

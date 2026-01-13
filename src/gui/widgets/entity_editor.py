@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.entities import Entity
+from src.gui.mixins.autosave_mixin import AutoSaveManager
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.relation_item_widget import RelationItemWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
@@ -62,6 +63,7 @@ class EntityEditorWidget(QWidget):
             parent (QWidget, optional): The parent widget. Defaults to None.
         """
         super().__init__(parent)
+        self.autosave_manager = AutoSaveManager(self)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
         # Set size policy to prevent dock collapse
@@ -290,8 +292,10 @@ class EntityEditorWidget(QWidget):
             self.btn_discard.setEnabled(dirty)
             if dirty:
                 self.btn_save.setText("Save Changes *")
+                self.autosave_manager.start_timer()
             else:
                 self.btn_save.setText("Save Changes")
+                self.autosave_manager.stop_timer()
 
     def has_unsaved_changes(self) -> bool:
         """Returns True if dirty."""
@@ -367,9 +371,26 @@ class EntityEditorWidget(QWidget):
             self.type_edit.blockSignals(True)
             self.desc_edit.blockSignals(True)
 
-            self.name_edit.setText(entity.name)
-            self.type_edit.setCurrentText(entity.type)
-            self.desc_edit.set_wiki_text(entity.description)
+            if self.name_edit.text() != entity.name:
+                self.name_edit.setText(entity.name)
+
+            if self.type_edit.currentText() != entity.type:
+                self.type_edit.setCurrentText(entity.type)
+
+            # Assuming WikiTextEdit has internal storage. We use set_wiki_text only if changed.
+            # Ideally we would check internal content, but comparing toPlainText() vs new description is decent proxy.
+            # Note: WikiTextEdit might format markdown. If toPlainText() returns formatted, this might be tricky.
+            # But standard QPlainTextEdit returns text.
+            # Let's assume set_wiki_text parses and sets.
+            # We can try to peek at internal storage if possible or just update blindly if unsure to avoid "stuck" state.
+            # Given the requirement, we should try.
+            # But let's verify if set_wiki_text is expensive or resets cursor. It likely does.
+            # Checking against `_current_wiki_text` if implemented in WikiTextEdit would be better.
+            if (
+                getattr(self.desc_edit, "_current_wiki_text", None)
+                != entity.description
+            ):
+                self.desc_edit.set_wiki_text(entity.description)
 
             # Load Attributes (filter out _tags for display)
             display_attrs = {k: v for k, v in entity.attributes.items() if k != "_tags"}

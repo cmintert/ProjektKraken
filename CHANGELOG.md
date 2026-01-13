@@ -17,6 +17,10 @@ All notable changes to this project will be documented in this file.
   - Integrated `QCompleter` into `TagEditorWidget`, `AttributeEditorWidget`, and `RelationEditDialog`.
   - Added `update_suggestions` methods to `EntityEditorWidget` and `EventEditorWidget` to propagate data.
   - Added `completer_data_loaded` signal to `DatabaseWorker` for asynchronous data loading.
+- *(2026-01-13)* **Feature**: Implemented Robust Autosave system with "Smart Updates" to prevent cursor jumps.
+  - Added `AutoSaveManager` with debounced timing (2s).
+  - Configured Entity/Event editors to only update UI fields when data actually changes.
+- *(2026-01-13)* **UX**: Stabilized Graph View layout by enforcing a deterministic physics seed (`randomSeed: 42`).
 
 ### Fixed
 - *(2026-01-13)* **Bug**: Fixed `AttributeError` in `MainWindow` when opening AI Settings dialog.

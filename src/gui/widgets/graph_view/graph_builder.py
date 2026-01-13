@@ -171,6 +171,9 @@ class GraphBuilder:
         net.set_options(
             """
         {
+            "layout": {
+                "randomSeed": 42
+            },
             "physics": {
                 "enabled": true,
                 "barnesHut": {
