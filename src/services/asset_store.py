@@ -20,6 +20,9 @@ class AssetStore:
     """
     Manages filesystem operations for project assets (images, thumbnails).
     Ensures deterministic paths and safe file handling.
+    
+    In portable-only mode, assets are stored within the world directory
+    at <world_dir>/assets/ rather than a separate project root.
     """
 
     def __init__(self, project_root: str) -> None:
@@ -27,7 +30,8 @@ class AssetStore:
         Initialize the asset store.
 
         Args:
-            project_root: Root directory of the project containing assets folder.
+            project_root: Root directory of the world containing assets folder.
+                         In portable mode, this is the world directory itself.
         """
         self.project_root = Path(project_root)
         self.assets_dir = self.project_root / "assets"
