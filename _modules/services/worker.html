@@ -313,6 +313,9 @@
     <span class="n">grouping_dialog_data_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>  <span class="c1"># tags_data, current_config</span>
     <span class="n">graph_data_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>  <span class="c1"># nodes, edges</span>
     <span class="n">graph_metadata_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>  <span class="c1"># tags, rel_types</span>
+    <span class="n">completer_data_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span>
+        <span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">list</span>
+    <span class="p">)</span>  <span class="c1"># tags, rel_types, attr_keys, entity_types</span>
 
     <span class="n">event_details_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>  <span class="c1"># Event, relations, incoming</span>
     <span class="n">entity_details_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>  <span class="c1"># Entity, relations, incoming</span>
@@ -1063,8 +1066,36 @@
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load graph data: </span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s2">&quot;Failed to load graph data.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseWorker.load_completer_data">
+<a class="viewcode-back" href="../../services.html#services.worker.DatabaseWorker.load_completer_data">[docs]</a>
+    <span class="nd">@Slot</span><span class="p">()</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_completer_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads data for autocompleters (tags, relation types, attribute keys).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.graph_data_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">GraphDataService</span>
+
+            <span class="c1"># self.operation_started.emit(&quot;Loading Completer Data...&quot;) # Quiet</span>
+            <span class="n">graph_service</span> <span class="o">=</span> <span class="n">GraphDataService</span><span class="p">()</span>
+
+            <span class="n">tags</span> <span class="o">=</span> <span class="n">graph_service</span><span class="o">.</span><span class="n">get_all_tags</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">)</span>
+            <span class="n">rel_types</span> <span class="o">=</span> <span class="n">graph_service</span><span class="o">.</span><span class="n">get_all_relation_types</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">)</span>
+            <span class="n">attr_keys</span> <span class="o">=</span> <span class="n">graph_service</span><span class="o">.</span><span class="n">get_all_attribute_keys</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">)</span>
+            <span class="n">entity_types</span> <span class="o">=</span> <span class="n">graph_service</span><span class="o">.</span><span class="n">get_all_entity_types</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">completer_data_loaded</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">tags</span><span class="p">,</span> <span class="n">rel_types</span><span class="p">,</span> <span class="n">attr_keys</span><span class="p">,</span> <span class="n">entity_types</span><span class="p">)</span>
+            <span class="c1"># self.operation_finished.emit(&quot;Completer Data Loaded.&quot;)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load completer data: </span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 </div>
 
+            <span class="c1"># self.error_occurred.emit(&quot;Failed to load completer data.&quot;)</span>
 </pre></div>
         </article>
       </div>
