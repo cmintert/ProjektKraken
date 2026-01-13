@@ -5,7 +5,6 @@ block_cipher = None
 added_files = [
     ('default_assets', 'default_assets'),
     ('themes.json', '.'),
-    ('migrations', 'migrations'),
     ('src/resources', 'src/resources'),
 ]
 
