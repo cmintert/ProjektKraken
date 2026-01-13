@@ -48,7 +48,6 @@ from src.app.ai_search_manager import AISearchManager
 from src.app.command_coordinator import CommandCoordinator
 from src.app.connection_manager import ConnectionManager
 from src.app.constants import (
-    DEFAULT_DB_NAME,
     DEFAULT_WINDOW_HEIGHT,
     DEFAULT_WINDOW_WIDTH,
     SETTINGS_ACTIVE_DB_KEY,
@@ -128,12 +127,15 @@ class MainWindow(QMainWindow):
 
         self.capture_layout_on_exit = capture_layout_on_exit
 
-        # Load active database for title
+        # Load active world name for title
         settings = QSettings()
-        active_db = settings.value(SETTINGS_ACTIVE_DB_KEY, DEFAULT_DB_NAME)
+        active_world_name = settings.value(SETTINGS_ACTIVE_DB_KEY, "Default World")
 
-        self.setWindowTitle(f"{WINDOW_TITLE} - {active_db}")
+        self.setWindowTitle(f"{WINDOW_TITLE} - {active_world_name}")
         self.resize(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
+
+        # Current world reference (will be set by worker_manager)
+        self.current_world = None
 
         # ... (rest of init unchanged until closeEvent)
 

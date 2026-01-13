@@ -23,7 +23,14 @@ from PySide6.QtWidgets import (
 
 # Define locally to avoid circular import
 MARKER_ICONS_PATH = os.path.join(
-    os.path.dirname(__file__), "..", "..", "..", "..", "assets", "icons", "markers"
+    os.path.dirname(__file__),
+    "..",
+    "..",
+    "..",
+    "..",
+    "default_assets",
+    "icons",
+    "markers",
 )
 
 
@@ -75,7 +82,7 @@ class IconPickerDialog(QDialog):
         # Load available icons
         icons = get_available_icons()
         if not icons:
-            label = QLabel("No icons found in assets/icons/markers/")
+            label = QLabel("No icons found in default_assets/icons/markers/")
             layout.addWidget(label)
             return
 

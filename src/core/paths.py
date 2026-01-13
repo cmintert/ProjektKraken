@@ -2,6 +2,9 @@
 Path Utility Module.
 Handles resource path resolution for both development and bundled environments.
 Also manages user data directories for persistent storage.
+
+In portable-only mode (0.6.0+), worlds are stored next to the executable in a
+worlds/ directory rather than in the system's AppData folder.
 """
 
 import os
@@ -127,3 +130,70 @@ def get_backup_directory() -> Path:
     backup_dir = Path(get_user_data_path()) / "backups"
     backup_dir.mkdir(parents=True, exist_ok=True)
     return backup_dir
+
+
+def get_executable_dir() -> Path:
+    """
+    Returns the directory containing the executable or main script.
+    
+    For development: Returns the project root directory.
+    For PyInstaller: Returns the directory containing the .exe.
+    
+    Returns:
+        Path: Directory containing the executable.
+    """
+    if getattr(sys, 'frozen', False):
+        # Running as PyInstaller bundle
+        return Path(sys.executable).parent
+    else:
+        # Running in development - return project root
+        # Assumes this file is at src/core/paths.py
+        return Path(__file__).parent.parent.parent
+
+
+def get_worlds_dir() -> Path:
+    """
+    Returns the worlds directory for portable-only mode.
+    
+    The worlds directory is created next to the executable and contains
+    all world subdirectories. Each world is a self-contained folder with
+    its own database, manifest, and assets.
+    
+    Returns:
+        Path: Path to the worlds/ directory.
+    """
+    executable_dir = get_executable_dir()
+    worlds_dir = executable_dir / "worlds"
+    return worlds_dir
+
+
+def ensure_worlds_directory() -> Path:
+    """
+    Ensures the worlds directory exists and is writable.
+    
+    Creates the worlds/ directory next to the executable if it doesn't exist.
+    Validates write permissions.
+    
+    Returns:
+        Path: Path to the worlds/ directory.
+        
+    Raises:
+        OSError: If the directory cannot be created or is not writable.
+    """
+    worlds_dir = get_worlds_dir()
+    
+    try:
+        worlds_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Test write permissions with a temporary marker file
+        test_file = worlds_dir / ".write_test"
+        test_file.touch()
+        test_file.unlink()
+        
+        return worlds_dir
+        
+    except (OSError, PermissionError) as e:
+        raise OSError(
+            f"Cannot create or write to worlds directory at {worlds_dir}. "
+            f"Please ensure the application has write permissions. Error: {e}"
+        )

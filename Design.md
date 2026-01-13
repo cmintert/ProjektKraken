@@ -1,25 +1,29 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Design Specification  
-**Last Updated:** 2026-01-01  
-**Commit:** `d9e3f83`  
+**Last Updated:** 2026-01-13  
+**Commit:** `HEAD`  
 ---
 
 # Project Kraken: Comprehensive Design Specification
 
-Version: 0.4.0  
-Status: Alpha  
+Version: 0.6.0  
+Status: Beta  
 Target Audience: Software Developers, UX Designers
 
 ## 1. Product Vision & Philosophy
 
 Project Kraken is a desktop worldbuilding environment designed specifically for the "Architect" Persona (Type A Worldbuilder). Unlike typical wiki-tools that treat lore as static text, Kraken treats history as the primary axis of the world.
 
+**Local-First Philosophy**: Kraken is designed to be fully offline and portable. Your world lives in a folder on your disk, not in a cloud database. You own your data.
+
 ### 1.1 The Core Problems Solved
 
 **The "Mode Switching" Fatigue**: Eliminates the friction of toggling between "Edit" (Markdown) and "Read" modes found in tools like Obsidian. Kraken uses a native WYSIWYG editor.
 
 **The Static History**: Most tools treat dates as simple text strings. Kraken treats time as a mathematical coordinate, allowing for causal ripples and precise timeline visualization.
+
+**The "Frozen Map" Problem**: Traditional maps are static snapshots. Kraken introduces **Temporal Maps** (4D), where entities have trajectories, moving across the map as the global playhead advances (like a Non-Linear Video Editor for geography).
 
 **The Context Void**: Standard tools show one page at a time. Kraken uses a Context-Aware UI (similar to 3D software like Houdini) where selecting an object instantly updates multiple linked views (Timeline, Graph, Inspector).
 
@@ -60,9 +64,10 @@ Kraken adheres to a strict Service-Oriented Architecture (SOA) with the Command 
 
 **Service Layer (The API):**
 - `DatabaseService`: Handles raw SQL I/O with parameterized queries.
+- `BackupService`: Manages automated/manual backups, integrity checks, and retention policies.
 - `CalendarConverter`: Handles Float-to-String time conversion.
 - `LinkResolver`: Resolves wiki links to entities/events.
-- `AttachmentService`: Manages image attachments.
+- `GraphDataService`: Prepares node/edge data for the graph visualization.
 
 ### 2.3 Directory Structure
 
@@ -72,6 +77,7 @@ src/
 ├── cli/          # Command-line tools (headless operations)
 ├── commands/     # Undo/Redo command pattern implementation
 ├── core/         # Business logic, models, theme management
+│   └── world.py  # World/Project management logic
 ├── gui/          # PySide6 widgets
 │   └── widgets/
 │       ├── timeline/      # Timeline visualization (lane packing, ruler)
@@ -81,9 +87,24 @@ src/
 └── services/     # Database, repositories, parsers
 ```
 
+### 2.4 World Storage Architecture (Portable/Local-First)
+
+Kraken uses a **Portable World Folder** system. Data is not hidden in AppData but stored in self-contained folders next to the executable.
+
+**Structure per World:**
+```
+worlds/
+└── MyFantasyWorld/          # The World Folder
+    ├── world.json           # Manifest (ID, Name, Version)
+    ├── MyFantasyWorld.kraken # SQLite Database (The "Hard" Data)
+    └── assets/              # Local Assets Directory
+        ├── images/          # User uploaded images
+        └── thumbnails/      # Generated thumbnails
+```
+
 ## 3. Data Architecture (The Hybrid Model)
 
-Kraken uses a Hybrid SQLite Schema to balance strict relational integrity with the flexibility required for worldbuilding.
+Kraken uses a Hybrid SQLite Schema balanced with a file-system based asset manager.
 
 ### 3.1 The "Hard" Schema (SQL Columns)
 
@@ -91,18 +112,24 @@ Mandatory fields strictly typed in SQL to ensure performance for sorting, filter
 
 | Table | Columns |
 |-------|---------|
-| **entities** | id (UUID), type, name, description (HTML) |
-| **events** | id (UUID), type, name, lore_date (Float), lore_duration (Float) |
-| **relations** | id (UUID), source_id, target_id, rel_type |
-| **maps** | id (UUID), name, image_path |
-| **markers** | id (UUID), map_id, object_id, object_type, x, y, label |
-| **attachments** | id (UUID), owner_type, owner_id, file_path, mime_type |
-| **longform_entries** | id, table_name, object_id, parent_id, position, level |
+| **system_meta** | key (PK), value |
+| **entities** | id (UUID), type, name, description, attributes, created_at, modified_at |
+| **events** | id (UUID), type, name, lore_date (Float), lore_duration, description, attributes |
+| **relations** | id (UUID), source_id, target_id, rel_type, attributes |
+| **calendar_config** | id (UUID), name, config_json, is_active |
+| **maps** | id (UUID), name, image_path, description, attributes |
+| **markers** | id (UUID), map_id, object_id, object_type, x, y, label, attributes |
+| **moving_features** | id (UUID), marker_id, t_start, t_end, trajectory (JSON), properties (JSON) |
+| **image_attachments** | id (UUID), owner_type, owner_id, image_rel_path, thumb_rel_path, caption |
+| **tags** | id (UUID), name, color |
+| **event_tags** | event_id, tag_id |
+| **entity_tags** | entity_id, tag_id |
+| **embeddings** | id (UUID), object_type, object_id, model, vector (BLOB), text_snippet |
 
 ### 3.2 The "Soft" Schema (JSON Attributes)
 
 Every table includes an `attributes` JSON column for flexible data:
-- Inventory, Stats, Custom Tags
+- Inventory, Stats, Ad-hoc properties
 - Procedural generation seeds
 - Map marker colors and icons
 - Attachment metadata
@@ -112,6 +139,15 @@ Every table includes an `attributes` JSON column for flexible data:
 All tables track:
 - `created_at`, `modified_at` (Real-world timestamps)
 - Status flags for workflow management
+
+### 3.4 Backup & Integrity Architecture
+
+Kraken treats user data as sacred.
+
+- **Automated Backups**: Background worker (`BackupService`) creates snapshots (Auto-Save, Daily, Weekly) based on configurable intervals.
+- **Integrity Validation**: Every backup is verified using SQLite's `PRAGMA integrity_check` and file size validation before being marked as success.
+- **Atomic Operations**: Saves write to `.tmp` files first, then rename to prevent corruption during crash.
+- **Retention Policy**: Old backups are automatically pruned based on count limits (e.g., "Keep last 5 dailies").
 
 ## 4. Time System
 
@@ -137,16 +173,24 @@ A `CalendarConfig` (JSON) defines how to translate the float into a human-readab
 
 This allows for custom fantasy calendars (e.g., 8-day weeks, 13-month years) without changing the database structure.
 
+### 4.3 Playhead Persistence
+
+The global time state (`master_clock`) is persistent:
+- **State Saving**: Current time is saved on drag release, playback stop, and app exit.
+- **Restoration**: App launches at the exact moment where the user left off.
+- **Precision**: Time is handled with high-precision float rounding (4 decimal places) to prevent jitter during sub-day scrubbing.
+
 ## 5. UI/UX Specification
 
 The interface mimics high-end productivity tools (IDEs, 3D Suites) with dockable panels.
 
 ### 5.1 Main Views
 
-**Project Explorer:**
-- Unified list showing all entities and events
-- Drag-and-drop to Map view creates markers
-- Type-based filtering
+**Project Explorer (Unified List):**
+- Unified generic list showing both Entities, Events, and potentially other items.
+- **Filtering**: Type-based (Event vs Entity), Text Search, and Advanced Tag filtering (Any/All/Exclude logic).
+- **Drag & Drop**: Items can be dragged onto the Map to create markers.
+- **Color Coding**: Visual differentiation between item types (e.g., Orange for Events, Blue for Entities).
 
 **Entity/Event Editors:**
 - Tabbed inspector with Details, Tags, Relations, Attributes
@@ -158,13 +202,22 @@ The interface mimics high-end productivity tools (IDEs, 3D Suites) with dockable
 - Lane-based event packing (First Fit algorithm)
 - Semantic zoom ruler with collision avoidance
 - Event duration bars and point markers
-- Draggable playhead and current time line
+- **Draggable Playhead**: Controls the global master clock.
 
-**Map View:**
-- Custom map images with placed markers
-- Markers link to entities/events
-- Context menu for marker management
-- Customizable marker icons and colors
+**Map View (Temporal):**
+- **4D Visualization**: Markers stand not just at $(x,y)$, but at $(x,y,t)$.
+- **Trajectories**: Entities moving across the map show motion paths.
+- **Keyframing**: User can set keyframes for position. Intermediate positions are interpolated (Linear only for now).
+- **Draft & Commit**: "Flash of Unsaved Changes" workflow. Moving a marker in the middle of a path creates a "Transient" state until committed.
+- **Future/Past Visualization**: Markers in the "future" appear desaturated/transparent.
+- **OpenGL Viewport**: Hardware-accelerated rendering (`QOpenGLWidget`) for high performance.
+- **Interactive Gizmos**: Keyframes have clock/delete gizmos for spatial and temporal editing.
+
+**Graph View:**
+- Interactive network visualization using `vis.js` (via `QWebEngineView`).
+- **Focus Mode**: Double-click a node to center and stabilize the view.
+- **Filtering**: Advanced filtering by Tag and Relation Type to reduce clutter.
+- Offline support: bundled JS assets.
 
 **Longform Editor:**
 - Hierarchical document structure

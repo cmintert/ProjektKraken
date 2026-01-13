@@ -9,13 +9,12 @@ DEFAULT_WINDOW_WIDTH = 1280
 DEFAULT_WINDOW_HEIGHT = 720
 WINDOW_SETTINGS_KEY = "ChristianMintert"
 WINDOW_SETTINGS_APP = "ProjektKraken"
-SETTINGS_ACTIVE_DB_KEY = "active_database"
+SETTINGS_ACTIVE_DB_KEY = "active_world"  # Now stores world name, not filename
 SETTINGS_LAYOUTS_KEY = "saved_layouts"
 SETTINGS_LAST_ITEM_ID_KEY = "last_selected_item_id"
 SETTINGS_LAST_ITEM_TYPE_KEY = "last_selected_item_type"
 SETTINGS_AUTO_RELATION_KEY = "wiki/auto_create_relations"
 SETTINGS_FILTER_CONFIG_KEY = "tag_filter_config"
-DEFAULT_DB_NAME = "world.kraken"
 
 
 # Dock Titles

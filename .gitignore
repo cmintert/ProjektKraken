@@ -65,3 +65,6 @@ assets/thumbnails/
 assets/.trash/
 test_result*.txt
 *_report.txt
+
+# World Data
+worlds/

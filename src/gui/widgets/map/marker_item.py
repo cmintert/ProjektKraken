@@ -33,7 +33,14 @@ from PySide6.QtWidgets import (
 
 # Resolve marker icons path
 MARKER_ICONS_PATH = os.path.join(
-    os.path.dirname(__file__), "..", "..", "..", "..", "assets", "icons", "markers"
+    os.path.dirname(__file__),
+    "..",
+    "..",
+    "..",
+    "..",
+    "default_assets",
+    "icons",
+    "markers",
 )
 
 logger = logging.getLogger(__name__)

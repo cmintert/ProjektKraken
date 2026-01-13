@@ -1,8 +1,11 @@
 """
 Database Manager Dialog Module.
 
-Provides a dialog for managing multiple database files (worlds),
-including creating, deleting, and switching between databases.
+Provides a dialog for managing multiple worlds in portable-only mode.
+Each world is a self-contained folder with its own .kraken database,
+world.json manifest, and assets/ directory.
+
+Worlds are stored in the worlds/ directory next to the executable.
 """
 
 import logging
@@ -24,18 +27,22 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.app.constants import DEFAULT_DB_NAME, SETTINGS_ACTIVE_DB_KEY
-from src.core.paths import get_user_data_path
+from src.app.constants import SETTINGS_ACTIVE_DB_KEY
+from src.core.paths import ensure_worlds_directory
+from src.core.world import World, WorldManager
 
 logger = logging.getLogger(__name__)
 
 
 class DatabaseManagerDialog(QDialog):
     """
-    Dialog to manage database files (CRUD) and select the active one.
+    Dialog to manage worlds in portable-only mode.
+    
+    Manages worlds stored in worlds/ directory next to the executable.
+    Each world is a self-contained folder with database, manifest, and assets.
     """
 
-    # Signal to indicate a restart is requested (optional, handled by dialog msg)
+    # Signal to indicate a restart is requested
     restart_required = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
@@ -46,11 +53,24 @@ class DatabaseManagerDialog(QDialog):
             parent: Parent widget.
         """
         super().__init__(parent)
-        self.setWindowTitle("Database Manager")
+        self.setWindowTitle("World Manager")
         self.resize(500, 400)
         main_layout = QVBoxLayout(self)
 
-        self.data_dir = get_user_data_path()
+        # Initialize worlds directory
+        try:
+            self.worlds_dir = ensure_worlds_directory()
+            self.world_manager = WorldManager(self.worlds_dir)
+        except OSError as e:
+            logger.critical(f"Cannot access worlds directory: {e}")
+            QMessageBox.critical(
+                self,
+                "Critical Error",
+                f"Cannot access worlds directory:\n{e}\n\n"
+                "Please ensure the application has write permissions."
+            )
+            self.worlds_dir = None
+            self.world_manager = None
 
         # Header
         header = QLabel("Manage Your Worlds")
@@ -58,7 +78,8 @@ class DatabaseManagerDialog(QDialog):
         main_layout.addWidget(header)
 
         # Info
-        info = QLabel(f"Database Location:\n{self.data_dir}")
+        info_text = f"Worlds Location:\n{self.worlds_dir}" if self.worlds_dir else "Error: Cannot access worlds directory"
+        info = QLabel(info_text)
         info.setWordWrap(True)
         info.setStyleSheet("color: gray; margin-bottom: 10px;")
         main_layout.addWidget(info)
@@ -71,14 +92,12 @@ class DatabaseManagerDialog(QDialog):
         # Buttons
         btn_layout = QHBoxLayout()
         self.btn_create = QPushButton("Create New")
-        self.btn_browse = QPushButton("Browse...")
         self.btn_open_folder = QPushButton("Open Folder")
         self.btn_delete = QPushButton("Delete")
         self.btn_select = QPushButton("Select && Restart")  # && escapes to &
         self.btn_close = QPushButton("Cancel")
 
         btn_layout.addWidget(self.btn_create)
-        btn_layout.addWidget(self.btn_browse)
         btn_layout.addWidget(self.btn_open_folder)
         btn_layout.addWidget(self.btn_delete)
         btn_layout.addWidget(self.btn_select)
@@ -88,197 +107,189 @@ class DatabaseManagerDialog(QDialog):
         main_layout.addLayout(btn_layout)
 
         # Connections
-        self.btn_create.clicked.connect(self._create_db)
-        self.btn_browse.clicked.connect(self._browse_db)
+        self.btn_create.clicked.connect(self._create_world)
         self.btn_open_folder.clicked.connect(self._open_folder)
-        self.btn_delete.clicked.connect(self._delete_db)
-        self.btn_select.clicked.connect(self._select_db)
+        self.btn_delete.clicked.connect(self._delete_world)
+        self.btn_select.clicked.connect(self._select_world)
         self.btn_close.clicked.connect(self.reject)
+        
+        # Disable buttons if world manager couldn't be initialized
+        if not self.world_manager:
+            self.btn_create.setEnabled(False)
+            self.btn_delete.setEnabled(False)
+            self.btn_select.setEnabled(False)
 
         # Initial Refresh
         self._refresh_list()
 
     def _refresh_list(self) -> None:
-        """Refresh the list of database files from the data directory."""
+        """Refresh the list of worlds from the worlds directory."""
         self.db_list.clear()
+        
+        if not self.world_manager:
+            return
+        
         settings = QSettings()
-        active_db = settings.value(SETTINGS_ACTIVE_DB_KEY, DEFAULT_DB_NAME)
+        active_world_name = settings.value(SETTINGS_ACTIVE_DB_KEY, None)
 
-        if not os.path.exists(self.data_dir):
-            os.makedirs(self.data_dir, exist_ok=True)
+        worlds = self.world_manager.discover_worlds()
 
-        files = [f for f in os.listdir(self.data_dir) if f.endswith(".kraken")]
-        files.sort()
-
-        for f in files:
-            item = QListWidgetItem(f)
-            if f == active_db:
-                item.setText(f"{f} (Active)")
+        for world in worlds:
+            item = QListWidgetItem(world.name)
+            if world.name == active_world_name:
+                item.setText(f"{world.name} (Active)")
                 font = item.font()
                 font.setBold(True)
                 item.setFont(font)
-                item.setForeground(Qt.GlobalColor.green)  # Or theme color
+                item.setForeground(Qt.GlobalColor.green)
                 # Pre-select active
                 self.db_list.setCurrentItem(item)
             self.db_list.addItem(item)
 
     @Slot()
     def _open_folder(self) -> None:
-        """Open the database directory in the system file explorer."""
+        """Open the worlds directory in the system file explorer."""
         import subprocess
         import sys
+
+        if not self.worlds_dir:
+            return
 
         try:
             if sys.platform == "win32":
                 # Use os.startfile on Windows - more reliable than subprocess
-                os.startfile(self.data_dir)
+                os.startfile(str(self.worlds_dir))
             elif sys.platform == "darwin":
-                subprocess.run(["open", self.data_dir], check=False)
+                subprocess.run(["open", str(self.worlds_dir)], check=False)
             else:  # Linux
-                subprocess.run(["xdg-open", self.data_dir], check=False)
+                subprocess.run(["xdg-open", str(self.worlds_dir)], check=False)
         except Exception as e:
-            logger.error(f"Failed to open database directory: {e}")
+            logger.error(f"Failed to open worlds directory: {e}")
             QMessageBox.information(
-                self, "Database Location", f"Database directory:\n{self.data_dir}"
+                self, "Worlds Location", f"Worlds directory:\n{self.worlds_dir}"
             )
 
     @Slot()
-    def _create_db(self) -> None:
-        """Handle creation of a new database file."""
+    def _create_world(self) -> None:
+        """Handle creation of a new world."""
+        if not self.world_manager:
+            return
+        
+        # Get world name from user
         name, ok = QInputDialog.getText(
-            self, "Create New World", "Database Name (e.g. 'MyCampaign'):"
+            self, "Create New World", "World Name (e.g. 'My Fantasy Campaign'):"
         )
-        if ok and name:
-            name = name.strip()
-            if not name:
-                return
+        if not ok or not name:
+            return
 
-            filename = f"{name}.kraken" if not name.endswith(".kraken") else name
-            path = os.path.join(self.data_dir, filename)
+        name = name.strip()
+        if not name:
+            return
 
-            if os.path.exists(path):
-                QMessageBox.warning(
-                    self, "Error", "A database with this name already exists!"
-                )
-                return
-
-            try:
-                # Create empty file
-                open(path, "w").close()
-                logger.info(f"Created new database file: {path}")
-                self._refresh_list()
-
-                # Highlight the new item
-                items = self.db_list.findItems(filename, Qt.MatchExactly)
-                if items:
-                    self.db_list.setCurrentItem(items[0])
-
-            except Exception as e:
-                logger.error(f"Failed to create database: {e}")
-                QMessageBox.critical(self, "Error", f"Failed to create database:\n{e}")
-
-    @Slot()
-    def _browse_db(self) -> None:
-        """Browse for a .kraken database file from any location."""
-        from PySide6.QtWidgets import QFileDialog
-
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Open Kraken Database",
-            "",  # Start in default directory
-            "Kraken Databases (*.kraken);;All Files (*)",
+        # Get optional description
+        description, ok = QInputDialog.getText(
+            self, 
+            "World Description", 
+            "Optional Description:",
+            text=""
         )
+        if not ok:
+            description = ""
 
-        if file_path:
-            # Get just the filename
-            filename = os.path.basename(file_path)
-            target_path = os.path.join(self.data_dir, filename)
-
-            # If file is not in data_dir, copy it there
-            if os.path.abspath(file_path) != os.path.abspath(target_path):
-                try:
-                    import shutil
-
-                    shutil.copy2(file_path, target_path)
-                    logger.info(f"Copied database from {file_path} to {target_path}")
-                    QMessageBox.information(
-                        self,
-                        "Success",
-                        f"Database copied to:\n{target_path}\n\nYou can now select it.",
-                    )
-                except Exception as e:
-                    logger.error(f"Failed to copy database: {e}")
-                    QMessageBox.critical(
-                        self, "Error", f"Failed to copy database:\n{e}"
-                    )
-                    return
-
+        try:
+            # Create the world
+            world = self.world_manager.create_world(name, description.strip())
+            logger.info(f"Created new world: {world.name} at {world.path}")
+            
             self._refresh_list()
 
-            # Select the copied/found item
-            items = self.db_list.findItems(filename, Qt.MatchFlag.MatchContains)
+            # Highlight the new item
+            items = self.db_list.findItems(world.name, Qt.MatchFlag.MatchExactly)
             if items:
                 self.db_list.setCurrentItem(items[0])
 
+        except ValueError as e:
+            QMessageBox.warning(self, "Error", str(e))
+        except Exception as e:
+            logger.error(f"Failed to create world: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to create world:\n{e}")
+
     @Slot()
-    def _delete_db(self) -> None:
-        """Handle deletion of a database file."""
+    def _delete_world(self) -> None:
+        """Handle deletion of a world."""
+        if not self.world_manager:
+            return
+        
         item = self.db_list.currentItem()
         if not item:
-            QMessageBox.information(self, "Info", "Please select a database to delete.")
+            QMessageBox.information(self, "Info", "Please select a world to delete.")
             return
 
-        filename = item.text().replace(" (Active)", "")
+        world_name = item.text().replace(" (Active)", "")
 
         # Check if active
         settings = QSettings()
-        active_db = settings.value(SETTINGS_ACTIVE_DB_KEY, DEFAULT_DB_NAME)
+        active_world_name = settings.value(SETTINGS_ACTIVE_DB_KEY, None)
 
-        if filename == active_db:
+        if world_name == active_world_name:
             QMessageBox.warning(
                 self,
                 "Warning",
-                "Cannot delete the currently active database.\nPlease switch to another database first.",
+                "Cannot delete the currently active world.\n"
+                "Please switch to another world first."
             )
             return
 
         confirm = QMessageBox.question(
             self,
             "Confirm Delete",
-            f"Are you sure you want to delete '{filename}'?\n\nThis action cannot be undone and all data in this world will be lost.",
+            f"Are you sure you want to delete '{world_name}'?\n\n"
+            "This will permanently delete:\n"
+            "- The world database\n"
+            "- All assets (images, maps)\n"
+            "- The world manifest\n\n"
+            "This action cannot be undone!",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
         if confirm == QMessageBox.StandardButton.Yes:
             try:
-                os.remove(os.path.join(self.data_dir, filename))
-                logger.info(f"Deleted database file: {filename}")
-                self._refresh_list()
+                world = self.world_manager.get_world(world_name)
+                if world:
+                    self.world_manager.delete_world(world)
+                    logger.info(f"Deleted world: {world_name}")
+                    self._refresh_list()
+                else:
+                    QMessageBox.warning(self, "Error", f"World '{world_name}' not found.")
             except Exception as e:
-                logger.error(f"Failed to delete database: {e}")
-                QMessageBox.critical(self, "Error", f"Failed to delete database:\n{e}")
+                logger.error(f"Failed to delete world: {e}")
+                QMessageBox.critical(self, "Error", f"Failed to delete world:\n{e}")
 
     @Slot()
-    def _select_db(self) -> None:
-        """Handle selection of a database to make active (requires restart)."""
+    def _select_world(self) -> None:
+        """Handle selection of a world to make active (requires restart)."""
+        if not self.world_manager:
+            return
+        
         item = self.db_list.currentItem()
         if not item:
             return
 
-        filename = item.text().replace(" (Active)", "")
+        world_name = item.text().replace(" (Active)", "")
         settings = QSettings()
-        active_db = settings.value(SETTINGS_ACTIVE_DB_KEY, DEFAULT_DB_NAME)
+        active_world_name = settings.value(SETTINGS_ACTIVE_DB_KEY, None)
 
-        if filename == active_db:
-            QMessageBox.information(self, "Info", "This database is already active.")
+        if world_name == active_world_name:
+            QMessageBox.information(self, "Info", "This world is already active.")
             return
 
-        settings.setValue(SETTINGS_ACTIVE_DB_KEY, filename)
-        logger.info(f"Switched active database to: {filename}")
+        settings.setValue(SETTINGS_ACTIVE_DB_KEY, world_name)
+        logger.info(f"Switched active world to: {world_name}")
 
         QMessageBox.information(
             self,
             "Restart Required",
-            f"Successfully switched to '{filename}'.\n\nPlease restart application to load the new world.",
+            f"Successfully switched to '{world_name}'.\n\n"
+            "Please restart the application to load the new world."
         )
         self.accept()

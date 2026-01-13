@@ -18,7 +18,6 @@ from PySide6.QtCore import (
 from PySide6.QtWidgets import QApplication
 
 from src.app.constants import (
-    DEFAULT_DB_NAME,
     SETTINGS_ACTIVE_DB_KEY,
     SETTINGS_FILTER_CONFIG_KEY,
     STATUS_DB_INIT_FAIL,
@@ -27,7 +26,8 @@ from src.app.constants import (
     WINDOW_SETTINGS_KEY,
 )
 from src.core.logging_config import get_logger
-from src.core.paths import get_user_data_path
+from src.core.paths import ensure_worlds_directory, get_worlds_dir
+from src.core.world import WorldManager
 from src.services.db_service import DatabaseService
 from src.services.worker import DatabaseWorker
 
@@ -62,18 +62,60 @@ class WorkerManager(QObject):
         """
         Initializes the DatabaseWorker and moves it to a separate thread.
         Connects all worker signals to MainWindow slots.
+        
+        Uses portable-only mode: worlds are stored in worlds/ directory
+        next to the executable.
         """
         self.window.worker_thread = QThread()
 
-        # Load active database from settings
-        settings = QSettings()
-        active_db = settings.value(SETTINGS_ACTIVE_DB_KEY, DEFAULT_DB_NAME)
+        # Ensure worlds directory exists and is writable
+        try:
+            worlds_dir = ensure_worlds_directory()
+            logger.info(f"Using worlds directory: {worlds_dir}")
+        except OSError as e:
+            logger.critical(f"Cannot initialize worlds directory: {e}")
+            # Let the UI handle showing the error
+            self.window.status_bar.showMessage(
+                f"CRITICAL: Cannot create worlds directory. {e}"
+            )
+            return
 
-        db_path = get_user_data_path(active_db)
+        # Initialize world manager
+        world_manager = WorldManager(worlds_dir)
+        
+        # Load active world name from settings
+        settings = QSettings()
+        active_world_name = settings.value(SETTINGS_ACTIVE_DB_KEY, None)
+        
+        # Get or create default world
+        world = None
+        if active_world_name:
+            world = world_manager.get_world(active_world_name)
+        
+        if world is None:
+            # No active world or world not found - discover or create default
+            worlds = world_manager.discover_worlds()
+            if worlds:
+                world = worlds[0]  # Use first available world
+                logger.info(f"Using first available world: {world.name}")
+            else:
+                # Create default world
+                logger.info("No worlds found, creating default world")
+                world = world_manager.create_world(
+                    name="Default World",
+                    description="Default worldbuilding workspace"
+                )
+            
+            # Save as active world
+            settings.setValue(SETTINGS_ACTIVE_DB_KEY, world.name)
+        
+        # Get database path from world
+        db_path = str(world.db_path)
         logger.info(f"Initializing DatabaseWorker with: {db_path}")
 
-        # Store db_path for main thread usage (path calculations)
+        # Store db_path and world for main thread usage
         self.window.db_path = db_path
+        self.window.current_world = world
 
         self.window.worker = DatabaseWorker(db_path)
         self.window.worker.moveToThread(self.window.worker_thread)
