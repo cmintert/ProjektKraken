@@ -377,19 +377,9 @@ class EntityEditorWidget(QWidget):
             if self.type_edit.currentText() != entity.type:
                 self.type_edit.setCurrentText(entity.type)
 
-            # Assuming WikiTextEdit has internal storage. We use set_wiki_text only if changed.
-            # Ideally we would check internal content, but comparing toPlainText() vs new description is decent proxy.
-            # Note: WikiTextEdit might format markdown. If toPlainText() returns formatted, this might be tricky.
-            # But standard QPlainTextEdit returns text.
-            # Let's assume set_wiki_text parses and sets.
-            # We can try to peek at internal storage if possible or just update blindly if unsure to avoid "stuck" state.
-            # Given the requirement, we should try.
-            # But let's verify if set_wiki_text is expensive or resets cursor. It likely does.
-            # Checking against `_current_wiki_text` if implemented in WikiTextEdit would be better.
-            if (
-                getattr(self.desc_edit, "_current_wiki_text", None)
-                != entity.description
-            ):
+            # Check against the actual current content of the editor instead of internal storage
+            # This ensures we don't reload if the text is effectively the same (resolving cursor reset)
+            if self.desc_edit.get_wiki_text() != entity.description:
                 self.desc_edit.set_wiki_text(entity.description)
 
             # Load Attributes (filter out _tags for display)

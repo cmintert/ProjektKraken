@@ -271,6 +271,11 @@ class WikiTextEdit(QTextEdit):
         if text is None:
             text = ""
 
+        # Check if text is identical to avoid unnecessary reload (which resets cursor)
+        if hasattr(self, "_current_wiki_text") and self._current_wiki_text == text:
+            logger.debug("set_wiki_text: Content identical, skipping update.")
+            return
+
         # Store text for re-rendering on theme change
         self._current_wiki_text = text
 

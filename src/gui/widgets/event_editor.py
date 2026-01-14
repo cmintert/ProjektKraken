@@ -510,7 +510,7 @@ class EventEditorWidget(QWidget):
             if self.type_edit.currentText() != event.type:
                 self.type_edit.setCurrentText(event.type)
 
-            if getattr(self.desc_edit, "_current_wiki_text", None) != event.description:
+            if self.desc_edit.get_wiki_text() != event.description:
                 self.desc_edit.set_wiki_text(event.description)
 
             # Load Attributes (filter out _tags for display)
