@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-15
-### Internal
-- Merge Qt Layout Hardening Phase 1 & 2
+### Documentation
+- docs: Update CHANGELOG for Qt layout hardening Phase 1 & 2
 
 
 *This changelog was automatically generated.*
