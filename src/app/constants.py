@@ -15,6 +15,10 @@ SETTINGS_LAST_ITEM_ID_KEY = "last_selected_item_id"
 SETTINGS_LAST_ITEM_TYPE_KEY = "last_selected_item_type"
 SETTINGS_AUTO_RELATION_KEY = "wiki/auto_create_relations"
 SETTINGS_FILTER_CONFIG_KEY = "tag_filter_config"
+SETTINGS_LAYOUT_VERSION_KEY = "layout_version"
+
+# Layout Version (increment when layout structure changes incompatibly)
+LAYOUT_VERSION = "1.0.0"
 
 
 # Dock Titles

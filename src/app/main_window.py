@@ -118,15 +118,42 @@ class MainWindow(QMainWindow):
 
     def __init__(self, capture_layout_on_exit: bool = False) -> None:
         """
-        Initializes the MainWindow.
+        Initializes the MainWindow using three-phase initialization.
+
+        Phase 1: Core services (data handler, worker thread)
+        Phase 2: UI skeleton (widgets, layout, menus)
+        Phase 3: Deferred completion (DB init, signals, state restoration)
 
         Args:
             capture_layout_on_exit: If True, saves current layout as default on exit.
         """
         super().__init__()
+        from src.core.logging_config import get_logger
+
+        logger = get_logger(__name__)
+        logger.debug("MainWindow initialization started")
 
         self.capture_layout_on_exit = capture_layout_on_exit
 
+        # Phase 1: Core infrastructure
+        self._init_core_services()
+        logger.debug("Phase 1: Core services initialized")
+
+        # Phase 2: UI skeleton (no data dependencies)
+        self._init_widgets_skeleton()
+        logger.debug("Phase 2: Widget skeleton created")
+
+        # Phase 3: Deferred initialization (after event loop starts)
+        QTimer.singleShot(100, self._complete_initialization)
+        logger.debug("Phase 3: Deferred initialization scheduled")
+
+    def _init_core_services(self) -> None:
+        """
+        Phase 1: Initialize core services and infrastructure.
+
+        Sets up data handler, worker thread, and basic window properties.
+        No widgets or UI elements created here.
+        """
         # Load active world name for title
         settings = QSettings()
         active_world_name = settings.value(SETTINGS_ACTIVE_DB_KEY, "Default World")
@@ -137,86 +164,58 @@ class MainWindow(QMainWindow):
         # Current world reference (will be set by worker_manager)
         self.current_world = None
 
-        # ... (rest of init unchanged until closeEvent)
-
-        # 0. Initialize Data Handler (signals-based, no window reference)
+        # Initialize Data Handler (signals-based, no window reference)
         self.data_handler = DataHandler()
 
         # Initialize backup service (will be properly connected after DB init)
         self.backup_service = None
 
-        # 1. Init Services (Worker Thread)
+        # Init Services (Worker Thread)
         self.worker_manager = WorkerManager(self)
         self.worker_manager.init_worker()
 
-        # 2. Init Widgets
-        self.unified_list = UnifiedListWidget()
-        self.event_editor = EventEditorWidget(self)
-        self.entity_editor = EntityEditorWidget(self)
-
-        # Connect dirty signals to update dock titles
-        self.event_editor.dirty_changed.connect(
-            lambda dirty: self._on_editor_dirty_changed(self.event_editor, dirty)
-        )
-        self.entity_editor.dirty_changed.connect(
-            lambda dirty: self._on_editor_dirty_changed(self.entity_editor, dirty)
-        )
-        self.timeline = TimelineWidget()
-        self.map_widget = MapWidget()
-
-        # AI Search Panel
-        self.ai_search_panel = AISearchPanelWidget()
-
-        # Graph Widget
-        self.graph_widget = GraphWidget()
-        self.graph_widget.node_clicked.connect(self._on_item_selected)
-
+        # Initialize state variables
         self.cached_event_count: Optional[int] = None
-
-        # Filter Configuration
-        # Filter Configuration
-        # self.filter_config removed - delegated to UnifiedList
-        self.longform_filter_config: dict = {}  # For Longform editor
-        self.longform_filter_config: dict = {}  # For Longform editor
-
-        # Data Cache for Unified List
+        self.longform_filter_config: dict = {}
         self._cached_events = []
         self._cached_entities = []
         self._cached_longform_sequence = []
         self.calendar_converter = None
-
-        # Pending Selection (for creation flow)
-        # Pending Selection (for creation flow)
         self._pending_select_id = None
         self._pending_select_type = None
-
-        # Track last selection for undoing on cancel
         self._last_selected_id = None
         self._last_selected_type = None
-
-        # Debounce timer for graph reload
         self._graph_reload_timer: QTimer | None = None
 
+    def _init_widgets_skeleton(self) -> None:
+        """
+        Phase 2: Create UI skeleton without data dependencies.
+
+        Creates all widgets, sets up layout, and creates menus.
+        Does NOT connect signals or load data.
+        """
+        # Create Widgets (no data access during construction)
+        self.unified_list = UnifiedListWidget()
+        self.event_editor = EventEditorWidget(self)
+        self.entity_editor = EntityEditorWidget(self)
+        self.timeline = TimelineWidget()
+        self.map_widget = MapWidget()
+        self.ai_search_panel = AISearchPanelWidget()
+        self.graph_widget = GraphWidget()
         self.longform_editor = LongformEditorWidget(db_path=self.db_path)
 
-        # Initialize Map Handler
+        # Initialize Managers
         self.map_handler = MapHandler(self)
-
-        # Initialize Timeline Grouping Manager
         self.grouping_manager = TimelineGroupingManager(self)
-
-        # Initialize AI Search Manager
         self.ai_settings_dialog = None
         self.ai_search_manager = AISearchManager(self)
-
-        # Initialize Longform Manager
         self.longform_manager = LongformManager(self)
 
         # Status Bar
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
 
-        # 3. Setup UI Layout via UIManager
+        # Setup UI Layout via UIManager
         self.ui_manager = UIManager(self)
         self.ui_manager.setup_docks(
             {
@@ -231,16 +230,6 @@ class MainWindow(QMainWindow):
             }
         )
 
-        # 4. Initialize Connection Manager
-        self.connection_manager = ConnectionManager(self)
-        self.connection_manager.connect_all()
-
-        # 5. Initialize Command Coordinator
-        self.command_coordinator = CommandCoordinator(self)
-        self.command_coordinator.command_requested.connect(
-            lambda cmd: self.command_requested.emit(cmd)
-        )
-
         # Central Widget
         self.setCentralWidget(QWidget())
         self.centralWidget().hide()
@@ -248,38 +237,65 @@ class MainWindow(QMainWindow):
         # Status Bar Time Labels
         self.lbl_world_time = QLabel("World: --")
         self.lbl_world_time.setMinimumWidth(250)
-        self.lbl_world_time.setStyleSheet("color: #3498db; font-weight: bold;")  # Blue
+        self.lbl_world_time.setStyleSheet("color: #3498db; font-weight: bold;")
         self.status_bar.addPermanentWidget(self.lbl_world_time)
 
         self.lbl_playhead_time = QLabel("Playhead: --")
         self.lbl_playhead_time.setMinimumWidth(250)
-        self.lbl_playhead_time.setStyleSheet(
-            "color: #e74c3c; font-weight: bold;"
-        )  # Red
+        self.lbl_playhead_time.setStyleSheet("color: #e74c3c; font-weight: bold;")
         self.status_bar.addPermanentWidget(self.lbl_playhead_time)
 
-        # File Menu
+        # Create Menus
         self.ui_manager.create_file_menu(self.menuBar())
-
-        # Timeline Menu (New)
         self.ui_manager.create_timeline_menu(self.menuBar())
-
-        # View Menu
         self.ui_manager.create_view_menu(self.menuBar())
-
-        # Settings Menu (Consolidated AI Search here)
         self.ui_manager.create_settings_menu(self.menuBar())
 
-        # 5. Initialize Database (deferred to ensure event loop is running)
-        QTimer.singleShot(
-            100,
-            lambda: QMetaObject.invokeMethod(
-                self.worker, "initialize_db", Qt.ConnectionType.QueuedConnection
-            ),
+    def _complete_initialization(self) -> None:
+        """
+        Phase 3: Complete initialization after event loop starts.
+
+        Initializes database, connects signals, restores state.
+        Called via QTimer.singleShot after event loop is running.
+        """
+        from src.core.logging_config import get_logger
+
+        logger = get_logger(__name__)
+        logger.debug("Completing initialization (Phase 3)")
+
+        # Initialize Connection Manager and connect signals
+        self.connection_manager = ConnectionManager(self)
+        stats = self.connection_manager.connect_all()
+        logger.info(
+            f"Signal connections: {stats['total_succeeded']}/{stats['total_attempted']}"
         )
 
-        # 6. Restore Window State
+        # Initialize Command Coordinator
+        self.command_coordinator = CommandCoordinator(self)
+        self.command_coordinator.command_requested.connect(
+            lambda cmd: self.command_requested.emit(cmd)
+        )
+
+        # Connect editor dirty signals (these are safe to connect early)
+        self.event_editor.dirty_changed.connect(
+            lambda dirty: self._on_editor_dirty_changed(self.event_editor, dirty)
+        )
+        self.entity_editor.dirty_changed.connect(
+            lambda dirty: self._on_editor_dirty_changed(self.entity_editor, dirty)
+        )
+
+        # Connect graph widget node clicked (was connected in old init)
+        self.graph_widget.node_clicked.connect(self._on_item_selected)
+
+        # Initialize Database
+        QMetaObject.invokeMethod(
+            self.worker, "initialize_db", Qt.ConnectionType.QueuedConnection
+        )
+
+        # Restore Window State
         self._restore_window_state()
+
+        logger.debug("Initialization complete")
 
     @property
     def list_dock(self) -> QDockWidget:
@@ -342,22 +358,161 @@ class MainWindow(QMainWindow):
         return self.ui_manager.docks.get("map")
 
     def _restore_window_state(self) -> None:
-        """Restores window geometry and state from settings."""
-        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-        geometry = settings.value("geometry")
-        state = settings.value("windowState")
+        """
+        Restores window geometry and state using staged approach.
 
+        Stage 1: Immediate - Restore geometry only
+        Stage 2: 100ms - Restore critical docks (list, editors, timeline)
+        Stage 3: 500ms - Restore optional docks (longform, map, AI, graph)
+        """
+        from src.core.logging_config import get_logger
+
+        logger = get_logger(__name__)
+        logger.debug("Starting staged layout restoration")
+
+        # Stage 1: Immediate geometry restoration
+        self._restore_geometry()
+
+        # Stage 2: Critical docks after 100ms
+        QTimer.singleShot(100, self._restore_critical_docks)
+
+        # Stage 3: Optional docks after 500ms
+        QTimer.singleShot(500, self._restore_optional_docks)
+
+    def _restore_geometry(self) -> None:
+        """
+        Stage 1: Restore window geometry immediately.
+
+        This provides instant visual feedback to the user.
+        """
+        from src.app.constants import LAYOUT_VERSION, SETTINGS_LAYOUT_VERSION_KEY
+        from src.core.logging_config import get_logger
+
+        logger = get_logger(__name__)
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+
+        # Check layout version compatibility
+        saved_version = settings.value(SETTINGS_LAYOUT_VERSION_KEY, "0.0.0")
+
+        if saved_version != LAYOUT_VERSION:
+            logger.warning(
+                f"Layout version mismatch: saved={saved_version}, "
+                f"current={LAYOUT_VERSION}. Will use default layout."
+            )
+            # Don't restore anything, will reset in critical docks stage
+            return
+
+        # Restore geometry only (fast)
+        geometry = settings.value("geometry")
         if geometry:
-            self.restoreGeometry(geometry)
-        if state:
-            self.restoreState(state)
+            if self.restoreGeometry(geometry):
+                logger.debug("Window geometry restored")
+            else:
+                logger.warning("Failed to restore window geometry")
         else:
+            logger.debug("No saved geometry found")
+
+    def _restore_critical_docks(self) -> None:
+        """
+        Stage 2: Restore critical docks and their state.
+
+        Critical docks: list, event editor, entity editor, timeline.
+        These are essential for basic functionality.
+        """
+        from src.app.constants import LAYOUT_VERSION, SETTINGS_LAYOUT_VERSION_KEY
+        from src.core.logging_config import get_logger
+
+        logger = get_logger(__name__)
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+
+        saved_version = settings.value(SETTINGS_LAYOUT_VERSION_KEY, "0.0.0")
+
+        # If version mismatch, reset layout
+        if saved_version != LAYOUT_VERSION:
+            logger.info("Resetting to default layout due to version mismatch")
             self.ui_manager.reset_layout()
+            settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
+            return
+
+        # Restore window state (includes dock positions)
+        state = settings.value("windowState")
+        if state:
+            if self.restoreState(state):
+                logger.debug("Critical docks state restored")
+
+                # Validate critical docks are present
+                if not self._validate_dock_state():
+                    logger.warning("Critical dock validation failed, resetting layout")
+                    self.ui_manager.reset_layout()
+                    settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
+            else:
+                logger.warning("Failed to restore window state, using default layout")
+                self.ui_manager.reset_layout()
+                settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
+        else:
+            logger.info("No saved state found, using default layout")
+            self.ui_manager.reset_layout()
+            settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
+
+    def _restore_optional_docks(self) -> None:
+        """
+        Stage 3: Restore optional dock configurations.
+
+        Optional docks: longform, map, AI search, graph.
+        These enhance functionality but aren't critical for startup.
+        """
+        from src.core.logging_config import get_logger
+
+        logger = get_logger(__name__)
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 
         # Restore Advanced Filter for Unified List
         filter_config = settings.value(SETTINGS_FILTER_CONFIG_KEY)
         if filter_config:
             self.unified_list.set_advanced_filter(filter_config)
+            logger.debug("Advanced filter configuration restored")
+
+        # Optional docks are already positioned by restoreState in stage 2
+        # This stage is for any additional configuration
+        logger.debug("Optional dock restoration complete")
+
+    def _validate_dock_state(self) -> bool:
+        """
+        Ensures all expected docks are accessible after restoration.
+
+        Returns:
+            bool: True if all critical docks are present and valid, False otherwise.
+        """
+        from src.core.logging_config import get_logger
+
+        logger = get_logger(__name__)
+
+        # Define critical docks that must be present
+        expected_docks = ["list", "event", "entity", "timeline"]
+        missing_docks = []
+        invalid_docks = []
+
+        for dock_key in expected_docks:
+            dock = self.ui_manager.docks.get(dock_key)
+            if dock is None:
+                missing_docks.append(dock_key)
+                logger.error(f"Critical dock missing after restoration: {dock_key}")
+            elif not isinstance(dock, QDockWidget):
+                invalid_docks.append(dock_key)
+                logger.error(f"Invalid dock type for {dock_key}: {type(dock)}")
+            elif dock.widget() is None:
+                invalid_docks.append(dock_key)
+                logger.error(f"Dock {dock_key} has no widget")
+
+        if missing_docks or invalid_docks:
+            logger.error(
+                f"Dock validation failed - Missing: {missing_docks}, "
+                f"Invalid: {invalid_docks}"
+            )
+            return False
+
+        logger.debug("Dock state validation passed")
+        return True
 
     def update_item(self, data: dict) -> None:
         """
@@ -747,9 +902,12 @@ class MainWindow(QMainWindow):
                 return
 
         # Save State
+        from src.app.constants import LAYOUT_VERSION, SETTINGS_LAYOUT_VERSION_KEY
+
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         settings.setValue("geometry", self.saveGeometry())
         settings.setValue("windowState", self.saveState())
+        settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
 
         # Save as Default Layout if requested
         if self.capture_layout_on_exit:
