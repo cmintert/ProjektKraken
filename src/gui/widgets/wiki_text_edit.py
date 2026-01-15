@@ -141,10 +141,10 @@ class WikiTextEdit(QTextEdit):
             serializer = WikiASTSerializer()
             ast = parser.parse(md_text)
             _, ast = serializer.to_markdown(ast)
-            _, ast = serializer.to_html(ast)
+            _, ast = serializer.to_plaintext(ast)
             mapper = CursorMapper(ast)
 
-            # Map cursor position from HTML to MD
+            # Map cursor position from HTML (PlainText) to MD
             new_cursor_pos = mapper.html_to_md(old_cursor_pos)
 
             # Switch mode
@@ -175,10 +175,10 @@ class WikiTextEdit(QTextEdit):
             serializer = WikiASTSerializer()
             ast = parser.parse(raw_text)
             _, ast = serializer.to_markdown(ast)
-            _, ast = serializer.to_html(ast)
+            _, ast = serializer.to_plaintext(ast)
             mapper = CursorMapper(ast)
 
-            # Map cursor position from MD to HTML
+            # Map cursor position from MD to HTML (PlainText)
             new_cursor_pos = mapper.md_to_html(old_cursor_pos)
 
             # Switch mode
@@ -722,7 +722,10 @@ class WikiTextEdit(QTextEdit):
             # If current font size is larger than body (roughly), reset to body
             # We could fetch exact theme values, but > 11 is a safe heuristic for now
             # since body is usually 10pt and H3 is 12pt+.
-            if cursor.charFormat().fontPointSize() > 11:
+            current_size = cursor.charFormat().fontPointSize()
+            # logger.info(f"Enter pressed. Current Font Size: {current_size}")
+            if current_size > 11:
+                # logger.info("Font size > 11, resetting heading to 0")
                 self._set_heading(0)
 
         # Check if user just closed a wiki link with ]]
@@ -873,20 +876,10 @@ class WikiTextEdit(QTextEdit):
 
         cursor.mergeCharFormat(fmt)
 
-        # Save cursor position before re-render
-        old_cursor_pos = cursor.position()
-
-        # Force visual update by re-rendering the document
-        # Manual format changes don't trigger CSS stylesheet application
-        # Re-render via markdown round-trip to apply CSS properly
-        current_text = self.get_wiki_text()
-        self._current_wiki_text = None  # Force re-render
-        self.set_wiki_text(current_text)
-
-        # Restore cursor position
-        cursor = self.textCursor()
-        cursor.setPosition(min(old_cursor_pos, self.document().characterCount() - 1))
-        self.setTextCursor(cursor)
+        # Force visual update by re-rendering was problematic for cursor state.
+        # Since we manually applied block and char formats that match the theme,
+        # we don't need to do a full markdown round-trip.
+        # This prevents cursor jumping and loss of empty lines.
 
     def _toggle_markdown_format(self, marker: str) -> None:
         """

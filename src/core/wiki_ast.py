@@ -474,6 +474,78 @@ class WikiASTSerializer:
             result.append(html)
         return "".join(result), pos
 
+    def to_plaintext(self, root: WikiNode) -> Tuple[str, WikiNode]:
+        """
+        Serialize AST to Plain Text (mimicking QTextEdit output), updating html_span.
+        We reuse html_span to store the Plain Text spans, as CursorMapper uses html_span
+        to map against the "View" representation (which is Plain Text in Qt).
+
+        Args:
+            root: The root node of the AST.
+
+        Returns:
+            Tuple of (plaintext_string, updated_root_with_spans).
+        """
+        result: List[str] = []
+        pos = 0
+
+        for i, child in enumerate(root.children):
+            text, pos = self._node_to_plaintext(child, pos)
+            result.append(text)
+
+            # Simulate block separator (newline) used by QTextEdit between blocks
+            if i < len(root.children) - 1:
+                result.append("\n")
+                pos += 1
+
+        return "".join(result), root
+
+    def _node_to_plaintext(self, node: WikiNode, pos: int) -> Tuple[str, int]:
+        """Convert a single node to Plain Text."""
+        start_pos = pos
+
+        # Container nodes - recurse
+        if node.node_type in (
+            NodeType.PARAGRAPH,
+            NodeType.HEADING,
+            NodeType.BOLD,
+            NodeType.ITALIC,
+            NodeType.BOLD_ITALIC,
+        ):
+            content, pos = self._children_to_plaintext(node.children, pos)
+            node.html_span = SourceSpan(start_pos, pos)
+            return content, pos
+
+        elif node.node_type == NodeType.TEXT:
+            node.html_span = SourceSpan(pos, pos + len(node.text))
+            return node.text, pos + len(node.text)
+
+        elif node.node_type == NodeType.WIKILINK:
+            # In Rich Text, only label is visible
+            target = node.attributes.get("target", "")
+            label = node.attributes.get("label", target)
+            node.html_span = SourceSpan(pos, pos + len(label))
+            return label, pos + len(label)
+
+        elif node.node_type == NodeType.LINEBREAK:
+            # Linebreak implies empty line.
+            # In MD: \n\n -> Block(Text) + Block(Empty) + Block(Text)
+            # Text content of Empty Block is ""
+            node.html_span = SourceSpan(pos, pos)
+            return "", pos
+
+        return "", pos
+
+    def _children_to_plaintext(
+        self, children: List[WikiNode], pos: int
+    ) -> Tuple[str, int]:
+        """Convert child nodes to Plain Text."""
+        result: List[str] = []
+        for child in children:
+            text, pos = self._node_to_plaintext(child, pos)
+            result.append(text)
+        return "".join(result), pos
+
 
 class CursorMapper:
     """
@@ -515,12 +587,22 @@ class CursorMapper:
                 if node.html_span:
                     # For links, we need to account for the tag
                     if node.node_type == NodeType.WIKILINK:
-                        # Cursor is in the label portion
                         target = node.attributes.get("target", "")
+                        label = node.attributes.get("label", target)
+
+                        # Check if html_span includes tags or just text
+                        span_len = node.html_span.end - node.html_span.start
+                        if span_len == len(label):
+                            # Plain text mapping (no tags)
+                            return node.html_span.start + offset
+
+                        # HTML mapping (with tags)
+                        # Cursor is in the label portion
                         # HTML: <a href="target">label</a>
                         # The label starts after <a href="target">
                         tag_prefix = f'<a href="{target}">'
                         return node.html_span.start + len(tag_prefix) + offset
+
                     return node.html_span.start + offset
         # Fallback: return position clamped to end
         return md_pos
@@ -540,19 +622,29 @@ class CursorMapper:
                 offset = node.html_span.offset_within(html_pos)
                 if node.md_span:
                     if node.node_type == NodeType.WIKILINK:
-                        # In HTML, cursor might be in the label
                         target = node.attributes.get("target", "")
-                        tag_prefix = f'<a href="{target}">'
-                        effective_offset = offset - len(tag_prefix)
+                        label = node.attributes.get("label", target)
+
+                        # Check if html_span includes tags or just text
+                        span_len = node.html_span.end - node.html_span.start
+                        if span_len == len(label):
+                            # Plain text mapping (no tags)
+                            effective_offset = offset
+                        else:
+                            # In HTML, cursor might be in the label
+                            tag_prefix = f'<a href="{target}">'
+                            effective_offset = offset - len(tag_prefix)
+
                         if effective_offset < 0:
                             effective_offset = 0
+
                         # In MD: [[target|label]] or [[target]]
                         # Label starts at position 2 + len(target) + 1 if has separator
-                        label = node.attributes.get("label", target)
                         if target != label:
                             label_start = 2 + len(target) + 1
                         else:
                             label_start = 2
                         return node.md_span.start + label_start + effective_offset
+
                     return node.md_span.start + offset
         return html_pos
