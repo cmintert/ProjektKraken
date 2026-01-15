@@ -1,5 +1,3 @@
-import pytest
-from PySide6.QtCore import Qt
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
 
