@@ -8,8 +8,21 @@ import re
 from typing import Any, List, Optional
 
 from PySide6.QtCore import QStringListModel, Qt, Signal, Slot
-from PySide6.QtGui import QKeyEvent, QMouseEvent, QResizeEvent, QTextCursor
-from PySide6.QtWidgets import QCompleter, QTextEdit, QToolButton, QWidget
+from PySide6.QtGui import (
+    QKeyEvent,
+    QMouseEvent,
+    QResizeEvent,
+    QTextBlock,
+    QTextCursor,
+    QTextFragment,
+)
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QCompleter,
+    QTextEdit,
+    QToolButton,
+    QWidget,
+)
 
 from src.core.theme_manager import ThemeManager
 
@@ -181,13 +194,12 @@ class WikiTextEdit(QTextEdit):
             names: Legacy list of names (for backward compatibility).
         """
         # Handle legacy positional argument
-        if items_or_names is not None:
-            if isinstance(items_or_names, list) and items_or_names:
-                # Check if it's a list of tuples (new format) or strings (legacy)
-                if isinstance(items_or_names[0], tuple):
-                    items = items_or_names
-                else:
-                    names = items_or_names
+        if items_or_names and isinstance(items_or_names, list):
+            # Check if it's a list of tuples (new format) or strings (legacy)
+            if isinstance(items_or_names[0], tuple):
+                items = items_or_names
+            else:
+                names = items_or_names
 
         if items is not None:
             # Build completion map: name -> (id, type)
@@ -197,16 +209,14 @@ class WikiTextEdit(QTextEdit):
             display_names = [name for _, name, _ in items]
 
             # Create set of lower-case names and IDs for validation
-            self._valid_targets_lower = set(
-                name.lower() for name in self._completion_map
-            )
-            self._valid_ids = set(item_id for item_id, _, _ in items)
+            self._valid_targets_lower = {name.lower() for name in self._completion_map}
+            self._valid_ids = {item_id for item_id, _, _ in items}
 
         elif names is not None:
             # Legacy mode - no ID mapping
             self._completion_map = {}
             display_names = names
-            self._valid_targets_lower = set(name.lower() for name in names)
+            self._valid_targets_lower = {name.lower() for name in names}
             self._valid_ids = set()
         else:
             return
@@ -389,8 +399,8 @@ class WikiTextEdit(QTextEdit):
             Convert WikiLink syntax to Markdown link syntax.
             Checks validity of target against known items.
             """
-            target = match.group(1).strip()
-            label = match.group(2).strip() if match.group(2) else target
+            target = match[1].strip()
+            label = match[2].strip() if match[2] else target
 
             # Check existence
             is_valid = False
@@ -401,7 +411,8 @@ class WikiTextEdit(QTextEdit):
             #   [[id:UUID|Label]] -> target = "id:UUID"
             check_target = target
             if target.startswith("id:"):
-                check_target = target[3:]  # Strip "id:" prefix for ID lookup
+                # Strip "id:" prefix for ID lookup
+                check_target = target[3:]
 
             # Check names (case insensitive)
             if (
@@ -471,7 +482,7 @@ class WikiTextEdit(QTextEdit):
 
         return "\n".join(result)
 
-    def _process_block(self, block) -> str:
+    def _process_block(self, block: QTextBlock) -> str:
         """
         Process a text block to recover block-level formatting (Headings).
         Then delegates to _process_fragment for inline formatting.
@@ -516,7 +527,7 @@ class WikiTextEdit(QTextEdit):
 
         return full_line_text
 
-    def _process_fragment(self, fragment) -> str:
+    def _process_fragment(self, fragment: QTextFragment) -> str:
         """
         Process a text fragment to recover inline formatting (Bold, Italic, Links).
         """
@@ -595,18 +606,16 @@ class WikiTextEdit(QTextEdit):
             event: QKeyEvent from PySide6.
         """
 
-        if self._completer:
-            popup = self._completer.popup()
-            if popup and popup.isVisible():
-                if event.key() in (
-                    Qt.Key.Key_Enter,
-                    Qt.Key.Key_Return,
-                    Qt.Key.Key_Escape,
-                    Qt.Key.Key_Tab,
-                    Qt.Key.Key_Backtab,
-                ):
-                    event.ignore()
-                    return
+        if self._completer and (popup := self._completer.popup()) and popup.isVisible():
+            if event.key() in (
+                Qt.Key.Key_Enter,
+                Qt.Key.Key_Return,
+                Qt.Key.Key_Escape,
+                Qt.Key.Key_Tab,
+                Qt.Key.Key_Backtab,
+            ):
+                event.ignore()
+                return
 
         super().keyPressEvent(event)
 
@@ -646,12 +655,11 @@ class WikiTextEdit(QTextEdit):
         link_content = text_before[bracket_start + 2 : link_end - 2]
 
         # Parse target (handle [[target|label]] format)
+        # Parse target (handle [[target|label]] format)
         if "|" in link_content:
-            target = link_content.split("|")[0].strip()
-            label = link_content.split("|")[1].strip()
+            target, label = (part.strip() for part in link_content.split("|", 1))
         else:
-            target = link_content.strip()
-            label = target
+            target = label = link_content.strip()
 
         if not target:
             return
@@ -712,10 +720,7 @@ class WikiTextEdit(QTextEdit):
             return True
 
         # Fallback if completer not set
-        if not hasattr(self, "_valid_targets_lower"):
-            return True
-
-        return False
+        return not hasattr(self, "_valid_targets_lower")
 
     def _check_for_completion(self) -> None:
         """
@@ -735,21 +740,25 @@ class WikiTextEdit(QTextEdit):
 
         if last_open != -1 and last_open > last_close:
             prefix = text_before[last_open + 2 :]
-            if "|" not in prefix and self._completer:
-                popup = self._completer.popup()
-                if popup:
-                    self._completer.setCompletionPrefix(prefix)
-                    curr_rect = self.cursorRect()
+            if (
+                "|" not in prefix
+                and self._completer
+                and (popup := self._completer.popup())
+            ):
+                self._show_completion_popup(popup, prefix)
+        elif self._completer and (popup := self._completer.popup()):
+            popup.hide()
 
-                    scroll_bar = popup.verticalScrollBar()
-                    sb_width = scroll_bar.sizeHint().width() if scroll_bar else 0
+    def _show_completion_popup(self, popup: QAbstractItemView, prefix: str) -> None:
+        """Helper to position and show completion popup."""
+        self._completer.setCompletionPrefix(prefix)
+        curr_rect = self.cursorRect()
 
-                    curr_rect.setWidth(popup.sizeHintForColumn(0) + sb_width)
-                    self._completer.complete(curr_rect)
-        elif self._completer:
-            popup = self._completer.popup()
-            if popup:
-                popup.hide()
+        scroll_bar = popup.verticalScrollBar()
+        sb_width = scroll_bar.sizeHint().width() if scroll_bar else 0
+
+        curr_rect.setWidth(popup.sizeHintForColumn(0) + sb_width)
+        self._completer.complete(curr_rect)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         """
@@ -758,11 +767,11 @@ class WikiTextEdit(QTextEdit):
         Args:
             event: QMouseEvent from PySide6.
         """
-        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
-            anchor = self.anchorAt(event.position().toPoint())
-            if anchor:
-                self.viewport().setCursor(Qt.CursorShape.PointingHandCursor)
-                return
+        if event.modifiers() & Qt.KeyboardModifier.ControlModifier and self.anchorAt(
+            event.position().toPoint()
+        ):
+            self.viewport().setCursor(Qt.CursorShape.PointingHandCursor)
+            return
         self.viewport().setCursor(Qt.IBeamCursor)
         super().mouseMoveEvent(event)
 
@@ -773,18 +782,17 @@ class WikiTextEdit(QTextEdit):
         Args:
             event: QMouseEvent from PySide6.
         """
-        if event.button() == Qt.MouseButton.LeftButton and (
-            event.modifiers() & Qt.KeyboardModifier.ControlModifier
+        if (
+            event.button() == Qt.MouseButton.LeftButton
+            and (event.modifiers() & Qt.KeyboardModifier.ControlModifier)
+            and (anchor := self.anchorAt(event.position().toPoint()))
         ):
-            anchor = self.anchorAt(event.position().toPoint())
-            if anchor:
-                # Handle ID checking
-                if anchor.startswith("id:"):
-                    target = anchor.split("|")[0][3:]
-                else:
-                    target = anchor.split("|")[0]
-                self.link_clicked.emit(target)
-                return
+            # Handle ID checking
+            target = anchor.split("|")[0]
+            if target.startswith("id:"):
+                target = target[3:]
+            self.link_clicked.emit(target)
+            return
         super().mouseReleaseEvent(event)
 
     @Slot(dict)
