@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-01-13  
-**Commit:** `4d6c077`  
+**Last Updated:** 2026-01-15  
+**Commit:** `363ddde`  
 ---
 
 # Changelog
@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- *(2026-01-15)* **Feature**: Implemented AST-based cursor synchronization for `WikiTextEdit` to ensure pixel-perfect cursor preservation when toggling between Rich and Source views.
 - *(2026-01-13)* **Feature**: Implemented Autocompletion for Tags, Attribute Keys, Relation Types, and Entity Types.
   - Added `GraphDataService` methods to fetch unique types and keys from the database.
   - Integrated `QCompleter` into `TagEditorWidget`, `AttributeEditorWidget`, and `RelationEditDialog`.
@@ -23,6 +24,9 @@ All notable changes to this project will be documented in this file.
 - *(2026-01-13)* **UX**: Stabilized Graph View layout by enforcing a deterministic physics seed (`randomSeed: 42`).
 
 ### Fixed
+- *(2026-01-15)* **Bug**: Fixed `WikiTextEdit` formatting issue where `Ctrl+4` did not reliably revert text to unformatted body text.
+- *(2026-01-14)* **Bug**: Fixed cursor jumping to start of document on autosave in `WikiTextEdit`.
+- *(2026-01-14)* **Bug**: Fixed persistence of Heading styles (H1-H3) in `WikiTextEdit` during Markdown/HTML conversion.
 - *(2026-01-13)* **Bug**: Fixed `AttributeError` in `MainWindow` when opening AI Settings dialog.
 - *(2026-01-13)* **Graph**: Fixed offline graph rendering by bundling PyVis templates and local assets.
 - *(2026-01-13)* **Build**: Removed missing migrations directory from build configuration to fix PyInstaller builds.
@@ -36,6 +40,9 @@ All notable changes to this project will be documented in this file.
   - Renamed root `assets` directory to `default_assets`.
   - Updated resource loading logic to support the new directory structure.
   - Enforced separation of user data by adding `worlds/` to `.gitignore`.
+
+### Refactor
+- *(2026-01-15)* **Cleanup**: Removed unused imports from `test_editor_signals.py`.
 
 ## [0.6.0]
 
