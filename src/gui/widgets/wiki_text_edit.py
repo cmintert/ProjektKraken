@@ -507,7 +507,22 @@ class WikiTextEdit(QTextEdit):
             result.append(block_text)
             block = block.next()
 
-        return "\n".join(result)
+        # Smart Join:
+        # If two consecutive blocks have content, they are paragraphs -> join with \n\n
+        # If one of them is empty, it's an explicit spacing -> join with \n
+        output = ""
+        for i, text in enumerate(result):
+            output += text
+            if i < len(result) - 1:
+                next_text = result[i + 1]
+                if text.strip() and next_text.strip():
+                    # Both have content: separate paragraphs
+                    output += "\n\n"
+                else:
+                    # One or both empty: simple line break
+                    output += "\n"
+
+        return output
 
     def _process_block(self, block: QTextBlock) -> str:
         """

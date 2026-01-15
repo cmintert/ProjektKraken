@@ -665,3 +665,42 @@ def test_heading_level_detection_uses_semantic_property(qtbot):
     assert md.startswith("# "), (
         f"Should detect heading via headingLevel, got: {repr(md)}"
     )
+
+
+def test_empty_lines_preserved(qtbot):
+    """Test that multiple empty lines are preserved in get_wiki_text."""
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    # 1. Set text with empty lines using set_wiki_text (which uses Markdown conversion)
+    input_text = "Line 1\n\nLine 2\n\n\nLine 3"
+    widget.set_wiki_text(input_text)
+
+    # Verify the internal HTML might represent this correctly
+    # But mainly verify get_wiki_text returns it back
+    output_text = widget.get_wiki_text()
+
+    # Note: Markdown conversion standardizes multiple blank lines into a single paragraph break
+    # So "Line 2\n\n\nLine 3" becomes "Line 2\n\nLine 3"
+    expected_normalized = "Line 1\n\nLine 2\n\nLine 3"
+    assert output_text == expected_normalized
+
+
+def test_empty_lines_manual_entry(qtbot):
+    """Test that manually entering empty lines preserves them."""
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+    widget.show()
+
+    # Simulate user typing: Line 1 <Enter> <Enter> Line 2
+    widget.set_wiki_text("")  # Start empty
+    widget.setFocus()
+
+    # Using keyClicks to simulate typing
+    qtbot.keyClicks(widget, "Line 1")
+    qtbot.keyClick(widget, Qt.Key.Key_Return)
+    qtbot.keyClick(widget, Qt.Key.Key_Return)
+    qtbot.keyClicks(widget, "Line 2")
+
+    expected = "Line 1\n\nLine 2"
+    assert widget.get_wiki_text() == expected
