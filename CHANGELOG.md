@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-01-15  
-**Commit:** `363ddde`  
+**Commit:** `97a6920`  
 ---
 
 # Changelog
@@ -12,6 +12,22 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- *(2026-01-15)* **Stability**: Implemented comprehensive Qt layout hardening with signal connection validation (79/79 connections validated).
+  - Added `_connect_signal_safe()` method to `ConnectionManager` with graceful error handling and detailed logging.
+  - Updated all 8 `connect_*()` methods to use validated connections with failure tracking.
+  - Created 10 unit tests for signal validation (all passing).
+- *(2026-01-15)* **Architecture**: Refactored `MainWindow` initialization to three-phase pattern to eliminate race conditions.
+  - Phase 1: Core services initialization (DataHandler, WorkerManager).
+  - Phase 2: UI skeleton creation (widgets, docks, menus).
+  - Phase 3: Deferred completion (signal connections, database init, state restoration).
+- *(2026-01-15)* **Architecture**: Implemented deferred layout restoration with three stages for improved startup performance.
+  - Stage 1: Immediate geometry restoration for instant visual feedback.
+  - Stage 2: Critical docks at 100ms (list, editors, timeline).
+  - Stage 3: Optional docks at 500ms (longform, map, AI, graph).
+- *(2026-01-15)* **Stability**: Added comprehensive error handling to dock creation with validation and graceful degradation.
+- *(2026-01-15)* **Architecture**: Implemented layout version compatibility checking to prevent corrupted state issues.
+- *(2026-01-15)* **Architecture**: Created `WidgetRegistry` class for centralized widget lifecycle management.
+- *(2026-01-15)* **Testing**: Added 29 unit tests and 9 integration tests for layout hardening (38 tests total, all passing).
 - *(2026-01-15)* **Feature**: Implemented AST-based cursor synchronization for `WikiTextEdit` to ensure pixel-perfect cursor preservation when toggling between Rich and Source views.
 - *(2026-01-13)* **Feature**: Implemented Autocompletion for Tags, Attribute Keys, Relation Types, and Entity Types.
   - Added `GraphDataService` methods to fetch unique types and keys from the database.
