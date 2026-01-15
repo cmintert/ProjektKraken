@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-15
-### Documentation
-- docs: update changelog with new WikiTextEdit features, bug fixes, and test cleanup.
+### Changed
+- Refactor: WikiTextEdit and tests for lint compliance
 
 
 *This changelog was automatically generated.*
