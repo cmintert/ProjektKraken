@@ -358,12 +358,37 @@ class MainWindow(QMainWindow):
         return self.ui_manager.docks.get("map")
 
     def _restore_window_state(self) -> None:
-        """Restores window geometry and state from settings with validation."""
+        """
+        Restores window geometry and state using staged approach.
+
+        Stage 1: Immediate - Restore geometry only
+        Stage 2: 100ms - Restore critical docks (list, editors, timeline)
+        Stage 3: 500ms - Restore optional docks (longform, map, AI, graph)
+        """
+        from src.core.logging_config import get_logger
+
+        logger = get_logger(__name__)
+        logger.debug("Starting staged layout restoration")
+
+        # Stage 1: Immediate geometry restoration
+        self._restore_geometry()
+
+        # Stage 2: Critical docks after 100ms
+        QTimer.singleShot(100, self._restore_critical_docks)
+
+        # Stage 3: Optional docks after 500ms
+        QTimer.singleShot(500, self._restore_optional_docks)
+
+    def _restore_geometry(self) -> None:
+        """
+        Stage 1: Restore window geometry immediately.
+
+        This provides instant visual feedback to the user.
+        """
         from src.app.constants import LAYOUT_VERSION, SETTINGS_LAYOUT_VERSION_KEY
         from src.core.logging_config import get_logger
 
         logger = get_logger(__name__)
-
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 
         # Check layout version compatibility
@@ -372,43 +397,84 @@ class MainWindow(QMainWindow):
         if saved_version != LAYOUT_VERSION:
             logger.warning(
                 f"Layout version mismatch: saved={saved_version}, "
-                f"current={LAYOUT_VERSION}. Using default layout."
+                f"current={LAYOUT_VERSION}. Will use default layout."
             )
+            # Don't restore anything, will reset in critical docks stage
+            return
+
+        # Restore geometry only (fast)
+        geometry = settings.value("geometry")
+        if geometry:
+            if self.restoreGeometry(geometry):
+                logger.debug("Window geometry restored")
+            else:
+                logger.warning("Failed to restore window geometry")
+        else:
+            logger.debug("No saved geometry found")
+
+    def _restore_critical_docks(self) -> None:
+        """
+        Stage 2: Restore critical docks and their state.
+
+        Critical docks: list, event editor, entity editor, timeline.
+        These are essential for basic functionality.
+        """
+        from src.app.constants import LAYOUT_VERSION, SETTINGS_LAYOUT_VERSION_KEY
+        from src.core.logging_config import get_logger
+
+        logger = get_logger(__name__)
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+
+        saved_version = settings.value(SETTINGS_LAYOUT_VERSION_KEY, "0.0.0")
+
+        # If version mismatch, reset layout
+        if saved_version != LAYOUT_VERSION:
+            logger.info("Resetting to default layout due to version mismatch")
             self.ui_manager.reset_layout()
-            # Update to current version
             settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
             return
 
-        # Restore with validation
-        geometry = settings.value("geometry")
+        # Restore window state (includes dock positions)
         state = settings.value("windowState")
-
-        success = True
-        if geometry:
-            if not self.restoreGeometry(geometry):
-                logger.warning("Failed to restore window geometry")
-                success = False
-
         if state:
-            if not self.restoreState(state):
-                logger.warning("Failed to restore window state")
-                success = False
+            if self.restoreState(state):
+                logger.debug("Critical docks state restored")
 
-        if not success or (not geometry and not state):
-            logger.info("Falling back to default layout")
-            self.ui_manager.reset_layout()
-            settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
-        else:
-            # Validate all expected docks are present
-            if not self._validate_dock_state():
-                logger.warning("Dock validation failed, resetting layout")
+                # Validate critical docks are present
+                if not self._validate_dock_state():
+                    logger.warning("Critical dock validation failed, resetting layout")
+                    self.ui_manager.reset_layout()
+                    settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
+            else:
+                logger.warning("Failed to restore window state, using default layout")
                 self.ui_manager.reset_layout()
                 settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
+        else:
+            logger.info("No saved state found, using default layout")
+            self.ui_manager.reset_layout()
+            settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
+
+    def _restore_optional_docks(self) -> None:
+        """
+        Stage 3: Restore optional dock configurations.
+
+        Optional docks: longform, map, AI search, graph.
+        These enhance functionality but aren't critical for startup.
+        """
+        from src.core.logging_config import get_logger
+
+        logger = get_logger(__name__)
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 
         # Restore Advanced Filter for Unified List
         filter_config = settings.value(SETTINGS_FILTER_CONFIG_KEY)
         if filter_config:
             self.unified_list.set_advanced_filter(filter_config)
+            logger.debug("Advanced filter configuration restored")
+
+        # Optional docks are already positioned by restoreState in stage 2
+        # This stage is for any additional configuration
+        logger.debug("Optional dock restoration complete")
 
     def _validate_dock_state(self) -> bool:
         """
