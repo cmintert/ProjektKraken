@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-01-14
-### Fixed
-- Fix cursor jump on autosave in description editor
+## [Development] - 2026-01-15
+### Added
+- Feat: Add Markdown/HTML toggle button to WikiTextEdit
 
 
 *This changelog was automatically generated.*
