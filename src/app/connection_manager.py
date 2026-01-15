@@ -30,10 +30,83 @@ class ConnectionManager:
             main_window: Reference to the MainWindow instance.
         """
         self.window = main_window
+        self._connection_stats = {"attempted": 0, "succeeded": 0, "failed": 0}
         logger.debug("ConnectionManager initialized")
 
-    def connect_all(self) -> None:
-        """Connect all UI signals to their respective slots."""
+    def _connect_signal_safe(
+        self,
+        obj: object,
+        signal_name: str,
+        slot: callable,
+        obj_description: str = "",
+    ) -> bool:
+        """
+        Safely connect a signal with validation and error handling.
+
+        Args:
+            obj: The object containing the signal.
+            signal_name: Name of the signal attribute.
+            slot: The slot (callable) to connect to.
+            obj_description: Description of the object for logging.
+
+        Returns:
+            bool: True if connection successful, False otherwise.
+        """
+        self._connection_stats["attempted"] += 1
+
+        try:
+            # Validate object
+            if obj is None:
+                logger.warning(f"Cannot connect signal '{signal_name}': object is None")
+                self._connection_stats["failed"] += 1
+                return False
+
+            # Check if object has the signal
+            if not hasattr(obj, signal_name):
+                logger.warning(
+                    f"{obj_description or obj.__class__.__name__} does not have "
+                    f"signal '{signal_name}'"
+                )
+                self._connection_stats["failed"] += 1
+                return False
+
+            # Get the signal
+            signal = getattr(obj, signal_name)
+
+            # Validate slot is callable
+            if not callable(slot):
+                logger.error(
+                    f"Slot for {obj_description}.{signal_name} is not callable: "
+                    f"{type(slot)}"
+                )
+                self._connection_stats["failed"] += 1
+                return False
+
+            # Attempt connection
+            signal.connect(slot)
+            self._connection_stats["succeeded"] += 1
+            logger.debug(
+                f"Successfully connected {obj_description or obj.__class__.__name__}."
+                f"{signal_name}"
+            )
+            return True
+
+        except Exception as e:
+            logger.exception(f"Failed to connect {obj_description}.{signal_name}: {e}")
+            self._connection_stats["failed"] += 1
+            return False
+
+    def connect_all(self) -> dict:
+        """
+        Connect all UI signals to their respective slots.
+
+        Returns:
+            dict: Connection statistics with keys 'total_attempted', 'total_succeeded',
+                  'total_failed'.
+        """
+        # Reset stats
+        self._connection_stats = {"attempted": 0, "succeeded": 0, "failed": 0}
+
         self.connect_data_handler()
         self.connect_unified_list()
         self.connect_editors()
@@ -42,7 +115,19 @@ class ConnectionManager:
         self.connect_map_widget()
         self.connect_ai_search_panel()
         self.connect_graph_widget()
-        logger.debug("All signal/slot connections established")
+
+        # Log summary
+        logger.info(
+            f"Signal connections complete: {self._connection_stats['succeeded']} "
+            f"succeeded, {self._connection_stats['failed']} failed out of "
+            f"{self._connection_stats['attempted']} attempted"
+        )
+
+        return {
+            "total_attempted": self._connection_stats["attempted"],
+            "total_succeeded": self._connection_stats["succeeded"],
+            "total_failed": self._connection_stats["failed"],
+        }
 
     def connect_data_handler(self) -> None:
         """Connect signals from the data handler."""
@@ -97,35 +182,109 @@ class ConnectionManager:
         if hasattr(ul, "clear_filter_requested"):
             ul.clear_filter_requested.connect(self.window.clear_filter)
 
-    def connect_editors(self) -> None:
-        """Connect signals from event and entity editors."""
+    def connect_editors(self) -> int:
+        """
+        Connect signals from event and entity editors.
+
+        Returns:
+            int: Number of failed connections.
+        """
+        failed_count = 0
+
         # Generic connections for both editors
         for editor in [self.window.event_editor, self.window.entity_editor]:
-            editor.add_relation_requested.connect(self.window.add_relation)
-            editor.remove_relation_requested.connect(self.window.remove_relation)
-            editor.update_relation_requested.connect(self.window.update_relation)
-            editor.link_clicked.connect(self.window.navigate_to_entity)
-            editor.navigate_to_relation.connect(self.window.navigate_to_entity)
+            editor_name = editor.__class__.__name__
+
+            if not self._connect_signal_safe(
+                editor, "add_relation_requested", self.window.add_relation, editor_name
+            ):
+                failed_count += 1
+
+            if not self._connect_signal_safe(
+                editor,
+                "remove_relation_requested",
+                self.window.remove_relation,
+                editor_name,
+            ):
+                failed_count += 1
+
+            if not self._connect_signal_safe(
+                editor,
+                "update_relation_requested",
+                self.window.update_relation,
+                editor_name,
+            ):
+                failed_count += 1
+
+            if not self._connect_signal_safe(
+                editor, "link_clicked", self.window.navigate_to_entity, editor_name
+            ):
+                failed_count += 1
+
+            if not self._connect_signal_safe(
+                editor,
+                "navigate_to_relation",
+                self.window.navigate_to_entity,
+                editor_name,
+            ):
+                failed_count += 1
 
         # Specific connections for each editor
-        self.window.event_editor.save_requested.connect(self.window.update_event)
-        self.window.entity_editor.save_requested.connect(self.window.update_entity)
-        self.window.entity_editor.return_to_present_requested.connect(
-            self.window.on_return_to_present
-        )
+        if not self._connect_signal_safe(
+            self.window.event_editor,
+            "save_requested",
+            self.window.update_event,
+            "EventEditor",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            self.window.entity_editor,
+            "save_requested",
+            self.window.update_entity,
+            "EntityEditor",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            self.window.entity_editor,
+            "return_to_present_requested",
+            self.window.on_return_to_present,
+            "EntityEditor",
+        ):
+            failed_count += 1
 
         # Live preview for Timeline
-        self.window.event_editor.current_data_changed.connect(
-            self.window.timeline.update_event_preview
-        )
+        if not self._connect_signal_safe(
+            self.window.event_editor,
+            "current_data_changed",
+            self.window.timeline.update_event_preview,
+            "EventEditor",
+        ):
+            failed_count += 1
 
         # Discard signals - reload from database
-        self.window.event_editor.discard_requested.connect(
-            self.window.load_event_details
+        if not self._connect_signal_safe(
+            self.window.event_editor,
+            "discard_requested",
+            self.window.load_event_details,
+            "EventEditor",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            self.window.entity_editor,
+            "discard_requested",
+            self.window.load_entity_details,
+            "EntityEditor",
+        ):
+            failed_count += 1
+
+        logger.debug(
+            f"Editor connections: {12 - failed_count}/12 succeeded, "
+            f"{failed_count} failed"
         )
-        self.window.entity_editor.discard_requested.connect(
-            self.window.load_entity_details
-        )
+        return failed_count
 
     def connect_timeline(self) -> None:
         """Connect signals from the timeline widget."""
