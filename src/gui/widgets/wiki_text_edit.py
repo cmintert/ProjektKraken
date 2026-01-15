@@ -287,9 +287,6 @@ class WikiTextEdit(QTextEdit):
         tm = ThemeManager()
         theme = tm.get_theme()
 
-        logger.debug(f"Building theme CSS. Current theme: {tm.current_theme_name}")
-        logger.debug(f"Theme data keys: {list(theme.keys())}")
-
         link_color = theme.get("accent_secondary", "#2980b9")
         text_color = theme.get("text_main", "#E0E0E0")
 
@@ -298,10 +295,6 @@ class WikiTextEdit(QTextEdit):
         fs_h2 = theme.get("font_size_h2", "16pt")
         fs_h3 = theme.get("font_size_h3", "14pt")
         fs_body = theme.get("font_size_body", "10pt")
-
-        logger.debug(
-            f"Font sizes from theme: h1={fs_h1}, h2={fs_h2}, h3={fs_h3}, body={fs_body}"
-        )
 
         # Build CSS stylesheet for the document
         css = (
@@ -320,7 +313,6 @@ class WikiTextEdit(QTextEdit):
             f"font-size: {fs_body}; }} "
             f"body {{ color: {text_color}; font-size: {fs_body}; }}"
         )
-        logger.debug(f"Generated CSS: {css}")
         return css
 
     def _apply_theme_stylesheet(self) -> None:
@@ -470,15 +462,9 @@ class WikiTextEdit(QTextEdit):
             # Fallback for when completer hasn't been set yet (don't mark red)
             elif not hasattr(self, "_valid_targets_lower"):
                 is_valid = True
-                logger.debug(f"Validation skipped for '{target}': No completer set")
 
             if not is_valid:
-                logger.debug(
-                    f"Link validation FAILED for '{target}' (check: {check_target}). "
-                    f"Completer set? {hasattr(self, '_valid_targets_lower')}"
-                )
-                if hasattr(self, "_valid_targets_lower"):
-                    pass
+                pass
 
             if is_valid:
                 return f"[{label}]({target})"
@@ -498,8 +484,6 @@ class WikiTextEdit(QTextEdit):
         html_content = (
             f"<html><head><style>{css}</style></head><body>{html_body}</body></html>"
         )
-
-        logger.debug(f"Setting HTML with embedded CSS (body length: {len(html_body)})")
 
         # Block signals to prevent textChanged during programmatic update
         was_blocked = self.blockSignals(True)
@@ -537,40 +521,58 @@ class WikiTextEdit(QTextEdit):
         # We need the first fragment to guess the block style if it's consistent
         # But iterating fragments is safer to get all content.
 
+        # Determine Heading Status EARLY
+        # Check semantic heading level first (preferred)
+        heading_level = block.blockFormat().headingLevel()
+
+        # Fallback to font size heuristic
+        if heading_level == 0 and block.length() > 1:
+            cursor = QTextCursor(block)
+            cursor.movePosition(QTextCursor.MoveOperation.Right)
+            font_size = cursor.charFormat().fontPointSize()
+
+            # Get theme font sizes for dynamic comparison
+            theme = ThemeManager()
+            theme_data = theme.get_theme()
+
+            def _parse_size(val: str | int | float) -> float:
+                if isinstance(val, (int, float)):
+                    return float(val)
+                if isinstance(val, str):
+                    return float(val.replace("pt", "").strip())
+                return 10.0
+
+            h1_size = _parse_size(theme_data.get("font_size_h1", 16))
+            h2_size = _parse_size(theme_data.get("font_size_h2", 14))
+            h3_size = _parse_size(theme_data.get("font_size_h3", 12))
+
+            if font_size >= h1_size - 0.5:
+                heading_level = 1
+            elif font_size >= h2_size - 0.5:
+                heading_level = 2
+            elif font_size >= h3_size - 0.5:
+                heading_level = 3
+
+        is_heading = heading_level > 0
+
         while not iterator.atEnd():
             fragment = iterator.fragment()
             if fragment.isValid():
-                text = self._process_fragment(fragment)
+                text = self._process_fragment(fragment, is_heading=is_heading)
                 block_content.append(text)
             iterator += 1
 
         full_line_text = "".join(block_content)
 
-        # Determine Block Format (Heading vs Paragraph)
-        # We rely on ThemeManager constants because that's what we set.
-        # This is a bit brittle if theme changes, but 'roughly' correct.
-        # Or we can check font sizes.
-
-        # Get the format of the first char in the block (heuristic)
-        if block.length() > 1:  # length includes newline
-            # Use a dummy cursor to inspect start of block
-            cursor = QTextCursor(block)
-            fmt = cursor.charFormat()
-            font_size = fmt.font().pointSize()
-
-            # Simple heuristic mapping based on default theme sizes
-            # h1=18, h2=16, h3=14, body=10
-            # We can try to be dynamic or hardcoded. Hardcoded is "tiny step".
-            if font_size >= 18:
-                return f"# {full_line_text}"
-            elif font_size >= 16:
-                return f"## {full_line_text}"
-            elif font_size >= 14:
-                return f"### {full_line_text}"
+        if heading_level > 0:
+            prefix = "#" * heading_level
+            return f"{prefix} {full_line_text}"
 
         return full_line_text
 
-    def _process_fragment(self, fragment: QTextFragment) -> str:
+    def _process_fragment(
+        self, fragment: QTextFragment, is_heading: bool = False
+    ) -> str:
         """
         Process a text fragment to recover inline formatting (Bold, Italic, Links).
         """
@@ -591,7 +593,8 @@ class WikiTextEdit(QTextEdit):
         # font weight 75 is Bold, 63 is DemiBold, 50 is Normal usually (legacy)
         # Qt 6: QFont.Weight.Bold = 700, Normal = 400.
         # But internal integer values might differ.
-        if fmt.fontWeight() > 600:  # Safe threshold for Bold (700)
+        # If it's a heading, explicit bold wrapping is redundant/visual only.
+        if not is_heading and fmt.fontWeight() > 600:  # Safe threshold for Bold (700)
             text = f"**{text}**"
 
         # 3. Italic
@@ -660,6 +663,18 @@ class WikiTextEdit(QTextEdit):
             elif event.key() == Qt.Key.Key_I:
                 self._toggle_italic()
                 return
+            elif event.key() == Qt.Key.Key_1:
+                self._set_heading(1)
+                return
+            elif event.key() == Qt.Key.Key_2:
+                self._set_heading(2)
+                return
+            elif event.key() == Qt.Key.Key_3:
+                self._set_heading(3)
+                return
+            elif event.key() == Qt.Key.Key_0:
+                self._set_heading(0)  # Remove heading
+                return
 
         if self._completer and (popup := self._completer.popup()) and popup.isVisible():
             if event.key() in (
@@ -673,6 +688,21 @@ class WikiTextEdit(QTextEdit):
                 return
 
         super().keyPressEvent(event)
+
+        # Handle formatting reset on Enter (only in Rich mode)
+        # If we just created a new block from a Heading, it inherits the large font size.
+        # We want to reset it to Body text size.
+        is_source_mode = hasattr(self, "_view_mode") and self._view_mode == "source"
+        if not is_source_mode and event.key() in (
+            Qt.Key.Key_Return,
+            Qt.Key.Key_Enter,
+        ):
+            cursor = self.textCursor()
+            # If current font size is larger than body (roughly), reset to body
+            # We could fetch exact theme values, but > 11 is a safe heuristic for now
+            # since body is usually 10pt and H3 is 12pt+.
+            if cursor.charFormat().fontPointSize() > 11:
+                self._set_heading(0)
 
         # Check if user just closed a wiki link with ]]
         if event.text() == "]":
@@ -704,6 +734,142 @@ class WikiTextEdit(QTextEdit):
             self._toggle_markdown_format("*")
         else:
             self._toggle_rich_format("italic")
+
+    def _set_heading(self, level: int) -> None:
+        """
+        Set heading level on the current line.
+
+        Args:
+            level: Heading level (1-3) or 0 to remove heading.
+
+        In Source mode: Adds/replaces/removes # prefix
+        In Rich mode: Applies font size from ThemeManager
+        """
+        if self._view_mode == "source":
+            self._set_markdown_heading(level)
+        else:
+            self._set_rich_heading(level)
+
+    def _set_markdown_heading(self, level: int) -> None:
+        """
+        Set Markdown heading on current line.
+
+        Args:
+            level: Heading level (1-3) or 0 to remove.
+        """
+        cursor = self.textCursor()
+
+        # Select entire current line
+        cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
+        cursor.movePosition(
+            QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor
+        )
+
+        line_text = cursor.selectedText()
+
+        # Remove existing heading prefix
+        stripped = line_text.lstrip("#").lstrip()
+
+        # Add new prefix
+        if level > 0:
+            prefix = "#" * level + " "
+            new_text = prefix + stripped
+        else:
+            new_text = stripped
+
+        cursor.insertText(new_text)
+        self.setTextCursor(cursor)
+
+    def _set_rich_heading(self, level: int) -> None:
+        """
+        Set heading style in Rich mode.
+
+        Args:
+            level: Heading level (1-3) or 0 for paragraph.
+        """
+        from PySide6.QtGui import QFont, QTextCharFormat
+
+        # Apply formatting
+        cursor = self.textCursor()
+
+        # Select entire current block to apply block format
+        cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
+        cursor.movePosition(
+            QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor
+        )
+
+        # Get font size from theme
+        theme = ThemeManager()
+        theme_data = theme.get_theme()
+
+        def _parse_font_size(value: Any) -> float:
+            """Parse font size, handling 'pt' suffix."""
+            if isinstance(value, (int, float)):
+                return float(value)
+            if isinstance(value, str):
+                # Remove 'pt' suffix if present
+                return float(value.replace("pt", "").strip())
+            return 10.0  # fallback
+
+        font_size_map = {
+            0: _parse_font_size(theme_data.get("font_size_body", 10)),
+            1: _parse_font_size(theme_data.get("font_size_h1", 18)),
+            2: _parse_font_size(theme_data.get("font_size_h2", 16)),
+            3: _parse_font_size(theme_data.get("font_size_h3", 14)),
+        }
+
+        font_size = font_size_map.get(level, 10.0)
+
+        from PySide6.QtGui import QTextBlockFormat
+
+        block_fmt = QTextBlockFormat()
+        block_fmt.setHeadingLevel(level)
+
+        # Set margins to match CSS
+        # h1: top=10, bottom=5
+        # h2: top=8, bottom=4
+        # h3: top=6, bottom=3
+        # body: top=0, bottom=0 (default)
+        if level == 1:
+            block_fmt.setTopMargin(10)
+            block_fmt.setBottomMargin(5)
+        elif level == 2:
+            block_fmt.setTopMargin(8)
+            block_fmt.setBottomMargin(4)
+        elif level == 3:
+            block_fmt.setTopMargin(6)
+            block_fmt.setBottomMargin(3)
+        else:
+            block_fmt.setTopMargin(0)
+            block_fmt.setBottomMargin(0)
+
+        cursor.setBlockFormat(block_fmt)
+
+        # Apply char formatting (Font Size + Weight)
+        fmt = QTextCharFormat()
+        fmt.setFontPointSize(font_size)
+
+        if level > 0:
+            fmt.setFontWeight(QFont.Weight.Bold)  # 700 / 600
+        else:
+            fmt.setFontWeight(QFont.Weight.Normal)
+
+        cursor.mergeCharFormat(fmt)
+
+        # Save cursor position before re-render
+        old_cursor_pos = cursor.position()
+
+        # Force visual update by re-rendering the document
+        # Manual format changes don't trigger CSS stylesheet application
+        # Re-render via markdown round-trip to apply CSS properly
+        current_text = self.get_wiki_text()
+        self._current_wiki_text = None  # Force re-render
+        self.set_wiki_text(current_text)
+
+        # Restore cursor position
+        cursor = self.textCursor()
+        cursor.setPosition(min(old_cursor_pos, self.document().characterCount() - 1))
+        self.setTextCursor(cursor)
 
     def _toggle_markdown_format(self, marker: str) -> None:
         """
@@ -959,7 +1125,6 @@ class WikiTextEdit(QTextEdit):
             theme_data: Dictionary containing theme settings (unused,
                         as we fetch fresh from ThemeManager).
         """
-        logger.debug("Theme changed, re-rendering content")
         # Update widget styling (scrollbars, borders)
         self._apply_widget_style()
 

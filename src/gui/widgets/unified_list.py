@@ -212,10 +212,6 @@ class UnifiedListWidget(QWidget):
             events (List[Event]): List of events to display.
             entities (List[Entity]): List of entities to display.
         """
-        logger.debug(
-            f"[UnifiedList] set_data called with {len(events)} events, "
-            f"{len(entities)} entities"
-        )
         self._events = events
         self._entities = entities
 
@@ -283,10 +279,6 @@ class UnifiedListWidget(QWidget):
         if selected_items:
             current_id = selected_items[0].data(Qt.ItemDataRole.UserRole)
             current_type = selected_items[0].data(Qt.ItemDataRole.UserRole + 1)
-            logger.debug(
-                f"[UnifiedList] Capturing current selection: "
-                f"{current_type}/{current_id}"
-            )
 
         self.list_widget.clear()
 
@@ -372,17 +364,7 @@ class UnifiedListWidget(QWidget):
                         self.list_widget.setCurrentItem(item)
                         self.list_widget.blockSignals(False)
 
-                        logger.debug(
-                            f"[UnifiedList] Restored selection: "
-                            f"{current_type}/{current_id}"
-                        )
-                        found = True
                         break
-                if not found:
-                    logger.debug(
-                        f"[UnifiedList] Could not restore selection: "
-                        f"{current_type}/{current_id}"
-                    )
         else:
             self.list_widget.hide()
             self.empty_label.show()
@@ -491,7 +473,6 @@ class UnifiedListWidget(QWidget):
             item = items[0]
             item_id = item.data(Qt.ItemDataRole.UserRole)
             item_type = item.data(Qt.ItemDataRole.UserRole + 1)
-            logger.debug(f"[UnifiedList] Selection changed to: {item_type}/{item_id}")
             self.item_selected.emit(item_type, item_id)
             self.btn_delete.setEnabled(True)
         else:
