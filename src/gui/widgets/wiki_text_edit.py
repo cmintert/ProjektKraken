@@ -643,11 +643,23 @@ class WikiTextEdit(QTextEdit):
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """
-        Handles key press events for wiki link completion.
+        Handles key press events for wiki link completion and formatting shortcuts.
+
+        Supports:
+        - Ctrl+B: Toggle bold
+        - Ctrl+I: Toggle italic
 
         Args:
             event: QKeyEvent from PySide6.
         """
+        # Check for formatting shortcuts first
+        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            if event.key() == Qt.Key.Key_B:
+                self._toggle_bold()
+                return
+            elif event.key() == Qt.Key.Key_I:
+                self._toggle_italic()
+                return
 
         if self._completer and (popup := self._completer.popup()) and popup.isVisible():
             if event.key() in (
@@ -668,6 +680,104 @@ class WikiTextEdit(QTextEdit):
 
         # Helper to trigger completer
         self._check_for_completion()
+
+    def _toggle_bold(self) -> None:
+        """
+        Toggle bold formatting on selected text or at cursor position.
+
+        In Source mode: wraps/unwraps selection with **
+        In Rich mode: applies/removes bold QTextCharFormat
+        """
+        if self._view_mode == "source":
+            self._toggle_markdown_format("**")
+        else:
+            self._toggle_rich_format("bold")
+
+    def _toggle_italic(self) -> None:
+        """
+        Toggle italic formatting on selected text or at cursor position.
+
+        In Source mode: wraps/unwraps selection with *
+        In Rich mode: applies/removes italic QTextCharFormat
+        """
+        if self._view_mode == "source":
+            self._toggle_markdown_format("*")
+        else:
+            self._toggle_rich_format("italic")
+
+    def _toggle_markdown_format(self, marker: str) -> None:
+        """
+        Toggle Markdown formatting markers around selection.
+
+        Args:
+            marker: The Markdown marker (e.g., "**" for bold, "*" for italic)
+        """
+        cursor = self.textCursor()
+        selected_text = cursor.selectedText()
+
+        if not selected_text:
+            # No selection - just insert markers and position cursor between
+            cursor.insertText(f"{marker}{marker}")
+            cursor.movePosition(
+                QTextCursor.MoveOperation.Left,
+                QTextCursor.MoveMode.MoveAnchor,
+                len(marker),
+            )
+            self.setTextCursor(cursor)
+            return
+
+        # Check if already formatted
+        if selected_text.startswith(marker) and selected_text.endswith(marker):
+            # Remove markers
+            unwrapped = selected_text[len(marker) : -len(marker)]
+            cursor.insertText(unwrapped)
+        else:
+            # Add markers
+            cursor.insertText(f"{marker}{selected_text}{marker}")
+
+        self.setTextCursor(cursor)
+
+    def _toggle_rich_format(self, format_type: str) -> None:
+        """
+        Toggle rich text formatting on selection.
+
+        Args:
+            format_type: "bold" or "italic"
+        """
+        from PySide6.QtGui import QFont, QTextCharFormat
+
+        cursor = self.textCursor()
+
+        if not cursor.hasSelection():
+            # No selection - toggle format at cursor for future typing
+            fmt = cursor.charFormat()
+            if format_type == "bold":
+                new_weight = (
+                    QFont.Weight.Normal
+                    if fmt.fontWeight() > QFont.Weight.Normal
+                    else QFont.Weight.Bold
+                )
+                fmt.setFontWeight(new_weight)
+            elif format_type == "italic":
+                fmt.setFontItalic(not fmt.fontItalic())
+            cursor.setCharFormat(fmt)
+            self.setTextCursor(cursor)
+            return
+
+        # Has selection - apply format to selection
+        fmt = QTextCharFormat()
+
+        if format_type == "bold":
+            # Check current state
+            current_fmt = cursor.charFormat()
+            is_bold = current_fmt.fontWeight() > QFont.Weight.Normal
+            fmt.setFontWeight(QFont.Weight.Normal if is_bold else QFont.Weight.Bold)
+        elif format_type == "italic":
+            current_fmt = cursor.charFormat()
+            fmt.setFontItalic(not current_fmt.fontItalic())
+
+        cursor.mergeCharFormat(fmt)
+        self.setTextCursor(cursor)
 
     def _check_for_link_closure(self) -> None:
         """

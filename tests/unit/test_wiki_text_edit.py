@@ -312,3 +312,99 @@ def test_cursor_mapping_with_formatting(qtbot):
     # The markdown is "Hello **Bold** World"
     # Cursor should be somewhere within the text
     assert pos < len(widget.toPlainText())
+
+
+def test_ctrl_b_bold_in_source_mode(qtbot):
+    """Test Ctrl+B wraps selection with ** in source mode."""
+    from PySide6.QtGui import QTextCursor
+
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    # Switch to source mode
+    widget.toggle_view_mode()
+    widget.setPlainText("Hello World")
+
+    # Select "World"
+    cursor = widget.textCursor()
+    cursor.setPosition(6)
+    cursor.setPosition(11, QTextCursor.MoveMode.KeepAnchor)
+    widget.setTextCursor(cursor)
+
+    # Simulate Ctrl+B
+    widget._toggle_bold()
+
+    # Should wrap with **
+    assert widget.toPlainText() == "Hello **World**"
+
+
+def test_ctrl_i_italic_in_source_mode(qtbot):
+    """Test Ctrl+I wraps selection with * in source mode."""
+    from PySide6.QtGui import QTextCursor
+
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    # Switch to source mode
+    widget.toggle_view_mode()
+    widget.setPlainText("Hello World")
+
+    # Select "World"
+    cursor = widget.textCursor()
+    cursor.setPosition(6)
+    cursor.setPosition(11, QTextCursor.MoveMode.KeepAnchor)
+    widget.setTextCursor(cursor)
+
+    # Simulate Ctrl+I
+    widget._toggle_italic()
+
+    # Should wrap with *
+    assert widget.toPlainText() == "Hello *World*"
+
+
+def test_bold_toggle_removes_markers(qtbot):
+    """Test that bold toggle removes markers if already present."""
+    from PySide6.QtGui import QTextCursor
+
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    # Switch to source mode
+    widget.toggle_view_mode()
+    widget.setPlainText("Hello **World**")
+
+    # Select "**World**"
+    cursor = widget.textCursor()
+    cursor.setPosition(6)
+    cursor.setPosition(15, QTextCursor.MoveMode.KeepAnchor)
+    widget.setTextCursor(cursor)
+
+    # Toggle should remove markers
+    widget._toggle_bold()
+
+    assert widget.toPlainText() == "Hello World"
+
+
+def test_bold_no_selection_inserts_markers(qtbot):
+    """Test that bold with no selection inserts markers and positions cursor."""
+    from PySide6.QtGui import QTextCursor
+
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    # Switch to source mode
+    widget.toggle_view_mode()
+    widget.setPlainText("Hello")
+
+    # Position cursor at end
+    cursor = widget.textCursor()
+    cursor.movePosition(QTextCursor.MoveOperation.End)
+    widget.setTextCursor(cursor)
+
+    # Toggle bold with no selection
+    widget._toggle_bold()
+
+    # Should insert ** and position cursor between
+    assert widget.toPlainText() == "Hello****"
+    # Cursor should be between the markers
+    assert widget.textCursor().position() == 7
