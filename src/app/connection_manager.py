@@ -129,58 +129,238 @@ class ConnectionManager:
             "total_failed": self._connection_stats["failed"],
         }
 
-    def connect_data_handler(self) -> None:
-        """Connect signals from the data handler."""
+    def connect_data_handler(self) -> int:
+        """
+        Connect signals from the data handler.
+
+        Returns:
+            int: Number of failed connections.
+        """
         dh = self.window.data_handler
+        failed_count = 0
 
         # Data ready signals
-        dh.events_ready.connect(self.window._on_events_ready)
-        dh.entities_ready.connect(self.window._on_entities_ready)
-        dh.suggestions_update_requested.connect(self.window._on_suggestions_update)
-        dh.event_details_ready.connect(self.window._on_event_details_ready)
-        dh.entity_details_ready.connect(self.window._on_entity_details_ready)
-        dh.longform_sequence_ready.connect(
-            self.window.longform_manager.on_longform_sequence_loaded
-        )
-        dh.maps_ready.connect(self.window.map_handler.on_maps_ready)
-        dh.markers_ready.connect(self.window.map_handler.on_markers_ready)
-        dh.trajectories_ready.connect(self.window.map_handler.on_trajectories_ready)
-        dh.entity_state_resolved.connect(self.window._on_entity_state_resolved)
-        dh.graph_data_ready.connect(self.window._on_graph_data_ready)
-        dh.graph_metadata_ready.connect(self.window._on_graph_metadata_ready)
+        if not self._connect_signal_safe(
+            dh, "events_ready", self.window._on_events_ready, "DataHandler"
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            dh, "entities_ready", self.window._on_entities_ready, "DataHandler"
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            dh,
+            "suggestions_update_requested",
+            self.window._on_suggestions_update,
+            "DataHandler",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            dh,
+            "event_details_ready",
+            self.window._on_event_details_ready,
+            "DataHandler",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            dh,
+            "entity_details_ready",
+            self.window._on_entity_details_ready,
+            "DataHandler",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            dh,
+            "longform_sequence_ready",
+            self.window.longform_manager.on_longform_sequence_loaded,
+            "DataHandler",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            dh, "maps_ready", self.window.map_handler.on_maps_ready, "DataHandler"
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            dh, "markers_ready", self.window.map_handler.on_markers_ready, "DataHandler"
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            dh,
+            "trajectories_ready",
+            self.window.map_handler.on_trajectories_ready,
+            "DataHandler",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            dh,
+            "entity_state_resolved",
+            self.window._on_entity_state_resolved,
+            "DataHandler",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            dh, "graph_data_ready", self.window._on_graph_data_ready, "DataHandler"
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            dh,
+            "graph_metadata_ready",
+            self.window._on_graph_metadata_ready,
+            "DataHandler",
+        ):
+            failed_count += 1
 
         # UI action signals
-        dh.status_message.connect(self.window.status_bar.showMessage)
+        if not self._connect_signal_safe(
+            dh, "status_message", self.window.status_bar.showMessage, "DataHandler"
+        ):
+            failed_count += 1
 
-        dh.command_failed.connect(self.window._on_command_failed)
-        dh.dock_raise_requested.connect(self.window._on_dock_raise_requested)
-        dh.selection_requested.connect(self.window._on_selection_requested)
+        if not self._connect_signal_safe(
+            dh, "command_failed", self.window._on_command_failed, "DataHandler"
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            dh,
+            "dock_raise_requested",
+            self.window._on_dock_raise_requested,
+            "DataHandler",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            dh,
+            "selection_requested",
+            self.window._on_selection_requested,
+            "DataHandler",
+        ):
+            failed_count += 1
 
         # Reload signals
-        dh.reload_events.connect(self.window.load_events)
-        dh.reload_entities.connect(self.window.load_entities)
-        dh.reload_maps.connect(self.window.load_maps)
-        dh.reload_longform.connect(self.window.load_longform_sequence)
-        dh.reload_active_editor_relations.connect(
-            self.window._on_reload_active_editor_relations
-        )
-        dh.reload_markers.connect(self.window.map_handler.reload_markers)
-        dh.reload_markers_for_current_map.connect(
-            self.window.map_handler.reload_markers_for_current_map
-        )
+        if not self._connect_signal_safe(
+            dh, "reload_events", self.window.load_events, "DataHandler"
+        ):
+            failed_count += 1
 
-    def connect_unified_list(self) -> None:
-        """Connect signals from the unified list widget."""
+        if not self._connect_signal_safe(
+            dh, "reload_entities", self.window.load_entities, "DataHandler"
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            dh, "reload_maps", self.window.load_maps, "DataHandler"
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            dh,
+            "reload_longform",
+            self.window.load_longform_sequence,
+            "DataHandler",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            dh,
+            "reload_active_editor_relations",
+            self.window._on_reload_active_editor_relations,
+            "DataHandler",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            dh,
+            "reload_markers",
+            self.window.map_handler.reload_markers,
+            "DataHandler",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            dh,
+            "reload_markers_for_current_map",
+            self.window.map_handler.reload_markers_for_current_map,
+            "DataHandler",
+        ):
+            failed_count += 1
+
+        logger.debug(
+            f"DataHandler connections: {23 - failed_count}/23 succeeded, "
+            f"{failed_count} failed"
+        )
+        return failed_count
+
+    def connect_unified_list(self) -> int:
+        """
+        Connect signals from the unified list widget.
+
+        Returns:
+            int: Number of failed connections.
+        """
         ul = self.window.unified_list
-        ul.refresh_requested.connect(self.window.load_data)
-        ul.create_event_requested.connect(self.window.create_event)
-        ul.create_entity_requested.connect(self.window.create_entity)
-        ul.delete_requested.connect(self.window._on_item_delete_requested)
-        ul.item_selected.connect(self.window._on_item_selected)
+        failed_count = 0
+
+        if not self._connect_signal_safe(
+            ul, "refresh_requested", self.window.load_data, "UnifiedList"
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            ul, "create_event_requested", self.window.create_event, "UnifiedList"
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            ul, "create_entity_requested", self.window.create_entity, "UnifiedList"
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            ul,
+            "delete_requested",
+            self.window._on_item_delete_requested,
+            "UnifiedList",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            ul, "item_selected", self.window._on_item_selected, "UnifiedList"
+        ):
+            failed_count += 1
+
+        # Optional signals
         if hasattr(ul, "show_filter_dialog_requested"):
-            ul.show_filter_dialog_requested.connect(self.window.show_filter_dialog)
+            if not self._connect_signal_safe(
+                ul,
+                "show_filter_dialog_requested",
+                self.window.show_filter_dialog,
+                "UnifiedList",
+            ):
+                failed_count += 1
+
         if hasattr(ul, "clear_filter_requested"):
-            ul.clear_filter_requested.connect(self.window.clear_filter)
+            if not self._connect_signal_safe(
+                ul, "clear_filter_requested", self.window.clear_filter, "UnifiedList"
+            ):
+                failed_count += 1
+
+        logger.debug(
+            f"UnifiedList connections: {7 - failed_count}/7 succeeded, "
+            f"{failed_count} failed"
+        )
+        return failed_count
 
     def connect_editors(self) -> int:
         """
