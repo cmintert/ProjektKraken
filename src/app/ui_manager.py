@@ -76,6 +76,13 @@ class UIManager:
                 - 'map_widget': MapWidget
                 - 'ai_search_panel': AISearchPanelWidget (optional)
         """
+        from src.core.logging_config import get_logger
+
+        logger = get_logger(__name__)
+
+        # Track dock creation results
+        failed_docks = []
+
         # Enable advanced docking
         self.main_window.setDockOptions(
             QMainWindow.DockOption.AnimatedDocks
@@ -101,101 +108,158 @@ class UIManager:
         )
 
         # 1. Project Explorer (Left)
-        self.docks["list"] = self._create_dock(
-            DOCK_TITLE_PROJECT, DOCK_OBJ_PROJECT, widgets["unified_list"]
+        dock = self._create_dock(
+            DOCK_TITLE_PROJECT, DOCK_OBJ_PROJECT, widgets.get("unified_list")
         )
-        self.main_window.addDockWidget(
-            Qt.DockWidgetArea.LeftDockWidgetArea, self.docks["list"]
-        )
+        if dock:
+            self.docks["list"] = dock
+            self.main_window.addDockWidget(
+                Qt.DockWidgetArea.LeftDockWidgetArea, self.docks["list"]
+            )
+        else:
+            failed_docks.append("list")
 
         # 2. Event Inspector (Right)
-        self.docks["event"] = self._create_dock(
+        dock = self._create_dock(
             DOCK_TITLE_EVENT_INSPECTOR,
             DOCK_OBJ_EVENT_INSPECTOR,
-            widgets["event_editor"],
+            widgets.get("event_editor"),
         )
-        self.main_window.addDockWidget(
-            Qt.DockWidgetArea.RightDockWidgetArea, self.docks["event"]
-        )
+        if dock:
+            self.docks["event"] = dock
+            self.main_window.addDockWidget(
+                Qt.DockWidgetArea.RightDockWidgetArea, self.docks["event"]
+            )
+        else:
+            failed_docks.append("event")
 
         # 3. Entity Inspector (Right)
-        self.docks["entity"] = self._create_dock(
+        dock = self._create_dock(
             DOCK_TITLE_ENTITY_INSPECTOR,
             DOCK_OBJ_ENTITY_INSPECTOR,
-            widgets["entity_editor"],
+            widgets.get("entity_editor"),
         )
-        self.main_window.addDockWidget(
-            Qt.DockWidgetArea.RightDockWidgetArea, self.docks["entity"]
-        )
+        if dock:
+            self.docks["entity"] = dock
+            self.main_window.addDockWidget(
+                Qt.DockWidgetArea.RightDockWidgetArea, self.docks["entity"]
+            )
+        else:
+            failed_docks.append("entity")
 
-        # Tabify Inspectors
-        self.main_window.tabifyDockWidget(self.docks["event"], self.docks["entity"])
+        # Tabify Inspectors (only if both exist)
+        if "event" in self.docks and "entity" in self.docks:
+            self.main_window.tabifyDockWidget(self.docks["event"], self.docks["entity"])
 
         # 4. Timeline (Bottom)
-        self.docks["timeline"] = self._create_dock(
-            DOCK_TITLE_TIMELINE, DOCK_OBJ_TIMELINE, widgets["timeline"]
+        dock = self._create_dock(
+            DOCK_TITLE_TIMELINE, DOCK_OBJ_TIMELINE, widgets.get("timeline")
         )
-        self.main_window.addDockWidget(
-            Qt.DockWidgetArea.BottomDockWidgetArea, self.docks["timeline"]
-        )
+        if dock:
+            self.docks["timeline"] = dock
+            self.main_window.addDockWidget(
+                Qt.DockWidgetArea.BottomDockWidgetArea, self.docks["timeline"]
+            )
+        else:
+            failed_docks.append("timeline")
 
         # 5. Longform Editor (Right)
         if "longform_editor" in widgets:
-            self.docks["longform"] = self._create_dock(
+            dock = self._create_dock(
                 DOCK_TITLE_LONGFORM, DOCK_OBJ_LONGFORM, widgets["longform_editor"]
             )
-            self.main_window.addDockWidget(
-                Qt.DockWidgetArea.RightDockWidgetArea, self.docks["longform"]
-            )
-            # Tabify with inspectors if desired, or keep separate.
-            # Instructions: addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, ...)
+            if dock:
+                self.docks["longform"] = dock
+                self.main_window.addDockWidget(
+                    Qt.DockWidgetArea.RightDockWidgetArea, self.docks["longform"]
+                )
+            else:
+                failed_docks.append("longform")
 
         # 6. Map Widget (Bottom, tabbed with Timeline by default)
         if "map_widget" in widgets:
-            self.docks["map"] = self._create_dock(
+            dock = self._create_dock(
                 DOCK_TITLE_MAP, DOCK_OBJ_MAP, widgets["map_widget"]
             )
-            self.main_window.addDockWidget(
-                Qt.DockWidgetArea.BottomDockWidgetArea, self.docks["map"]
-            )
-            self.main_window.tabifyDockWidget(self.docks["timeline"], self.docks["map"])
+            if dock:
+                self.docks["map"] = dock
+                self.main_window.addDockWidget(
+                    Qt.DockWidgetArea.BottomDockWidgetArea, self.docks["map"]
+                )
+                if "timeline" in self.docks:
+                    self.main_window.tabifyDockWidget(
+                        self.docks["timeline"], self.docks["map"]
+                    )
+            else:
+                failed_docks.append("map")
 
         # 7. AI Search Panel (Right, tabbed with inspectors)
         if "ai_search_panel" in widgets:
-            self.docks["ai_search"] = self._create_dock(
+            dock = self._create_dock(
                 DOCK_TITLE_AI_SEARCH, DOCK_OBJ_AI_SEARCH, widgets["ai_search_panel"]
             )
-            self.main_window.addDockWidget(
-                Qt.DockWidgetArea.RightDockWidgetArea, self.docks["ai_search"]
-            )
-            # Tabify with entity inspector
-            self.main_window.tabifyDockWidget(
-                self.docks["entity"], self.docks["ai_search"]
-            )
+            if dock:
+                self.docks["ai_search"] = dock
+                self.main_window.addDockWidget(
+                    Qt.DockWidgetArea.RightDockWidgetArea, self.docks["ai_search"]
+                )
+                # Tabify with entity inspector if it exists
+                if "entity" in self.docks:
+                    self.main_window.tabifyDockWidget(
+                        self.docks["entity"], self.docks["ai_search"]
+                    )
+            else:
+                failed_docks.append("ai_search")
 
         # 8. Graph Widget (Bottom, tabbed with Map)
         if "graph_widget" in widgets:
-            self.docks["graph"] = self._create_dock(
+            dock = self._create_dock(
                 DOCK_TITLE_GRAPH, DOCK_OBJ_GRAPH, widgets["graph_widget"]
             )
-            self.main_window.addDockWidget(
-                Qt.DockWidgetArea.BottomDockWidgetArea, self.docks["graph"]
-            )
-            # Tabify with map if it exists, otherwise with timeline
-            if "map" in self.docks:
-                self.main_window.tabifyDockWidget(
-                    self.docks["map"], self.docks["graph"]
+            if dock:
+                self.docks["graph"] = dock
+                self.main_window.addDockWidget(
+                    Qt.DockWidgetArea.BottomDockWidgetArea, self.docks["graph"]
                 )
+                # Tabify with map if it exists, otherwise with timeline
+                if "map" in self.docks:
+                    self.main_window.tabifyDockWidget(
+                        self.docks["map"], self.docks["graph"]
+                    )
+                elif "timeline" in self.docks:
+                    self.main_window.tabifyDockWidget(
+                        self.docks["timeline"], self.docks["graph"]
+                    )
             else:
-                self.main_window.tabifyDockWidget(
-                    self.docks["timeline"], self.docks["graph"]
-                )
+                failed_docks.append("graph")
 
-    def _create_dock(self, title: str, obj_name: str, widget: QWidget) -> QDockWidget:
+        # Report results
+        if failed_docks:
+            logger.warning(f"Failed to create docks: {failed_docks}")
+
+        # Validate critical docks are present
+        critical_docks = ["list", "event", "entity", "timeline"]
+        missing_critical = [d for d in critical_docks if d not in self.docks]
+
+        if missing_critical:
+            error_msg = f"Critical docks missing: {missing_critical}"
+            logger.error(error_msg)
+            raise RuntimeError(
+                f"UI initialization failed - {error_msg}. Cannot continue."
+            )
+
+        logger.info(
+            f"Successfully created {len(self.docks)} docks: {list(self.docks.keys())}"
+        )
+
+    def _create_dock(
+        self, title: str, obj_name: str, widget: QWidget
+    ) -> Optional[QDockWidget]:
         """
         Helper to create a configured dock widget with size constraints.
 
         Sets minimum sizes to prevent dock collapse during resize/rearrangement.
+        Includes validation and error handling to ensure robust dock creation.
 
         Args:
             title: Display title for the dock widget.
@@ -203,32 +267,63 @@ class UIManager:
             widget: The widget to contain in the dock.
 
         Returns:
-            Configured QDockWidget with size constraints.
+            Configured QDockWidget with size constraints, or None if creation fails.
         """
+        from src.core.logging_config import get_logger
+
         from PySide6.QtWidgets import QSizePolicy
 
-        dock = QDockWidget(title, self.main_window)
-        dock.setObjectName(obj_name)
-        dock.setWidget(widget)
-        dock.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
-        dock.setFeatures(
-            QDockWidget.DockWidgetFeature.DockWidgetMovable
-            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
-            | QDockWidget.DockWidgetFeature.DockWidgetClosable
-        )
+        logger = get_logger(__name__)
 
-        # Set minimum sizes to prevent collapse
-        # Base minimum that shows title bar + some content
-        dock.setMinimumWidth(250)  # Enough for form labels
-        dock.setMinimumHeight(150)  # Enough for controls
+        try:
+            # Validate widget parameter
+            if widget is None:
+                logger.error(f"Cannot create dock '{title}': widget is None")
+                return None
 
-        # Set size policy to allow shrinking but with limits
-        policy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-        policy.setHorizontalStretch(1)
-        policy.setVerticalStretch(1)
-        dock.setSizePolicy(policy)
+            if not isinstance(widget, QWidget):
+                logger.error(
+                    f"Invalid widget type for dock '{title}': {type(widget).__name__}"
+                )
+                return None
 
-        return dock
+            # Create dock widget
+            dock = QDockWidget(title, self.main_window)
+            dock.setObjectName(obj_name)
+            dock.setWidget(widget)
+
+            # Validate widget was set correctly
+            if dock.widget() is not widget:
+                logger.error(f"Widget assignment failed for dock '{title}'")
+                return None
+
+            # Configure dock properties
+            dock.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
+            dock.setFeatures(
+                QDockWidget.DockWidgetFeature.DockWidgetMovable
+                | QDockWidget.DockWidgetFeature.DockWidgetFloatable
+                | QDockWidget.DockWidgetFeature.DockWidgetClosable
+            )
+
+            # Set minimum sizes to prevent collapse
+            # Base minimum that shows title bar + some content
+            dock.setMinimumWidth(250)  # Enough for form labels
+            dock.setMinimumHeight(150)  # Enough for controls
+
+            # Set size policy to allow shrinking but with limits
+            policy = QSizePolicy(
+                QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred
+            )
+            policy.setHorizontalStretch(1)
+            policy.setVerticalStretch(1)
+            dock.setSizePolicy(policy)
+
+            logger.debug(f"Successfully created dock: {title} ({obj_name})")
+            return dock
+
+        except Exception as e:
+            logger.exception(f"Failed to create dock '{title}': {e}")
+            return None
 
     def create_file_menu(self, menu_bar: QMenuBar) -> None:
         """Creates the File menu."""

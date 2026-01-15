@@ -342,22 +342,95 @@ class MainWindow(QMainWindow):
         return self.ui_manager.docks.get("map")
 
     def _restore_window_state(self) -> None:
-        """Restores window geometry and state from settings."""
+        """Restores window geometry and state from settings with validation."""
+        from src.app.constants import LAYOUT_VERSION, SETTINGS_LAYOUT_VERSION_KEY
+        from src.core.logging_config import get_logger
+
+        logger = get_logger(__name__)
+
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+
+        # Check layout version compatibility
+        saved_version = settings.value(SETTINGS_LAYOUT_VERSION_KEY, "0.0.0")
+
+        if saved_version != LAYOUT_VERSION:
+            logger.warning(
+                f"Layout version mismatch: saved={saved_version}, "
+                f"current={LAYOUT_VERSION}. Using default layout."
+            )
+            self.ui_manager.reset_layout()
+            # Update to current version
+            settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
+            return
+
+        # Restore with validation
         geometry = settings.value("geometry")
         state = settings.value("windowState")
 
+        success = True
         if geometry:
-            self.restoreGeometry(geometry)
+            if not self.restoreGeometry(geometry):
+                logger.warning("Failed to restore window geometry")
+                success = False
+
         if state:
-            self.restoreState(state)
-        else:
+            if not self.restoreState(state):
+                logger.warning("Failed to restore window state")
+                success = False
+
+        if not success or (not geometry and not state):
+            logger.info("Falling back to default layout")
             self.ui_manager.reset_layout()
+            settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
+        else:
+            # Validate all expected docks are present
+            if not self._validate_dock_state():
+                logger.warning("Dock validation failed, resetting layout")
+                self.ui_manager.reset_layout()
+                settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
 
         # Restore Advanced Filter for Unified List
         filter_config = settings.value(SETTINGS_FILTER_CONFIG_KEY)
         if filter_config:
             self.unified_list.set_advanced_filter(filter_config)
+
+    def _validate_dock_state(self) -> bool:
+        """
+        Ensures all expected docks are accessible after restoration.
+
+        Returns:
+            bool: True if all critical docks are present and valid, False otherwise.
+        """
+        from src.core.logging_config import get_logger
+
+        logger = get_logger(__name__)
+
+        # Define critical docks that must be present
+        expected_docks = ["list", "event", "entity", "timeline"]
+        missing_docks = []
+        invalid_docks = []
+
+        for dock_key in expected_docks:
+            dock = self.ui_manager.docks.get(dock_key)
+            if dock is None:
+                missing_docks.append(dock_key)
+                logger.error(f"Critical dock missing after restoration: {dock_key}")
+            elif not isinstance(dock, QDockWidget):
+                invalid_docks.append(dock_key)
+                logger.error(f"Invalid dock type for {dock_key}: {type(dock)}")
+            elif dock.widget() is None:
+                invalid_docks.append(dock_key)
+                logger.error(f"Dock {dock_key} has no widget")
+
+        if missing_docks or invalid_docks:
+            logger.error(
+                f"Dock validation failed - Missing: {missing_docks}, "
+                f"Invalid: {invalid_docks}"
+            )
+            return False
+
+        logger.debug("Dock state validation passed")
+        return True
 
     def update_item(self, data: dict) -> None:
         """
@@ -747,9 +820,12 @@ class MainWindow(QMainWindow):
                 return
 
         # Save State
+        from src.app.constants import LAYOUT_VERSION, SETTINGS_LAYOUT_VERSION_KEY
+
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         settings.setValue("geometry", self.saveGeometry())
         settings.setValue("windowState", self.saveState())
+        settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
 
         # Save as Default Layout if requested
         if self.capture_layout_on_exit:
