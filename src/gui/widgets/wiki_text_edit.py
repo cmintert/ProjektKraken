@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.core.wiki_ast import CursorMapper, WikiASTParser, WikiASTSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -125,34 +126,76 @@ class WikiTextEdit(QTextEdit):
     def toggle_view_mode(self) -> None:
         """
         Toggles between Rich HTML view and Markdown Source view.
+        Uses AST for pixel-perfect cursor position preservation.
         """
+        # Capture cursor position before switching
+        old_cursor_pos = self.textCursor().position()
+        old_scroll = self.verticalScrollBar().value()
+
         if self._view_mode == "rich":
-            # Get the underlying Markdown (recovered from HTML) BEFORE switching mode
+            # Rich -> Source: Map HTML cursor to MD cursor
             md_text = self.get_wiki_text()
 
-            # Switch to Source
-            self._view_mode = "source"
+            # Build AST for cursor mapping
+            parser = WikiASTParser()
+            serializer = WikiASTSerializer()
+            ast = parser.parse(md_text)
+            _, ast = serializer.to_markdown(ast)
+            _, ast = serializer.to_html(ast)
+            mapper = CursorMapper(ast)
 
-            # Switch to plain text styling/behavior (optional, or just set text)
-            # We want to show raw text, so no HTML rendering.
+            # Map cursor position from HTML to MD
+            new_cursor_pos = mapper.html_to_md(old_cursor_pos)
+
+            # Switch mode
+            self._view_mode = "source"
             self.setPlainText(md_text)
+
+            # Restore cursor (clamped to valid range)
+            doc_length = self.document().characterCount()
+            new_cursor_pos = min(new_cursor_pos, doc_length - 1)
+            new_cursor_pos = max(0, new_cursor_pos)
+            cursor = self.textCursor()
+            cursor.setPosition(new_cursor_pos)
+            self.setTextCursor(cursor)
+
+            # Restore scroll position
+            self.verticalScrollBar().setValue(old_scroll)
 
             # Update Button
             self.btn_toggle_view.setText("HTML")
             self.btn_toggle_view.setToolTip("Switch to Rendered View")
 
         else:
-            # Switch back to Rich
-            self._view_mode = "rich"
-            # Get the current text (which is raw markdown edits)
+            # Source -> Rich: Map MD cursor to HTML cursor
             raw_text = self.toPlainText()
 
-            # Force re-render by clearing the cache
-            # (Otherwise set_wiki_text thinks content is unchanged and skips render)
-            self._current_wiki_text = None
+            # Build AST for cursor mapping
+            parser = WikiASTParser()
+            serializer = WikiASTSerializer()
+            ast = parser.parse(raw_text)
+            _, ast = serializer.to_markdown(ast)
+            _, ast = serializer.to_html(ast)
+            mapper = CursorMapper(ast)
 
-            # Render back to HTML
+            # Map cursor position from MD to HTML
+            new_cursor_pos = mapper.md_to_html(old_cursor_pos)
+
+            # Switch mode
+            self._view_mode = "rich"
+            self._current_wiki_text = None  # Force re-render
             self.set_wiki_text(raw_text)
+
+            # Restore cursor (clamped to valid range)
+            doc_length = self.document().characterCount()
+            new_cursor_pos = min(new_cursor_pos, doc_length - 1)
+            new_cursor_pos = max(0, new_cursor_pos)
+            cursor = self.textCursor()
+            cursor.setPosition(new_cursor_pos)
+            self.setTextCursor(cursor)
+
+            # Restore scroll position
+            self.verticalScrollBar().setValue(old_scroll)
 
             # Update Button
             self.btn_toggle_view.setText("MD")

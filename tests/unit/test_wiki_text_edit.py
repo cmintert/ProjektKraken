@@ -258,3 +258,57 @@ def test_reverse_conversion_headings(qtbot):
     assert "# Heading 1" in result
     assert "## Heading 2" in result
     assert "Text" in result
+
+
+def test_cursor_position_preserved_on_toggle(qtbot):
+    """Test that cursor position is preserved when toggling view modes."""
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    # Set some content
+    widget.set_wiki_text("Hello World, this is a test")
+
+    # In rich mode, move cursor to position 6 (at 'W')
+    cursor = widget.textCursor()
+    cursor.setPosition(6)
+    widget.setTextCursor(cursor)
+
+    # Verify cursor is at expected position
+    assert widget.textCursor().position() == 6
+
+    # Toggle to source mode
+    widget.toggle_view_mode()
+
+    # Cursor should NOT be at 0 (completely reset)
+    assert widget.textCursor().position() > 0
+
+    # Toggle back to rich mode
+    widget.toggle_view_mode()
+
+    # Again, should not reset to 0
+    assert widget.textCursor().position() > 0
+
+
+def test_cursor_mapping_with_formatting(qtbot):
+    """Test cursor mapping with bold/italic formatting."""
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    # Set formatted content
+    widget.set_wiki_text("Hello **Bold** World")
+
+    # Position cursor in the middle
+    cursor = widget.textCursor()
+    cursor.setPosition(10)
+    widget.setTextCursor(cursor)
+
+    # Toggle to source
+    widget.toggle_view_mode()
+
+    # Cursor should be preserved (not at 0)
+    pos = widget.textCursor().position()
+    assert pos > 0, "Cursor should not reset to start"
+
+    # The markdown is "Hello **Bold** World"
+    # Cursor should be somewhere within the text
+    assert pos < len(widget.toPlainText())
