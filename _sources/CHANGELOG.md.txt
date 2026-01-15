@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-15
-### Fixed
-- Fix: WikiTextEdit Ctrl+4 shortcut for reverting formatting
+### Documentation
+- docs: update changelog with new WikiTextEdit features, bug fixes, and test cleanup.
 
 
 *This changelog was automatically generated.*
