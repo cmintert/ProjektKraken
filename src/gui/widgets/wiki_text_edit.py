@@ -675,6 +675,9 @@ class WikiTextEdit(QTextEdit):
             elif event.key() == Qt.Key.Key_0:
                 self._set_heading(0)  # Remove heading
                 return
+            elif event.key() == Qt.Key.Key_4:
+                self._set_heading(0)  # Revert to body text
+                return
 
         if self._completer and (popup := self._completer.popup()) and popup.isVisible():
             if event.key() in (
