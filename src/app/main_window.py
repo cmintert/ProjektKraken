@@ -118,15 +118,42 @@ class MainWindow(QMainWindow):
 
     def __init__(self, capture_layout_on_exit: bool = False) -> None:
         """
-        Initializes the MainWindow.
+        Initializes the MainWindow using three-phase initialization.
+
+        Phase 1: Core services (data handler, worker thread)
+        Phase 2: UI skeleton (widgets, layout, menus)
+        Phase 3: Deferred completion (DB init, signals, state restoration)
 
         Args:
             capture_layout_on_exit: If True, saves current layout as default on exit.
         """
         super().__init__()
+        from src.core.logging_config import get_logger
+
+        logger = get_logger(__name__)
+        logger.debug("MainWindow initialization started")
 
         self.capture_layout_on_exit = capture_layout_on_exit
 
+        # Phase 1: Core infrastructure
+        self._init_core_services()
+        logger.debug("Phase 1: Core services initialized")
+
+        # Phase 2: UI skeleton (no data dependencies)
+        self._init_widgets_skeleton()
+        logger.debug("Phase 2: Widget skeleton created")
+
+        # Phase 3: Deferred initialization (after event loop starts)
+        QTimer.singleShot(100, self._complete_initialization)
+        logger.debug("Phase 3: Deferred initialization scheduled")
+
+    def _init_core_services(self) -> None:
+        """
+        Phase 1: Initialize core services and infrastructure.
+
+        Sets up data handler, worker thread, and basic window properties.
+        No widgets or UI elements created here.
+        """
         # Load active world name for title
         settings = QSettings()
         active_world_name = settings.value(SETTINGS_ACTIVE_DB_KEY, "Default World")
@@ -137,86 +164,58 @@ class MainWindow(QMainWindow):
         # Current world reference (will be set by worker_manager)
         self.current_world = None
 
-        # ... (rest of init unchanged until closeEvent)
-
-        # 0. Initialize Data Handler (signals-based, no window reference)
+        # Initialize Data Handler (signals-based, no window reference)
         self.data_handler = DataHandler()
 
         # Initialize backup service (will be properly connected after DB init)
         self.backup_service = None
 
-        # 1. Init Services (Worker Thread)
+        # Init Services (Worker Thread)
         self.worker_manager = WorkerManager(self)
         self.worker_manager.init_worker()
 
-        # 2. Init Widgets
-        self.unified_list = UnifiedListWidget()
-        self.event_editor = EventEditorWidget(self)
-        self.entity_editor = EntityEditorWidget(self)
-
-        # Connect dirty signals to update dock titles
-        self.event_editor.dirty_changed.connect(
-            lambda dirty: self._on_editor_dirty_changed(self.event_editor, dirty)
-        )
-        self.entity_editor.dirty_changed.connect(
-            lambda dirty: self._on_editor_dirty_changed(self.entity_editor, dirty)
-        )
-        self.timeline = TimelineWidget()
-        self.map_widget = MapWidget()
-
-        # AI Search Panel
-        self.ai_search_panel = AISearchPanelWidget()
-
-        # Graph Widget
-        self.graph_widget = GraphWidget()
-        self.graph_widget.node_clicked.connect(self._on_item_selected)
-
+        # Initialize state variables
         self.cached_event_count: Optional[int] = None
-
-        # Filter Configuration
-        # Filter Configuration
-        # self.filter_config removed - delegated to UnifiedList
-        self.longform_filter_config: dict = {}  # For Longform editor
-        self.longform_filter_config: dict = {}  # For Longform editor
-
-        # Data Cache for Unified List
+        self.longform_filter_config: dict = {}
         self._cached_events = []
         self._cached_entities = []
         self._cached_longform_sequence = []
         self.calendar_converter = None
-
-        # Pending Selection (for creation flow)
-        # Pending Selection (for creation flow)
         self._pending_select_id = None
         self._pending_select_type = None
-
-        # Track last selection for undoing on cancel
         self._last_selected_id = None
         self._last_selected_type = None
-
-        # Debounce timer for graph reload
         self._graph_reload_timer: QTimer | None = None
 
+    def _init_widgets_skeleton(self) -> None:
+        """
+        Phase 2: Create UI skeleton without data dependencies.
+
+        Creates all widgets, sets up layout, and creates menus.
+        Does NOT connect signals or load data.
+        """
+        # Create Widgets (no data access during construction)
+        self.unified_list = UnifiedListWidget()
+        self.event_editor = EventEditorWidget(self)
+        self.entity_editor = EntityEditorWidget(self)
+        self.timeline = TimelineWidget()
+        self.map_widget = MapWidget()
+        self.ai_search_panel = AISearchPanelWidget()
+        self.graph_widget = GraphWidget()
         self.longform_editor = LongformEditorWidget(db_path=self.db_path)
 
-        # Initialize Map Handler
+        # Initialize Managers
         self.map_handler = MapHandler(self)
-
-        # Initialize Timeline Grouping Manager
         self.grouping_manager = TimelineGroupingManager(self)
-
-        # Initialize AI Search Manager
         self.ai_settings_dialog = None
         self.ai_search_manager = AISearchManager(self)
-
-        # Initialize Longform Manager
         self.longform_manager = LongformManager(self)
 
         # Status Bar
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
 
-        # 3. Setup UI Layout via UIManager
+        # Setup UI Layout via UIManager
         self.ui_manager = UIManager(self)
         self.ui_manager.setup_docks(
             {
@@ -231,16 +230,6 @@ class MainWindow(QMainWindow):
             }
         )
 
-        # 4. Initialize Connection Manager
-        self.connection_manager = ConnectionManager(self)
-        self.connection_manager.connect_all()
-
-        # 5. Initialize Command Coordinator
-        self.command_coordinator = CommandCoordinator(self)
-        self.command_coordinator.command_requested.connect(
-            lambda cmd: self.command_requested.emit(cmd)
-        )
-
         # Central Widget
         self.setCentralWidget(QWidget())
         self.centralWidget().hide()
@@ -248,38 +237,65 @@ class MainWindow(QMainWindow):
         # Status Bar Time Labels
         self.lbl_world_time = QLabel("World: --")
         self.lbl_world_time.setMinimumWidth(250)
-        self.lbl_world_time.setStyleSheet("color: #3498db; font-weight: bold;")  # Blue
+        self.lbl_world_time.setStyleSheet("color: #3498db; font-weight: bold;")
         self.status_bar.addPermanentWidget(self.lbl_world_time)
 
         self.lbl_playhead_time = QLabel("Playhead: --")
         self.lbl_playhead_time.setMinimumWidth(250)
-        self.lbl_playhead_time.setStyleSheet(
-            "color: #e74c3c; font-weight: bold;"
-        )  # Red
+        self.lbl_playhead_time.setStyleSheet("color: #e74c3c; font-weight: bold;")
         self.status_bar.addPermanentWidget(self.lbl_playhead_time)
 
-        # File Menu
+        # Create Menus
         self.ui_manager.create_file_menu(self.menuBar())
-
-        # Timeline Menu (New)
         self.ui_manager.create_timeline_menu(self.menuBar())
-
-        # View Menu
         self.ui_manager.create_view_menu(self.menuBar())
-
-        # Settings Menu (Consolidated AI Search here)
         self.ui_manager.create_settings_menu(self.menuBar())
 
-        # 5. Initialize Database (deferred to ensure event loop is running)
-        QTimer.singleShot(
-            100,
-            lambda: QMetaObject.invokeMethod(
-                self.worker, "initialize_db", Qt.ConnectionType.QueuedConnection
-            ),
+    def _complete_initialization(self) -> None:
+        """
+        Phase 3: Complete initialization after event loop starts.
+
+        Initializes database, connects signals, restores state.
+        Called via QTimer.singleShot after event loop is running.
+        """
+        from src.core.logging_config import get_logger
+
+        logger = get_logger(__name__)
+        logger.debug("Completing initialization (Phase 3)")
+
+        # Initialize Connection Manager and connect signals
+        self.connection_manager = ConnectionManager(self)
+        stats = self.connection_manager.connect_all()
+        logger.info(
+            f"Signal connections: {stats['total_succeeded']}/{stats['total_attempted']}"
         )
 
-        # 6. Restore Window State
+        # Initialize Command Coordinator
+        self.command_coordinator = CommandCoordinator(self)
+        self.command_coordinator.command_requested.connect(
+            lambda cmd: self.command_requested.emit(cmd)
+        )
+
+        # Connect editor dirty signals (these are safe to connect early)
+        self.event_editor.dirty_changed.connect(
+            lambda dirty: self._on_editor_dirty_changed(self.event_editor, dirty)
+        )
+        self.entity_editor.dirty_changed.connect(
+            lambda dirty: self._on_editor_dirty_changed(self.entity_editor, dirty)
+        )
+
+        # Connect graph widget node clicked (was connected in old init)
+        self.graph_widget.node_clicked.connect(self._on_item_selected)
+
+        # Initialize Database
+        QMetaObject.invokeMethod(
+            self.worker, "initialize_db", Qt.ConnectionType.QueuedConnection
+        )
+
+        # Restore Window State
         self._restore_window_state()
+
+        logger.debug("Initialization complete")
 
     @property
     def list_dock(self) -> QDockWidget:
