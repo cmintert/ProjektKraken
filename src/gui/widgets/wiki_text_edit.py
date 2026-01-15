@@ -8,8 +8,8 @@ import re
 from typing import Any, List, Optional
 
 from PySide6.QtCore import QStringListModel, Qt, Signal, Slot
-from PySide6.QtGui import QKeyEvent, QMouseEvent, QTextCursor
-from PySide6.QtWidgets import QCompleter, QTextEdit, QWidget
+from PySide6.QtGui import QKeyEvent, QMouseEvent, QResizeEvent, QTextCursor
+from PySide6.QtWidgets import QCompleter, QTextEdit, QToolButton, QWidget
 
 from src.core.theme_manager import ThemeManager
 
@@ -59,6 +59,91 @@ class WikiTextEdit(QTextEdit):
 
         self._apply_theme_stylesheet()
         self._apply_widget_style()
+
+        # View Mode: 'rich' (HTML) or 'source' (Markdown)
+        self._view_mode = "rich"
+
+        # Toggle Button (floating overlay)
+        self.btn_toggle_view = QToolButton(self)
+        self.btn_toggle_view.setText("MD")
+        self.btn_toggle_view.setToolTip("Toggle Source View")
+        self.btn_toggle_view.setCursor(Qt.CursorShape.ArrowCursor)
+        self.btn_toggle_view.setFixedSize(30, 24)
+        # Style: subtle, semi-transparent
+        self.btn_toggle_view.setStyleSheet(
+            """
+            QToolButton {
+                background-color: rgba(50, 50, 50, 150);
+                color: #E0E0E0;
+                border: 1px solid #555;
+                border-radius: 4px;
+                font-size: 10px;
+                font-weight: bold;
+            }
+            QToolButton:hover {
+                background-color: rgba(80, 80, 80, 200);
+                border-color: #777;
+            }
+            """
+        )
+        self.btn_toggle_view.clicked.connect(self.toggle_view_mode)
+        self.btn_toggle_view.show()
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        """
+        Handle resize to reposition the floating button.
+        """
+        super().resizeEvent(event)
+        # Top-Right corner with padding
+        padding = 5
+        btn_width = self.btn_toggle_view.width()
+        # btn_height = self.btn_toggle_view.height()
+
+        # Adjust for scrollbar if visible?
+        # Typically scrollbar is part of the widget or overlaid.
+        # QTextEdit scrollbar is inside the frame usually.
+        # We'll just place it top-right relative to widget width.
+
+        x = self.width() - btn_width - padding - 15  # extra padding for scrollbar
+        y = padding
+        self.btn_toggle_view.move(x, y)
+
+    @Slot()
+    def toggle_view_mode(self) -> None:
+        """
+        Toggles between Rich HTML view and Markdown Source view.
+        """
+        if self._view_mode == "rich":
+            # Get the underlying Markdown (recovered from HTML) BEFORE switching mode
+            md_text = self.get_wiki_text()
+
+            # Switch to Source
+            self._view_mode = "source"
+
+            # Switch to plain text styling/behavior (optional, or just set text)
+            # We want to show raw text, so no HTML rendering.
+            self.setPlainText(md_text)
+
+            # Update Button
+            self.btn_toggle_view.setText("HTML")
+            self.btn_toggle_view.setToolTip("Switch to Rendered View")
+
+        else:
+            # Switch back to Rich
+            self._view_mode = "rich"
+            # Get the current text (which is raw markdown edits)
+            raw_text = self.toPlainText()
+
+            # Force re-render by clearing the cache
+            # (Otherwise set_wiki_text thinks content is unchanged and skips render)
+            self._current_wiki_text = None
+
+            # Render back to HTML
+            self.set_wiki_text(raw_text)
+
+            # Update Button
+            self.btn_toggle_view.setText("MD")
+            self.btn_toggle_view.setToolTip("Switch to Source View")
 
     def set_link_resolver(self, link_resolver: Any) -> None:
         """
@@ -271,8 +356,18 @@ class WikiTextEdit(QTextEdit):
         if text is None:
             text = ""
 
+        # If in Source mode, just set the raw text and ignore HTML rendering
+        if hasattr(self, "_view_mode") and self._view_mode == "source":
+            self.setPlainText(text)
+            # Update internal store so switching back works
+            self._current_wiki_text = text
+            return
+
         # Check if text is identical to avoid unnecessary reload (which resets cursor)
         if hasattr(self, "_current_wiki_text") and self._current_wiki_text == text:
+            # Check if we are actually fully rendered?
+            # If we just initialized, we might need to render.
+            # But usually safe to skip.
             logger.debug("set_wiki_text: Content identical, skipping update.")
             return
 
@@ -355,8 +450,12 @@ class WikiTextEdit(QTextEdit):
 
     def get_wiki_text(self) -> str:
         """
-        Converts the editor content (HTML) back to WikiLink syntax.
+        Converts the editor content back to WikiLink syntax.
+        If in 'source' mode, returns the raw text directly.
         """
+        if hasattr(self, "_view_mode") and self._view_mode == "source":
+            return self.toPlainText()
+
         result = []
         block = self.document().begin()
         while block.isValid():

@@ -108,3 +108,71 @@ def test_theme_change_updates_stylesheet(qtbot):
         # Note: Stylesheet might be the same if font sizes are identical
         # But the connection should be working
         assert updated_stylesheet is not None
+
+
+def test_toggle_view_mode(qtbot):
+    """Test toggling between Rich and Source mode updates content."""
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    # 1. Start with Wiki Content
+    original_text = "[[Link|Label]]"
+    widget.set_wiki_text(original_text)
+
+    # Verify initial state (Rich Mode)
+    assert widget._view_mode == "rich"
+    # In rich mode, text should be HTML with anchor
+    assert "href" in widget.toHtml()
+    assert "Label" in widget.toPlainText()
+    assert "[[" not in widget.toPlainText()  # Should be rendered
+
+    # 2. Toggle to Source
+    widget.btn_toggle_view.click()
+
+    assert widget._view_mode == "source"
+    assert widget.toPlainText() == "[[Link|Label]]"
+
+    # 3. Edit in Source Mode
+    widget.setPlainText("[[NewLink]]")
+
+    # 4. Toggle back to Rich
+    widget.btn_toggle_view.click()
+
+    assert widget._view_mode == "rich"
+    # Should now be rendered
+    assert "href" in widget.toHtml()
+    # get_wiki_text should return the new link
+    assert widget.get_wiki_text() == "[[NewLink]]"
+
+
+def test_get_wiki_text_in_source_mode(qtbot):
+    """Test get_wiki_text returns raw text when in source mode."""
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    widget.set_wiki_text("Initial")
+
+    # Toggle to Source
+    widget.toggle_view_mode()  # Programmatic toggle
+
+    widget.setPlainText("Updated Source")
+
+    # Should return raw text without parsing
+    assert widget.get_wiki_text() == "Updated Source"
+
+
+def test_set_wiki_text_in_source_mode(qtbot):
+    """Test set_wiki_text updates plain text directly in source mode."""
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    # Toggle to Source
+    widget.toggle_view_mode()
+
+    widget.set_wiki_text("[[RawLink]]")
+
+    # Should be set as plain text, not rendered HTML
+    assert widget.toPlainText() == "[[RawLink]]"
+    # Switch back to verify it renders
+    widget.toggle_view_mode()
+    assert "href" in widget.toHtml()
