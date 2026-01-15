@@ -176,3 +176,85 @@ def test_set_wiki_text_in_source_mode(qtbot):
     # Switch back to verify it renders
     widget.toggle_view_mode()
     assert "href" in widget.toHtml()
+
+
+def test_reverse_conversion_bold(qtbot):
+    """Test converting bold HTML to Markdown."""
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    # HTML: <b>Bold Text</b>
+    # Note: QTextEdit normalizes HTML, often using span style="font-weight:600;"
+    # We setHtml and let Qt normalize it
+    widget.setHtml("<b>Bold Text</b>")
+
+    assert widget.get_wiki_text() == "**Bold Text**"
+
+
+def test_reverse_conversion_italic(qtbot):
+    """Test converting italic HTML to Markdown."""
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    widget.setHtml("<i>Italic Text</i>")
+
+    assert widget.get_wiki_text() == "*Italic Text*"
+
+
+def test_reverse_conversion_bold_italic(qtbot):
+    """Test converting bold and italic HTML to Markdown."""
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    widget.setHtml("<b><i>Bold Italic</i></b>")
+
+    # Order of * and * depends on logic, but standard is *** or ** *
+    # Let's simple assertion for now, check strictness later
+    result = widget.get_wiki_text()
+    assert (
+        result == "***Bold Italic***"
+        or result == "**_Bold Italic_**"
+        or result == "_**Bold Italic**_"
+    )
+
+
+def test_reverse_conversion_mixed(qtbot):
+    """Test mixed formatting."""
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    widget.setHtml("Normal <b>Bold</b> and <i>Italic</i>.")
+
+    assert widget.get_wiki_text() == "Normal **Bold** and *Italic*."
+
+
+def test_reverse_conversion_wikilink_in_bold(qtbot):
+    """Test WikiLink inside bold formatting."""
+    # This is tricky: bold tag usually wraps the link anchor
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    # Simulate: **[[Link]]**
+    # set_wiki_text("**[[Link]]**") -> HTML rendering
+    # We want get_wiki_text to return "**[[Link]]**"
+
+    # Manually construct similar HTML: bold span wrapping the anchor
+    # But easiest is to use the parser we trust:
+    widget.set_wiki_text("**[[Link]]**")
+
+    assert widget.get_wiki_text() == "**[[Link]]**"
+
+
+def test_reverse_conversion_headings(qtbot):
+    """Test converting Headings via font size heuristic."""
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    # We assume standard theme font sizes: h1=18pt, h2=16pt, h3=14pt
+    # Note: set_wiki_text applies CSS, so let's use that
+    widget.set_wiki_text("# Heading 1\n## Heading 2\nText")
+
+    result = widget.get_wiki_text()
+    assert "# Heading 1" in result
+    assert "## Heading 2" in result
+    assert "Text" in result

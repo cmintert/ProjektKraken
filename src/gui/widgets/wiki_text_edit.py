@@ -252,7 +252,7 @@ class WikiTextEdit(QTextEdit):
 
         # Build CSS stylesheet for the document
         css = (
-            f"a {{ color: {link_color}; font-weight: bold; "
+            f"a {{ color: {link_color}; "
             "text-decoration: none; } "
             f"h1 {{ font-size: {fs_h1}; font-weight: 600; "
             f"color: {text_color}; "
@@ -356,19 +356,25 @@ class WikiTextEdit(QTextEdit):
         if text is None:
             text = ""
 
-        # If in Source mode, just set the raw text and ignore HTML rendering
-        if hasattr(self, "_view_mode") and self._view_mode == "source":
-            self.setPlainText(text)
-            # Update internal store so switching back works
-            self._current_wiki_text = text
-            return
-
-        # Check if text is identical to avoid unnecessary reload (which resets cursor)
+        # Check if text is identical to avoid unnecessary reload
+        # This applies to BOTH Rich and Source modes.
         if hasattr(self, "_current_wiki_text") and self._current_wiki_text == text:
             # Check if we are actually fully rendered?
             # If we just initialized, we might need to render.
             # But usually safe to skip.
-            logger.debug("set_wiki_text: Content identical, skipping update.")
+            return
+
+        # If in Source mode, just set the raw text and ignore HTML rendering
+        if hasattr(self, "_view_mode") and self._view_mode == "source":
+            # Block signals to prevent textChanged during programmatic update
+            was_blocked = self.blockSignals(True)
+            try:
+                self.setPlainText(text)
+            finally:
+                self.blockSignals(was_blocked)
+
+            # Update internal store so switching back works
+            self._current_wiki_text = text
             return
 
         # Store text for re-rendering on theme change
@@ -459,31 +465,86 @@ class WikiTextEdit(QTextEdit):
         result = []
         block = self.document().begin()
         while block.isValid():
-            iterator = block.begin()
-            while not iterator.atEnd():
-                fragment = iterator.fragment()
-                text = fragment.text()
-                fmt = fragment.charFormat()
-
-                if fmt.isAnchor():
-                    href = fmt.anchorHref()
-                    if href == text:
-                        result.append(f"[[{text}]]")
-                    elif href.startswith("id:") and text:
-                        result.append(f"[[{href}|{text}]]")
-                    else:
-                        # Fallback
-                        result.append(f"[[{href}|{text}]]")
-                else:
-                    result.append(text)
-
-                iterator += 1
-
-            if block.next().isValid():
-                result.append("\n")
+            block_text = self._process_block(block)
+            result.append(block_text)
             block = block.next()
 
-        return "".join(result)
+        return "\n".join(result)
+
+    def _process_block(self, block) -> str:
+        """
+        Process a text block to recover block-level formatting (Headings).
+        Then delegates to _process_fragment for inline formatting.
+        """
+        iterator = block.begin()
+        block_content = []
+
+        # Check first fragment for Font Size Heuristic (Heading Detection)
+        # We need the first fragment to guess the block style if it's consistent
+        # But iterating fragments is safer to get all content.
+
+        while not iterator.atEnd():
+            fragment = iterator.fragment()
+            if fragment.isValid():
+                text = self._process_fragment(fragment)
+                block_content.append(text)
+            iterator += 1
+
+        full_line_text = "".join(block_content)
+
+        # Determine Block Format (Heading vs Paragraph)
+        # We rely on ThemeManager constants because that's what we set.
+        # This is a bit brittle if theme changes, but 'roughly' correct.
+        # Or we can check font sizes.
+
+        # Get the format of the first char in the block (heuristic)
+        if block.length() > 1:  # length includes newline
+            # Use a dummy cursor to inspect start of block
+            cursor = QTextCursor(block)
+            fmt = cursor.charFormat()
+            font_size = fmt.font().pointSize()
+
+            # Simple heuristic mapping based on default theme sizes
+            # h1=18, h2=16, h3=14, body=10
+            # We can try to be dynamic or hardcoded. Hardcoded is "tiny step".
+            if font_size >= 18:
+                return f"# {full_line_text}"
+            elif font_size >= 16:
+                return f"## {full_line_text}"
+            elif font_size >= 14:
+                return f"### {full_line_text}"
+
+        return full_line_text
+
+    def _process_fragment(self, fragment) -> str:
+        """
+        Process a text fragment to recover inline formatting (Bold, Italic, Links).
+        """
+        text = fragment.text()
+        fmt = fragment.charFormat()
+
+        # 1. WikiLinks (Anchor)
+        if fmt.isAnchor():
+            href = fmt.anchorHref()
+            if href == text:
+                text = f"[[{text}]]"
+            elif href.startswith("id:") and text:
+                text = f"[[{href}|{text}]]"
+            else:
+                text = f"[[{href}|{text}]]"
+
+        # 2. Bold
+        # font weight 75 is Bold, 63 is DemiBold, 50 is Normal usually (legacy)
+        # Qt 6: QFont.Weight.Bold = 700, Normal = 400.
+        # But internal integer values might differ.
+        if fmt.fontWeight() > 600:  # Safe threshold for Bold (700)
+            text = f"**{text}**"
+
+        # 3. Italic
+        if fmt.fontItalic():
+            text = f"*{text}*"
+
+        return text
 
     @Slot(str)
     def insert_completion(self, completion: str) -> None:
