@@ -538,9 +538,11 @@ class WikiTextEdit(QTextEdit):
             def _parse_size(val: str | int | float) -> float:
                 if isinstance(val, (int, float)):
                     return float(val)
-                if isinstance(val, str):
-                    return float(val.replace("pt", "").strip())
-                return 10.0
+                return (
+                    float(val.replace("pt", "").strip())
+                    if isinstance(val, str)
+                    else 10.0
+                )
 
             h1_size = _parse_size(theme_data.get("font_size_h1", 16))
             h2_size = _parse_size(theme_data.get("font_size_h2", 14))
@@ -693,7 +695,8 @@ class WikiTextEdit(QTextEdit):
         super().keyPressEvent(event)
 
         # Handle formatting reset on Enter (only in Rich mode)
-        # If we just created a new block from a Heading, it inherits the large font size.
+        # If we just created a new block from a Heading,
+        # it inherits the large font size.
         # We want to reset it to Body text size.
         is_source_mode = hasattr(self, "_view_mode") and self._view_mode == "source"
         if not is_source_mode and event.key() in (
@@ -774,11 +777,7 @@ class WikiTextEdit(QTextEdit):
         stripped = line_text.lstrip("#").lstrip()
 
         # Add new prefix
-        if level > 0:
-            prefix = "#" * level + " "
-            new_text = prefix + stripped
-        else:
-            new_text = stripped
+        new_text = ("#" * level + " " + stripped) if level > 0 else stripped
 
         cursor.insertText(new_text)
         self.setTextCursor(cursor)
@@ -1026,9 +1025,7 @@ class WikiTextEdit(QTextEdit):
             bool: True if valid, False if broken/non-existent.
         """
         # Handle id: prefix
-        check_target = target
-        if target.startswith("id:"):
-            check_target = target[3:]
+        check_target = target[3:] if target.startswith("id:") else target
 
         # Check names (case insensitive)
         if (
