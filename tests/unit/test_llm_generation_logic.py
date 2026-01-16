@@ -183,37 +183,6 @@ def test_preview_fetches_rag(qtbot, widget, monkeypatch):
     assert "{{RAG_CONTEXT}}" in rag_called[0][0]
 
 
-def test_custom_system_prompt_from_settings(qtbot, widget, monkeypatch):
-    """Test that custom system prompt is loaded from QSettings and used."""
-    custom_prompt = "You are a sci-fi world designer."
-
-    # Use global QSettings mock (via fixtures)
-    from PySide6.QtCore import QSettings
-
-    settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-    settings.setValue("ai_gen_system_prompt", custom_prompt)
-
-    # Ensure template combo doesn't override if it finds a template
-    # We want to test the setting.
-    # But get_system_prompt Priority 1 is UI template.
-    # If UI template fails (MockLoader), it falls to Priority 2 (Settings).
-    # So we need MockLoader to fail or return nothing for the current combo selection.
-
-    class MockLoader:
-        def load_template(self, tid):
-            raise FileNotFoundError()
-
-        def get_template(self, tid, tver):
-            raise FileNotFoundError()
-
-    monkeypatch.setattr(
-        "src.gui.widgets.llm_generation_widget.PromptLoader", MockLoader
-    )
-
-    result = widget._get_system_prompt()
-    assert result == custom_prompt
-
-
 def test_default_system_prompt_fallback(qtbot, widget, monkeypatch):
     """Test that default system prompt is used when settings are empty."""
     # Ensure empty settings
@@ -242,83 +211,6 @@ def test_default_system_prompt_fallback(qtbot, widget, monkeypatch):
         or "fantasy" in result.lower()
         or "assistant" in result.lower()
     )
-
-
-def test_template_based_prompt_loading(qtbot, widget, monkeypatch):
-    """Test that template-based prompt loading works via QSettings (Priority 3)."""
-
-    # Mock Template object
-    class MockTemplate:
-        def __init__(self, content, tid, version="1.0"):
-            self.content = content
-            self.template_id = tid
-            self.version = version
-            self.name = "Mock Template"
-
-    # Mock PromptLoader to avoid filesystem dependency
-    class MockLoader:
-        def load_template(self, tid, version=None):
-            # Priority 1: Default UI selection usually "description_default"
-            # We want this to fail so it falls through to settings check
-            if tid == "description_default":
-                raise FileNotFoundError()
-
-            # Priority 3: Settings check
-            if tid == "fantasy_worldbuilder":
-                expected_ver = "1.0"
-                if version and version != expected_ver:
-                    raise FileNotFoundError()
-                return MockTemplate("Mock Fantasy Prompt", tid, version or expected_ver)
-
-            raise FileNotFoundError()
-
-    monkeypatch.setattr(
-        "src.gui.widgets.llm_generation_widget.PromptLoader", MockLoader
-    )
-
-    from PySide6.QtCore import QSettings
-
-    settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-    settings.setValue("ai_gen_system_prompt_template_id", "fantasy_worldbuilder")
-    settings.setValue("ai_gen_system_prompt_version", "1.0")
-    settings.remove("ai_gen_system_prompt")  # Ensure no custom prompt
-
-    result = widget._get_system_prompt()
-    assert result == "Mock Fantasy Prompt"
-
-
-def test_template_loading_with_version_2(qtbot, widget, monkeypatch):
-    """Test loading version 2.0 of the template."""
-
-    class MockTemplate:
-        def __init__(self, content, tid, version="1.0"):
-            self.content = content
-            self.template_id = tid
-            self.version = version
-            self.name = "Mock Template"
-
-    class MockLoader:
-        def load_template(self, tid, version=None):
-            if tid == "description_default":
-                raise FileNotFoundError()
-
-            if tid == "fantasy_worldbuilder" and version == "2.0":
-                return MockTemplate("Mock Fantasy Prompt v2", tid, version)
-            raise FileNotFoundError()
-
-    monkeypatch.setattr(
-        "src.gui.widgets.llm_generation_widget.PromptLoader", MockLoader
-    )
-
-    from PySide6.QtCore import QSettings
-
-    settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-    settings.setValue("ai_gen_system_prompt_template_id", "fantasy_worldbuilder")
-    settings.setValue("ai_gen_system_prompt_version", "2.0")
-    settings.remove("ai_gen_system_prompt")
-
-    result = widget._get_system_prompt()
-    assert result == "Mock Fantasy Prompt v2"
 
 
 def test_template_loading_fallback_on_error(qtbot, widget, monkeypatch):

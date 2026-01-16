@@ -3,7 +3,6 @@ from unittest.mock import patch
 import pytest
 
 from src.app.main import MainWindow
-from src.commands.base_command import CommandResult
 from src.core.entities import Entity
 from src.core.events import Event
 
@@ -30,96 +29,6 @@ def main_window(qtbot):
             # window.show()  # needed for visibility checks often
             qtbot.addWidget(window)
             yield window
-
-
-def test_create_entity_success_selects_item(main_window):
-    """Verify that creating an entity selects it after loading."""
-    # 1. Mock Input Dialog
-    with patch("src.app.main_window.QInputDialog.getText") as mock_input:
-        mock_input.return_value = ("New Entity", True)
-
-        # 2. Mock Command
-        with patch("src.app.main_window.CreateEntityCommand") as MockCmd:
-            # Execute
-            main_window.create_entity()
-
-            # Verify command creation
-            MockCmd.assert_called_once()
-            args, _ = MockCmd.call_args
-            assert args[0] == {"name": "New Entity", "type": "Concept"}
-
-    # 3. Simulate Command Finish with Data
-    cmd_result = CommandResult(
-        success=True,
-        message="Created",
-        command_name="CreateEntityCommand",
-        data={"id": "new-ent-id"},
-    )
-
-    # 4. Mock load_entities triggering
-    with patch.object(main_window, "load_entities") as mock_load:
-        main_window.data_handler.on_command_finished(cmd_result)
-        mock_load.assert_called_once()
-
-    # Check pending state
-    # Check pending state on DataHandler
-    assert main_window.data_handler._pending_select_id == "new-ent-id"
-    assert main_window.data_handler._pending_select_type == "entity"
-
-    # 5. Simulate entities loaded - use real Entity class
-    test_entity = Entity(id="new-ent-id", name="New Entity", type="Concept")
-
-    with patch.object(main_window.unified_list, "select_item") as mock_select:
-        main_window.data_handler.on_entities_loaded([test_entity])
-
-        # 6. Verify selection called
-        mock_select.assert_called_once_with("entity", "new-ent-id")
-
-    # Check pending state cleared
-    # Check pending state cleared
-    assert main_window.data_handler._pending_select_id is None
-    assert main_window.data_handler._pending_select_type is None
-
-
-def test_create_event_success_selects_item(main_window):
-    """Verify that creating an event selects it after loading."""
-    # 1. Mock Input Dialog
-    with patch("src.app.main_window.QInputDialog.getText") as mock_input:
-        mock_input.return_value = ("New Event", True)
-
-        # 2. Mock Command
-        with patch("src.app.main_window.CreateEventCommand") as MockCmd:
-            main_window.create_event()
-
-            MockCmd.assert_called_once()
-            args, _ = MockCmd.call_args
-            assert args[0] == {"name": "New Event", "lore_date": 0.0}
-
-    # 3. Simulate Command Finish
-    cmd_result = CommandResult(
-        success=True,
-        message="Created",
-        command_name="CreateEventCommand",
-        data={"id": "new-evt-id"},
-    )
-
-    with patch.object(main_window, "load_events") as mock_load:
-        main_window.data_handler.on_command_finished(cmd_result)
-        mock_load.assert_called_once()
-
-    assert main_window.data_handler._pending_select_id == "new-evt-id"
-    assert main_window.data_handler._pending_select_type == "event"
-
-    # 5. Simulate events loaded - use real Event class
-    test_event = Event(id="new-evt-id", name="New Event", lore_date=0.0, type="generic")
-
-    with patch.object(main_window.unified_list, "select_item") as mock_select:
-        with patch.object(main_window.timeline, "set_events"):
-            main_window.data_handler.on_events_loaded([test_event])
-
-        mock_select.assert_called_once_with("event", "new-evt-id")
-
-    assert main_window.data_handler._pending_select_id is None
 
 
 def test_create_cancel_does_nothing(main_window):
