@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-16
 ### Internal
-- Merge pull request #55 from cmintert/copilot/add-llm-review-documentation
+- Merge pull request #56 from cmintert/copilot/implement-prompt-template-loader
 
 
 *This changelog was automatically generated.*
