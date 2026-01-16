@@ -440,6 +440,141 @@
 </div>
 </section>
 </section>
+<section id="prompt-template-system">
+<h2>Prompt Template System<a class="headerlink" href="#prompt-template-system" title="Link to this heading">¶</a></h2>
+<section id="id1">
+<h3>Overview<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<p>ProjektKraken includes a template-based prompt system that allows users to switch between different writing styles and includes few-shot examples to guide LLM outputs. This improves consistency and allows users to easily control the verbosity and tone of generated descriptions.</p>
+</section>
+<section id="available-templates">
+<h3>Available Templates<a class="headerlink" href="#available-templates" title="Link to this heading">¶</a></h3>
+<p>The system includes three pre-configured description templates:</p>
+<ol class="arabic simple">
+<li><p><strong>Default</strong> (<code class="docutils literal notranslate"><span class="pre">description_default_v1.0</span></code>) - Balanced style, ~200 words</p>
+<ul class="simple">
+<li><p>Descriptive and evocative, suitable for most worldbuilding tasks</p></li>
+<li><p>Includes sensory details and atmosphere</p></li>
+<li><p>Maintains consistency with high-fantasy literature tone</p></li>
+</ul>
+</li>
+<li><p><strong>Concise</strong> (<code class="docutils literal notranslate"><span class="pre">description_concise_v1.0</span></code>) - Brief style, 50-100 words</p>
+<ul class="simple">
+<li><p>Sharp, vivid, minimal language</p></li>
+<li><p>Focuses on most distinctive features</p></li>
+<li><p>Ideal for quick references or codex entries</p></li>
+</ul>
+</li>
+<li><p><strong>Detailed</strong> (<code class="docutils literal notranslate"><span class="pre">description_detailed_v1.0</span></code>) - Expansive style, 300-500 words</p>
+<ul class="simple">
+<li><p>Rich sensory descriptions and historical context</p></li>
+<li><p>Literary, layered, immersive prose</p></li>
+<li><p>Best for major locations, characters, or events</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="using-templates-in-the-ui">
+<h3>Using Templates in the UI<a class="headerlink" href="#using-templates-in-the-ui" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p>Open the <strong>Entity Editor</strong> or <strong>Event Editor</strong></p></li>
+<li><p>Expand the <strong>LLM Generation</strong> panel</p></li>
+<li><p>Select a template from the <strong>Template:</strong> dropdown (above Provider selector)</p></li>
+<li><p>Enter your custom prompt</p></li>
+<li><p>Click <strong>Generate</strong></p></li>
+</ol>
+<p>The selected template persists across sessions and is saved to QSettings.</p>
+</section>
+<section id="few-shot-examples">
+<h3>Few-Shot Examples<a class="headerlink" href="#few-shot-examples" title="Link to this heading">¶</a></h3>
+<p>The system includes built-in few-shot examples that demonstrate the desired output style for different entity types:</p>
+<ul class="simple">
+<li><p><strong>Characters</strong>: Appearance, personality, distinctive features</p></li>
+<li><p><strong>Locations</strong>: Atmosphere, sensory details, environmental mood</p></li>
+<li><p><strong>Items</strong>: Physical appearance, significance, legendary properties</p></li>
+<li><p><strong>Factions</strong>: Organization, influence, cultural impact</p></li>
+<li><p><strong>Events</strong>: Scale, consequences, historical significance</p></li>
+</ul>
+<p>These examples are automatically included in prompts to guide the LLM toward producing consistent, high-quality outputs.</p>
+</section>
+<section id="template-format">
+<h3>Template Format<a class="headerlink" href="#template-format" title="Link to this heading">¶</a></h3>
+<p>Templates are stored in <code class="docutils literal notranslate"><span class="pre">default_assets/templates/system_prompts/</span></code> with YAML metadata headers:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nn">---</span>
+<span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
+<span class="nt">template_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">description_default</span>
+<span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Default Description Template</span>
+<span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Standard fantasy worldbuilding style with balanced detail (200 words)</span>
+<span class="nt">author</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ProjektKraken Team</span>
+<span class="nt">created</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2026-01-16</span>
+<span class="nt">tags</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">description</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">default</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">fantasy</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">worldbuilding</span><span class="p p-Indicator">]</span>
+<span class="nt">max_words</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">200</span>
+<span class="nn">---</span>
+
+<span class="p p-Indicator">[</span><span class="nv">Template content here...</span><span class="p p-Indicator">]</span>
+</pre></div>
+</div>
+</section>
+<section id="creating-custom-templates">
+<h3>Creating Custom Templates<a class="headerlink" href="#creating-custom-templates" title="Link to this heading">¶</a></h3>
+<p>To create a custom template:</p>
+<ol class="arabic simple">
+<li><p>Create a new <code class="docutils literal notranslate"><span class="pre">.txt</span></code> file in <code class="docutils literal notranslate"><span class="pre">default_assets/templates/system_prompts/</span></code></p></li>
+<li><p>Name it following the pattern: <code class="docutils literal notranslate"><span class="pre">description_&lt;name&gt;_v&lt;version&gt;.txt</span></code></p></li>
+<li><p>Include a YAML metadata header with required fields:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">version</span></code>: Semantic version (e.g., “1.0”)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">template_id</span></code>: Unique identifier (e.g., “description_custom”)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">name</span></code>: Human-readable name</p></li>
+</ul>
+</li>
+<li><p>Write your system prompt below the closing <code class="docutils literal notranslate"><span class="pre">---</span></code></p></li>
+</ol>
+<p>The new template will automatically appear in the UI dropdown after restart.</p>
+</section>
+<section id="promptloader-api">
+<h3>PromptLoader API<a class="headerlink" href="#promptloader-api" title="Link to this heading">¶</a></h3>
+<p>For programmatic access to templates:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">src.services.prompt_loader</span><span class="w"> </span><span class="kn">import</span> <span class="n">PromptLoader</span>
+
+<span class="n">loader</span> <span class="o">=</span> <span class="n">PromptLoader</span><span class="p">()</span>
+
+<span class="c1"># List available templates</span>
+<span class="n">templates</span> <span class="o">=</span> <span class="n">loader</span><span class="o">.</span><span class="n">list_templates</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">templates</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">t</span><span class="p">[</span><span class="s1">&#39;template_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> v</span><span class="si">{</span><span class="n">t</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">t</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Load a specific template</span>
+<span class="n">template</span> <span class="o">=</span> <span class="n">loader</span><span class="o">.</span><span class="n">load_template</span><span class="p">(</span><span class="s2">&quot;description_default&quot;</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s2">&quot;1.0&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+
+<span class="c1"># Load few-shot examples</span>
+<span class="n">examples</span> <span class="o">=</span> <span class="n">loader</span><span class="o">.</span><span class="n">load_few_shot</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">examples</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="prompt-construction">
+<h3>Prompt Construction<a class="headerlink" href="#prompt-construction" title="Link to this heading">¶</a></h3>
+<p>When generating text, the final prompt is constructed as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">System</span> <span class="n">Prompt</span> <span class="kn">from</span><span class="w"> </span><span class="nn">selected</span> <span class="n">template</span><span class="p">]</span>
+
+<span class="c1">## Examples</span>
+
+<span class="p">[</span><span class="n">Few</span><span class="o">-</span><span class="n">shot</span> <span class="n">examples</span> <span class="kn">from</span><span class="w"> </span><span class="nn">few_shot_description.txt</span><span class="p">]</span>
+
+<span class="p">{{</span><span class="n">RAG_CONTEXT</span><span class="p">}}</span> <span class="p">[</span><span class="n">If</span> <span class="n">RAG</span> <span class="n">enabled</span><span class="p">]</span>
+
+<span class="n">Context</span><span class="p">:</span>
+<span class="n">Name</span><span class="p">:</span> <span class="p">[</span><span class="n">Entity</span> <span class="n">name</span><span class="p">]</span>
+<span class="n">Type</span><span class="p">:</span> <span class="p">[</span><span class="n">Entity</span> <span class="nb">type</span><span class="p">]</span>
+<span class="p">[</span><span class="n">Additional</span> <span class="n">context</span> <span class="n">fields</span><span class="o">...</span><span class="p">]</span>
+
+<span class="n">Task</span><span class="p">:</span> <span class="p">[</span><span class="n">User</span><span class="s1">&#39;s custom prompt]</span>
+</pre></div>
+</div>
+<p>This structure ensures consistent outputs while allowing flexibility in user instructions.</p>
+</section>
+</section>
 <section id="error-handling-resilience">
 <h2>Error Handling &amp; Resilience<a class="headerlink" href="#error-handling-resilience" title="Link to this heading">¶</a></h2>
 <section id="circuit-breaker-pattern">
@@ -885,6 +1020,17 @@
 <li><a class="reference internal" href="#architecture">Architecture</a><ul>
 <li><a class="reference internal" href="#provider-abstraction">Provider Abstraction</a></li>
 <li><a class="reference internal" href="#embedding-service">Embedding Service</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#prompt-template-system">Prompt Template System</a><ul>
+<li><a class="reference internal" href="#id1">Overview</a></li>
+<li><a class="reference internal" href="#available-templates">Available Templates</a></li>
+<li><a class="reference internal" href="#using-templates-in-the-ui">Using Templates in the UI</a></li>
+<li><a class="reference internal" href="#few-shot-examples">Few-Shot Examples</a></li>
+<li><a class="reference internal" href="#template-format">Template Format</a></li>
+<li><a class="reference internal" href="#creating-custom-templates">Creating Custom Templates</a></li>
+<li><a class="reference internal" href="#promptloader-api">PromptLoader API</a></li>
+<li><a class="reference internal" href="#prompt-construction">Prompt Construction</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#error-handling-resilience">Error Handling &amp; Resilience</a><ul>
