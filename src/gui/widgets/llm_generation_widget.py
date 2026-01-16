@@ -31,6 +31,7 @@ from PySide6.QtWidgets import (
 from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 from src.gui.utils.style_helper import StyleHelper
 from src.services.llm_provider import create_provider
+from src.services.prompt_loader import PromptLoader
 from src.services.search_service import create_search_service
 
 logger = logging.getLogger(__name__)
@@ -615,9 +616,10 @@ class LLMGenerationWidget(QWidget):
         """
         Get the system prompt from settings.
 
-        Loads the user's custom system prompt from QSettings if available,
-        otherwise falls back to DEFAULT_SYSTEM_PROMPT. The system prompt
-        defines the LLM's role, tone, and behavior.
+        Loads the system prompt using the following priority:
+        1. Custom prompt from QSettings (ai_gen_system_prompt) - backward compatibility
+        2. Template-based prompt from PromptLoader (ai_gen_system_prompt_template_id/version)
+        3. DEFAULT_SYSTEM_PROMPT as fallback
 
         The prompt can be customized via:
         Settings → AI Settings → Text Generation tab → System Prompt field
@@ -627,7 +629,36 @@ class LLMGenerationWidget(QWidget):
         """
         try:
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-            return settings.value("ai_gen_system_prompt", DEFAULT_SYSTEM_PROMPT)
+            
+            # First check for custom prompt (backward compatibility)
+            custom_prompt = settings.value("ai_gen_system_prompt", None)
+            if custom_prompt:
+                logger.debug("Using custom system prompt from QSettings")
+                return custom_prompt
+            
+            # Try to load from template
+            template_id = settings.value("ai_gen_system_prompt_template_id", None)
+            template_version = settings.value("ai_gen_system_prompt_version", None)
+            
+            if template_id:
+                try:
+                    loader = PromptLoader()
+                    template = loader.load_template(template_id, version=template_version)
+                    logger.info(
+                        f"Loaded system prompt from template: {template.template_id} "
+                        f"v{template.version} ({template.name})"
+                    )
+                    return template.content
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to load template {template_id} v{template_version}: {e}. "
+                        f"Falling back to default."
+                    )
+            
+            # Final fallback to hardcoded default
+            logger.debug("Using DEFAULT_SYSTEM_PROMPT")
+            return DEFAULT_SYSTEM_PROMPT
+            
         except Exception as e:
             logger.warning(f"Failed to load system prompt: {e}")
             return DEFAULT_SYSTEM_PROMPT
