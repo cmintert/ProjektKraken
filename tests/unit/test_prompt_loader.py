@@ -15,7 +15,20 @@ from src.services.prompt_loader import PromptLoader, PromptTemplate
 
 @pytest.fixture
 def temp_templates_dir(tmp_path):
-    """Create a temporary templates directory with test templates."""
+    """
+    Create a temporary templates directory populated with sample template files for tests.
+    
+    Creates three files within a "templates" subdirectory:
+    - test_template_v1.0.txt (metadata and multi-line content for version 1.0)
+    - test_template_v2.0.txt (metadata and content for version 2.0)
+    - other_template_v1.0.txt (a separate template family)
+    
+    Parameters:
+        tmp_path (pathlib.Path): Base temporary directory provided by pytest.
+    
+    Returns:
+        pathlib.Path: Path to the created "templates" directory containing the sample files.
+    """
     templates_dir = tmp_path / "templates"
     templates_dir.mkdir()
 
@@ -67,7 +80,15 @@ Different template content.
 
 @pytest.fixture
 def loader(temp_templates_dir):
-    """Create a PromptLoader with temporary templates directory."""
+    """
+    Create a PromptLoader configured to use the provided temporary templates directory.
+    
+    Parameters:
+        temp_templates_dir (Path): Path to a temporary directory containing template files.
+    
+    Returns:
+        PromptLoader: An instance configured to load templates from the given directory.
+    """
     return PromptLoader(templates_dir=str(temp_templates_dir))
 
 

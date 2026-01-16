@@ -267,6 +267,18 @@ def test_template_based_prompt_loading(qtbot, widget, monkeypatch):
     # Mock QSettings to return template_id and version
     class MockSettings:
         def value(self, key, default):
+            """
+            Return mock configuration values for AI system prompt template id and version.
+            
+            If `key` is "ai_gen_system_prompt_template_id" returns "fantasy_worldbuilder"; if `key` is "ai_gen_system_prompt_version" returns "1.0"; otherwise returns the provided `default`.
+            
+            Parameters:
+                key (str): Configuration key to look up.
+                default: Value to return when the key is not recognized.
+            
+            Returns:
+                The mock value corresponding to `key`, or `default` if the key is unrecognized.
+            """
             if key == "ai_gen_system_prompt_template_id":
                 return "fantasy_worldbuilder"
             elif key == "ai_gen_system_prompt_version":
@@ -292,6 +304,19 @@ def test_template_loading_with_version_2(qtbot, widget, monkeypatch):
     # Mock QSettings to return template_id and version 2.0
     class MockSettings:
         def value(self, key, default):
+            """
+            Return mocked setting values for specific AI-generation keys.
+            
+            Parameters:
+                key (str): The settings key to query.
+                default: The value to return when the key is not one of the mocked keys.
+            
+            Returns:
+                The mocked string value for the queried key:
+                  - "fantasy_worldbuilder" for "ai_gen_system_prompt_template_id"
+                  - "2.0" for "ai_gen_system_prompt_version"
+                Otherwise returns `default`.
+            """
             if key == "ai_gen_system_prompt_template_id":
                 return "fantasy_worldbuilder"
             elif key == "ai_gen_system_prompt_version":
@@ -317,6 +342,16 @@ def test_template_loading_fallback_on_error(qtbot, widget, monkeypatch):
     # Mock QSettings to return invalid template_id
     class MockSettings:
         def value(self, key, default):
+            """
+            Return a mock settings value for the given key, providing a specific template id for system prompt template lookups.
+            
+            Parameters:
+                key (str): Settings key to retrieve.
+                default: Value to return when the key is not handled.
+            
+            Returns:
+                The string "nonexistent_template" if `key` is "ai_gen_system_prompt_template_id", otherwise `default`.
+            """
             if key == "ai_gen_system_prompt_template_id":
                 return "nonexistent_template"
             return default
@@ -342,6 +377,16 @@ def test_custom_prompt_takes_precedence_over_template(qtbot, widget, monkeypatch
     # Mock QSettings to return both custom prompt and template_id
     class MockSettings:
         def value(self, key, default):
+            """
+            Return a mocked QSettings value with test-specific overrides for system prompt keys.
+            
+            Parameters:
+                key (str): The settings key to retrieve.
+                default: The default value to return if the key is not matched.
+            
+            Returns:
+                The value for `key`. If `key` is "ai_gen_system_prompt", returns the externally captured `custom_prompt`; if `key` is "ai_gen_system_prompt_template_id", returns "fantasy_worldbuilder"; otherwise returns `default`.
+            """
             if key == "ai_gen_system_prompt":
                 return custom_prompt
             elif key == "ai_gen_system_prompt_template_id":
