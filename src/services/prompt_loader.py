@@ -358,3 +358,33 @@ class PromptLoader:
                 metadata[key] = value
 
         return metadata
+
+    def load_few_shot(self, filename: str = "few_shot_description.txt") -> str:
+        """
+        Load few-shot examples from the templates directory.
+
+        Few-shot examples are plain text files (no metadata header) that contain
+        example prompts and outputs to guide LLM generation.
+
+        Args:
+            filename: Name of the few-shot examples file (default: "few_shot_description.txt").
+
+        Returns:
+            str: The content of the few-shot examples file.
+
+        Raises:
+            FileNotFoundError: If the few-shot file doesn't exist.
+        """
+        file_path = self.templates_dir / filename
+
+        if not file_path.exists():
+            raise FileNotFoundError(
+                f"Few-shot examples file not found: {file_path}"
+            )
+
+        logger.info(f"Loading few-shot examples from {file_path}")
+
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        return content.strip()

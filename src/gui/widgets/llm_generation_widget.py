@@ -317,6 +317,17 @@ class LLMGenerationWidget(QWidget):
         top_sep.setStyleSheet("color: #444444; margin-bottom: 4px;")
         main_layout.addWidget(top_sep)
 
+        # Template selection row
+        template_layout = QHBoxLayout()
+        template_layout.addWidget(QLabel("Template:"))
+        self.template_combo = QComboBox()
+        self.template_combo.setToolTip("Select prompt template for generation")
+        self._populate_template_combo()
+        self.template_combo.currentIndexChanged.connect(self._save_settings)
+        template_layout.addWidget(self.template_combo)
+        template_layout.addStretch()
+        main_layout.addLayout(template_layout)
+
         # Controls row
         controls_layout = QHBoxLayout()
 
@@ -438,6 +449,40 @@ class LLMGenerationWidget(QWidget):
         # Load settings
         self._load_settings()
 
+    def _populate_template_combo(self) -> None:
+        """Populate template combo box with available templates."""
+        try:
+            loader = PromptLoader()
+            templates = loader.list_templates()
+            
+            # Filter to only description templates
+            description_templates = [
+                t for t in templates 
+                if t["template_id"].startswith("description_")
+            ]
+            
+            # Sort by template_id for consistent ordering
+            description_templates.sort(key=lambda t: t["template_id"])
+            
+            self.template_combo.clear()
+            
+            # Store template info as user data for easy retrieval
+            for template in description_templates:
+                display_name = f"{template['name']}"
+                template_id = template["template_id"]
+                # Store template_id as item data
+                self.template_combo.addItem(display_name, template_id)
+            
+            # If no description templates found, add a fallback
+            if self.template_combo.count() == 0:
+                self.template_combo.addItem("Default (Fallback)", "description_default")
+                logger.warning("No description templates found, using fallback")
+                
+        except Exception as e:
+            logger.error(f"Failed to populate template combo: {e}")
+            # Add fallback option
+            self.template_combo.addItem("Default (Error)", "description_default")
+
     def _load_settings(self) -> None:
         """Load provider settings from QSettings."""
         try:
@@ -476,6 +521,16 @@ class LLMGenerationWidget(QWidget):
             self.rag_limit_input.setVisible(self.rag_cb.isChecked())
             self.rag_limit_input.blockSignals(False)
 
+            # Load template selection
+            self.template_combo.blockSignals(True)
+            saved_template_id = settings.value("ai_gen_template_id", "description_default")
+            # Find the template in the combo box by its data (template_id)
+            for i in range(self.template_combo.count()):
+                if self.template_combo.itemData(i) == saved_template_id:
+                    self.template_combo.setCurrentIndex(i)
+                    break
+            self.template_combo.blockSignals(False)
+
         except Exception as e:
             logger.warning(f"Failed to load generation settings: {e}")
 
@@ -495,6 +550,11 @@ class LLMGenerationWidget(QWidget):
             except ValueError:
                 limit_val = 3
             settings.setValue("ai_gen_rag_limit", limit_val)
+
+            # Save template selection
+            current_template_id = self.template_combo.currentData()
+            if current_template_id:
+                settings.setValue("ai_gen_template_id", current_template_id)
 
         except Exception as e:
             logger.warning(f"Failed to save generation settings: {e}")
@@ -559,16 +619,20 @@ class LLMGenerationWidget(QWidget):
         context_str = "\n".join(context_lines)
 
         system_persona = self._get_system_prompt()
+        few_shot_examples = self._get_few_shot_examples()
 
         # Insert placeholder for RAG
         rag_placeholder = "{{RAG_CONTEXT}}" if self.rag_cb.isChecked() else ""
 
-        prompt = (
-            f"{system_persona}\n\n"
-            f"{rag_placeholder}"
-            f"Context:\n{context_str}\n\n"
-            f"Task: {user_prompt}"
-        )
+        # Construct prompt with few-shot examples
+        prompt_parts = [system_persona]
+        
+        if few_shot_examples:
+            prompt_parts.append("\n\n## Examples\n\n" + few_shot_examples)
+        
+        prompt_parts.append(f"\n\n{rag_placeholder}Context:\n{context_str}\n\nTask: {user_prompt}")
+        
+        prompt = "".join(prompt_parts)
         self.status_label.setText("Generating with context...")
 
         # Get temperature as float (0.0-2.0)
@@ -614,14 +678,15 @@ class LLMGenerationWidget(QWidget):
 
     def _get_system_prompt(self) -> str:
         """
-        Get the system prompt from settings.
+        Get the system prompt from settings or selected template.
 
         Loads the system prompt using the following priority:
-        1. Custom prompt from QSettings (ai_gen_system_prompt)
+        1. Template selected in the UI dropdown (ai_gen_template_id)
+        2. Custom prompt from QSettings (ai_gen_system_prompt)
            - backward compatibility
-        2. Template-based prompt from PromptLoader
+        3. Template-based prompt from PromptLoader
            (ai_gen_system_prompt_template_id/version)
-        3. DEFAULT_SYSTEM_PROMPT as fallback
+        4. DEFAULT_SYSTEM_PROMPT as fallback
 
         The prompt can be customized via:
         Settings → AI Settings → Text Generation tab → System Prompt field
@@ -632,36 +697,54 @@ class LLMGenerationWidget(QWidget):
         try:
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 
-            # First check for custom prompt (backward compatibility)
-            custom_prompt = settings.value("ai_gen_system_prompt", None)
-            if custom_prompt:
-                logger.debug("Using custom system prompt from QSettings")
-                return custom_prompt
-
-            # Try to load from template
-            template_id = settings.value(
-                "ai_gen_system_prompt_template_id", None
-            )
-            template_version = settings.value(
-                "ai_gen_system_prompt_version", None
-            )
-
+            # First priority: Use template selected in UI
+            template_id = self.template_combo.currentData()
             if template_id:
                 try:
                     loader = PromptLoader()
-                    template = loader.load_template(
-                        template_id, version=template_version
-                    )
+                    template = loader.load_template(template_id)
                     logger.info(
-                        f"Loaded system prompt from template: "
+                        f"Loaded system prompt from UI template: "
                         f"{template.template_id} v{template.version} "
                         f"({template.name})"
                     )
                     return template.content
                 except Exception as e:
                     logger.warning(
-                        f"Failed to load template {template_id} "
-                        f"v{template_version}: {e}. Falling back to default."
+                        f"Failed to load UI template {template_id}: {e}. "
+                        f"Trying fallback..."
+                    )
+
+            # Second priority: Check for custom prompt (backward compatibility)
+            custom_prompt = settings.value("ai_gen_system_prompt", None)
+            if custom_prompt:
+                logger.debug("Using custom system prompt from QSettings")
+                return custom_prompt
+
+            # Third priority: Try to load from old template settings
+            old_template_id = settings.value(
+                "ai_gen_system_prompt_template_id", None
+            )
+            old_template_version = settings.value(
+                "ai_gen_system_prompt_version", None
+            )
+
+            if old_template_id:
+                try:
+                    loader = PromptLoader()
+                    template = loader.load_template(
+                        old_template_id, version=old_template_version
+                    )
+                    logger.info(
+                        f"Loaded system prompt from old template settings: "
+                        f"{template.template_id} v{template.version} "
+                        f"({template.name})"
+                    )
+                    return template.content
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to load template {old_template_id} "
+                        f"v{old_template_version}: {e}. Falling back to default."
                     )
 
             # Final fallback to hardcoded default
@@ -671,6 +754,25 @@ class LLMGenerationWidget(QWidget):
         except Exception as e:
             logger.warning(f"Failed to load system prompt: {e}")
             return DEFAULT_SYSTEM_PROMPT
+
+    def _get_few_shot_examples(self) -> str:
+        """
+        Load few-shot examples for inclusion in prompts.
+
+        Returns:
+            str: Few-shot examples content, or empty string if not available.
+        """
+        try:
+            loader = PromptLoader()
+            few_shot = loader.load_few_shot()
+            logger.debug(f"Loaded few-shot examples: {len(few_shot)} characters")
+            return few_shot
+        except FileNotFoundError:
+            logger.warning("Few-shot examples file not found, skipping")
+            return ""
+        except Exception as e:
+            logger.error(f"Failed to load few-shot examples: {e}")
+            return ""
 
     def _get_generation_context(self) -> Optional[dict]:
         """
@@ -840,14 +942,18 @@ class LLMGenerationWidget(QWidget):
 
         context_str = "\n".join(context_lines)
         system_persona = self._get_system_prompt()
+        few_shot_examples = self._get_few_shot_examples()
         rag_placeholder = "{{RAG_CONTEXT}}" if self.rag_cb.isChecked() else ""
 
-        prompt = (
-            f"{system_persona}\n\n"
-            f"{rag_placeholder}"
-            f"Context:\n{context_str}\n\n"
-            f"Task: {user_prompt}"
-        )
+        # Construct prompt with few-shot examples
+        prompt_parts = [system_persona]
+        
+        if few_shot_examples:
+            prompt_parts.append("\n\n## Examples\n\n" + few_shot_examples)
+        
+        prompt_parts.append(f"\n\n{rag_placeholder}Context:\n{context_str}\n\nTask: {user_prompt}")
+        
+        prompt = "".join(prompt_parts)
 
         # Show dialog
         dlg = QDialog(self)
