@@ -241,8 +241,14 @@ def test_circuit_breaker_preserves_exception_type():
     """Test circuit breaker preserves exception type."""
     cb = CircuitBreaker(failure_threshold=5)
     
+    def raise_value_error():
+        raise ValueError("test")
+    
+    def raise_type_error():
+        return "string" + 123
+    
     with pytest.raises(ValueError):
-        cb.call(lambda: 1 / 0 if False else (_ for _ in ()).throw(ValueError("test")))
+        cb.call(raise_value_error)
     
     with pytest.raises(TypeError):
-        cb.call(lambda: "string" + 123)
+        cb.call(raise_type_error)
