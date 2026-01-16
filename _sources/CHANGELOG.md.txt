@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-16
 ### Internal
-- Merge pull request #58 from cmintert/copilot/implement-prompt-template-system
+- Implement Generation Review Dialog and Enhance LLM Provider
 
 
 *This changelog was automatically generated.*
