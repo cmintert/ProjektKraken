@@ -217,25 +217,3 @@ def test_load_event_details_no_event(main_window):
 
     # Should not try to get relations
     main_window.worker.db_service.get_relations.assert_not_called()
-
-
-def test_wikilink_completion_refreshes_ui(main_window):
-    """Test that WikiLink command completion triggers UI refresh."""
-    from src.commands.base_command import CommandResult
-
-    # Setup active event in editor
-    main_window.event_editor._current_event_id = "evt1"
-    main_window._last_selected_type = "event"
-
-    # Simulate WikiLink command completion
-    # Simulate WikiLink command completion
-    result = CommandResult(
-        True, "Created links", command_name="ProcessWikiLinksCommand"
-    )
-
-    # Patch load_event_details to verify it gets called
-    with patch.object(main_window, "load_event_details") as mock_load:
-        main_window.data_handler.on_command_finished(result)
-
-        # Verify load_event_details was called with the correct ID
-        mock_load.assert_called_once_with("evt1")

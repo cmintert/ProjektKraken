@@ -1,0 +1,1953 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\chris\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\python.exe
+cachedir: .pytest_cache
+PySide6 6.10.1 -- Qt runtime 6.10.1 -- Qt compiled 6.10.1
+rootdir: C:\Users\chris\Antigravity Projects\ProjektKraken
+configfile: pytest.ini
+testpaths: tests
+plugins: anyio-4.12.0, cov-7.0.0, qt-4.5.0
+collecting ... collected 1280 items
+
+tests/cli/test_cli_attachment.py::test_attachment_add PASSED             [  0%]
+tests/cli/test_cli_attachment.py::test_attachment_list PASSED            [  0%]
+tests/cli/test_cli_attachment.py::test_attachment_update_caption PASSED  [  0%]
+tests/cli/test_cli_calendar.py::test_calendar_create PASSED              [  0%]
+tests/cli/test_cli_calendar.py::test_calendar_list PASSED                [  0%]
+tests/cli/test_cli_calendar.py::test_calendar_set_active PASSED          [  0%]
+tests/cli/test_cli_entity.py::test_entity_create_success PASSED          [  0%]
+tests/cli/test_cli_entity.py::test_entity_list PASSED                    [  0%]
+tests/cli/test_cli_entity.py::test_entity_show PASSED                    [  0%]
+tests/cli/test_cli_entity.py::test_entity_update PASSED                  [  0%]
+tests/cli/test_cli_entity.py::test_entity_delete PASSED                  [  0%]
+tests/cli/test_cli_event.py::test_event_create_success PASSED            [  0%]
+tests/cli/test_cli_event.py::test_event_list PASSED                      [  1%]
+tests/cli/test_cli_event.py::test_event_show PASSED                      [  1%]
+tests/cli/test_cli_event.py::test_event_update PASSED                    [  1%]
+tests/cli/test_cli_event.py::test_event_delete PASSED                    [  1%]
+tests/cli/test_cli_longform.py::test_longform_export PASSED              [  1%]
+tests/cli/test_cli_longform.py::test_longform_add PASSED                 [  1%]
+tests/cli/test_cli_longform.py::test_longform_promote PASSED             [  1%]
+tests/cli/test_cli_longform.py::test_longform_reindex PASSED             [  1%]
+tests/cli/test_cli_map.py::test_map_create_success PASSED                [  1%]
+tests/cli/test_cli_map.py::test_map_list PASSED                          [  1%]
+tests/cli/test_cli_map.py::test_map_update PASSED                        [  1%]
+tests/cli/test_cli_map.py::test_map_delete PASSED                        [  1%]
+tests/cli/test_cli_map.py::test_marker_add PASSED                        [  1%]
+tests/cli/test_cli_map.py::test_marker_update PASSED                     [  2%]
+tests/cli/test_cli_map.py::test_marker_delete PASSED                     [  2%]
+tests/cli/test_cli_map.py::test_marker_list PASSED                       [  2%]
+tests/cli/test_cli_relation.py::test_relation_add PASSED                 [  2%]
+tests/cli/test_cli_relation.py::test_relation_list PASSED                [  2%]
+tests/cli/test_cli_relation.py::test_relation_update PASSED              [  2%]
+tests/cli/test_cli_relation.py::test_relation_delete PASSED              [  2%]
+tests/cli/test_new_cli.py::test_map_create PASSED                        [  2%]
+tests/cli/test_new_cli.py::test_map_add_marker PASSED                    [  2%]
+tests/cli/test_new_cli.py::test_wiki_scan PASSED                         [  2%]
+tests/gui/widgets/test_wiki_text_edit_rendering.py::TestWikiTextEditRendering::test_rendering_case_insensitive PASSED [  2%]
+tests/gui/widgets/test_wiki_text_edit_rendering.py::TestWikiTextEditRendering::test_rendering_id_based_link PASSED [  2%]
+tests/gui/widgets/test_wiki_text_edit_rendering.py::TestWikiTextEditRendering::test_rendering_known_entity PASSED [  2%]
+tests/gui/widgets/test_wiki_text_edit_rendering.py::TestWikiTextEditRendering::test_rendering_mixed PASSED [  3%]
+tests/gui/widgets/test_wiki_text_edit_rendering.py::TestWikiTextEditRendering::test_rendering_unknown_entity PASSED [  3%]
+tests/integration/test_cache_invalidation.py::test_moving_event_invalidates_linked_entities PASSED [  3%]
+tests/integration/test_cache_invalidation.py::test_adding_relation_invalidates_target_entity PASSED [  3%]
+tests/integration/test_cache_invalidation.py::test_deleting_relation_invalidates_target_entity PASSED [  3%]
+tests/integration/test_commands.py::test_create_event_undo PASSED        [  3%]
+tests/integration/test_commands.py::test_delete_event_undo PASSED        [  3%]
+tests/integration/test_id_based_wiki_commands.py::test_id_based_link_processing PASSED [  3%]
+tests/integration/test_id_based_wiki_commands.py::test_mixed_links_processing PASSED [  3%]
+tests/integration/test_id_based_wiki_commands.py::test_broken_id_link_skipped PASSED [  3%]
+tests/integration/test_id_based_wiki_commands.py::test_id_link_with_display_name PASSED [  3%]
+tests/integration/test_id_based_wiki_commands.py::test_id_link_self_reference_skipped PASSED [  3%]
+tests/integration/test_id_based_wiki_commands.py::test_id_link_undo PASSED [  3%]
+tests/integration/test_id_based_wiki_commands.py::test_format_helpers PASSED [  4%]
+tests/integration/test_link_resolver_integration.py::test_link_resolver_with_editor PASSED [  4%]
+tests/integration/test_link_resolver_integration.py::test_broken_link_highlighting PASSED [  4%]
+tests/integration/test_link_resolver_integration.py::test_autocomplete_with_id_based_links PASSED [  4%]
+tests/integration/test_link_resolver_integration.py::test_link_navigation_by_id PASSED [  4%]
+tests/integration/test_link_resolver_integration.py::test_resolver_cache_invalidation PASSED [  4%]
+tests/integration/test_link_resolver_integration.py::test_find_broken_links_in_text PASSED [  4%]
+tests/integration/test_link_resolver_integration.py::test_get_display_name_scenarios PASSED [  4%]
+tests/integration/test_link_resolver_integration.py::test_resolver_handles_events_and_entities PASSED [  4%]
+tests/integration/test_longform_integration.py::test_add_items_to_longform PASSED [  4%]
+tests/integration/test_longform_integration.py::test_build_sequence_ordering PASSED [  4%]
+tests/integration/test_longform_integration.py::test_parent_child_nesting PASSED [  4%]
+tests/integration/test_longform_integration.py::test_place_between_siblings PASSED [  5%]
+tests/integration/test_longform_integration.py::test_reindex_positions PASSED [  5%]
+tests/integration/test_longform_integration.py::test_promote_item PASSED [  5%]
+tests/integration/test_longform_integration.py::test_demote_item PASSED  [  5%]
+tests/integration/test_longform_integration.py::test_demote_item_no_previous_sibling PASSED [  5%]
+tests/integration/test_longform_integration.py::test_remove_from_longform PASSED [  5%]
+tests/integration/test_longform_integration.py::test_export_to_markdown PASSED [  5%]
+tests/integration/test_longform_integration.py::test_mixed_events_and_entities PASSED [  5%]
+tests/integration/test_longform_integration.py::test_move_command_execute_undo PASSED [  5%]
+tests/integration/test_longform_integration.py::test_promote_command_execute_undo PASSED [  5%]
+tests/integration/test_longform_integration.py::test_demote_command_execute_undo PASSED [  5%]
+tests/integration/test_longform_integration.py::test_remove_command_execute_undo PASSED [  5%]
+tests/integration/test_longform_integration.py::test_title_override PASSED [  5%]
+tests/integration/test_longform_integration.py::test_deeply_nested_structure PASSED [  6%]
+tests/integration/test_main_window_initialization.py::TestConnectionManagerIntegration::test_connect_all_returns_statistics PASSED [  6%]
+tests/integration/test_main_window_initialization.py::TestConnectionManagerIntegration::test_connect_all_logs_summary PASSED [  6%]
+tests/integration/test_main_window_initialization.py::TestConnectionManagerIntegration::test_individual_connect_methods_return_counts PASSED [  6%]
+tests/integration/test_main_window_initialization.py::TestLayoutVersioning::test_layout_version_constant_exists PASSED [  6%]
+tests/integration/test_main_window_initialization.py::TestLayoutVersioning::test_settings_key_constant_exists PASSED [  6%]
+tests/integration/test_main_window_initialization.py::TestSignalValidation::test_safe_connection_with_missing_signal PASSED [  6%]
+tests/integration/test_main_window_initialization.py::TestSignalValidation::test_safe_connection_with_valid_signal PASSED [  6%]
+tests/integration/test_main_window_initialization.py::TestSignalValidation::test_safe_connection_with_none_object PASSED [  6%]
+tests/integration/test_main_window_initialization.py::TestSignalValidation::test_safe_connection_with_invalid_slot PASSED [  6%]
+tests/integration/test_main_window_wiring.py::test_data_handler_exists PASSED [  6%]
+tests/integration/test_main_window_wiring.py::test_timeline_provider_wiring PASSED [  6%]
+tests/integration/test_main_window_wiring.py::test_map_and_longform_handlers_exist PASSED [  6%]
+tests/integration/test_server_integration.py::test_server_endpoints PASSED [  7%]
+tests/integration/test_tag_normalization.py::TestTagNormalizationIntegration::test_create_event_with_tags_syncs_to_normalized_tables PASSED [  7%]
+tests/integration/test_tag_normalization.py::TestTagNormalizationIntegration::test_update_event_tags_syncs_to_normalized_tables PASSED [  7%]
+tests/integration/test_tag_normalization.py::TestTagNormalizationIntegration::test_create_entity_with_tags_syncs_to_normalized_tables PASSED [  7%]
+tests/integration/test_tag_normalization.py::TestTagNormalizationIntegration::test_update_entity_tags_syncs_to_normalized_tables PASSED [  7%]
+tests/integration/test_tag_normalization.py::TestTagNormalizationIntegration::test_migration_preserves_existing_tags PASSED [  7%]
+tests/integration/test_tag_normalization.py::TestTagNormalizationIntegration::test_migration_idempotent PASSED [  7%]
+tests/integration/test_tag_normalization.py::TestTagNormalizationIntegration::test_get_events_by_tag_after_migration PASSED [  7%]
+tests/integration/test_tag_normalization.py::TestTagNormalizationIntegration::test_get_entities_by_tag_after_migration PASSED [  7%]
+tests/integration/test_tag_normalization.py::TestTagNormalizationIntegration::test_delete_event_removes_tag_associations_after_migration PASSED [  7%]
+tests/integration/test_tag_normalization.py::TestTagNormalizationIntegration::test_timeline_grouping_after_migration PASSED [  7%]
+tests/integration/test_temporal_dynamic_timing.py::test_dynamic_event_timing PASSED [  7%]
+tests/integration/test_temporal_e2e.py::test_entity_state_evolution_over_time PASSED [  7%]
+tests/integration/test_temporal_e2e.py::test_upstream_event_change_propagates PASSED [  8%]
+tests/integration/test_temporal_integration.py::test_temporal_resolution_flow PASSED [  8%]
+tests/integration/test_temporal_integration.py::test_temporal_invalidation PASSED [  8%]
+tests/integration/test_timeline_grouping_workflow.py::TestTimelineGroupingIntegration::test_complete_grouping_workflow PASSED [  8%]
+tests/integration/test_timeline_grouping_workflow.py::TestTimelineGroupingIntegration::test_tag_edit_propagates_to_all_groups PASSED [  8%]
+tests/integration/test_timeline_grouping_workflow.py::TestTimelineGroupingIntegration::test_removing_tag_updates_groups PASSED [  8%]
+tests/integration/test_timeline_grouping_workflow.py::TestTimelineGroupingIntegration::test_deleting_event_removes_from_all_groups PASSED [  8%]
+tests/integration/test_timeline_grouping_workflow.py::TestTimelineGroupingIntegration::test_undo_redo_grouping_configuration PASSED [  8%]
+tests/integration/test_timeline_grouping_workflow.py::TestTimelineGroupingIntegration::test_undo_redo_tag_color_updates PASSED [  8%]
+tests/integration/test_timeline_grouping_workflow.py::TestTimelineGroupingIntegration::test_date_range_filtering_across_workflow PASSED [  8%]
+tests/integration/test_timeline_grouping_workflow.py::TestTimelineGroupingIntegration::test_duplicate_mode_with_multiple_tags_on_same_event PASSED [  8%]
+tests/integration/test_timeline_grouping_workflow.py::TestTimelineGroupingIntegration::test_first_match_mode_with_multiple_tags_on_same_event PASSED [  8%]
+tests/integration/test_timeline_grouping_workflow.py::TestTimelineGroupingIntegration::test_remaining_events_handling PASSED [  8%]
+tests/integration/test_timeline_grouping_workflow.py::TestTimelineGroupingIntegration::test_empty_tag_list_returns_all_events_as_remaining PASSED [  9%]
+tests/integration/test_web_server_filtering.py::test_get_longform_no_filter PASSED [  9%]
+tests/integration/test_web_server_filtering.py::test_get_longform_filter_tag_A PASSED [  9%]
+tests/integration/test_web_server_filtering.py::test_get_longform_filter_tag_B PASSED [  9%]
+tests/integration/test_web_server_filtering.py::test_get_longform_invalid_filter_json PASSED [  9%]
+tests/integration/test_wikilinking_flow.py::test_update_event_triggers_commands PASSED [  9%]
+tests/integration/test_wikilinking_navigation.py::test_navigate_to_entity_success PASSED [  9%]
+tests/integration/test_wikilinking_navigation.py::test_navigate_to_entity_case_insensitive PASSED [  9%]
+tests/integration/test_wikilinking_navigation.py::test_navigate_to_entity_not_found PASSED [  9%]
+tests/test_image_support.py::test_webp_is_supported_by_qt PASSED         [  9%]
+tests/test_image_support.py::test_webp_in_constants PASSED               [  9%]
+tests/test_map_navigation.py::test_marker_item_inheritance PASSED        [  9%]
+tests/test_map_navigation.py::test_marker_emits_clicked PASSED           [ 10%]
+tests/test_map_navigation.py::test_marker_drag_does_not_emit_clicked PASSED [ 10%]
+tests/test_map_navigation.py::test_map_widget_signal_propagation PASSED  [ 10%]
+tests/test_map_navigation.py::test_mainwindow_integration FAILED         [ 10%]
+tests/test_shutdown.py::test_database_worker_cleanup PASSED              [ 10%]
+tests/test_shutdown.py::test_logging_shutdown PASSED                     [ 10%]
+tests/test_shutdown.py::test_mainwindow_close_event_cleanups_worker PASSED [ 10%]
+tests/test_shutdown.py::test_mainwindow_close_calls_worker_cleanup_logic PASSED [ 10%]
+tests/test_shutdown.py::test_cleanup_app_shuts_down_logging PASSED       [ 10%]
+tests/test_unsaved_changes.py::test_event_editor_dirty_tracking PASSED   [ 10%]
+tests/test_unsaved_changes.py::test_entity_editor_dirty_tracking PASSED  [ 10%]
+tests/test_unsaved_changes.py::test_mainwindow_check_unsaved_changes PASSED [ 10%]
+tests/test_unsaved_changes.py::test_editor_init_not_dirty PASSED         [ 10%]
+tests/unit/services/repositories/test_trajectory_repository.py::TestTrajectoryRepository::test_insert_and_get_by_marker_id PASSED [ 11%]
+tests/unit/services/repositories/test_trajectory_repository.py::TestTrajectoryRepository::test_insert_empty_trajectory_raises_error PASSED [ 11%]
+tests/unit/services/repositories/test_trajectory_repository.py::TestTrajectoryRepository::test_get_by_map_id PASSED [ 11%]
+tests/unit/services/repositories/test_trajectory_repository.py::TestTrajectoryRepository::test_trajectory_columns_populated_correctly PASSED [ 11%]
+tests/unit/services/repositories/test_trajectory_repository.py::TestTrajectoryRepository::test_update_keyframe_time_and_resort PASSED [ 11%]
+tests/unit/services/repositories/test_trajectory_repository.py::TestTrajectoryRepository::test_update_keyframe_time_not_found PASSED [ 11%]
+tests/unit/services/repositories/test_trajectory_repository.py::TestTrajectoryRepository::test_add_keyframe_creates_new_trajectory PASSED [ 11%]
+tests/unit/services/repositories/test_trajectory_repository.py::TestTrajectoryRepository::test_add_keyframe_raises_error_for_missing_marker PASSED [ 11%]
+tests/unit/services/repositories/test_trajectory_repository.py::TestTrajectoryRepository::test_backward_compat_parses_old_format PASSED [ 11%]
+tests/unit/services/test_backup_service.py::test_backup_config_to_dict PASSED [ 11%]
+tests/unit/services/test_backup_service.py::test_backup_config_from_dict PASSED [ 11%]
+tests/unit/services/test_backup_service.py::test_create_manual_backup PASSED [ 11%]
+tests/unit/services/test_backup_service.py::test_create_auto_save_backup PASSED [ 11%]
+tests/unit/services/test_backup_service.py::test_create_daily_backup PASSED [ 12%]
+tests/unit/services/test_backup_service.py::test_create_weekly_backup PASSED [ 12%]
+tests/unit/services/test_backup_service.py::test_backup_verification PASSED [ 12%]
+tests/unit/services/test_backup_service.py::test_backup_verification_corrupted PASSED [ 12%]
+tests/unit/services/test_backup_service.py::test_restore_backup PASSED   [ 12%]
+tests/unit/services/test_backup_service.py::test_list_backups PASSED     [ 12%]
+tests/unit/services/test_backup_service.py::test_auto_save_retention_policy PASSED [ 12%]
+tests/unit/services/test_backup_service.py::test_daily_retention_policy PASSED [ 12%]
+tests/unit/services/test_backup_service.py::test_manual_backup_unlimited_retention PASSED [ 12%]
+tests/unit/services/test_backup_service.py::test_backup_metadata_persistence PASSED [ 12%]
+tests/unit/services/test_backup_service.py::test_backup_with_nonexistent_db PASSED [ 12%]
+tests/unit/services/test_backup_service.py::test_restore_with_nonexistent_backup PASSED [ 12%]
+tests/unit/services/test_backup_service.py::test_backup_metadata_serialization PASSED [ 12%]
+tests/unit/services/test_backup_service.py::test_set_database_path PASSED [ 13%]
+tests/unit/services/test_backup_service.py::test_backup_naming_convention PASSED [ 13%]
+tests/unit/services/test_backup_service.py::test_backup_creates_subdirectories PASSED [ 13%]
+tests/unit/services/test_backup_service.py::test_external_backup_location PASSED [ 13%]
+tests/unit/services/test_backup_service.py::test_checksum_calculation PASSED [ 13%]
+tests/unit/services/test_backup_service.py::test_restore_creates_safety_backup PASSED [ 13%]
+tests/unit/services/test_backup_service.py::test_backup_config_defaults PASSED [ 13%]
+tests/unit/test_attachment_repository.py::test_insert_and_get PASSED     [ 13%]
+tests/unit/test_attachment_repository.py::test_list_by_owner PASSED      [ 13%]
+tests/unit/test_attachment_repository.py::test_delete PASSED             [ 13%]
+tests/unit/test_attachment_repository.py::test_update_caption PASSED     [ 13%]
+tests/unit/test_attachment_repository.py::test_update_order PASSED       [ 13%]
+tests/unit/test_attachment_service.py::test_add_images PASSED            [ 13%]
+tests/unit/test_attachment_service.py::test_remove_image PASSED          [ 14%]
+tests/unit/test_attachment_service.py::test_restore_image PASSED         [ 14%]
+tests/unit/test_backup_settings_dialog.py::TestBackupSettingsDialogInit::test_dialog_opens_without_error PASSED [ 14%]
+tests/unit/test_backup_settings_dialog.py::TestBackupSettingsDialogInit::test_dialog_has_all_controls PASSED [ 14%]
+tests/unit/test_backup_settings_dialog.py::TestBackupSettingsDialogDefaults::test_default_enabled PASSED [ 14%]
+tests/unit/test_backup_settings_dialog.py::TestBackupSettingsDialogDefaults::test_default_interval PASSED [ 14%]
+tests/unit/test_backup_settings_dialog.py::TestBackupSettingsDialogDefaults::test_default_auto_retention PASSED [ 14%]
+tests/unit/test_backup_settings_dialog.py::TestBackupSettingsDialogDefaults::test_default_daily_retention PASSED [ 14%]
+tests/unit/test_backup_settings_dialog.py::TestBackupSettingsDialogDefaults::test_default_weekly_retention PASSED [ 14%]
+tests/unit/test_backup_settings_dialog.py::TestBackupSettingsDialogDefaults::test_default_manual_retention PASSED [ 14%]
+tests/unit/test_backup_settings_dialog.py::TestBackupSettingsDialogDefaults::test_default_verify PASSED [ 14%]
+tests/unit/test_backup_settings_dialog.py::TestBackupSettingsDialogDefaults::test_default_vacuum PASSED [ 14%]
+tests/unit/test_backup_settings_dialog.py::TestBackupSettingsDialogSaveLoad::test_save_settings PASSED [ 15%]
+tests/unit/test_backup_settings_dialog.py::TestBackupSettingsDialogSaveLoad::test_load_settings PASSED [ 15%]
+tests/unit/test_backup_settings_dialog.py::TestBackupSettingsDialogSignals::test_settings_changed_signal_on_ok PASSED [ 15%]
+tests/unit/test_calendar.py::TestCalendarConfigValidation::test_valid_config_passes_validation PASSED [ 15%]
+tests/unit/test_calendar.py::TestCalendarConfigValidation::test_duplicate_month_names_rejected PASSED [ 15%]
+tests/unit/test_calendar.py::TestCalendarConfigValidation::test_duplicate_abbreviations_rejected PASSED [ 15%]
+tests/unit/test_calendar.py::TestCalendarConfigValidation::test_empty_month_list_rejected PASSED [ 15%]
+tests/unit/test_calendar.py::TestCalendarConfigValidation::test_zero_day_month_rejected PASSED [ 15%]
+tests/unit/test_calendar.py::TestCalendarConfigValidation::test_negative_day_month_rejected PASSED [ 15%]
+tests/unit/test_calendar.py::TestCalendarConfigYearLength::test_simple_year_length PASSED [ 15%]
+tests/unit/test_calendar.py::TestCalendarConfigYearLength::test_variable_month_year_length PASSED [ 15%]
+tests/unit/test_calendar.py::TestCalendarConfigYearLength::test_year_variant_length PASSED [ 15%]
+tests/unit/test_calendar.py::TestCalendarConverterRoundTrip::test_epoch_start_round_trip PASSED [ 15%]
+tests/unit/test_calendar.py::TestCalendarConverterRoundTrip::test_mid_year_round_trip PASSED [ 16%]
+tests/unit/test_calendar.py::TestCalendarConverterRoundTrip::test_end_of_year_round_trip PASSED [ 16%]
+tests/unit/test_calendar.py::TestCalendarConverterRoundTrip::test_year_boundary_round_trip PASSED [ 16%]
+tests/unit/test_calendar.py::TestCalendarConverterRoundTrip::test_high_year_round_trip PASSED [ 16%]
+tests/unit/test_calendar.py::TestCalendarConverterRoundTrip::test_variable_month_round_trip PASSED [ 16%]
+tests/unit/test_calendar.py::TestCalendarConverterRoundTrip::test_parametrized_round_trip[1-1-1] PASSED [ 16%]
+tests/unit/test_calendar.py::TestCalendarConverterRoundTrip::test_parametrized_round_trip[1-6-15] PASSED [ 16%]
+tests/unit/test_calendar.py::TestCalendarConverterRoundTrip::test_parametrized_round_trip[1-12-30] PASSED [ 16%]
+tests/unit/test_calendar.py::TestCalendarConverterRoundTrip::test_parametrized_round_trip[2-1-1] PASSED [ 16%]
+tests/unit/test_calendar.py::TestCalendarConverterRoundTrip::test_parametrized_round_trip[10-3-10] PASSED [ 16%]
+tests/unit/test_calendar.py::TestCalendarConverterRoundTrip::test_parametrized_round_trip[100-12-30] PASSED [ 16%]
+tests/unit/test_calendar.py::TestCalendarConverterToFloat::test_epoch_start_is_zero PASSED [ 16%]
+tests/unit/test_calendar.py::TestCalendarConverterToFloat::test_second_day_is_one PASSED [ 16%]
+tests/unit/test_calendar.py::TestCalendarConverterToFloat::test_second_month_correct PASSED [ 17%]
+tests/unit/test_calendar.py::TestCalendarConverterToFloat::test_year_two_start PASSED [ 17%]
+tests/unit/test_calendar.py::TestCalendarConverterToFloat::test_noon_time_fraction PASSED [ 17%]
+tests/unit/test_calendar.py::TestCalendarConverterFromFloat::test_zero_is_epoch_start PASSED [ 17%]
+tests/unit/test_calendar.py::TestCalendarConverterFromFloat::test_one_is_second_day PASSED [ 17%]
+tests/unit/test_calendar.py::TestCalendarConverterFromFloat::test_thirty_is_month_two PASSED [ 17%]
+tests/unit/test_calendar.py::TestCalendarConverterFromFloat::test_360_is_year_two PASSED [ 17%]
+tests/unit/test_calendar.py::TestCalendarConverterFromFloat::test_noon_fraction PASSED [ 17%]
+tests/unit/test_calendar.py::TestCalendarConverterNegativeFloats::test_negative_one_is_day_before_epoch PASSED [ 17%]
+tests/unit/test_calendar.py::TestCalendarConverterNegativeFloats::test_negative_360_is_year_minus_one PASSED [ 17%]
+tests/unit/test_calendar.py::TestCalendarConverterNegativeFloats::test_negative_round_trip PASSED [ 17%]
+tests/unit/test_calendar.py::TestCalendarConverterYearVariants::test_year_variant_conversion PASSED [ 17%]
+tests/unit/test_calendar.py::TestCalendarConverterYearVariants::test_year_variant_round_trip PASSED [ 17%]
+tests/unit/test_calendar.py::TestCalendarConverterYearVariants::test_year_variant_affects_subsequent_years PASSED [ 18%]
+tests/unit/test_calendar.py::TestCalendarConverterFormatDate::test_format_basic PASSED [ 18%]
+tests/unit/test_calendar.py::TestCalendarConverterFormatDate::test_format_includes_day PASSED [ 18%]
+tests/unit/test_calendar_commands.py::TestCreateCalendarConfigCommand::test_execute_creates_config PASSED [ 18%]
+tests/unit/test_calendar_commands.py::TestCreateCalendarConfigCommand::test_execute_returns_command_result PASSED [ 18%]
+tests/unit/test_calendar_commands.py::TestCreateCalendarConfigCommand::test_undo_deletes_config PASSED [ 18%]
+tests/unit/test_calendar_commands.py::TestUpdateCalendarConfigCommand::test_execute_updates_config PASSED [ 18%]
+tests/unit/test_calendar_commands.py::TestUpdateCalendarConfigCommand::test_undo_restores_original PASSED [ 18%]
+tests/unit/test_calendar_commands.py::TestDeleteCalendarConfigCommand::test_execute_deletes_config PASSED [ 18%]
+tests/unit/test_calendar_commands.py::TestDeleteCalendarConfigCommand::test_undo_restores_config PASSED [ 18%]
+tests/unit/test_calendar_commands.py::TestSetActiveCalendarCommand::test_execute_sets_active PASSED [ 18%]
+tests/unit/test_calendar_commands.py::TestSetActiveCalendarCommand::test_undo_restores_previous_active PASSED [ 18%]
+tests/unit/test_calendar_db.py::TestCalendarConfigCRUD::test_insert_calendar_config PASSED [ 18%]
+tests/unit/test_calendar_db.py::TestCalendarConfigCRUD::test_get_calendar_config_not_found PASSED [ 19%]
+tests/unit/test_calendar_db.py::TestCalendarConfigCRUD::test_get_all_calendar_configs PASSED [ 19%]
+tests/unit/test_calendar_db.py::TestCalendarConfigCRUD::test_update_calendar_config PASSED [ 19%]
+tests/unit/test_calendar_db.py::TestCalendarConfigCRUD::test_delete_calendar_config PASSED [ 19%]
+tests/unit/test_calendar_db.py::TestActiveCalendar::test_get_active_calendar_when_none PASSED [ 19%]
+tests/unit/test_calendar_db.py::TestActiveCalendar::test_set_active_calendar PASSED [ 19%]
+tests/unit/test_calendar_db.py::TestActiveCalendar::test_only_one_active_calendar PASSED [ 19%]
+tests/unit/test_calendar_dialog.py::TestCalendarConfigDialogInit::test_creates_with_default_config PASSED [ 19%]
+tests/unit/test_calendar_dialog.py::TestCalendarConfigDialogInit::test_creates_with_provided_config PASSED [ 19%]
+tests/unit/test_calendar_dialog.py::TestCalendarConfigDialogInit::test_name_field_populated PASSED [ 19%]
+tests/unit/test_calendar_dialog.py::TestCalendarConfigDialogInit::test_epoch_field_populated PASSED [ 19%]
+tests/unit/test_calendar_dialog.py::TestCalendarConfigDialogMonthTable::test_month_table_row_count PASSED [ 19%]
+tests/unit/test_calendar_dialog.py::TestCalendarConfigDialogMonthTable::test_add_month_button PASSED [ 20%]
+tests/unit/test_calendar_dialog.py::TestCalendarConfigDialogMonthTable::test_remove_month_button PASSED [ 20%]
+tests/unit/test_calendar_dialog.py::TestCalendarConfigDialogValidation::test_empty_months_shows_error PASSED [ 20%]
+tests/unit/test_calendar_dialog.py::TestCalendarConfigDialogValidation::test_valid_config_enables_save PASSED [ 20%]
+tests/unit/test_calendar_dialog.py::TestCalendarConfigDialogPreview::test_preview_updates_on_float_change PASSED [ 20%]
+tests/unit/test_calendar_dialog.py::TestCalendarConfigDialogPreview::test_preview_shows_formatted_date PASSED [ 20%]
+tests/unit/test_calendar_dialog.py::TestCalendarConfigDialogOutput::test_get_config_returns_updated_values PASSED [ 20%]
+tests/unit/test_calendar_dialog.py::TestCalendarConfigDialogOutput::test_config_saved_signal_emitted PASSED [ 20%]
+tests/unit/test_command_coordinator.py::test_initialization PASSED       [ 20%]
+tests/unit/test_command_coordinator.py::test_execute_command PASSED      [ 20%]
+tests/unit/test_command_coordinator.py::test_on_command_result_success PASSED [ 20%]
+tests/unit/test_command_coordinator.py::test_on_command_result_failure PASSED [ 20%]
+tests/unit/test_compact_date_widget.py::TestCompactDateWidgetBasics::test_widget_initializes PASSED [ 20%]
+tests/unit/test_compact_date_widget.py::TestCompactDateWidgetBasics::test_set_get_value_roundtrip PASSED [ 21%]
+tests/unit/test_compact_date_widget.py::TestCompactDateWidgetBasics::test_set_value_updates_display PASSED [ 21%]
+tests/unit/test_compact_date_widget.py::TestCompactDateWidgetBasics::test_value_changed_signal_emitted PASSED [ 21%]
+tests/unit/test_compact_date_widget.py::TestCompactDateWidgetCalendarAwareness::test_month_dropdown_populated_from_calendar PASSED [ 21%]
+tests/unit/test_compact_date_widget.py::TestCompactDateWidgetCalendarAwareness::test_day_dropdown_adjusts_to_month PASSED [ 21%]
+tests/unit/test_compact_date_widget.py::TestCompactDateWidgetCalendarAwareness::test_fantasy_calendar_months PASSED [ 21%]
+tests/unit/test_compact_date_widget.py::TestCompactDateWidgetEdgeCases::test_negative_year PASSED [ 21%]
+tests/unit/test_compact_date_widget.py::TestCompactDateWidgetEdgeCases::test_large_year PASSED [ 21%]
+tests/unit/test_compact_date_widget.py::TestCompactDateWidgetEdgeCases::test_month_boundary_transition PASSED [ 21%]
+tests/unit/test_compact_date_widget.py::TestCompactDateWidgetEdgeCases::test_no_converter_fallback PASSED [ 21%]
+tests/unit/test_compact_date_widget.py::TestCompactDateWidgetEdgeCases::test_time_fraction_preserved PASSED [ 21%]
+tests/unit/test_compact_date_widget.py::TestCompactDateWidgetEdgeCases::test_year_zero PASSED [ 21%]
+tests/unit/test_compact_date_widget.py::TestCompactDateWidgetCalendarPopup::test_calendar_button_exists PASSED [ 21%]
+tests/unit/test_compact_date_widget.py::TestCompactDateWidgetCalendarPopup::test_calendar_popup_opens PASSED [ 22%]
+tests/unit/test_compact_duration_widget.py::TestCompactDurationWidgetBasics::test_widget_initializes PASSED [ 22%]
+tests/unit/test_compact_duration_widget.py::TestCompactDurationWidgetBasics::test_set_get_value_roundtrip PASSED [ 22%]
+tests/unit/test_compact_duration_widget.py::TestCompactDurationWidgetBasics::test_value_changed_signal_emitted PASSED [ 22%]
+tests/unit/test_compact_duration_widget.py::TestCompactDurationWidgetDecomposition::test_exact_year_decomposition PASSED [ 22%]
+tests/unit/test_compact_duration_widget.py::TestCompactDurationWidgetDecomposition::test_year_and_month_decomposition PASSED [ 22%]
+tests/unit/test_compact_duration_widget.py::TestCompactDurationWidgetDecomposition::test_complex_decomposition PASSED [ 22%]
+tests/unit/test_compact_duration_widget.py::TestCompactDurationWidgetDecomposition::test_only_days_decomposition PASSED [ 22%]
+tests/unit/test_compact_duration_widget.py::TestCompactDurationWidgetPreview::test_preview_hides_zero_units PASSED [ 22%]
+tests/unit/test_compact_duration_widget.py::TestCompactDurationWidgetPreview::test_preview_written_format PASSED [ 22%]
+tests/unit/test_compact_duration_widget.py::TestCompactDurationWidgetPreview::test_plural_handling PASSED [ 22%]
+tests/unit/test_compact_duration_widget.py::TestCompactDurationWidgetEdgeCases::test_zero_duration PASSED [ 22%]
+tests/unit/test_compact_duration_widget.py::TestCompactDurationWidgetEdgeCases::test_fractional_days PASSED [ 22%]
+tests/unit/test_compact_duration_widget.py::TestCompactDurationWidgetEdgeCases::test_very_large_duration PASSED [ 23%]
+tests/unit/test_compact_duration_widget.py::TestCompactDurationWidgetEdgeCases::test_no_converter_fallback PASSED [ 23%]
+tests/unit/test_compact_duration_widget.py::TestCompactDurationWidgetEdgeCases::test_start_date_affects_calculation PASSED [ 23%]
+tests/unit/test_compact_duration_widget.py::TestCompactDurationWidgetCalendarAwareness::test_standard_calendar_year_length PASSED [ 23%]
+tests/unit/test_compact_duration_widget.py::TestCompactDurationWidgetCalendarAwareness::test_simple_calendar_year_length PASSED [ 23%]
+tests/unit/test_compact_duration_widget.py::TestCompactDurationWidgetCalendarAwareness::test_varying_month_lengths PASSED [ 23%]
+tests/unit/test_connection_manager.py::TestConnectSignalSafe::test_connect_signal_safe_with_valid_signal PASSED [ 23%]
+tests/unit/test_connection_manager.py::TestConnectSignalSafe::test_connect_signal_safe_with_missing_signal PASSED [ 23%]
+tests/unit/test_connection_manager.py::TestConnectSignalSafe::test_connect_signal_safe_with_none_object PASSED [ 23%]
+tests/unit/test_connection_manager.py::TestConnectSignalSafe::test_connect_signal_safe_with_invalid_slot PASSED [ 23%]
+tests/unit/test_connection_manager.py::TestConnectSignalSafe::test_connect_signal_safe_logs_success PASSED [ 23%]
+tests/unit/test_connection_manager.py::TestConnectSignalSafe::test_connect_signal_safe_logs_failure PASSED [ 23%]
+tests/unit/test_connection_manager.py::TestConnectEditors::test_connect_editors_with_valid_signals PASSED [ 23%]
+tests/unit/test_connection_manager.py::TestConnectEditors::test_connect_editors_returns_failure_count PASSED [ 24%]
+tests/unit/test_connection_manager.py::TestConnectAll::test_connect_all_returns_summary PASSED [ 24%]
+tests/unit/test_connection_manager.py::TestConnectAll::test_connect_all_logs_summary PASSED [ 24%]
+tests/unit/test_creation_ux.py::test_create_entity_success_selects_item FAILED [ 24%]
+tests/unit/test_creation_ux.py::test_create_event_success_selects_item FAILED [ 24%]
+tests/unit/test_creation_ux.py::test_create_cancel_does_nothing PASSED   [ 24%]
+tests/unit/test_creation_ux.py::test_select_item_switches_filter_if_needed PASSED [ 24%]
+tests/unit/test_data_handler.py::TestDataHandlerSignals::test_events_loaded_emits_signals PASSED [ 24%]
+tests/unit/test_data_handler.py::TestDataHandlerSignals::test_entities_loaded_emits_signals PASSED [ 24%]
+tests/unit/test_data_handler.py::TestDataHandlerSignals::test_suggestions_include_both_events_and_entities PASSED [ 24%]
+tests/unit/test_data_handler.py::TestDataHandlerSignals::test_event_details_loaded_emits_signals PASSED [ 24%]
+tests/unit/test_data_handler.py::TestDataHandlerSignals::test_command_finished_handles_success PASSED [ 24%]
+tests/unit/test_data_handler.py::TestDataHandlerSignals::test_command_finished_handles_failure PASSED [ 25%]
+tests/unit/test_data_handler.py::TestDataHandlerSignals::test_pending_selection_after_create PASSED [ 25%]
+tests/unit/test_data_handler.py::TestDataHandlerSignals::test_update_event_reloads_markers PASSED [ 25%]
+tests/unit/test_data_handler.py::TestDataHandlerSignals::test_update_entity_reloads_markers PASSED [ 25%]
+tests/unit/test_data_handler.py::TestDataHandlerDecoupling::test_no_mainwindow_reference PASSED [ 25%]
+tests/unit/test_data_handler.py::TestDataHandlerDecoupling::test_uses_internal_cache PASSED [ 25%]
+tests/unit/test_db_bulk_operations.py::test_bulk_insert_events_empty_list PASSED [ 25%]
+tests/unit/test_db_bulk_operations.py::test_bulk_insert_events_single PASSED [ 25%]
+tests/unit/test_db_bulk_operations.py::test_bulk_insert_events_multiple PASSED [ 25%]
+tests/unit/test_db_bulk_operations.py::test_bulk_insert_events_with_attributes PASSED [ 25%]
+tests/unit/test_db_bulk_operations.py::test_bulk_insert_events_upsert PASSED [ 25%]
+tests/unit/test_db_bulk_operations.py::test_bulk_insert_entities_empty_list PASSED [ 25%]
+tests/unit/test_db_bulk_operations.py::test_bulk_insert_entities_multiple PASSED [ 25%]
+tests/unit/test_db_bulk_operations.py::test_bulk_insert_entities_with_attributes PASSED [ 26%]
+tests/unit/test_db_bulk_operations.py::test_bulk_insert_entities_upsert PASSED [ 26%]
+tests/unit/test_db_bulk_operations.py::test_transaction_rollback_on_error PASSED [ 26%]
+tests/unit/test_db_bulk_operations.py::test_connection_auto_connects_on_read PASSED [ 26%]
+tests/unit/test_db_bulk_operations.py::test_get_event_nonexistent PASSED [ 26%]
+tests/unit/test_db_bulk_operations.py::test_get_entity_nonexistent PASSED [ 26%]
+tests/unit/test_db_bulk_operations.py::test_get_relation_nonexistent PASSED [ 26%]
+tests/unit/test_db_bulk_operations.py::test_delete_nonexistent_event PASSED [ 26%]
+tests/unit/test_db_bulk_operations.py::test_delete_nonexistent_entity PASSED [ 26%]
+tests/unit/test_db_bulk_operations.py::test_delete_nonexistent_relation PASSED [ 26%]
+tests/unit/test_db_bulk_operations.py::test_get_name_event PASSED        [ 26%]
+tests/unit/test_db_bulk_operations.py::test_get_name_entity PASSED       [ 26%]
+tests/unit/test_db_bulk_operations.py::test_get_name_nonexistent PASSED  [ 26%]
+tests/unit/test_db_bulk_operations.py::test_foreign_keys_enabled PASSED  [ 27%]
+tests/unit/test_db_bulk_operations.py::test_indexes_created PASSED       [ 27%]
+tests/unit/test_db_bulk_operations.py::test_event_ordering_by_lore_date PASSED [ 27%]
+tests/unit/test_db_bulk_operations.py::test_incoming_relations PASSED    [ 27%]
+tests/unit/test_db_bulk_operations.py::test_relation_attributes_none_default PASSED [ 27%]
+tests/unit/test_db_bulk_operations.py::test_update_relation_attributes_none PASSED [ 27%]
+tests/unit/test_db_hydration.py::TestDBHydration::test_get_objects_by_ids_empty PASSED [ 27%]
+tests/unit/test_db_hydration.py::TestDBHydration::test_get_objects_by_ids_mixed PASSED [ 27%]
+tests/unit/test_db_hydration.py::TestDBHydration::test_get_objects_by_ids_preserves_order PASSED [ 27%]
+tests/unit/test_db_hydration.py::TestDBHydration::test_get_objects_by_ids_ignores_missing PASSED [ 27%]
+tests/unit/test_db_service.py::test_event_crud PASSED                    [ 27%]
+tests/unit/test_db_service.py::test_entity_crud PASSED                   [ 27%]
+tests/unit/test_db_service.py::test_get_all_events PASSED                [ 27%]
+tests/unit/test_db_service.py::test_relation_crud PASSED                 [ 28%]
+tests/unit/test_db_service.py::test_get_tags_with_events PASSED          [ 28%]
+tests/unit/test_dock_layout.py::test_timeline_is_dockable PASSED         [ 28%]
+tests/unit/test_dock_layout.py::test_view_menu_includes_timeline PASSED  [ 28%]
+tests/unit/test_dock_layout.py::test_dock_features_enabled PASSED        [ 28%]
+tests/unit/test_editor_signals.py::test_formatting_triggers_text_changed_signal PASSED [ 28%]
+tests/unit/test_editor_signals.py::test_text_modification_triggers_text_changed_signal PASSED [ 28%]
+tests/unit/test_entities.py::test_entity_serialization PASSED            [ 28%]
+tests/unit/test_entities.py::test_insert_and_get_entity PASSED           [ 28%]
+tests/unit/test_entities.py::test_get_all_entities PASSED                [ 28%]
+tests/unit/test_entities.py::test_delete_entity PASSED                   [ 28%]
+tests/unit/test_entities.py::test_update_entity_via_insert PASSED        [ 28%]
+tests/unit/test_entities.py::test_update_entity_via_insert ERROR         [ 28%]
+tests/unit/test_entities.py::test_entity_tags_property PASSED            [ 28%]
+tests/unit/test_entities.py::test_entity_tags_serialization PASSED       [ 29%]
+tests/unit/test_entities.py::test_entity_tags_with_other_attributes PASSED [ 29%]
+tests/unit/test_entity_commands.py::test_create_entity_success PASSED    [ 29%]
+tests/unit/test_entity_commands.py::test_create_entity_undo PASSED       [ 29%]
+tests/unit/test_entity_commands.py::test_update_entity_success PASSED    [ 29%]
+tests/unit/test_entity_commands.py::test_update_entity_undo PASSED       [ 29%]
+tests/unit/test_entity_commands.py::test_delete_entity_success PASSED    [ 29%]
+tests/unit/test_entity_commands.py::test_delete_entity_undo PASSED       [ 29%]
+tests/unit/test_entity_editor.py::test_editor_init PASSED                [ 29%]
+tests/unit/test_entity_editor.py::test_load_entity PASSED                [ 29%]
+tests/unit/test_entity_editor.py::test_save_clicked PASSED               [ 29%]
+tests/unit/test_entity_editor.py::test_add_relation_flow PASSED          [ 29%]
+tests/unit/test_entity_editor.py::test_remove_relation PASSED            [ 30%]
+tests/unit/test_entity_editor.py::test_edit_relation_flow PASSED         [ 30%]
+tests/unit/test_entity_editor.py::test_auto_relation_creation PASSED     [ 30%]
+tests/unit/test_entity_editor.py::test_auto_relation_disabled PASSED     [ 30%]
+tests/unit/test_event_commands.py::test_create_event_success PASSED      [ 30%]
+tests/unit/test_event_commands.py::test_create_event_failure PASSED      [ 30%]
+tests/unit/test_event_commands.py::test_create_event_undo PASSED         [ 30%]
+tests/unit/test_event_commands.py::test_create_event_undo_not_executed PASSED [ 30%]
+tests/unit/test_event_commands.py::test_update_event_success PASSED      [ 30%]
+tests/unit/test_event_commands.py::test_update_event_validation_error PASSED [ 30%]
+tests/unit/test_event_commands.py::test_update_event_not_found PASSED    [ 30%]
+tests/unit/test_event_commands.py::test_update_event_db_error PASSED     [ 30%]
+tests/unit/test_event_commands.py::test_update_event_undo PASSED         [ 30%]
+tests/unit/test_event_commands.py::test_update_event_undo_not_executed PASSED [ 31%]
+tests/unit/test_event_commands.py::test_delete_event_success PASSED      [ 31%]
+tests/unit/test_event_commands.py::test_delete_event_not_found PASSED    [ 31%]
+tests/unit/test_event_commands.py::test_delete_event_db_error PASSED     [ 31%]
+tests/unit/test_event_commands.py::test_delete_event_undo PASSED         [ 31%]
+tests/unit/test_event_commands.py::test_delete_event_undo_not_executed PASSED [ 31%]
+tests/unit/test_event_editor.py::test_editor_init PASSED                 [ 31%]
+tests/unit/test_event_editor.py::test_load_event PASSED                  [ 31%]
+tests/unit/test_event_editor.py::test_save_clicked PASSED                [ 31%]
+tests/unit/test_event_editor.py::test_add_relation_flow PASSED           [ 31%]
+tests/unit/test_event_editor.py::test_remove_relation PASSED             [ 31%]
+tests/unit/test_event_editor.py::test_context_menu_actions PASSED        [ 31%]
+tests/unit/test_event_editor.py::test_auto_relation_creation PASSED      [ 31%]
+tests/unit/test_event_editor.py::test_auto_relation_disabled PASSED      [ 32%]
+tests/unit/test_event_list.py::test_init PASSED                          [ 32%]
+tests/unit/test_event_list.py::test_set_events_empty PASSED              [ 32%]
+tests/unit/test_event_list.py::test_set_events_with_data PASSED          [ 32%]
+tests/unit/test_event_list.py::test_selection_changed_signal PASSED      [ 32%]
+tests/unit/test_event_list.py::test_selection_cleared PASSED             [ 32%]
+tests/unit/test_event_list.py::test_delete_clicked_signal PASSED         [ 32%]
+tests/unit/test_event_list.py::test_delete_clicked_no_selection PASSED   [ 32%]
+tests/unit/test_event_list.py::test_refresh_clicked_signal PASSED        [ 32%]
+tests/unit/test_event_list.py::test_set_events_clears_previous PASSED    [ 32%]
+tests/unit/test_event_list.py::test_widget_styling PASSED                [ 32%]
+tests/unit/test_event_list.py::test_empty_to_populated_transition PASSED [ 32%]
+tests/unit/test_event_list.py::test_populated_to_empty_transition PASSED [ 32%]
+tests/unit/test_events_duration.py::TestEventDuration::test_event_editor_has_duration_field PASSED [ 33%]
+tests/unit/test_events_duration.py::TestEventDuration::test_event_editor_loads_saves_duration PASSED [ 33%]
+tests/unit/test_events_duration.py::TestEventDuration::test_event_item_rect_no_duration PASSED [ 33%]
+tests/unit/test_events_duration.py::TestEventDuration::test_event_item_rect_with_duration PASSED [ 33%]
+tests/unit/test_filter_dialog.py::TestFilterDialog::test_init_populates_tags PASSED [ 33%]
+tests/unit/test_filter_dialog.py::TestFilterDialog::test_get_config_defaults PASSED [ 33%]
+tests/unit/test_filter_dialog.py::TestFilterDialog::test_selection_generates_config PASSED [ 33%]
+tests/unit/test_full_text_search.py::test_search_matches_description PASSED [ 33%]
+tests/unit/test_full_text_search.py::test_search_matches_tags PASSED     [ 33%]
+tests/unit/test_full_text_search.py::test_search_matches_attributes PASSED [ 33%]
+tests/unit/test_full_text_search.py::test_search_matches_type PASSED     [ 33%]
+tests/unit/test_gallery_refresh.py::test_refresh_on_finish PASSED        [ 33%]
+tests/unit/test_gallery_widget.py::test_initialization PASSED            [ 33%]
+tests/unit/test_gallery_widget.py::test_set_owner PASSED                 [ 34%]
+tests/unit/test_gallery_widget.py::test_on_attachments_loaded PASSED     [ 34%]
+tests/unit/test_gallery_widget.py::test_add_clicked PASSED               [ 34%]
+tests/unit/test_gallery_widget.py::test_remove_clicked PASSED            [ 34%]
+tests/unit/test_gallery_widget.py::test_edit_caption PASSED              [ 34%]
+tests/unit/test_gallery_widget.py::test_drop_event PASSED                [ 34%]
+tests/unit/test_generation_review_dialog.py::TestGenerationReviewDialog::test_init_displays_generated_text PASSED [ 34%]
+tests/unit/test_generation_review_dialog.py::TestGenerationReviewDialog::test_text_is_editable PASSED [ 34%]
+tests/unit/test_generation_review_dialog.py::TestGenerationReviewDialog::test_replace_action PASSED [ 34%]
+tests/unit/test_generation_review_dialog.py::TestGenerationReviewDialog::test_append_action PASSED [ 34%]
+tests/unit/test_generation_review_dialog.py::TestGenerationReviewDialog::test_discard_action PASSED [ 34%]
+tests/unit/test_generation_review_dialog.py::TestGenerationReviewDialog::test_thumbs_up_rating PASSED [ 34%]
+tests/unit/test_generation_review_dialog.py::TestGenerationReviewDialog::test_thumbs_down_rating PASSED [ 35%]
+tests/unit/test_generation_review_dialog.py::TestGenerationReviewDialog::test_get_result_returns_action_and_text PASSED [ 35%]
+tests/unit/test_generation_review_dialog.py::TestGenerationReviewDialog::test_get_result_includes_rating PASSED [ 35%]
+tests/unit/test_generation_review_dialog.py::TestGenerationReviewDialog::test_discard_returns_none_text PASSED [ 35%]
+tests/unit/test_granular_duration.py::TestGranularDuration::test_compact_duration_widget_simple PASSED [ 35%]
+tests/unit/test_granular_duration.py::TestGranularDuration::test_event_editor_has_duration_widget PASSED [ 35%]
+tests/unit/test_granular_duration.py::TestGranularDuration::test_sync_duration_to_end_date PASSED [ 35%]
+tests/unit/test_granular_duration.py::TestGranularDuration::test_sync_end_date_to_duration PASSED [ 35%]
+tests/unit/test_graph_data_service.py::TestGraphDataServiceInit::test_init_creates_service PASSED [ 35%]
+tests/unit/test_graph_data_service.py::TestGetGraphData::test_get_graph_data_returns_all_nodes_without_filters PASSED [ 35%]
+tests/unit/test_graph_data_service.py::TestGetGraphData::test_get_graph_data_filters_by_single_tag PASSED [ 35%]
+tests/unit/test_graph_data_service.py::TestGetGraphData::test_get_graph_data_filters_by_multiple_tags_or PASSED [ 35%]
+tests/unit/test_graph_data_service.py::TestGetGraphData::test_get_graph_data_filters_by_rel_type PASSED [ 35%]
+tests/unit/test_graph_data_service.py::TestGetGraphData::test_get_graph_data_filters_edges_include_connected_nodes PASSED [ 36%]
+tests/unit/test_graph_data_service.py::TestGetGraphData::test_get_graph_data_combined_filters PASSED [ 36%]
+tests/unit/test_graph_data_service.py::TestGetGraphData::test_get_graph_data_empty_result_for_nonexistent_tag PASSED [ 36%]
+tests/unit/test_graph_data_service.py::TestGetAllTags::test_get_all_tags_returns_unique_tags PASSED [ 36%]
+tests/unit/test_graph_data_service.py::TestGetAllTags::test_get_all_tags_empty_db PASSED [ 36%]
+tests/unit/test_graph_data_service.py::TestGetAllRelationTypes::test_get_all_relation_types_returns_unique_types PASSED [ 36%]
+tests/unit/test_graph_data_service.py::TestGetAllRelationTypes::test_get_all_relation_types_empty_db PASSED [ 36%]
+tests/unit/test_graph_widgets.py::TestGraphBuilder::test_build_html_returns_string PASSED [ 36%]
+tests/unit/test_graph_widgets.py::TestGraphBuilder::test_build_html_with_edges PASSED [ 36%]
+tests/unit/test_graph_widgets.py::TestGraphBuilder::test_build_empty_html PASSED [ 36%]
+tests/unit/test_graph_widgets.py::TestGraphFilterBar::test_init_creates_widget PASSED [ 36%]
+tests/unit/test_graph_widgets.py::TestGraphFilterBar::test_set_available_tags PASSED [ 36%]
+tests/unit/test_graph_widgets.py::TestGraphFilterBar::test_get_selected_tags_default PASSED [ 36%]
+tests/unit/test_graph_widgets.py::TestGraphFilterBar::test_filters_changed_signal PASSED [ 37%]
+tests/unit/test_graph_widgets.py::TestGraphWebView::test_init_creates_widget PASSED [ 37%]
+tests/unit/test_graph_widgets.py::TestGraphWebView::test_load_html PASSED [ 37%]
+tests/unit/test_graph_widgets.py::TestGraphWidget::test_init_creates_widget PASSED [ 37%]
+tests/unit/test_graph_widgets.py::TestGraphWidget::test_set_available_tags_delegates PASSED [ 37%]
+tests/unit/test_graph_widgets.py::TestGraphWidget::test_set_available_relation_types_delegates PASSED [ 37%]
+tests/unit/test_graph_widgets.py::TestGraphWidget::test_get_filter_config_returns_dict PASSED [ 37%]
+tests/unit/test_graph_widgets.py::TestGraphWidget::test_refresh_requested_signal PASSED [ 37%]
+tests/unit/test_graph_widgets.py::TestGraphWidget::test_filter_changed_signal PASSED [ 37%]
+tests/unit/test_headless_operation.py::test_database_operations_headless PASSED [ 37%]
+tests/unit/test_headless_operation.py::test_cli_export_headless PASSED   [ 37%]
+tests/unit/test_id_based_links.py::test_parse_id_based_link PASSED       [ 37%]
+tests/unit/test_id_based_links.py::test_parse_legacy_name_link PASSED    [ 37%]
+tests/unit/test_id_based_links.py::test_parse_legacy_name_with_label PASSED [ 38%]
+tests/unit/test_id_based_links.py::test_parse_mixed_links PASSED         [ 38%]
+tests/unit/test_id_based_links.py::test_format_id_link PASSED            [ 38%]
+tests/unit/test_id_based_links.py::test_format_name_link PASSED          [ 38%]
+tests/unit/test_id_based_links.py::test_format_name_link_with_label PASSED [ 38%]
+tests/unit/test_id_based_links.py::test_id_case_insensitive PASSED       [ 38%]
+tests/unit/test_id_based_links.py::test_id_without_display_name PASSED   [ 38%]
+tests/unit/test_id_based_links.py::test_invalid_id_format_treated_as_name PASSED [ 38%]
+tests/unit/test_id_based_links.py::test_span_correctness_id_based PASSED [ 38%]
+tests/unit/test_id_based_links.py::test_adjacent_id_links PASSED         [ 38%]
+tests/unit/test_id_based_links.py::test_whitespace_in_id_link PASSED     [ 38%]
+tests/unit/test_image_commands.py::test_update_image_caption_command PASSED [ 38%]
+tests/unit/test_image_commands.py::test_remove_image_command PASSED      [ 38%]
+tests/unit/test_link_resolver.py::test_resolve_entity PASSED             [ 39%]
+tests/unit/test_link_resolver.py::test_resolve_event PASSED              [ 39%]
+tests/unit/test_link_resolver.py::test_resolve_broken_link PASSED        [ 39%]
+tests/unit/test_link_resolver.py::test_cache_usage PASSED                [ 39%]
+tests/unit/test_link_resolver.py::test_invalidate_cache_specific PASSED  [ 39%]
+tests/unit/test_link_resolver.py::test_invalidate_cache_all PASSED       [ 39%]
+tests/unit/test_link_resolver.py::test_get_display_name_valid PASSED     [ 39%]
+tests/unit/test_link_resolver.py::test_get_display_name_broken_with_fallback PASSED [ 39%]
+tests/unit/test_link_resolver.py::test_get_display_name_broken_without_fallback PASSED [ 39%]
+tests/unit/test_link_resolver.py::test_find_broken_links_none PASSED     [ 39%]
+tests/unit/test_link_resolver.py::test_find_broken_links_some PASSED     [ 39%]
+tests/unit/test_link_resolver.py::test_name_change_propagation PASSED    [ 39%]
+tests/unit/test_llm_generation_logic.py::test_preview_dialog_builds_prompt PASSED [ 40%]
+tests/unit/test_llm_generation_logic.py::test_custom_prompt_structure PASSED [ 40%]
+tests/unit/test_llm_generation_logic.py::test_preview_fetches_rag PASSED [ 40%]
+tests/unit/test_llm_generation_logic.py::test_custom_system_prompt_from_settings FAILED [ 40%]
+tests/unit/test_llm_generation_logic.py::test_default_system_prompt_fallback PASSED [ 40%]
+tests/unit/test_llm_generation_logic.py::test_template_based_prompt_loading FAILED [ 40%]
+tests/unit/test_llm_generation_logic.py::test_template_loading_with_version_2 FAILED [ 40%]
+tests/unit/test_llm_generation_logic.py::test_template_loading_fallback_on_error PASSED [ 40%]
+tests/unit/test_llm_generation_widget.py::test_initial_state PASSED      [ 40%]
+tests/unit/test_llm_generation_widget.py::test_generation_flow_custom_prompt PASSED [ 40%]
+tests/unit/test_llm_generation_widget.py::test_empty_custom_prompt_error PASSED [ 40%]
+tests/unit/test_llm_generation_widget.py::test_settings_usage PASSED     [ 40%]
+tests/unit/test_llm_generation_widget.py::test_template_combo_populated PASSED [ 40%]
+tests/unit/test_llm_generation_widget.py::test_template_selection_saved PASSED [ 41%]
+tests/unit/test_llm_generation_widget.py::test_template_selection_loaded PASSED [ 41%]
+tests/unit/test_llm_generation_widget.py::test_get_few_shot_examples PASSED [ 41%]
+tests/unit/test_llm_providers.py::test_lmstudio_init PASSED              [ 41%]
+tests/unit/test_llm_providers.py::test_lmstudio_init_no_model PASSED     [ 41%]
+tests/unit/test_llm_providers.py::test_lmstudio_embed PASSED             [ 41%]
+tests/unit/test_llm_providers.py::test_lmstudio_embed_empty PASSED       [ 41%]
+tests/unit/test_llm_providers.py::test_lmstudio_generate PASSED          [ 41%]
+tests/unit/test_llm_providers.py::test_lmstudio_health_check PASSED      [ 41%]
+tests/unit/test_llm_providers.py::test_lmstudio_metadata PASSED          [ 41%]
+tests/unit/test_llm_providers.py::test_lmstudio_init_chat_mode_default PASSED [ 41%]
+tests/unit/test_llm_providers.py::test_lmstudio_init_legacy_mode PASSED  [ 41%]
+tests/unit/test_llm_providers.py::test_lmstudio_generate_chat_mode_with_dict_prompt PASSED [ 41%]
+tests/unit/test_llm_providers.py::test_lmstudio_generate_chat_mode_with_string_prompt PASSED [ 42%]
+tests/unit/test_llm_providers.py::test_lmstudio_generate_legacy_mode PASSED [ 42%]
+tests/unit/test_llm_providers.py::test_openai_init PASSED                [ 42%]
+tests/unit/test_llm_providers.py::test_openai_init_no_key PASSED         [ 42%]
+tests/unit/test_llm_providers.py::test_openai_embed PASSED               [ 42%]
+tests/unit/test_llm_providers.py::test_openai_generate PASSED            [ 42%]
+tests/unit/test_llm_providers.py::test_openai_metadata PASSED            [ 42%]
+tests/unit/test_llm_providers.py::test_anthropic_init PASSED             [ 42%]
+tests/unit/test_llm_providers.py::test_anthropic_init_no_key PASSED      [ 42%]
+tests/unit/test_llm_providers.py::test_anthropic_embed_not_supported PASSED [ 42%]
+tests/unit/test_llm_providers.py::test_anthropic_generate PASSED         [ 42%]
+tests/unit/test_llm_providers.py::test_anthropic_metadata PASSED         [ 42%]
+tests/unit/test_llm_providers.py::test_create_provider_lmstudio PASSED   [ 42%]
+tests/unit/test_llm_providers.py::test_create_provider_openai PASSED     [ 43%]
+tests/unit/test_llm_providers.py::test_create_provider_anthropic PASSED  [ 43%]
+tests/unit/test_llm_providers.py::test_create_provider_unknown PASSED    [ 43%]
+tests/unit/test_llm_providers.py::test_create_provider_with_overrides PASSED [ 43%]
+tests/unit/test_llm_providers.py::test_lmstudio_circuit_breaker PASSED   [ 43%]
+tests/unit/test_llm_providers.py::test_lmstudio_retry_success PASSED     [ 43%]
+tests/unit/test_longform_builder.py::test_safe_json_loads_valid PASSED   [ 43%]
+tests/unit/test_longform_builder.py::test_safe_json_loads_empty PASSED   [ 43%]
+tests/unit/test_longform_builder.py::test_safe_json_loads_invalid PASSED [ 43%]
+tests/unit/test_longform_builder.py::test_safe_json_loads_null PASSED    [ 43%]
+tests/unit/test_longform_builder.py::test_get_longform_meta_exists PASSED [ 43%]
+tests/unit/test_longform_builder.py::test_get_longform_meta_missing PASSED [ 43%]
+tests/unit/test_longform_builder.py::test_set_longform_meta_new PASSED   [ 43%]
+tests/unit/test_longform_builder.py::test_set_longform_meta_update PASSED [ 44%]
+tests/unit/test_longform_builder.py::test_read_all_longform_items_mixed PASSED [ 44%]
+tests/unit/test_longform_builder.py::test_read_all_longform_items_no_metadata PASSED [ 44%]
+tests/unit/test_longform_builder.py::test_build_longform_sequence_ordering PASSED [ 44%]
+tests/unit/test_longform_builder.py::test_build_longform_sequence_nesting PASSED [ 44%]
+tests/unit/test_longform_builder.py::test_build_longform_sequence_heading_levels PASSED [ 44%]
+tests/unit/test_longform_builder.py::test_insert_or_update_longform_meta_new PASSED [ 44%]
+tests/unit/test_longform_builder.py::test_insert_or_update_longform_meta_update_existing PASSED [ 44%]
+tests/unit/test_longform_builder.py::test_insert_or_update_longform_meta_invalid_table PASSED [ 44%]
+tests/unit/test_longform_builder.py::test_insert_or_update_longform_meta_row_not_found PASSED [ 44%]
+tests/unit/test_longform_builder.py::test_place_between_siblings_middle PASSED [ 44%]
+tests/unit/test_longform_builder.py::test_place_between_siblings_only_prev PASSED [ 44%]
+tests/unit/test_longform_builder.py::test_place_between_siblings_no_siblings PASSED [ 45%]
+tests/unit/test_longform_builder.py::test_reindex_document_positions PASSED [ 45%]
+tests/unit/test_longform_builder.py::test_export_longform_to_markdown_empty PASSED [ 45%]
+tests/unit/test_longform_builder.py::test_export_longform_to_markdown_with_content PASSED [ 45%]
+tests/unit/test_longform_builder.py::test_export_longform_to_markdown_title_override PASSED [ 45%]
+tests/unit/test_longform_editor.py::test_load_content_populates_text PASSED [ 45%]
+tests/unit/test_longform_editor.py::test_load_content_injects_anchors PASSED [ 45%]
+tests/unit/test_longform_editor.py::test_scroll_to_item_calls_scroll_to_anchor PASSED [ 45%]
+tests/unit/test_longform_editor.py::test_outline_load_sequence PASSED    [ 45%]
+tests/unit/test_longform_editor.py::test_outline_promote_shortcut PASSED [ 45%]
+tests/unit/test_longform_editor.py::test_outline_drag_mime_data PASSED   [ 45%]
+tests/unit/test_longform_editor.py::test_outline_drag_content PASSED     [ 45%]
+tests/unit/test_longform_editor.py::test_editor_initialization PASSED    [ 45%]
+tests/unit/test_longform_editor.py::test_editor_refresh_signal PASSED    [ 46%]
+tests/unit/test_longform_editor.py::test_editor_selection_sync PASSED    [ 46%]
+tests/unit/test_longform_filtering.py::test_read_all_longform_items_no_filter PASSED [ 46%]
+tests/unit/test_longform_filtering.py::test_read_all_longform_items_with_allowed_ids PASSED [ 46%]
+tests/unit/test_longform_filtering.py::test_build_longform_sequence_skips_ensure_indexed_when_filtered PASSED [ 46%]
+tests/unit/test_longform_filtering.py::test_worker_load_longform_sequence_pass_through_filter PASSED [ 46%]
+tests/unit/test_lore_date_widget.py::TestLoreDateWidgetBasic::test_widget_initializes_without_calendar PASSED [ 46%]
+tests/unit/test_lore_date_widget.py::TestLoreDateWidgetBasic::test_set_calendar_enables_structured_mode PASSED [ 46%]
+tests/unit/test_lore_date_widget.py::TestLoreDateWidgetBasic::test_month_combo_shows_month_names PASSED [ 46%]
+tests/unit/test_lore_date_widget.py::TestLoreDateWidgetValueRoundTrip::test_set_value_updates_structured_fields PASSED [ 46%]
+tests/unit/test_lore_date_widget.py::TestLoreDateWidgetValueRoundTrip::test_get_value_returns_correct_float PASSED [ 46%]
+tests/unit/test_lore_date_widget.py::TestLoreDateWidgetValueRoundTrip::test_round_trip_consistency PASSED [ 46%]
+tests/unit/test_lore_date_widget.py::TestLoreDateWidgetDayRange::test_day_combo_has_correct_count PASSED [ 46%]
+tests/unit/test_lore_date_widget.py::TestLoreDateWidgetDayRange::test_day_combo_updates_on_month_change PASSED [ 47%]
+tests/unit/test_lore_date_widget.py::TestLoreDateWidgetDayRange::test_day_selection_preserved_when_valid PASSED [ 47%]
+tests/unit/test_lore_date_widget.py::TestLoreDateWidgetDayRange::test_day_clamped_when_exceeds_month PASSED [ 47%]
+tests/unit/test_lore_date_widget.py::TestLoreDateWidgetRawMode::test_raw_mode_toggle_shows_spinbox PASSED [ 47%]
+tests/unit/test_lore_date_widget.py::TestLoreDateWidgetRawMode::test_raw_mode_preserves_value PASSED [ 47%]
+tests/unit/test_lore_date_widget.py::TestLoreDateWidgetRawMode::test_structured_mode_from_raw_preserves_value PASSED [ 47%]
+tests/unit/test_lore_date_widget.py::TestLoreDateWidgetSignals::test_value_changed_emitted_on_year_change PASSED [ 47%]
+tests/unit/test_lore_date_widget.py::TestLoreDateWidgetSignals::test_value_changed_emitted_on_month_change PASSED [ 47%]
+tests/unit/test_lore_date_widget.py::TestLoreDateWidgetSignals::test_value_changed_emitted_on_day_change PASSED [ 47%]
+tests/unit/test_lore_date_widget.py::TestLoreDateWidgetPreview::test_preview_shows_formatted_date PASSED [ 47%]
+tests/unit/test_lore_duration_decomposition.py::test_duration_decomposition_exact_year PASSED [ 47%]
+tests/unit/test_lore_duration_decomposition.py::test_duration_decomposition_year_and_month PASSED [ 47%]
+tests/unit/test_lore_duration_decomposition.py::test_duration_decomposition_complex PASSED [ 47%]
+tests/unit/test_lore_duration_decomposition.py::test_decomposition_without_converter PASSED [ 48%]
+tests/unit/test_main_window.py::test_init_window PASSED                  [ 48%]
+tests/unit/test_main_window.py::test_create_event_flow PASSED            [ 48%]
+tests/unit/test_main_window.py::test_create_entity PASSED                [ 48%]
+tests/unit/test_main_window.py::test_delete_entity PASSED                [ 48%]
+tests/unit/test_main_window.py::test_delete_event PASSED                 [ 48%]
+tests/unit/test_main_window.py::test_update_entity PASSED                [ 48%]
+tests/unit/test_main_window.py::test_add_relation PASSED                 [ 48%]
+tests/unit/test_main_window.py::test_check_unsaved_changes_save PASSED   [ 48%]
+tests/unit/test_main_window.py::test_check_unsaved_changes_cancel PASSED [ 48%]
+tests/unit/test_main_window_entities.py::test_entity_docks_exist PASSED  [ 48%]
+tests/unit/test_main_window_entities.py::test_create_entity PASSED       [ 48%]
+tests/unit/test_main_window_entities.py::test_delete_entity PASSED       [ 48%]
+tests/unit/test_main_window_entities.py::test_update_entity PASSED       [ 49%]
+tests/unit/test_main_window_entities.py::test_entity_add_relation PASSED [ 49%]
+tests/unit/test_main_window_entities.py::test_entity_remove_relation PASSED [ 49%]
+tests/unit/test_main_window_entities.py::test_entity_update_relation PASSED [ 49%]
+tests/unit/test_main_window_ext.py::test_delete_event_success PASSED     [ 49%]
+tests/unit/test_main_window_ext.py::test_delete_event_sends_command PASSED [ 49%]
+tests/unit/test_main_window_ext.py::test_update_event_success PASSED     [ 49%]
+tests/unit/test_main_window_ext.py::test_update_event_sends_command PASSED [ 49%]
+tests/unit/test_main_window_ext.py::test_add_relation_success PASSED     [ 49%]
+tests/unit/test_main_window_ext.py::test_add_relation_bidirectional PASSED [ 49%]
+tests/unit/test_main_window_ext.py::test_remove_relation_success PASSED  [ 49%]
+tests/unit/test_main_window_ext.py::test_remove_relation_no_current_event PASSED [ 49%]
+tests/unit/test_main_window_ext.py::test_update_relation_success PASSED  [ 50%]
+tests/unit/test_main_window_ext.py::test_update_relation_no_current_event PASSED [ 50%]
+tests/unit/test_main_window_ext.py::test_dock_options_set PASSED         [ 50%]
+tests/unit/test_main_window_ext.py::test_central_widget_is_hidden PASSED [ 50%]
+tests/unit/test_main_window_ext.py::test_all_docks_are_floatable PASSED  [ 50%]
+tests/unit/test_main_window_ext.py::test_load_event_details_no_event PASSED [ 50%]
+tests/unit/test_main_window_ext.py::test_wikilink_completion_refreshes_ui FAILED [ 50%]
+tests/unit/test_main_window_persistence.py::test_on_item_selected_saves_settings PASSED [ 50%]
+tests/unit/test_main_window_persistence.py::test_restore_last_selection_event PASSED [ 50%]
+tests/unit/test_main_window_persistence.py::test_restore_last_selection_entity PASSED [ 50%]
+tests/unit/test_main_window_persistence.py::test_restore_last_selection_none PASSED [ 50%]
+tests/unit/test_main_window_reselection.py::test_event_reselection_skipped PASSED [ 50%]
+tests/unit/test_main_window_reselection.py::test_entity_reselection_skipped PASSED [ 50%]
+tests/unit/test_main_window_reselection.py::test_different_item_reloads PASSED [ 51%]
+tests/unit/test_main_window_reselection.py::test_switch_type_reloads PASSED [ 51%]
+tests/unit/test_main_window_status.py::test_status_bar_initialization PASSED [ 51%]
+tests/unit/test_main_window_status.py::test_status_bar_updates PASSED    [ 51%]
+tests/unit/test_main_window_status.py::test_status_bar_formatting_with_converter PASSED [ 51%]
+tests/unit/test_map_color_command.py::test_update_marker_color_command PASSED [ 51%]
+tests/unit/test_map_color_command.py::test_update_marker_color_command_undo PASSED [ 51%]
+tests/unit/test_map_color_command.py::test_update_marker_color_command_undo_no_previous_color PASSED [ 51%]
+tests/unit/test_map_color_command.py::test_update_marker_color_not_found PASSED [ 51%]
+tests/unit/test_map_commands.py::test_create_map_command PASSED          [ 51%]
+tests/unit/test_map_commands.py::test_create_map_command_undo PASSED     [ 51%]
+tests/unit/test_map_commands.py::test_update_map_command PASSED          [ 51%]
+tests/unit/test_map_commands.py::test_update_map_command_undo PASSED     [ 51%]
+tests/unit/test_map_commands.py::test_delete_map_command PASSED          [ 52%]
+tests/unit/test_map_commands.py::test_delete_map_command_undo PASSED     [ 52%]
+tests/unit/test_map_commands.py::test_create_marker_command PASSED       [ 52%]
+tests/unit/test_map_commands.py::test_create_marker_command_upsert PASSED [ 52%]
+tests/unit/test_map_commands.py::test_create_marker_command_undo PASSED  [ 52%]
+tests/unit/test_map_commands.py::test_update_marker_command PASSED       [ 52%]
+tests/unit/test_map_commands.py::test_update_marker_command_undo PASSED  [ 52%]
+tests/unit/test_map_commands.py::test_delete_marker_command PASSED       [ 52%]
+tests/unit/test_map_commands.py::test_delete_marker_command_undo PASSED  [ 52%]
+tests/unit/test_map_db.py::test_map_crud PASSED                          [ 52%]
+tests/unit/test_map_db.py::test_get_all_maps PASSED                      [ 52%]
+tests/unit/test_map_db.py::test_marker_crud PASSED                       [ 52%]
+tests/unit/test_map_db.py::test_marker_upsert_behavior PASSED            [ 52%]
+tests/unit/test_map_db.py::test_get_markers_for_map PASSED               [ 53%]
+tests/unit/test_map_db.py::test_get_markers_for_object PASSED            [ 53%]
+tests/unit/test_map_db.py::test_get_marker_by_composite PASSED           [ 53%]
+tests/unit/test_map_db.py::test_cascade_delete_markers PASSED            [ 53%]
+tests/unit/test_map_db.py::test_marker_normalized_coordinates PASSED     [ 53%]
+tests/unit/test_map_graphics_view.py::TestMouseCoordinatesSignal::test_signal_emits_normalized_coordinates_in_bounds PASSED [ 53%]
+tests/unit/test_map_graphics_view.py::TestMouseCoordinatesSignal::test_signal_emits_out_of_bounds_for_external_coordinates PASSED [ 53%]
+tests/unit/test_map_graphics_view.py::TestMouseCoordinatesSignal::test_pixmap_contains_check_uses_item_coordinates PASSED [ 53%]
+tests/unit/test_map_graphics_view.py::TestCoordinateSystemIntegration::test_coordinate_system_initialized_with_pixmap_bounds PASSED [ 53%]
+tests/unit/test_map_graphics_view.py::TestCoordinateSystemIntegration::test_coordinate_system_handles_empty_scene PASSED [ 53%]
+tests/unit/test_map_graphics_view.py::test_keyframe_gizmo_interaction PASSED [ 53%]
+tests/unit/test_map_image_storage.py::TestMapImageStorage::test_relative_path_resolution PASSED [ 53%]
+tests/unit/test_map_image_storage.py::TestMapImageStorage::test_relative_path_detection PASSED [ 53%]
+tests/unit/test_map_image_storage.py::TestMapImageStorage::test_unique_filename_generation PASSED [ 54%]
+tests/unit/test_map_image_storage.py::TestMapImageStorage::test_image_copy_to_assets PASSED [ 54%]
+tests/unit/test_map_image_storage.py::TestMapImageStorage::test_relative_path_storage PASSED [ 54%]
+tests/unit/test_map_widget.py::test_map_widget_initialization PASSED     [ 54%]
+tests/unit/test_map_widget.py::test_map_view_initialization PASSED       [ 54%]
+tests/unit/test_map_widget.py::test_load_map_invalid_path PASSED         [ 54%]
+tests/unit/test_map_widget.py::test_add_marker_without_map PASSED        [ 54%]
+tests/unit/test_map_widget.py::test_add_marker_with_map PASSED           [ 54%]
+tests/unit/test_map_widget.py::test_remove_marker PASSED                 [ 54%]
+tests/unit/test_map_widget.py::test_clear_markers PASSED                 [ 54%]
+tests/unit/test_map_widget.py::test_update_marker_position PASSED        [ 54%]
+tests/unit/test_map_widget.py::test_marker_position_changed_signal PASSED [ 54%]
+tests/unit/test_map_widget.py::test_marker_item_draggable PASSED         [ 55%]
+tests/unit/test_map_widget.py::test_marker_item_colors PASSED            [ 55%]
+tests/unit/test_map_widget.py::test_marker_item_tooltip PASSED           [ 55%]
+tests/unit/test_map_widget.py::test_marker_drag_tracking PASSED          [ 55%]
+tests/unit/test_map_widget.py::test_normalized_coordinates_conversion PASSED [ 55%]
+tests/unit/test_map_widget.py::test_widget_delegates_to_view PASSED      [ 55%]
+tests/unit/test_map_widget.py::test_marker_item_change_emits_signal PASSED [ 55%]
+tests/unit/test_map_widget.py::test_mouse_coordinates_display PASSED     [ 55%]
+tests/unit/test_map_widget.py::test_clock_mode_logic PASSED              [ 55%]
+tests/unit/test_map_widget.py::test_clock_mode_jumps_time PASSED         [ 55%]
+tests/unit/test_map_widget.py::test_mode_indicator_ui PASSED             [ 55%]
+tests/unit/test_marker_item_labels.py::test_marker_item_label_creation PASSED [ 55%]
+tests/unit/test_marker_item_labels.py::test_marker_item_label_styling PASSED [ 55%]
+tests/unit/test_marker_item_labels.py::test_marker_item_label_positioning PASSED [ 56%]
+tests/unit/test_prompt_loader.py::test_load_template_v1 PASSED           [ 56%]
+tests/unit/test_prompt_loader.py::test_load_template_latest_version PASSED [ 56%]
+tests/unit/test_prompt_loader.py::test_list_templates PASSED             [ 56%]
+tests/unit/test_prompt_loader.py::test_get_latest_version PASSED         [ 56%]
+tests/unit/test_prompt_loader.py::test_validate_template_valid PASSED    [ 56%]
+tests/unit/test_prompt_loader.py::test_validate_template_invalid_missing_file PASSED [ 56%]
+tests/unit/test_prompt_loader.py::test_validate_template_invalid_no_metadata PASSED [ 56%]
+tests/unit/test_prompt_loader.py::test_validate_template_invalid_missing_closing_delimiter PASSED [ 56%]
+tests/unit/test_prompt_loader.py::test_validate_template_invalid_missing_required_field PASSED [ 56%]
+tests/unit/test_prompt_loader.py::test_validate_template_invalid_no_content PASSED [ 56%]
+tests/unit/test_prompt_loader.py::test_load_nonexistent_template PASSED  [ 56%]
+tests/unit/test_prompt_loader.py::test_load_nonexistent_version PASSED   [ 56%]
+tests/unit/test_prompt_loader.py::test_metadata_parsing PASSED           [ 57%]
+tests/unit/test_prompt_loader.py::test_list_templates_empty_directory PASSED [ 57%]
+tests/unit/test_prompt_loader.py::test_list_templates_nonexistent_directory PASSED [ 57%]
+tests/unit/test_prompt_loader.py::test_default_templates_directory PASSED [ 57%]
+tests/unit/test_prompt_loader.py::test_prompt_template_str PASSED        [ 57%]
+tests/unit/test_prompt_loader.py::test_load_template_strips_whitespace PASSED [ 57%]
+tests/unit/test_prompt_loader.py::test_list_templates_skips_invalid_filenames PASSED [ 57%]
+tests/unit/test_prompt_loader.py::test_get_latest_version_no_templates PASSED [ 57%]
+tests/unit/test_prompt_loader.py::test_load_real_fantasy_worldbuilder_v1 PASSED [ 57%]
+tests/unit/test_prompt_loader.py::test_load_real_fantasy_worldbuilder_v2 PASSED [ 57%]
+tests/unit/test_prompt_loader.py::test_load_few_shot PASSED              [ 57%]
+tests/unit/test_prompt_loader.py::test_load_few_shot_custom_filename PASSED [ 57%]
+tests/unit/test_prompt_loader.py::test_load_few_shot_missing_file PASSED [ 57%]
+tests/unit/test_prompt_loader.py::test_load_real_description_templates PASSED [ 58%]
+tests/unit/test_protocols.py::TestMainWindowProtocol::test_valid_implementation PASSED [ 58%]
+tests/unit/test_protocols.py::TestMainWindowProtocol::test_missing_method PASSED [ 58%]
+tests/unit/test_protocols.py::TestMainWindowProtocol::test_missing_attribute PASSED [ 58%]
+tests/unit/test_protocols.py::TestTimelineDataProvider::test_valid_implementation PASSED [ 58%]
+tests/unit/test_protocols.py::TestTimelineDataProvider::test_missing_get_group_metadata PASSED [ 58%]
+tests/unit/test_protocols.py::TestTimelineDataProvider::test_missing_get_events_for_group PASSED [ 58%]
+tests/unit/test_protocols.py::TestTimelineDataProvider::test_correct_signatures PASSED [ 58%]
+tests/unit/test_relation_commands.py::test_add_relation_command PASSED   [ 58%]
+tests/unit/test_relation_commands.py::test_remove_relation_command PASSED [ 58%]
+tests/unit/test_relation_commands.py::test_update_relation_command PASSED [ 58%]
+tests/unit/test_relation_commands.py::test_add_relation_bidirectional PASSED [ 58%]
+tests/unit/test_relation_custom_attributes.py::test_custom_attributes_preservation PASSED [ 58%]
+tests/unit/test_relation_dialog.py::test_dialog_init PASSED              [ 59%]
+tests/unit/test_relation_dialog.py::test_autocompletion_resolution PASSED [ 59%]
+tests/unit/test_relation_dialog.py::test_manual_entry_fallback PASSED    [ 59%]
+tests/unit/test_relation_dialog.py::test_prefill_editing PASSED          [ 59%]
+tests/unit/test_relation_dialog.py::test_attribute_collection PASSED     [ 59%]
+tests/unit/test_relation_dialog.py::test_default_attributes_omitted PASSED [ 59%]
+tests/unit/test_relation_item_widget.py::test_widget_init PASSED         [ 59%]
+tests/unit/test_relation_item_widget.py::test_attributes_display PASSED  [ 59%]
+tests/unit/test_relation_repo_temporal.py::test_insert_and_retrieve_temporal_relation PASSED [ 59%]
+tests/unit/test_relation_repo_temporal.py::test_update_payload PASSED    [ 59%]
+tests/unit/test_relations_attributes.py::test_relation_dataclass_creation PASSED [ 59%]
+tests/unit/test_relations_attributes.py::test_relation_dataclass_default_attributes PASSED [ 59%]
+tests/unit/test_relations_attributes.py::test_relation_to_dict PASSED    [ 60%]
+tests/unit/test_relations_attributes.py::test_relation_from_dict PASSED  [ 60%]
+tests/unit/test_relations_attributes.py::test_relation_from_dict_null_attributes PASSED [ 60%]
+tests/unit/test_relations_attributes.py::test_relation_weight_property PASSED [ 60%]
+tests/unit/test_relations_attributes.py::test_relation_confidence_property PASSED [ 60%]
+tests/unit/test_relations_attributes.py::test_create_relation_with_attributes PASSED [ 60%]
+tests/unit/test_relations_attributes.py::test_create_relation_without_attributes PASSED [ 60%]
+tests/unit/test_relations_attributes.py::test_update_relation_attributes PASSED [ 60%]
+tests/unit/test_relations_attributes.py::test_relation_attributes_round_trip PASSED [ 60%]
+tests/unit/test_relations_attributes.py::test_relations_with_entities PASSED [ 60%]
+tests/unit/test_relations_attributes.py::test_get_relations_with_attributes PASSED [ 60%]
+tests/unit/test_relations_attributes.py::test_incoming_relations_with_attributes PASSED [ 60%]
+tests/unit/test_relations_attributes.py::test_multiple_relations_same_pair_different_attributes PASSED [ 60%]
+tests/unit/test_search_service.py::test_build_text_for_entity_basic PASSED [ 61%]
+tests/unit/test_search_service.py::test_build_text_for_entity_with_tags PASSED [ 61%]
+tests/unit/test_search_service.py::test_build_text_for_entity_with_attributes PASSED [ 61%]
+tests/unit/test_search_service.py::test_build_text_for_event_basic PASSED [ 61%]
+tests/unit/test_search_service.py::test_build_text_for_event_with_attributes PASSED [ 61%]
+tests/unit/test_search_service.py::test_text_building_deterministic PASSED [ 61%]
+tests/unit/test_search_service.py::test_text_sha256 PASSED               [ 61%]
+tests/unit/test_search_service.py::test_normalize_vector PASSED          [ 61%]
+tests/unit/test_search_service.py::test_normalize_zero_vector PASSED     [ 61%]
+tests/unit/test_search_service.py::test_serialize_deserialize_vector PASSED [ 61%]
+tests/unit/test_search_service.py::test_top_k_streaming PASSED           [ 61%]
+tests/unit/test_search_service.py::test_index_entity PASSED              [ 61%]
+tests/unit/test_search_service.py::test_index_event PASSED               [ 61%]
+tests/unit/test_search_service.py::test_skip_unchanged_entity PASSED     [ 62%]
+tests/unit/test_search_service.py::test_query_index PASSED               [ 62%]
+tests/unit/test_search_service.py::test_query_with_type_filter PASSED    [ 62%]
+tests/unit/test_search_service.py::test_rebuild_index PASSED             [ 62%]
+tests/unit/test_search_service.py::test_delete_index_for_object PASSED   [ 62%]
+tests/unit/test_search_service.py::test_query_empty_index PASSED         [ 62%]
+tests/unit/test_search_service.py::test_model_dimension_filtering PASSED [ 62%]
+tests/unit/test_security_longform.py::test_validate_table_name_valid_events PASSED [ 62%]
+tests/unit/test_security_longform.py::test_validate_table_name_valid_entities PASSED [ 62%]
+tests/unit/test_security_longform.py::test_validate_table_name_invalid PASSED [ 62%]
+tests/unit/test_security_longform.py::test_validate_table_name_sql_injection_attempt PASSED [ 62%]
+tests/unit/test_security_longform.py::test_validate_table_name_case_sensitive PASSED [ 62%]
+tests/unit/test_security_longform.py::test_insert_or_update_invalid_table PASSED [ 62%]
+tests/unit/test_security_longform.py::test_promote_item_invalid_table PASSED [ 63%]
+tests/unit/test_security_longform.py::test_demote_item_invalid_table PASSED [ 63%]
+tests/unit/test_security_longform.py::test_remove_from_longform_invalid_table PASSED [ 63%]
+tests/unit/test_security_longform.py::test_place_between_siblings_invalid_target_table PASSED [ 63%]
+tests/unit/test_security_longform.py::test_place_between_siblings_invalid_prev_table PASSED [ 63%]
+tests/unit/test_security_longform.py::test_place_between_siblings_invalid_next_table PASSED [ 63%]
+tests/unit/test_style_helper.py::test_empty_state_style_contains_theme_values PASSED [ 63%]
+tests/unit/test_style_helper.py::test_preview_label_style_contains_theme_values PASSED [ 63%]
+tests/unit/test_style_helper.py::test_error_label_style_contains_theme_values PASSED [ 63%]
+tests/unit/test_style_helper.py::test_section_header_style PASSED        [ 63%]
+tests/unit/test_style_helper.py::test_frame_style_contains_theme_values PASSED [ 63%]
+tests/unit/test_style_helper.py::test_lore_frame_style_contains_theme_values PASSED [ 63%]
+tests/unit/test_style_helper.py::test_map_viewport_style_contains_theme_values PASSED [ 63%]
+tests/unit/test_style_helper.py::test_primary_button_style_contains_theme_values PASSED [ 64%]
+tests/unit/test_style_helper.py::test_destructive_button_style_contains_theme_values PASSED [ 64%]
+tests/unit/test_style_helper.py::test_dialog_button_style_selected PASSED [ 64%]
+tests/unit/test_style_helper.py::test_dialog_button_style_unselected PASSED [ 64%]
+tests/unit/test_style_helper.py::test_dialog_base_style_contains_theme_values PASSED [ 64%]
+tests/unit/test_style_helper.py::test_scrollbar_style_contains_theme_values PASSED [ 64%]
+tests/unit/test_style_helper.py::test_wiki_link_style_valid PASSED       [ 64%]
+tests/unit/test_style_helper.py::test_wiki_link_style_broken PASSED      [ 64%]
+tests/unit/test_style_helper.py::test_timeline_header_style_contains_theme_values PASSED [ 64%]
+tests/unit/test_style_helper.py::test_style_changes_with_theme_switch PASSED [ 64%]
+tests/unit/test_style_helper.py::test_apply_standard_list_spacing PASSED [ 64%]
+tests/unit/test_style_helper.py::test_apply_compact_spacing PASSED       [ 64%]
+tests/unit/test_style_helper.py::test_apply_form_spacing PASSED          [ 65%]
+tests/unit/test_style_helper.py::test_apply_no_margins PASSED            [ 65%]
+tests/unit/test_style_helper.py::test_style_methods_return_non_empty_strings[get_empty_state_style] PASSED [ 65%]
+tests/unit/test_style_helper.py::test_style_methods_return_non_empty_strings[get_preview_label_style] PASSED [ 65%]
+tests/unit/test_style_helper.py::test_style_methods_return_non_empty_strings[get_error_label_style] PASSED [ 65%]
+tests/unit/test_style_helper.py::test_style_methods_return_non_empty_strings[get_frame_style] PASSED [ 65%]
+tests/unit/test_style_helper.py::test_style_methods_return_non_empty_strings[get_lore_frame_style] PASSED [ 65%]
+tests/unit/test_style_helper.py::test_style_methods_return_non_empty_strings[get_map_viewport_style] PASSED [ 65%]
+tests/unit/test_style_helper.py::test_style_methods_return_non_empty_strings[get_primary_button_style] PASSED [ 65%]
+tests/unit/test_style_helper.py::test_style_methods_return_non_empty_strings[get_destructive_button_style] PASSED [ 65%]
+tests/unit/test_style_helper.py::test_style_methods_return_non_empty_strings[get_dialog_base_style] PASSED [ 65%]
+tests/unit/test_style_helper.py::test_style_methods_return_non_empty_strings[get_scrollbar_style] PASSED [ 65%]
+tests/unit/test_style_helper.py::test_style_methods_return_non_empty_strings[get_timeline_header_style] PASSED [ 65%]
+tests/unit/test_style_helper.py::test_ui_constants_exist PASSED          [ 66%]
+tests/unit/test_style_helper.py::test_empty_state_widget_initialization PASSED [ 66%]
+tests/unit/test_style_helper.py::test_empty_state_widget_set_message PASSED [ 66%]
+tests/unit/test_tag_editor.py::TestTagEditorWidget::test_initial_state PASSED [ 66%]
+tests/unit/test_tag_editor.py::TestTagEditorWidget::test_add_tag PASSED  [ 66%]
+tests/unit/test_tag_editor.py::TestTagEditorWidget::test_add_tag_via_enter PASSED [ 66%]
+tests/unit/test_tag_editor.py::TestTagEditorWidget::test_remove_tag PASSED [ 66%]
+tests/unit/test_tag_editor.py::TestTagEditorWidget::test_duplicate_tag_rejected PASSED [ 66%]
+tests/unit/test_tag_editor.py::TestTagEditorWidget::test_empty_tag_rejected PASSED [ 66%]
+tests/unit/test_tag_editor.py::TestTagEditorWidget::test_load_tags PASSED [ 66%]
+tests/unit/test_tag_editor.py::TestTagEditorWidget::test_load_tags_clears_previous PASSED [ 66%]
+tests/unit/test_tag_editor.py::TestTagEditorWidget::test_get_tags PASSED [ 66%]
+tests/unit/test_tag_editor.py::TestTagEditorWidget::test_tags_changed_signal_on_add PASSED [ 66%]
+tests/unit/test_tag_editor.py::TestTagEditorWidget::test_tags_changed_signal_on_remove PASSED [ 67%]
+tests/unit/test_tag_editor.py::TestTagEditorWidget::test_tag_normalization PASSED [ 67%]
+tests/unit/test_tag_editor.py::TestTagEditorWidget::test_case_sensitive_tags PASSED [ 67%]
+tests/unit/test_tag_filter.py::TestTagFilter::test_filter_object_ids_empty_database PASSED [ 67%]
+tests/unit/test_tag_filter.py::TestTagFilter::test_filter_object_ids_no_filters_returns_all PASSED [ 67%]
+tests/unit/test_tag_filter.py::TestTagFilter::test_filter_object_ids_include_any PASSED [ 67%]
+tests/unit/test_tag_filter.py::TestTagFilter::test_filter_object_ids_include_all PASSED [ 67%]
+tests/unit/test_tag_filter.py::TestTagFilter::test_filter_object_ids_exclude_any PASSED [ 67%]
+tests/unit/test_tag_filter.py::TestTagFilter::test_filter_object_ids_exclude_all PASSED [ 67%]
+tests/unit/test_tag_filter.py::TestTagFilter::test_filter_object_ids_include_and_exclude PASSED [ 67%]
+tests/unit/test_tag_filter.py::TestTagFilter::test_filter_object_ids_case_insensitive PASSED [ 67%]
+tests/unit/test_tag_filter.py::TestTagFilter::test_filter_object_ids_case_sensitive PASSED [ 67%]
+tests/unit/test_tag_filter.py::TestTagFilter::test_filter_object_ids_object_type_entity_only PASSED [ 67%]
+tests/unit/test_tag_filter.py::TestTagFilter::test_filter_object_ids_object_type_event_only PASSED [ 68%]
+tests/unit/test_tag_filter.py::TestTagFilter::test_filter_object_ids_object_type_both PASSED [ 68%]
+tests/unit/test_tag_filter.py::TestTagFilter::test_filter_object_ids_empty_include_list PASSED [ 68%]
+tests/unit/test_tag_filter.py::TestTagFilter::test_filter_object_ids_empty_exclude_list PASSED [ 68%]
+tests/unit/test_tag_filter.py::TestTagFilter::test_filter_object_ids_no_matches PASSED [ 68%]
+tests/unit/test_tag_filter.py::TestTagFilter::test_filter_object_ids_multiple_tags_on_object PASSED [ 68%]
+tests/unit/test_tag_filter.py::TestTagFilter::test_filter_object_ids_invalid_object_type PASSED [ 68%]
+tests/unit/test_tag_filter.py::TestTagFilter::test_filter_object_ids_invalid_include_mode PASSED [ 68%]
+tests/unit/test_tag_filter.py::TestTagFilter::test_filter_object_ids_invalid_exclude_mode PASSED [ 68%]
+tests/unit/test_tag_filter.py::TestTagFilter::test_filter_object_ids_with_connection PASSED [ 68%]
+tests/unit/test_tag_filter.py::TestTagFilter::test_filter_clause_abstract PASSED [ 68%]
+tests/unit/test_tag_filter.py::TestTagFilter::test_complex_scenario PASSED [ 68%]
+tests/unit/test_tag_filter.py::TestTagFilter::test_tag_names_with_spaces PASSED [ 68%]
+tests/unit/test_tag_filter.py::TestTagFilter::test_special_characters_in_tags PASSED [ 69%]
+tests/unit/test_tag_migration.py::TestTagMigration::test_extract_tags_from_event_attributes PASSED [ 69%]
+tests/unit/test_tag_migration.py::TestTagMigration::test_extract_tags_from_entity_attributes PASSED [ 69%]
+tests/unit/test_tag_migration.py::TestTagMigration::test_migration_creates_tags_table PASSED [ 69%]
+tests/unit/test_tag_migration.py::TestTagMigration::test_migration_creates_event_tags_table PASSED [ 69%]
+tests/unit/test_tag_migration.py::TestTagMigration::test_migration_creates_entity_tags_table PASSED [ 69%]
+tests/unit/test_tag_migration.py::TestTagMigration::test_migration_extracts_and_deduplicates_tags PASSED [ 69%]
+tests/unit/test_tag_migration.py::TestTagMigration::test_migration_preserves_tag_associations PASSED [ 69%]
+tests/unit/test_tag_migration.py::TestTagMigration::test_migration_idempotent PASSED [ 69%]
+tests/unit/test_tag_migration.py::TestTagMigration::test_migration_handles_empty_tags PASSED [ 69%]
+tests/unit/test_tag_migration.py::TestTagMigration::test_migration_handles_duplicate_tags_in_item PASSED [ 69%]
+tests/unit/test_tag_migration.py::TestTagMigration::test_rollback_restores_tags_to_attributes PASSED [ 69%]
+tests/unit/test_tags_service.py::TestTagsService::test_get_all_tags_empty PASSED [ 70%]
+tests/unit/test_tags_service.py::TestTagsService::test_create_tag PASSED [ 70%]
+tests/unit/test_tags_service.py::TestTagsService::test_create_duplicate_tag_returns_existing PASSED [ 70%]
+tests/unit/test_tags_service.py::TestTagsService::test_assign_tag_to_event PASSED [ 70%]
+tests/unit/test_tags_service.py::TestTagsService::test_assign_multiple_tags_to_event PASSED [ 70%]
+tests/unit/test_tags_service.py::TestTagsService::test_assign_duplicate_tag_to_event_ignored PASSED [ 70%]
+tests/unit/test_tags_service.py::TestTagsService::test_assign_tag_to_entity PASSED [ 70%]
+tests/unit/test_tags_service.py::TestTagsService::test_assign_multiple_tags_to_entity PASSED [ 70%]
+tests/unit/test_tags_service.py::TestTagsService::test_remove_tag_from_event PASSED [ 70%]
+tests/unit/test_tags_service.py::TestTagsService::test_remove_tag_from_entity PASSED [ 70%]
+tests/unit/test_tags_service.py::TestTagsService::test_delete_tag_removes_all_associations PASSED [ 70%]
+tests/unit/test_tags_service.py::TestTagsService::test_get_events_by_tag PASSED [ 70%]
+tests/unit/test_tags_service.py::TestTagsService::test_get_entities_by_tag PASSED [ 70%]
+tests/unit/test_tags_service.py::TestTagsService::test_get_tags_for_nonexistent_event PASSED [ 71%]
+tests/unit/test_tags_service.py::TestTagsService::test_get_tags_for_nonexistent_entity PASSED [ 71%]
+tests/unit/test_tags_service.py::TestTagsService::test_tag_name_case_sensitive PASSED [ 71%]
+tests/unit/test_tags_service.py::TestTagsService::test_tag_name_whitespace_trimmed PASSED [ 71%]
+tests/unit/test_tags_service.py::TestTagsService::test_empty_tag_name_rejected PASSED [ 71%]
+tests/unit/test_tags_service.py::TestTagsService::test_delete_event_removes_tag_associations PASSED [ 71%]
+tests/unit/test_tags_service.py::TestTagsService::test_delete_entity_removes_tag_associations PASSED [ 71%]
+tests/unit/test_temporal_db_schema.py::test_moving_features_table_exists PASSED [ 71%]
+tests/unit/test_temporal_db_schema.py::test_insert_moving_feature PASSED [ 71%]
+tests/unit/test_temporal_db_schema.py::test_moving_feature_deleted_on_marker_delete PASSED [ 71%]
+tests/unit/test_temporal_manager.py::test_get_state_delegates_to_resolver PASSED [ 71%]
+tests/unit/test_temporal_manager.py::test_caching_behavior PASSED        [ 71%]
+tests/unit/test_temporal_manager.py::test_invalidation_on_signal PASSED  [ 71%]
+tests/unit/test_temporal_manager.py::test_event_change_invalidates_linked_entities PASSED [ 72%]
+tests/unit/test_temporal_manager.py::test_event_change_with_no_relations PASSED [ 72%]
+tests/unit/test_temporal_manager.py::test_relation_add_invalidates_target PASSED [ 72%]
+tests/unit/test_temporal_manager.py::test_relation_delete_invalidates_target PASSED [ 72%]
+tests/unit/test_temporal_manager.py::test_multiple_time_points_invalidated PASSED [ 72%]
+tests/unit/test_temporal_manager.py::test_nuclear_clear_cache PASSED     [ 72%]
+tests/unit/test_temporal_manager.py::test_invalidation_does_not_affect_other_entities PASSED [ 72%]
+tests/unit/test_temporal_manager.py::test_nonexistent_entity_does_not_crash PASSED [ 72%]
+tests/unit/test_temporal_resolver.py::test_resolve_entity_state_no_relations PASSED [ 72%]
+tests/unit/test_temporal_resolver.py::test_resolve_entity_state_basic_override PASSED [ 72%]
+tests/unit/test_temporal_resolver.py::test_resolve_entity_state_time_scope PASSED [ 72%]
+tests/unit/test_temporal_resolver.py::test_resolve_entity_state_priority PASSED [ 72%]
+tests/unit/test_temporal_resolver.py::test_stepwise_history PASSED       [ 72%]
+tests/unit/test_temporal_resolver.py::test_multi_edge_relations PASSED   [ 73%]
+tests/unit/test_text_parser.py::test_extract_simple_link PASSED          [ 73%]
+tests/unit/test_text_parser.py::test_extract_link_with_label PASSED      [ 73%]
+tests/unit/test_text_parser.py::test_extract_multiple_links PASSED       [ 73%]
+tests/unit/test_text_parser.py::test_extract_duplicate_links PASSED      [ 73%]
+tests/unit/test_text_parser.py::test_extract_no_links PASSED             [ 73%]
+tests/unit/test_text_parser.py::test_extract_empty_text PASSED           [ 73%]
+tests/unit/test_text_parser.py::test_whitespace_handling PASSED          [ 73%]
+tests/unit/test_text_parser.py::test_offset_correctness PASSED           [ 73%]
+tests/unit/test_text_parser.py::test_pipe_with_whitespace PASSED         [ 73%]
+tests/unit/test_text_parser.py::test_nested_brackets_rejected PASSED     [ 73%]
+tests/unit/test_text_parser.py::test_link_at_start PASSED                [ 73%]
+tests/unit/test_text_parser.py::test_link_at_end PASSED                  [ 73%]
+tests/unit/test_text_parser.py::test_adjacent_links PASSED               [ 74%]
+tests/unit/test_theme_manager.py::test_singleton PASSED                  [ 74%]
+tests/unit/test_theme_manager.py::test_default_theme_fallback PASSED     [ 74%]
+tests/unit/test_theme_manager.py::test_load_themes_success PASSED        [ 74%]
+tests/unit/test_theme_manager.py::test_apply_theme_success PASSED        [ 74%]
+tests/unit/test_theme_manager.py::test_apply_theme_error PASSED          [ 74%]
+tests/unit/test_timeline.py::test_timeline_init PASSED                   [ 74%]
+tests/unit/test_timeline.py::test_set_events PASSED                      [ 74%]
+tests/unit/test_timeline.py::test_lane_layout_logic PASSED               [ 74%]
+tests/unit/test_timeline.py::test_focus_event PASSED                     [ 74%]
+tests/unit/test_timeline.py::test_gravity_packing PASSED                 [ 74%]
+tests/unit/test_timeline_advanced.py::TestSmartLanePacking::test_non_overlapping_events_same_lane PASSED [ 74%]
+tests/unit/test_timeline_advanced.py::TestSmartLanePacking::test_overlapping_events_different_lanes PASSED [ 75%]
+tests/unit/test_timeline_advanced.py::TestSmartLanePacking::test_lane_reuse_after_gap PASSED [ 75%]
+tests/unit/test_timeline_advanced.py::TestSmartLanePacking::test_point_events_minimal_lanes PASSED [ 75%]
+tests/unit/test_timeline_advanced.py::TestSmartLanePacking::test_complex_overlapping_pattern PASSED [ 75%]
+tests/unit/test_timeline_advanced.py::TestZoomToCursor::test_zoom_in_at_point PASSED [ 75%]
+tests/unit/test_timeline_advanced.py::TestZoomToCursor::test_zoom_out_at_point PASSED [ 75%]
+tests/unit/test_timeline_advanced.py::TestZoomToCursor::test_zoom_min_limit PASSED [ 75%]
+tests/unit/test_timeline_advanced.py::TestZoomToCursor::test_zoom_max_limit PASSED [ 75%]
+tests/unit/test_timeline_advanced.py::TestEventItemUpdate::test_event_item_update_method_exists PASSED [ 75%]
+tests/unit/test_timeline_advanced.py::TestEventItemUpdate::test_event_item_update_changes_data PASSED [ 75%]
+tests/unit/test_timeline_advanced.py::TestEventItemUpdate::test_items_reused_on_set_events PASSED [ 75%]
+tests/unit/test_timeline_advanced.py::TestEventItemUpdate::test_items_removed_when_event_deleted PASSED [ 75%]
+tests/unit/test_timeline_advanced.py::TestScrubberPlayhead::test_playhead_exists_in_scene PASSED [ 75%]
+tests/unit/test_timeline_advanced.py::TestScrubberPlayhead::test_set_playhead_time PASSED [ 76%]
+tests/unit/test_timeline_advanced.py::TestScrubberPlayhead::test_playhead_time_changed_signal PASSED [ 76%]
+tests/unit/test_timeline_advanced.py::TestScrubberPlayhead::test_start_stop_playback PASSED [ 76%]
+tests/unit/test_timeline_advanced.py::TestScrubberPlayhead::test_step_forward PASSED [ 76%]
+tests/unit/test_timeline_advanced.py::TestScrubberPlayhead::test_step_backward PASSED [ 76%]
+tests/unit/test_timeline_advanced.py::TestScrubberPlayhead::test_playback_advances_automatically PASSED [ 76%]
+tests/unit/test_timeline_advanced.py::TestPlaybackControls::test_play_pause_button_exists PASSED [ 76%]
+tests/unit/test_timeline_advanced.py::TestPlaybackControls::test_step_buttons_exist PASSED [ 76%]
+tests/unit/test_timeline_advanced.py::TestPlaybackControls::test_toggle_playback PASSED [ 76%]
+tests/unit/test_timeline_advanced.py::TestPlaybackControls::test_step_forward_button PASSED [ 76%]
+tests/unit/test_timeline_advanced.py::TestPlaybackControls::test_step_backward_button PASSED [ 76%]
+tests/unit/test_timeline_advanced.py::TestPlaybackControls::test_widget_exposes_playhead_signal PASSED [ 76%]
+tests/unit/test_timeline_advanced.py::TestEventItemCaching::test_event_item_has_cache_mode_set PASSED [ 76%]
+tests/unit/test_timeline_advanced.py::TestCurrentTimeLine::test_current_time_line_exists_in_scene PASSED [ 77%]
+tests/unit/test_timeline_advanced.py::TestCurrentTimeLine::test_set_current_time PASSED [ 77%]
+tests/unit/test_timeline_advanced.py::TestCurrentTimeLine::test_current_time_changed_signal PASSED [ 77%]
+tests/unit/test_timeline_advanced.py::TestCurrentTimeLine::test_current_time_line_not_draggable PASSED [ 77%]
+tests/unit/test_timeline_advanced.py::TestCurrentTimeLine::test_current_time_distinct_from_playhead PASSED [ 77%]
+tests/unit/test_timeline_advanced.py::TestCurrentTimeLine::test_widget_exposes_current_time_signal PASSED [ 77%]
+tests/unit/test_timeline_advanced.py::TestCurrentTimeLine::test_set_current_time_to_playhead_button PASSED [ 77%]
+tests/unit/test_timeline_display.py::test_widget_creation PASSED         [ 77%]
+tests/unit/test_timeline_display.py::test_empty_state PASSED             [ 77%]
+tests/unit/test_timeline_display.py::test_single_event_display PASSED    [ 77%]
+tests/unit/test_timeline_display.py::test_multiple_events_sorted_chronologically PASSED [ 77%]
+tests/unit/test_timeline_display.py::test_playhead_highlighting PASSED   [ 77%]
+tests/unit/test_timeline_display.py::test_event_without_payload PASSED   [ 77%]
+tests/unit/test_timeline_grouping.py::TestTimelineGrouping::test_get_events_grouped_by_tags_duplicate_mode_assigns_event_to_all_matching_groups PASSED [ 78%]
+tests/unit/test_timeline_grouping.py::TestTimelineGrouping::test_get_group_counts_returns_distinct_event_counts_per_tag PASSED [ 78%]
+tests/unit/test_timeline_grouping.py::TestTimelineGrouping::test_remaining_contains_only_events_with_no_group_tags PASSED [ 78%]
+tests/unit/test_timeline_grouping.py::TestTimelineGrouping::test_get_events_grouped_by_tags_first_match_mode_explicit PASSED [ 78%]
+tests/unit/test_timeline_grouping.py::TestTimelineGrouping::test_get_events_grouped_by_tags_respects_tag_order PASSED [ 78%]
+tests/unit/test_timeline_grouping.py::TestTimelineGrouping::test_get_events_grouped_by_tags_filters_by_date_range PASSED [ 78%]
+tests/unit/test_timeline_grouping.py::TestTimelineGrouping::test_get_group_counts_respects_date_range PASSED [ 78%]
+tests/unit/test_timeline_grouping.py::TestTimelineGrouping::test_get_events_grouped_by_tags_sorts_by_lore_date_within_groups PASSED [ 78%]
+tests/unit/test_timeline_grouping.py::TestTimelineGrouping::test_remaining_events_excludes_events_with_any_group_tag PASSED [ 78%]
+tests/unit/test_timeline_grouping.py::TestTimelineGrouping::test_empty_tag_order_returns_empty_groups PASSED [ 78%]
+tests/unit/test_timeline_grouping.py::TestTimelineGrouping::test_get_group_counts_includes_metadata PASSED [ 78%]
+tests/unit/test_timeline_grouping.py::TestTimelineGrouping::test_get_events_grouped_by_tags_handles_nonexistent_tags PASSED [ 78%]
+tests/unit/test_timeline_grouping.py::TestTimelineGrouping::test_get_events_grouped_by_tags_default_mode_is_duplicate PASSED [ 78%]
+tests/unit/test_timeline_grouping.py::TestTimelineGrouping::test_remaining_events_sorted_by_lore_date PASSED [ 79%]
+tests/unit/test_timeline_grouping.py::TestTimelineGrouping::test_get_group_metadata_handles_all_events_tag PASSED [ 79%]
+tests/unit/test_timeline_grouping.py::TestTimelineGrouping::test_get_group_metadata_all_events_includes_untagged PASSED [ 79%]
+tests/unit/test_timeline_grouping.py::TestTimelineGrouping::test_get_group_metadata_all_events_at_end PASSED [ 79%]
+tests/unit/test_timeline_grouping_commands.py::TestTimelineGroupingCommands::test_set_timeline_grouping_command_stores_configuration PASSED [ 79%]
+tests/unit/test_timeline_grouping_commands.py::TestTimelineGroupingCommands::test_set_timeline_grouping_command_with_first_match_mode PASSED [ 79%]
+tests/unit/test_timeline_grouping_commands.py::TestTimelineGroupingCommands::test_set_timeline_grouping_command_undo_restores_previous PASSED [ 79%]
+tests/unit/test_timeline_grouping_commands.py::TestTimelineGroupingCommands::test_set_timeline_grouping_command_undo_when_no_previous_config PASSED [ 79%]
+tests/unit/test_timeline_grouping_commands.py::TestTimelineGroupingCommands::test_clear_timeline_grouping_command_removes_configuration PASSED [ 79%]
+tests/unit/test_timeline_grouping_commands.py::TestTimelineGroupingCommands::test_clear_timeline_grouping_command_undo_restores_config PASSED [ 79%]
+tests/unit/test_timeline_grouping_commands.py::TestTimelineGroupingCommands::test_update_tag_color_command_sets_color PASSED [ 79%]
+tests/unit/test_timeline_grouping_commands.py::TestTimelineGroupingCommands::test_update_tag_color_command_undo_restores_previous_color PASSED [ 79%]
+tests/unit/test_timeline_grouping_commands.py::TestTimelineGroupingCommands::test_update_tag_color_command_undo_when_no_previous_color PASSED [ 80%]
+tests/unit/test_timeline_grouping_commands.py::TestTimelineGroupingCommands::test_update_tag_color_command_validates_color_format PASSED [ 80%]
+tests/unit/test_timeline_grouping_commands.py::TestTimelineGroupingCommands::test_set_timeline_grouping_command_validates_mode PASSED [ 80%]
+tests/unit/test_timeline_grouping_commands.py::TestTimelineGroupingCommands::test_update_tag_color_command_creates_tag_if_not_exists PASSED [ 80%]
+tests/unit/test_timeline_grouping_commands.py::TestTimelineGroupingCommands::test_command_execution_state_tracking PASSED [ 80%]
+tests/unit/test_timeline_grouping_commands.py::TestTimelineGroupingCommands::test_multiple_undo_redo_cycles PASSED [ 80%]
+tests/unit/test_timeline_grouping_service.py::TestTimelineGroupingService::test_get_group_metadata_returns_tag_info_with_colors PASSED [ 80%]
+tests/unit/test_timeline_grouping_service.py::TestTimelineGroupingService::test_get_events_for_group_returns_only_matching_events PASSED [ 80%]
+tests/unit/test_timeline_grouping_service.py::TestTimelineGroupingService::test_get_events_for_group_respects_date_range PASSED [ 80%]
+tests/unit/test_timeline_grouping_service.py::TestTimelineGroupingService::test_set_tag_color_stores_and_retrieves_color PASSED [ 80%]
+tests/unit/test_timeline_grouping_service.py::TestTimelineGroupingService::test_get_tag_color_generates_deterministic_color_when_not_set PASSED [ 80%]
+tests/unit/test_timeline_grouping_service.py::TestTimelineGroupingService::test_get_tag_color_returns_stored_color_when_set PASSED [ 80%]
+tests/unit/test_timeline_grouping_service.py::TestTimelineGroupingService::test_update_tag_color_changes_existing_color PASSED [ 80%]
+tests/unit/test_timeline_grouping_service.py::TestTimelineGroupingService::test_get_group_metadata_with_no_events_returns_zero_counts PASSED [ 81%]
+tests/unit/test_timeline_grouping_service.py::TestTimelineGroupingService::test_get_events_for_group_with_nonexistent_tag_returns_empty PASSED [ 81%]
+tests/unit/test_timeline_grouping_service.py::TestTimelineGroupingService::test_get_group_metadata_includes_all_tags_in_order PASSED [ 81%]
+tests/unit/test_timeline_grouping_service.py::TestTimelineGroupingService::test_color_generation_is_consistent_across_calls PASSED [ 81%]
+tests/unit/test_timeline_grouping_service.py::TestTimelineGroupingService::test_set_tag_color_validates_hex_format PASSED [ 81%]
+tests/unit/test_timeline_interaction.py::test_timeline_init PASSED       [ 81%]
+tests/unit/test_timeline_interaction.py::test_set_events_creates_items PASSED [ 81%]
+tests/unit/test_timeline_interaction.py::test_fit_view PASSED            [ 81%]
+tests/unit/test_timeline_interaction.py::test_selection_signal PASSED    [ 81%]
+tests/unit/test_timeline_interaction.py::test_focus_event PASSED         [ 81%]
+tests/unit/test_timeline_interaction.py::test_wheel_zoom PASSED          [ 81%]
+tests/unit/test_timeline_interaction.py::test_mouse_pan_init PASSED      [ 81%]
+tests/unit/test_timeline_interaction.py::test_draw_ruler PASSED          [ 81%]
+tests/unit/test_timeline_interaction.py::test_playhead_drag PASSED       [ 82%]
+tests/unit/test_timeline_interaction.py::test_event_drag_date_change PASSED [ 82%]
+tests/unit/test_timeline_interaction.py::test_event_drag_constrained_to_horizontal PASSED [ 82%]
+tests/unit/test_timeline_lane_packer.py::TestTimelineLanePacker::test_non_overlapping_events_same_lane PASSED [ 82%]
+tests/unit/test_timeline_lane_packer.py::TestTimelineLanePacker::test_overlapping_events_different_lanes PASSED [ 82%]
+tests/unit/test_timeline_lane_packer.py::TestTimelineLanePacker::test_lane_reuse PASSED [ 82%]
+tests/unit/test_timeline_lane_packer.py::TestTimelineLanePacker::test_point_events PASSED [ 82%]
+tests/unit/test_timeline_lane_packer.py::TestTimelineLanePacker::test_scale_factor_update PASSED [ 82%]
+tests/unit/test_timeline_lane_packer.py::TestTimelineLanePacker::test_empty_events PASSED [ 82%]
+tests/unit/test_timeline_lane_packer.py::TestTimelineLanePacker::test_long_event_names PASSED [ 82%]
+tests/unit/test_timeline_rendering.py::test_event_item_bounding_rect PASSED [ 82%]
+tests/unit/test_timeline_rendering.py::test_event_item_paint PASSED      [ 82%]
+tests/unit/test_timeline_rendering.py::test_event_item_paint_selected PASSED [ 82%]
+tests/unit/test_timeline_rendering.py::test_event_item_color_by_type PASSED [ 83%]
+tests/unit/test_timeline_rendering.py::test_event_item_position PASSED   [ 83%]
+tests/unit/test_timeline_rendering.py::test_timeline_scene_init PASSED   [ 83%]
+tests/unit/test_timeline_rendering.py::test_timeline_view_set_events_empty PASSED [ 83%]
+tests/unit/test_timeline_rendering.py::test_timeline_view_set_events_with_data PASSED [ 83%]
+tests/unit/test_timeline_rendering.py::test_timeline_view_drag_mode PASSED [ 83%]
+tests/unit/test_timeline_rendering.py::test_timeline_view_fit_all PASSED [ 83%]
+tests/unit/test_timeline_rendering.py::test_timeline_view_focus_event_found PASSED [ 83%]
+tests/unit/test_timeline_rendering.py::test_timeline_view_focus_event_not_found PASSED [ 83%]
+tests/unit/test_timeline_rendering.py::test_timeline_view_scale_factor PASSED [ 83%]
+tests/unit/test_timeline_rendering.py::test_timeline_widget_btn_fit PASSED [ 83%]
+tests/unit/test_timeline_rendering.py::test_timeline_widget_header_frame PASSED [ 83%]
+tests/unit/test_timeline_rendering.py::test_timeline_view_scene_rect_updates PASSED [ 83%]
+tests/unit/test_timeline_rendering.py::test_event_item_flags PASSED      [ 84%]
+tests/unit/test_timeline_rendering.py::test_timeline_view_lane_height_constant PASSED [ 84%]
+tests/unit/test_timeline_rendering.py::test_timeline_view_ruler_height_constant PASSED [ 84%]
+tests/unit/test_timeline_ruler.py::TestTickLevel::test_tick_levels_ordered_by_granularity PASSED [ 84%]
+tests/unit/test_timeline_ruler.py::TestTickLevel::test_get_finer_level PASSED [ 84%]
+tests/unit/test_timeline_ruler.py::TestTickLevel::test_get_coarser_level PASSED [ 84%]
+tests/unit/test_timeline_ruler.py::TestActiveLevelCalculation::test_zoomed_out_shows_decades PASSED [ 84%]
+tests/unit/test_timeline_ruler.py::TestActiveLevelCalculation::test_zoomed_in_shows_days PASSED [ 84%]
+tests/unit/test_timeline_ruler.py::TestActiveLevelCalculation::test_minor_level_is_finer_than_major PASSED [ 84%]
+tests/unit/test_timeline_ruler.py::TestOpacityInterpolation::test_opacity_zero_when_crowded PASSED [ 84%]
+tests/unit/test_timeline_ruler.py::TestOpacityInterpolation::test_opacity_full_when_spacious PASSED [ 84%]
+tests/unit/test_timeline_ruler.py::TestOpacityInterpolation::test_opacity_interpolates_smoothly PASSED [ 84%]
+tests/unit/test_timeline_ruler.py::TestTickCalculation::test_calculate_ticks_returns_list PASSED [ 85%]
+tests/unit/test_timeline_ruler.py::TestTickCalculation::test_ticks_within_date_range PASSED [ 85%]
+tests/unit/test_timeline_ruler.py::TestTickCalculation::test_ticks_have_required_properties PASSED [ 85%]
+tests/unit/test_timeline_ruler.py::TestTickCalculation::test_major_ticks_have_full_opacity PASSED [ 85%]
+tests/unit/test_timeline_ruler.py::TestCollisionAvoidance::test_non_overlapping_labels_kept PASSED [ 85%]
+tests/unit/test_timeline_ruler.py::TestCollisionAvoidance::test_overlapping_minor_labels_culled PASSED [ 85%]
+tests/unit/test_timeline_ruler.py::TestCalendarAwareDivisions::test_set_calendar_converter PASSED [ 85%]
+tests/unit/test_timeline_ruler.py::TestCalendarAwareDivisions::test_with_calendar_uses_calendar_labels PASSED [ 85%]
+tests/unit/test_timeline_ruler.py::TestCalendarAwareDivisions::test_day_ticks_have_abbreviations PASSED [ 85%]
+tests/unit/test_timeline_ruler.py::TestNumericFallback::test_without_calendar_uses_numeric_labels PASSED [ 85%]
+tests/unit/test_timeline_ruler.py::TestStickyParentContext::test_get_parent_context_returns_string PASSED [ 85%]
+tests/unit/test_timeline_ruler.py::TestStickyParentContext::test_parent_context_without_calendar PASSED [ 85%]
+tests/unit/test_timeline_ruler.py::TestEdgeCases::test_zero_date_range PASSED [ 85%]
+tests/unit/test_timeline_ruler.py::TestEdgeCases::test_negative_dates PASSED [ 86%]
+tests/unit/test_timeline_ruler.py::TestEdgeCases::test_very_large_dates PASSED [ 86%]
+tests/unit/test_timeline_ruler.py::TestEdgeCases::test_narrow_viewport PASSED [ 86%]
+tests/unit/test_timeline_view_helpers.py::TestApplyZoom::test_apply_zoom_updates_transform PASSED [ 86%]
+tests/unit/test_timeline_view_helpers.py::TestApplyZoom::test_apply_zoom_updates_current_zoom PASSED [ 86%]
+tests/unit/test_timeline_view_helpers.py::TestApplyZoom::test_apply_zoom_updates_playhead_zoom PASSED [ 86%]
+tests/unit/test_timeline_view_helpers.py::TestSetupRulerFonts::test_setup_ruler_fonts_returns_tuple PASSED [ 86%]
+tests/unit/test_timeline_view_helpers.py::TestSetupRulerFonts::test_setup_ruler_fonts_major_is_bold PASSED [ 86%]
+tests/unit/test_timeline_view_helpers.py::TestSetupRulerFonts::test_setup_ruler_fonts_sizes PASSED [ 86%]
+tests/unit/test_timeline_view_helpers.py::TestPositionEventItem::test_position_event_item_sets_y PASSED [ 86%]
+tests/unit/test_timeline_view_helpers.py::TestPositionEventItem::test_position_event_item_sets_visible PASSED [ 86%]
+tests/unit/test_timeline_view_helpers.py::TestPositionEventItem::test_position_event_item_updates_initial_y PASSED [ 86%]
+tests/unit/test_timeline_view_helpers.py::TestUpdateSceneRectFromEvents::test_update_scene_rect_sets_valid_rect PASSED [ 86%]
+tests/unit/test_timeline_view_helpers.py::TestUpdateSceneRectFromEvents::test_update_scene_rect_handles_single_event PASSED [ 87%]
+tests/unit/test_timeline_view_helpers.py::TestUpdateSceneRectFromEvents::test_update_scene_rect_includes_margin PASSED [ 87%]
+tests/unit/test_timeline_view_helpers.py::TestEventUpdatePreview::test_update_event_preview_changes_name PASSED [ 87%]
+tests/unit/test_timeline_view_helpers.py::TestEventUpdatePreview::test_update_event_preview_changes_lore_date PASSED [ 87%]
+tests/unit/test_timeline_view_helpers.py::TestEventUpdatePreview::test_update_event_preview_nonexistent_id PASSED [ 87%]
+tests/unit/test_timeline_view_helpers.py::TestPlayheadHelpers::test_get_playhead_time PASSED [ 87%]
+tests/unit/test_timeline_view_helpers.py::TestPlayheadHelpers::test_is_playing_initially_false PASSED [ 87%]
+tests/unit/test_timeline_view_helpers.py::TestPlayheadHelpers::test_is_playing_after_start PASSED [ 87%]
+tests/unit/test_timeline_visibility.py::TestTimelineVisibility::test_events_visible_in_default_view PASSED [ 87%]
+tests/unit/test_timeline_visibility.py::TestTimelineVisibility::test_band_visibility_when_grouping_active PASSED [ 87%]
+tests/unit/test_timeline_visibility.py::TestTimelineVisibility::test_events_hidden_when_band_collapsed PASSED [ 87%]
+tests/unit/test_timeline_visibility.py::TestTimelineVisibility::test_events_visible_when_band_expanded PASSED [ 87%]
+tests/unit/test_timeline_visibility.py::TestTimelineVisibility::test_duplicate_events_visibility PASSED [ 87%]
+tests/unit/test_timeline_visibility.py::TestTimelineVisibility::test_label_overlay_visibility PASSED [ 88%]
+tests/unit/test_trajectory.py::TestKeyframe::test_keyframe_creation PASSED [ 88%]
+tests/unit/test_trajectory.py::TestInterpolatePosition::test_empty_keyframes_returns_none PASSED [ 88%]
+tests/unit/test_trajectory.py::TestInterpolatePosition::test_single_keyframe_returns_none PASSED [ 88%]
+tests/unit/test_trajectory.py::TestInterpolatePosition::test_before_first_keyframe_clamps_to_start PASSED [ 88%]
+tests/unit/test_trajectory.py::TestInterpolatePosition::test_after_last_keyframe_clamps_to_end PASSED [ 88%]
+tests/unit/test_trajectory.py::TestInterpolatePosition::test_exact_first_keyframe_time PASSED [ 88%]
+tests/unit/test_trajectory.py::TestInterpolatePosition::test_exact_last_keyframe_time PASSED [ 88%]
+tests/unit/test_trajectory.py::TestInterpolatePosition::test_midpoint_interpolation PASSED [ 88%]
+tests/unit/test_trajectory.py::TestInterpolatePosition::test_quarter_interpolation PASSED [ 88%]
+tests/unit/test_trajectory.py::TestInterpolatePosition::test_three_keyframes_first_segment PASSED [ 88%]
+tests/unit/test_trajectory.py::TestInterpolatePosition::test_three_keyframes_second_segment PASSED [ 88%]
+tests/unit/test_trajectory.py::TestInterpolatePosition::test_non_uniform_time_spacing PASSED [ 88%]
+tests/unit/test_trajectory.py::TestInterpolatePosition::test_coincident_keyframe_times PASSED [ 89%]
+tests/unit/test_trajectory.py::TestInterpolatePosition::test_negative_time_values PASSED [ 89%]
+tests/unit/test_trajectory.py::TestInterpolatePosition::test_large_keyframe_list_performance PASSED [ 89%]
+tests/unit/test_trajectory.py::TestMFJSONSerialization::test_keyframes_to_mfjson_basic PASSED [ 89%]
+tests/unit/test_trajectory.py::TestMFJSONSerialization::test_keyframes_to_mfjson_empty_raises PASSED [ 89%]
+tests/unit/test_trajectory.py::TestMFJSONSerialization::test_mfjson_to_keyframes_basic PASSED [ 89%]
+tests/unit/test_trajectory.py::TestMFJSONSerialization::test_mfjson_roundtrip PASSED [ 89%]
+tests/unit/test_trajectory.py::TestMFJSONSerialization::test_mfjson_to_keyframes_missing_datetimes PASSED [ 89%]
+tests/unit/test_trajectory.py::TestMFJSONSerialization::test_mfjson_to_keyframes_mismatched_lengths PASSED [ 89%]
+tests/unit/test_ui_manager.py::TestDockCreation::test_create_dock_with_valid_widget PASSED [ 89%]
+tests/unit/test_ui_manager.py::TestDockCreation::test_create_dock_with_none_widget PASSED [ 89%]
+tests/unit/test_ui_manager.py::TestDockCreation::test_create_dock_with_invalid_widget_type PASSED [ 89%]
+tests/unit/test_ui_manager.py::TestDockCreation::test_create_dock_sets_minimum_sizes PASSED [ 90%]
+tests/unit/test_ui_manager.py::TestDockCreation::test_create_dock_sets_features PASSED [ 90%]
+tests/unit/test_ui_manager.py::TestSetupDocks::test_setup_docks_with_all_widgets PASSED [ 90%]
+tests/unit/test_ui_manager.py::TestSetupDocks::test_setup_docks_with_missing_critical_widget PASSED [ 90%]
+tests/unit/test_ui_manager.py::TestSetupDocks::test_setup_docks_with_none_widget PASSED [ 90%]
+tests/unit/test_ui_manager.py::TestSetupDocks::test_setup_docks_with_optional_widgets_missing PASSED [ 90%]
+tests/unit/test_ui_manager_layout.py::test_save_layout_stores_data PASSED [ 90%]
+tests/unit/test_ui_manager_layout.py::test_restore_layout_applies_data PASSED [ 90%]
+tests/unit/test_ui_manager_layout.py::test_delete_layout_removes_data PASSED [ 90%]
+tests/unit/test_ui_manager_layout.py::test_get_saved_layouts_returns_sorted_list PASSED [ 90%]
+tests/unit/test_unified_list.py::test_init PASSED                        [ 90%]
+tests/unit/test_unified_list.py::test_set_data PASSED                    [ 90%]
+tests/unit/test_unified_list.py::test_filtering PASSED                   [ 90%]
+tests/unit/test_unified_list.py::test_selection_signal PASSED            [ 91%]
+tests/unit/test_unified_list.py::test_delete_signal PASSED               [ 91%]
+tests/unit/test_unified_list.py::test_create_signals PASSED              [ 91%]
+tests/unit/test_unified_list.py::test_refresh_signal PASSED              [ 91%]
+tests/unit/test_unified_list_advanced_filtering.py::TestUnifiedListAdvancedFiltering::test_advanced_filter_logic PASSED [ 91%]
+tests/unit/test_unified_list_advanced_filtering.py::TestUnifiedListAdvancedFiltering::test_filter_persists_on_update PASSED [ 91%]
+tests/unit/test_unified_list_advanced_filtering.py::TestUnifiedListAdvancedFiltering::test_clear_advanced_filter PASSED [ 91%]
+tests/unit/test_unified_list_filter_persistence.py::TestUnifiedListFilterPersistence::test_filter_persists_after_set_data PASSED [ 91%]
+tests/unit/test_unified_list_filter_persistence.py::TestUnifiedListFilterPersistence::test_select_filtered_item_preserves_filter_visuals PASSED [ 91%]
+tests/unit/test_unified_list_selection.py::TestUnifiedListSelection::test_selection_clears_when_item_not_found PASSED [ 91%]
+tests/unit/test_unified_list_selection.py::TestUnifiedListSelection::test_selection_switches_filter_if_needed PASSED [ 91%]
+tests/unit/test_widget_registry.py::TestWidgetRegistry::test_register_widget PASSED [ 91%]
+tests/unit/test_widget_registry.py::TestWidgetRegistry::test_register_duplicate_widget PASSED [ 91%]
+tests/unit/test_widget_registry.py::TestWidgetRegistry::test_get_nonexistent_widget PASSED [ 92%]
+tests/unit/test_widget_registry.py::TestWidgetRegistry::test_mark_initialized PASSED [ 92%]
+tests/unit/test_widget_registry.py::TestWidgetRegistry::test_is_initialized_false_for_created PASSED [ 92%]
+tests/unit/test_widget_registry.py::TestWidgetRegistry::test_widget_destroyed_signal PASSED [ 92%]
+tests/unit/test_widget_registry.py::TestWidgetRegistry::test_get_destroyed_widget_returns_none PASSED [ 92%]
+tests/unit/test_widget_registry.py::TestWidgetRegistry::test_cleanup_all PASSED [ 92%]
+tests/unit/test_widget_registry.py::TestWidgetRegistry::test_get_all_names PASSED [ 92%]
+tests/unit/test_widget_registry.py::TestWidgetRegistry::test_get_widget_count PASSED [ 92%]
+tests/unit/test_widget_sizes.py::test_widget_minimum_size_hints[UnifiedListWidget-250-200] PASSED [ 92%]
+tests/unit/test_widget_sizes.py::test_widget_minimum_size_hints[EventListWidget-250-200] PASSED [ 92%]
+tests/unit/test_widget_sizes.py::test_widget_minimum_size_hints[EntityListWidget-250-200] PASSED [ 92%]
+tests/unit/test_widget_sizes.py::test_widget_minimum_size_hints[GalleryWidget-250-150] PASSED [ 92%]
+tests/unit/test_widget_sizes.py::test_widget_minimum_size_hints[CompactDateWidget-250-72] PASSED [ 92%]
+tests/unit/test_widget_sizes.py::test_widget_minimum_size_hints[CompactDurationWidget-250-72] PASSED [ 93%]
+tests/unit/test_widget_sizes.py::test_widget_size_hints_valid[UnifiedListWidget] PASSED [ 93%]
+tests/unit/test_widget_sizes.py::test_widget_size_hints_valid[EventListWidget] PASSED [ 93%]
+tests/unit/test_widget_sizes.py::test_widget_size_hints_valid[EntityListWidget] PASSED [ 93%]
+tests/unit/test_widget_sizes.py::test_widget_size_hints_valid[GalleryWidget] PASSED [ 93%]
+tests/unit/test_widget_sizes.py::test_widget_size_hints_valid[CompactDateWidget] PASSED [ 93%]
+tests/unit/test_widget_sizes.py::test_widget_size_hints_valid[CompactDurationWidget] PASSED [ 93%]
+tests/unit/test_wiki_ast.py::TestSourceSpan::test_contains PASSED        [ 93%]
+tests/unit/test_wiki_ast.py::TestSourceSpan::test_offset_within PASSED   [ 93%]
+tests/unit/test_wiki_ast.py::TestWikiASTParser::test_parse_plain_text PASSED [ 93%]
+tests/unit/test_wiki_ast.py::TestWikiASTParser::test_parse_bold PASSED   [ 93%]
+tests/unit/test_wiki_ast.py::TestWikiASTParser::test_parse_italic PASSED [ 93%]
+tests/unit/test_wiki_ast.py::TestWikiASTParser::test_parse_bold_italic PASSED [ 93%]
+tests/unit/test_wiki_ast.py::TestWikiASTParser::test_parse_wikilink_simple PASSED [ 94%]
+tests/unit/test_wiki_ast.py::TestWikiASTParser::test_parse_wikilink_with_label PASSED [ 94%]
+tests/unit/test_wiki_ast.py::TestWikiASTParser::test_parse_heading PASSED [ 94%]
+tests/unit/test_wiki_ast.py::TestWikiASTParser::test_source_spans_set PASSED [ 94%]
+tests/unit/test_wiki_ast.py::TestWikiASTSerializer::test_to_markdown_plain_text PASSED [ 94%]
+tests/unit/test_wiki_ast.py::TestWikiASTSerializer::test_to_markdown_bold PASSED [ 94%]
+tests/unit/test_wiki_ast.py::TestWikiASTSerializer::test_to_markdown_wikilink PASSED [ 94%]
+tests/unit/test_wiki_ast.py::TestWikiASTSerializer::test_to_html_plain_text PASSED [ 94%]
+tests/unit/test_wiki_ast.py::TestWikiASTSerializer::test_to_html_bold PASSED [ 94%]
+tests/unit/test_wiki_ast.py::TestWikiASTSerializer::test_to_html_wikilink PASSED [ 94%]
+tests/unit/test_wiki_ast.py::TestWikiASTSerializer::test_to_html_heading PASSED [ 94%]
+tests/unit/test_wiki_ast.py::TestWikiASTSerializer::test_roundtrip_markdown PASSED [ 94%]
+tests/unit/test_wiki_ast.py::TestCursorMapper::test_md_to_html_plain_text PASSED [ 95%]
+tests/unit/test_wiki_ast.py::TestCursorMapper::test_md_to_html_with_bold PASSED [ 95%]
+tests/unit/test_wiki_ast.py::TestIntegration::test_complex_document PASSED [ 95%]
+tests/unit/test_wiki_commands.py::test_process_no_links PASSED           [ 95%]
+tests/unit/test_wiki_commands.py::test_process_finds_valid_link PASSED   [ 95%]
+tests/unit/test_wiki_commands.py::test_process_case_insensitive_match PASSED [ 95%]
+tests/unit/test_wiki_commands.py::test_process_with_aliases PASSED       [ 95%]
+tests/unit/test_wiki_commands.py::test_process_skips_ambiguous PASSED    [ 95%]
+tests/unit/test_wiki_commands.py::test_process_skips_missing PASSED      [ 95%]
+tests/unit/test_wiki_commands.py::test_process_multiple_links PASSED     [ 95%]
+tests/unit/test_wiki_commands.py::test_process_same_entity_multiple_times PASSED [ 95%]
+tests/unit/test_wiki_commands.py::test_process_skips_self_reference PASSED [ 95%]
+tests/unit/test_wiki_commands.py::test_process_undo_does_nothing PASSED  [ 95%]
+tests/unit/test_wiki_commands.py::test_pipe_modifier_ignored_for_matching PASSED [ 96%]
+tests/unit/test_wiki_commands.py::test_process_wiki_links_to_events PASSED [ 96%]
+tests/unit/test_wiki_completion.py::test_completer_initialization PASSED [ 96%]
+tests/unit/test_wiki_completion.py::test_completer_update PASSED         [ 96%]
+tests/unit/test_wiki_completion.py::test_insert_completion PASSED        [ 96%]
+tests/unit/test_wiki_completion.py::test_insert_completion_mid_sentence PASSED [ 96%]
+tests/unit/test_wiki_text_edit.py::test_ctrl_click_emits_signal PASSED   [ 96%]
+tests/unit/test_wiki_text_edit.py::test_normal_click_ignores_link PASSED [ 96%]
+tests/unit/test_wiki_text_edit.py::test_font_sizes_applied_on_init PASSED [ 96%]
+tests/unit/test_wiki_text_edit.py::test_font_sizes_applied_in_set_wiki_text PASSED [ 96%]
+tests/unit/test_wiki_text_edit.py::test_theme_change_updates_stylesheet PASSED [ 96%]
+tests/unit/test_wiki_text_edit.py::test_toggle_view_mode PASSED          [ 96%]
+tests/unit/test_wiki_text_edit.py::test_get_wiki_text_in_source_mode PASSED [ 96%]
+tests/unit/test_wiki_text_edit.py::test_set_wiki_text_in_source_mode PASSED [ 97%]
+tests/unit/test_wiki_text_edit.py::test_reverse_conversion_bold PASSED   [ 97%]
+tests/unit/test_wiki_text_edit.py::test_reverse_conversion_italic PASSED [ 97%]
+tests/unit/test_wiki_text_edit.py::test_reverse_conversion_bold_italic PASSED [ 97%]
+tests/unit/test_wiki_text_edit.py::test_reverse_conversion_mixed PASSED  [ 97%]
+tests/unit/test_wiki_text_edit.py::test_reverse_conversion_wikilink_in_bold PASSED [ 97%]
+tests/unit/test_wiki_text_edit.py::test_reverse_conversion_headings PASSED [ 97%]
+tests/unit/test_wiki_text_edit.py::test_cursor_position_preserved_on_toggle PASSED [ 97%]
+tests/unit/test_wiki_text_edit.py::test_cursor_mapping_with_formatting PASSED [ 97%]
+tests/unit/test_wiki_text_edit.py::test_ctrl_b_bold_in_source_mode PASSED [ 97%]
+tests/unit/test_wiki_text_edit.py::test_ctrl_i_italic_in_source_mode PASSED [ 97%]
+tests/unit/test_wiki_text_edit.py::test_bold_toggle_removes_markers PASSED [ 97%]
+tests/unit/test_wiki_text_edit.py::test_bold_no_selection_inserts_markers PASSED [ 97%]
+tests/unit/test_wiki_text_edit.py::test_heading_1_in_source_mode PASSED  [ 98%]
+tests/unit/test_wiki_text_edit.py::test_heading_2_in_source_mode PASSED  [ 98%]
+tests/unit/test_wiki_text_edit.py::test_heading_toggle_replaces_level PASSED [ 98%]
+tests/unit/test_wiki_text_edit.py::test_heading_0_removes_heading PASSED [ 98%]
+tests/unit/test_wiki_text_edit.py::test_ctrl_4_reverts_formatting PASSED [ 98%]
+tests/unit/test_wiki_text_edit.py::test_heading_in_rich_mode_applies_formatting PASSED [ 98%]
+tests/unit/test_wiki_text_edit.py::test_heading_1_rich_mode_round_trip PASSED [ 98%]
+tests/unit/test_wiki_text_edit.py::test_heading_2_rich_mode_round_trip PASSED [ 98%]
+tests/unit/test_wiki_text_edit.py::test_heading_3_rich_mode_round_trip PASSED [ 98%]
+tests/unit/test_wiki_text_edit.py::test_heading_visual_update_without_mode_switch PASSED [ 98%]
+tests/unit/test_wiki_text_edit.py::test_no_double_bold_in_headings PASSED [ 98%]
+tests/unit/test_wiki_text_edit.py::test_enter_resets_heading_format SKIPPED [ 98%]
+tests/unit/test_wiki_text_edit.py::test_cursor_preserved_during_heading_rerender PASSED [ 98%]
+tests/unit/test_wiki_text_edit.py::test_heading_level_detection_uses_semantic_property PASSED [ 99%]
+tests/unit/test_wiki_text_edit.py::test_empty_lines_preserved PASSED     [ 99%]
+tests/unit/test_wiki_text_edit.py::test_empty_lines_manual_entry PASSED  [ 99%]
+tests/unit/test_worker.py::test_initialization PASSED                    [ 99%]
+tests/unit/test_worker.py::test_initialization_failure PASSED            [ 99%]
+tests/unit/test_worker.py::test_load_events PASSED                       [ 99%]
+tests/unit/test_worker.py::test_load_entities PASSED                     [ 99%]
+tests/unit/test_worker.py::test_run_command_success PASSED               [ 99%]
+tests/unit/test_worker.py::test_run_command_failure PASSED               [ 99%]
+tests/unit/test_worker.py::test_load_current_time PASSED                 [ 99%]
+tests/unit/test_worker.py::test_save_current_time PASSED                 [ 99%]
+tests/unit/test_worker_filtering.py::TestWorkerFiltering::test_apply_filter_flow PASSED [ 99%]
+tests/unit/test_worker_filtering.py::TestWorkerFiltering::test_apply_filter_empty_config_passes_none PASSED [100%]
+
+=================================== ERRORS ====================================
+_____________ ERROR at teardown of test_update_entity_via_insert ______________
+TEARDOWN ERROR: Exceptions caught in Qt event loop:
+________________________________________________________________________________
+Traceback (most recent call last):
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main_window.py", line 291, in _complete_initialization
+    QMetaObject.invokeMethod(
+    ~~~~~~~~~~~~~~~~~~~~~~~~^
+        self.worker, "initialize_db", Qt.ConnectionType.QueuedConnection
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+TypeError: 'PySide6.QtCore.QMetaObject.invokeMethod' called with wrong argument types:
+  PySide6.QtCore.QMetaObject.invokeMethod(MagicMock, str, ConnectionType)
+Supported signatures:
+  PySide6.QtCore.QMetaObject.invokeMethod(obj: PySide6.QtCore.QObject, member: bytes | bytearray | memoryview, ret: PySide6.QtCore.QGenericReturnArgument, /, val0: PySide6.QtCore.QGenericArgument = ..., val1: PySide6.QtCore.QGenericArgument = ..., val2: PySide6.QtCore.QGenericArgument = ..., val3: PySide6.QtCore.QGenericArgument = ..., val4: PySide6.QtCore.QGenericArgument = ..., val5: PySide6.QtCore.QGenericArgument = ..., val6: PySide6.QtCore.QGenericArgument = ..., val7: PySide6.QtCore.QGenericArgument = ..., val8: PySide6.QtCore.QGenericArgument = ..., val9: PySide6.QtCore.QGenericArgument = ...)
+  PySide6.QtCore.QMetaObject.invokeMethod(obj: PySide6.QtCore.QObject, member: bytes | bytearray | memoryview, arg__3: PySide6.QtCore.Qt.ConnectionType, ret: PySide6.QtCore.QGenericReturnArgument, /, val0: PySide6.QtCore.QGenericArgument = ..., val1: PySide6.QtCore.QGenericArgument = ..., val2: PySide6.QtCore.QGenericArgument = ..., val3: PySide6.QtCore.QGenericArgument = ..., val4: PySide6.QtCore.QGenericArgument = ..., val5: PySide6.QtCore.QGenericArgument = ..., val6: PySide6.QtCore.QGenericArgument = ..., val7: PySide6.QtCore.QGenericArgument = ..., val8: PySide6.QtCore.QGenericArgument = ..., val9: PySide6.QtCore.QGenericArgument = ...)
+  PySide6.QtCore.QMetaObject.invokeMethod(obj: PySide6.QtCore.QObject, member: bytes | bytearray | memoryview, type: PySide6.QtCore.Qt.ConnectionType, val0: PySide6.QtCore.QGenericArgument, /, val1: PySide6.QtCore.QGenericArgument = ..., val2: PySide6.QtCore.QGenericArgument = ..., val3: PySide6.QtCore.QGenericArgument = ..., val4: PySide6.QtCore.QGenericArgument = ..., val5: PySide6.QtCore.QGenericArgument = ..., val6: PySide6.QtCore.QGenericArgument = ..., val7: PySide6.QtCore.QGenericArgument = ..., val8: PySide6.QtCore.QGenericArgument = ..., val9: PySide6.QtCore.QGenericArgument = ...)
+  PySide6.QtCore.QMetaObject.invokeMethod(object: PySide6.QtCore.QObject, member: bytes | bytearray | memoryview, type: PySide6.QtCore.Qt.ConnectionType, /, val0: PySide6.QtCore.QGenericArgumentHolder = {}, val1: PySide6.QtCore.QGenericArgumentHolder = {}, val2: PySide6.QtCore.QGenericArgumentHolder = {}, val3: PySide6.QtCore.QGenericArgumentHolder = {}, val4: PySide6.QtCore.QGenericArgumentHolder = {}, val5: PySide6.QtCore.QGenericArgumentHolder = {}, val6: PySide6.QtCore.QGenericArgumentHolder = {}, val7: PySide6.QtCore.QGenericArgumentHolder = {}, val8: PySide6.QtCore.QGenericArgumentHolder = {}, val9: PySide6.QtCore.QGenericArgumentHolder = {})
+  PySide6.QtCore.QMetaObject.invokeMethod(object: PySide6.QtCore.QObject, member: bytes | bytearray | memoryview, type: PySide6.QtCore.Qt.ConnectionType, ret: PySide6.QtCore.QGenericReturnArgumentHolder, /, val0: PySide6.QtCore.QGenericArgumentHolder = {}, val1: PySide6.QtCore.QGenericArgumentHolder = {}, val2: PySide6.QtCore.QGenericArgumentHolder = {}, val3: PySide6.QtCore.QGenericArgumentHolder = {}, val4: PySide6.QtCore.QGenericArgumentHolder = {}, val5: PySide6.QtCore.QGenericArgumentHolder = {}, val6: PySide6.QtCore.QGenericArgumentHolder = {}, val7: PySide6.QtCore.QGenericArgumentHolder = {}, val8: PySide6.QtCore.QGenericArgumentHolder = {}, val9: PySide6.QtCore.QGenericArgumentHolder = {})
+  PySide6.QtCore.QMetaObject.invokeMethod(obj: PySide6.QtCore.QObject, member: bytes | bytearray | memoryview, val0: PySide6.QtCore.QGenericArgument, /, val1: PySide6.QtCore.QGenericArgument = ..., val2: PySide6.QtCore.QGenericArgument = ..., val3: PySide6.QtCore.QGenericArgument = ..., val4: PySide6.QtCore.QGenericArgument = ..., val5: PySide6.QtCore.QGenericArgument = ..., val6: PySide6.QtCore.QGenericArgument = ..., val7: PySide6.QtCore.QGenericArgument = ..., val8: PySide6.QtCore.QGenericArgument = ..., val9: PySide6.QtCore.QGenericArgument = ...)
+  PySide6.QtCore.QMetaObject.invokeMethod(object: PySide6.QtCore.QObject, member: bytes | bytearray | memoryview, /, val0: PySide6.QtCore.QGenericArgumentHolder = {}, val1: PySide6.QtCore.QGenericArgumentHolder = {}, val2: PySide6.QtCore.QGenericArgumentHolder = {}, val3: PySide6.QtCore.QGenericArgumentHolder = {}, val4: PySide6.QtCore.QGenericArgumentHolder = {}, val5: PySide6.QtCore.QGenericArgumentHolder = {}, val6: PySide6.QtCore.QGenericArgumentHolder = {}, val7: PySide6.QtCore.QGenericArgumentHolder = {}, val8: PySide6.QtCore.QGenericArgumentHolder = {}, val9: PySide6.QtCore.QGenericArgumentHolder = {})
+  PySide6.QtCore.QMetaObject.invokeMethod(object: PySide6.QtCore.QObject, member: bytes | bytearray | memoryview, ret: PySide6.QtCore.QGenericReturnArgumentHolder, /, val0: PySide6.QtCore.QGenericArgumentHolder = {}, val1: PySide6.QtCore.QGenericArgumentHolder = {}, val2: PySide6.QtCore.QGenericArgumentHolder = {}, val3: PySide6.QtCore.QGenericArgumentHolder = {}, val4: PySide6.QtCore.QGenericArgumentHolder = {}, val5: PySide6.QtCore.QGenericArgumentHolder = {}, val6: PySide6.QtCore.QGenericArgumentHolder = {}, val7: PySide6.QtCore.QGenericArgumentHolder = {}, val8: PySide6.QtCore.QGenericArgumentHolder = {}, val9: PySide6.QtCore.QGenericArgumentHolder = {})
+________________________________________________________________________________
+
+---------------------------- Captured stderr setup ----------------------------
+2026-01-17 00:03:11 - src.services.db_service - INFO - DatabaseService initialized with path: :memory:
+2026-01-17 00:03:11 - src.services.db_service - DEBUG - Database connection established.
+2026-01-17 00:03:11 - src.services.db_service - DEBUG - Database schema initialized.
+----------------------------- Captured log setup ------------------------------
+INFO     src.services.db_service:db_service.py:69 DatabaseService initialized with path: :memory:
+DEBUG    src.services.db_service:db_service.py:84 Database connection established.
+DEBUG    src.services.db_service:db_service.py:318 Database schema initialized.
+-------------------------- Captured stderr teardown ---------------------------
+2026-01-17 00:03:11 - src.services.db_service - DEBUG - Database connection closed.
+2026-01-17 00:03:11 - src.app.main_window - DEBUG - Completing initialization (Phase 3)
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - ConnectionManager initialized
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected DataHandler.events_ready
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected DataHandler.entities_ready
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected DataHandler.suggestions_update_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected DataHandler.event_details_ready
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected DataHandler.entity_details_ready
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected DataHandler.longform_sequence_ready
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected DataHandler.maps_ready
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected DataHandler.markers_ready
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected DataHandler.trajectories_ready
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected DataHandler.entity_state_resolved
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected DataHandler.graph_data_ready
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected DataHandler.graph_metadata_ready
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected DataHandler.status_message
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected DataHandler.command_failed
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected DataHandler.dock_raise_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected DataHandler.selection_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected DataHandler.reload_events
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected DataHandler.reload_entities
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected DataHandler.reload_maps
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected DataHandler.reload_longform
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected DataHandler.reload_active_editor_relations
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected DataHandler.reload_markers
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected DataHandler.reload_markers_for_current_map
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - DataHandler connections: 23/23 succeeded, 0 failed
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected UnifiedList.refresh_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected UnifiedList.create_event_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected UnifiedList.create_entity_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected UnifiedList.delete_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected UnifiedList.item_selected
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected UnifiedList.show_filter_dialog_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected UnifiedList.clear_filter_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - UnifiedList connections: 7/7 succeeded, 0 failed
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected EventEditorWidget.add_relation_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected EventEditorWidget.remove_relation_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected EventEditorWidget.update_relation_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected EventEditorWidget.link_clicked
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected EventEditorWidget.navigate_to_relation
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected EntityEditorWidget.add_relation_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected EntityEditorWidget.remove_relation_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected EntityEditorWidget.update_relation_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected EntityEditorWidget.link_clicked
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected EntityEditorWidget.navigate_to_relation
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected EventEditor.save_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected EntityEditor.save_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected EntityEditor.return_to_present_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected EventEditor.current_data_changed
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected EventEditor.discard_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected EntityEditor.discard_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Editor connections: 12/12 succeeded, 0 failed
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected Timeline.event_selected
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected Timeline.current_time_changed
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected Timeline.playhead_time_changed
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected Timeline.playhead_time_changed
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected Timeline.event_date_changed
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Timeline connections: 7/7 succeeded, 0 failed
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected LongformEditor.promote_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected LongformEditor.demote_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected LongformEditor.refresh_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected LongformEditor.export_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected LongformEditor.item_selected
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected LongformEditor.item_moved
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected LongformEditor.link_clicked
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected LongformEditor.show_filter_dialog_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected LongformEditor.clear_filters_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - LongformEditor connections: 9/9 succeeded, 0 failed
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected MapWidget.marker_position_changed
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected MapWidget.marker_clicked
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected MapWidget.create_map_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected MapWidget.delete_map_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected MapWidget.map_selected
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected MapWidget.create_marker_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected MapWidget.delete_marker_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected MapWidget.change_marker_icon_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected MapWidget.change_marker_color_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected MapWidget.marker_drop_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected Timeline->MapWidget.playhead_time_changed
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected Timeline->MapWidget.current_time_changed
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected MapWidget.add_keyframe_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected MapWidget.update_keyframe_time_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected MapWidget.delete_keyframe_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected MapWidget.jump_to_time_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - MapWidget connections: 16/16 succeeded, 0 failed
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected AISearchPanel.search_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected AISearchPanel.result_selected
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - AISearchPanel connections: 2/2 succeeded, 0 failed
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected GraphWidget.refresh_requested
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected GraphWidget.filter_changed
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - Successfully connected GraphWidget.node_clicked
+2026-01-17 00:03:11 - src.app.connection_manager - DEBUG - GraphWidget connections: 3/3 succeeded, 0 failed
+2026-01-17 00:03:11 - src.app.connection_manager - INFO - Signal connections complete: 81 succeeded, 0 failed out of 81 attempted
+2026-01-17 00:03:11 - src.app.main_window - INFO - Signal connections: 81/81
+2026-01-17 00:03:11 - src.app.command_coordinator - DEBUG - CommandCoordinator initialized
+Exceptions caught in Qt event loop:
+________________________________________________________________________________
+Traceback (most recent call last):
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\src\app\main_window.py", line 291, in _complete_initialization
+    QMetaObject.invokeMethod(
+    ~~~~~~~~~~~~~~~~~~~~~~~~^
+        self.worker, "initialize_db", Qt.ConnectionType.QueuedConnection
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+TypeError: 'PySide6.QtCore.QMetaObject.invokeMethod' called with wrong argument types:
+  PySide6.QtCore.QMetaObject.invokeMethod(MagicMock, str, ConnectionType)
+Supported signatures:
+  PySide6.QtCore.QMetaObject.invokeMethod(obj: PySide6.QtCore.QObject, member: bytes | bytearray | memoryview, ret: PySide6.QtCore.QGenericReturnArgument, /, val0: PySide6.QtCore.QGenericArgument = ..., val1: PySide6.QtCore.QGenericArgument = ..., val2: PySide6.QtCore.QGenericArgument = ..., val3: PySide6.QtCore.QGenericArgument = ..., val4: PySide6.QtCore.QGenericArgument = ..., val5: PySide6.QtCore.QGenericArgument = ..., val6: PySide6.QtCore.QGenericArgument = ..., val7: PySide6.QtCore.QGenericArgument = ..., val8: PySide6.QtCore.QGenericArgument = ..., val9: PySide6.QtCore.QGenericArgument = ...)
+  PySide6.QtCore.QMetaObject.invokeMethod(obj: PySide6.QtCore.QObject, member: bytes | bytearray | memoryview, arg__3: PySide6.QtCore.Qt.ConnectionType, ret: PySide6.QtCore.QGenericReturnArgument, /, val0: PySide6.QtCore.QGenericArgument = ..., val1: PySide6.QtCore.QGenericArgument = ..., val2: PySide6.QtCore.QGenericArgument = ..., val3: PySide6.QtCore.QGenericArgument = ..., val4: PySide6.QtCore.QGenericArgument = ..., val5: PySide6.QtCore.QGenericArgument = ..., val6: PySide6.QtCore.QGenericArgument = ..., val7: PySide6.QtCore.QGenericArgument = ..., val8: PySide6.QtCore.QGenericArgument = ..., val9: PySide6.QtCore.QGenericArgument = ...)
+  PySide6.QtCore.QMetaObject.invokeMethod(obj: PySide6.QtCore.QObject, member: bytes | bytearray | memoryview, type: PySide6.QtCore.Qt.ConnectionType, val0: PySide6.QtCore.QGenericArgument, /, val1: PySide6.QtCore.QGenericArgument = ..., val2: PySide6.QtCore.QGenericArgument = ..., val3: PySide6.QtCore.QGenericArgument = ..., val4: PySide6.QtCore.QGenericArgument = ..., val5: PySide6.QtCore.QGenericArgument = ..., val6: PySide6.QtCore.QGenericArgument = ..., val7: PySide6.QtCore.QGenericArgument = ..., val8: PySide6.QtCore.QGenericArgument = ..., val9: PySide6.QtCore.QGenericArgument = ...)
+  PySide6.QtCore.QMetaObject.invokeMethod(object: PySide6.QtCore.QObject, member: bytes | bytearray | memoryview, type: PySide6.QtCore.Qt.ConnectionType, /, val0: PySide6.QtCore.QGenericArgumentHolder = {}, val1: PySide6.QtCore.QGenericArgumentHolder = {}, val2: PySide6.QtCore.QGenericArgumentHolder = {}, val3: PySide6.QtCore.QGenericArgumentHolder = {}, val4: PySide6.QtCore.QGenericArgumentHolder = {}, val5: PySide6.QtCore.QGenericArgumentHolder = {}, val6: PySide6.QtCore.QGenericArgumentHolder = {}, val7: PySide6.QtCore.QGenericArgumentHolder = {}, val8: PySide6.QtCore.QGenericArgumentHolder = {}, val9: PySide6.QtCore.QGenericArgumentHolder = {})
+  PySide6.QtCore.QMetaObject.invokeMethod(object: PySide6.QtCore.QObject, member: bytes | bytearray | memoryview, type: PySide6.QtCore.Qt.ConnectionType, ret: PySide6.QtCore.QGenericReturnArgumentHolder, /, val0: PySide6.QtCore.QGenericArgumentHolder = {}, val1: PySide6.QtCore.QGenericArgumentHolder = {}, val2: PySide6.QtCore.QGenericArgumentHolder = {}, val3: PySide6.QtCore.QGenericArgumentHolder = {}, val4: PySide6.QtCore.QGenericArgumentHolder = {}, val5: PySide6.QtCore.QGenericArgumentHolder = {}, val6: PySide6.QtCore.QGenericArgumentHolder = {}, val7: PySide6.QtCore.QGenericArgumentHolder = {}, val8: PySide6.QtCore.QGenericArgumentHolder = {}, val9: PySide6.QtCore.QGenericArgumentHolder = {})
+  PySide6.QtCore.QMetaObject.invokeMethod(obj: PySide6.QtCore.QObject, member: bytes | bytearray | memoryview, val0: PySide6.QtCore.QGenericArgument, /, val1: PySide6.QtCore.QGenericArgument = ..., val2: PySide6.QtCore.QGenericArgument = ..., val3: PySide6.QtCore.QGenericArgument = ..., val4: PySide6.QtCore.QGenericArgument = ..., val5: PySide6.QtCore.QGenericArgument = ..., val6: PySide6.QtCore.QGenericArgument = ..., val7: PySide6.QtCore.QGenericArgument = ..., val8: PySide6.QtCore.QGenericArgument = ..., val9: PySide6.QtCore.QGenericArgument = ...)
+  PySide6.QtCore.QMetaObject.invokeMethod(object: PySide6.QtCore.QObject, member: bytes | bytearray | memoryview, /, val0: PySide6.QtCore.QGenericArgumentHolder = {}, val1: PySide6.QtCore.QGenericArgumentHolder = {}, val2: PySide6.QtCore.QGenericArgumentHolder = {}, val3: PySide6.QtCore.QGenericArgumentHolder = {}, val4: PySide6.QtCore.QGenericArgumentHolder = {}, val5: PySide6.QtCore.QGenericArgumentHolder = {}, val6: PySide6.QtCore.QGenericArgumentHolder = {}, val7: PySide6.QtCore.QGenericArgumentHolder = {}, val8: PySide6.QtCore.QGenericArgumentHolder = {}, val9: PySide6.QtCore.QGenericArgumentHolder = {})
+  PySide6.QtCore.QMetaObject.invokeMethod(object: PySide6.QtCore.QObject, member: bytes | bytearray | memoryview, ret: PySide6.QtCore.QGenericReturnArgumentHolder, /, val0: PySide6.QtCore.QGenericArgumentHolder = {}, val1: PySide6.QtCore.QGenericArgumentHolder = {}, val2: PySide6.QtCore.QGenericArgumentHolder = {}, val3: PySide6.QtCore.QGenericArgumentHolder = {}, val4: PySide6.QtCore.QGenericArgumentHolder = {}, val5: PySide6.QtCore.QGenericArgumentHolder = {}, val6: PySide6.QtCore.QGenericArgumentHolder = {}, val7: PySide6.QtCore.QGenericArgumentHolder = {}, val8: PySide6.QtCore.QGenericArgumentHolder = {}, val9: PySide6.QtCore.QGenericArgumentHolder = {})
+________________________________________________________________________________
+2026-01-17 00:03:11 - src.app.main_window - DEBUG - Critical docks state restored
+2026-01-17 00:03:11 - src.app.main_window - DEBUG - Dock state validation passed
+---------------------------- Captured log teardown ----------------------------
+DEBUG    src.services.db_service:db_service.py:107 Database connection closed.
+DEBUG    src.app.main_window:main_window.py:264 Completing initialization (Phase 3)
+DEBUG    src.app.connection_manager:connection_manager.py:34 ConnectionManager initialized
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected DataHandler.events_ready
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected DataHandler.entities_ready
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected DataHandler.suggestions_update_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected DataHandler.event_details_ready
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected DataHandler.entity_details_ready
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected DataHandler.longform_sequence_ready
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected DataHandler.maps_ready
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected DataHandler.markers_ready
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected DataHandler.trajectories_ready
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected DataHandler.entity_state_resolved
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected DataHandler.graph_data_ready
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected DataHandler.graph_metadata_ready
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected DataHandler.status_message
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected DataHandler.command_failed
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected DataHandler.dock_raise_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected DataHandler.selection_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected DataHandler.reload_events
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected DataHandler.reload_entities
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected DataHandler.reload_maps
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected DataHandler.reload_longform
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected DataHandler.reload_active_editor_relations
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected DataHandler.reload_markers
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected DataHandler.reload_markers_for_current_map
+DEBUG    src.app.connection_manager:connection_manager.py:299 DataHandler connections: 23/23 succeeded, 0 failed
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected UnifiedList.refresh_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected UnifiedList.create_event_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected UnifiedList.create_entity_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected UnifiedList.delete_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected UnifiedList.item_selected
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected UnifiedList.show_filter_dialog_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected UnifiedList.clear_filter_requested
+DEBUG    src.app.connection_manager:connection_manager.py:359 UnifiedList connections: 7/7 succeeded, 0 failed
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected EventEditorWidget.add_relation_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected EventEditorWidget.remove_relation_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected EventEditorWidget.update_relation_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected EventEditorWidget.link_clicked
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected EventEditorWidget.navigate_to_relation
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected EntityEditorWidget.add_relation_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected EntityEditorWidget.remove_relation_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected EntityEditorWidget.update_relation_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected EntityEditorWidget.link_clicked
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected EntityEditorWidget.navigate_to_relation
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected EventEditor.save_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected EntityEditor.save_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected EntityEditor.return_to_present_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected EventEditor.current_data_changed
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected EventEditor.discard_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected EntityEditor.discard_requested
+DEBUG    src.app.connection_manager:connection_manager.py:463 Editor connections: 12/12 succeeded, 0 failed
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected Timeline.event_selected
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected Timeline.current_time_changed
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected Timeline.playhead_time_changed
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected Timeline.playhead_time_changed
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected Timeline.event_date_changed
+DEBUG    src.app.connection_manager:connection_manager.py:534 Timeline connections: 7/7 succeeded, 0 failed
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected LongformEditor.promote_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected LongformEditor.demote_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected LongformEditor.refresh_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected LongformEditor.export_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected LongformEditor.item_selected
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected LongformEditor.item_moved
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected LongformEditor.link_clicked
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected LongformEditor.show_filter_dialog_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected LongformEditor.clear_filters_requested
+DEBUG    src.app.connection_manager:connection_manager.py:619 LongformEditor connections: 9/9 succeeded, 0 failed
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected MapWidget.marker_position_changed
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected MapWidget.marker_clicked
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected MapWidget.create_map_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected MapWidget.delete_map_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected MapWidget.map_selected
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected MapWidget.create_marker_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected MapWidget.delete_marker_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected MapWidget.change_marker_icon_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected MapWidget.change_marker_color_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected MapWidget.marker_drop_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected Timeline->MapWidget.playhead_time_changed
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected Timeline->MapWidget.current_time_changed
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected MapWidget.add_keyframe_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected MapWidget.update_keyframe_time_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected MapWidget.delete_keyframe_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected MapWidget.jump_to_time_requested
+DEBUG    src.app.connection_manager:connection_manager.py:757 MapWidget connections: 16/16 succeeded, 0 failed
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected AISearchPanel.search_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected AISearchPanel.result_selected
+DEBUG    src.app.connection_manager:connection_manager.py:790 AISearchPanel connections: 2/2 succeeded, 0 failed
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected GraphWidget.refresh_requested
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected GraphWidget.filter_changed
+DEBUG    src.app.connection_manager:connection_manager.py:88 Successfully connected GraphWidget.node_clicked
+DEBUG    src.app.connection_manager:connection_manager.py:821 GraphWidget connections: 3/3 succeeded, 0 failed
+INFO     src.app.connection_manager:connection_manager.py:120 Signal connections complete: 81 succeeded, 0 failed out of 81 attempted
+INFO     src.app.main_window:main_window.py:269 Signal connections: 81/81
+DEBUG    src.app.command_coordinator:command_coordinator.py:45 CommandCoordinator initialized
+DEBUG    src.app.main_window:main_window.py:441 Critical docks state restored
+DEBUG    src.app.main_window:main_window.py:514 Dock state validation passed
+================================== FAILURES ===================================
+E   AssertionError: expected call not found.
+    Expected: connect(<bound method MainWindow._on_marker_clicked of <src.app.main_window.MainWindow(0x18f5fc13280) at 0x0000018F5DA88A80>>)
+      Actual: not called.
+---------------------------- Captured stderr call -----------------------------
+2026-01-17 00:03:04 - src.app.main_window - DEBUG - MainWindow initialization started
+2026-01-17 00:03:04 - src.app.data_handler - DEBUG - DataHandler initialized
+2026-01-17 00:03:04 - src.app.worker_manager - INFO - Using worlds directory: C:\Users\chris\Antigravity Projects\ProjektKraken\worlds
+2026-01-17 00:03:04 - src.core.world - INFO - Discovered 2 worlds in C:\Users\chris\Antigravity Projects\ProjektKraken\worlds
+2026-01-17 00:03:04 - src.app.worker_manager - INFO - Using first available world: Default World
+2026-01-17 00:03:04 - src.app.worker_manager - INFO - Initializing DatabaseWorker with: C:\Users\chris\Antigravity Projects\ProjektKraken\worlds\Default World\Default World.kraken
+2026-01-17 00:03:04 - src.app.main_window - DEBUG - Phase 1: Core services initialized
+2026-01-17 00:03:04 - src.app.main_window - DEBUG - Phase 2: Widget skeleton created
+2026-01-17 00:03:04 - src.app.main_window - DEBUG - Phase 3: Deferred initialization scheduled
+------------------------------ Captured log call ------------------------------
+DEBUG    src.app.main_window:main_window.py:134 MainWindow initialization started
+DEBUG    src.app.data_handler:data_handler.py:77 DataHandler initialized
+INFO     src.app.worker_manager:worker_manager.py:74 Using worlds directory: C:\Users\chris\Antigravity Projects\ProjektKraken\worlds
+INFO     src.core.world:world.py:259 Discovered 2 worlds in C:\Users\chris\Antigravity Projects\ProjektKraken\worlds
+INFO     src.app.worker_manager:worker_manager.py:100 Using first available world: Default World
+INFO     src.app.worker_manager:worker_manager.py:113 Initializing DatabaseWorker with: C:\Users\chris\Antigravity Projects\ProjektKraken\worlds\Default World\Default World.kraken
+DEBUG    src.app.main_window:main_window.py:140 Phase 1: Core services initialized
+DEBUG    src.app.main_window:main_window.py:144 Phase 2: Widget skeleton created
+DEBUG    src.app.main_window:main_window.py:148 Phase 3: Deferred initialization scheduled
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.2544.0_x64__qbz5n2kfra8p0\Lib\unittest\mock.py:970: AssertionError: expected call not found.
+E   AssertionError: Expected 'load_entities' to have been called once. Called 0 times.
+---------------------------- Captured stderr setup ----------------------------
+2026-01-17 00:03:09 - src.app.main_window - DEBUG - MainWindow initialization started
+2026-01-17 00:03:09 - src.app.data_handler - DEBUG - DataHandler initialized
+2026-01-17 00:03:09 - src.app.worker_manager - INFO - Using worlds directory: C:\Users\chris\Antigravity Projects\ProjektKraken\worlds
+2026-01-17 00:03:09 - src.core.world - INFO - Discovered 2 worlds in C:\Users\chris\Antigravity Projects\ProjektKraken\worlds
+2026-01-17 00:03:09 - src.app.worker_manager - INFO - Using first available world: Default World
+2026-01-17 00:03:09 - src.app.worker_manager - INFO - Initializing DatabaseWorker with: C:\Users\chris\Antigravity Projects\ProjektKraken\worlds\Default World\Default World.kraken
+2026-01-17 00:03:09 - src.app.main_window - DEBUG - Phase 1: Core services initialized
+2026-01-17 00:03:09 - src.services.prompt_loader - DEBUG - PromptLoader initialized with directory: C:\Users\chris\Antigravity Projects\ProjektKraken\default_assets\templates\system_prompts
+2026-01-17 00:03:09 - src.services.prompt_loader - DEBUG - Skipping file with invalid name format: few_shot_description.txt
+2026-01-17 00:03:09 - src.services.prompt_loader - DEBUG - Found 5 templates
+2026-01-17 00:03:09 - src.services.prompt_loader - DEBUG - PromptLoader initialized with directory: C:\Users\chris\Antigravity Projects\ProjektKraken\default_assets\templates\system_prompts
+2026-01-17 00:03:09 - src.services.prompt_loader - DEBUG - Skipping file with invalid name format: few_shot_description.txt
+2026-01-17 00:03:09 - src.services.prompt_loader - DEBUG - Found 5 templates
+2026-01-17 00:03:10 - src.app.ui_manager - DEBUG - Successfully created dock: Project Explorer (ProjectExplorerDock)
+2026-01-17 00:03:10 - src.app.ui_manager - DEBUG - Successfully created dock: Event Inspector (EventInspectorDock)
+2026-01-17 00:03:10 - src.app.ui_manager - DEBUG - Successfully created dock: Entity Inspector (EntityInspectorDock)
+2026-01-17 00:03:10 - src.app.ui_manager - DEBUG - Successfully created dock: Timeline (TimelineDock)
+2026-01-17 00:03:10 - src.app.ui_manager - DEBUG - Successfully created dock: Longform Document (LongformDock)
+2026-01-17 00:03:10 - src.app.ui_manager - DEBUG - Successfully created dock: Map (MapDock)
+2026-01-17 00:03:10 - src.app.ui_manager - DEBUG - Successfully created dock: AI Search (AISearchDock)
+2026-01-17 00:03:10 - src.app.ui_manager - DEBUG - Successfully created dock: Relationship Graph (GraphDock)
+2026-01-17 00:03:10 - src.app.ui_manager - INFO - Successfully created 8 docks: ['list', 'event', 'entity', 'timeline', 'longform', 'map', 'ai_search', 'graph']
+2026-01-17 00:03:10 - src.app.main_window - DEBUG - Phase 2: Widget skeleton created
+2026-01-17 00:03:10 - src.app.main_window - DEBUG - Phase 3: Deferred initialization scheduled
+----------------------------- Captured log setup ------------------------------
+DEBUG    src.app.main_window:main_window.py:134 MainWindow initialization started
+DEBUG    src.app.data_handler:data_handler.py:77 DataHandler initialized
+INFO     src.app.worker_manager:worker_manager.py:74 Using worlds directory: C:\Users\chris\Antigravity Projects\ProjektKraken\worlds
+INFO     src.core.world:world.py:259 Discovered 2 worlds in C:\Users\chris\Antigravity Projects\ProjektKraken\worlds
+INFO     src.app.worker_manager:worker_manager.py:100 Using first available world: Default World
+INFO     src.app.worker_manager:worker_manager.py:113 Initializing DatabaseWorker with: C:\Users\chris\Antigravity Projects\ProjektKraken\worlds\Default World\Default World.kraken
+DEBUG    src.app.main_window:main_window.py:140 Phase 1: Core services initialized
+DEBUG    src.services.prompt_loader:prompt_loader.py:79 PromptLoader initialized with directory: C:\Users\chris\Antigravity Projects\ProjektKraken\default_assets\templates\system_prompts
+DEBUG    src.services.prompt_loader:prompt_loader.py:172 Skipping file with invalid name format: few_shot_description.txt
+DEBUG    src.services.prompt_loader:prompt_loader.py:198 Found 5 templates
+DEBUG    src.services.prompt_loader:prompt_loader.py:79 PromptLoader initialized with directory: C:\Users\chris\Antigravity Projects\ProjektKraken\default_assets\templates\system_prompts
+DEBUG    src.services.prompt_loader:prompt_loader.py:172 Skipping file with invalid name format: few_shot_description.txt
+DEBUG    src.services.prompt_loader:prompt_loader.py:198 Found 5 templates
+DEBUG    src.app.ui_manager:ui_manager.py:321 Successfully created dock: Project Explorer (ProjectExplorerDock)
+DEBUG    src.app.ui_manager:ui_manager.py:321 Successfully created dock: Event Inspector (EventInspectorDock)
+DEBUG    src.app.ui_manager:ui_manager.py:321 Successfully created dock: Entity Inspector (EntityInspectorDock)
+DEBUG    src.app.ui_manager:ui_manager.py:321 Successfully created dock: Timeline (TimelineDock)
+DEBUG    src.app.ui_manager:ui_manager.py:321 Successfully created dock: Longform Document (LongformDock)
+DEBUG    src.app.ui_manager:ui_manager.py:321 Successfully created dock: Map (MapDock)
+DEBUG    src.app.ui_manager:ui_manager.py:321 Successfully created dock: AI Search (AISearchDock)
+DEBUG    src.app.ui_manager:ui_manager.py:321 Successfully created dock: Relationship Graph (GraphDock)
+INFO     src.app.ui_manager:ui_manager.py:251 Successfully created 8 docks: ['list', 'event', 'entity', 'timeline', 'longform', 'map', 'ai_search', 'graph']
+DEBUG    src.app.main_window:main_window.py:144 Phase 2: Widget skeleton created
+DEBUG    src.app.main_window:main_window.py:148 Phase 3: Deferred initialization scheduled
+---------------------------- Captured stderr call -----------------------------
+2026-01-17 00:03:10 - src.app.data_handler - INFO - [DataHandler] on_command_finished: CreateEntityCommand success=True
+2026-01-17 00:03:10 - src.app.data_handler - DEBUG - [DataHandler] Emitting reload_entities (Entity command)
+2026-01-17 00:03:10 - src.app.data_handler - DEBUG - [DataHandler] on_command_finished completed: CreateEntityCommand
+------------------------------ Captured log call ------------------------------
+INFO     src.app.data_handler:data_handler.py:268 [DataHandler] on_command_finished: CreateEntityCommand success=True
+DEBUG    src.app.data_handler:data_handler.py:310 [DataHandler] Emitting reload_entities (Entity command)
+DEBUG    src.app.data_handler:data_handler.py:325 [DataHandler] on_command_finished completed: CreateEntityCommand
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.2544.0_x64__qbz5n2kfra8p0\Lib\unittest\mock.py:958: AssertionError: Expected 'load_entities' to have been called once. Called 0 times.
+E   AssertionError: Expected 'load_events' to have been called once. Called 0 times.
+---------------------------- Captured stderr setup ----------------------------
+2026-01-17 00:03:10 - src.app.main_window - DEBUG - MainWindow initialization started
+2026-01-17 00:03:10 - src.app.data_handler - DEBUG - DataHandler initialized
+2026-01-17 00:03:10 - src.app.worker_manager - INFO - Using worlds directory: C:\Users\chris\Antigravity Projects\ProjektKraken\worlds
+2026-01-17 00:03:10 - src.core.world - INFO - Discovered 2 worlds in C:\Users\chris\Antigravity Projects\ProjektKraken\worlds
+2026-01-17 00:03:10 - src.app.worker_manager - INFO - Using first available world: Default World
+2026-01-17 00:03:10 - src.app.worker_manager - INFO - Initializing DatabaseWorker with: C:\Users\chris\Antigravity Projects\ProjektKraken\worlds\Default World\Default World.kraken
+2026-01-17 00:03:10 - src.app.main_window - DEBUG - Phase 1: Core services initialized
+2026-01-17 00:03:10 - src.services.prompt_loader - DEBUG - PromptLoader initialized with directory: C:\Users\chris\Antigravity Projects\ProjektKraken\default_assets\templates\system_prompts
+2026-01-17 00:03:10 - src.services.prompt_loader - DEBUG - Skipping file with invalid name format: few_shot_description.txt
+2026-01-17 00:03:10 - src.services.prompt_loader - DEBUG - Found 5 templates
+2026-01-17 00:03:10 - src.services.prompt_loader - DEBUG - PromptLoader initialized with directory: C:\Users\chris\Antigravity Projects\ProjektKraken\default_assets\templates\system_prompts
+2026-01-17 00:03:10 - src.services.prompt_loader - DEBUG - Skipping file with invalid name format: few_shot_description.txt
+2026-01-17 00:03:10 - src.services.prompt_loader - DEBUG - Found 5 templates
+2026-01-17 00:03:10 - src.app.ui_manager - DEBUG - Successfully created dock: Project Explorer (ProjectExplorerDock)
+2026-01-17 00:03:10 - src.app.ui_manager - DEBUG - Successfully created dock: Event Inspector (EventInspectorDock)
+2026-01-17 00:03:10 - src.app.ui_manager - DEBUG - Successfully created dock: Entity Inspector (EntityInspectorDock)
+2026-01-17 00:03:10 - src.app.ui_manager - DEBUG - Successfully created dock: Timeline (TimelineDock)
+2026-01-17 00:03:10 - src.app.ui_manager - DEBUG - Successfully created dock: Longform Document (LongformDock)
+2026-01-17 00:03:10 - src.app.ui_manager - DEBUG - Successfully created dock: Map (MapDock)
+2026-01-17 00:03:10 - src.app.ui_manager - DEBUG - Successfully created dock: AI Search (AISearchDock)
+2026-01-17 00:03:10 - src.app.ui_manager - DEBUG - Successfully created dock: Relationship Graph (GraphDock)
+2026-01-17 00:03:10 - src.app.ui_manager - INFO - Successfully created 8 docks: ['list', 'event', 'entity', 'timeline', 'longform', 'map', 'ai_search', 'graph']
+2026-01-17 00:03:10 - src.app.main_window - DEBUG - Phase 2: Widget skeleton created
+2026-01-17 00:03:10 - src.app.main_window - DEBUG - Phase 3: Deferred initialization scheduled
+----------------------------- Captured log setup ------------------------------
+DEBUG    src.app.main_window:main_window.py:134 MainWindow initialization started
+DEBUG    src.app.data_handler:data_handler.py:77 DataHandler initialized
+INFO     src.app.worker_manager:worker_manager.py:74 Using worlds directory: C:\Users\chris\Antigravity Projects\ProjektKraken\worlds
+INFO     src.core.world:world.py:259 Discovered 2 worlds in C:\Users\chris\Antigravity Projects\ProjektKraken\worlds
+INFO     src.app.worker_manager:worker_manager.py:100 Using first available world: Default World
+INFO     src.app.worker_manager:worker_manager.py:113 Initializing DatabaseWorker with: C:\Users\chris\Antigravity Projects\ProjektKraken\worlds\Default World\Default World.kraken
+DEBUG    src.app.main_window:main_window.py:140 Phase 1: Core services initialized
+DEBUG    src.services.prompt_loader:prompt_loader.py:79 PromptLoader initialized with directory: C:\Users\chris\Antigravity Projects\ProjektKraken\default_assets\templates\system_prompts
+DEBUG    src.services.prompt_loader:prompt_loader.py:172 Skipping file with invalid name format: few_shot_description.txt
+DEBUG    src.services.prompt_loader:prompt_loader.py:198 Found 5 templates
+DEBUG    src.services.prompt_loader:prompt_loader.py:79 PromptLoader initialized with directory: C:\Users\chris\Antigravity Projects\ProjektKraken\default_assets\templates\system_prompts
+DEBUG    src.services.prompt_loader:prompt_loader.py:172 Skipping file with invalid name format: few_shot_description.txt
+DEBUG    src.services.prompt_loader:prompt_loader.py:198 Found 5 templates
+DEBUG    src.app.ui_manager:ui_manager.py:321 Successfully created dock: Project Explorer (ProjectExplorerDock)
+DEBUG    src.app.ui_manager:ui_manager.py:321 Successfully created dock: Event Inspector (EventInspectorDock)
+DEBUG    src.app.ui_manager:ui_manager.py:321 Successfully created dock: Entity Inspector (EntityInspectorDock)
+DEBUG    src.app.ui_manager:ui_manager.py:321 Successfully created dock: Timeline (TimelineDock)
+DEBUG    src.app.ui_manager:ui_manager.py:321 Successfully created dock: Longform Document (LongformDock)
+DEBUG    src.app.ui_manager:ui_manager.py:321 Successfully created dock: Map (MapDock)
+DEBUG    src.app.ui_manager:ui_manager.py:321 Successfully created dock: AI Search (AISearchDock)
+DEBUG    src.app.ui_manager:ui_manager.py:321 Successfully created dock: Relationship Graph (GraphDock)
+INFO     src.app.ui_manager:ui_manager.py:251 Successfully created 8 docks: ['list', 'event', 'entity', 'timeline', 'longform', 'map', 'ai_search', 'graph']
+DEBUG    src.app.main_window:main_window.py:144 Phase 2: Widget skeleton created
+DEBUG    src.app.main_window:main_window.py:148 Phase 3: Deferred initialization scheduled
+---------------------------- Captured stderr call -----------------------------
+2026-01-17 00:03:10 - src.app.data_handler - INFO - [DataHandler] on_command_finished: CreateEventCommand success=True
+2026-01-17 00:03:10 - src.app.data_handler - DEBUG - [DataHandler] Emitting reload_events (Event command)
+2026-01-17 00:03:10 - src.app.data_handler - DEBUG - [DataHandler] on_command_finished completed: CreateEventCommand
+------------------------------ Captured log call ------------------------------
+INFO     src.app.data_handler:data_handler.py:268 [DataHandler] on_command_finished: CreateEventCommand success=True
+DEBUG    src.app.data_handler:data_handler.py:306 [DataHandler] Emitting reload_events (Event command)
+DEBUG    src.app.data_handler:data_handler.py:325 [DataHandler] on_command_finished completed: CreateEventCommand
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.2544.0_x64__qbz5n2kfra8p0\Lib\unittest\mock.py:958: AssertionError: Expected 'load_events' to have been called once. Called 0 times.
+E   AssertionError: assert 'You are an e...meric format.' == 'You are a sc...rld designer.'
+      
+      - You are a sci-fi world designer.
+      + You are an expert fantasy world-builder assisting a user in creating a rich and immersive setting. Your tone is descriptive, evocative, and consistent with high-fantasy literature.
+      + 
+      + IMPORTANT: Time in this world is represented as floating-point numbers where 1.0 = 1 day. The decimal portion represents time within the day (e.g., 0.5 = noon). When referencing dates or durations, understand that event dates and durations use this numeric format.
+---------------------------- Captured stderr setup ----------------------------
+2026-01-17 00:03:15 - src.services.prompt_loader - DEBUG - PromptLoader initialized with directory: C:\Users\chris\Antigravity Projects\ProjektKraken\default_assets\templates\system_prompts
+2026-01-17 00:03:15 - src.services.prompt_loader - DEBUG - Skipping file with invalid name format: few_shot_description.txt
+2026-01-17 00:03:15 - src.services.prompt_loader - DEBUG - Found 5 templates
+----------------------------- Captured log setup ------------------------------
+DEBUG    src.services.prompt_loader:prompt_loader.py:79 PromptLoader initialized with directory: C:\Users\chris\Antigravity Projects\ProjektKraken\default_assets\templates\system_prompts
+DEBUG    src.services.prompt_loader:prompt_loader.py:172 Skipping file with invalid name format: few_shot_description.txt
+DEBUG    src.services.prompt_loader:prompt_loader.py:198 Found 5 templates
+---------------------------- Captured stderr call -----------------------------
+2026-01-17 00:03:15 - src.gui.widgets.llm_generation_widget - WARNING - Failed to load UI template description_default: . Trying fallback...
+2026-01-17 00:03:15 - src.gui.widgets.llm_generation_widget - DEBUG - Using DEFAULT_SYSTEM_PROMPT
+------------------------------ Captured log call ------------------------------
+WARNING  src.gui.widgets.llm_generation_widget:llm_generation_widget.py:768 Failed to load UI template description_default: . Trying fallback...
+DEBUG    src.gui.widgets.llm_generation_widget:llm_generation_widget.py:802 Using DEFAULT_SYSTEM_PROMPT
+C:\Users\chris\Antigravity Projects\ProjektKraken\tests\unit\test_llm_generation_logic.py:214: AssertionError: assert 'You are an e...meric format.' == 'You are a sc...rld designer.'
+E   AssertionError: assert 'You are an e...meric format.' == 'Mock Fantasy Prompt'
+      
+      - Mock Fantasy Prompt
+      + You are an expert fantasy world-builder assisting a user in creating a rich and immersive setting. Your tone is descriptive, evocative, and consistent with high-fantasy literature.
+      + 
+      + IMPORTANT: Time in this world is represented as floating-point numbers where 1.0 = 1 day. The decimal portion represents time within the day (e.g., 0.5 = noon). When referencing dates or durations, understand that event dates and durations use this numeric format.
+---------------------------- Captured stderr setup ----------------------------
+2026-01-17 00:03:15 - src.services.prompt_loader - DEBUG - PromptLoader initialized with directory: C:\Users\chris\Antigravity Projects\ProjektKraken\default_assets\templates\system_prompts
+2026-01-17 00:03:15 - src.services.prompt_loader - DEBUG - Skipping file with invalid name format: few_shot_description.txt
+2026-01-17 00:03:15 - src.services.prompt_loader - DEBUG - Found 5 templates
+----------------------------- Captured log setup ------------------------------
+DEBUG    src.services.prompt_loader:prompt_loader.py:79 PromptLoader initialized with directory: C:\Users\chris\Antigravity Projects\ProjektKraken\default_assets\templates\system_prompts
+DEBUG    src.services.prompt_loader:prompt_loader.py:172 Skipping file with invalid name format: few_shot_description.txt
+DEBUG    src.services.prompt_loader:prompt_loader.py:198 Found 5 templates
+---------------------------- Captured stderr call -----------------------------
+2026-01-17 00:03:15 - src.gui.widgets.llm_generation_widget - WARNING - Failed to load UI template description_default: . Trying fallback...
+2026-01-17 00:03:15 - src.gui.widgets.llm_generation_widget - DEBUG - Using DEFAULT_SYSTEM_PROMPT
+------------------------------ Captured log call ------------------------------
+WARNING  src.gui.widgets.llm_generation_widget:llm_generation_widget.py:768 Failed to load UI template description_default: . Trying fallback...
+DEBUG    src.gui.widgets.llm_generation_widget:llm_generation_widget.py:802 Using DEFAULT_SYSTEM_PROMPT
+C:\Users\chris\Antigravity Projects\ProjektKraken\tests\unit\test_llm_generation_logic.py:287: AssertionError: assert 'You are an e...meric format.' == 'Mock Fantasy Prompt'
+E   AssertionError: assert 'You are an e...meric format.' == 'Mock Fantasy Prompt v2'
+      
+      - Mock Fantasy Prompt v2
+      + You are an expert fantasy world-builder assisting a user in creating a rich and immersive setting. Your tone is descriptive, evocative, and consistent with high-fantasy literature.
+      + 
+      + IMPORTANT: Time in this world is represented as floating-point numbers where 1.0 = 1 day. The decimal portion represents time within the day (e.g., 0.5 = noon). When referencing dates or durations, understand that event dates and durations use this numeric format.
+---------------------------- Captured stderr setup ----------------------------
+2026-01-17 00:03:15 - src.services.prompt_loader - DEBUG - PromptLoader initialized with directory: C:\Users\chris\Antigravity Projects\ProjektKraken\default_assets\templates\system_prompts
+2026-01-17 00:03:15 - src.services.prompt_loader - DEBUG - Skipping file with invalid name format: few_shot_description.txt
+2026-01-17 00:03:15 - src.services.prompt_loader - DEBUG - Found 5 templates
+----------------------------- Captured log setup ------------------------------
+DEBUG    src.services.prompt_loader:prompt_loader.py:79 PromptLoader initialized with directory: C:\Users\chris\Antigravity Projects\ProjektKraken\default_assets\templates\system_prompts
+DEBUG    src.services.prompt_loader:prompt_loader.py:172 Skipping file with invalid name format: few_shot_description.txt
+DEBUG    src.services.prompt_loader:prompt_loader.py:198 Found 5 templates
+---------------------------- Captured stderr call -----------------------------
+2026-01-17 00:03:15 - src.gui.widgets.llm_generation_widget - WARNING - Failed to load UI template description_default: . Trying fallback...
+2026-01-17 00:03:15 - src.gui.widgets.llm_generation_widget - DEBUG - Using DEFAULT_SYSTEM_PROMPT
+------------------------------ Captured log call ------------------------------
+WARNING  src.gui.widgets.llm_generation_widget:llm_generation_widget.py:768 Failed to load UI template description_default: . Trying fallback...
+DEBUG    src.gui.widgets.llm_generation_widget:llm_generation_widget.py:802 Using DEFAULT_SYSTEM_PROMPT
+C:\Users\chris\Antigravity Projects\ProjektKraken\tests\unit\test_llm_generation_logic.py:321: AssertionError: assert 'You are an e...meric format.' == 'Mock Fantasy Prompt v2'
+E   AssertionError: Expected 'load_event_details' to be called once. Called 0 times.
+---------------------------- Captured stderr setup ----------------------------
+2026-01-17 00:03:27 - src.app.main_window - DEBUG - MainWindow initialization started
+2026-01-17 00:03:27 - src.app.data_handler - DEBUG - DataHandler initialized
+2026-01-17 00:03:27 - src.app.worker_manager - INFO - Using worlds directory: C:\Users\chris\Antigravity Projects\ProjektKraken\worlds
+2026-01-17 00:03:27 - src.core.world - INFO - Discovered 2 worlds in C:\Users\chris\Antigravity Projects\ProjektKraken\worlds
+2026-01-17 00:03:27 - src.app.worker_manager - INFO - Using first available world: Default World
+2026-01-17 00:03:27 - src.app.worker_manager - INFO - Initializing DatabaseWorker with: C:\Users\chris\Antigravity Projects\ProjektKraken\worlds\Default World\Default World.kraken
+2026-01-17 00:03:27 - src.app.main_window - DEBUG - Phase 1: Core services initialized
+2026-01-17 00:03:27 - src.services.prompt_loader - DEBUG - PromptLoader initialized with directory: C:\Users\chris\Antigravity Projects\ProjektKraken\default_assets\templates\system_prompts
+2026-01-17 00:03:27 - src.services.prompt_loader - DEBUG - Skipping file with invalid name format: few_shot_description.txt
+2026-01-17 00:03:27 - src.services.prompt_loader - DEBUG - Found 5 templates
+2026-01-17 00:03:27 - src.services.prompt_loader - DEBUG - PromptLoader initialized with directory: C:\Users\chris\Antigravity Projects\ProjektKraken\default_assets\templates\system_prompts
+2026-01-17 00:03:27 - src.services.prompt_loader - DEBUG - Skipping file with invalid name format: few_shot_description.txt
+2026-01-17 00:03:27 - src.services.prompt_loader - DEBUG - Found 5 templates
+2026-01-17 00:03:27 - src.app.ui_manager - DEBUG - Successfully created dock: Project Explorer (ProjectExplorerDock)
+2026-01-17 00:03:27 - src.app.ui_manager - DEBUG - Successfully created dock: Event Inspector (EventInspectorDock)
+2026-01-17 00:03:27 - src.app.ui_manager - DEBUG - Successfully created dock: Entity Inspector (EntityInspectorDock)
+2026-01-17 00:03:27 - src.app.ui_manager - DEBUG - Successfully created dock: Timeline (TimelineDock)
+2026-01-17 00:03:27 - src.app.ui_manager - DEBUG - Successfully created dock: Longform Document (LongformDock)
+2026-01-17 00:03:27 - src.app.ui_manager - DEBUG - Successfully created dock: Map (MapDock)
+2026-01-17 00:03:27 - src.app.ui_manager - DEBUG - Successfully created dock: AI Search (AISearchDock)
+2026-01-17 00:03:27 - src.app.ui_manager - DEBUG - Successfully created dock: Relationship Graph (GraphDock)
+2026-01-17 00:03:27 - src.app.ui_manager - INFO - Successfully created 8 docks: ['list', 'event', 'entity', 'timeline', 'longform', 'map', 'ai_search', 'graph']
+2026-01-17 00:03:27 - src.app.main_window - DEBUG - Phase 2: Widget skeleton created
+2026-01-17 00:03:27 - src.app.main_window - DEBUG - Phase 3: Deferred initialization scheduled
+----------------------------- Captured log setup ------------------------------
+DEBUG    src.app.main_window:main_window.py:134 MainWindow initialization started
+DEBUG    src.app.data_handler:data_handler.py:77 DataHandler initialized
+INFO     src.app.worker_manager:worker_manager.py:74 Using worlds directory: C:\Users\chris\Antigravity Projects\ProjektKraken\worlds
+INFO     src.core.world:world.py:259 Discovered 2 worlds in C:\Users\chris\Antigravity Projects\ProjektKraken\worlds
+INFO     src.app.worker_manager:worker_manager.py:100 Using first available world: Default World
+INFO     src.app.worker_manager:worker_manager.py:113 Initializing DatabaseWorker with: C:\Users\chris\Antigravity Projects\ProjektKraken\worlds\Default World\Default World.kraken
+DEBUG    src.app.main_window:main_window.py:140 Phase 1: Core services initialized
+DEBUG    src.services.prompt_loader:prompt_loader.py:79 PromptLoader initialized with directory: C:\Users\chris\Antigravity Projects\ProjektKraken\default_assets\templates\system_prompts
+DEBUG    src.services.prompt_loader:prompt_loader.py:172 Skipping file with invalid name format: few_shot_description.txt
+DEBUG    src.services.prompt_loader:prompt_loader.py:198 Found 5 templates
+DEBUG    src.services.prompt_loader:prompt_loader.py:79 PromptLoader initialized with directory: C:\Users\chris\Antigravity Projects\ProjektKraken\default_assets\templates\system_prompts
+DEBUG    src.services.prompt_loader:prompt_loader.py:172 Skipping file with invalid name format: few_shot_description.txt
+DEBUG    src.services.prompt_loader:prompt_loader.py:198 Found 5 templates
+DEBUG    src.app.ui_manager:ui_manager.py:321 Successfully created dock: Project Explorer (ProjectExplorerDock)
+DEBUG    src.app.ui_manager:ui_manager.py:321 Successfully created dock: Event Inspector (EventInspectorDock)
+DEBUG    src.app.ui_manager:ui_manager.py:321 Successfully created dock: Entity Inspector (EntityInspectorDock)
+DEBUG    src.app.ui_manager:ui_manager.py:321 Successfully created dock: Timeline (TimelineDock)
+DEBUG    src.app.ui_manager:ui_manager.py:321 Successfully created dock: Longform Document (LongformDock)
+DEBUG    src.app.ui_manager:ui_manager.py:321 Successfully created dock: Map (MapDock)
+DEBUG    src.app.ui_manager:ui_manager.py:321 Successfully created dock: AI Search (AISearchDock)
+DEBUG    src.app.ui_manager:ui_manager.py:321 Successfully created dock: Relationship Graph (GraphDock)
+INFO     src.app.ui_manager:ui_manager.py:251 Successfully created 8 docks: ['list', 'event', 'entity', 'timeline', 'longform', 'map', 'ai_search', 'graph']
+DEBUG    src.app.main_window:main_window.py:144 Phase 2: Widget skeleton created
+DEBUG    src.app.main_window:main_window.py:148 Phase 3: Deferred initialization scheduled
+---------------------------- Captured stderr call -----------------------------
+2026-01-17 00:03:27 - src.app.data_handler - INFO - [DataHandler] on_command_finished: ProcessWikiLinksCommand success=True
+2026-01-17 00:03:27 - src.app.data_handler - DEBUG - [DataHandler] Emitting reload signals (WikiLinks/Relation)
+2026-01-17 00:03:27 - src.app.data_handler - DEBUG - [DataHandler] on_command_finished completed: ProcessWikiLinksCommand
+------------------------------ Captured log call ------------------------------
+INFO     src.app.data_handler:data_handler.py:268 [DataHandler] on_command_finished: ProcessWikiLinksCommand success=True
+DEBUG    src.app.data_handler:data_handler.py:314 [DataHandler] Emitting reload signals (WikiLinks/Relation)
+DEBUG    src.app.data_handler:data_handler.py:325 [DataHandler] on_command_finished completed: ProcessWikiLinksCommand
+C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.2544.0_x64__qbz5n2kfra8p0\Lib\unittest\mock.py:990: AssertionError: Expected 'load_event_details' to be called once. Called 0 times.
+============================== warnings summary ===============================
+tests/integration/test_server_integration.py::test_server_endpoints
+  C:\Users\chris\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\websockets\legacy\__init__.py:6: DeprecationWarning: websockets.legacy is deprecated; see https://websockets.readthedocs.io/en/stable/howto/upgrade.html for upgrade instructions
+    warnings.warn(  # deprecated in 14.0 - 2024-11-09
+
+tests/integration/test_server_integration.py::test_server_endpoints
+  C:\Users\chris\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\uvicorn\protocols\websockets\websockets_impl.py:17: DeprecationWarning: websockets.server.WebSocketServerProtocol is deprecated
+    from websockets.server import WebSocketServerProtocol
+
+tests/integration/test_server_integration.py::test_server_endpoints
+  C:\Users\chris\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\starlette\templating.py:162: DeprecationWarning: The `name` is not the first parameter anymore. The first parameter should be the `Request` instance.
+  Replace `TemplateResponse(name, {"request": request})` by `TemplateResponse(request, name)`.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_map_navigation.py::test_mainwindow_integration - AssertionE...
+FAILED tests/unit/test_creation_ux.py::test_create_entity_success_selects_item
+FAILED tests/unit/test_creation_ux.py::test_create_event_success_selects_item
+FAILED tests/unit/test_llm_generation_logic.py::test_custom_system_prompt_from_settings
+FAILED tests/unit/test_llm_generation_logic.py::test_template_based_prompt_loading
+FAILED tests/unit/test_llm_generation_logic.py::test_template_loading_with_version_2
+FAILED tests/unit/test_main_window_ext.py::test_wikilink_completion_refreshes_ui
+ERROR tests/unit/test_entities.py::test_update_entity_via_insert - Failed: TE...
+======= 7 failed, 1272 passed, 1 skipped, 3 warnings, 1 error in 33.80s =======
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.2544.0_x64__qbz5n2kfra8p0\Lib\logging\__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\src\app\widget_registry.py", line 53, in <lambda>
+    widget.destroyed.connect(lambda: self._on_widget_destroyed(name))
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\src\app\widget_registry.py", line 126, in _on_widget_destroyed
+    logger.debug(f"Widget '{name}' destroyed")
+Message: "Widget 'widget1' destroyed"
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.2544.0_x64__qbz5n2kfra8p0\Lib\logging\__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\src\app\widget_registry.py", line 53, in <lambda>
+    widget.destroyed.connect(lambda: self._on_widget_destroyed(name))
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\src\app\widget_registry.py", line 126, in _on_widget_destroyed
+    logger.debug(f"Widget '{name}' destroyed")
+Message: "Widget 'test_widget' destroyed"
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.2544.0_x64__qbz5n2kfra8p0\Lib\logging\__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\src\app\widget_registry.py", line 53, in <lambda>
+    widget.destroyed.connect(lambda: self._on_widget_destroyed(name))
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\src\app\widget_registry.py", line 126, in _on_widget_destroyed
+    logger.debug(f"Widget '{name}' destroyed")
+Message: "Widget 'test_widget' destroyed"
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.2544.0_x64__qbz5n2kfra8p0\Lib\logging\__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\src\app\widget_registry.py", line 53, in <lambda>
+    widget.destroyed.connect(lambda: self._on_widget_destroyed(name))
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\src\app\widget_registry.py", line 126, in _on_widget_destroyed
+    logger.debug(f"Widget '{name}' destroyed")
+Message: "Widget 'test_widget' destroyed"
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.2544.0_x64__qbz5n2kfra8p0\Lib\logging\__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\src\app\widget_registry.py", line 53, in <lambda>
+    widget.destroyed.connect(lambda: self._on_widget_destroyed(name))
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\src\app\widget_registry.py", line 126, in _on_widget_destroyed
+    logger.debug(f"Widget '{name}' destroyed")
+Message: "Widget 'test_widget' destroyed"
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.2544.0_x64__qbz5n2kfra8p0\Lib\logging\__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\src\app\widget_registry.py", line 53, in <lambda>
+    widget.destroyed.connect(lambda: self._on_widget_destroyed(name))
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\src\app\widget_registry.py", line 126, in _on_widget_destroyed
+    logger.debug(f"Widget '{name}' destroyed")
+Message: "Widget 'test_widget' destroyed"
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.2544.0_x64__qbz5n2kfra8p0\Lib\logging\__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\src\app\widget_registry.py", line 53, in <lambda>
+    widget.destroyed.connect(lambda: self._on_widget_destroyed(name))
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\src\app\widget_registry.py", line 126, in _on_widget_destroyed
+    logger.debug(f"Widget '{name}' destroyed")
+Message: "Widget 'widget2' destroyed"
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.2544.0_x64__qbz5n2kfra8p0\Lib\logging\__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\src\app\widget_registry.py", line 53, in <lambda>
+    widget.destroyed.connect(lambda: self._on_widget_destroyed(name))
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\src\app\widget_registry.py", line 126, in _on_widget_destroyed
+    logger.debug(f"Widget '{name}' destroyed")
+Message: "Widget 'widget1' destroyed"
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.2544.0_x64__qbz5n2kfra8p0\Lib\logging\__init__.py", line 1154, in emit
+    stream.write(msg + self.terminator)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: I/O operation on closed file.
+Call stack:
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\src\app\widget_registry.py", line 53, in <lambda>
+    widget.destroyed.connect(lambda: self._on_widget_destroyed(name))
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\src\app\widget_registry.py", line 126, in _on_widget_destroyed
+    logger.debug(f"Widget '{name}' destroyed")
+Message: "Widget 'widget2' destroyed"
+Arguments: ()
