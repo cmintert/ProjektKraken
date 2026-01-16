@@ -3,10 +3,10 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="GNU AFFERO GENERAL PUBLIC LICENSE" href="LICENSE.html"><link rel="prev" title="services package" href="services.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
-        <title>Changelog - Project Kraken 0.6.0 documentation</title>
+        <title>LLM Integration Review - Quick Reference - Project Kraken 0.6.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -235,8 +235,8 @@
 </li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
-<ul class="current">
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Changelog</a></li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
 <li class="toctree-l1"><a class="reference internal" href="LICENSE.html">GNU AFFERO GENERAL PUBLIC LICENSE</a></li>
 </ul>
 
@@ -258,7 +258,7 @@
         </a>
         <div class="content-icon-container">
           <div class="view-this-page">
-  <a class="muted-link" href="_sources/CHANGELOG.md.txt" title="View this page">
+  <a class="muted-link" href="_sources/LLM_REVIEW_SUMMARY.md.txt" title="View this page">
     <svg><use href="#svg-eye"></use></svg>
     <span class="visually-hidden">View this page</span>
   </a>
@@ -276,18 +276,126 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="changelog">
-<h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">¶</a></h1>
-<p>All notable changes to this project will be documented in this file.</p>
-<section id="development-2026-01-16">
-<h2>[Development] - 2026-01-16<a class="headerlink" href="#development-2026-01-16" title="Link to this heading">¶</a></h2>
-<section id="internal">
-<h3>Internal<a class="headerlink" href="#internal" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Merge pull request #55 from cmintert/copilot/add-llm-review-documentation</p></li>
-</ul>
-<p><em>This changelog was automatically generated.</em></p>
+          <section id="llm-integration-review-quick-reference">
+<h1>LLM Integration Review - Quick Reference<a class="headerlink" href="#llm-integration-review-quick-reference" title="Link to this heading">¶</a></h1>
+<p><strong>Full Document:</strong> <a class="reference internal" href="LLM_REVIEW.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">LLM_REVIEW.md</span></code></span></a> (516 lines)<br />
+<strong>Last Updated:</strong> 2026-01-14<br />
+<strong>Status:</strong> Production-ready for basic use, needs improvements for reliable AI workflows</p>
+<hr class="docutils" />
+<section id="tl-dr">
+<h2>TL;DR<a class="headerlink" href="#tl-dr" title="Link to this heading">¶</a></h2>
+<p>Projekt Kraken has a <strong>solid LLM architecture</strong> with local-first operation, multi-provider support, and Qt integration. However, it needs <strong>structured output enforcement, RAG condensation, entity deduplication, and consistency checks</strong> to be reliable for AI-assisted worldbuilding.</p>
 </section>
+<hr class="docutils" />
+<section id="critical-gaps-top-8">
+<h2>Critical Gaps (Top 8)<a class="headerlink" href="#critical-gaps-top-8" title="Link to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p><strong>RAG condensation</strong> → 6000-char raw chunks bloat context</p></li>
+<li><p><strong>Structured outputs</strong> → Free-text requires manual parsing</p></li>
+<li><p><strong>Entity deduplication</strong> → No registry checks create duplicates</p></li>
+<li><p><strong>Consistency validation</strong> → No timeline/relation logic checks</p></li>
+<li><p><strong>Prompt infrastructure</strong> → No versioning or templates</p></li>
+<li><p><strong>Provenance</strong> → RAG sources not shown to users</p></li>
+<li><p><strong>Testing</strong> → No LLM output validation tests</p></li>
+<li><p><strong>Audit security</strong> → No redaction guidance</p></li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="recommended-next-prs-priority-order">
+<h2>Recommended Next PRs (Priority Order)<a class="headerlink" href="#recommended-next-prs-priority-order" title="Link to this heading">¶</a></h2>
+<section id="quick-wins-1-3-days">
+<h3>Quick Wins (1-3 days)<a class="headerlink" href="#quick-wins-1-3-days" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Prompt template loader</strong> (2-4 hours, Low risk)</p></li>
+<li><p><strong>Few-shot examples</strong> (2-3 hours, Low risk)</p></li>
+<li><p><strong>JSON schema validation</strong> (4-6 hours, Low risk)</p></li>
+<li><p><strong>Provenance metadata</strong> (1 day, Low risk)</p></li>
+</ol>
+</section>
+<section id="medium-term-1-2-weeks">
+<h3>Medium-Term (1-2 weeks)<a class="headerlink" href="#medium-term-1-2-weeks" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple" start="5">
+<li><p><strong>RAG condensation</strong> (2-3 days, Medium risk) ⭐</p></li>
+<li><p><strong>Structured output enforcement</strong> (2-3 days, Medium risk) ⭐</p></li>
+<li><p><strong>Entity deduplication</strong> (4-5 days, High risk) ⭐</p></li>
+<li><p><strong>Consistency checker</strong> (3-4 days, Medium risk) ⭐</p></li>
+</ol>
+</section>
+<section id="long-term-1-2-months">
+<h3>Long-Term (1-2 months)<a class="headerlink" href="#long-term-1-2-months" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple" start="9">
+<li><p><strong>CI LLM tests</strong> (1-2 days, Low risk)</p></li>
+<li><p><strong>Telemetry</strong> (2-3 days, Low risk)</p></li>
+<li><p><strong>Multi-provider fallback</strong> (2-3 days, Medium risk)</p></li>
+<li><p><strong>Diff view + merge UI</strong> (5-7 days, Medium risk)</p></li>
+</ol>
+<p><strong>⭐ = High Impact</strong></p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="quick-reference-files-inspected">
+<h2>Quick Reference: Files Inspected<a class="headerlink" href="#quick-reference-files-inspected" title="Link to this heading">¶</a></h2>
+<p><strong>Core:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">src/services/llm_provider.py</span></code> (Provider ABC, factory)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/services/providers/*.py</span></code> (LM Studio, OpenAI, Anthropic, Google)</p></li>
+</ul>
+<p><strong>UI:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/llm_generation_widget.py</span></code> (LLMGenerationWidget)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/entity_editor.py</span></code> (Integration)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/gui/dialogs/ai_settings_dialog.py</span></code> (Configuration)</p></li>
+</ul>
+<p><strong>CLI:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">src/cli/index.py</span></code> (rebuild, query, index-object)</p></li>
+</ul>
+<p><strong>Docs:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">docs/LLM_INTEGRATION.md</span></code> (Multi-provider guide)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docs/SEMANTIC_SEARCH.md</span></code> (Search architecture)</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="example-artifacts-in-full-doc">
+<h2>Example Artifacts in Full Doc<a class="headerlink" href="#example-artifacts-in-full-doc" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Improved system prompt</strong> (v2 with structured output guidance)</p></li>
+<li><p><strong>Few-shot examples</strong> (wizard character, haunted forest location)</p></li>
+<li><p><strong>JSON schemas</strong> (Entity, Location with validation rules)</p></li>
+<li><p><strong>RAG condensation pseudo-code</strong> (6000 chars → 400 chars)</p></li>
+<li><p><strong>Consistency check rules</strong> (birth/death order, circular relations, causality)</p></li>
+<li><p><strong>UI mockups</strong> (Preview panel, provenance list, duplicate warnings, diff view)</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="key-metrics">
+<h2>Key Metrics<a class="headerlink" href="#key-metrics" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Lines of code inspected:</strong> ~2000+ (core providers, UI widgets, CLI)</p></li>
+<li><p><strong>Gaps identified:</strong> 8 critical issues</p></li>
+<li><p><strong>Recommendations:</strong> 12 PRs prioritized</p></li>
+<li><p><strong>Estimated total effort:</strong> 1-2 months for full implementation</p></li>
+<li><p><strong>Quick wins impact:</strong> Immediate quality boost in 1-3 days</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="why-read-the-full-document">
+<h2>Why Read The Full Document?<a class="headerlink" href="#why-read-the-full-document" title="Link to this heading">¶</a></h2>
+<p>The full <a class="reference internal" href="LLM_REVIEW.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">LLM_REVIEW.md</span></code></span></a> includes:</p>
+<ul class="simple">
+<li><p>Detailed technical analysis of each gap (cause, harm, examples)</p></li>
+<li><p>Complete implementation pseudo-code for all recommendations</p></li>
+<li><p>Test specifications for each feature</p></li>
+<li><p>UI/UX mockups with exact component descriptions</p></li>
+<li><p>Security and performance optimization notes</p></li>
+<li><p>14-item acceptance checklist for tracking progress</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="contact">
+<h2>Contact<a class="headerlink" href="#contact" title="Link to this heading">¶</a></h2>
+<p>For questions about this review or implementation guidance, see the full document’s conclusion and recommended PR order.</p>
 </section>
 </section>
 
@@ -296,26 +404,8 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="LICENSE.html">
-              <div class="page-info">
-                <div class="context">
-                  <span>Next</span>
-                </div>
-                <div class="title">GNU AFFERO GENERAL PUBLIC LICENSE</div>
-              </div>
-              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
-            </a>
-          <a class="prev-page" href="services.html">
-              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
-              <div class="page-info">
-                <div class="context">
-                  <span>Previous</span>
-                </div>
-                
-                <div class="title">services package</div>
-                
-              </div>
-            </a>
+          
+          
         </div>
         <div class="bottom-of-page">
           <div class="left-details">
@@ -346,11 +436,20 @@
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Changelog</a><ul>
-<li><a class="reference internal" href="#development-2026-01-16">[Development] - 2026-01-16</a><ul>
-<li><a class="reference internal" href="#internal">Internal</a></li>
+<li><a class="reference internal" href="#">LLM Integration Review - Quick Reference</a><ul>
+<li><a class="reference internal" href="#tl-dr">TL;DR</a></li>
+<li><a class="reference internal" href="#critical-gaps-top-8">Critical Gaps (Top 8)</a></li>
+<li><a class="reference internal" href="#recommended-next-prs-priority-order">Recommended Next PRs (Priority Order)</a><ul>
+<li><a class="reference internal" href="#quick-wins-1-3-days">Quick Wins (1-3 days)</a></li>
+<li><a class="reference internal" href="#medium-term-1-2-weeks">Medium-Term (1-2 weeks)</a></li>
+<li><a class="reference internal" href="#long-term-1-2-months">Long-Term (1-2 months)</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#quick-reference-files-inspected">Quick Reference: Files Inspected</a></li>
+<li><a class="reference internal" href="#example-artifacts-in-full-doc">Example Artifacts in Full Doc</a></li>
+<li><a class="reference internal" href="#key-metrics">Key Metrics</a></li>
+<li><a class="reference internal" href="#why-read-the-full-document">Why Read The Full Document?</a></li>
+<li><a class="reference internal" href="#contact">Contact</a></li>
 </ul>
 </li>
 </ul>

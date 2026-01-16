@@ -1,0 +1,1051 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
+        <title>LLM Integration Comprehensive Review - Project Kraken 0.6.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">Project Kraken 0.6.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  <span class="sidebar-brand-text">Project Kraken 0.6.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="WIKI_LINKING.html">ID-Based Wiki Linking Implementation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MAP_USAGE_EXAMPLES.html">Map System Usage Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="LONGFORM.html">Longform Document Feature</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="DATABASE.html">Database Architecture and Best Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DEVELOPMENT.html">Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security Best Practices</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
+<li class="toctree-l1"><a class="reference internal" href="LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html">Tag Normalization Migration Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="modules.html">src</a><input aria-label="Toggle navigation of src" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="app.html">app package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html">cli package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="commands.html">commands package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core.html">core package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="gui.html">gui package</a><input aria-label="Toggle navigation of gui package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui.widgets.html">gui.widgets package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui.dialogs.html">gui.dialogs package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="services.html">services package</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="LICENSE.html">GNU AFFERO GENERAL PUBLIC LICENSE</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/LLM_REVIEW.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="llm-integration-comprehensive-review">
+<h1>LLM Integration Comprehensive Review<a class="headerlink" href="#llm-integration-comprehensive-review" title="Link to this heading">¶</a></h1>
+<section id="executive-summary">
+<h2>1. Executive Summary<a class="headerlink" href="#executive-summary" title="Link to this heading">¶</a></h2>
+<p>ProjektKraken has implemented a production-ready, multi-provider LLM system supporting semantic search (embeddings) and text generation. The architecture prioritizes local-first operation with LM Studio as default, plus cloud fallbacks (OpenAI, Google Vertex AI, Anthropic).</p>
+<p><strong>Strengths:</strong></p>
+<ul class="simple">
+<li><p>Strong <code class="docutils literal notranslate"><span class="pre">Provider</span></code> ABC abstraction</p></li>
+<li><p>Local semantic search with deterministic indexing</p></li>
+<li><p>Streaming generation in Qt UI via <code class="docutils literal notranslate"><span class="pre">GenerationWorker</span></code></p></li>
+<li><p>RAG support with top-k retrieval (<code class="docutils literal notranslate"><span class="pre">{{RAG_CONTEXT}}</span></code>)</p></li>
+<li><p>Comprehensive CLI tools</p></li>
+<li><p>QSettings persistence + env fallback</p></li>
+</ul>
+<p><strong>Critical Gaps:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>RAG condensation</strong> (2000-char chunks → context bloat)</p></li>
+<li><p><strong>Structured outputs</strong> (free-text → manual parsing)</p></li>
+<li><p><strong>Entity deduplication</strong> (no registry → duplicates)</p></li>
+<li><p><strong>Consistency validation</strong> (no timeline checks → paradoxes)</p></li>
+<li><p><strong>Prompt infrastructure</strong> (no versioning/templates)</p></li>
+<li><p><strong>Provenance</strong> (RAG sources hidden)</p></li>
+<li><p><strong>Testing</strong> (no LLM output validation)</p></li>
+<li><p><strong>Audit security</strong> (no redaction → data leakage)</p></li>
+</ol>
+<p><strong>Verdict:</strong> Production-ready for basic use, but <strong>needs structured outputs, RAG condensation, consistency checks</strong> for reliable AI worldbuilding.</p>
+</section>
+<hr class="docutils" />
+<section id="scope-methodology">
+<h2>2. Scope &amp; Methodology<a class="headerlink" href="#scope-methodology" title="Link to this heading">¶</a></h2>
+<p><strong>Files Inspected (with absolute paths):</strong></p>
+<p>Core:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">/home/runner/work/ProjektKraken/ProjektKraken/src/services/llm_provider.py</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/home/runner/work/ProjektKraken/ProjektKraken/src/services/providers/*.py</span></code></p></li>
+</ul>
+<p>UI:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">/home/runner/work/ProjektKraken/ProjektKraken/src/gui/widgets/llm_generation_widget.py</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/home/runner/work/ProjektKraken/ProjektKraken/src/gui/widgets/entity_editor.py</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/home/runner/work/ProjektKraken/ProjektKraken/src/gui/dialogs/ai_settings_dialog.py</span></code></p></li>
+</ul>
+<p>CLI &amp; Docs:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">/home/runner/work/ProjektKraken/ProjektKraken/src/cli/index.py</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/home/runner/work/ProjektKraken/ProjektKraken/docs/LLM_INTEGRATION.md</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/home/runner/work/ProjektKraken/ProjektKraken/docs/SEMANTIC_SEARCH.md</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/home/runner/work/ProjektKraken/ProjektKraken/README.md</span></code></p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="current-implementation-summary">
+<h2>3. Current Implementation Summary<a class="headerlink" href="#current-implementation-summary" title="Link to this heading">¶</a></h2>
+<section id="provider-abstraction">
+<h3>Provider Abstraction<a class="headerlink" href="#provider-abstraction" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Interface:</strong> <code class="docutils literal notranslate"><span class="pre">Provider</span></code> ABC with <code class="docutils literal notranslate"><span class="pre">embed()</span></code>, <code class="docutils literal notranslate"><span class="pre">generate()</span></code>, <code class="docutils literal notranslate"><span class="pre">stream_generate()</span></code>, <code class="docutils literal notranslate"><span class="pre">health_check()</span></code>, <code class="docutils literal notranslate"><span class="pre">metadata()</span></code></p></li>
+<li><p><strong>Factory:</strong> <code class="docutils literal notranslate"><span class="pre">create_provider(id,</span> <span class="pre">world_id,</span> <span class="pre">**overrides)</span></code> → loads from QSettings + env vars</p></li>
+<li><p><strong>Implementations:</strong> LM Studio (default), OpenAI, Google Vertex AI, Anthropic Claude</p></li>
+<li><p><strong>Resilience:</strong> Circuit breaker (5-failure threshold, 60s cooldown), 3 retries with exponential backoff</p></li>
+</ul>
+</section>
+<section id="ui-integration">
+<h3>UI Integration<a class="headerlink" href="#ui-integration" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Widget:</strong> <code class="docutils literal notranslate"><span class="pre">LLMGenerationWidget</span></code> collapsible panel in entity/event editors</p></li>
+<li><p><strong>Controls:</strong> Provider combo, max tokens (50-4096), temperature (0-200%), RAG checkbox + top_k (1-20)</p></li>
+<li><p><strong>Workflow:</strong> Custom prompt → Generate button → <code class="docutils literal notranslate"><span class="pre">GenerationWorker</span></code> thread → <code class="docutils literal notranslate"><span class="pre">text_generated</span></code> signal → Append to description</p></li>
+</ul>
+</section>
+<section id="system-prompt">
+<h3>System Prompt<a class="headerlink" href="#system-prompt" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">DEFAULT_SYSTEM_PROMPT</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;You are an expert fantasy world-builder... &quot;</span>
+    <span class="s2">&quot;Time is float: 1.0 = 1 day...&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Stored in QSettings as <code class="docutils literal notranslate"><span class="pre">ai_gen_system_prompt</span></code></p></li>
+<li><p>Customizable via AI Settings dialog</p></li>
+<li><p><strong>No versioning or template system</strong></p></li>
+</ul>
+</section>
+<section id="rag-helper">
+<h3>RAG Helper<a class="headerlink" href="#rag-helper" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">perform_rag_search(prompt,</span> <span class="pre">db_path,</span> <span class="pre">top_k)</span></code>:</p>
+<ol class="arabic simple">
+<li><p>Query SearchService with first 200 chars of prompt</p></li>
+<li><p>Retrieve top_k results (default 3)</p></li>
+<li><p>Extract descriptions from <code class="docutils literal notranslate"><span class="pre">text_content</span></code> field</p></li>
+<li><p>Truncate each to 2000 chars</p></li>
+<li><p>Format as <code class="docutils literal notranslate"><span class="pre">###</span> <span class="pre">World</span> <span class="pre">Knowledge</span> <span class="pre">(RAG</span> <span class="pre">Data):\n**Name**</span> <span class="pre">(Type):\n&lt;description&gt;...</span></code></p></li>
+<li><p>Inject via <code class="docutils literal notranslate"><span class="pre">{{RAG_CONTEXT}}</span></code> placeholder or prepend</p></li>
+</ol>
+<p><strong>No condensation:</strong> Concatenates raw text (3 × 2000 = 6000 chars)</p>
+</section>
+<section id="semantic-search">
+<h3>Semantic Search<a class="headerlink" href="#semantic-search" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>SearchService:</strong> Indexes entities/events, stores float32 BLOBs (normalized vectors)</p></li>
+<li><p><strong>Text format:</strong> <code class="docutils literal notranslate"><span class="pre">Name:</span> <span class="pre">X\nType:</span> <span class="pre">Y\nTags:</span> <span class="pre">...\nDescription:</span> <span class="pre">...\nattr:</span> <span class="pre">val...</span></code></p></li>
+<li><p><strong>Change detection:</strong> SHA-256 hash of text content</p></li>
+<li><p><strong>CLI:</strong> <code class="docutils literal notranslate"><span class="pre">rebuild</span></code>, <code class="docutils literal notranslate"><span class="pre">query</span></code>, <code class="docutils literal notranslate"><span class="pre">index-object</span></code>, <code class="docutils literal notranslate"><span class="pre">delete-object</span></code></p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="observed-gaps-and-risks">
+<h2>4. Observed Gaps and Risks<a class="headerlink" href="#observed-gaps-and-risks" title="Link to this heading">¶</a></h2>
+<section id="insufficient-rag-condensation">
+<h3>4.1. Insufficient RAG Condensation<a class="headerlink" href="#insufficient-rag-condensation" title="Link to this heading">¶</a></h3>
+<p><strong>Cause:</strong> Concatenates 2000-char descriptions without summarization<br />
+<strong>Harm:</strong> Context bloat (6000 chars for top_k=3), irrelevant details, slower/costlier generation<br />
+<strong>Example:</strong> “Wizard’s personality” → 6000 chars (backstory + tower + mentor event), only 10% relevant</p>
+</section>
+<section id="lack-of-structured-outputs">
+<h3>4.2. Lack of Structured Outputs<a class="headerlink" href="#lack-of-structured-outputs" title="Link to this heading">¶</a></h3>
+<p><strong>Cause:</strong> <code class="docutils literal notranslate"><span class="pre">generate()</span></code> returns <code class="docutils literal notranslate"><span class="pre">{&quot;text&quot;:</span> <span class="pre">str}</span></code>, no JSON schema validation<br />
+<strong>Harm:</strong> Unparseable data, manual extraction, hallucination-prone<br />
+<strong>Example:</strong> “Generate NPC” → “The character’s name is Eldric…” (prose) not <code class="docutils literal notranslate"><span class="pre">{&quot;name&quot;:</span> <span class="pre">&quot;Eldric&quot;}</span></code></p>
+</section>
+<section id="no-entity-deduplication">
+<h3>4.3. No Entity Deduplication<a class="headerlink" href="#no-entity-deduplication" title="Link to this heading">¶</a></h3>
+<p><strong>Cause:</strong> No DB lookup before inserting generated entities<br />
+<strong>Harm:</strong> Duplicates (“Gandalf the Grey” vs “Gandalf the Gray”), lore fragmentation<br />
+<strong>Example:</strong> DB has “King Arthur” → generates “King Arthur” → duplicate entity</p>
+</section>
+<section id="missing-consistency-checks">
+<h3>4.4. Missing Consistency Checks<a class="headerlink" href="#missing-consistency-checks" title="Link to this heading">¶</a></h3>
+<p><strong>Cause:</strong> No validation of timeline logic, circular relations<br />
+<strong>Harm:</strong> Impossible genealogies (born after death), paradoxical events (cause after effect)<br />
+<strong>Example:</strong> Character born year 100 fights in War of year 80 → stored without error</p>
+</section>
+<section id="limited-prompt-infrastructure">
+<h3>4.5. Limited Prompt Infrastructure<a class="headerlink" href="#limited-prompt-infrastructure" title="Link to this heading">¶</a></h3>
+<p><strong>Cause:</strong> Single <code class="docutils literal notranslate"><span class="pre">DEFAULT_SYSTEM_PROMPT</span></code> constant, no versioning<br />
+<strong>Harm:</strong> Inconsistent output, hard to iterate, no few-shot learning<br />
+<strong>Example:</strong> Users manually craft “Generate JSON with…” every time</p>
+</section>
+<section id="no-llm-output-tests">
+<h3>4.6. No LLM Output Tests<a class="headerlink" href="#no-llm-output-tests" title="Link to this heading">¶</a></h3>
+<p><strong>Cause:</strong> No integration tests for schema/prompt regression<br />
+<strong>Harm:</strong> Silent quality degradation, API changes undetected<br />
+<strong>Example:</strong> Provider API change breaks parsing → KeyError → no CI catch</p>
+</section>
+<section id="limited-provenance">
+<h3>4.7. Limited Provenance<a class="headerlink" href="#limited-provenance" title="Link to this heading">¶</a></h3>
+<p><strong>Cause:</strong> RAG results in prompt but not shown to users<br />
+<strong>Harm:</strong> Reduced trust, no source attribution, missed relations<br />
+<strong>Example:</strong> “Staff of Ages” from RAG → user unaware → no link created</p>
+</section>
+<section id="audit-log-data-leakage">
+<h3>4.8. Audit Log Data Leakage<a class="headerlink" href="#audit-log-data-leakage" title="Link to this heading">¶</a></h3>
+<p><strong>Cause:</strong> Optional logging, no redaction, plaintext<br />
+<strong>Harm:</strong> Sensitive lore exposed, PII leakage, compliance risk<br />
+<strong>Example:</strong> Logs “Secret NPC: villain, real name Alice” → compromised</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="prioritized-recommendations">
+<h2>5. Prioritized Recommendations<a class="headerlink" href="#prioritized-recommendations" title="Link to this heading">¶</a></h2>
+<section id="quick-wins-1-3-days-low-risk">
+<h3>Quick Wins (1-3 days, Low Risk)<a class="headerlink" href="#quick-wins-1-3-days-low-risk" title="Link to this heading">¶</a></h3>
+<p><strong>5.1. Externalize Prompt Templates</strong></p>
+<ul class="simple">
+<li><p>Move to <code class="docutils literal notranslate"><span class="pre">assets/templates/system_prompt_v1.txt</span></code> with metadata header</p></li>
+<li><p>Create <code class="docutils literal notranslate"><span class="pre">PromptLoader</span></code> class for versioned loading</p></li>
+<li><p><strong>Tests:</strong> <code class="docutils literal notranslate"><span class="pre">test_prompt_loader_loads_v1()</span></code>, <code class="docutils literal notranslate"><span class="pre">test_lists_templates()</span></code></p></li>
+</ul>
+<p><strong>5.2. Add Few-Shot Examples</strong></p>
+<ul class="simple">
+<li><p>Create <code class="docutils literal notranslate"><span class="pre">few_shot_entity.txt</span></code>, <code class="docutils literal notranslate"><span class="pre">few_shot_location.txt</span></code> (2-3 examples each)</p></li>
+<li><p>Prepend to prompts for structured generation</p></li>
+<li><p><strong>Tests:</strong> <code class="docutils literal notranslate"><span class="pre">test_few_shot_loads()</span></code>, <code class="docutils literal notranslate"><span class="pre">test_injection()</span></code></p></li>
+</ul>
+<p><strong>5.3. Add Provenance Metadata</strong></p>
+<ul class="simple">
+<li><p>Return <code class="docutils literal notranslate"><span class="pre">{&quot;context&quot;:</span> <span class="pre">str,</span> <span class="pre">&quot;sources&quot;:</span> <span class="pre">List[Dict]}</span></code> from RAG</p></li>
+<li><p>Display “Sources: Entity A, Event B” in UI below generated text</p></li>
+<li><p><strong>Tests:</strong> <code class="docutils literal notranslate"><span class="pre">test_rag_returns_sources()</span></code>, <code class="docutils literal notranslate"><span class="pre">test_ui_displays_sources()</span></code></p></li>
+</ul>
+<p><strong>5.4. Add JSON Schema Validation</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">validate_json_output(text,</span> <span class="pre">schema)</span> <span class="pre">-&gt;</span> <span class="pre">(success,</span> <span class="pre">data,</span> <span class="pre">error)</span></code></p></li>
+<li><p>Catch parse errors early, enable retry logic</p></li>
+<li><p><strong>Tests:</strong> <code class="docutils literal notranslate"><span class="pre">test_validates_valid()</span></code>, <code class="docutils literal notranslate"><span class="pre">test_rejects_invalid()</span></code>, <code class="docutils literal notranslate"><span class="pre">test_checks_keys()</span></code></p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="medium-term-1-2-weeks-medium-risk">
+<h3>Medium-Term (1-2 weeks, Medium Risk)<a class="headerlink" href="#medium-term-1-2-weeks-medium-risk" title="Link to this heading">¶</a></h3>
+<p><strong>5.5. Implement RAG Condensation</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">condense_rag_chunks(chunks,</span> <span class="pre">max_tokens=100)</span></code> → LLM summarization per chunk</p></li>
+<li><p>Reduce 2000-char chunks to 100-token summaries</p></li>
+<li><p><strong>Tests:</strong> <code class="docutils literal notranslate"><span class="pre">test_reduces_length()</span></code>, <code class="docutils literal notranslate"><span class="pre">test_preserves_facts()</span></code>, <code class="docutils literal notranslate"><span class="pre">test_empty()</span></code></p></li>
+</ul>
+<p><strong>5.6. Structured Output Enforcement</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">structured_generate(prompt,</span> <span class="pre">schema)</span></code> → function-calling or post-validation + retry</p></li>
+<li><p>Use OpenAI/Anthropic native APIs, fallback to validation</p></li>
+<li><p><strong>Tests:</strong> <code class="docutils literal notranslate"><span class="pre">test_with_function_calling()</span></code>, <code class="docutils literal notranslate"><span class="pre">test_fallback_retries()</span></code>, <code class="docutils literal notranslate"><span class="pre">test_raises()</span></code></p></li>
+</ul>
+<p><strong>5.7. Entity Registry + Deduplication</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">EntityRegistry.find_similar(name,</span> <span class="pre">threshold=80)</span></code> → fuzzy matching (fuzzywuzzy)</p></li>
+<li><p>Show merge dialog before creating similar entity</p></li>
+<li><p><strong>Tests:</strong> <code class="docutils literal notranslate"><span class="pre">test_finds_exact()</span></code>, <code class="docutils literal notranslate"><span class="pre">test_finds_fuzzy()</span></code>, <code class="docutils literal notranslate"><span class="pre">test_ignores_dissimilar()</span></code></p></li>
+</ul>
+<p><strong>5.8. Consistency Checker</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ConsistencyChecker</span></code> with <code class="docutils literal notranslate"><span class="pre">check_birth_death_order()</span></code>, <code class="docutils literal notranslate"><span class="pre">check_event_dates()</span></code>, <code class="docutils literal notranslate"><span class="pre">check_circular_relations()</span></code></p></li>
+<li><p>Surface warnings in UI before save</p></li>
+<li><p><strong>Tests:</strong> <code class="docutils literal notranslate"><span class="pre">test_detects_birth_after_death()</span></code>, <code class="docutils literal notranslate"><span class="pre">test_negative_duration()</span></code>, <code class="docutils literal notranslate"><span class="pre">test_circular()</span></code></p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="long-term-1-2-months-higher-risk">
+<h3>Long-Term (1-2 months, Higher Risk)<a class="headerlink" href="#long-term-1-2-months-higher-risk" title="Link to this heading">¶</a></h3>
+<p><strong>5.9. CI Tests + Regression Prompts</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">tests/integration/test_llm_generation.py</span></code> with fixed prompts</p></li>
+<li><p>Assert schema conformance, key fields present</p></li>
+<li><p><strong>Tests:</strong> <code class="docutils literal notranslate"><span class="pre">test_character_schema()</span></code>, <code class="docutils literal notranslate"><span class="pre">test_location_description()</span></code>, <code class="docutils literal notranslate"><span class="pre">test_rag_injection()</span></code></p></li>
+</ul>
+<p><strong>5.10. Telemetry Opt-In</strong></p>
+<ul class="simple">
+<li><p>Track accept/reject rate, generation time, token usage</p></li>
+<li><p>Store in local SQLite <code class="docutils literal notranslate"><span class="pre">llm_telemetry</span></code> table</p></li>
+<li><p><strong>Tests:</strong> <code class="docutils literal notranslate"><span class="pre">test_logs_generation()</span></code>, <code class="docutils literal notranslate"><span class="pre">test_acceptance_rate()</span></code></p></li>
+</ul>
+<p><strong>5.11. Multi-Provider Fallback</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">FallbackProvider([(&quot;lmstudio&quot;,</span> <span class="pre">1),</span> <span class="pre">(&quot;openai&quot;,</span> <span class="pre">2)])</span></code> → try in priority order</p></li>
+<li><p>Failover on health_check or circuit breaker</p></li>
+<li><p><strong>Tests:</strong> <code class="docutils literal notranslate"><span class="pre">test_tries_all()</span></code>, <code class="docutils literal notranslate"><span class="pre">test_succeeds_second()</span></code>, <code class="docutils literal notranslate"><span class="pre">test_raises_all_fail()</span></code></p></li>
+</ul>
+<p><strong>5.12. Diff View + Merge UI</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">MergeDialog(original,</span> <span class="pre">generated)</span></code> → show before/after diff (difflib.HtmlDiff)</p></li>
+<li><p>Options: Replace, Append, Selective merge</p></li>
+<li><p><strong>Tests:</strong> <code class="docutils literal notranslate"><span class="pre">test_replace()</span></code>, <code class="docutils literal notranslate"><span class="pre">test_append()</span></code>, <code class="docutils literal notranslate"><span class="pre">test_diff_highlights()</span></code></p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="example-artifacts">
+<h2>6. Example Artifacts<a class="headerlink" href="#example-artifacts" title="Link to this heading">¶</a></h2>
+<section id="improved-system-prompt-v2">
+<h3>6.1. Improved System Prompt (v2)<a class="headerlink" href="#improved-system-prompt-v2" title="Link to this heading">¶</a></h3>
+<div class="highlight-markdown notranslate"><div class="highlight"><pre><span></span><span class="gh"># templates/system_prompt_v2.txt</span>
+<span class="gh"># version: 2.0</span>
+<span class="gh"># description: Fantasy world-builder with structured output guidance</span>
+
+You are an expert fantasy world-builder. Tone: descriptive, evocative.
+
+<span class="gs">**TIME:**</span> 1.0 = 1 day (0.5 = noon). Use for dates/durations.
+
+<span class="gs">**OUTPUT FORMAT:**</span>
+```json
+{
+  &quot;name&quot;: &quot;Entity Name&quot;,
+  &quot;type&quot;: &quot;Character|Location|Faction|Item|Concept&quot;,
+  &quot;description&quot;: &quot;100-300 word description&quot;,
+  &quot;attributes&quot;: {&quot;key&quot;: &quot;value&quot;}
+}
+</pre></div>
+</div>
+<p><strong>GUIDELINES:</strong></p>
+<ul class="simple">
+<li><p>Be concise (100-300 words)</p></li>
+<li><p>Maintain consistency with RAG context</p></li>
+<li><p>Avoid contradictions</p></li>
+<li><p>Use sensory details</p></li>
+<li><p>Consider timeline logic</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+### 6.2. Few-Shot Entity Examples
+
+```json
+// Example 1 - Wizard
+User: Create a wise old wizard.
+Assistant: {
+  &quot;name&quot;: &quot;Aldric the Wise&quot;,
+  &quot;type&quot;: &quot;Character&quot;,
+  &quot;description&quot;: &quot;An ancient wizard with silver beard...&quot;,
+  &quot;attributes&quot;: {&quot;age&quot;: 300, &quot;alignment&quot;: &quot;good&quot;}
+}
+
+// Example 2 - Haunted Forest
+User: Describe a haunted forest.
+Assistant: {
+  &quot;name&quot;: &quot;The Whispering Woods&quot;,
+  &quot;type&quot;: &quot;Location&quot;,
+  &quot;description&quot;: &quot;Ancient trees twist into grotesque shapes...&quot;,
+  &quot;attributes&quot;: {&quot;danger_level&quot;: &quot;high&quot;, &quot;inhabitants&quot;: [&quot;wraiths&quot;]}
+}
+</pre></div>
+</div>
+</section>
+<section id="json-schemas">
+<h3>6.3. JSON Schemas<a class="headerlink" href="#json-schemas" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ENTITY_SCHEMA</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="s2">&quot;minLength&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;maxLength&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">},</span>
+        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="s2">&quot;enum&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Character&quot;</span><span class="p">,</span> <span class="s2">&quot;Location&quot;</span><span class="p">,</span> <span class="s2">&quot;Faction&quot;</span><span class="p">,</span> <span class="s2">&quot;Item&quot;</span><span class="p">,</span> <span class="s2">&quot;Concept&quot;</span><span class="p">]},</span>
+        <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="s2">&quot;minLength&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span> <span class="s2">&quot;maxLength&quot;</span><span class="p">:</span> <span class="mi">2000</span><span class="p">},</span>
+        <span class="s2">&quot;attributes&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="rag-condensation-pseudo-code">
+<h3>6.4. RAG Condensation Pseudo-Code<a class="headerlink" href="#rag-condensation-pseudo-code" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">condense_rag_chunks</span><span class="p">(</span><span class="n">provider</span><span class="p">,</span> <span class="n">chunks</span><span class="p">,</span> <span class="n">max_tokens_per_chunk</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Before: 3 × 2000 chars = 6000 chars</span>
+<span class="sd">    After: 3 × 100 tokens = ~400 chars</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">condensed</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">chunks</span><span class="p">:</span>
+        <span class="n">summary_prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Summarize in </span><span class="si">{</span><span class="n">max_tokens_per_chunk</span><span class="si">}</span><span class="s2"> tokens:</span><span class="se">\n</span><span class="si">{</span><span class="n">chunk</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">][:</span><span class="mi">1000</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">Summary:&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">provider</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">summary_prompt</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="n">max_tokens_per_chunk</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+        <span class="n">condensed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;**</span><span class="si">{</span><span class="n">chunk</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">**: </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">condensed</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="consistency-check-rules">
+<h3>6.5. Consistency Check Rules<a class="headerlink" href="#consistency-check-rules" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">ConsistencyChecker</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_birth_death_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity</span><span class="p">):</span>
+        <span class="n">birth</span> <span class="o">=</span> <span class="n">entity</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;birth_date&quot;</span><span class="p">)</span>
+        <span class="n">death</span> <span class="o">=</span> <span class="n">entity</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;death_date&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">birth</span> <span class="ow">and</span> <span class="n">death</span> <span class="ow">and</span> <span class="n">birth</span> <span class="o">&gt;=</span> <span class="n">death</span><span class="p">:</span>
+            <span class="k">return</span> <span class="ne">Warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">entity</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> born after death&quot;</span><span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_circular_relations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">):</span>
+        <span class="n">visited</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">stack</span> <span class="o">=</span> <span class="p">[</span><span class="n">entity_id</span><span class="p">]</span>
+        <span class="k">while</span> <span class="n">stack</span><span class="p">:</span>
+            <span class="n">current</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">current</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">:</span>
+                <span class="k">return</span> <span class="ne">Warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Circular relation: </span><span class="si">{</span><span class="n">current</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">visited</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
+            <span class="n">relations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">get_relations</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">rel_type</span><span class="o">=</span><span class="s2">&quot;parent_of&quot;</span><span class="p">)</span>
+            <span class="n">stack</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;target_id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">relations</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="recommended-next-code-prs">
+<h2>7. Recommended Next-Code PRs<a class="headerlink" href="#recommended-next-code-prs" title="Link to this heading">¶</a></h2>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>PR #</p></th>
+<th class="head"><p>Title</p></th>
+<th class="head"><p>Est. Time</p></th>
+<th class="head"><p>Risk</p></th>
+<th class="head"><p>Impact</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>Prompt template loader + versioning</p></td>
+<td><p>2-4 hours</p></td>
+<td><p>Low</p></td>
+<td><p>Med</p></td>
+</tr>
+<tr class="row-odd"><td><p>2</p></td>
+<td><p>Few-shot examples (entity/location)</p></td>
+<td><p>2-3 hours</p></td>
+<td><p>Low</p></td>
+<td><p>High</p></td>
+</tr>
+<tr class="row-even"><td><p>3</p></td>
+<td><p>JSON schema validation wrapper</p></td>
+<td><p>4-6 hours</p></td>
+<td><p>Low</p></td>
+<td><p>High</p></td>
+</tr>
+<tr class="row-odd"><td><p>4</p></td>
+<td><p>Provenance metadata in RAG</p></td>
+<td><p>1 day</p></td>
+<td><p>Low</p></td>
+<td><p>Med</p></td>
+</tr>
+<tr class="row-even"><td><p>5</p></td>
+<td><p>RAG condensation pipeline</p></td>
+<td><p>2-3 days</p></td>
+<td><p>Med</p></td>
+<td><p>High</p></td>
+</tr>
+<tr class="row-odd"><td><p>6</p></td>
+<td><p>Structured output enforcement</p></td>
+<td><p>2-3 days</p></td>
+<td><p>Med</p></td>
+<td><p>High</p></td>
+</tr>
+<tr class="row-even"><td><p>7</p></td>
+<td><p>Entity registry + deduplication</p></td>
+<td><p>4-5 days</p></td>
+<td><p>High</p></td>
+<td><p>High</p></td>
+</tr>
+<tr class="row-odd"><td><p>8</p></td>
+<td><p>Consistency checker</p></td>
+<td><p>3-4 days</p></td>
+<td><p>Med</p></td>
+<td><p>High</p></td>
+</tr>
+<tr class="row-even"><td><p>9</p></td>
+<td><p>CI LLM output tests</p></td>
+<td><p>1-2 days</p></td>
+<td><p>Low</p></td>
+<td><p>Med</p></td>
+</tr>
+<tr class="row-odd"><td><p>10</p></td>
+<td><p>Telemetry/metrics</p></td>
+<td><p>2-3 days</p></td>
+<td><p>Low</p></td>
+<td><p>Med</p></td>
+</tr>
+<tr class="row-even"><td><p>11</p></td>
+<td><p>Multi-provider fallback</p></td>
+<td><p>2-3 days</p></td>
+<td><p>Med</p></td>
+<td><p>Med</p></td>
+</tr>
+<tr class="row-odd"><td><p>12</p></td>
+<td><p>Diff view + merge UI</p></td>
+<td><p>5-7 days</p></td>
+<td><p>Med</p></td>
+<td><p>High</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Order:</strong> Start with <strong>PR1-3</strong> (quick wins), then <strong>PR5-6</strong> (core), finally <strong>PR7-8</strong> (complex).</p>
+</section>
+<hr class="docutils" />
+<section id="why-this-matters-for-worldbuilding">
+<h2>8. Why This Matters for Worldbuilding<a class="headerlink" href="#why-this-matters-for-worldbuilding" title="Link to this heading">¶</a></h2>
+<section id="maintain-canonical-lore">
+<h3>Maintain Canonical Lore<a class="headerlink" href="#maintain-canonical-lore" title="Link to this heading">¶</a></h3>
+<p><strong>Fix:</strong> Fuzzy-match deduplication prevents “Gandalf the Grey” + “Gandalf the Gray”<br />
+<strong>Benefit:</strong> Single source of truth, consistent relationships</p>
+</section>
+<section id="reduce-hallucination-contradictions">
+<h3>Reduce Hallucination/Contradictions<a class="headerlink" href="#reduce-hallucination-contradictions" title="Link to this heading">¶</a></h3>
+<p><strong>Fix:</strong> Consistency checker enforces birth &lt; death, event A caused B ⇒ A.date ≤ B.date<br />
+<strong>Benefit:</strong> Internally consistent world, no temporal paradoxes</p>
+</section>
+<section id="enable-reliable-machine-readable-outputs">
+<h3>Enable Reliable Machine-Readable Outputs<a class="headerlink" href="#enable-reliable-machine-readable-outputs" title="Link to this heading">¶</a></h3>
+<p><strong>Fix:</strong> Structured JSON with schema validation<br />
+<strong>Benefit:</strong> Automated workflows (bulk import, CSV export, API integration)</p>
+</section>
+<section id="improve-user-trust">
+<h3>Improve User Trust<a class="headerlink" href="#improve-user-trust" title="Link to this heading">¶</a></h3>
+<p><strong>Fix:</strong> Provenance shows “Sources: Entity A, B”, diff view before accepting<br />
+<strong>Benefit:</strong> Users verify sources, selectively merge content</p>
+</section>
+<section id="allow-safe-offline-local-first">
+<h3>Allow Safe Offline/Local-First<a class="headerlink" href="#allow-safe-offline-local-first" title="Link to this heading">¶</a></h3>
+<p><strong>Fix:</strong> Multi-provider fallback (LM Studio → OpenAI → Anthropic)<br />
+<strong>Benefit:</strong> Works offline, graceful degradation, private data stays local</p>
+</section>
+<section id="ensure-provenance-auditability">
+<h3>Ensure Provenance &amp; Auditability<a class="headerlink" href="#ensure-provenance-auditability" title="Link to this heading">¶</a></h3>
+<p><strong>Fix:</strong> Track AI-generated vs human-written, secure audit logs with redaction<br />
+<strong>Benefit:</strong> Compliance, content origin tracking, safe audit trails</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="ui-ux-notes-for-entity-editor-llm-panel">
+<h2>9. UI/UX Notes for Entity Editor LLM Panel<a class="headerlink" href="#ui-ux-notes-for-entity-editor-llm-panel" title="Link to this heading">¶</a></h2>
+<section id="structured-preview">
+<h3>Structured Preview<a class="headerlink" href="#structured-preview" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>┌────────────────────────────────────┐
+│ Generated Content Preview          │
+├────────────────────────────────────┤
+│ {                                  │
+│   &quot;name&quot;: &quot;Aldric&quot;,                │
+│   &quot;type&quot;: &quot;Character&quot;,             │
+│   &quot;attributes&quot;: { ▼ }              │  ← Collapsible
+│ }                                  │
+├────────────────────────────────────┤
+│ ✓ Valid JSON   ⚠ Schema OK        │
+└────────────────────────────────────┘
+</pre></div>
+</div>
+</section>
+<section id="provenance-list">
+<h3>Provenance List<a class="headerlink" href="#provenance-list" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Sources (RAG Context):
+  • Gandalf (Character) - 0.92  [View]
+  • The Shire (Location) - 0.87  [View]
+</pre></div>
+</div>
+</section>
+<section id="duplicate-warning">
+<h3>Duplicate Warning<a class="headerlink" href="#duplicate-warning" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>⚠ Similar Entity: &quot;Gandalf the Wise&quot; (90% match)
+  ○ Merge with existing
+  ○ Create as new
+  [ View Existing ]  [ Cancel ]  [ Proceed ]
+</pre></div>
+</div>
+</section>
+<section id="accept-reject-merge-buttons">
+<h3>Accept/Reject/Merge Buttons<a class="headerlink" href="#accept-reject-merge-buttons" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span> <span class="n">Reject</span> <span class="p">]</span>  <span class="p">[</span> <span class="n">Merge</span><span class="o">...</span> <span class="p">]</span>  <span class="p">[</span> <span class="n">Accept</span> <span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="diff-view">
+<h3>Diff View<a class="headerlink" href="#diff-view" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>┌────────────────┬────────────────────┐
+│ Current        │ Generated          │
+├────────────────┼────────────────────┤
+│ Gandalf is a   │ Gandalf is a wise  │  ← Added (green)
+│ wizard.        │ and ancient wizard.│
+└────────────────┴────────────────────┘
+Merge Options:
+  ○ Replace entire   ○ Append   ○ Selective
+                 [ Cancel ]  [ Apply ]
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="checklist-acceptance-criteria">
+<h2>10. Checklist (Acceptance Criteria)<a class="headerlink" href="#checklist-acceptance-criteria" title="Link to this heading">¶</a></h2>
+<p><strong>Infrastructure:</strong></p>
+<ul class="simple">
+<li><p>[ ] Prompt templates in <code class="docutils literal notranslate"><span class="pre">templates/</span></code> directory</p></li>
+<li><p>[ ] <code class="docutils literal notranslate"><span class="pre">PromptLoader</span></code> with version management</p></li>
+<li><p>[ ] 3+ few-shot examples (entity, location, event)</p></li>
+<li><p>[ ] JSON schemas defined (Entity, Location, Event)</p></li>
+</ul>
+<p><strong>Core Features:</strong></p>
+<ul class="simple">
+<li><p>[ ] RAG condensation with summarization</p></li>
+<li><p>[ ] Structured output enforcement (function-calling or retry)</p></li>
+<li><p>[ ] Entity registry with fuzzy matching (80%+)</p></li>
+<li><p>[ ] Consistency checker (timeline/relation rules)</p></li>
+</ul>
+<p><strong>UI/UX:</strong></p>
+<ul class="simple">
+<li><p>[ ] Provenance metadata displayed (“Sources: …”)</p></li>
+<li><p>[ ] Duplicate warnings shown</p></li>
+<li><p>[ ] Diff view for before/after</p></li>
+<li><p>[ ] Accept/Reject/Merge buttons</p></li>
+</ul>
+<p><strong>Testing:</strong></p>
+<ul class="simple">
+<li><p>[ ] CI tests for LLM output validation</p></li>
+<li><p>[ ] Regression prompts with schema assertions</p></li>
+<li><p>[ ] Telemetry opt-in implemented</p></li>
+<li><p>[ ] Integration tests for RAG and structured output</p></li>
+</ul>
+<p><strong>Documentation:</strong></p>
+<ul class="simple">
+<li><p>[ ] Updated docs (prompt templates, few-shot)</p></li>
+<li><p>[ ] User guide for AI workflows</p></li>
+<li><p>[ ] Security guidelines (audit logs, redaction)</p></li>
+<li><p>[ ] Migration guide for structured outputs</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="security-privacy">
+<h2>11. Security &amp; Privacy<a class="headerlink" href="#security-privacy" title="Link to this heading">¶</a></h2>
+<section id="audit-log-security">
+<h3>Audit Log Security<a class="headerlink" href="#audit-log-security" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Implement opt-in redaction (strip custom attributes)</p></li>
+<li><p>Add retention policy (auto-delete &gt;30 days)</p></li>
+<li><p>Encrypt logs at rest (OS keychain)</p></li>
+</ul>
+</section>
+<section id="api-key-storage">
+<h3>API Key Storage<a class="headerlink" href="#api-key-storage" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Use OS credential manager (Windows Credential Manager, macOS Keychain)</p></li>
+<li><p>Never log API keys</p></li>
+</ul>
+</section>
+<section id="cloud-provider-data-leakage">
+<h3>Cloud Provider Data Leakage<a class="headerlink" href="#cloud-provider-data-leakage" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Warn users when enabling cloud providers</p></li>
+<li><p>Add “Data Privacy Mode”: disable RAG for cloud</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="performance-notes">
+<h2>12. Performance Notes<a class="headerlink" href="#performance-notes" title="Link to this heading">¶</a></h2>
+<section id="rag-condensation">
+<h3>RAG Condensation<a class="headerlink" href="#rag-condensation" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Bottleneck:</strong> 3 separate LLM calls for summarization</p></li>
+<li><p><strong>Optimization:</strong> Batch into single prompt: “Summarize these 3 entries…”</p></li>
+<li><p><strong>Trade-off:</strong> Reduces API calls (3→1) but increases single-call latency</p></li>
+</ul>
+</section>
+<section id="structured-output-retries">
+<h3>Structured Output Retries<a class="headerlink" href="#structured-output-retries" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Cost:</strong> Each retry = additional LLM call</p></li>
+<li><p><strong>Optimization:</strong> Exponential backoff, increase temp on retry</p></li>
+<li><p><strong>Max retries:</strong> 2-3 attempts</p></li>
+</ul>
+</section>
+<section id="entity-registry">
+<h3>Entity Registry<a class="headerlink" href="#entity-registry" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Bottleneck:</strong> O(N) fuzzy matching for N entities</p></li>
+<li><p><strong>Optimization:</strong> Trigram index or BK-tree for sub-linear search (&gt;1000 entities)</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="future-enhancements">
+<h2>13. Future Enhancements<a class="headerlink" href="#future-enhancements" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Chunk embeddings for long descriptions</p></li>
+<li><p>Cross-modal RAG (image captions, map labels)</p></li>
+<li><p>Relation-aware search (“Who caused X?”)</p></li>
+<li><p>Prompt optimizer (A/B testing, auto-tune)</p></li>
+<li><p>Voice input (speech-to-text for accessibility)</p></li>
+<li><p>Collaborative filtering suggestions</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="conclusion">
+<h2>Conclusion<a class="headerlink" href="#conclusion" title="Link to this heading">¶</a></h2>
+<p>ProjektKraken’s LLM integration is <strong>architecturally sound</strong> with strong abstractions and local-first principles. The <strong>critical gaps</strong>—structured outputs, RAG condensation, entity deduplication, consistency checks—are <strong>well-scoped and implementable in 1-2 months</strong>. Prioritizing Quick Wins (PR1-4) delivers immediate quality improvements with minimal risk. Medium-Term work (PR5-8) addresses core workflow gaps. The system is <strong>production-ready for basic use today</strong> and will be <strong>best-in-class for AI-assisted worldbuilding</strong> after implementing these recommendations.</p>
+<p><strong>Next Action:</strong> Start with <strong>PR1</strong> (prompt template loader) to establish infrastructure for iterative improvement.</p>
+<hr class="docutils" />
+<p><strong>Document End</strong></p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, Christian Mintert
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">LLM Integration Comprehensive Review</a><ul>
+<li><a class="reference internal" href="#executive-summary">1. Executive Summary</a></li>
+<li><a class="reference internal" href="#scope-methodology">2. Scope &amp; Methodology</a></li>
+<li><a class="reference internal" href="#current-implementation-summary">3. Current Implementation Summary</a><ul>
+<li><a class="reference internal" href="#provider-abstraction">Provider Abstraction</a></li>
+<li><a class="reference internal" href="#ui-integration">UI Integration</a></li>
+<li><a class="reference internal" href="#system-prompt">System Prompt</a></li>
+<li><a class="reference internal" href="#rag-helper">RAG Helper</a></li>
+<li><a class="reference internal" href="#semantic-search">Semantic Search</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#observed-gaps-and-risks">4. Observed Gaps and Risks</a><ul>
+<li><a class="reference internal" href="#insufficient-rag-condensation">4.1. Insufficient RAG Condensation</a></li>
+<li><a class="reference internal" href="#lack-of-structured-outputs">4.2. Lack of Structured Outputs</a></li>
+<li><a class="reference internal" href="#no-entity-deduplication">4.3. No Entity Deduplication</a></li>
+<li><a class="reference internal" href="#missing-consistency-checks">4.4. Missing Consistency Checks</a></li>
+<li><a class="reference internal" href="#limited-prompt-infrastructure">4.5. Limited Prompt Infrastructure</a></li>
+<li><a class="reference internal" href="#no-llm-output-tests">4.6. No LLM Output Tests</a></li>
+<li><a class="reference internal" href="#limited-provenance">4.7. Limited Provenance</a></li>
+<li><a class="reference internal" href="#audit-log-data-leakage">4.8. Audit Log Data Leakage</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#prioritized-recommendations">5. Prioritized Recommendations</a><ul>
+<li><a class="reference internal" href="#quick-wins-1-3-days-low-risk">Quick Wins (1-3 days, Low Risk)</a></li>
+<li><a class="reference internal" href="#medium-term-1-2-weeks-medium-risk">Medium-Term (1-2 weeks, Medium Risk)</a></li>
+<li><a class="reference internal" href="#long-term-1-2-months-higher-risk">Long-Term (1-2 months, Higher Risk)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#example-artifacts">6. Example Artifacts</a><ul>
+<li><a class="reference internal" href="#improved-system-prompt-v2">6.1. Improved System Prompt (v2)</a></li>
+<li><a class="reference internal" href="#json-schemas">6.3. JSON Schemas</a></li>
+<li><a class="reference internal" href="#rag-condensation-pseudo-code">6.4. RAG Condensation Pseudo-Code</a></li>
+<li><a class="reference internal" href="#consistency-check-rules">6.5. Consistency Check Rules</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#recommended-next-code-prs">7. Recommended Next-Code PRs</a></li>
+<li><a class="reference internal" href="#why-this-matters-for-worldbuilding">8. Why This Matters for Worldbuilding</a><ul>
+<li><a class="reference internal" href="#maintain-canonical-lore">Maintain Canonical Lore</a></li>
+<li><a class="reference internal" href="#reduce-hallucination-contradictions">Reduce Hallucination/Contradictions</a></li>
+<li><a class="reference internal" href="#enable-reliable-machine-readable-outputs">Enable Reliable Machine-Readable Outputs</a></li>
+<li><a class="reference internal" href="#improve-user-trust">Improve User Trust</a></li>
+<li><a class="reference internal" href="#allow-safe-offline-local-first">Allow Safe Offline/Local-First</a></li>
+<li><a class="reference internal" href="#ensure-provenance-auditability">Ensure Provenance &amp; Auditability</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#ui-ux-notes-for-entity-editor-llm-panel">9. UI/UX Notes for Entity Editor LLM Panel</a><ul>
+<li><a class="reference internal" href="#structured-preview">Structured Preview</a></li>
+<li><a class="reference internal" href="#provenance-list">Provenance List</a></li>
+<li><a class="reference internal" href="#duplicate-warning">Duplicate Warning</a></li>
+<li><a class="reference internal" href="#accept-reject-merge-buttons">Accept/Reject/Merge Buttons</a></li>
+<li><a class="reference internal" href="#diff-view">Diff View</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#checklist-acceptance-criteria">10. Checklist (Acceptance Criteria)</a></li>
+<li><a class="reference internal" href="#security-privacy">11. Security &amp; Privacy</a><ul>
+<li><a class="reference internal" href="#audit-log-security">Audit Log Security</a></li>
+<li><a class="reference internal" href="#api-key-storage">API Key Storage</a></li>
+<li><a class="reference internal" href="#cloud-provider-data-leakage">Cloud Provider Data Leakage</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#performance-notes">12. Performance Notes</a><ul>
+<li><a class="reference internal" href="#rag-condensation">RAG Condensation</a></li>
+<li><a class="reference internal" href="#structured-output-retries">Structured Output Retries</a></li>
+<li><a class="reference internal" href="#entity-registry">Entity Registry</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#future-enhancements">13. Future Enhancements</a></li>
+<li><a class="reference internal" href="#conclusion">Conclusion</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=dda85ae5"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

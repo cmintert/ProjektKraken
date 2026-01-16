@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-01-15
-### Documentation
-- docs: Update CHANGELOG for Qt layout hardening Phase 1 & 2
+## [Development] - 2026-01-16
+### Internal
+- Merge pull request #55 from cmintert/copilot/add-llm-review-documentation
 
 
 *This changelog was automatically generated.*
