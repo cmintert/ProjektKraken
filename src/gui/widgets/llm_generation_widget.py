@@ -623,21 +623,7 @@ class LLMGenerationWidget(QWidget):
 
         context_str = "\n".join(context_lines)
 
-        system_persona = self._get_system_prompt()
-        few_shot_examples = self._get_few_shot_examples()
-
-        # Insert placeholder for RAG
-        rag_placeholder = "{{RAG_CONTEXT}}" if self.rag_cb.isChecked() else ""
-
-        # Construct prompt with few-shot examples
-        prompt_parts = [system_persona]
-        
-        if few_shot_examples:
-            prompt_parts.append("\n\n## Examples\n\n" + few_shot_examples)
-        
-        prompt_parts.append(f"\n\n{rag_placeholder}Context:\n{context_str}\n\nTask: {user_prompt}")
-        
-        prompt = "".join(prompt_parts)
+        prompt = self._construct_prompt(context_str, user_prompt)
         self.status_label.setText("Generating with context...")
 
         # Get temperature as float (0.0-2.0)
@@ -829,6 +815,33 @@ class LLMGenerationWidget(QWidget):
 
         return context if found_editor else None
 
+    def _construct_prompt(self, context_str: str, user_prompt: str) -> str:
+        """
+        Construct the final prompt with system prompt, few-shot examples, and context.
+
+        Args:
+            context_str: Formatted context string with entity/event details.
+            user_prompt: User's custom prompt/task.
+
+        Returns:
+            str: Complete prompt ready for LLM generation.
+        """
+        system_persona = self._get_system_prompt()
+        few_shot_examples = self._get_few_shot_examples()
+
+        # Insert placeholder for RAG
+        rag_placeholder = "{{RAG_CONTEXT}}" if self.rag_cb.isChecked() else ""
+
+        # Construct prompt with few-shot examples
+        prompt_parts = [system_persona]
+        
+        if few_shot_examples:
+            prompt_parts.append("\n\n## Examples\n\n" + few_shot_examples)
+        
+        prompt_parts.append(f"\n\n{rag_placeholder}Context:\n{context_str}\n\nTask: {user_prompt}")
+        
+        return "".join(prompt_parts)
+
     def _start_generation(
         self, prompt: str, temperature: float, db_path: Optional[str] = None
     ) -> None:
@@ -946,19 +959,9 @@ class LLMGenerationWidget(QWidget):
                 context_lines.append(f"{k.replace('_', ' ').title()}: {v}")
 
         context_str = "\n".join(context_lines)
-        system_persona = self._get_system_prompt()
-        few_shot_examples = self._get_few_shot_examples()
-        rag_placeholder = "{{RAG_CONTEXT}}" if self.rag_cb.isChecked() else ""
-
-        # Construct prompt with few-shot examples
-        prompt_parts = [system_persona]
         
-        if few_shot_examples:
-            prompt_parts.append("\n\n## Examples\n\n" + few_shot_examples)
-        
-        prompt_parts.append(f"\n\n{rag_placeholder}Context:\n{context_str}\n\nTask: {user_prompt}")
-        
-        prompt = "".join(prompt_parts)
+        # Construct prompt using helper method
+        prompt = self._construct_prompt(context_str, user_prompt)
 
         # Show dialog
         dlg = QDialog(self)
