@@ -259,3 +259,102 @@ def test_default_system_prompt_fallback(qtbot, widget, monkeypatch):
 
     assert result == DEFAULT_SYSTEM_PROMPT
     assert "fantasy world-builder" in result
+
+
+def test_template_based_prompt_loading(qtbot, widget, monkeypatch):
+    """Test that template-based prompt loading works via QSettings."""
+    
+    # Mock QSettings to return template_id and version
+    class MockSettings:
+        def value(self, key, default):
+            if key == "ai_gen_system_prompt_template_id":
+                return "fantasy_worldbuilder"
+            elif key == "ai_gen_system_prompt_version":
+                return "1.0"
+            return default
+    
+    monkeypatch.setattr(
+        "src.gui.widgets.llm_generation_widget.QSettings",
+        lambda org, app: MockSettings(),
+    )
+    
+    # Call _get_system_prompt and verify it loads from template
+    result = widget._get_system_prompt()
+    
+    # Should match the template content
+    assert "fantasy world-builder" in result
+    assert "1.0 = 1 day" in result
+
+
+def test_template_loading_with_version_2(qtbot, widget, monkeypatch):
+    """Test loading version 2.0 of the template."""
+    
+    # Mock QSettings to return template_id and version 2.0
+    class MockSettings:
+        def value(self, key, default):
+            if key == "ai_gen_system_prompt_template_id":
+                return "fantasy_worldbuilder"
+            elif key == "ai_gen_system_prompt_version":
+                return "2.0"
+            return default
+    
+    monkeypatch.setattr(
+        "src.gui.widgets.llm_generation_widget.QSettings",
+        lambda org, app: MockSettings(),
+    )
+    
+    # Call _get_system_prompt and verify it loads version 2.0
+    result = widget._get_system_prompt()
+    
+    # Version 2.0 has structured output format
+    assert "OUTPUT FORMAT" in result or "output format" in result.lower()
+    assert "json" in result.lower()
+
+
+def test_template_loading_fallback_on_error(qtbot, widget, monkeypatch):
+    """Test that template loading falls back to DEFAULT on error."""
+    
+    # Mock QSettings to return invalid template_id
+    class MockSettings:
+        def value(self, key, default):
+            if key == "ai_gen_system_prompt_template_id":
+                return "nonexistent_template"
+            return default
+    
+    monkeypatch.setattr(
+        "src.gui.widgets.llm_generation_widget.QSettings",
+        lambda org, app: MockSettings(),
+    )
+    
+    # Call _get_system_prompt and verify it falls back to default
+    result = widget._get_system_prompt()
+    from src.gui.widgets.llm_generation_widget import DEFAULT_SYSTEM_PROMPT
+    
+    assert result == DEFAULT_SYSTEM_PROMPT
+    assert "fantasy world-builder" in result
+
+
+def test_custom_prompt_takes_precedence_over_template(qtbot, widget, monkeypatch):
+    """Test that custom prompt in QSettings takes precedence over template."""
+    
+    custom_prompt = "Custom sci-fi prompt"
+    
+    # Mock QSettings to return both custom prompt and template_id
+    class MockSettings:
+        def value(self, key, default):
+            if key == "ai_gen_system_prompt":
+                return custom_prompt
+            elif key == "ai_gen_system_prompt_template_id":
+                return "fantasy_worldbuilder"
+            return default
+    
+    monkeypatch.setattr(
+        "src.gui.widgets.llm_generation_widget.QSettings",
+        lambda org, app: MockSettings(),
+    )
+    
+    # Call _get_system_prompt and verify custom prompt wins
+    result = widget._get_system_prompt()
+    
+    assert result == custom_prompt
+    assert "sci-fi" in result

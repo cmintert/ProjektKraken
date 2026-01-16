@@ -7,7 +7,6 @@ and validation.
 """
 
 import logging
-import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -47,8 +46,8 @@ class PromptLoader:
     Templates are stored in a directory structure with YAML metadata headers.
     Supports template discovery, versioning, and validation.
 
-    The default templates directory is `src/assets/templates/system_prompts/`
-    relative to the package root.
+    The default templates directory is
+    `default_assets/templates/system_prompts/` relative to the package root.
     """
 
     def __init__(self, templates_dir: Optional[str] = None) -> None:
@@ -57,16 +56,16 @@ class PromptLoader:
 
         Args:
             templates_dir: Optional path to templates directory. If None,
-                uses default location: src/assets/templates/system_prompts/
+                uses default location: default_assets/templates/system_prompts/
         """
         if templates_dir:
             self.templates_dir = Path(templates_dir)
         else:
-            # Default to src/assets/templates/system_prompts
-            # Resolve relative to this file's location
-            package_root = Path(__file__).parent.parent
+            # Default to default_assets/templates/system_prompts
+            # Resolve relative to package root (parent of src/)
+            package_root = Path(__file__).parent.parent.parent
             self.templates_dir = (
-                package_root / "assets" / "templates" / "system_prompts"
+                package_root / "default_assets" / "templates" / "system_prompts"
             )
 
         logger.debug(f"PromptLoader initialized with directory: {self.templates_dir}")
@@ -86,8 +85,10 @@ class PromptLoader:
         If no version is specified, loads the latest available version.
 
         Args:
-            template_id: Unique identifier for the template (e.g., "fantasy_worldbuilder").
-            version: Optional version string (e.g., "1.0"). If None, loads latest.
+            template_id: Unique identifier for the template
+                (e.g., "fantasy_worldbuilder").
+            version: Optional version string (e.g., "1.0").
+                If None, loads latest.
 
         Returns:
             PromptTemplate: The loaded template with metadata and content.
@@ -157,7 +158,10 @@ class PromptLoader:
         for file_path in self.templates_dir.glob("*.txt"):
             match = pattern.match(file_path.name)
             if not match:
-                logger.debug(f"Skipping file with invalid name format: {file_path.name}")
+                logger.debug(
+                    f"Skipping file with invalid name format: "
+                    f"{file_path.name}"
+                )
                 continue
 
             template_id, version = match.groups()

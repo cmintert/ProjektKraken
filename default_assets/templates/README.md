@@ -43,18 +43,19 @@ Template files should follow this pattern:
 ```
 
 Examples:
-- `fantasy_worldbuilder_v1.txt`
-- `fantasy_worldbuilder_v2.txt`
-- `scifi_worldbuilder_v1.txt`
+- `fantasy_worldbuilder_v1.0.txt`
+- `fantasy_worldbuilder_v2.0.txt`
+- `scifi_worldbuilder_v1.0.txt`
 
 ## Directory Structure
 
 ```
-templates/
-└── system_prompts/
-    ├── fantasy_worldbuilder_v1.txt
-    ├── fantasy_worldbuilder_v2.txt
-    └── README.md (this file)
+default_assets/
+└── templates/
+    └── system_prompts/
+        ├── fantasy_worldbuilder_v1.0.txt
+        ├── fantasy_worldbuilder_v2.0.txt
+        └── README.md (this file)
 ```
 
 ## Usage

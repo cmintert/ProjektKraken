@@ -254,11 +254,11 @@ def test_list_templates_nonexistent_directory(tmp_path):
 def test_default_templates_directory():
     """Test that default templates directory resolves correctly."""
     loader = PromptLoader()
-    
-    # Should point to src/assets/templates/system_prompts
+
+    # Should point to default_assets/templates/system_prompts
     assert loader.templates_dir.name == "system_prompts"
     assert "templates" in str(loader.templates_dir)
-    assert "assets" in str(loader.templates_dir)
+    assert "default_assets" in str(loader.templates_dir)
 
 
 def test_prompt_template_str():
