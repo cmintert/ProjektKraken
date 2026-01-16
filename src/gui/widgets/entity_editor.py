@@ -319,7 +319,11 @@ class EntityEditorWidget(QWidget):
 
         # Re-render wiki text if already loaded to apply new validation
         if self.desc_edit._current_wiki_text:
-            self.desc_edit.set_wiki_text(self.desc_edit._current_wiki_text)
+            self.desc_edit.blockSignals(True)
+            try:
+                self.desc_edit.set_wiki_text(self.desc_edit._current_wiki_text)
+            finally:
+                self.desc_edit.blockSignals(False)
 
         # Store for RelationEditDialog
         if items:
@@ -384,10 +388,18 @@ class EntityEditorWidget(QWidget):
 
             # Load Attributes (filter out _tags for display)
             display_attrs = {k: v for k, v in entity.attributes.items() if k != "_tags"}
-            self.attribute_editor.load_attributes(display_attrs)
+            self.attribute_editor.blockSignals(True)
+            try:
+                self.attribute_editor.load_attributes(display_attrs)
+            finally:
+                self.attribute_editor.blockSignals(False)
 
             # Load Tags
-            self.tag_editor.load_tags(entity.tags)
+            self.tag_editor.blockSignals(True)
+            try:
+                self.tag_editor.load_tags(entity.tags)
+            finally:
+                self.tag_editor.blockSignals(False)
 
             # Load Gallery
             self.gallery.set_owner("entity", entity.id)
