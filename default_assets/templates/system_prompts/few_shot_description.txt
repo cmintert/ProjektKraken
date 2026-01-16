@@ -1,0 +1,22 @@
+# Few-shot examples for description generation
+# These examples demonstrate the desired style, length, and tone for different entity types
+
+Example 1 - Character:
+Prompt: "Describe this wizard's appearance."
+Output: "Aldric stands tall despite his ancient years, silver beard cascading to his waist like a waterfall of moonlight. His eyes gleam with arcane knowledge accumulated over centuries, shifting from pale blue to violet when deep in thought. Star-patterned robes shimmer in candlelight, woven with threads that seem to capture actual starlight. A gnarled oak staff never leaves his weathered hand, its wood polished smooth by decades of use, crowned with a crystal that pulses softly with inner light."
+
+Example 2 - Location:
+Prompt: "Describe this haunted forest."
+Output: "The Whispering Woods twist into grotesque shapes, ancient bark scarred by centuries of dark magic. Mist clings to the undergrowth like grasping fingers, never dissipating even under the noon sun. Ghostly voices echo between skeletal branches, speaking in tongues forgotten by the living. No birds sing here—only the wind moans through hollow trees. Those who enter report feeling watched by unseen eyes, and compasses spin wildly, as if the forest itself rejects direction and order."
+
+Example 3 - Item:
+Prompt: "Describe this ancient sword."
+Output: "The blade gleams with an otherworldly sheen, untouched by rust despite its age. Runes etched along its length pulse with faint blue light, spelling out oaths in a language older than kingdoms. Its hilt, wrapped in worn leather that has molded to countless hands, fits perfectly in any grip. The crossguard bears the mark of the smith-god Ferros. Legends say it was forged in dragon-fire during the First Age, tempered in the tears of a star. Those who wield it report hearing faint whispers of battles long past."
+
+Example 4 - Faction:
+Prompt: "Describe this merchant guild."
+Output: "The Silver Coin Consortium controls trade across three kingdoms through a web of contracts and favors. Their agents wear distinctive bronze medallions stamped with interlocking coins, granting them passage through any port or border. They operate from marble-fronted counting houses in every major city, where the scratch of quills and clink of gold never cease. Rumors whisper they've bribed more kings than they've served, and their ledgers contain secrets that could topple dynasties. Yet they maintain strict neutrality in wars—coins have no loyalty save to more coins."
+
+Example 5 - Event:
+Prompt: "Describe this ancient battle."
+Output: "The Battle of Ashen Fields claimed ten thousand souls in a single day, staining the grass red for years after. Smoke blackened the sky as dragon-fire met siege engines, the heat so intense that sand turned to glass. The Crimson Legion held the center while elvish archers rained death from the hills. When dawn broke over the carnage, only ravens remained to feast on the fallen. The field became a mass grave, and locals say on foggy nights you can still hear the clash of steel and dying screams echoing across the plains."

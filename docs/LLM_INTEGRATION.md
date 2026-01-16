@@ -147,6 +147,132 @@ results = service.get_embeddings_by_model(
 service.rebuild_index()
 ```
 
+## Prompt Template System
+
+### Overview
+
+ProjektKraken includes a template-based prompt system that allows users to switch between different writing styles and includes few-shot examples to guide LLM outputs. This improves consistency and allows users to easily control the verbosity and tone of generated descriptions.
+
+### Available Templates
+
+The system includes three pre-configured description templates:
+
+1. **Default** (`description_default_v1.0`) - Balanced style, ~200 words
+   - Descriptive and evocative, suitable for most worldbuilding tasks
+   - Includes sensory details and atmosphere
+   - Maintains consistency with high-fantasy literature tone
+
+2. **Concise** (`description_concise_v1.0`) - Brief style, 50-100 words
+   - Sharp, vivid, minimal language
+   - Focuses on most distinctive features
+   - Ideal for quick references or codex entries
+
+3. **Detailed** (`description_detailed_v1.0`) - Expansive style, 300-500 words
+   - Rich sensory descriptions and historical context
+   - Literary, layered, immersive prose
+   - Best for major locations, characters, or events
+
+### Using Templates in the UI
+
+1. Open the **Entity Editor** or **Event Editor**
+2. Expand the **LLM Generation** panel
+3. Select a template from the **Template:** dropdown (above Provider selector)
+4. Enter your custom prompt
+5. Click **Generate**
+
+The selected template persists across sessions and is saved to QSettings.
+
+### Few-Shot Examples
+
+The system includes built-in few-shot examples that demonstrate the desired output style for different entity types:
+
+- **Characters**: Appearance, personality, distinctive features
+- **Locations**: Atmosphere, sensory details, environmental mood
+- **Items**: Physical appearance, significance, legendary properties
+- **Factions**: Organization, influence, cultural impact
+- **Events**: Scale, consequences, historical significance
+
+These examples are automatically included in prompts to guide the LLM toward producing consistent, high-quality outputs.
+
+### Template Format
+
+Templates are stored in `default_assets/templates/system_prompts/` with YAML metadata headers:
+
+```yaml
+---
+version: 1.0
+template_id: description_default
+name: Default Description Template
+description: Standard fantasy worldbuilding style with balanced detail (200 words)
+author: ProjektKraken Team
+created: 2026-01-16
+tags: [description, default, fantasy, worldbuilding]
+max_words: 200
+---
+
+[Template content here...]
+```
+
+### Creating Custom Templates
+
+To create a custom template:
+
+1. Create a new `.txt` file in `default_assets/templates/system_prompts/`
+2. Name it following the pattern: `description_<name>_v<version>.txt`
+3. Include a YAML metadata header with required fields:
+   - `version`: Semantic version (e.g., "1.0")
+   - `template_id`: Unique identifier (e.g., "description_custom")
+   - `name`: Human-readable name
+4. Write your system prompt below the closing `---`
+
+The new template will automatically appear in the UI dropdown after restart.
+
+### PromptLoader API
+
+For programmatic access to templates:
+
+```python
+from src.services.prompt_loader import PromptLoader
+
+loader = PromptLoader()
+
+# List available templates
+templates = loader.list_templates()
+for t in templates:
+    print(f"{t['template_id']} v{t['version']}: {t['name']}")
+
+# Load a specific template
+template = loader.load_template("description_default", version="1.0")
+print(template.content)
+
+# Load few-shot examples
+examples = loader.load_few_shot()
+print(examples)
+```
+
+### Prompt Construction
+
+When generating text, the final prompt is constructed as:
+
+```
+[System Prompt from selected template]
+
+## Examples
+
+[Few-shot examples from few_shot_description.txt]
+
+{{RAG_CONTEXT}} [If RAG enabled]
+
+Context:
+Name: [Entity name]
+Type: [Entity type]
+[Additional context fields...]
+
+Task: [User's custom prompt]
+```
+
+This structure ensures consistent outputs while allowing flexibility in user instructions.
+
 ## Error Handling & Resilience
 
 ### Circuit Breaker Pattern

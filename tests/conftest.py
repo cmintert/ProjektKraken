@@ -125,6 +125,13 @@ class MockQSettings:
     def sync(self):
         pass
 
+    def clear(self):
+        """Clear all settings for this organization/application."""
+        prefix = f"{self.organization}/{self.application}/"
+        keys_to_remove = [k for k in self._storage.keys() if k.startswith(prefix)]
+        for key in keys_to_remove:
+            del self._storage[key]
+
 
 @pytest.fixture(autouse=True, scope="session")
 def mock_qsettings_global():
