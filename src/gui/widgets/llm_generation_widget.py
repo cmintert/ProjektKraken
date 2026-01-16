@@ -553,11 +553,16 @@ class LLMGenerationWidget(QWidget):
 
             # Save template selection
             current_template_id = self.template_combo.currentData()
+            logger.debug(f"Saving template_id: {current_template_id}")
             if current_template_id:
                 settings.setValue("ai_gen_template_id", current_template_id)
+                settings.sync()  # Ensure settings are written immediately
+                logger.debug(f"Template ID saved: {current_template_id}")
+            else:
+                logger.warning("Template ID is empty, not saving")
 
         except Exception as e:
-            logger.warning(f"Failed to save generation settings: {e}")
+            logger.error(f"Failed to save generation settings: {e}", exc_info=True)
 
     def _get_provider_id(self) -> str:
         """Get provider ID from combo box selection."""

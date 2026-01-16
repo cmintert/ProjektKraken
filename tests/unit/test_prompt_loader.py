@@ -361,3 +361,70 @@ def test_load_real_fantasy_worldbuilder_v2():
         assert "json" in template.content.lower()
     except FileNotFoundError:
         pytest.skip("Real templates not found (expected during isolated testing)")
+
+
+def test_load_few_shot():
+    """Test loading few-shot examples."""
+    loader = PromptLoader()
+    
+    try:
+        examples = loader.load_few_shot()
+        
+        assert len(examples) > 200
+        assert "Example 1" in examples
+        assert "Character" in examples or "Location" in examples
+        # Should have multiple examples
+        assert examples.count("Example") >= 3
+    except FileNotFoundError:
+        pytest.skip("Few-shot examples not found (expected during isolated testing)")
+
+
+def test_load_few_shot_custom_filename(temp_templates_dir):
+    """Test loading few-shot examples with custom filename."""
+    loader = PromptLoader(templates_dir=str(temp_templates_dir))
+    
+    # Create a custom few-shot file
+    custom_few_shot = temp_templates_dir / "custom_examples.txt"
+    custom_few_shot.write_text("Example 1: Test\nExample 2: Another test")
+    
+    examples = loader.load_few_shot("custom_examples.txt")
+    
+    assert "Example 1" in examples
+    assert "Example 2" in examples
+
+
+def test_load_few_shot_missing_file():
+    """Test that loading nonexistent few-shot file raises FileNotFoundError."""
+    loader = PromptLoader()
+    
+    with pytest.raises(FileNotFoundError) as exc_info:
+        loader.load_few_shot("nonexistent_examples.txt")
+    
+    assert "nonexistent_examples.txt" in str(exc_info.value)
+
+
+def test_load_real_description_templates():
+    """Test loading the real description templates."""
+    loader = PromptLoader()
+    
+    try:
+        # Test default template
+        default = loader.load_template("description_default", version="1.0")
+        assert default.template_id == "description_default"
+        assert default.version == "1.0"
+        assert "world-builder" in default.content.lower()
+        assert "200 words" in default.content.lower() or "200" in default.metadata.get("max_words", "")
+        
+        # Test concise template
+        concise = loader.load_template("description_concise", version="1.0")
+        assert concise.template_id == "description_concise"
+        assert concise.version == "1.0"
+        assert "concise" in concise.content.lower() or "brief" in concise.content.lower()
+        
+        # Test detailed template
+        detailed = loader.load_template("description_detailed", version="1.0")
+        assert detailed.template_id == "description_detailed"
+        assert detailed.version == "1.0"
+        assert "detailed" in detailed.content.lower() or "expansive" in detailed.content.lower()
+    except FileNotFoundError:
+        pytest.skip("Real templates not found (expected during isolated testing)")
