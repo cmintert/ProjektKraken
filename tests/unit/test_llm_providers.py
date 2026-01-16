@@ -125,11 +125,16 @@ def test_lmstudio_embed_empty(mock_requests):
 
 
 def test_lmstudio_generate(mock_requests):
-    """Test LMStudioProvider text generation."""
-    # Mock API response
+    """Test LMStudioProvider text generation with default chat mode."""
+    # Mock chat API response format (default mode)
     mock_response = MockResponse(
         {
-            "choices": [{"text": "Generated text", "finish_reason": "stop"}],
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "Generated text"},
+                    "finish_reason": "stop",
+                }
+            ],
             "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
         }
     )
@@ -143,12 +148,14 @@ def test_lmstudio_generate(mock_requests):
     assert result["finish_reason"] == "stop"
     assert result["usage"]["total_tokens"] == 15
 
-    # Verify API call
+    # Verify API call uses messages format (default chat mode)
     assert mock_requests.post.called
     call_args = mock_requests.post.call_args
-    assert call_args[1]["json"]["prompt"] == "Test prompt"
-    assert call_args[1]["json"]["max_tokens"] == 100
-    assert call_args[1]["json"]["temperature"] == 0.7
+    payload = call_args[1]["json"]
+    assert "messages" in payload
+    assert payload["messages"][0]["content"] == "Test prompt"
+    assert payload["max_tokens"] == 100
+    assert payload["temperature"] == 0.7
 
 
 def test_lmstudio_health_check(mock_requests):
@@ -176,6 +183,115 @@ def test_lmstudio_metadata():
     assert meta["supports_generation"] is True
     assert meta["supports_streaming"] is True
     assert meta["generation_model"] == "test-model"
+
+
+def test_lmstudio_init_chat_mode_default():
+    """Test LMStudioProvider defaults to chat API mode."""
+    provider = LMStudioProvider(model="test-model")
+
+    assert provider.use_chat_api is True
+    assert "chat/completions" in provider.generate_url
+
+
+def test_lmstudio_init_legacy_mode():
+    """Test LMStudioProvider can be initialized in legacy mode."""
+    provider = LMStudioProvider(
+        model="test-model",
+        use_chat_api=False,
+        generate_url="http://localhost:8080/v1/completions",
+    )
+
+    assert provider.use_chat_api is False
+    assert "completions" in provider.generate_url
+
+
+def test_lmstudio_generate_chat_mode_with_dict_prompt(mock_requests):
+    """Test LMStudioProvider generates with structured prompt in chat mode."""
+    # Mock chat API response format
+    mock_response = MockResponse(
+        {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "Generated text"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+        }
+    )
+    mock_requests.post.return_value = mock_response
+
+    provider = LMStudioProvider(model="test-model", use_chat_api=True)
+
+    # Structured prompt with system/user separation
+    prompt = {"system": "You are a fantasy writer.", "user": "Describe a castle."}
+    result = provider.generate(prompt, max_tokens=100)
+
+    assert result["text"] == "Generated text"
+    assert result["finish_reason"] == "stop"
+
+    # Verify API call uses messages format
+    call_args = mock_requests.post.call_args
+    payload = call_args[1]["json"]
+    assert "messages" in payload
+    assert payload["messages"][0]["role"] == "system"
+    assert payload["messages"][0]["content"] == "You are a fantasy writer."
+    assert payload["messages"][1]["role"] == "user"
+    assert payload["messages"][1]["content"] == "Describe a castle."
+
+
+def test_lmstudio_generate_chat_mode_with_string_prompt(mock_requests):
+    """Test chat mode handles legacy string prompt by treating as user message."""
+    mock_response = MockResponse(
+        {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "Generated text"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+        }
+    )
+    mock_requests.post.return_value = mock_response
+
+    provider = LMStudioProvider(model="test-model", use_chat_api=True)
+    result = provider.generate("Simple string prompt", max_tokens=100)
+
+    assert result["text"] == "Generated text"
+
+    # String prompt should become user message
+    call_args = mock_requests.post.call_args
+    payload = call_args[1]["json"]
+    assert "messages" in payload
+    assert payload["messages"][0]["role"] == "user"
+    assert payload["messages"][0]["content"] == "Simple string prompt"
+
+
+def test_lmstudio_generate_legacy_mode(mock_requests):
+    """Test LMStudioProvider legacy mode uses old completions format."""
+    mock_response = MockResponse(
+        {
+            "choices": [{"text": "Generated text", "finish_reason": "stop"}],
+            "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+        }
+    )
+    mock_requests.post.return_value = mock_response
+
+    provider = LMStudioProvider(
+        model="test-model",
+        use_chat_api=False,
+        generate_url="http://localhost:8080/v1/completions",
+    )
+    result = provider.generate("Test prompt", max_tokens=100)
+
+    assert result["text"] == "Generated text"
+
+    # Verify uses legacy prompt format
+    call_args = mock_requests.post.call_args
+    payload = call_args[1]["json"]
+    assert "prompt" in payload
+    assert "messages" not in payload
 
 
 # =============================================================================

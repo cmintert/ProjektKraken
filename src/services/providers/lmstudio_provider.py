@@ -37,6 +37,7 @@ class LMStudioProvider(Provider):
         generate_url: Optional[str] = None,
         timeout: int = 30,
         max_retries: int = 3,
+        use_chat_api: bool = True,
     ) -> None:
         """
         Initialize LM Studio provider.
@@ -46,9 +47,12 @@ class LMStudioProvider(Provider):
             model: Model name for both embedding and generation.
             api_key: Optional API key.
             embed_url: Embeddings endpoint URL.
-            generate_url: Completions endpoint URL.
+            generate_url: Chat/completions endpoint URL.
             timeout: Request timeout in seconds.
             max_retries: Maximum retry attempts for failed requests.
+            use_chat_api: If True (default), use /v1/chat/completions with
+                messages format. If False, use legacy /v1/completions with
+                raw prompt format.
 
         Raises:
             ValueError: If model is not specified.
@@ -65,7 +69,16 @@ class LMStudioProvider(Provider):
             embed_url = url
 
         self.embed_url = embed_url or "http://localhost:8080/v1/embeddings"
-        self.generate_url = generate_url or "http://localhost:8080/v1/completions"
+        self.use_chat_api = use_chat_api
+
+        # Set default generate URL based on API mode
+        if generate_url:
+            self.generate_url = generate_url
+        elif use_chat_api:
+            self.generate_url = "http://localhost:8080/v1/chat/completions"
+        else:
+            self.generate_url = "http://localhost:8080/v1/completions"
+
         self.api_key = api_key
         self.timeout = timeout
         self.max_retries = max_retries
@@ -75,6 +88,7 @@ class LMStudioProvider(Provider):
         logger.info(f"LMStudioProvider initialized with model: {self.model}")
         logger.info(f"Embed URL: {self.embed_url}")
         logger.info(f"Generate URL: {self.generate_url}")
+        logger.info(f"Use Chat API: {self.use_chat_api}")
 
     def _make_headers(self) -> Dict[str, str]:
         """Build request headers."""
@@ -185,9 +199,34 @@ class LMStudioProvider(Provider):
             logger.error(f"Failed to parse LM Studio embedding response: {e}")
             raise Exception(f"Invalid response from LM Studio API: {e}") from e
 
+    def _build_messages(self, prompt: Any) -> List[Dict[str, str]]:
+        """
+        Build messages array from prompt for chat API.
+
+        Args:
+            prompt: Either a string (user message only) or a dict with
+                'system' and 'user' keys.
+
+        Returns:
+            List of message dicts with 'role' and 'content' keys.
+        """
+        messages = []
+
+        if isinstance(prompt, dict):
+            # Structured prompt with system/user separation
+            if "system" in prompt and prompt["system"]:
+                messages.append({"role": "system", "content": prompt["system"]})
+            if "user" in prompt:
+                messages.append({"role": "user", "content": prompt["user"]})
+        else:
+            # Legacy string prompt - treat as user message
+            messages.append({"role": "user", "content": str(prompt)})
+
+        return messages
+
     def generate(
         self,
-        prompt: str,
+        prompt: Any,
         max_tokens: int = 512,
         temperature: float = 0.7,
         stop: Optional[List[str]] = None,
@@ -197,7 +236,8 @@ class LMStudioProvider(Provider):
         Generate text completion for a prompt.
 
         Args:
-            prompt: Input prompt text.
+            prompt: Input prompt. Can be a string or a dict with 'system'
+                and 'user' keys for chat API mode.
             max_tokens: Maximum tokens to generate.
             temperature: Sampling temperature (0.0-2.0).
             stop: Optional list of stop sequences.
@@ -212,13 +252,25 @@ class LMStudioProvider(Provider):
 
         def _generate_impl() -> Dict[str, Any]:
             """Inner implementation for retry wrapper."""
-            payload = {
-                "prompt": prompt,
-                "model": self.model,
-                "max_tokens": max_tokens,
-                "temperature": temperature,
-                "stream": False,
-            }
+            if self.use_chat_api:
+                # Chat completions format with messages
+                payload: Dict[str, Any] = {
+                    "messages": self._build_messages(prompt),
+                    "model": self.model,
+                    "max_tokens": max_tokens,
+                    "temperature": temperature,
+                    "stream": False,
+                }
+            else:
+                # Legacy completions format with raw prompt
+                prompt_text = prompt if isinstance(prompt, str) else str(prompt)
+                payload = {
+                    "prompt": prompt_text,
+                    "model": self.model,
+                    "max_tokens": max_tokens,
+                    "temperature": temperature,
+                    "stream": False,
+                }
 
             if stop:
                 payload["stop"] = stop
@@ -242,12 +294,19 @@ class LMStudioProvider(Provider):
 
             data = response.json()
 
-            # Extract completion text
+            # Extract completion text based on API mode
             choices = data.get("choices", [])
             if not choices:
                 raise ValueError("No completion choices returned from API")
 
-            text = choices[0].get("text", "")
+            if self.use_chat_api:
+                # Chat API returns message.content
+                message = choices[0].get("message", {})
+                text = message.get("content", "")
+            else:
+                # Legacy API returns text directly
+                text = choices[0].get("text", "")
+
             finish_reason = choices[0].get("finish_reason", "unknown")
 
             # Extract usage statistics
@@ -277,7 +336,7 @@ class LMStudioProvider(Provider):
 
     async def stream_generate(
         self,
-        prompt: str,
+        prompt: Any,
         max_tokens: int = 512,
         temperature: float = 0.7,
         stop: Optional[List[str]] = None,
@@ -292,7 +351,8 @@ class LMStudioProvider(Provider):
         client like aiohttp or httpx.
 
         Args:
-            prompt: Input prompt text.
+            prompt: Input prompt. Can be a string or a dict with 'system'
+                and 'user' keys for chat API mode.
             max_tokens: Maximum tokens to generate.
             temperature: Sampling temperature (0.0-2.0).
             stop: Optional list of stop sequences.
@@ -304,13 +364,25 @@ class LMStudioProvider(Provider):
         Raises:
             Exception: If streaming fails.
         """
-        payload = {
-            "prompt": prompt,
-            "model": self.model,
-            "max_tokens": max_tokens,
-            "temperature": temperature,
-            "stream": True,
-        }
+        if self.use_chat_api:
+            # Chat completions format with messages
+            payload: Dict[str, Any] = {
+                "messages": self._build_messages(prompt),
+                "model": self.model,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "stream": True,
+            }
+        else:
+            # Legacy completions format with raw prompt
+            prompt_text = prompt if isinstance(prompt, str) else str(prompt)
+            payload = {
+                "prompt": prompt_text,
+                "model": self.model,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "stream": True,
+            }
 
         if stop:
             payload["stop"] = stop
@@ -355,7 +427,16 @@ class LMStudioProvider(Provider):
 
                         if choices:
                             choice = choices[0]
-                            delta = choice.get("text", "")
+
+                            # Extract delta based on API mode
+                            if self.use_chat_api:
+                                # Chat API returns delta.content
+                                delta_obj = choice.get("delta", {})
+                                delta = delta_obj.get("content", "")
+                            else:
+                                # Legacy API returns text directly
+                                delta = choice.get("text", "")
+
                             finish_reason = choice.get("finish_reason")
 
                             chunk = {"delta": delta}
@@ -428,10 +509,24 @@ class LMStudioProvider(Provider):
             # 1. User only configured generation (embed URL might be invalid)
             # 2. Model is generation-only (embedding request might return 400)
             try:
+                # Build payload based on API mode
+                if self.use_chat_api:
+                    payload = {
+                        "messages": [{"role": "user", "content": "test"}],
+                        "model": self.model,
+                        "max_tokens": 1,
+                    }
+                else:
+                    payload = {
+                        "prompt": "test",
+                        "model": self.model,
+                        "max_tokens": 1,
+                    }
+
                 # Try a minimal generation request
                 response = requests.post(
                     self.generate_url,
-                    json={"prompt": "test", "model": self.model, "max_tokens": 1},
+                    json=payload,
                     headers=self._make_headers(),
                     timeout=5,
                 )

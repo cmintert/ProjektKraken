@@ -265,8 +265,19 @@ class AISettingsDialog(QDialog):
         self.lm_gen_enabled.setChecked(True)
         lm_gen_form.addRow("Enabled:", self.lm_gen_enabled)
 
+        self.lm_gen_use_chat_api = QCheckBox("Use Chat API (recommended)")
+        self.lm_gen_use_chat_api.setChecked(True)
+        self.lm_gen_use_chat_api.setToolTip(
+            "Use /v1/chat/completions with messages format. "
+            "Recommended for modern models like GPT, DeepSeek, Mistral. "
+            "Uncheck only for legacy completion-only models."
+        )
+        lm_gen_form.addRow("Chat Mode:", self.lm_gen_use_chat_api)
+
         self.lm_gen_url_input = QLineEdit()
-        self.lm_gen_url_input.setPlaceholderText("http://localhost:8080/v1/completions")
+        self.lm_gen_url_input.setPlaceholderText(
+            "http://localhost:8080/v1/chat/completions"
+        )
         lm_gen_form.addRow("API URL:", self.lm_gen_url_input)
 
         # Test connection button
@@ -395,6 +406,15 @@ class AISettingsDialog(QDialog):
             "This will be prepended to all generation requests."
         )
         options_layout.addRow("", self.system_prompt_edit)
+
+        # Filter reasoning tags checkbox
+        self.filter_reasoning_cb = QCheckBox("Filter reasoning tags (recommended)")
+        self.filter_reasoning_cb.setChecked(True)
+        self.filter_reasoning_cb.setToolTip(
+            "Remove <think>, <thinking>, <reasoning> and similar tags from output.\n"
+            "Recommended for models like DeepSeek R1 that expose chain-of-thought."
+        )
+        options_layout.addRow("Output:", self.filter_reasoning_cb)
 
         # Restore default button
         restore_btn = QPushButton("Restore Default")
@@ -582,6 +602,9 @@ class AISettingsDialog(QDialog):
         # Save generation provider settings
         # LM Studio generation
         settings.setValue("ai_gen_lmstudio_enabled", self.lm_gen_enabled.isChecked())
+        settings.setValue(
+            "ai_gen_lmstudio_use_chat_api", self.lm_gen_use_chat_api.isChecked()
+        )
         settings.setValue("ai_gen_lmstudio_url", self.lm_gen_url_input.text().strip())
         settings.setValue(
             "ai_gen_lmstudio_model", self.lm_gen_model_input.text().strip()
@@ -623,6 +646,9 @@ class AISettingsDialog(QDialog):
         settings.setValue("ai_gen_max_tokens", self.max_tokens_input.value())
         settings.setValue("ai_gen_temperature", self.temperature_input.value())
         settings.setValue("ai_gen_system_prompt", self.system_prompt_edit.toPlainText())
+        settings.setValue(
+            "ai_gen_filter_reasoning", self.filter_reasoning_cb.isChecked()
+        )
 
         logger.info(
             f"AI Settings saved. Embedding provider: {provider}, "
@@ -661,9 +687,12 @@ class AISettingsDialog(QDialog):
         self.lm_gen_enabled.setChecked(
             settings.value("ai_gen_lmstudio_enabled", True, type=bool)
         )
+        self.lm_gen_use_chat_api.setChecked(
+            settings.value("ai_gen_lmstudio_use_chat_api", True, type=bool)
+        )
         self.lm_gen_url_input.setText(
             settings.value(
-                "ai_gen_lmstudio_url", "http://localhost:8080/v1/completions"
+                "ai_gen_lmstudio_url", "http://localhost:8080/v1/chat/completions"
             )
         )
         self.lm_gen_model_input.setText(settings.value("ai_gen_lmstudio_model", ""))
@@ -711,6 +740,9 @@ class AISettingsDialog(QDialog):
         )
         self.max_tokens_input.setValue(int(settings.value("ai_gen_max_tokens", 512)))
         self.temperature_input.setValue(int(settings.value("ai_gen_temperature", 70)))
+        self.filter_reasoning_cb.setChecked(
+            settings.value("ai_gen_filter_reasoning", True, type=bool)
+        )
 
         # System prompt with default fallback
         default_prompt = (

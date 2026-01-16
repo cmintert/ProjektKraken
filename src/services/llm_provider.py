@@ -216,15 +216,18 @@ def get_provider_settings_from_qsettings(
                     "api_key": str(settings.value(f"{prefix}api_key", "")),
                     "embed_url": str(
                         settings.value(
-                            f"{prefix}url",  # Dialog saves embedding URL as ai_lmstudio_url
+                            f"{prefix}url",  # Embedding URL
                             "http://localhost:8080/v1/embeddings",
                         )
                     ),
                     "generate_url": str(
                         settings.value(
                             f"ai_gen_{provider_id}_url",
-                            "http://localhost:8080/v1/completions",
+                            "http://localhost:8080/v1/chat/completions",
                         )
+                    ),
+                    "use_chat_api": settings.value(
+                        f"ai_gen_{provider_id}_use_chat_api", True, type=bool
                     ),
                 }
             )
@@ -319,9 +322,10 @@ def create_provider(
             or os.getenv("LMSTUDIO_EMBED_URL", "http://localhost:8080/v1/embeddings"),
             generate_url=settings.get("generate_url")
             or os.getenv(
-                "LMSTUDIO_GENERATE_URL", "http://localhost:8080/v1/completions"
+                "LMSTUDIO_GENERATE_URL", "http://localhost:8080/v1/chat/completions"
             ),
             timeout=settings.get("timeout", 30),
+            use_chat_api=settings.get("use_chat_api", True),
         )
     elif provider_id == "openai":
         from src.services.providers.openai_provider import OpenAIProvider
