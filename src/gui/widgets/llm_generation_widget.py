@@ -1080,13 +1080,19 @@ class LLMGenerationWidget(QWidget):
 
         # Perform RAG search for preview
         rag_context = ""
-        if db_path and "{{RAG_CONTEXT}}" in prompt:
+        # prompt is a dict with 'system' and 'user' keys
+        user_msg = prompt.get("user", "")
+        if db_path and "{{RAG_CONTEXT}}" in user_msg:
             # Show loading status (simple blocking for now as requested)
-            rag_context = perform_rag_search(prompt, db_path)
-            prompt = prompt.replace("{{RAG_CONTEXT}}", rag_context)
+            rag_context = perform_rag_search(user_msg, db_path)
+            # Update the user message in the prompt dict
+            prompt["user"] = user_msg.replace("{{RAG_CONTEXT}}", rag_context)
             if not rag_context:
-                # Remove placeholder clean
-                prompt = prompt.replace("{{RAG_CONTEXT}}", "")
+                # Remove placeholder clean if no context found
+                prompt["user"] = prompt["user"].replace("{{RAG_CONTEXT}}", "")
+
+        # Format for display in preview (show keys clearly)
+        display_text = f"--- SYSTEM ---\n{prompt.get('system', '')}\n\n--- USER ---\n{prompt.get('user', '')}"
 
         info = QLabel(
             "This is the prompt structure that will be sent to the LLM.\n"
@@ -1098,7 +1104,7 @@ class LLMGenerationWidget(QWidget):
         layout.addWidget(info)
 
         text_edit = QPlainTextEdit()
-        text_edit.setPlainText(prompt)
+        text_edit.setPlainText(display_text)
         text_edit.setReadOnly(True)
         text_edit.setStyleSheet(
             StyleHelper.get_input_field_style() + "font-family: Consolas, monospace;"

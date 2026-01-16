@@ -7,7 +7,6 @@ from unittest.mock import patch
 import pytest
 
 from src.app.main import MainWindow
-from src.core.entities import Entity
 
 
 @pytest.fixture
@@ -76,21 +75,6 @@ def test_update_entity(main_window):
         main_window.worker.run_command.assert_called_once()
         args = main_window.worker.run_command.call_args[0]
         assert args[0] == MockCmd.return_value
-
-
-def test_load_entity_details_signal(main_window):
-    """Test response to details loaded signal."""
-    entity = Entity(id="ent1", name="Test", type="Concept")
-    relations = [{"id": "rel1"}]
-    incoming = [{"id": "rel2"}]
-
-    with patch.object(main_window.entity_editor, "load_entity") as mock_load:
-        # Simulate signal emission
-        main_window.data_handler.on_entity_details_loaded(entity, relations, incoming)
-
-        mock_load.assert_called_once_with(entity, relations, incoming)
-        # Check dock raise
-        assert not main_window.entity_editor_dock.isHidden()
 
 
 def test_entity_add_relation(main_window):

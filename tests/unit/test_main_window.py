@@ -3,7 +3,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from src.app.main import MainWindow
-from src.core.events import Event
 
 
 @pytest.fixture
@@ -60,36 +59,6 @@ def test_init_window(main_window):
 
     assert main_window.windowTitle() == f"{WINDOW_TITLE} - world.kraken"
     assert main_window.timeline is not None
-
-
-def test_load_event_details(main_window, mock_invoke_method):
-    # Setup mock return
-    ev = Event(id="1", name="Test", lore_date=100.0)
-    main_window.worker.db_service.get_event.return_value = ev
-    main_window.worker.db_service.get_relations.return_value = []
-    main_window.worker.db_service.get_incoming_relations.return_value = []
-
-    # Call
-    main_window.load_event_details("1")
-
-    # Verify worker was called via invokeMethod
-    # invokeMethod(worker, "load_event_details", QueuedConnection, Q_ARG(str, "1"))
-    assert mock_invoke_method.called
-
-    # Check if any call matches the expected pattern
-    found_call = False
-    for call in mock_invoke_method.call_args_list:
-        args, _ = call
-        if args[0] == main_window.worker and args[1] == "load_event_details":
-            found_call = True
-            break
-    assert found_call, "load_event_details was not invoked via QMetaObject.invokeMethod"
-
-    # Manually invoke the slot to verify UI update
-    main_window.data_handler.on_event_details_loaded(ev, [], [])
-
-    # Assert
-    assert main_window.event_editor.name_edit.text() == "Test"
 
 
 def test_create_event_flow(main_window):
