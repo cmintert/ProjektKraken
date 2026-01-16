@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-01-15  
-**Commit:** `97a6920`  
+**Last Updated:** 2026-01-16  
+**Commit:** `cbeec64`  
 ---
 
 # Changelog
@@ -12,6 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- *(2026-01-16)* **Architecture**: Implemented versioned prompt template system with YAML metadata and comprehensive validation.
+  - Added `PromptLoader` class with support for template discovery, loading, and validation.
+  - Implemented YAML frontmatter parsing for template metadata (version, description, variables).
+  - Added template inheritance and variable substitution with Jinja2-style syntax.
+  - Created comprehensive test suite with 363 unit tests covering edge cases and error handling.
+  - Moved templates from `src/assets` to `default_assets/templates` for better organization.
+  - Added support for system prompts and custom user prompts with validation.
 - *(2026-01-15)* **Stability**: Implemented comprehensive Qt layout hardening with signal connection validation (79/79 connections validated).
   - Added `_connect_signal_safe()` method to `ConnectionManager` with graceful error handling and detailed logging.
   - Updated all 8 `connect_*()` methods to use validated connections with failure tracking.
@@ -48,6 +55,14 @@ All notable changes to this project will be documented in this file.
 - *(2026-01-13)* **Build**: Removed missing migrations directory from build configuration to fix PyInstaller builds.
 
 ### Documentation
+- *(2026-01-16)* **Docs**: Added comprehensive LLM integration review document (`docs/LLM_REVIEW_SUMMARY.md`).
+  - Executive summary analyzing current LLM integration strengths and identifying 8 critical gaps.
+  - Detailed gap analysis covering prompt management, UI/UX, RAG, semantic search, and context handling.
+  - Recommended 12 prioritized PRs with effort/risk/impact estimates (Quick Wins, Medium, Long-term).
+  - UI/UX mockups for enhanced LLM panel design with collapsible sections and streaming support.
+  - 14-item implementation checklist with examples, JSON schemas, and pseudo-code.
+  - Security, performance, and future enhancement considerations.
+  - 516 lines of production-ready specification for follow-up work.
 - *(2026-01-13)* **Design**: Updated `Design.md` to reflect v0.6.0 changes and portable world model.
 - *(2026-01-12)* **Docs**: Updated `README.md` for v0.6.0 features.
 
