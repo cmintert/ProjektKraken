@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-16
-### Internal
-- Implement Generation Review Dialog and Enhance LLM Provider
+### Fixed
+- fix: Resolve test failures in LLM generation and MainWindow tests
 
 
 *This changelog was automatically generated.*
