@@ -29,7 +29,7 @@ def mock_settings():
             def setValue(key, value):
                 storage[key] = value
 
-            def value(key, default=None):
+            def value(key, default=None, type=None):
                 return storage.get(key, default)
 
             def remove(key):
