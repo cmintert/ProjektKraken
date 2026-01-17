@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-17
-### Added
-- Feat: Implement auto-refresh for longform editor
+### Internal
+- Chore: Resolve all Ruff linting errors and formatting issues
 
 
 *This changelog was automatically generated.*
