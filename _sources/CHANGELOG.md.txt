@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-17
-### Internal
-- Merge pull request #60 from cmintert/copilot/fix-windows-test-suite
+### Fixed
+- Fix hang in widget_registry by breaking reference cycle and guarding logs
 
 
 *This changelog was automatically generated.*
