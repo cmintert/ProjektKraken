@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-17
-### Fixed
-- Fix hang in widget_registry by breaking reference cycle and guarding logs
+### Internal
+- Merge pull request #61 from cmintert/copilot/add-diagnostic-logging-graph-behavior
 
 
 *This changelog was automatically generated.*
