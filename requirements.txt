@@ -28,3 +28,15 @@ pyinstaller==6.17.0
 # Semantic Search Dependencies
 numpy==2.2.1
 requests==2.32.3
+
+# Environment Configuration
+python-dotenv==1.2.1
+
+# Web Server (for Longform Editor Live Preview)
+fastapi==0.128.0
+uvicorn==0.40.0
+httpx==0.28.1
+
+# Graph Visualization
+pyvis==0.3.2
+networkx==3.6.1
