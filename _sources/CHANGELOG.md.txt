@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-17
-### Internal
-- Merge pull request #59 from cmintert/copilot/increase-testing-coverage
+### Fixed
+- fix: Windows platform-specific test failures and asset store pluralization bug
 
 
 *This changelog was automatically generated.*
