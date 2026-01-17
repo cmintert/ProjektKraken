@@ -20,7 +20,7 @@ class AssetStore:
     """
     Manages filesystem operations for project assets (images, thumbnails).
     Ensures deterministic paths and safe file handling.
-    
+
     In portable-only mode, assets are stored within the world directory
     at <world_dir>/assets/ rather than a separate project root.
     """
@@ -55,7 +55,11 @@ class AssetStore:
         """
         base_dir = self.thumbs_dir if is_thumbnail else self.images_dir
         # Pluralize owner_type for cleaner structure (events/entities)
-        type_segment = f"{owner_type}s"
+        # Handle words ending in 'y' -> 'ies' (entity -> entities)
+        if owner_type.endswith("y"):
+            type_segment = f"{owner_type[:-1]}ies"
+        else:
+            type_segment = f"{owner_type}s"
         return base_dir / type_segment / owner_id
 
     def import_image(
@@ -146,14 +150,16 @@ class AssetStore:
         try:
             full_img_path = self.project_root / image_rel_path
             if full_img_path.exists():
-                trash_img = trash_subdir / full_img_path.name
+                # Prefix with 'img_' to avoid collision with thumbnail (same UUID name)
+                trash_img = trash_subdir / f"img_{full_img_path.name}"
                 shutil.move(str(full_img_path), str(trash_img))
                 img_trash_rel = trash_img.relative_to(self.project_root).as_posix()
 
             if thumb_rel_path:
                 full_thumb_path = self.project_root / thumb_rel_path
                 if full_thumb_path.exists():
-                    trash_thumb = trash_subdir / full_thumb_path.name
+                    # Prefix with 'thumb_' to avoid collision with image
+                    trash_thumb = trash_subdir / f"thumb_{full_thumb_path.name}"
                     shutil.move(str(full_thumb_path), str(trash_thumb))
                     thumb_trash_rel = trash_thumb.relative_to(
                         self.project_root
