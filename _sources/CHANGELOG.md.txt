@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-17
 ### Added
-- feat(timeline): enable unconstrained horizontal panning
+- feat(timeline): increase max zoom out range
 
 
 *This changelog was automatically generated.*
