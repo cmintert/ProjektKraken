@@ -15,6 +15,9 @@ from src.gui.widgets.graph_view.graph_builder import GraphBuilder
 from src.gui.widgets.graph_view.graph_filter_bar import GraphFilterBar
 from src.gui.widgets.graph_view.graph_web_view import GraphWebView
 
+MIN_GRAPH_WIDTH = 100
+MIN_GRAPH_HEIGHT = 100
+
 
 class GraphWidget(QWidget):
     """
@@ -90,6 +93,8 @@ class GraphWidget(QWidget):
 
         Creates the vertical layout and adds the filter bar and web view components.
         """
+        self.setMinimumSize(MIN_GRAPH_WIDTH, MIN_GRAPH_HEIGHT)
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)

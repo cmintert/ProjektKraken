@@ -47,7 +47,7 @@ from src.core.protocols import MainWindowProtocol
 class _DockEventFilter(QObject):
     """
     Event filter for dock widgets to log visibility and resize events.
-    
+
     This diagnostic helper logs show/hide/resize events for debugging
     disappearing widget issues.
     """
@@ -55,7 +55,7 @@ class _DockEventFilter(QObject):
     def __init__(self, dock_name: str, logger):
         """
         Initialize the event filter.
-        
+
         Args:
             dock_name: Name of the dock widget being monitored.
             logger: Logger instance for output.
@@ -67,17 +67,19 @@ class _DockEventFilter(QObject):
     def eventFilter(self, obj, event):
         """
         Filter events and log relevant ones.
-        
+
         Args:
             obj: Object receiving the event.
             event: Event to filter.
-            
+
         Returns:
             bool: Always False (don't consume events).
         """
         if event.type() == QEvent.Type.Resize:
             s = event.size()
-            self._logger.debug(f"Dock widget '{self._name}' resized -> {s.width()}x{s.height()}")
+            self._logger.debug(
+                f"Dock widget '{self._name}' resized -> {s.width()}x{s.height()}"
+            )
         elif event.type() == QEvent.Type.Show:
             self._logger.debug(f"Dock widget '{self._name}' showEvent")
         elif event.type() == QEvent.Type.Hide:
@@ -106,10 +108,10 @@ class UIManager:
     def _attach_diagnostics(self, dock: QDockWidget) -> None:
         """
         Attach diagnostic logging to a dock widget.
-        
+
         Logs visibility changes, top-level changes, and widget events
         (show/hide/resize) to help diagnose disappearing widget issues.
-        
+
         Args:
             dock: The dock widget to monitor.
         """
@@ -118,19 +120,19 @@ class UIManager:
         logger = get_logger(__name__)
         name = dock.objectName()
         logger.info(f"Attaching diagnostics to dock '{name}'")
-        
+
         # Log visibility changes with size info
         dock.visibilityChanged.connect(
             lambda vis, n=name, d=dock: logger.info(
                 f"Dock '{n}' visibilityChanged={vis} size={d.size().width()}x{d.size().height()}"
             )
         )
-        
+
         # Log top-level (floating) changes
         dock.topLevelChanged.connect(
             lambda top, n=name: logger.info(f"Dock '{n}' topLevelChanged={top}")
         )
-        
+
         # Install event filter on the contained widget
         widget = dock.widget()
         if widget is not None:
@@ -138,7 +140,6 @@ class UIManager:
             widget.installEventFilter(f)
             # Store filter as attribute to prevent garbage collection
             setattr(dock, "_diag_event_filter", f)
-
 
     def setup_docks(self, widgets: Dict[str, QWidget]) -> None:
         """
@@ -307,12 +308,7 @@ class UIManager:
                     Qt.DockWidgetArea.BottomDockWidgetArea, self.docks["graph"]
                 )
                 self._attach_diagnostics(self.docks["graph"])
-                
-                # Temporarily make graph dock non-closable for diagnostics
-                cur = dock.features()
-                dock.setFeatures(cur & ~QDockWidget.DockWidgetFeature.DockWidgetClosable)
-                logger.info("Graph dock temporarily set non-closable for diagnostics")
-                
+
                 # Tabify with map if it exists, otherwise with timeline
                 if "map" in self.docks:
                     self.main_window.tabifyDockWidget(
@@ -379,7 +375,9 @@ class UIManager:
                 )
                 return None
 
-            logger.debug(f"Creating dock '{title}' ({obj_name}) with widget {type(widget).__name__}")
+            logger.debug(
+                f"Creating dock '{title}' ({obj_name}) with widget {type(widget).__name__}"
+            )
 
             # Create dock widget
             dock = QDockWidget(title, self.main_window)
