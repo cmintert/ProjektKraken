@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-17
 ### Added
-- feat(gui): Harden layout restoration against corruption and off-screen windows
+- Feat: Implement auto-refresh for longform editor
 
 
 *This changelog was automatically generated.*
