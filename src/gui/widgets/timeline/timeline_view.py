@@ -56,7 +56,7 @@ class TimelineView(QGraphicsView):
     RULER_HEIGHT = 50  # Increased for semantic ruler with context tier
 
     # Zoom limits
-    MIN_ZOOM = 0.01  # Maximum zoom out (1% of normal)
+    MIN_ZOOM = 0.0001  # Maximum zoom out (0.01% of normal)
     MAX_ZOOM = 100.0  # Maximum zoom in (100x normal)
 
     # Ruler & Playhead Constants
