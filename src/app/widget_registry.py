@@ -4,6 +4,7 @@ Widget Registry Module.
 Provides centralized widget lifecycle management and tracking for the MainWindow.
 """
 
+import weakref
 from enum import Enum, auto
 from typing import Dict, Optional
 
@@ -50,7 +51,14 @@ class WidgetRegistry:
         self._widget_states[name] = WidgetState.CREATED
 
         # Connect to destroyed signal for cleanup
-        widget.destroyed.connect(lambda: self._on_widget_destroyed(name))
+        # Use weakref to avoid circular reference (Registry -> Widget -> Signal -> Lambda -> Registry)
+        self_ref = weakref.ref(self)
+
+        def _cleanup() -> None:
+            if r := self_ref():
+                r._on_widget_destroyed(name)
+
+        widget.destroyed.connect(_cleanup)
 
         logger.debug(f"Registered widget: {name}")
 
@@ -123,7 +131,12 @@ class WidgetRegistry:
         """
         if name in self._widget_states:
             self._widget_states[name] = WidgetState.DESTROYED
-            logger.debug(f"Widget '{name}' destroyed")
+            try:
+                if logger:
+                    logger.debug(f"Widget '{name}' destroyed")
+            except Exception:
+                # Ignore errors during destruction logging (e.g. at shutdown)
+                pass
 
     def cleanup_all(self) -> None:
         """Cleanup all registered widgets."""
