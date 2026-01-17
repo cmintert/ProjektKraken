@@ -7,7 +7,7 @@ of tabs with drag-and-drop functionality.
 
 from typing import Optional
 
-from PySide6.QtCore import QMimeData, QPoint, QSize, Qt, Signal
+from PySide6.QtCore import QMimeData, QPoint, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QDrag, QDragEnterEvent, QDropEvent, QMouseEvent
 from PySide6.QtWidgets import (
     QSplitter,
@@ -16,6 +16,10 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from src.core.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class DraggableTabBar(QTabBar):
@@ -79,11 +83,13 @@ class DraggableTabBar(QTabBar):
         widget = source_tab_widget.widget(source_idx)
         title = source_tab_widget.tabText(source_idx)
 
+        logger.debug(
+            f"DraggableTabBar.dropEvent: source_idx={source_idx}, title='{title}', "
+            f"source_tab_widget={source_tab_widget.objectName() if hasattr(source_tab_widget, 'objectName') else None}"
+        )
+
         # Remove from source
         source_tab_widget.removeTab(source_idx)
-
-        # Cleanup empty source pane
-        self._cleanup_empty_pane(source_tab_widget)
 
         # Insert into this tab widget
         target_tab_widget = self.parent()
@@ -93,15 +99,47 @@ class DraggableTabBar(QTabBar):
         target_tab_widget.insertTab(drop_idx, widget, title)
         target_tab_widget.setCurrentIndex(drop_idx)
 
+        logger.debug("DraggableTabBar.dropEvent: moved tab, scheduling cleanup check for source pane")
+
+        # Cleanup empty source pane - schedule on next tick
+        QTimer.singleShot(0, lambda: self._cleanup_empty_pane(source_tab_widget))
+
         event.acceptProposedAction()
 
     def _cleanup_empty_pane(self, tab_widget: QTabWidget) -> None:
-        """Remove a tab widget from splitter if it has no tabs left."""
+        """
+        Remove a tab widget from splitter if it has no tabs left.
+        
+        Uses delayed deletion with re-check to avoid race conditions during
+        drag/reparent operations.
+        
+        Args:
+            tab_widget: The tab widget to check and potentially remove.
+        """
+        logger.debug(
+            f"DraggableTabBar._cleanup_empty_pane: checking tab_widget="
+            f"{getattr(tab_widget, 'objectName', lambda: None)()}"
+        )
+        
         if tab_widget.count() == 0:
             splitter = self._find_parent_splitter(tab_widget)
             if splitter and splitter.count() > 1:
-                tab_widget.setParent(None)
-                tab_widget.deleteLater()
+                logger.info("Pane empty — hiding and scheduling deletion")
+                tab_widget.hide()
+                
+                def _maybe_delete():
+                    # Re-check conditions before deleting
+                    if (tab_widget.count() == 0 and 
+                        tab_widget.parent() is splitter and 
+                        splitter.count() > 1):
+                        logger.info("Deleting empty pane now")
+                        tab_widget.setParent(None)
+                        tab_widget.deleteLater()
+                    else:
+                        logger.debug("Skipping deletion; pane no longer empty or reparented")
+                
+                # Delay deletion by 200ms to let reparent operations complete
+                QTimer.singleShot(200, _maybe_delete)
 
     def _find_parent_splitter(self, widget: QWidget) -> Optional[QSplitter]:
         """Find the parent QSplitter of a widget."""
@@ -155,6 +193,11 @@ class DraggableTabWidget(QTabWidget):
         widget = source_tab_widget.widget(source_idx)
         title = source_tab_widget.tabText(source_idx)
 
+        logger.debug(
+            f"dropEvent: source_idx={source_idx}, title='{title}', "
+            f"source_tab_widget={source_tab_widget.objectName() if hasattr(source_tab_widget, 'objectName') else None}"
+        )
+
         # Remove from source
         source_tab_widget.removeTab(source_idx)
 
@@ -168,16 +211,47 @@ class DraggableTabWidget(QTabWidget):
             idx = splitter.indexOf(self)
             splitter.insertWidget(idx + 1, new_tab_widget)
 
+            logger.debug("dropEvent: moved tab, scheduling cleanup check for source pane")
+            
             # Cleanup empty source pane (after creating new one)
-            self._cleanup_empty_pane(source_tab_widget, splitter)
+            # Schedule on next tick to avoid race between removeTab and cleanup
+            QTimer.singleShot(0, lambda: self._cleanup_empty_pane(source_tab_widget, splitter))
 
         event.acceptProposedAction()
 
     def _cleanup_empty_pane(self, tab_widget: QTabWidget, splitter: QSplitter) -> None:
-        """Remove a tab widget from splitter if it has no tabs left."""
+        """
+        Remove a tab widget from splitter if it has no tabs left.
+        
+        Uses delayed deletion with re-check to avoid race conditions during
+        drag/reparent operations.
+        
+        Args:
+            tab_widget: The tab widget to check and potentially remove.
+            splitter: The parent splitter containing the tab widget.
+        """
+        logger.debug(
+            f"_cleanup_empty_pane: checking tab_widget="
+            f"{getattr(tab_widget, 'objectName', lambda: None)()}"
+        )
+        
         if tab_widget.count() == 0 and splitter.count() > 1:
-            tab_widget.setParent(None)
-            tab_widget.deleteLater()
+            logger.info("Pane empty — hiding and scheduling deletion")
+            tab_widget.hide()
+            
+            def _maybe_delete():
+                # Re-check conditions before deleting
+                if (tab_widget.count() == 0 and 
+                    tab_widget.parent() is splitter and 
+                    splitter.count() > 1):
+                    logger.info("Deleting empty pane now")
+                    tab_widget.setParent(None)
+                    tab_widget.deleteLater()
+                else:
+                    logger.debug("Skipping deletion; pane no longer empty or reparented")
+            
+            # Delay deletion by 200ms to let reparent operations complete
+            QTimer.singleShot(200, _maybe_delete)
 
     def _find_parent_splitter(self) -> Optional[QSplitter]:
         """Find the parent QSplitter."""
