@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-17
-### Fixed
-- fix(graph): improve graph widget docs and restore close capability
+### Added
+- feat(timeline): enable unconstrained horizontal panning
 
 
 *This changelog was automatically generated.*
