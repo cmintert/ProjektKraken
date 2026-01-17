@@ -83,6 +83,7 @@ from src.commands.wiki_commands import ProcessWikiLinksCommand
 from src.core.logging_config import get_logger
 from src.gui.dialogs.database_manager_dialog import DatabaseManagerDialog
 from src.gui.dialogs.filter_dialog import FilterDialog
+from src.gui.mixins.layout_guard import LayoutGuardMixin
 from src.gui.widgets.ai_search_panel import AISearchPanelWidget
 from src.gui.widgets.entity_editor import EntityEditorWidget
 from src.gui.widgets.event_editor import EventEditorWidget
@@ -95,7 +96,7 @@ from src.gui.widgets.unified_list import UnifiedListWidget
 logger = get_logger(__name__)
 
 
-class MainWindow(QMainWindow):
+class MainWindow(QMainWindow, LayoutGuardMixin):
     """
     The main application window.
 
@@ -373,6 +374,13 @@ class MainWindow(QMainWindow):
         # Stage 1: Immediate geometry restoration
         self._restore_geometry()
 
+        # Check for crash loop / blocked docks immediately
+        if self.guard_check_crash_flag():
+            logger.info(
+                "Crash flag detected - considering safety measures (logging only for now)"
+            )
+            # We could force reset here if enabled
+
         # Stage 2: Critical docks after 100ms
         QTimer.singleShot(100, self._restore_critical_docks)
 
@@ -405,8 +413,9 @@ class MainWindow(QMainWindow):
         # Restore geometry only (fast)
         geometry = settings.value("geometry")
         if geometry:
-            if self.restoreGeometry(geometry):
-                logger.debug("Window geometry restored")
+            # Use Guard implementation
+            if self.guard_restore_geometry(geometry):
+                logger.debug("Window geometry restored safely")
             else:
                 logger.warning("Failed to restore window geometry")
         else:
