@@ -1,9 +1,10 @@
 import datetime
 import subprocess
 from pathlib import Path
+from typing import Dict, List
 
 
-def get_git_logs():
+def get_git_logs() -> List[str]:
     """Get git log messages since the last tag or start of project."""
     try:
         # Get all logs with format "sha|subject|body"
@@ -19,9 +20,9 @@ def get_git_logs():
         return []
 
 
-def parse_logs(logs):
+def parse_logs(logs: List[str]) -> Dict[str, List[str]]:
     """Parse logs into categories based on conventional commit prefixes."""
-    categories = {
+    categories: Dict[str, List[str]] = {
         "Added": [],
         "Fixed": [],
         "Changed": [],
@@ -63,7 +64,9 @@ def parse_logs(logs):
     return categories
 
 
-def generate_markdown(categories, version="Development"):
+def generate_markdown(
+    categories: Dict[str, List[str]], version: str = "Development"
+) -> str:
     """Generate the markdown content for the changelog."""
     date_str = datetime.date.today().isoformat()
     lines = [f"## [{version}] - {date_str}"]
@@ -80,7 +83,7 @@ def generate_markdown(categories, version="Development"):
     return "\n".join(lines)
 
 
-def main():
+def main() -> None:
     """Main execution entry point."""
     print("Generating automated changelog...")
     logs = get_git_logs()

@@ -210,7 +210,7 @@ def generate_markdown_tables(
     return "\n".join(lines)
 
 
-def main():
+def main() -> int | None:
     """Main function to generate schema documentation."""
     print("Extracting database schema from DatabaseService...")
 

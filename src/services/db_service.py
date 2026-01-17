@@ -2224,7 +2224,7 @@ class DatabaseService:
             self.connect()
         return self._trajectory_repo.delete_keyframe(map_id, object_id, t)
 
-    def register_backup_service(self, backup_service) -> None:
+    def register_backup_service(self, backup_service: Any) -> None:
         """
         Registers a backup service for integration with database operations.
 

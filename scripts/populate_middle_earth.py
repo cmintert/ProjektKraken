@@ -7,9 +7,9 @@ import uuid
 # Add src to path
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from src.core.entities import Entity
-from src.core.events import Event
-from src.services.db_service import DatabaseService
+from src.core.entities import Entity  # noqa: E402
+from src.core.events import Event  # noqa: E402
+from src.services.db_service import DatabaseService  # noqa: E402
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -827,7 +827,7 @@ EVENTS_DATA = [
 ]
 
 
-def populate():
+def populate() -> None:
     logger.info(f"Connecting to database at {DB_PATH}")
     db_service = DatabaseService(DB_PATH)
     db_service.connect()
@@ -843,7 +843,8 @@ def populate():
         conn.execute("DELETE FROM tags")
 
     # Helper to clean text
-    def clean(s):
+    # Helper to clean text
+    def clean(s: str) -> str:
         return s.replace("'", "").replace(" ", "_").lower()
 
     # 1. Tags
@@ -870,7 +871,6 @@ def populate():
     # 2. Entities
     logger.info("Seeding entities...")
     entity_map = {}  # name -> id
-    entities_to_insert = []
 
     for ent_data in ENTITIES_DATA:
         ent_id = str(uuid.uuid4())
@@ -950,7 +950,7 @@ def populate():
     # 4. Relations
     logger.info("Seeding relations...")
 
-    def create_rel(src_name, target_name, rel_type):
+    def create_rel(src_name: str, target_name: str, rel_type: str) -> None:
         src_id = entity_map.get(src_name) or event_map.get(src_name)
         tgt_id = entity_map.get(target_name) or event_map.get(target_name)
 

@@ -375,7 +375,7 @@ def test_external_backup_location(tmp_path, temp_db):
     )
     service = BackupService(config)
 
-    metadata = service.create_backup(db_path=temp_db, backup_type=BackupType.DAILY)
+    service.create_backup(db_path=temp_db, backup_type=BackupType.DAILY)
 
     # Check that backup was also copied to external location
     external_daily_dir = external_path / "daily"

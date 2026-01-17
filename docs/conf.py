@@ -2,6 +2,7 @@
 import os
 import sys
 import tomllib
+from typing import Any
 
 sys.path.insert(0, os.path.abspath(".."))
 sys.path.insert(0, os.path.abspath("../src"))
@@ -71,7 +72,7 @@ html_theme_options = {
 
 
 # -- Auto-generate schema documentation --------------------------------------
-def setup(app):
+def setup(app: Any) -> None:
     """
     Sphinx setup hook to auto-generate schema documentation.
 

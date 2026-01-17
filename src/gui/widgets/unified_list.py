@@ -352,7 +352,6 @@ class UnifiedListWidget(QWidget):
 
             # Restore selection if possible
             if current_id and current_type:
-                found = False
                 for index in range(self.list_widget.count()):
                     item = self.list_widget.item(index)
                     if (
