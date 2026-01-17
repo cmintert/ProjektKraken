@@ -5,17 +5,15 @@ Public facade widget for graph visualization of item relationships.
 This is the only public interface for the graph view functionality.
 """
 
-import logging
 from typing import Any, Optional
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QTimer, Signal
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
+from src.core.logging_config import get_logger
 from src.gui.widgets.graph_view.graph_builder import GraphBuilder
 from src.gui.widgets.graph_view.graph_filter_bar import GraphFilterBar
 from src.gui.widgets.graph_view.graph_web_view import GraphWebView
-
-logger = logging.getLogger(__name__)
 
 
 class GraphWidget(QWidget):
@@ -53,6 +51,9 @@ class GraphWidget(QWidget):
             parent: Parent widget.
         """
         super().__init__(parent)
+
+        # Initialize logger
+        self._logger = get_logger(__name__)
 
         # Private internal components (following MapWidget pattern)
         self._filter_bar = GraphFilterBar()
@@ -169,7 +170,7 @@ class GraphWidget(QWidget):
 
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self._advanced_filter_config = dialog.get_filter_config()
-            logger.info(f"Advanced filter applied: {self._advanced_filter_config}")
+            self._logger.info(f"Advanced filter applied: {self._advanced_filter_config}")
 
             # Since advanced filter might change what we need from DB (includes),
             # we request a refresh.
@@ -235,7 +236,7 @@ class GraphWidget(QWidget):
                 focus_node_id=focus_node_id,
             )
             self._web_view.load_html(html)
-            logger.debug(
+            self._logger.debug(
                 f"Refreshed graph: {len(filtered_nodes)} nodes, "
                 f"{len(filtered_edges)} edges, focus_id={focus_node_id}"
             )
@@ -337,7 +338,7 @@ class GraphWidget(QWidget):
         """
         self._all_nodes = nodes
         self._all_edges = edges
-        logger.debug(
+        self._logger.debug(
             f"Received {len(nodes)} nodes, {len(edges)} edges. Refreshing display."
         )
 
@@ -355,3 +356,56 @@ class GraphWidget(QWidget):
         self._web_view.clear()
         self._all_nodes = []
         self._all_edges = []
+
+    def showEvent(self, event):
+        """
+        Handle widget show event.
+        
+        Logs visibility and schedules a refresh of the web view to recover
+        from transient invisibility or reparent issues.
+        
+        Args:
+            event: The show event.
+        """
+        super().showEvent(event)
+        self._logger.info("GraphWidget.showEvent — visible")
+        
+        def _refresh():
+            try:
+                reload_fn = getattr(self._web_view, 'reload', None)
+                if callable(reload_fn):
+                    reload_fn()
+                    self._logger.debug("GraphWidget: called web_view.reload()")
+                else:
+                    self._web_view.update()
+                    self._logger.debug("GraphWidget: called web_view.update()")
+            except Exception as e:
+                self._logger.exception(f"GraphWidget: refresh on show failed: {e}")
+        
+        # Schedule refresh on next event loop iteration
+        QTimer.singleShot(0, _refresh)
+
+    def hideEvent(self, event):
+        """
+        Handle widget hide event.
+        
+        Logs when the widget is hidden for diagnostic purposes.
+        
+        Args:
+            event: The hide event.
+        """
+        super().hideEvent(event)
+        self._logger.info("GraphWidget.hideEvent — hidden")
+
+    def resizeEvent(self, event):
+        """
+        Handle widget resize event.
+        
+        Logs widget resizes for diagnostic purposes.
+        
+        Args:
+            event: The resize event.
+        """
+        super().resizeEvent(event)
+        s = event.size()
+        self._logger.debug(f"GraphWidget.resizeEvent -> {s.width()}x{s.height()}")
