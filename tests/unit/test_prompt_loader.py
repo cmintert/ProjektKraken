@@ -4,10 +4,6 @@ Unit tests for PromptLoader.
 Tests template loading, listing, versioning, validation, and error handling.
 """
 
-import os
-import tempfile
-from pathlib import Path
-
 import pytest
 
 from src.services.prompt_loader import PromptLoader, PromptTemplate
@@ -17,15 +13,15 @@ from src.services.prompt_loader import PromptLoader, PromptTemplate
 def temp_templates_dir(tmp_path):
     """
     Create a temporary templates directory populated with sample template files for tests.
-    
+
     Creates three files within a "templates" subdirectory:
     - test_template_v1.0.txt (metadata and multi-line content for version 1.0)
     - test_template_v2.0.txt (metadata and content for version 2.0)
     - other_template_v1.0.txt (a separate template family)
-    
+
     Parameters:
         tmp_path (pathlib.Path): Base temporary directory provided by pytest.
-    
+
     Returns:
         pathlib.Path: Path to the created "templates" directory containing the sample files.
     """
@@ -82,10 +78,10 @@ Different template content.
 def loader(temp_templates_dir):
     """
     Create a PromptLoader configured to use the provided temporary templates directory.
-    
+
     Parameters:
         temp_templates_dir (Path): Path to a temporary directory containing template files.
-    
+
     Returns:
         PromptLoader: An instance configured to load templates from the given directory.
     """
@@ -120,7 +116,7 @@ def test_list_templates(loader):
     templates = loader.list_templates()
 
     assert len(templates) == 3
-    
+
     # Check that all templates are present
     template_ids = [(t["template_id"], t["version"]) for t in templates]
     assert ("test_template", "1.0") in template_ids
@@ -128,7 +124,11 @@ def test_list_templates(loader):
     assert ("other_template", "1.0") in template_ids
 
     # Check metadata is included
-    test_v1 = next(t for t in templates if t["template_id"] == "test_template" and t["version"] == "1.0")
+    test_v1 = next(
+        t
+        for t in templates
+        if t["template_id"] == "test_template" and t["version"] == "1.0"
+    )
     assert test_v1["name"] == "Test Template v1"
     assert test_v1["description"] == "A test template"
 
@@ -244,7 +244,7 @@ def test_metadata_parsing(loader):
     assert template.metadata["description"] == "A test template"
     assert template.metadata["author"] == "Test Author"
     assert template.metadata["created"] == "2026-01-16"
-    
+
     # Check list parsing
     assert isinstance(template.metadata["tags"], list)
     assert "test" in template.metadata["tags"]
@@ -255,7 +255,7 @@ def test_list_templates_empty_directory(tmp_path):
     """Test listing templates in an empty directory."""
     empty_dir = tmp_path / "empty"
     empty_dir.mkdir()
-    
+
     loader = PromptLoader(templates_dir=str(empty_dir))
     templates = loader.list_templates()
 
@@ -265,7 +265,7 @@ def test_list_templates_empty_directory(tmp_path):
 def test_list_templates_nonexistent_directory(tmp_path):
     """Test listing templates when directory doesn't exist."""
     nonexistent_dir = tmp_path / "nonexistent"
-    
+
     loader = PromptLoader(templates_dir=str(nonexistent_dir))
     templates = loader.list_templates()
 
@@ -289,9 +289,9 @@ def test_prompt_template_str():
         version="1.0",
         name="Test Template",
         content="Test content",
-        metadata={}
+        metadata={},
     )
-    
+
     str_repr = str(template)
     assert "test" in str_repr
     assert "1.0" in str_repr
@@ -301,7 +301,7 @@ def test_prompt_template_str():
 def test_load_template_strips_whitespace(loader):
     """Test that template content has leading/trailing whitespace stripped."""
     template = loader.load_template("test_template", version="1.0")
-    
+
     # Content should not start or end with newlines
     assert not template.content.startswith("\n")
     assert not template.content.endswith("\n\n")
@@ -312,9 +312,9 @@ def test_list_templates_skips_invalid_filenames(loader, temp_templates_dir):
     # Create files with invalid names
     (temp_templates_dir / "invalid_name.txt").write_text("content")
     (temp_templates_dir / "no_version.txt").write_text("content")
-    
+
     templates = loader.list_templates()
-    
+
     # Should still only return the 3 valid templates
     assert len(templates) == 3
 
@@ -324,10 +324,10 @@ def test_get_latest_version_no_templates(loader, tmp_path):
     empty_dir = tmp_path / "empty"
     empty_dir.mkdir()
     loader = PromptLoader(templates_dir=str(empty_dir))
-    
+
     with pytest.raises(FileNotFoundError) as exc_info:
         loader.get_latest_version("nonexistent")
-    
+
     assert "nonexistent" in str(exc_info.value)
 
 
@@ -335,11 +335,11 @@ def test_load_real_fantasy_worldbuilder_v1():
     """Test loading the real fantasy_worldbuilder v1 template."""
     # Use default loader which points to actual templates
     loader = PromptLoader()
-    
+
     # This test will only pass if the templates exist in the repo
     try:
         template = loader.load_template("fantasy_worldbuilder", version="1.0")
-        
+
         assert template.template_id == "fantasy_worldbuilder"
         assert template.version == "1.0"
         assert "fantasy world-builder" in template.content.lower()
@@ -351,13 +351,16 @@ def test_load_real_fantasy_worldbuilder_v1():
 def test_load_real_fantasy_worldbuilder_v2():
     """Test loading the real fantasy_worldbuilder v2 template."""
     loader = PromptLoader()
-    
+
     try:
         template = loader.load_template("fantasy_worldbuilder", version="2.0")
-        
+
         assert template.template_id == "fantasy_worldbuilder"
         assert template.version == "2.0"
-        assert "OUTPUT FORMAT" in template.content or "output format" in template.content.lower()
+        assert (
+            "OUTPUT FORMAT" in template.content
+            or "output format" in template.content.lower()
+        )
         assert "json" in template.content.lower()
     except FileNotFoundError:
         pytest.skip("Real templates not found (expected during isolated testing)")
@@ -366,10 +369,10 @@ def test_load_real_fantasy_worldbuilder_v2():
 def test_load_few_shot():
     """Test loading few-shot examples."""
     loader = PromptLoader()
-    
+
     try:
         examples = loader.load_few_shot()
-        
+
         assert len(examples) > 200
         assert "Example 1" in examples
         assert "Character" in examples or "Location" in examples
@@ -382,13 +385,13 @@ def test_load_few_shot():
 def test_load_few_shot_custom_filename(temp_templates_dir):
     """Test loading few-shot examples with custom filename."""
     loader = PromptLoader(templates_dir=str(temp_templates_dir))
-    
+
     # Create a custom few-shot file
     custom_few_shot = temp_templates_dir / "custom_examples.txt"
     custom_few_shot.write_text("Example 1: Test\nExample 2: Another test")
-    
+
     examples = loader.load_few_shot("custom_examples.txt")
-    
+
     assert "Example 1" in examples
     assert "Example 2" in examples
 
@@ -396,35 +399,42 @@ def test_load_few_shot_custom_filename(temp_templates_dir):
 def test_load_few_shot_missing_file():
     """Test that loading nonexistent few-shot file raises FileNotFoundError."""
     loader = PromptLoader()
-    
+
     with pytest.raises(FileNotFoundError) as exc_info:
         loader.load_few_shot("nonexistent_examples.txt")
-    
+
     assert "nonexistent_examples.txt" in str(exc_info.value)
 
 
 def test_load_real_description_templates():
     """Test loading the real description templates."""
     loader = PromptLoader()
-    
+
     try:
         # Test default template
         default = loader.load_template("description_default", version="1.0")
         assert default.template_id == "description_default"
         assert default.version == "1.0"
         assert "world-builder" in default.content.lower()
-        assert "200 words" in default.content.lower() or "200" in default.metadata.get("max_words", "")
-        
+        assert "200 words" in default.content.lower() or "200" in default.metadata.get(
+            "max_words", ""
+        )
+
         # Test concise template
         concise = loader.load_template("description_concise", version="1.0")
         assert concise.template_id == "description_concise"
         assert concise.version == "1.0"
-        assert "concise" in concise.content.lower() or "brief" in concise.content.lower()
-        
+        assert (
+            "concise" in concise.content.lower() or "brief" in concise.content.lower()
+        )
+
         # Test detailed template
         detailed = loader.load_template("description_detailed", version="1.0")
         assert detailed.template_id == "description_detailed"
         assert detailed.version == "1.0"
-        assert "detailed" in detailed.content.lower() or "expansive" in detailed.content.lower()
+        assert (
+            "detailed" in detailed.content.lower()
+            or "expansive" in detailed.content.lower()
+        )
     except FileNotFoundError:
         pytest.skip("Real templates not found (expected during isolated testing)")

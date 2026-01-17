@@ -51,6 +51,7 @@ from src.app.constants import (
     DEFAULT_WINDOW_HEIGHT,
     DEFAULT_WINDOW_WIDTH,
     SETTINGS_ACTIVE_DB_KEY,
+    SETTINGS_AUTO_RELATION_KEY,
     SETTINGS_FILTER_CONFIG_KEY,
     SETTINGS_LAST_ITEM_ID_KEY,
     SETTINGS_LAST_ITEM_TYPE_KEY,
@@ -251,6 +252,11 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.ui_manager.create_timeline_menu(self.menuBar())
         self.ui_manager.create_view_menu(self.menuBar())
         self.ui_manager.create_settings_menu(self.menuBar())
+
+        # Initialize Longform auto-refresh state (default: True)
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        auto_refresh = settings.value("longform_auto_refresh", True, type=bool)
+        self.longform_editor.set_refresh_button_visible(not auto_refresh)
 
     def _complete_initialization(self) -> None:
         """
@@ -854,6 +860,49 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """Updates the red playhead time label."""
         text = self._format_time_string(time_val)
         self.lbl_playhead_time.setText(f"Playhead: {text}")
+
+    @Slot()
+    def toggle_auto_relation_setting(self) -> None:
+        """
+        Toggles the auto-creation of relations from wikilinks.
+        """
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        current = settings.value(SETTINGS_AUTO_RELATION_KEY, False, type=bool)
+        new_value = not current
+        settings.setValue(SETTINGS_AUTO_RELATION_KEY, new_value)
+        logger.info(f"Auto-relation setting set to: {new_value}")
+
+    @Slot()
+    def toggle_longform_auto_refresh(self) -> None:
+        """
+        Toggles the auto-refresh setting for Longform Editor.
+        """
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        # Default to True
+        current = settings.value("longform_auto_refresh", True, type=bool)
+        new_value = not current
+        settings.setValue("longform_auto_refresh", new_value)
+
+        logger.info(f"Longform auto-refresh set to: {new_value}")
+
+        # Update UI state immediately
+        if hasattr(self, "longform_editor") and self.longform_editor:
+            self.longform_editor.set_refresh_button_visible(not new_value)
+
+        # If turned on, do an immediate refresh to ensure sync
+        if new_value:
+            self.longform_manager.load_longform_sequence()
+
+    @Slot()
+    def _on_auto_refresh_longform(self) -> None:
+        """
+        Reloads longform sequence if auto-refresh is enabled.
+        """
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        # Default to True
+        if settings.value("longform_auto_refresh", True, type=bool):
+            logger.debug("Auto-refreshing longform editor")
+            self.longform_manager.load_longform_sequence()
 
     def _restore_last_selection(self) -> None:
         """Restores the last selected item from settings."""
@@ -1840,19 +1889,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         Opens a file dialog for the user to choose save location.
         """
         self.longform_manager.export_longform_document()
-
-    def toggle_auto_relation_setting(self, checked: bool) -> None:
-        """
-        Toggles the auto-create relations setting.
-
-        Args:
-            checked (bool): The new state of the setting.
-        """
-        from src.app.constants import SETTINGS_AUTO_RELATION_KEY
-
-        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-        settings.setValue(SETTINGS_AUTO_RELATION_KEY, checked)
-        logger.info(f"Auto-Create Relations setting set to: {checked}")
 
     # =========================================================================
     # AI Search Panel & Settings Methods

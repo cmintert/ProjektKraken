@@ -1,7 +1,6 @@
 """
 Tests for application constants.
 """
-import pytest
 
 from src.app.constants import (
     AUTOSAVE_DELAY_MS,
@@ -86,10 +85,10 @@ def test_dock_object_names():
         DOCK_OBJ_AI_SEARCH,
         DOCK_OBJ_GRAPH,
     ]
-    
+
     # All dock names should be unique
     assert len(dock_names) == len(set(dock_names))
-    
+
     # All should end with "Dock"
     for name in dock_names:
         assert isinstance(name, str)
@@ -108,10 +107,10 @@ def test_dock_titles():
         DOCK_TITLE_AI_SEARCH,
         DOCK_TITLE_GRAPH,
     ]
-    
+
     # All dock titles should be unique
     assert len(dock_titles) == len(set(dock_titles))
-    
+
     # All should be non-empty strings
     for title in dock_titles:
         assert isinstance(title, str)
@@ -130,7 +129,7 @@ def test_dock_name_title_pairing():
         DOCK_OBJ_AI_SEARCH,
         DOCK_OBJ_GRAPH,
     ]
-    
+
     dock_titles = [
         DOCK_TITLE_PROJECT,
         DOCK_TITLE_EVENT_INSPECTOR,
@@ -141,7 +140,7 @@ def test_dock_name_title_pairing():
         DOCK_TITLE_AI_SEARCH,
         DOCK_TITLE_GRAPH,
     ]
-    
+
     # Should have same number of names and titles
     assert len(dock_names) == len(dock_titles)
 
@@ -158,12 +157,12 @@ def test_image_format_constants():
     """Test image format constants."""
     assert isinstance(SUPPORTED_IMAGE_FORMATS, list)
     assert len(SUPPORTED_IMAGE_FORMATS) > 0
-    
+
     # All formats should be lowercase strings
     for fmt in SUPPORTED_IMAGE_FORMATS:
         assert isinstance(fmt, str)
         assert fmt.islower()
-    
+
     # Should include common formats
     assert "png" in SUPPORTED_IMAGE_FORMATS
     assert "jpg" in SUPPORTED_IMAGE_FORMATS or "jpeg" in SUPPORTED_IMAGE_FORMATS
@@ -173,7 +172,7 @@ def test_image_file_filter():
     """Test image file filter constant."""
     assert isinstance(IMAGE_FILE_FILTER, str)
     assert "Images" in IMAGE_FILE_FILTER
-    
+
     # Should contain format wildcards
     for fmt in SUPPORTED_IMAGE_FORMATS:
         assert f"*.{fmt}" in IMAGE_FILE_FILTER
@@ -192,11 +191,11 @@ def test_window_dimensions_reasonable():
     # Should be at least 640x480
     assert DEFAULT_WINDOW_WIDTH >= 640
     assert DEFAULT_WINDOW_HEIGHT >= 480
-    
+
     # Should not be excessively large
     assert DEFAULT_WINDOW_WIDTH <= 4000
     assert DEFAULT_WINDOW_HEIGHT <= 4000
-    
+
     # Should have reasonable aspect ratio
     aspect_ratio = DEFAULT_WINDOW_WIDTH / DEFAULT_WINDOW_HEIGHT
     assert 1.0 <= aspect_ratio <= 2.5
@@ -213,7 +212,7 @@ def test_settings_keys_unique():
         SETTINGS_FILTER_CONFIG_KEY,
         SETTINGS_LAYOUT_VERSION_KEY,
     ]
-    
+
     assert len(settings_keys) == len(set(settings_keys))
 
 
@@ -222,11 +221,11 @@ def test_constants_are_immutable_types():
     # Strings should be immutable (Python strings are always immutable)
     assert isinstance(WINDOW_TITLE, str)
     assert isinstance(DOCK_OBJ_PROJECT, str)
-    
+
     # Numbers should be immutable
     assert isinstance(DEFAULT_WINDOW_WIDTH, int)
     assert isinstance(AUTOSAVE_DELAY_MS, int)
-    
+
     # Lists are mutable but that's acceptable for SUPPORTED_IMAGE_FORMATS
     # as long as it's not modified at runtime
 

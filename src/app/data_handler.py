@@ -306,10 +306,15 @@ class DataHandler(QObject):
                 logger.debug("[DataHandler] Emitting reload_events (Event command)")
                 self.reload_events.emit()
                 self.reload_markers_for_current_map.emit()
+                # Also reload longform as it might contain this event
+                self.reload_longform.emit()
+
             if "Entity" in command_name:
                 logger.debug("[DataHandler] Emitting reload_entities (Entity command)")
                 self.reload_entities.emit()
                 self.reload_markers_for_current_map.emit()
+                # Also reload longform as it might contain this entity
+                self.reload_longform.emit()
             if "Relation" in command_name or "WikiLinks" in command_name:
                 logger.debug(
                     "[DataHandler] Emitting reload signals (WikiLinks/Relation)"

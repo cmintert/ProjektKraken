@@ -37,7 +37,7 @@ class PromptTemplate:
     def __str__(self) -> str:
         """
         Return a concise human-readable representation of the PromptTemplate.
-        
+
         Returns:
             str: A string in the form "PromptTemplate({template_id} v{version}: {name})".
         """
@@ -58,11 +58,11 @@ class PromptLoader:
     def __init__(self, templates_dir: Optional[str] = None) -> None:
         """
         Initialize the PromptLoader and set the templates directory.
-        
+
         If `templates_dir` is provided, uses it; otherwise resolves the default
         templates directory relative to the package root (default_assets/templates/system_prompts).
         Logs the chosen directory and emits a warning if the directory does not exist.
-        
+
         Parameters:
             templates_dir (Optional[str]): Path to a custom templates directory.
         """
@@ -80,9 +80,7 @@ class PromptLoader:
 
         # Validate directory exists
         if not self.templates_dir.exists():
-            logger.warning(
-                f"Templates directory does not exist: {self.templates_dir}"
-            )
+            logger.warning(f"Templates directory does not exist: {self.templates_dir}")
 
     def load_template(
         self, template_id: str, version: Optional[str] = None
@@ -145,9 +143,9 @@ class PromptLoader:
     def list_templates(self) -> List[Dict[str, Any]]:
         """
         Discover available prompt templates in the templates directory and return their metadata.
-        
+
         Scans for files matching the pattern "<template_id>_v<version>.txt", parses each file's metadata header, and collects a summary for each valid template.
-        
+
         Returns:
             A list of dictionaries, one per discovered template. Each dictionary contains:
                 - template_id (str): Template family identifier.
@@ -170,8 +168,7 @@ class PromptLoader:
             match = pattern.match(file_path.name)
             if not match:
                 logger.debug(
-                    f"Skipping file with invalid name format: "
-                    f"{file_path.name}"
+                    f"Skipping file with invalid name format: {file_path.name}"
                 )
                 continue
 
@@ -201,13 +198,13 @@ class PromptLoader:
     def get_latest_version(self, template_id: str) -> str:
         """
         Determine the highest available version for a given template ID by scanning template files named "{template_id}_v{version}.txt".
-        
+
         Parameters:
             template_id (str): Template identifier used in filenames (e.g., "welcome_email" for files like "welcome_email_v1.0.txt").
-        
+
         Returns:
             latest_version (str): The highest version string found (e.g., "2.0").
-        
+
         Raises:
             FileNotFoundError: If the templates directory does not exist or no templates are found for the given ID.
         """
@@ -241,14 +238,14 @@ class PromptLoader:
     def validate_template(self, file_path: str) -> Tuple[bool, Optional[str]]:
         """
         Validate a prompt template file's structure and required metadata.
-        
+
         Checks that the file exists, begins with a metadata header delimited by '---',
         contains non-empty prompt content after the closing '---', and includes the
         required metadata fields: 'version', 'template_id', and 'name'.
-        
+
         Parameters:
             file_path: Path to the template file to validate.
-        
+
         Returns:
             (is_valid, error_message): is_valid is True when the file meets format and metadata requirements, False otherwise. error_message is None when valid; otherwise contains a short description of the problem.
         """
@@ -325,12 +322,12 @@ class PromptLoader:
     def _parse_yaml_metadata(self, yaml_text: str) -> Dict[str, Any]:
         """
         Parse a lightweight YAML-like metadata string into a dictionary.
-        
+
         Supports simple `key: value` pairs and list values written as `[item1, item2]`. Blank lines and lines starting with `#` are ignored; lines without a colon are skipped.
-        
+
         Parameters:
             yaml_text (str): Metadata text to parse.
-        
+
         Returns:
             Dict[str, Any]: A mapping of metadata keys to values. Values are strings or lists of strings for bracketed lists.
         """
@@ -378,9 +375,7 @@ class PromptLoader:
         file_path = self.templates_dir / filename
 
         if not file_path.exists():
-            raise FileNotFoundError(
-                f"Few-shot examples file not found: {file_path}"
-            )
+            raise FileNotFoundError(f"Few-shot examples file not found: {file_path}")
 
         logger.info(f"Loading few-shot examples from {file_path}")
 

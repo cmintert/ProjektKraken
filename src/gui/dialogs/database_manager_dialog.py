@@ -29,7 +29,7 @@ from PySide6.QtWidgets import (
 
 from src.app.constants import SETTINGS_ACTIVE_DB_KEY
 from src.core.paths import ensure_worlds_directory
-from src.core.world import World, WorldManager
+from src.core.world import WorldManager
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 class DatabaseManagerDialog(QDialog):
     """
     Dialog to manage worlds in portable-only mode.
-    
+
     Manages worlds stored in worlds/ directory next to the executable.
     Each world is a self-contained folder with database, manifest, and assets.
     """
@@ -67,7 +67,7 @@ class DatabaseManagerDialog(QDialog):
                 self,
                 "Critical Error",
                 f"Cannot access worlds directory:\n{e}\n\n"
-                "Please ensure the application has write permissions."
+                "Please ensure the application has write permissions.",
             )
             self.worlds_dir = None
             self.world_manager = None
@@ -78,7 +78,11 @@ class DatabaseManagerDialog(QDialog):
         main_layout.addWidget(header)
 
         # Info
-        info_text = f"Worlds Location:\n{self.worlds_dir}" if self.worlds_dir else "Error: Cannot access worlds directory"
+        info_text = (
+            f"Worlds Location:\n{self.worlds_dir}"
+            if self.worlds_dir
+            else "Error: Cannot access worlds directory"
+        )
         info = QLabel(info_text)
         info.setWordWrap(True)
         info.setStyleSheet("color: gray; margin-bottom: 10px;")
@@ -112,7 +116,7 @@ class DatabaseManagerDialog(QDialog):
         self.btn_delete.clicked.connect(self._delete_world)
         self.btn_select.clicked.connect(self._select_world)
         self.btn_close.clicked.connect(self.reject)
-        
+
         # Disable buttons if world manager couldn't be initialized
         if not self.world_manager:
             self.btn_create.setEnabled(False)
@@ -125,10 +129,10 @@ class DatabaseManagerDialog(QDialog):
     def _refresh_list(self) -> None:
         """Refresh the list of worlds from the worlds directory."""
         self.db_list.clear()
-        
+
         if not self.world_manager:
             return
-        
+
         settings = QSettings()
         active_world_name = settings.value(SETTINGS_ACTIVE_DB_KEY, None)
 
@@ -174,7 +178,7 @@ class DatabaseManagerDialog(QDialog):
         """Handle creation of a new world."""
         if not self.world_manager:
             return
-        
+
         # Get world name from user
         name, ok = QInputDialog.getText(
             self, "Create New World", "World Name (e.g. 'My Fantasy Campaign'):"
@@ -188,10 +192,7 @@ class DatabaseManagerDialog(QDialog):
 
         # Get optional description
         description, ok = QInputDialog.getText(
-            self, 
-            "World Description", 
-            "Optional Description:",
-            text=""
+            self, "World Description", "Optional Description:", text=""
         )
         if not ok:
             description = ""
@@ -200,7 +201,7 @@ class DatabaseManagerDialog(QDialog):
             # Create the world
             world = self.world_manager.create_world(name, description.strip())
             logger.info(f"Created new world: {world.name} at {world.path}")
-            
+
             self._refresh_list()
 
             # Highlight the new item
@@ -219,7 +220,7 @@ class DatabaseManagerDialog(QDialog):
         """Handle deletion of a world."""
         if not self.world_manager:
             return
-        
+
         item = self.db_list.currentItem()
         if not item:
             QMessageBox.information(self, "Info", "Please select a world to delete.")
@@ -236,7 +237,7 @@ class DatabaseManagerDialog(QDialog):
                 self,
                 "Warning",
                 "Cannot delete the currently active world.\n"
-                "Please switch to another world first."
+                "Please switch to another world first.",
             )
             return
 
@@ -260,7 +261,9 @@ class DatabaseManagerDialog(QDialog):
                     logger.info(f"Deleted world: {world_name}")
                     self._refresh_list()
                 else:
-                    QMessageBox.warning(self, "Error", f"World '{world_name}' not found.")
+                    QMessageBox.warning(
+                        self, "Error", f"World '{world_name}' not found."
+                    )
             except Exception as e:
                 logger.error(f"Failed to delete world: {e}")
                 QMessageBox.critical(self, "Error", f"Failed to delete world:\n{e}")
@@ -270,7 +273,7 @@ class DatabaseManagerDialog(QDialog):
         """Handle selection of a world to make active (requires restart)."""
         if not self.world_manager:
             return
-        
+
         item = self.db_list.currentItem()
         if not item:
             return
@@ -290,6 +293,6 @@ class DatabaseManagerDialog(QDialog):
             self,
             "Restart Required",
             f"Successfully switched to '{world_name}'.\n\n"
-            "Please restart the application to load the new world."
+            "Please restart the application to load the new world.",
         )
         self.accept()

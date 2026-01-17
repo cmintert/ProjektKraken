@@ -5,17 +5,18 @@ Tests the initialization helpers and layout restoration logic.
 """
 
 import logging
+from unittest.mock import Mock
+
 import pytest
-from PySide6.QtCore import QSettings, QTimer
+from PySide6.QtCore import QSettings
 from PySide6.QtWidgets import QApplication
-from unittest.mock import Mock, patch
 
 from src.app.connection_manager import ConnectionManager
 from src.app.constants import (
-    WINDOW_SETTINGS_KEY,
-    WINDOW_SETTINGS_APP,
-    SETTINGS_LAYOUT_VERSION_KEY,
     LAYOUT_VERSION,
+    SETTINGS_LAYOUT_VERSION_KEY,
+    WINDOW_SETTINGS_APP,
+    WINDOW_SETTINGS_KEY,
 )
 
 

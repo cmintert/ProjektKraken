@@ -6,7 +6,6 @@ applying it to the description field.
 """
 
 import pytest
-
 from PySide6.QtWidgets import QApplication
 
 from src.gui.dialogs.generation_review_dialog import (

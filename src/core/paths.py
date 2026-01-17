@@ -135,14 +135,14 @@ def get_backup_directory() -> Path:
 def get_executable_dir() -> Path:
     """
     Returns the directory containing the executable or main script.
-    
+
     For development: Returns the project root directory.
     For PyInstaller: Returns the directory containing the .exe.
-    
+
     Returns:
         Path: Directory containing the executable.
     """
-    if getattr(sys, 'frozen', False):
+    if getattr(sys, "frozen", False):
         # Running as PyInstaller bundle
         return Path(sys.executable).parent
     else:
@@ -154,11 +154,11 @@ def get_executable_dir() -> Path:
 def get_worlds_dir() -> Path:
     """
     Returns the worlds directory for portable-only mode.
-    
+
     The worlds directory is created next to the executable and contains
     all world subdirectories. Each world is a self-contained folder with
     its own database, manifest, and assets.
-    
+
     Returns:
         Path: Path to the worlds/ directory.
     """
@@ -170,28 +170,28 @@ def get_worlds_dir() -> Path:
 def ensure_worlds_directory() -> Path:
     """
     Ensures the worlds directory exists and is writable.
-    
+
     Creates the worlds/ directory next to the executable if it doesn't exist.
     Validates write permissions.
-    
+
     Returns:
         Path: Path to the worlds/ directory.
-        
+
     Raises:
         OSError: If the directory cannot be created or is not writable.
     """
     worlds_dir = get_worlds_dir()
-    
+
     try:
         worlds_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Test write permissions with a temporary marker file
         test_file = worlds_dir / ".write_test"
         test_file.touch()
         test_file.unlink()
-        
+
         return worlds_dir
-        
+
     except (OSError, PermissionError) as e:
         raise OSError(
             f"Cannot create or write to worlds directory at {worlds_dir}. "

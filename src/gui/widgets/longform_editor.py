@@ -447,9 +447,9 @@ class LongformEditorWidget(QWidget):
         toolbar.setStyleSheet("QToolBar { spacing: 10px; padding: 5px; }")
 
         # Refresh Button
-        btn_refresh = QPushButton("Refresh")
-        btn_refresh.clicked.connect(self.refresh_requested.emit)
-        toolbar.addWidget(btn_refresh)
+        self.btn_refresh = QPushButton("Refresh")
+        self.btn_refresh.clicked.connect(self.refresh_requested.emit)
+        self.refresh_action = toolbar.addWidget(self.btn_refresh)
 
         # Filter Button
         btn_filter = QPushButton("Filter...")
@@ -608,3 +608,9 @@ class LongformEditorWidget(QWidget):
         self.publish_action.setChecked(False)
         self.url_label.setText("Error starting server")
         QMessageBox.warning(self, "Web Server Error", msg)
+
+    def set_refresh_button_visible(self, visible: bool) -> None:
+        """
+        Sets the visibility of the manual refresh button.
+        """
+        self.refresh_action.setVisible(visible)

@@ -272,7 +272,6 @@ class KeyframeItem(QGraphicsObject):
             # Emit signal to enter Clock Mode
             view = self.scene().views()[0] if self.scene() else None
             if view and hasattr(view, "keyframe_clock_mode_requested"):
-
                 view.keyframe_clock_mode_requested.emit(self.marker_id, self.t)
         # Hide gizmo after selection
         self._cleanup_gizmo()
@@ -302,7 +301,6 @@ class KeyframeItem(QGraphicsObject):
 
         super().hoverEnterEvent(event)
         if not self.gizmo and not self.is_pinned:
-
             self.gizmo = KeyframeGizmo(self)
             self.gizmo.setParentItem(self)  # Auto-cleanup when parent deleted
             self.gizmo.setVisible(True)
@@ -338,7 +336,6 @@ class KeyframeItem(QGraphicsObject):
             and not self.is_pinned
             and not gizmo_under_mouse
         ):
-
             self.gizmo.setVisible(False)
 
     def hoverLeaveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
@@ -355,7 +352,6 @@ class KeyframeItem(QGraphicsObject):
             self.scene().clearSelection()
         # Hide gizmo immediately when starting drag
         if self.gizmo and self.mode == "transform":
-
             self.gizmo.setVisible(False)
         super().mousePressEvent(event)
 
@@ -565,10 +561,8 @@ class MapGraphicsView(QGraphicsView):
         item = self.itemAt(event.pos())
 
         if isinstance(item, MarkerItem):
-
             self.setDragMode(QGraphicsView.DragMode.NoDrag)
         else:
-
             self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         super().mousePressEvent(event)
 

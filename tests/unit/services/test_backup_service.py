@@ -3,9 +3,8 @@ Unit tests for the BackupService.
 Tests backup creation, restoration, verification, and retention policies.
 """
 
-import json
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 import pytest

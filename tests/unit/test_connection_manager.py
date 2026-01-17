@@ -5,10 +5,11 @@ Tests the safe signal connection functionality.
 """
 
 import logging
+from unittest.mock import Mock
+
 import pytest
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QApplication, QMainWindow
-from unittest.mock import Mock
 
 from src.app.connection_manager import ConnectionManager
 

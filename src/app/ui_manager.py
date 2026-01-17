@@ -269,9 +269,9 @@ class UIManager:
         Returns:
             Configured QDockWidget with size constraints, or None if creation fails.
         """
-        from src.core.logging_config import get_logger
-
         from PySide6.QtWidgets import QSizePolicy
+
+        from src.core.logging_config import get_logger
 
         logger = get_logger(__name__)
 
@@ -669,6 +669,21 @@ class UIManager:
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
             is_checked = settings.value(SETTINGS_AUTO_RELATION_KEY, False, type=bool)
             self.auto_relation_action.setChecked(is_checked)
+
+        # Longform Auto-Refresh Setting
+        self.longform_refresh_action = settings_menu.addAction(
+            "Auto-Refresh Longform Editor"
+        )
+        self.longform_refresh_action.setCheckable(True)
+
+        if hasattr(self.main_window, "toggle_longform_auto_refresh"):
+            self.longform_refresh_action.triggered.connect(
+                self.main_window.toggle_longform_auto_refresh
+            )
+            # Init state (default True)
+            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+            is_checked = settings.value("longform_auto_refresh", True, type=bool)
+            self.longform_refresh_action.setChecked(is_checked)
 
         # Track pending dialog state
         self._calendar_dialog_pending = False

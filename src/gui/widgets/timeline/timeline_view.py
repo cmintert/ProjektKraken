@@ -766,7 +766,6 @@ class TimelineView(QGraphicsView):
 
             # If band is collapsed, hide events and skip space
             if band.is_collapsed:
-
                 for event in events_in_group:
                     if event.id in event_items:
                         event_items[event.id].setVisible(False)
@@ -776,7 +775,6 @@ class TimelineView(QGraphicsView):
 
             # Band is expanded - pack and show events
             if events_in_group:
-
                 # Pack events for this group
                 layout_map, lane_heights = self._lane_packer.pack_events(
                     events_in_group
@@ -853,7 +851,6 @@ class TimelineView(QGraphicsView):
 
         # Check if "All events" band is collapsed - skip event positioning
         if all_events_band and all_events_band.is_collapsed:
-
             # Hide ungrouped events (their original items)
             for event in self.events:
                 if event.id not in grouped_event_ids and event.id in event_items:

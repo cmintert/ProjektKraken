@@ -4,9 +4,10 @@ Unit Tests for UIManager Dock Creation.
 Tests the error handling and validation in dock creation.
 """
 
+from unittest.mock import Mock
+
 import pytest
-from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QWidget
-from unittest.mock import Mock, MagicMock
+from PySide6.QtWidgets import QApplication, QLabel, QMainWindow
 
 from src.app.ui_manager import UIManager
 
