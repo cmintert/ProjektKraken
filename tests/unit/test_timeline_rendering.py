@@ -34,7 +34,7 @@ def sample_events():
     ]
 
 
-def test_event_item_bounding_rect():
+def test_event_item_bounding_rect(qtbot):
     """Test EventItem bounding rectangle."""
     event = Event(name="Test", lore_date=100.0, type="generic")
     item = EventItem(event, scale_factor=10.0)
@@ -231,3 +231,41 @@ def test_timeline_view_lane_height_constant(timeline_view):
 def test_timeline_view_ruler_height_constant(timeline_view):
     """Test RULER_HEIGHT constant."""
     assert timeline_view.RULER_HEIGHT == 50
+
+
+def test_timeline_scene_rect_is_unconstrained(timeline_view):
+    """Test that the scene rect is effectively infinite for unconstrained panning."""
+    events = [
+        Event(id="e1", name="E1", lore_date=100.0, type="generic"),
+        Event(id="e2", name="E2", lore_date=200.0, type="generic"),
+    ]
+
+    timeline_view.set_events(events)
+
+    scene_rect = timeline_view.scene.sceneRect()
+
+    # Check width is massive (buffer is 100M on each side)
+    assert (
+        scene_rect.width() > 10_000_000
+    ), "Scene rect should be huge to allow unconstrained panning"
+
+    # Check that events are centered in this massive rect
+    # Center of events is 150.0 * 20 = 3000 x
+    # Scene rect x should be roughly 3000 - 100M
+    center_x = 150.0 * timeline_view.scale_factor
+    expected_start_x = center_x - 100_000_000
+
+    # Allow some floating point wiggle room
+    assert abs(scene_rect.x() - expected_start_x) < 2000
+
+
+def test_timeline_scene_rect_is_unconstrained_empty(timeline_view):
+    """Test that the scene rect is infinite even when no events are present."""
+    timeline_view.set_events([])
+
+    scene_rect = timeline_view.scene.sceneRect()
+
+    # Check width is massive
+    assert (
+        scene_rect.width() > 10_000_000
+    ), "Scene rect should be huge even with no events"

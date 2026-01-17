@@ -586,6 +586,14 @@ class TimelineView(QGraphicsView):
                     self._has_done_initial_fit = True
                 else:
                     self._initial_fit_pending = True
+        else:
+            # Handle empty state - still want infinite panning
+            self._update_scene_rect_default()
+
+            # Since there are no events to fit, we just mark initial fit as done
+            # or we could center on 0.
+            if not self._has_done_initial_fit:
+                self._has_done_initial_fit = True
 
     def repack_events(self) -> None:
         """
@@ -1433,16 +1441,22 @@ class TimelineView(QGraphicsView):
 
     def _update_scene_rect_from_events(self, sorted_events: list) -> None:
         """Updates the scene rectangle based on event bounds."""
-        # X bounds
+        # Calculate event center
         min_date = sorted_events[0].lore_date
         max_date = sorted_events[-1].lore_date
-        if min_date == max_date:
-            min_date -= 10
-            max_date += 10
 
-        margin_x = (max_date - min_date) * 0.1 or 100
-        start_x = (min_date - margin_x) * self.scale_factor
-        end_x = (max_date + margin_x) * self.scale_factor
+        # Determine center of events to center the infinite canvas
+        center_date = (min_date + max_date) / 2
+        center_x = center_date * self.scale_factor
+
+        # "Infinite" horizontal range
+        # Use a large buffer (e.g. 100M pixels) to allow free panning
+        # proper infinite scrolling would require dynamic scene rect updates,
+        # but a massive fixed rect is a robust and simple approximation.
+        HUGE_BUFFER = 100_000_000  # 100 million pixels
+
+        start_x = center_x - HUGE_BUFFER
+        end_x = center_x + HUGE_BUFFER
 
         # Y bounds - inspect items to find max Y
         max_y_found = 60
@@ -1453,5 +1467,22 @@ class TimelineView(QGraphicsView):
         max_y = max_y_found + self.LANE_HEIGHT + 40
         min_y = 0
 
-        # Set Scene Rect explicitly to avoid infinite lines expanding it
+        # Set Scene Rect explicitly
+        # Horizontal: Massive range centered on events
+        # Vertical: Tight fit to content
+        self.scene.setSceneRect(start_x, min_y, end_x - start_x, max_y - min_y)
+
+    def _update_scene_rect_default(self) -> None:
+        """Sets a default infinite scene rect when no events are present."""
+        # Center near 0
+        center_x = 0
+        HUGE_BUFFER = 100_000_000
+
+        start_x = center_x - HUGE_BUFFER
+        end_x = center_x + HUGE_BUFFER
+
+        # Default height
+        max_y = 200
+        min_y = 0
+
         self.scene.setSceneRect(start_x, min_y, end_x - start_x, max_y - min_y)
