@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-17
-### Fixed
-- fix: Windows platform-specific test failures and asset store pluralization bug
+### Documentation
+- docs: Update CHANGELOG.md for Jan 16-17 commits
 
 
 *This changelog was automatically generated.*
