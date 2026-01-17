@@ -30,7 +30,7 @@ def main_window(qtbot):
         # Setup Settings (MainWindow)
         mock_mw_settings = MockMainWindowSettings.return_value
 
-        def settings_side_effect(key, default=None):
+        def settings_side_effect(key, default=None, type=None):
             from src.app.constants import SETTINGS_ACTIVE_DB_KEY
 
             if key == SETTINGS_ACTIVE_DB_KEY:

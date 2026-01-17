@@ -1,7 +1,12 @@
+import os
 import pathlib
 import sys
 
 import pytest
+
+# Set Qt to use offscreen platform for headless testing
+# This must be set BEFORE any Qt imports
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 # Ensure project root is in sys.path
 repo_root = pathlib.Path(__file__).parent.parent
