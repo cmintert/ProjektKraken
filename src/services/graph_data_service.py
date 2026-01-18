@@ -1,8 +1,7 @@
-"""
-Graph Data Service Module.
+"""Graph Data Service Module.
 
-Provides data fetching and filtering for graph visualization.
-Separates data access concerns from the widget layer.
+Provides data fetching and filtering for graph visualization. Separates data access
+concerns from the widget layer.
 """
 
 import logging
@@ -15,12 +14,11 @@ logger = logging.getLogger(__name__)
 
 
 class GraphDataService:
-    """
-    Service for fetching graph visualization data.
+    """Service for fetching graph visualization data.
 
-    Provides methods to retrieve entities, events, and relations
-    for graph visualization, with support for positive (include-only)
-    filtering by tags and relation types.
+    Provides methods to retrieve entities, events, and relations for graph
+    visualization, with support for positive (include-only) filtering by tags and
+    relation types.
     """
 
     def get_graph_data(
@@ -29,8 +27,7 @@ class GraphDataService:
         include_tags: list[str] | None = None,
         include_rel_types: list[str] | None = None,
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-        """
-        Fetches nodes (entities/events) and edges (relations) for graph display.
+        """Fetches nodes (entities/events) and edges (relations) for graph display.
 
         Args:
             db_service: Database service instance.
@@ -91,8 +88,7 @@ class GraphDataService:
         return nodes, edges
 
     def get_all_tags(self, db_service: "DatabaseService") -> list[str]:
-        """
-        Returns all unique tags across entities and events.
+        """Returns all unique tags across entities and events.
 
         Args:
             db_service: Database service instance.
@@ -115,8 +111,7 @@ class GraphDataService:
         return sorted(tags)
 
     def get_all_relation_types(self, db_service: "DatabaseService") -> list[str]:
-        """
-        Returns all unique relation types.
+        """Returns all unique relation types.
 
         Args:
             db_service: Database service instance.
@@ -128,8 +123,7 @@ class GraphDataService:
         return sorted({r.get("rel_type", "") for r in all_relations})
 
     def get_all_entity_types(self, db_service: "DatabaseService") -> list[str]:
-        """
-        Returns all unique entity types.
+        """Returns all unique entity types.
 
         Args:
             db_service: Database service instance.
@@ -141,8 +135,7 @@ class GraphDataService:
         return sorted(types)
 
     def get_all_attribute_keys(self, db_service: "DatabaseService") -> list[str]:
-        """
-        Returns all unique attribute keys across entities and events.
+        """Returns all unique attribute keys across entities and events.
 
         Args:
             db_service: Database service instance.
@@ -166,8 +159,7 @@ class GraphDataService:
     def _collect_all_relations(
         self, db_service: "DatabaseService"
     ) -> list[dict[str, Any]]:
-        """
-        Collects all relations by iterating over all entities and events.
+        """Collects all relations by iterating over all entities and events.
 
         Since DatabaseService doesn't expose a get_all_relations() method,
         we collect relations by querying outgoing relations for each source.
@@ -202,8 +194,7 @@ class GraphDataService:
         db_service: "DatabaseService",
         include_tags: list[str] | None = None,
     ) -> list[dict[str, Any]]:
-        """
-        Gets all entities and events as nodes.
+        """Gets all entities and events as nodes.
 
         Args:
             db_service: Database service instance.
@@ -232,8 +223,7 @@ class GraphDataService:
         ids: set[str],
         include_tags: list[str] | None = None,
     ) -> list[dict[str, Any]]:
-        """
-        Gets nodes for specific IDs only.
+        """Gets nodes for specific IDs only.
 
         Args:
             db_service: Database service instance.
@@ -258,8 +248,7 @@ class GraphDataService:
         return nodes
 
     def _entity_to_node(self, entity: Any) -> dict[str, Any]:
-        """
-        Converts an Entity object to a node dictionary.
+        """Converts an Entity object to a node dictionary.
 
         Args:
             entity: The Entity object to convert.
@@ -276,8 +265,7 @@ class GraphDataService:
         }
 
     def _event_to_node(self, event: Any) -> dict[str, Any]:
-        """
-        Converts an Event object to a node dictionary.
+        """Converts an Event object to a node dictionary.
 
         Args:
             event: The Event object to convert.
@@ -294,8 +282,7 @@ class GraphDataService:
         }
 
     def _entity_matches_tags(self, entity: Any, include_tags: list[str] | None) -> bool:
-        """
-        Checks if an entity matches the tag filter (OR semantics).
+        """Checks if an entity matches the tag filter (OR semantics).
 
         Args:
             entity: The Entity object to check.
@@ -310,8 +297,7 @@ class GraphDataService:
         return any(tag in entity_tags for tag in include_tags)
 
     def _event_matches_tags(self, event: Any, include_tags: list[str] | None) -> bool:
-        """
-        Checks if an event matches the tag filter (OR semantics).
+        """Checks if an event matches the tag filter (OR semantics).
 
         Args:
             event: The Event object to check.

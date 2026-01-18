@@ -1,5 +1,4 @@
-"""
-Map Repository Module.
+"""Map Repository Module.
 
 Handles CRUD operations for Map and Marker entities in the database.
 """
@@ -15,17 +14,15 @@ logger = logging.getLogger(__name__)
 
 
 class MapRepository(BaseRepository):
-    """
-    Repository for Map and Marker entities.
+    """Repository for Map and Marker entities.
 
-    Provides specialized methods for creating, reading, updating,
-    and deleting maps and markers from the database.
+    Provides specialized methods for creating, reading, updating, and deleting maps and
+    markers from the database.
     """
 
     # Map operations
     def insert_map(self, map_obj: Map) -> None:
-        """
-        Insert a new map or update an existing one (Upsert).
+        """Insert a new map or update an existing one (Upsert).
 
         Args:
             map_obj: The map domain object to persist.
@@ -59,8 +56,7 @@ class MapRepository(BaseRepository):
             )
 
     def get_map(self, map_id: str) -> Optional[Map]:
-        """
-        Retrieve a single map by its UUID.
+        """Retrieve a single map by its UUID.
 
         Args:
             map_id: The unique identifier of the map.
@@ -84,8 +80,7 @@ class MapRepository(BaseRepository):
         return None
 
     def get_all_maps(self) -> List[Map]:
-        """
-        Retrieve all maps from the database.
+        """Retrieve all maps from the database.
 
         Returns:
             List of all Map objects in the database.
@@ -105,8 +100,7 @@ class MapRepository(BaseRepository):
         return maps
 
     def delete_map(self, map_id: str) -> None:
-        """
-        Delete a map permanently (markers are CASCADE deleted).
+        """Delete a map permanently (markers are CASCADE deleted).
 
         Args:
             map_id: The unique identifier of the map to delete.
@@ -119,8 +113,7 @@ class MapRepository(BaseRepository):
 
     # Marker operations
     def insert_marker(self, marker: Marker) -> None:
-        """
-        Insert a new marker or update an existing one (Upsert).
+        """Insert a new marker or update an existing one (Upsert).
 
         Args:
             marker: The marker domain object to persist.
@@ -157,8 +150,7 @@ class MapRepository(BaseRepository):
             )
 
     def get_markers_by_map(self, map_id: str) -> List[Marker]:
-        """
-        Retrieve all markers for a specific map.
+        """Retrieve all markers for a specific map.
 
         Args:
             map_id: The map ID to get markers for.
@@ -181,8 +173,7 @@ class MapRepository(BaseRepository):
         return markers
 
     def get_marker(self, marker_id: str) -> Optional[Marker]:
-        """
-        Retrieve a single marker by its UUID.
+        """Retrieve a single marker by its UUID.
 
         Args:
             marker_id: The unique identifier of the marker.
@@ -206,8 +197,7 @@ class MapRepository(BaseRepository):
         return None
 
     def delete_marker(self, marker_id: str) -> None:
-        """
-        Delete a marker permanently.
+        """Delete a marker permanently.
 
         Args:
             marker_id: The unique identifier of the marker to delete.

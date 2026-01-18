@@ -1,5 +1,4 @@
-"""
-Fast Inject Core Module.
+"""Fast Inject Core Module.
 
 Handles logic for defining, loading, saving, and applying "Fast Inject" templates.
 Templates allow rapid application of tags and attributes to Entities and Events.
@@ -20,14 +19,13 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class FastInjectTemplate:
-    """
-    Represents a reusable template of tags and attributes.
-    """
+    """Represents a reusable template of tags and attributes."""
 
     name: str
     description: str = ""
     tags: List[str] = field(default_factory=list)
     attributes: Dict[str, Any] = field(default_factory=dict)
+    type_value: Optional[str] = None  # Specific type to apply
     target_type: str = "any"  # "entity", "event", or "any"
     version: str = "1.0"
     source_path: Optional[Path] = None  # Not serialized, used for UI tracking
@@ -44,6 +42,7 @@ class FastInjectTemplate:
             "inject": {
                 "tags": self.tags,
                 "attributes": self.attributes,
+                "type_value": self.type_value,
             },
         }
 
@@ -61,18 +60,16 @@ class FastInjectTemplate:
             version=meta.get("version", "1.0"),
             tags=inject.get("tags", []),
             attributes=inject.get("attributes", {}),
+            type_value=inject.get("type_value"),
             source_path=path,
         )
 
 
 class FastInjectManager:
-    """
-    Manages loading, validation, and application of Fast Inject templates.
-    """
+    """Manages loading, validation, and application of Fast Inject templates."""
 
     def __init__(self, world_path: Path):
-        """
-        Initialize manager for a specific world.
+        """Initialize manager for a specific world.
 
         Args:
             world_path: Root directory of the world.
@@ -86,8 +83,7 @@ class FastInjectManager:
         self.templates_dir.mkdir(parents=True, exist_ok=True)
 
     def load_templates(self) -> List[FastInjectTemplate]:
-        """
-        Load all valid .fastinject files from the directory.
+        """Load all valid .fastinject files from the directory.
 
         Returns:
             List of loaded templates.
@@ -109,8 +105,7 @@ class FastInjectManager:
         return self._templates
 
     def save_template(self, template: FastInjectTemplate) -> Path:
-        """
-        Save a template to disk.
+        """Save a template to disk.
 
         Args:
             template: The template to save.
@@ -147,16 +142,18 @@ class FastInjectManager:
         description: str = "",
         include_tags: bool = True,
         include_attributes: List[str] = None,
+        include_type: bool = False,
     ) -> FastInjectTemplate:
-        """
-        Create a new template object from an existing target.
+        """Create a new template object from an existing target.
 
         Args:
             target: Entity or Event to copy from.
             name: Name for the new template.
             description: Description.
             include_tags: Whether to include all tags.
-            include_attributes: List of attribute keys to include. None means all (excluding internal).
+            include_attributes: List of attribute keys to include.
+                                None means all (excluding internal).
+            include_type: Whether to include the target's type.
 
         Returns:
             New FastInjectTemplate object (not saved to disk yet).
@@ -181,23 +178,25 @@ class FastInjectManager:
                 if k in source_attrs:
                     attrs[k] = source_attrs[k]
 
-        target_type = "object"
+        target_type_str = "object"
         if isinstance(target, Entity):
-            target_type = "entity"
+            target_type_str = "entity"
         elif isinstance(target, Event):
-            target_type = "event"
+            target_type_str = "event"
+
+        type_val = target.type if include_type and hasattr(target, "type") else None
 
         return FastInjectTemplate(
             name=name,
             description=description,
             tags=tags,
             attributes=attrs,
-            target_type=target_type,
+            type_value=type_val,
+            target_type=target_type_str,
         )
 
     def import_template(self, source_path: Path) -> Optional[FastInjectTemplate]:
-        """
-        Import a generic .fastinject file from anywhere into the project.
+        """Import a generic .fastinject file from anywhere into the project.
 
         Args:
             source_path: Path to external file.
@@ -226,8 +225,7 @@ class FastInjectManager:
             return None
 
     def find_variables(self, template: FastInjectTemplate) -> List[str]:
-        """
-        Scan template values for {{VAR_NAME}} patterns.
+        """Scan template values for {{VAR_NAME}} patterns.
 
         Returns:
             List of unique variable names found.
@@ -249,6 +247,10 @@ class FastInjectManager:
         for val in template.attributes.values():
             scan_value(val)
 
+        # Also scan type_value if it's a string
+        if isinstance(template.type_value, str):
+            scan_value(template.type_value)
+
         return sorted(list(vars_found))
 
     def apply_template(
@@ -260,7 +262,8 @@ class FastInjectManager:
     ) -> None:
         """
         Apply tags and attributes to a target object.
-        NOTE: This modifies the object in memory. Database save must be called separately.
+        NOTE: This modifies the object in memory. Database save must be called
+        separately.
 
         Args:
             target: The Entity or Event to modify.
@@ -299,3 +302,7 @@ class FastInjectManager:
                 continue
 
             target.attributes[key] = final_val
+
+        # 3. Apply Type
+        if template.type_value and hasattr(target, "type"):
+            target.type = resolve_vars(template.type_value)

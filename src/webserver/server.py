@@ -1,8 +1,7 @@
-"""
-Web Server Module for ProjektKraken.
+"""Web Server Module for ProjektKraken.
 
-Provides FastAPI-based REST API for serving longform documents and health checks.
-This server is designed to run embedded within the main application via QThread.
+Provides FastAPI-based REST API for serving longform documents and health checks. This
+server is designed to run embedded within the main application via QThread.
 """
 
 import logging
@@ -29,8 +28,8 @@ _config: ServerConfig = ServerConfig()
 
 
 def get_db_service() -> DatabaseService:
-    """
-    Create a new DatabaseService instance for the current request.
+    """Create a new DatabaseService instance for the current request.
+
     This ensures thread safety by creating a fresh connection per request/thread.
     """
     service = DatabaseService(db_path=_config.db_path)
@@ -40,9 +39,7 @@ def get_db_service() -> DatabaseService:
 
 
 def create_app(config: ServerConfig) -> FastAPI:
-    """
-    Factory function to create the FastAPI app with the given configuration.
-    """
+    """Factory function to create the FastAPI app with the given configuration."""
     global _config
     _config = config
 
@@ -62,8 +59,7 @@ def create_app(config: ServerConfig) -> FastAPI:
 
     @app.get("/api/tags")
     def get_tags() -> dict[str, Any]:
-        """
-        Get all available tags.
+        """Get all available tags.
 
         Returns:
             JSON object with "tags": list[str].
@@ -84,9 +80,8 @@ def create_app(config: ServerConfig) -> FastAPI:
     def get_longform(
         doc_id: str = "default", filter_json: str | None = None
     ) -> dict[str, Any]:
-        """
-        Get the structured longform sequence as JSON.
-        Includes rendered HTML content for each section.
+        """Get the structured longform sequence as JSON. Includes rendered HTML content
+        for each section.
 
         Args:
             doc_id: Document ID.
@@ -192,9 +187,7 @@ def create_app(config: ServerConfig) -> FastAPI:
 
     @app.get("/api/toc")
     def get_toc(doc_id: str = "default") -> list[dict[str, Any]]:
-        """
-        Get just the Table of Contents structure.
-        """
+        """Get just the Table of Contents structure."""
         db = get_db_service()
         try:
             assert db._connection is not None, "Database not connected"

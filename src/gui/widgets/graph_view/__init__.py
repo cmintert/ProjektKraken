@@ -1,5 +1,4 @@
-"""
-Graph View Widget Package.
+"""Graph View Widget Package.
 
 Provides graph visualization for item relationships using PyVis.
 """

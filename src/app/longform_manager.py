@@ -25,8 +25,7 @@ logger = get_logger(__name__)
 
 
 class LongformManager(QObject):
-    """
-    Manages longform document operations for the MainWindow.
+    """Manages longform document operations for the MainWindow.
 
     This class encapsulates all functionality related to:
     - Loading longform sequences
@@ -36,8 +35,7 @@ class LongformManager(QObject):
     """
 
     def __init__(self, main_window: "MainWindow") -> None:
-        """
-        Initialize the LongformManager.
+        """Initialize the LongformManager.
 
         Args:
             main_window: Reference to the MainWindow instance.
@@ -46,9 +44,7 @@ class LongformManager(QObject):
         self.window = main_window
 
     def load_longform_sequence(self) -> None:
-        """
-        Loads the longform sequence, applying active filters if any.
-        """
+        """Loads the longform sequence, applying active filters if any."""
         # PySide6 cross-thread signal/slot type issues.
         filter_json = (
             json.dumps(self.window.longform_filter_config)
@@ -66,9 +62,7 @@ class LongformManager(QObject):
 
     @Slot(list)
     def on_longform_sequence_loaded(self, sequence: list) -> None:
-        """
-        Handler for when longform sequence is loaded.
-        """
+        """Handler for when longform sequence is loaded."""
         self.window.longform_editor.load_sequence(sequence)
         self.window._cached_longform_sequence = sequence
 
@@ -106,8 +100,7 @@ class LongformManager(QObject):
         self.load_longform_sequence()
 
     def promote_longform_entry(self, table: str, row_id: str, old_meta: dict) -> None:
-        """
-        Promotes a longform entry by reducing its depth.
+        """Promotes a longform entry by reducing its depth.
 
         Args:
             table: Table name ("events" or "entities").
@@ -118,8 +111,7 @@ class LongformManager(QObject):
         self.window.command_requested.emit(cmd)
 
     def demote_longform_entry(self, table: str, row_id: str, old_meta: dict) -> None:
-        """
-        Demotes a longform entry by increasing its depth.
+        """Demotes a longform entry by increasing its depth.
 
         Args:
             table: Table name ("events" or "entities").
@@ -132,8 +124,7 @@ class LongformManager(QObject):
     def move_longform_entry(
         self, table: str, row_id: str, old_meta: dict, new_meta: dict
     ) -> None:
-        """
-        Moves a longform entry to a new position.
+        """Moves a longform entry to a new position.
 
         Args:
             table: Table name.
@@ -145,8 +136,8 @@ class LongformManager(QObject):
         self.window.command_requested.emit(cmd)
 
     def export_longform_document(self) -> None:
-        """
-        Exports the current longform document to Markdown.
+        """Exports the current longform document to Markdown.
+
         Opens a file dialog for the user to choose save location.
         """
         file_path, _ = QFileDialog.getSaveFileName(
@@ -181,11 +172,10 @@ class LongformManager(QObject):
                 self.window.status_bar.showMessage(f"Export failed: {e}", 5000)
 
     def export_as_vault(self) -> None:
-        """
-        Exports entities and events as individual Obsidian-compatible .md files.
+        """Exports entities and events as individual Obsidian-compatible .md files.
 
-        Opens a folder dialog for the user to choose export location.
-        Each entity/event becomes a separate file with YAML frontmatter.
+        Opens a folder dialog for the user to choose export location. Each entity/event
+        becomes a separate file with YAML frontmatter.
         """
         from pathlib import Path
 

@@ -1,5 +1,4 @@
-"""
-Timeline Event Item Module.
+"""Timeline Event Item Module.
 
 Provides the EventItem class for rendering individual events on the timeline.
 """
@@ -27,8 +26,8 @@ logger = logging.getLogger(__name__)
 
 
 class EventItem(QGraphicsItem):
-    """
-    Diamond-shaped event marker with text label.
+    """Diamond-shaped event marker with text label.
+
     Color-coded by event type.
     """
 
@@ -54,8 +53,7 @@ class EventItem(QGraphicsItem):
 
     @classmethod
     def get_event_height(cls, event: Event) -> int:
-        """
-        Returns the visual height for an event based on its type.
+        """Returns the visual height for an event based on its type.
 
         Args:
             event (Event): The Event object.
@@ -73,8 +71,7 @@ class EventItem(QGraphicsItem):
         cls._calendar_converter = converter
 
     def __init__(self, event: Event, scale_factor: float = 10.0) -> None:
-        """
-        Initializes an EventBlock.
+        """Initializes an EventBlock.
 
         Args:
             event (Event): The event to represent.
@@ -116,8 +113,7 @@ class EventItem(QGraphicsItem):
         self._is_dragging = False
 
     def update_event(self, event: Event) -> None:
-        """
-        Updates the event data for this item and refreshes the display.
+        """Updates the event data for this item and refreshes the display.
 
         Args:
             event (Event): The updated event object.
@@ -129,10 +125,10 @@ class EventItem(QGraphicsItem):
         self.update()
 
     def boundingRect(self) -> QRectF:
-        """
-        Defines the redrawable area of the item.
-        Includes the diamond icon and the text label.
-        Refreshed when selection changes (border width).
+        """Defines the redrawable area of the item.
+
+        Includes the diamond icon and the text label. Refreshed when selection changes
+        (border width).
         """
         if self.event.lore_duration > 0:
             width = self.event.lore_duration * self.scale_factor
@@ -147,9 +143,8 @@ class EventItem(QGraphicsItem):
         )
 
     def shape(self) -> QPainterPath:
-        """
-        Defines the clickable area of the item.
-        Only includes the diamond icon (or duration bar), not the text labels.
+        """Defines the clickable area of the item. Only includes the diamond icon (or
+        duration bar), not the text labels.
 
         Returns:
             QPainterPath: The clickable region path.
@@ -177,8 +172,7 @@ class EventItem(QGraphicsItem):
         return path
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        """
-        Handles mouse press to track drag state.
+        """Handles mouse press to track drag state.
 
         Args:
             event: The mouse event.
@@ -191,9 +185,8 @@ class EventItem(QGraphicsItem):
         self._initial_y = self.y()
 
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
-        """
-        Handles item changes to constrain dragging to horizontal only
-        and update the lore_date during drag.
+        """Handles item changes to constrain dragging to horizontal only and update the
+        lore_date during drag.
 
         Args:
             change: The type of change.
@@ -220,8 +213,7 @@ class EventItem(QGraphicsItem):
         return super().itemChange(change, value)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        """
-        Handles mouse release to emit drag completion callback.
+        """Handles mouse release to emit drag completion callback.
 
         Args:
             event: The mouse event.
@@ -242,8 +234,8 @@ class EventItem(QGraphicsItem):
         option: QStyleOptionGraphicsItem,
         widget: Optional[QWidget] = None,
     ) -> None:
-        """
-        Custom painting for the Event Marker.
+        """Custom painting for the Event Marker.
+
         Draws a diamond shape and a text label.
         """
         painter.setRenderHint(QPainter.Antialiasing)

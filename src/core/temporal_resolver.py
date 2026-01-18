@@ -1,8 +1,7 @@
-"""
-Temporal Resolver Module.
+"""Temporal Resolver Module.
 
-Responsible for computing the state of an entity at a given point in time
-by aggregating and merging relation-driven overrides.
+Responsible for computing the state of an entity at a given point in time by aggregating
+and merging relation-driven overrides.
 """
 
 import logging
@@ -14,9 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class TemporalResolver:
-    """
-    Computes entity state at time T based on a list of relations.
-    """
+    """Computes entity state at time T based on a list of relations."""
 
     def resolve_entity_state(
         self,
@@ -25,8 +22,7 @@ class TemporalResolver:
         time: float,
         include_base_state: bool = True,
     ) -> Dict[str, Any]:
-        """
-        Computes the merged state of an entity at a specific time.
+        """Computes the merged state of an entity at a specific time.
 
         Args:
             entity: The base Entity object (contains static/default attributes).
@@ -92,8 +88,8 @@ class TemporalResolver:
         return current_state
 
     def _sort_key(self, relation: Dict[str, Any]) -> Tuple[float, int, float, str]:
-        """
-        Returns a sort key for deterministic application order.
+        """Returns a sort key for deterministic application order.
+
         Tuple order: (ValidFrom, PriorityScore, ModifiedAt, ID)
         """
         attrs = relation.get("attributes", {})
@@ -119,8 +115,8 @@ class TemporalResolver:
         return (valid_from, priority_score, modified_at, rel_id)
 
     def _merge_payload(self, state: Dict[str, Any], payload: Dict[str, Any]) -> None:
-        """
-        Merges a payload into the state.
+        """Merges a payload into the state.
+
         Currently implements a shallow merge (overwrite).
         """
         for key, value in payload.items():

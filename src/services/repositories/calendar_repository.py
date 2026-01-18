@@ -1,5 +1,4 @@
-"""
-Calendar Repository Module.
+"""Calendar Repository Module.
 
 Handles CRUD operations for Calendar configuration in the database.
 """
@@ -14,16 +13,14 @@ logger = logging.getLogger(__name__)
 
 
 class CalendarRepository(BaseRepository):
-    """
-    Repository for Calendar configuration.
+    """Repository for Calendar configuration.
 
-    Provides specialized methods for creating, reading, updating,
-    and deleting calendar configurations from the database.
+    Provides specialized methods for creating, reading, updating, and deleting calendar
+    configurations from the database.
     """
 
     def insert(self, config: CalendarConfig) -> None:
-        """
-        Insert a new calendar configuration or update an existing one.
+        """Insert a new calendar configuration or update an existing one.
 
         Args:
             config: The calendar configuration to persist.
@@ -55,8 +52,7 @@ class CalendarRepository(BaseRepository):
             )
 
     def get(self, config_id: str) -> Optional[CalendarConfig]:
-        """
-        Retrieve a calendar configuration by its UUID.
+        """Retrieve a calendar configuration by its UUID.
 
         Args:
             config_id: The unique identifier of the configuration.
@@ -78,8 +74,7 @@ class CalendarRepository(BaseRepository):
         return None
 
     def get_all(self) -> List[CalendarConfig]:
-        """
-        Retrieve all calendar configurations.
+        """Retrieve all calendar configurations.
 
         Returns:
             List of all CalendarConfig objects.
@@ -97,8 +92,7 @@ class CalendarRepository(BaseRepository):
         return configs
 
     def get_active(self) -> Optional[CalendarConfig]:
-        """
-        Retrieve the active calendar configuration.
+        """Retrieve the active calendar configuration.
 
         Returns:
             The active CalendarConfig object if found, else None.
@@ -117,8 +111,7 @@ class CalendarRepository(BaseRepository):
         return None
 
     def set_active(self, config_id: str) -> None:
-        """
-        Set a calendar configuration as active (deactivates all others).
+        """Set a calendar configuration as active (deactivates all others).
 
         Args:
             config_id: The unique identifier of the configuration to activate.
@@ -136,8 +129,7 @@ class CalendarRepository(BaseRepository):
             )
 
     def delete(self, config_id: str) -> None:
-        """
-        Delete a calendar configuration permanently.
+        """Delete a calendar configuration permanently.
 
         Args:
             config_id: The unique identifier of the configuration to delete.

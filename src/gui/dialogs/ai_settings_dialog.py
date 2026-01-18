@@ -1,8 +1,7 @@
-"""
-AI Settings Dialog.
+"""AI Settings Dialog.
 
-Provides configuration for AI features, including Search Index status and
-attribute exclusion.
+Provides configuration for AI features, including Search Index status and attribute
+exclusion.
 """
 
 import logging
@@ -34,16 +33,13 @@ logger = logging.getLogger(__name__)
 
 
 class AISettingsDialog(QDialog):
-    """
-    Dialog for AI Search settings and index status.
-    """
+    """Dialog for AI Search settings and index status."""
 
     rebuild_index_requested = Signal(str)  # object_type ('entity', 'event', 'all')
     index_status_requested = Signal()  # Request to refresh index status
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """
-        Initialize the AI Settings Dialog.
+        """Initialize the AI Settings Dialog.
 
         Args:
             parent: Parent widget.
@@ -517,8 +513,7 @@ class AISettingsDialog(QDialog):
         self.system_prompt_edit.setPlainText(default_prompt)
 
     def _test_connection(self, provider_id: str, mode: str) -> None:
-        """
-        Test connection to the specified provider.
+        """Test connection to the specified provider.
 
         Args:
             provider_id: Provider ID (e.g. 'lmstudio')

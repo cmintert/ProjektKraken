@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Entity Management CLI.
+"""Entity Management CLI.
 
 Provides command-line tools for creating, listing, updating, and deleting
 entities.

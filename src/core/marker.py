@@ -1,5 +1,4 @@
-"""
-Marker Data Model.
+"""Marker Data Model.
 
 Represents a marker on a map that points to an entity or event.
 """
@@ -12,8 +11,7 @@ from typing import Any, Dict
 
 @dataclass
 class Marker:
-    """
-    Represents a marker on a map.
+    """Represents a marker on a map.
 
     A marker links a map to an entity or event at a specific position.
     Positions are stored as normalized coordinates [0.0, 1.0] relative to
@@ -44,8 +42,7 @@ class Marker:
     modified_at: float = field(default_factory=time.time)
 
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the Marker instance to a dictionary.
+        """Converts the Marker instance to a dictionary.
 
         Returns:
             Dict[str, Any]: Dictionary representation of the marker.
@@ -65,8 +62,7 @@ class Marker:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Marker":
-        """
-        Creates a Marker instance from a dictionary.
+        """Creates a Marker instance from a dictionary.
 
         Args:
             data: Dictionary containing marker data.

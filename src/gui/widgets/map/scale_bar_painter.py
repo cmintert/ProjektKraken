@@ -1,5 +1,5 @@
-"""
-Scale Bar Painter Module.
+"""Scale Bar Painter Module.
+
 Handles the calculation and rendering of a GIS-style scale bar.
 """
 
@@ -8,9 +8,7 @@ from PySide6.QtGui import QBrush, QColor, QFont, QFontMetrics, QPainter, QPen
 
 
 class ScaleBarPainter:
-    """
-    Helper class to render a map scale bar.
-    """
+    """Helper class to render a map scale bar."""
 
     def __init__(self) -> None:
         self.font = QFont("Sans Serif", 9)
@@ -27,8 +25,7 @@ class ScaleBarPainter:
         viewport_rect: QRectF,
         meters_per_pixel: float,
     ) -> None:
-        """
-        Draws the scale bar overlay.
+        """Draws the scale bar overlay.
 
         Args:
             painter: The viewport painter.

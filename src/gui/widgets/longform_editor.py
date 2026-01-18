@@ -1,5 +1,4 @@
-"""
-Longform Editor Widget Module.
+"""Longform Editor Widget Module.
 
 Provides a split-view interface for editing longform documents:
 - Left: Outline tree view with drag/drop reordering and promote/demote
@@ -40,11 +39,10 @@ logger = logging.getLogger(__name__)
 
 
 class LongformOutlineWidget(QTreeWidget):
-    """
-    Tree widget for displaying the longform document outline.
+    """Tree widget for displaying the longform document outline.
 
-    Supports drag-and-drop reordering and keyboard shortcuts for
-    promote/demote operations.
+    Supports drag-and-drop reordering and keyboard shortcuts for promote/demote
+    operations.
     """
 
     item_selected = Signal(str, str)  # table, id
@@ -72,11 +70,10 @@ class LongformOutlineWidget(QTreeWidget):
         self.customContextMenuRequested.connect(self._show_context_menu)
 
     def startDrag(self, supportedActions: Qt.DropActions) -> None:
-        """
-        Override to provide custom MIME data for external drags.
+        """Override to provide custom MIME data for external drags.
 
-        Supports both internal reordering and external drag to map.
-        Uses the same MIME type as Project Explorer for DRY compatibility.
+        Supports both internal reordering and external drag to map. Uses the same MIME
+        type as Project Explorer for DRY compatibility.
         """
         from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
 
@@ -113,8 +110,8 @@ class LongformOutlineWidget(QTreeWidget):
         drag.exec(Qt.CopyAction | Qt.MoveAction)
 
     def dropEvent(self, event: QDropEvent) -> None:
-        """
-        Handle drop event to reorder items.
+        """Handle drop event to reorder items.
+
         Calculates new parent, depth, and position.
         """
         # 1. capture selection before drop (the item being moved)
@@ -213,8 +210,7 @@ class LongformOutlineWidget(QTreeWidget):
             self.item_moved.emit(table, row_id, old_meta, new_meta)
 
     def load_sequence(self, sequence: List[Dict[str, Any]]) -> None:
-        """
-        Load a longform sequence into the tree.
+        """Load a longform sequence into the tree.
 
         Args:
             sequence: Ordered list of items from build_longform_sequence.
@@ -334,11 +330,10 @@ class LongformOutlineWidget(QTreeWidget):
 
 
 class LongformContentWidget(WikiTextEdit):
-    """
-    Read-only text view for displaying the continuous longform document.
+    """Read-only text view for displaying the continuous longform document.
 
-    Shows the assembled document with headings and content from all items.
-    inherits from WikiTextEdit to support WikiLink rendering and navigation.
+    Shows the assembled document with headings and content from all items. inherits from
+    WikiTextEdit to support WikiLink rendering and navigation.
     """
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
@@ -347,8 +342,7 @@ class LongformContentWidget(WikiTextEdit):
         self.setReadOnly(True)
 
     def load_content(self, sequence: List[Dict[str, Any]]) -> None:
-        """
-        Load and display the longform sequence as continuous text.
+        """Load and display the longform sequence as continuous text.
 
         Args:
             sequence: Ordered list of items from build_longform_sequence.
@@ -379,8 +373,7 @@ class LongformContentWidget(WikiTextEdit):
         self.set_wiki_text("\n".join(lines))
 
     def scroll_to_item(self, item_index: int) -> None:
-        """
-        Scroll to a specific item in the document.
+        """Scroll to a specific item in the document.
 
         Args:
             item_index: Index of the item in the sequence.
@@ -389,8 +382,7 @@ class LongformContentWidget(WikiTextEdit):
 
 
 class LongformEditorWidget(QWidget):
-    """
-    Main longform editor widget with split view.
+    """Main longform editor widget with split view.
 
     Left panel: Outline tree
     Right panel: Continuous document view
@@ -519,8 +511,7 @@ class LongformEditorWidget(QWidget):
         layout.addWidget(self.status_label, 0)  # Stretch factor 0
 
     def load_sequence(self, sequence: List[Dict[str, Any]]) -> None:
-        """
-        Load a longform sequence into the editor.
+        """Load a longform sequence into the editor.
 
         Args:
             sequence: Ordered list from build_longform_sequence.
@@ -535,8 +526,7 @@ class LongformEditorWidget(QWidget):
 
     @Slot(str, str)
     def _on_item_selected(self, table: str, row_id: str) -> None:
-        """
-        Handle item selection in outline.
+        """Handle item selection in outline.
 
         Args:
             table: Table name.
@@ -552,8 +542,7 @@ class LongformEditorWidget(QWidget):
         self.item_selected.emit(table, row_id)
 
     def get_current_selection(self) -> Optional[tuple]:
-        """
-        Get currently selected item.
+        """Get currently selected item.
 
         Returns:
             Tuple of (table, id) or None.
@@ -568,8 +557,7 @@ class LongformEditorWidget(QWidget):
         return None
 
     def minimumSizeHint(self) -> QSize:
-        """
-        Override to prevent dock collapse.
+        """Override to prevent dock collapse.
 
         Returns:
             QSize: Minimum size for usable longform editor.
@@ -577,8 +565,7 @@ class LongformEditorWidget(QWidget):
         return QSize(400, 300)  # Width for split view, height for toolbar + content
 
     def sizeHint(self) -> QSize:
-        """
-        Preferred size for the longform editor.
+        """Preferred size for the longform editor.
 
         Returns:
             QSize: Comfortable working size for editing longform documents.
@@ -619,7 +606,5 @@ class LongformEditorWidget(QWidget):
         QMessageBox.warning(self, "Web Server Error", msg)
 
     def set_refresh_button_visible(self, visible: bool) -> None:
-        """
-        Sets the visibility of the manual refresh button.
-        """
+        """Sets the visibility of the manual refresh button."""
         self.refresh_action.setVisible(visible)

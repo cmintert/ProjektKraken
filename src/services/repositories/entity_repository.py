@@ -1,5 +1,4 @@
-"""
-Entity Repository Module.
+"""Entity Repository Module.
 
 Handles CRUD operations for Entity entities in the database.
 """
@@ -14,16 +13,14 @@ logger = logging.getLogger(__name__)
 
 
 class EntityRepository(BaseRepository):
-    """
-    Repository for Entity entities.
+    """Repository for Entity entities.
 
-    Provides specialized methods for creating, reading, updating,
-    and deleting entities from the database.
+    Provides specialized methods for creating, reading, updating, and deleting entities
+    from the database.
     """
 
     def insert(self, entity: Entity) -> None:
-        """
-        Insert a new entity or update an existing one (Upsert).
+        """Insert a new entity or update an existing one (Upsert).
 
         Args:
             entity: The entity domain object to persist.
@@ -57,8 +54,7 @@ class EntityRepository(BaseRepository):
             )
 
     def get(self, entity_id: str) -> Optional[Entity]:
-        """
-        Retrieve a single entity by its UUID.
+        """Retrieve a single entity by its UUID.
 
         Args:
             entity_id: The unique identifier of the entity.
@@ -82,8 +78,7 @@ class EntityRepository(BaseRepository):
         return None
 
     def get_all(self) -> List[Entity]:
-        """
-        Retrieve all entities from the database, sorted by name.
+        """Retrieve all entities from the database, sorted by name.
 
         Returns:
             List of all Entity objects in the database.
@@ -103,8 +98,7 @@ class EntityRepository(BaseRepository):
         return entities
 
     def delete(self, entity_id: str) -> None:
-        """
-        Delete an entity permanently.
+        """Delete an entity permanently.
 
         Args:
             entity_id: The unique identifier of the entity to delete.
@@ -116,8 +110,7 @@ class EntityRepository(BaseRepository):
             conn.execute("DELETE FROM entities WHERE id = ?", (entity_id,))
 
     def insert_bulk(self, entities: List[Entity]) -> None:
-        """
-        Insert multiple entities in a single transaction.
+        """Insert multiple entities in a single transaction.
 
         Args:
             entities: List of entity objects to persist.
@@ -154,8 +147,7 @@ class EntityRepository(BaseRepository):
             conn.executemany(sql, data)
 
     def get_by_type(self, entity_type: str) -> List[Entity]:
-        """
-        Retrieve entities by type.
+        """Retrieve entities by type.
 
         Args:
             entity_type: The type of entities to retrieve.
@@ -178,8 +170,7 @@ class EntityRepository(BaseRepository):
         return entities
 
     def search_by_name(self, search_term: str) -> List[Entity]:
-        """
-        Search entities by name (case-insensitive partial match).
+        """Search entities by name (case-insensitive partial match).
 
         Args:
             search_term: The search term to match against entity names.

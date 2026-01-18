@@ -1,5 +1,4 @@
-"""
-Widget Registry Module.
+"""Widget Registry Module.
 
 Provides centralized widget lifecycle management and tracking for the MainWindow.
 """
@@ -24,11 +23,10 @@ class WidgetState(Enum):
 
 
 class WidgetRegistry:
-    """
-    Manages widget lifecycle and provides centralized access.
+    """Manages widget lifecycle and provides centralized access.
 
-    Tracks widget states and provides validation to prevent access
-    to destroyed or invalid widgets.
+    Tracks widget states and provides validation to prevent access to destroyed or
+    invalid widgets.
     """
 
     def __init__(self) -> None:
@@ -37,8 +35,7 @@ class WidgetRegistry:
         self._widget_states: Dict[str, WidgetState] = {}
 
     def register(self, name: str, widget: QWidget) -> None:
-        """
-        Register a widget with lifecycle tracking.
+        """Register a widget with lifecycle tracking.
 
         Args:
             name: Unique identifier for the widget.
@@ -63,8 +60,7 @@ class WidgetRegistry:
         logger.debug(f"Registered widget: {name}")
 
     def get(self, name: str) -> Optional[QWidget]:
-        """
-        Get widget by name with state validation.
+        """Get widget by name with state validation.
 
         Args:
             name: The widget identifier.
@@ -85,8 +81,7 @@ class WidgetRegistry:
         return widget
 
     def mark_initialized(self, name: str) -> None:
-        """
-        Mark a widget as fully initialized.
+        """Mark a widget as fully initialized.
 
         Args:
             name: The widget identifier.
@@ -98,8 +93,7 @@ class WidgetRegistry:
             logger.warning(f"Cannot mark unknown widget '{name}' as initialized")
 
     def is_initialized(self, name: str) -> bool:
-        """
-        Check if a widget is fully initialized.
+        """Check if a widget is fully initialized.
 
         Args:
             name: The widget identifier.
@@ -111,8 +105,7 @@ class WidgetRegistry:
         return state == WidgetState.INITIALIZED
 
     def get_state(self, name: str) -> Optional[WidgetState]:
-        """
-        Get the current state of a widget.
+        """Get the current state of a widget.
 
         Args:
             name: The widget identifier.
@@ -123,8 +116,7 @@ class WidgetRegistry:
         return self._widget_states.get(name)
 
     def _on_widget_destroyed(self, name: str) -> None:
-        """
-        Handle widget destruction.
+        """Handle widget destruction.
 
         Args:
             name: The widget identifier.
@@ -149,8 +141,7 @@ class WidgetRegistry:
         logger.info("All widgets cleaned up")
 
     def get_all_names(self) -> list[str]:
-        """
-        Get names of all registered widgets.
+        """Get names of all registered widgets.
 
         Returns:
             List of widget names.
@@ -158,8 +149,7 @@ class WidgetRegistry:
         return list(self._widgets.keys())
 
     def get_widget_count(self) -> int:
-        """
-        Get count of registered widgets.
+        """Get count of registered widgets.
 
         Returns:
             Number of widgets in registry.

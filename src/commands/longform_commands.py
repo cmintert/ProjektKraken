@@ -1,5 +1,4 @@
-"""
-Longform Commands Module.
+"""Longform Commands Module.
 
 Provides command classes for manipulating longform document structure:
 - MoveLongformEntryCommand: Move an entry to a new position
@@ -21,8 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class MoveLongformEntryCommand(BaseCommand):
-    """
-    Command to move a longform entry to a new position.
+    """Command to move a longform entry to a new position.
 
     Stores old and new metadata for undo/redo support.
     """
@@ -35,8 +33,7 @@ class MoveLongformEntryCommand(BaseCommand):
         new_meta: Dict[str, Any],
         doc_id: str = longform_builder.DOC_ID_DEFAULT,
     ) -> None:
-        """
-        Initialize the MoveLongformEntryCommand.
+        """Initialize the MoveLongformEntryCommand.
 
         Args:
             table: Table name ("events" or "entities").
@@ -53,8 +50,7 @@ class MoveLongformEntryCommand(BaseCommand):
         self.doc_id = doc_id
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Execute the move by applying new metadata.
+        """Execute the move by applying new metadata.
 
         Args:
             db_service: The database service to operate on.
@@ -93,8 +89,7 @@ class MoveLongformEntryCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Undo the move by restoring old metadata.
+        """Undo the move by restoring old metadata.
 
         Args:
             db_service: The database service to operate on.
@@ -121,8 +116,7 @@ class MoveLongformEntryCommand(BaseCommand):
 
 
 class PromoteLongformEntryCommand(BaseCommand):
-    """
-    Command to promote a longform entry (reduce depth).
+    """Command to promote a longform entry (reduce depth).
 
     Stores old metadata for undo support.
     """
@@ -134,8 +128,7 @@ class PromoteLongformEntryCommand(BaseCommand):
         old_meta: Dict[str, Any],
         doc_id: str = longform_builder.DOC_ID_DEFAULT,
     ) -> None:
-        """
-        Initialize the PromoteLongformEntryCommand.
+        """Initialize the PromoteLongformEntryCommand.
 
         Args:
             table: Table name ("events" or "entities").
@@ -150,8 +143,7 @@ class PromoteLongformEntryCommand(BaseCommand):
         self.doc_id = doc_id
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Execute the promote operation.
+        """Execute the promote operation.
 
         Args:
             db_service: The database service to operate on.
@@ -186,8 +178,7 @@ class PromoteLongformEntryCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Undo the promote by restoring old metadata.
+        """Undo the promote by restoring old metadata.
 
         Args:
             db_service: The database service to operate on.
@@ -214,8 +205,7 @@ class PromoteLongformEntryCommand(BaseCommand):
 
 
 class DemoteLongformEntryCommand(BaseCommand):
-    """
-    Command to demote a longform entry (increase depth).
+    """Command to demote a longform entry (increase depth).
 
     Stores old metadata for undo support.
     """
@@ -227,8 +217,7 @@ class DemoteLongformEntryCommand(BaseCommand):
         old_meta: Dict[str, Any],
         doc_id: str = longform_builder.DOC_ID_DEFAULT,
     ) -> None:
-        """
-        Initialize the DemoteLongformEntryCommand.
+        """Initialize the DemoteLongformEntryCommand.
 
         Args:
             table: Table name ("events" or "entities").
@@ -243,8 +232,7 @@ class DemoteLongformEntryCommand(BaseCommand):
         self.doc_id = doc_id
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Execute the demote operation.
+        """Execute the demote operation.
 
         Args:
             db_service: The database service to operate on.
@@ -279,8 +267,7 @@ class DemoteLongformEntryCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Undo the demote by restoring old metadata.
+        """Undo the demote by restoring old metadata.
 
         Args:
             db_service: The database service to operate on.
@@ -307,8 +294,7 @@ class DemoteLongformEntryCommand(BaseCommand):
 
 
 class RemoveLongformEntryCommand(BaseCommand):
-    """
-    Command to remove an entry from the longform document.
+    """Command to remove an entry from the longform document.
 
     Stores old metadata for undo support.
     """
@@ -320,8 +306,7 @@ class RemoveLongformEntryCommand(BaseCommand):
         old_meta: Dict[str, Any],
         doc_id: str = longform_builder.DOC_ID_DEFAULT,
     ) -> None:
-        """
-        Initialize the RemoveLongformEntryCommand.
+        """Initialize the RemoveLongformEntryCommand.
 
         Args:
             table: Table name ("events" or "entities").
@@ -336,8 +321,7 @@ class RemoveLongformEntryCommand(BaseCommand):
         self.doc_id = doc_id
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Execute the removal operation.
+        """Execute the removal operation.
 
         Args:
             db_service: The database service to operate on.
@@ -372,8 +356,7 @@ class RemoveLongformEntryCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Undo the removal by restoring old metadata.
+        """Undo the removal by restoring old metadata.
 
         Args:
             db_service: The database service to operate on.

@@ -1,8 +1,7 @@
-"""
-LM Studio Provider Implementation.
+"""LM Studio Provider Implementation.
 
-Provides embeddings and text generation via LM Studio's OpenAI-compatible API.
-Supports streaming, health checks, timeouts, retries, and circuit breaker pattern.
+Provides embeddings and text generation via LM Studio's OpenAI-compatible API. Supports
+streaming, health checks, timeouts, retries, and circuit breaker pattern.
 """
 
 import asyncio
@@ -21,11 +20,10 @@ logger = logging.getLogger(__name__)
 
 
 class LMStudioProvider(Provider):
-    """
-    LM Studio provider supporting embeddings and text generation.
+    """LM Studio provider supporting embeddings and text generation.
 
-    Implements OpenAI-compatible API endpoints with streaming support,
-    retries, and circuit breaker pattern.
+    Implements OpenAI-compatible API endpoints with streaming support, retries, and
+    circuit breaker pattern.
     """
 
     def __init__(
@@ -39,8 +37,7 @@ class LMStudioProvider(Provider):
         max_retries: int = 3,
         use_chat_api: bool = True,
     ) -> None:
-        """
-        Initialize LM Studio provider.
+        """Initialize LM Studio provider.
 
         Args:
             url: Legacy API endpoint (deprecated, use embed_url/generate_url).
@@ -98,8 +95,7 @@ class LMStudioProvider(Provider):
         return headers
 
     def _retry_request(self, func: Any, *args: Any, **kwargs: Any) -> Any:
-        """
-        Execute request with retry logic.
+        """Execute request with retry logic.
 
         Args:
             func: Function to execute.
@@ -135,8 +131,7 @@ class LMStudioProvider(Provider):
         raise Exception("Request failed with no exception captured")
 
     def embed(self, texts: List[str]) -> np.ndarray:
-        """
-        Generate embeddings using LM Studio API.
+        """Generate embeddings using LM Studio API.
 
         Args:
             texts: List of text strings to embed.
@@ -200,8 +195,7 @@ class LMStudioProvider(Provider):
             raise Exception(f"Invalid response from LM Studio API: {e}") from e
 
     def _build_messages(self, prompt: Any) -> List[Dict[str, str]]:
-        """
-        Build messages array from prompt for chat API.
+        """Build messages array from prompt for chat API.
 
         Args:
             prompt: Either a string (user message only) or a dict with
@@ -232,8 +226,7 @@ class LMStudioProvider(Provider):
         stop: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """
-        Generate text completion for a prompt.
+        """Generate text completion for a prompt.
 
         Args:
             prompt: Input prompt. Can be a string or a dict with 'system'
@@ -342,8 +335,7 @@ class LMStudioProvider(Provider):
         stop: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> AsyncIterator[Dict[str, Any]]:
-        """
-        Generate text completion with streaming output.
+        """Generate text completion with streaming output.
 
         Note: This implementation uses blocking I/O wrapped in run_in_executor
         for the initial request, but iter_lines() still blocks the event loop.
@@ -457,8 +449,7 @@ class LMStudioProvider(Provider):
             ) from e
 
     def health_check(self) -> Dict[str, Any]:
-        """
-        Check provider health and availability.
+        """Check provider health and availability.
 
         Returns:
             Dict containing status, latency_ms, and message.
@@ -554,8 +545,7 @@ class LMStudioProvider(Provider):
             }
 
     def metadata(self) -> Dict[str, Any]:
-        """
-        Get provider metadata and capabilities.
+        """Get provider metadata and capabilities.
 
         Returns:
             Dict containing provider information and capabilities.

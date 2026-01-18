@@ -1,6 +1,4 @@
-"""
-Tests for Layout Hardening features (GeometryUtils and LayoutGuardMixin).
-"""
+"""Tests for Layout Hardening features (GeometryUtils and LayoutGuardMixin)."""
 
 import pytest
 from PySide6.QtCore import QRect, Qt
@@ -59,8 +57,8 @@ def test_geometry_utils_clamp_off_screen(monkeypatch: object) -> None:
 
 
 def test_geometry_utils_multi_monitor_ghost(monkeypatch: object) -> None:
-    """
-    Test the 'Ghost' scenario: Window was on 2nd monitor, now 2nd monitor is gone.
+    """Test the 'Ghost' scenario: Window was on 2nd monitor, now 2nd monitor is gone.
+
     Should move to primary monitor.
     """
     primary_rect = QRect(0, 0, 1920, 1080)

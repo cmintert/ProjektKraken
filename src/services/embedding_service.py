@@ -1,9 +1,8 @@
-"""
-Embedding Service Module.
+"""Embedding Service Module.
 
-Provides a unified interface for embedding operations with model/dimension
-validation and index management. Wraps provider implementations to ensure
-compatibility with the existing embeddings database schema.
+Provides a unified interface for embedding operations with model/dimension validation
+and index management. Wraps provider implementations to ensure compatibility with the
+existing embeddings database schema.
 """
 
 import json
@@ -20,11 +19,10 @@ logger = logging.getLogger(__name__)
 
 
 class EmbeddingService:
-    """
-    Service for managing embeddings with model/dimension validation.
+    """Service for managing embeddings with model/dimension validation.
 
-    Wraps provider implementations and enforces consistency checks when
-    storing and retrieving embeddings from the database.
+    Wraps provider implementations and enforces consistency checks when storing and
+    retrieving embeddings from the database.
     """
 
     def __init__(
@@ -34,8 +32,7 @@ class EmbeddingService:
         index_dir: Optional[str] = None,
         world_id: Optional[str] = None,
     ) -> None:
-        """
-        Initialize embedding service.
+        """Initialize embedding service.
 
         Args:
             db_connection: SQLite database connection.
@@ -76,8 +73,7 @@ class EmbeddingService:
         logger.info(f"Index directory: {self.index_dir}")
 
     def get_index_path(self, model: Optional[str] = None) -> Path:
-        """
-        Get the path for a specific model's index file.
+        """Get the path for a specific model's index file.
 
         Args:
             model: Optional model name (defaults to current provider model).
@@ -97,8 +93,7 @@ class EmbeddingService:
         return self.index_dir / filename
 
     def validate_embedding(self, embedding: np.ndarray) -> bool:
-        """
-        Validate that an embedding matches expected dimensions.
+        """Validate that an embedding matches expected dimensions.
 
         Args:
             embedding: Embedding vector to validate.
@@ -117,8 +112,8 @@ class EmbeddingService:
     def get_embeddings_by_model(
         self, model: Optional[str] = None, object_type: Optional[str] = None
     ) -> List[Dict]:
-        """
-        Retrieve embeddings from database filtered by model and optionally object type.
+        """Retrieve embeddings from database filtered by model and optionally object
+        type.
 
         Args:
             model: Optional model filter (defaults to current model).
@@ -173,8 +168,7 @@ class EmbeddingService:
     def count_embeddings_by_model(
         self, model: Optional[str] = None, enforce_dimension: bool = True
     ) -> int:
-        """
-        Count embeddings in database for a specific model.
+        """Count embeddings in database for a specific model.
 
         Args:
             model: Optional model filter (defaults to current model).
@@ -207,8 +201,7 @@ class EmbeddingService:
     def delete_embeddings_by_model(
         self, model: Optional[str] = None, enforce_dimension: bool = True
     ) -> int:
-        """
-        Delete embeddings from database for a specific model.
+        """Delete embeddings from database for a specific model.
 
         Args:
             model: Optional model filter (defaults to current model).
@@ -240,8 +233,7 @@ class EmbeddingService:
         return deleted_count
 
     def embed_batch(self, texts: List[str]) -> np.ndarray:
-        """
-        Generate embeddings for a batch of texts using the provider.
+        """Generate embeddings for a batch of texts using the provider.
 
         Args:
             texts: List of text strings to embed.
@@ -269,8 +261,7 @@ class EmbeddingService:
         return embeddings
 
     def rebuild_index(self) -> None:
-        """
-        Rebuild the ANN index from database embeddings.
+        """Rebuild the ANN index from database embeddings.
 
         Loads all embeddings matching current model and dimension,
         then persists index to disk.
@@ -304,8 +295,7 @@ class EmbeddingService:
         logger.info(f"Index metadata saved to {index_path}")
 
     def get_index_metadata(self, model: Optional[str] = None) -> Optional[Dict]:
-        """
-        Load index metadata from disk.
+        """Load index metadata from disk.
 
         Args:
             model: Optional model name (defaults to current model).
@@ -335,8 +325,7 @@ def create_embedding_service(
     world_id: Optional[str] = None,
     **provider_kwargs: Any,
 ) -> EmbeddingService:
-    """
-    Create an EmbeddingService with the specified provider.
+    """Create an EmbeddingService with the specified provider.
 
     Args:
         db_connection: SQLite database connection.

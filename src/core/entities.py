@@ -17,9 +17,7 @@ from typing import Any, Dict
 
 @dataclass
 class Entity:
-    """
-    Represents a timeless object (Character, Location, Artifact).
-    """
+    """Represents a timeless object (Character, Location, Artifact)."""
 
     name: str
     type: str  # e.g., "character", "location", "faction"
@@ -32,8 +30,7 @@ class Entity:
     modified_at: float = field(default_factory=time.time)
 
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the Entity instance to a dictionary for storage or serialization.
+        """Converts the Entity instance to a dictionary for storage or serialization.
 
         Returns:
             Dict[str, Any]: A dictionary containing all the entity's data.
@@ -50,8 +47,7 @@ class Entity:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Entity":
-        """
-        Creates an Entity instance from a dictionary.
+        """Creates an Entity instance from a dictionary.
 
         Args:
             data (Dict[str, Any]): A dictionary containing entity data.
@@ -64,8 +60,7 @@ class Entity:
 
     @property
     def tags(self) -> list[str]:
-        """
-        Returns the list of tags for this entity.
+        """Returns the list of tags for this entity.
 
         Tags are stored in the attributes dict under the "_tags" key.
 
@@ -76,8 +71,7 @@ class Entity:
 
     @tags.setter
     def tags(self, value: list[str]) -> None:
-        """
-        Sets the tags for this entity.
+        """Sets the tags for this entity.
 
         Args:
             value (list[str]): List of tag strings.

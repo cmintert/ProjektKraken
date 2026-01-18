@@ -1,8 +1,7 @@
-"""
-Graph Builder Module.
+"""Graph Builder Module.
 
-Business logic layer for building PyVis networks from graph data.
-Stateless utility class that transforms node/edge data into HTML output.
+Business logic layer for building PyVis networks from graph data. Stateless utility
+class that transforms node/edge data into HTML output.
 """
 
 import json
@@ -20,11 +19,10 @@ logger = logging.getLogger(__name__)
 
 
 class GraphBuilder:
-    """
-    Builds PyVis Network from node/edge data.
+    """Builds PyVis Network from node/edge data.
 
-    This is a stateless utility class in the business logic layer.
-    It knows only about PyVis, not about Qt or database concerns.
+    This is a stateless utility class in the business logic layer. It knows only about
+    PyVis, not about Qt or database concerns.
     """
 
     # Node styling by object_type
@@ -53,8 +51,7 @@ class GraphBuilder:
 
     @classmethod
     def _load_local_vis_assets(cls) -> tuple[str, str, str]:
-        """
-        Loads local vis-network JS, CSS, and PyVis utils files for offline use.
+        """Loads local vis-network JS, CSS, and PyVis utils files for offline use.
 
         Caches the content on first load to avoid repeated file I/O.
 
@@ -105,8 +102,7 @@ class GraphBuilder:
         theme_config: dict[str, str] = None,
         focus_node_id: str | None = None,
     ) -> str:
-        """
-        Builds a PyVis network and returns HTML string.
+        """Builds a PyVis network and returns HTML string.
 
         Args:
             nodes: List of node dicts with id, name, type, object_type keys.
@@ -146,8 +142,7 @@ class GraphBuilder:
         width: str,
         theme: dict[str, str],
     ) -> Network:
-        """
-        Creates a PyVis Network from node/edge data.
+        """Creates a PyVis Network from node/edge data.
 
         Args:
             nodes: List of node dicts.
@@ -255,8 +250,7 @@ class GraphBuilder:
     def _generate_html(
         self, network: Network, theme: dict[str, str], focus_node_id: str | None = None
     ) -> str:
-        """
-        Generates HTML string from a PyVis network.
+        """Generates HTML string from a PyVis network.
 
         Args:
             network: Configured PyVis Network.
@@ -463,8 +457,7 @@ class GraphBuilder:
         return html_content
 
     def build_empty_html(self, theme_config: dict[str, str] = None) -> str:
-        """
-        Returns HTML for an empty state message.
+        """Returns HTML for an empty state message.
 
         Args:
             theme_config: Optional dictionary with color settings.

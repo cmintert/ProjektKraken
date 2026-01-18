@@ -1,5 +1,4 @@
-"""
-Compact Duration Widget Module.
+"""Compact Duration Widget Module.
 
 Provides a polished, calendar-aware duration input widget with:
 - Year, Month, Day spinboxes with labels AFTER inputs
@@ -25,8 +24,7 @@ from src.gui.utils.style_helper import StyleHelper
 
 
 class CompactDurationWidget(QWidget):
-    """
-    A polished duration input widget with calendar-aware decomposition.
+    """A polished duration input widget with calendar-aware decomposition.
 
     Features:
     - Spinboxes for Years, Months, Days, Hours, Minutes
@@ -41,8 +39,7 @@ class CompactDurationWidget(QWidget):
     value_changed = Signal(float)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """
-        Initializes the compact duration widget.
+        """Initializes the compact duration widget.
 
         Args:
             parent: Parent widget.
@@ -157,8 +154,7 @@ class CompactDurationWidget(QWidget):
         self.spin_minutes.valueChanged.connect(self._on_input_changed)
 
     def set_calendar_converter(self, converter: CalendarConverter) -> None:
-        """
-        Sets the calendar converter for calculations.
+        """Sets the calendar converter for calculations.
 
         Args:
             converter: CalendarConverter instance.
@@ -167,8 +163,7 @@ class CompactDurationWidget(QWidget):
         self._update_preview()
 
     def set_start_date(self, start_date_float: float) -> None:
-        """
-        Sets the start date for duration calculations.
+        """Sets the start date for duration calculations.
 
         The start date affects how months/years are calculated since
         month lengths can vary.
@@ -215,8 +210,7 @@ class CompactDurationWidget(QWidget):
             self.lbl_preview.setText("0 Days")
 
     def get_value(self) -> float:
-        """
-        Gets the current duration as a float value in days.
+        """Gets the current duration as a float value in days.
 
         Returns:
             float: Duration in days.
@@ -272,8 +266,7 @@ class CompactDurationWidget(QWidget):
         return total_days
 
     def set_value(self, days_float: float) -> None:
-        """
-        Sets the duration from a float value, decomposing into Y/M/D.
+        """Sets the duration from a float value, decomposing into Y/M/D.
 
         Args:
             days_float: Duration in days.
@@ -366,8 +359,7 @@ class CompactDurationWidget(QWidget):
             self._updating = False
 
     def minimumSizeHint(self) -> QSize:
-        """
-        Returns the minimum size hint to prevent vertical collapse.
+        """Returns the minimum size hint to prevent vertical collapse.
 
         Returns:
             QSize: Minimum size for the duration widget (two rows of controls).
@@ -377,8 +369,7 @@ class CompactDurationWidget(QWidget):
         return QSize(250, 72)  # Two rows of controls + frame padding
 
     def sizeHint(self) -> QSize:
-        """
-        Returns the preferred size hint.
+        """Returns the preferred size hint.
 
         Returns:
             QSize: Preferred size for comfortable duration input.

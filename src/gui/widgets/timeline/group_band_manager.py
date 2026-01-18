@@ -1,8 +1,7 @@
-"""
-Group Band Manager Module.
+"""Group Band Manager Module.
 
-Manages multiple GroupBandItem widgets for the timeline, handling stacking,
-ordering, collapse state, and requesting data via callback interface.
+Manages multiple GroupBandItem widgets for the timeline, handling stacking, ordering,
+collapse state, and requesting data via callback interface.
 """
 
 import logging
@@ -17,8 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class GroupBandManager(QObject):
-    """
-    Manages timeline group bands.
+    """Manages timeline group bands.
 
     Responsibilities:
     - Create and position multiple GroupBandItem widgets
@@ -48,8 +46,7 @@ class GroupBandManager(QObject):
         get_events_for_group_callback: Callable,
         parent: Optional[QObject] = None,
     ) -> None:
-        """
-        Initializes the GroupBandManager.
+        """Initializes the GroupBandManager.
 
         Args:
             scene: The QGraphicsScene to add bands to
@@ -75,8 +72,7 @@ class GroupBandManager(QObject):
     def set_grouping_config(
         self, tag_order: List[str], date_range: Optional[tuple] = None
     ) -> None:
-        """
-        Set the grouping configuration and create/update bands.
+        """Set the grouping configuration and create/update bands.
 
         Args:
             tag_order: List of tag names to create bands for
@@ -143,8 +139,7 @@ class GroupBandManager(QObject):
         logger.debug("Cleared all bands")
 
     def update_band_metadata(self, date_range: Optional[tuple] = None) -> None:
-        """
-        Update metadata for all bands.
+        """Update metadata for all bands.
 
         Args:
             date_range: Optional (start_date, end_date) for filtering
@@ -221,8 +216,7 @@ class GroupBandManager(QObject):
         return [self._bands[tag] for tag in self._tag_order if tag in self._bands]
 
     def _on_context_menu_requested(self, tag_name: str, screen_pos: QPoint) -> None:
-        """
-        Handle context menu request for a band.
+        """Handle context menu request for a band.
 
         Args:
             tag_name: The tag name for the band
@@ -249,8 +243,7 @@ class GroupBandManager(QObject):
             self.remove_from_grouping_requested.emit(tag_name)
 
     def get_collapsed_tags(self) -> set:
-        """
-        Get the set of collapsed tag names.
+        """Get the set of collapsed tag names.
 
         Returns:
             Set of collapsed tag names
@@ -258,8 +251,7 @@ class GroupBandManager(QObject):
         return self._collapsed_tags.copy()
 
     def set_collapsed_tags(self, collapsed_tags: set) -> None:
-        """
-        Set which tags should be collapsed.
+        """Set which tags should be collapsed.
 
         Args:
             collapsed_tags: Set of tag names to collapse
@@ -275,8 +267,7 @@ class GroupBandManager(QObject):
         self._reposition_bands()
 
     def get_total_bands_height(self) -> int:
-        """
-        Calculate the total height of all bands.
+        """Calculate the total height of all bands.
 
         Returns:
             Total height in pixels
@@ -294,8 +285,7 @@ class GroupBandManager(QObject):
         return total
 
     def get_tag_order(self) -> List[str]:
-        """
-        Get the current tag order.
+        """Get the current tag order.
 
         Returns:
             List of tag names in order

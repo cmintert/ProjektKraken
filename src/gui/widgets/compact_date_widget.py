@@ -1,5 +1,4 @@
-"""
-Compact Date Widget Module.
+"""Compact Date Widget Module.
 
 Provides a polished, calendar-aware date input widget with:
 - Year spinbox
@@ -31,8 +30,7 @@ from src.gui.utils.style_helper import StyleHelper
 
 
 class CompactDateWidget(QWidget):
-    """
-    A polished date input widget with calendar-aware dropdowns.
+    """A polished date input widget with calendar-aware dropdowns.
 
     Features:
     - Year spinbox
@@ -49,8 +47,7 @@ class CompactDateWidget(QWidget):
     value_changed = Signal(float)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """
-        Initializes the compact date widget.
+        """Initializes the compact date widget.
 
         Args:
             parent: Parent widget.
@@ -169,8 +166,7 @@ class CompactDateWidget(QWidget):
         self.btn_calendar.clicked.connect(self._open_calendar_popup)
 
     def set_calendar_converter(self, converter: CalendarConverter) -> None:
-        """
-        Sets the calendar converter for date calculations.
+        """Sets the calendar converter for date calculations.
 
         Args:
             converter: CalendarConverter instance.
@@ -261,8 +257,7 @@ class CompactDateWidget(QWidget):
             self.lbl_preview.setText("")
 
     def get_value(self) -> float:
-        """
-        Gets the current date as a float value.
+        """Gets the current date as a float value.
 
         Returns:
             float: Absolute day value.
@@ -298,8 +293,7 @@ class CompactDateWidget(QWidget):
         return self._converter.to_float(date)
 
     def set_value(self, days_float: float) -> None:
-        """
-        Sets the date from a float value.
+        """Sets the date from a float value.
 
         Args:
             days_float: Absolute day value.
@@ -367,8 +361,7 @@ class CompactDateWidget(QWidget):
             self.combo_day.setCurrentIndex(day - 1)
 
     def minimumSizeHint(self) -> QSize:
-        """
-        Returns the minimum size hint to prevent vertical collapse.
+        """Returns the minimum size hint to prevent vertical collapse.
 
         Returns:
             QSize: Minimum size for the date widget (two rows of controls).
@@ -378,8 +371,7 @@ class CompactDateWidget(QWidget):
         return QSize(250, 72)  # Two rows of controls + frame padding
 
     def sizeHint(self) -> QSize:
-        """
-        Returns the preferred size hint.
+        """Returns the preferred size hint.
 
         Returns:
             QSize: Preferred size for comfortable date input.
@@ -390,8 +382,7 @@ class CompactDateWidget(QWidget):
 
 
 class CalendarPopup(QDialog):
-    """
-    A popup dialog for visual date selection.
+    """A popup dialog for visual date selection.
 
     Shows a grid of days for the selected month.
     """
@@ -404,8 +395,7 @@ class CalendarPopup(QDialog):
         month: int,
         day: int,
     ) -> None:
-        """
-        Initializes the calendar popup.
+        """Initializes the calendar popup.
 
         Args:
             parent: Parent widget.

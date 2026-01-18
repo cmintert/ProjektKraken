@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Semantic Search Index Management CLI.
+"""Semantic Search Index Management CLI.
 
 Provides command-line tools for building, querying, and managing
 the semantic search index.
@@ -29,8 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 def rebuild_index(args: argparse.Namespace) -> int:
-    """
-    Rebuild the semantic search index.
+    """Rebuild the semantic search index.
 
     Args:
         args: Command-line arguments.
@@ -88,8 +86,7 @@ def rebuild_index(args: argparse.Namespace) -> int:
 
 
 def delete_object(args: argparse.Namespace) -> int:
-    """
-    Delete embeddings for a single object.
+    """Delete embeddings for a single object.
 
     Args:
         args: Command-line arguments.
@@ -130,8 +127,7 @@ def delete_object(args: argparse.Namespace) -> int:
 
 
 def index_object(args: argparse.Namespace) -> int:
-    """
-    Index a single object.
+    """Index a single object.
 
     Args:
         args: Command-line arguments.
@@ -184,8 +180,7 @@ def index_object(args: argparse.Namespace) -> int:
 
 
 def query_index(args: argparse.Namespace) -> int:
-    """
-    Query the semantic search index.
+    """Query the semantic search index.
 
     Args:
         args: Command-line arguments.

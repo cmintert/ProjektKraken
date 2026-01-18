@@ -1,5 +1,4 @@
-"""
-Map Graphics View Module.
+"""Map Graphics View Module.
 
 Provides the MapGraphicsView class for rendering and interacting with the map.
 """
@@ -179,9 +178,7 @@ class KeyframeGizmo(QGraphicsItemGroup):
 
 
 class KeyframeItem(QGraphicsObject):
-    """
-    A draggable keyframe dot on the trajectory.
-    """
+    """A draggable keyframe dot on the trajectory."""
 
     def __init__(
         self,
@@ -374,8 +371,7 @@ class KeyframeItem(QGraphicsObject):
 
 
 class MapGraphicsView(QGraphicsView):
-    """
-    Graphics view for displaying a map image with draggable markers.
+    """Graphics view for displaying a map image with draggable markers.
 
     Signals:
         marker_moved: Emitted when a marker is dragged to a new position.
@@ -399,8 +395,7 @@ class MapGraphicsView(QGraphicsView):
     keyframe_edit_requested = Signal(str, float, float, float)  # marker_id, t, x, y
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """
-        Initializes the MapGraphicsView.
+        """Initializes the MapGraphicsView.
 
         Args:
             parent: Parent widget.
@@ -478,8 +473,7 @@ class MapGraphicsView(QGraphicsView):
         self._animations: list[QPropertyAnimation] = []  # Keep references
 
     def minimumSizeHint(self) -> QSize:
-        """
-        Override minimum size hint to allow resizing below map image size.
+        """Override minimum size hint to allow resizing below map image size.
 
         By default, QGraphicsView uses the scene rect to determine
         its minimum size, which prevents the dock from being resized
@@ -501,8 +495,7 @@ class MapGraphicsView(QGraphicsView):
         self.map_width_meters = 1_000_000.0  # Default 1000km
 
     def load_map(self, image_path: str) -> bool:
-        """
-        Loads a map image into the view.
+        """Loads a map image into the view.
 
         Args:
             image_path: Path to the image file.
@@ -541,8 +534,8 @@ class MapGraphicsView(QGraphicsView):
             return False
 
     def resizeEvent(self, event: QResizeEvent) -> None:
-        """
-        Handle resize events.
+        """Handle resize events.
+
         Note: We no longer auto-fit here to allow the user to maintain zoom level.
         """
         super().resizeEvent(event)
@@ -553,10 +546,10 @@ class MapGraphicsView(QGraphicsView):
             self.fitInView(self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        """
-        Handle mouse press to implement Smart Drag.
-        If clicking a marker, disable view panning.
-        If clicking background, enable view panning.
+        """Handle mouse press to implement Smart Drag.
+
+        If clicking a marker, disable view panning. If clicking background, enable view
+        panning.
         """
         item = self.itemAt(event.pos())
 
@@ -573,8 +566,8 @@ class MapGraphicsView(QGraphicsView):
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        """
-        Handle mouse move to track coordinates.
+        """Handle mouse move to track coordinates.
+
         Does not interfere with drag operations as we call super().
         """
         super().mouseMoveEvent(event)
@@ -603,8 +596,7 @@ class MapGraphicsView(QGraphicsView):
         description: Optional[str] = None,
         lore_date: Optional[float] = None,
     ) -> None:
-        """
-        Adds a marker to the map at normalized coordinates.
+        """Adds a marker to the map at normalized coordinates.
 
         Args:
             marker_id: Unique identifier for the marker.
@@ -650,9 +642,7 @@ class MapGraphicsView(QGraphicsView):
         marker.clicked.connect(self.marker_clicked.emit)
 
     def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
-        """
-        Updates a marker's position to new normalized coordinates.
-        """
+        """Updates a marker's position to new normalized coordinates."""
         if marker_id not in self.markers:
             logger.warning(f"Cannot update: marker {marker_id} not found")
             return
@@ -665,9 +655,7 @@ class MapGraphicsView(QGraphicsView):
         # logger.debug(f"Updated marker {marker_id} to normalized ({x:.3f}, {y:.3f})")
 
     def remove_marker(self, marker_id: str) -> None:
-        """
-        Removes a marker from the map.
-        """
+        """Removes a marker from the map."""
         if marker_id in self.markers:
             self.scene.removeItem(self.markers[marker_id])
             del self.markers[marker_id]
@@ -682,9 +670,7 @@ class MapGraphicsView(QGraphicsView):
     def update_markers_temporal_state(
         self, playhead_time: float, current_time: float
     ) -> None:
-        """
-        Updates the temporal visual state of all markers based on time.
-        """
+        """Updates the temporal visual state of all markers based on time."""
         for marker in self.markers.values():
             if marker.lore_date is None:
                 # Timeless entities are always present/vivid
@@ -707,8 +693,8 @@ class MapGraphicsView(QGraphicsView):
             marker.set_temporal_state(is_future=is_future, is_past=is_past)
 
     def _normalized_to_scene(self, x: float, y: float) -> QPointF:
-        """
-        [DEPRECATED] Use self.coord_system.to_scene instead.
+        """[DEPRECATED] Use self.coord_system.to_scene instead.
+
         Kept temporarily if external callers use it, but should be removed.
         """
         return self.coord_system.to_scene(x, y)
@@ -726,9 +712,7 @@ class MapGraphicsView(QGraphicsView):
         self._update_label_scales()
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
-        """
-        Accept drag events with our custom MIME type.
-        """
+        """Accept drag events with our custom MIME type."""
         from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
 
         if event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE):
@@ -737,9 +721,7 @@ class MapGraphicsView(QGraphicsView):
             event.ignore()
 
     def dragMoveEvent(self, event: QDragMoveEvent) -> None:
-        """
-        Allow drop only over the map pixmap.
-        """
+        """Allow drop only over the map pixmap."""
         from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
 
         if not event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE):
@@ -759,9 +741,7 @@ class MapGraphicsView(QGraphicsView):
             event.ignore()
 
     def dropEvent(self, event: QDropEvent) -> None:
-        """
-        Handle drop of item from Project Explorer to create a marker.
-        """
+        """Handle drop of item from Project Explorer to create a marker."""
         from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
 
         if not event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE):
@@ -791,9 +771,7 @@ class MapGraphicsView(QGraphicsView):
             event.ignore()
 
     def contextMenuEvent(self, event: QContextMenuEvent) -> None:
-        """
-        Handles context menu events for adding/removing markers.
-        """
+        """Handles context menu events for adding/removing markers."""
         if not self.pixmap_item:
             return
 
@@ -812,8 +790,7 @@ class MapGraphicsView(QGraphicsView):
                 self._show_map_background_context_menu(scene_pos, event.globalPos())
 
     def set_map_width_meters(self, width_meters: float) -> None:
-        """
-        Sets the real-world width of the map for scale calculation.
+        """Sets the real-world width of the map for scale calculation.
 
         Args:
             width_meters: Width of the map image in meters.
@@ -827,11 +804,10 @@ class MapGraphicsView(QGraphicsView):
         self.viewport().update()
 
     def drawForeground(self, painter: QPainter, rect: QRectF) -> None:
-        """
-        Draw overlay elements on top of the scene.
-        Using drawForeground allows us to hook into the render loop correctly,
-        even with an OpenGL viewport.
-        We reset the transform to draw in window coordinates.
+        """Draw overlay elements on top of the scene.
+
+        Using drawForeground allows us to hook into the render loop correctly, even with
+        an OpenGL viewport. We reset the transform to draw in window coordinates.
         """
         super().drawForeground(painter, rect)
 
@@ -865,8 +841,7 @@ class MapGraphicsView(QGraphicsView):
                     painter.restore()
 
     def _show_icon_picker(self, marker_item: MarkerItem) -> None:
-        """
-        Shows the icon picker dialog for a marker.
+        """Shows the icon picker dialog for a marker.
 
         Args:
             marker_item: The marker to change the icon for.
@@ -879,8 +854,7 @@ class MapGraphicsView(QGraphicsView):
             self.change_marker_icon_requested.emit(marker_item.marker_id, selected_icon)
 
     def _show_color_picker(self, marker_item: MarkerItem) -> None:
-        """
-        Shows the color picker dialog for a marker.
+        """Shows the color picker dialog for a marker.
 
         Args:
             marker_item: The marker to change the color for.
@@ -898,9 +872,7 @@ class MapGraphicsView(QGraphicsView):
     def _handle_drop_data(
         self, event: QDropEvent, norm_x: float, norm_y: float
     ) -> bool:
-        """
-        Parses drop data and emits marker request.
-        """
+        """Parses drop data and emits marker request."""
         from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
 
         try:
@@ -926,9 +898,7 @@ class MapGraphicsView(QGraphicsView):
         return False
 
     def _show_marker_context_menu(self, item: MarkerItem, global_pos: QPoint) -> None:
-        """
-        Shows context menu for a marker.
-        """
+        """Shows context menu for a marker."""
         menu = QMenu(self)
 
         # Change Icon action
@@ -954,9 +924,7 @@ class MapGraphicsView(QGraphicsView):
     def _show_map_background_context_menu(
         self, scene_pos: QPointF, global_pos: QPoint
     ) -> None:
-        """
-        Shows context menu for adding a marker at a specific location.
-        """
+        """Shows context menu for adding a marker at a specific location."""
         # Unpack tuple to avoid closure issues with lambda
         norm_x, norm_y = self.coord_system.to_normalized(scene_pos)
         menu = QMenu(self)
@@ -968,8 +936,7 @@ class MapGraphicsView(QGraphicsView):
         menu.exec(global_pos)
 
     def show_trajectory(self, marker_id: str, keyframes: list) -> None:
-        """
-        Visualizes the trajectory path and keyframes.
+        """Visualizes the trajectory path and keyframes.
 
         Args:
             marker_id: The ID of the marker owning this trajectory.
@@ -1112,8 +1079,8 @@ class MapGraphicsView(QGraphicsView):
                 logger.error("Invalid input for keyframe edit")
 
     def _update_label_scales(self) -> None:
-        """
-        Updates the scale of keyframe labels based on current zoom level.
+        """Updates the scale of keyframe labels based on current zoom level.
+
         Logic:
         - Scale < 1 (Zoom Out): Keep constant screen size (s=1.0).
         - Scale > 1 (Zoom In): Grow with map (s=scale), but cap at MAX_SCALE.
@@ -1216,8 +1183,8 @@ class MapGraphicsView(QGraphicsView):
                 return
 
     def update_keyframe_label(self, marker_id: str, t: float, new_time: float) -> None:
-        """
-        Updates the label of a specific keyframe to show a new time/date.
+        """Updates the label of a specific keyframe to show a new time/date.
+
         Used for live feedback during Clock Mode.
         """
         for i, item in enumerate(self.keyframe_items):

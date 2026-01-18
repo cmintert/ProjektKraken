@@ -1,8 +1,7 @@
-"""
-Theme Manager Module.
+"""Theme Manager Module.
 
-Manages loading and applying UI themes (Dark/Light) for the application.
-Implements a singleton pattern to ensure consistent theming across the app.
+Manages loading and applying UI themes (Dark/Light) for the application. Implements a
+singleton pattern to ensure consistent theming across the app.
 
 This is the Qt-specific implementation that extends BaseThemeManager.
 """
@@ -19,19 +18,16 @@ logger = logging.getLogger(__name__)
 
 
 class ThemeManager(QObject, BaseThemeManager):
-    """
-    Qt-specific theme manager that extends BaseThemeManager.
+    """Qt-specific theme manager that extends BaseThemeManager.
 
-    Manages loading and applying UI themes (Dark/Light) with Qt signal support.
-    Reads 'themes.json' and applies values to a QSS template.
-    Implements Singleton pattern.
+    Manages loading and applying UI themes (Dark/Light) with Qt signal support. Reads
+    'themes.json' and applies values to a QSS template. Implements Singleton pattern.
     """
 
     theme_changed = Signal(dict)  # Emits new theme data
 
     def __new__(cls, *args: Any, **kwargs: Any) -> "ThemeManager":
-        """
-        Create or return the singleton instance of ThemeManager.
+        """Create or return the singleton instance of ThemeManager.
 
         Implements the singleton pattern to ensure only one ThemeManager
         instance exists throughout the application lifecycle. This is
@@ -53,8 +49,7 @@ class ThemeManager(QObject, BaseThemeManager):
         return cast("ThemeManager", cls._instance)
 
     def __init__(self, theme_file: str = "themes.json") -> None:
-        """
-        Initializes the ThemeManager.
+        """Initializes the ThemeManager.
 
         Args:
             theme_file: Path to the themes JSON file.
@@ -74,8 +69,7 @@ class ThemeManager(QObject, BaseThemeManager):
             self.current_theme_name = saved_theme
 
     def _notify_theme_changed(self, theme_data: Dict[str, Any]) -> None:
-        """
-        Override to emit Qt signal in addition to calling callbacks.
+        """Override to emit Qt signal in addition to calling callbacks.
 
         Args:
             theme_data: The new theme data dictionary.
@@ -87,8 +81,7 @@ class ThemeManager(QObject, BaseThemeManager):
         self.theme_changed.emit(theme_data)
 
     def set_theme(self, theme_name: str, app: Optional[QApplication] = None) -> None:
-        """
-        Switches the current theme and updates the application.
+        """Switches the current theme and updates the application.
 
         Args:
             theme_name: The key of the theme to switch to.
@@ -122,9 +115,8 @@ class ThemeManager(QObject, BaseThemeManager):
     def apply_theme(
         self, app: QApplication, qss_template: Optional[str] = None
     ) -> None:
-        """
-        Formats the QSS template with current theme values
-        and applies it to the QApplication.
+        """Formats the QSS template with current theme values and applies it to the
+        QApplication.
 
         Args:
             app: QApplication instance.

@@ -1,5 +1,4 @@
-"""
-Map Coordinate System Module.
+"""Map Coordinate System Module.
 
 Handles translation between different coordinate spaces:
 1. Normalized Coordinates: (0.0, 0.0) top-left to (1.0, 1.0) bottom-right.
@@ -14,16 +13,13 @@ from PySide6.QtCore import QPointF, QRectF
 
 
 class MapCoordinateSystem:
-    """
-    Manages coordinate transformations for the map.
-    """
+    """Manages coordinate transformations for the map."""
 
     def __init__(self) -> None:
         self._scene_rect = QRectF()
 
     def set_scene_rect(self, rect: QRectF) -> None:
-        """
-        Updates the boundaries of the scene (the map image dimensions).
+        """Updates the boundaries of the scene (the map image dimensions).
 
         Args:
             rect: The bounding rectangle of the map image in scene coordinates.
@@ -31,8 +27,7 @@ class MapCoordinateSystem:
         self._scene_rect = rect
 
     def to_scene(self, x: float, y: float) -> QPointF:
-        """
-        Converts normalized coordinates to scene coordinates.
+        """Converts normalized coordinates to scene coordinates.
 
         Args:
             x: Normalized X [0.0, 1.0].
@@ -49,8 +44,7 @@ class MapCoordinateSystem:
         return QPointF(scene_x, scene_y)
 
     def to_normalized(self, scene_pos: QPointF) -> Tuple[float, float]:
-        """
-        Converts scene coordinates to normalized coordinates.
+        """Converts scene coordinates to normalized coordinates.
 
         Args:
             scene_pos: Point in scene coordinates.
@@ -74,8 +68,7 @@ class MapCoordinateSystem:
         return norm_x, norm_y
 
     def clamp_normalized(self, x: float, y: float) -> Tuple[float, float]:
-        """
-        Clamps coordinates to the [0.0, 1.0] range.
+        """Clamps coordinates to the [0.0, 1.0] range.
 
         Args:
             x: Raw normalized X.

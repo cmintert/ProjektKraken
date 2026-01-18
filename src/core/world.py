@@ -1,5 +1,4 @@
-"""
-World Management Module.
+"""World Management Module.
 
 Manages world/workspace directories in portable-only mode.
 Each world is a self-contained folder with:
@@ -20,11 +19,10 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class WorldManifest:
-    """
-    Manifest file for a world (world.json).
+    """Manifest file for a world (world.json).
 
-    Contains metadata about the world including its ID, name, description,
-    and creation/modification timestamps.
+    Contains metadata about the world including its ID, name, description, and
+    creation/modification timestamps.
     """
 
     id: str
@@ -36,8 +34,7 @@ class WorldManifest:
     db_filename: str = ""
 
     def to_dict(self) -> dict:
-        """
-        Converts the manifest to a dictionary for JSON serialization.
+        """Converts the manifest to a dictionary for JSON serialization.
 
         Returns:
             dict: Dictionary representation of the manifest.
@@ -54,8 +51,7 @@ class WorldManifest:
 
     @classmethod
     def from_dict(cls, data: dict) -> "WorldManifest":
-        """
-        Creates a WorldManifest from a dictionary.
+        """Creates a WorldManifest from a dictionary.
 
         Args:
             data: Dictionary containing manifest data.
@@ -76,8 +72,7 @@ class WorldManifest:
 
 @dataclass
 class World:
-    """
-    Represents a world/workspace in the portable structure.
+    """Represents a world/workspace in the portable structure.
 
     A world consists of:
     - Directory: worlds/<world_name>/
@@ -110,8 +105,8 @@ class World:
         return self.path / "world.json"
 
     def ensure_structure(self) -> None:
-        """
-        Ensures the world directory structure exists.
+        """Ensures the world directory structure exists.
+
         Creates missing directories and manifest file if needed.
         """
         # Create world directory
@@ -141,8 +136,7 @@ class World:
 
     @classmethod
     def load(cls, world_path: Path) -> Optional["World"]:
-        """
-        Loads a world from a directory.
+        """Loads a world from a directory.
 
         Args:
             world_path: Path to the world directory.
@@ -176,8 +170,7 @@ class World:
 
     @classmethod
     def create(cls, worlds_dir: Path, name: str, description: str = "") -> "World":
-        """
-        Creates a new world with proper structure.
+        """Creates a new world with proper structure.
 
         Args:
             worlds_dir: Parent directory containing all worlds.
@@ -220,13 +213,10 @@ class World:
 
 
 class WorldManager:
-    """
-    Manages discovery and validation of worlds in the portable structure.
-    """
+    """Manages discovery and validation of worlds in the portable structure."""
 
     def __init__(self, worlds_dir: Path) -> None:
-        """
-        Initialize the WorldManager.
+        """Initialize the WorldManager.
 
         Args:
             worlds_dir: Path to the worlds/ directory.
@@ -235,8 +225,7 @@ class WorldManager:
         self.worlds_dir.mkdir(parents=True, exist_ok=True)
 
     def discover_worlds(self) -> List[World]:
-        """
-        Discovers all valid worlds in the worlds directory.
+        """Discovers all valid worlds in the worlds directory.
 
         Returns:
             List of World instances found in the directory.
@@ -260,8 +249,7 @@ class WorldManager:
         return worlds
 
     def get_world(self, name: str) -> Optional[World]:
-        """
-        Gets a specific world by name.
+        """Gets a specific world by name.
 
         Args:
             name: Name of the world to find.
@@ -276,8 +264,7 @@ class WorldManager:
         return None
 
     def create_world(self, name: str, description: str = "") -> World:
-        """
-        Creates a new world.
+        """Creates a new world.
 
         Args:
             name: Name of the new world.
@@ -292,8 +279,7 @@ class WorldManager:
         return World.create(self.worlds_dir, name, description)
 
     def delete_world(self, world: World) -> None:
-        """
-        Deletes a world and all its contents.
+        """Deletes a world and all its contents.
 
         Args:
             world: World instance to delete.

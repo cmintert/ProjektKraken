@@ -32,8 +32,7 @@ logger = get_logger(__name__)
 
 
 class MapHandler(QObject):
-    """
-    Manages map and marker operations for the MainWindow.
+    """Manages map and marker operations for the MainWindow.
 
     This class encapsulates all functionality related to:
     - Loading and displaying maps
@@ -43,8 +42,7 @@ class MapHandler(QObject):
     """
 
     def __init__(self, main_window: "MainWindow") -> None:
-        """
-        Initialize the MapHandler.
+        """Initialize the MapHandler.
 
         Args:
             main_window: Reference to the MainWindow instance.
@@ -62,9 +60,8 @@ class MapHandler(QObject):
 
     @Slot(str)
     def on_map_selected(self, map_id: str) -> None:
-        """
-        Handler for when a map is selected in the widget.
-        Loads the map image and requests markers.
+        """Handler for when a map is selected in the widget. Loads the map image and
+        requests markers.
 
         Args:
             map_id: ID of the selected map.
@@ -100,8 +97,7 @@ class MapHandler(QObject):
 
     @Slot(str)
     def reload_markers(self, map_id: str) -> None:
-        """
-        Reloads markers for the specified map.
+        """Reloads markers for the specified map.
 
         Args:
             map_id: The ID of the map to reload markers for.
@@ -116,11 +112,10 @@ class MapHandler(QObject):
 
     @Slot()
     def reload_markers_for_current_map(self) -> None:
-        """
-        Reloads markers for the currently selected map.
+        """Reloads markers for the currently selected map.
 
-        Used when a marker command completes but we don't have the map_id
-        in the command result.
+        Used when a marker command completes but we don't have the map_id in the command
+        result.
         """
         map_id = self.window.map_widget.get_selected_map_id()
         if map_id:
@@ -185,9 +180,8 @@ class MapHandler(QObject):
             self.window.command_requested.emit(cmd)
 
     def create_marker(self, x: float, y: float) -> None:
-        """
-        Creates a new marker at the given normalized coordinates.
-        Prompts user to select an Entity or Event.
+        """Creates a new marker at the given normalized coordinates. Prompts user to
+        select an Entity or Event.
 
         Args:
             x: Normalized X coordinate [0.0, 1.0].
@@ -249,8 +243,7 @@ class MapHandler(QObject):
     def on_marker_dropped(
         self, item_id: str, item_type: str, item_name: str, x: float, y: float
     ) -> None:
-        """
-        Handle marker creation from drag-drop.
+        """Handle marker creation from drag-drop.
 
         Args:
             item_id: ID of the dropped entity/event.
@@ -278,8 +271,7 @@ class MapHandler(QObject):
         logger.info(f"Creating marker for {item_type} '{item_name}' via drag-drop")
 
     def delete_marker(self, marker_id: str) -> None:
-        """
-        Deletes a marker.
+        """Deletes a marker.
 
         Args:
             marker_id: The object_id from the UI (not the actual marker.id).
@@ -307,8 +299,7 @@ class MapHandler(QObject):
 
     @Slot(str, str)
     def on_marker_clicked(self, marker_id: str, object_type: str) -> None:
-        """
-        Handle marker click from MapWidget.
+        """Handle marker click from MapWidget.
 
         Args:
             marker_id: The ID of the item.
@@ -338,8 +329,7 @@ class MapHandler(QObject):
 
     @Slot(str, str)
     def on_marker_icon_changed(self, marker_id: str, icon: str) -> None:
-        """
-        Handle marker icon change from MapWidget.
+        """Handle marker icon change from MapWidget.
 
         Args:
             marker_id: ID of the marker (actually object_id from view).
@@ -355,8 +345,7 @@ class MapHandler(QObject):
 
     @Slot(str, str)
     def on_marker_color_changed(self, marker_id: str, color: str) -> None:
-        """
-        Handle marker color change from MapWidget.
+        """Handle marker color change from MapWidget.
 
         Args:
             marker_id: ID of the marker (actually object_id from view).
@@ -372,8 +361,7 @@ class MapHandler(QObject):
 
     @Slot(str, float, float)
     def on_marker_position_changed(self, marker_id: str, x: float, y: float) -> None:
-        """
-        Handle marker position change from MapWidget.
+        """Handle marker position change from MapWidget.
 
         Args:
             marker_id: ID of the marker (actually object_id from view).
@@ -392,8 +380,7 @@ class MapHandler(QObject):
 
     @Slot(list)
     def on_maps_ready(self, maps: list) -> None:
-        """
-        Handle maps ready signal from DataHandler.
+        """Handle maps ready signal from DataHandler.
 
         Args:
             maps: List of Map objects.
@@ -408,8 +395,7 @@ class MapHandler(QObject):
 
     @Slot(str, list)
     def on_markers_ready(self, map_id: str, processed_markers: list) -> None:
-        """
-        Handle markers ready signal from DataHandler.
+        """Handle markers ready signal from DataHandler.
 
         Args:
             map_id: The map ID these markers belong to.
@@ -442,8 +428,7 @@ class MapHandler(QObject):
 
     @Slot(list)
     def on_trajectories_ready(self, trajectories: list) -> None:
-        """
-        Handle trajectories ready signal from DataHandler.
+        """Handle trajectories ready signal from DataHandler.
 
         Args:
             trajectories: List of (marker_id, trajectory_id, keyframes) tuples.

@@ -1,8 +1,7 @@
-"""
-Attribute Editor Widget Module.
+"""Attribute Editor Widget Module.
 
-Provides a table-based interface for editing key-value attribute pairs
-with support for different data types.
+Provides a table-based interface for editing key-value attribute pairs with support for
+different data types.
 """
 
 from typing import Any, Dict, List, Optional, Union
@@ -24,16 +23,15 @@ from src.gui.widgets.standard_buttons import StandardButton
 
 
 class AttributeEditorWidget(QWidget):
-    """
-    A widget for editing a dictionary of attributes (Key-Value pairs).
+    """A widget for editing a dictionary of attributes (Key-Value pairs).
+
     Supports String, Number (Float/Int), and Boolean types.
     """
 
     attributes_changed = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """
-        Initializes the AttributeEditorWidget.
+        """Initializes the AttributeEditorWidget.
 
         Args:
             parent (QWidget, optional): The parent widget. Defaults to None.
@@ -111,8 +109,7 @@ class AttributeEditorWidget(QWidget):
         return attrs
 
     def _add_row(self, key: str = "", value: Optional[Any] = None) -> None:
-        """
-        Adds a new row to the attribute table.
+        """Adds a new row to the attribute table.
 
         Args:
             key (str, optional): The attribute key. Defaults to "".
@@ -146,8 +143,7 @@ class AttributeEditorWidget(QWidget):
         self.table.setCellWidget(row, 2, combo)
 
     def update_suggestions(self, keys: List[str]) -> None:
-        """
-        Updates the attribute key suggestions.
+        """Updates the attribute key suggestions.
 
         Args:
             keys: List of existing attribute keys.
@@ -156,8 +152,7 @@ class AttributeEditorWidget(QWidget):
 
     @Slot()
     def _on_add(self) -> None:
-        """
-        Handles adding a new attribute.
+        """Handles adding a new attribute.
 
         Prompts for the attribute key and adds a new row.
         """
@@ -180,9 +175,7 @@ class AttributeEditorWidget(QWidget):
 
     @Slot()
     def _on_remove(self) -> None:
-        """
-        Handles removing the selected attribute.
-        """
+        """Handles removing the selected attribute."""
         current_row = self.table.currentRow()
         if current_row >= 0:
             self.table.removeRow(current_row)
@@ -190,8 +183,7 @@ class AttributeEditorWidget(QWidget):
 
     @Slot(QTableWidgetItem)
     def _on_item_changed(self, item: QTableWidgetItem) -> None:
-        """
-        Handles table item changes.
+        """Handles table item changes.
 
         Args:
             item (QTableWidgetItem): The changed item.
@@ -201,8 +193,7 @@ class AttributeEditorWidget(QWidget):
 
     @Slot(int)
     def _on_type_changed(self, row: int) -> None:
-        """
-        Handles attribute type changes.
+        """Handles attribute type changes.
 
         Args:
             row (int): The row number of the changed type.
@@ -211,8 +202,7 @@ class AttributeEditorWidget(QWidget):
             self.attributes_changed.emit()
 
     def _parse_value(self, raw_val: str, val_type: str) -> Union[str, int, float, bool]:
-        """
-        Parses a raw string value to the specified type.
+        """Parses a raw string value to the specified type.
 
         Args:
             raw_val (str): The raw value as a string.

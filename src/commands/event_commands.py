@@ -1,5 +1,4 @@
-"""
-Event Commands Module.
+"""Event Commands Module.
 
 Provides command classes for managing events in the timeline:
 - CreateEventCommand: Create new events with default or custom data
@@ -20,13 +19,10 @@ logger = logging.getLogger(__name__)
 
 
 class CreateEventCommand(BaseCommand):
-    """
-    Command to create a new event.
-    """
+    """Command to create a new event."""
 
     def __init__(self, event_data: Optional[dict] = None) -> None:
-        """
-        Initializes the CreateEventCommand.
+        """Initializes the CreateEventCommand.
 
         Args:
             event_data (dict, optional): Dictionary containing event data.
@@ -45,8 +41,7 @@ class CreateEventCommand(BaseCommand):
         self._previous_state = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Executes the command to insert the event into the database.
+        """Executes the command to insert the event into the database.
 
         Args:
             db_service (DatabaseService): The database service to use.
@@ -83,8 +78,7 @@ class CreateEventCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Reverts the event creation by deleting it from the database.
+        """Reverts the event creation by deleting it from the database.
 
         Args:
             db_service (DatabaseService): The database service to operate on.
@@ -98,15 +92,14 @@ class CreateEventCommand(BaseCommand):
 
 
 class UpdateEventCommand(BaseCommand):
-    """
-    Command to update an existing event.
-    Accepts a dictionary of changes to apply to the existing event.
-    Snapshots the clean state before update for undo.
+    """Command to update an existing event.
+
+    Accepts a dictionary of changes to apply to the existing event. Snapshots the clean
+    state before update for undo.
     """
 
     def __init__(self, event_id: str, update_data: dict) -> None:
-        """
-        Initializes the Update command.
+        """Initializes the Update command.
 
         Args:
             event_id (str): The ID of the event to update.
@@ -119,8 +112,7 @@ class UpdateEventCommand(BaseCommand):
         self._new_event: Optional[Event] = None  # Store result for logs/UI
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Executes the update.
+        """Executes the update.
 
         Args:
             db_service (DatabaseService): The database service to use.
@@ -202,9 +194,7 @@ class UpdateEventCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Reverts the update by restoring the previous state of the event.
-        """
+        """Reverts the update by restoring the previous state of the event."""
         if self._is_executed and self._previous_event:
             logger.info(
                 f"Undoing UpdateEvent: Reverting to {self._previous_event.name}"
@@ -214,13 +204,10 @@ class UpdateEventCommand(BaseCommand):
 
 
 class DeleteEventCommand(BaseCommand):
-    """
-    Command to delete an event, storing its state for undo.
-    """
+    """Command to delete an event, storing its state for undo."""
 
     def __init__(self, event_id: str) -> None:
-        """
-        Initializes the DeleteEventCommand.
+        """Initializes the DeleteEventCommand.
 
         Args:
             event_id (str): The ID of the event to delete.
@@ -230,8 +217,7 @@ class DeleteEventCommand(BaseCommand):
         self._backup_event: Optional[Event] = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Executes the command to delete the event.
+        """Executes the command to delete the event.
 
         Args:
             db_service (DatabaseService): The database service to use.
@@ -266,8 +252,7 @@ class DeleteEventCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Reverts the event deletion by restoring it to the database.
+        """Reverts the event deletion by restoring it to the database.
 
         Args:
             db_service (DatabaseService): The database service to operate on.

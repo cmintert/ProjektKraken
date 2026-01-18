@@ -1,5 +1,4 @@
-"""
-Map Data Model.
+"""Map Data Model.
 
 Represents a map image with associated metadata.
 """
@@ -12,8 +11,7 @@ from typing import Any, Dict
 
 @dataclass
 class Map:
-    """
-    Represents a map in the worldbuilding environment.
+    """Represents a map in the worldbuilding environment.
 
     A map is an image file that can have markers placed on it to indicate
     locations of entities or events.
@@ -37,8 +35,7 @@ class Map:
     modified_at: float = field(default_factory=time.time)
 
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the Map instance to a dictionary.
+        """Converts the Map instance to a dictionary.
 
         Returns:
             Dict[str, Any]: Dictionary representation of the map.
@@ -55,8 +52,7 @@ class Map:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Map":
-        """
-        Creates a Map instance from a dictionary.
+        """Creates a Map instance from a dictionary.
 
         Args:
             data: Dictionary containing map data.

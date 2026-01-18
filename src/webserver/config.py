@@ -1,6 +1,4 @@
-"""
-Configuration helpers for the Longform web server.
-"""
+"""Configuration helpers for the Longform web server."""
 
 from dataclasses import dataclass
 

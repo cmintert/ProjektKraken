@@ -1,8 +1,7 @@
-"""
-LLM Provider Abstraction Module.
+"""LLM Provider Abstraction Module.
 
-Defines the abstract interface for LLM providers supporting both embeddings
-and text generation with streaming capabilities.
+Defines the abstract interface for LLM providers supporting both embeddings and text
+generation with streaming capabilities.
 """
 
 import logging
@@ -16,17 +15,15 @@ logger = logging.getLogger(__name__)
 
 
 class Provider(ABC):
-    """
-    Abstract base class for LLM providers.
+    """Abstract base class for LLM providers.
 
-    All providers must implement embeddings, generation, streaming,
-    health checks, and metadata methods.
+    All providers must implement embeddings, generation, streaming, health checks, and
+    metadata methods.
     """
 
     @abstractmethod
     def embed(self, texts: List[str]) -> np.ndarray:
-        """
-        Generate embeddings for a list of texts.
+        """Generate embeddings for a list of texts.
 
         Args:
             texts: List of text strings to embed.
@@ -48,8 +45,7 @@ class Provider(ABC):
         stop: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """
-        Generate text completion for a prompt.
+        """Generate text completion for a prompt.
 
         Args:
             prompt: Input prompt text.
@@ -79,8 +75,7 @@ class Provider(ABC):
         stop: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> AsyncIterator[Dict[str, Any]]:
-        """
-        Generate text completion with streaming output.
+        """Generate text completion with streaming output.
 
         Args:
             prompt: Input prompt text.
@@ -101,8 +96,7 @@ class Provider(ABC):
 
     @abstractmethod
     def health_check(self) -> Dict[str, Any]:
-        """
-        Check provider health and availability.
+        """Check provider health and availability.
 
         Returns:
             Dict containing:
@@ -118,8 +112,7 @@ class Provider(ABC):
 
     @abstractmethod
     def metadata(self) -> Dict[str, Any]:
-        """
-        Get provider metadata and capabilities.
+        """Get provider metadata and capabilities.
 
         Returns:
             Dict containing:
@@ -136,8 +129,7 @@ class Provider(ABC):
         pass
 
     def get_dimension(self) -> int:
-        """
-        Get the dimensionality of embeddings (convenience method).
+        """Get the dimensionality of embeddings (convenience method).
 
         Returns:
             int: Embedding dimension.
@@ -153,8 +145,7 @@ class Provider(ABC):
         return meta.get("embedding_dimension", 0)
 
     def get_model_name(self) -> str:
-        """
-        Get the model name/identifier (convenience method).
+        """Get the model name/identifier (convenience method).
 
         Returns:
             str: Model identifier (prioritizes generation model over embedding).
@@ -166,8 +157,7 @@ class Provider(ABC):
 def get_provider_settings_from_qsettings(
     provider_id: str, world_id: Optional[str] = None
 ) -> Dict[str, Any]:
-    """
-    Load provider settings from QSettings.
+    """Load provider settings from QSettings.
 
     Args:
         provider_id: Provider identifier ('lmstudio', 'openai', 'google', 'anthropic').
@@ -282,8 +272,7 @@ def get_provider_settings_from_qsettings(
 def create_provider(
     provider_id: str, world_id: Optional[str] = None, **overrides: Any
 ) -> Provider:
-    """
-    Create a provider instance based on configuration.
+    """Create a provider instance based on configuration.
 
     Loads settings from QSettings with environment variable fallbacks,
     then applies any explicit overrides.

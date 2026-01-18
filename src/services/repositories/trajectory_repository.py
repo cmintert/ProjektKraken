@@ -1,5 +1,4 @@
-"""
-Trajectory Repository Module.
+"""Trajectory Repository Module.
 
 Handles database operations for the `moving_features` table,
 managing temporal trajectories for map markers.
@@ -22,9 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class TrajectoryRepository(BaseRepository):
-    """
-    Repository for managing temporal trajectory data in `moving_features`.
-    """
+    """Repository for managing temporal trajectory data in `moving_features`."""
 
     def insert(
         self,
@@ -32,10 +29,9 @@ class TrajectoryRepository(BaseRepository):
         trajectory: List[Keyframe],
         properties: Optional[dict] = None,
     ) -> str:
-        """
-        Inserts a new trajectory or updates if one exists for the marker.
-        (Note: Current schema allows multiple trajectories per marker,
-         but for now we might treat it as one active trajectory or multiple segments).
+        """Inserts a new trajectory or updates if one exists for the marker. (Note:
+        Current schema allows multiple trajectories per marker, but for now we might
+        treat it as one active trajectory or multiple segments).
 
         For this implementation, we insert a new row.
 
@@ -77,8 +73,7 @@ class TrajectoryRepository(BaseRepository):
     def get_by_marker_db_id(
         self, marker_db_id: str
     ) -> List[Tuple[str, List[Keyframe]]]:
-        """
-        Retrieves all trajectories associated with a marker (by DB ID).
+        """Retrieves all trajectories associated with a marker (by DB ID).
 
         Args:
             marker_db_id: The UUID of the marker in markers table.
@@ -112,8 +107,7 @@ class TrajectoryRepository(BaseRepository):
         return results
 
     def get_by_map_id(self, map_id: str) -> List[Tuple[str, str, List[Keyframe]]]:
-        """
-        Retrieves all trajectories for all markers on a specific map.
+        """Retrieves all trajectories for all markers on a specific map.
 
         Args:
             map_id: The UUID of the map.
@@ -151,8 +145,7 @@ class TrajectoryRepository(BaseRepository):
         return results
 
     def add_keyframe(self, map_id: str, object_id: str, keyframe: Keyframe) -> str:
-        """
-        Adds or updates a keyframe for the given marker (identified by map+object).
+        """Adds or updates a keyframe for the given marker (identified by map+object).
         Resolves the internal markers.id first.
 
         Args:
@@ -202,9 +195,8 @@ class TrajectoryRepository(BaseRepository):
     def update_keyframe_time(
         self, map_id: str, object_id: str, old_t: float, new_t: float
     ) -> str:
-        """
-        Updates the timestamp of a specific keyframe (Clock Mode editing).
-        Finds keyframe at old_t, changes its t to new_t, re-sorts trajectory.
+        """Updates the timestamp of a specific keyframe (Clock Mode editing). Finds
+        keyframe at old_t, changes its t to new_t, re-sorts trajectory.
 
         Args:
             map_id: ID of the map.
@@ -263,8 +255,7 @@ class TrajectoryRepository(BaseRepository):
         return traj_id
 
     def delete_keyframe(self, map_id: str, object_id: str, t: float) -> Optional[str]:
-        """
-        Deletes a keyframe at a specific time from a trajectory.
+        """Deletes a keyframe at a specific time from a trajectory.
 
         Args:
             map_id: ID of the map.
@@ -342,8 +333,7 @@ class TrajectoryRepository(BaseRepository):
             conn.execute(sql, (t_start, t_end, traj_json, traj_id))
 
     def _parse_trajectory_json(self, data: dict | list) -> List[Keyframe]:
-        """
-        Parse trajectory data, supporting both old and new formats.
+        """Parse trajectory data, supporting both old and new formats.
 
         Args:
             data: Either MF-JSON dict or old [[t,x,y],...] list.

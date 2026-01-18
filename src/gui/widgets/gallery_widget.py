@@ -1,8 +1,7 @@
-"""
-Gallery Widget Module.
+"""Gallery Widget Module.
 
-Provides a visual gallery interface for managing image attachments
-associated with events and entities.
+Provides a visual gallery interface for managing image attachments associated with
+events and entities.
 """
 
 import logging
@@ -39,16 +38,15 @@ logger = logging.getLogger(__name__)
 
 
 class GalleryWidget(QWidget):
-    """
-    Widget for managing and displaying image attachments.
+    """Widget for managing and displaying image attachments.
+
     Supports drag-and-drop, thumbnails, and captions.
     """
 
     # Needs access to main_window to emit commands
 
     def __init__(self, main_window: QWidget) -> None:
-        """
-        Initialize the gallery widget.
+        """Initialize the gallery widget.
 
         Args:
             main_window: Reference to MainWindow for command emission.
@@ -200,9 +198,7 @@ class GalleryWidget(QWidget):
 
     @Slot(object)
     def on_command_finished(self, result: object) -> None:
-        """
-        Handles command completion signals to auto-refresh the gallery.
-        """
+        """Handles command completion signals to auto-refresh the gallery."""
         if not result.success:
             return
 
@@ -269,8 +265,7 @@ class GalleryWidget(QWidget):
             logger.error(f"GalleryWidget: Attachment {att_id} not found in data list")
 
     def show_context_menu(self, pos: "QPoint") -> None:
-        """
-        Show context menu for gallery items.
+        """Show context menu for gallery items.
 
         Args:
             pos: The position where the menu was requested.
@@ -309,8 +304,7 @@ class GalleryWidget(QWidget):
             self.remove_item(item)
 
     def edit_caption(self, item: QListWidgetItem) -> None:
-        """
-        Edit the caption for a gallery item.
+        """Edit the caption for a gallery item.
 
         Args:
             item: The QListWidgetItem representing the attachment.
@@ -327,8 +321,7 @@ class GalleryWidget(QWidget):
             self.main_window.command_requested.emit(cmd)
 
     def remove_item(self, item: QListWidgetItem) -> None:
-        """
-        Remove an attachment from the gallery.
+        """Remove an attachment from the gallery.
 
         Args:
             item: The QListWidgetItem representing the attachment.
@@ -382,8 +375,7 @@ class GalleryWidget(QWidget):
                 event.acceptProposedAction()
 
     def minimumSizeHint(self) -> QSize:
-        """
-        Override to prevent dock collapse.
+        """Override to prevent dock collapse.
 
         Returns:
             QSize: Minimum size for usable gallery.
@@ -393,8 +385,7 @@ class GalleryWidget(QWidget):
         return QSize(250, 150)
 
     def sizeHint(self) -> QSize:
-        """
-        Preferred size for the gallery.
+        """Preferred size for the gallery.
 
         Returns:
             QSize: Comfortable working size.

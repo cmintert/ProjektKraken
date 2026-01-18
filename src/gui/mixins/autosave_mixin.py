@@ -1,5 +1,5 @@
-"""
-AutoSave Mixin Module.
+"""AutoSave Mixin Module.
+
 Provides debounce logic for automatic saving of editor widgets.
 """
 
@@ -22,15 +22,12 @@ class AutoSaveSource(Protocol):
 
 
 class AutoSaveManager(QObject):
-    """
-    Manager to handle debounced autosave functionality via composition.
-    """
+    """Manager to handle debounced autosave functionality via composition."""
 
     def __init__(
         self, target: AutoSaveSource, delay_ms: int = AUTOSAVE_DELAY_MS
     ) -> None:
-        """
-        Initialize the autosave manager.
+        """Initialize the autosave manager.
 
         Args:
             target: The object to auto-save (must satisfy AutoSaveSource protocol)
@@ -60,8 +57,9 @@ class AutoSaveManager(QObject):
             self.stop_timer()
 
     def _perform_autosave(self) -> None:
-        """
-        Called when timer expires. Triggers save if still dirty.
+        """Called when timer expires.
+
+        Triggers save if still dirty.
         """
         if self._target.has_unsaved_changes():
             logger.debug(f"[{self._target.__class__.__name__}] Autosave triggered.")

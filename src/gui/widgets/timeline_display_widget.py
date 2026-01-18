@@ -1,8 +1,7 @@
-"""
-Timeline Display Widget Module.
+"""Timeline Display Widget Module.
 
-Provides a read-only widget that displays a chronological list of events
-affecting an entity, with payload attributes shown inline.
+Provides a read-only widget that displays a chronological list of events affecting an
+entity, with payload attributes shown inline.
 """
 
 from typing import Any, Optional
@@ -11,11 +10,10 @@ from PySide6.QtWidgets import QTextEdit, QVBoxLayout, QWidget
 
 
 class TimelineDisplayWidget(QWidget):
-    """
-    Read-only widget displaying chronological events affecting an entity.
+    """Read-only widget displaying chronological events affecting an entity.
 
-    Shows events sorted by date with their payload attributes, and highlights
-    events at or before the current playhead time.
+    Shows events sorted by date with their payload attributes, and highlights events at
+    or before the current playhead time.
     """
 
     # Class-level calendar converter for date formatting
@@ -27,8 +25,7 @@ class TimelineDisplayWidget(QWidget):
         cls._calendar_converter = converter
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """
-        Initialize the timeline display widget.
+        """Initialize the timeline display widget.
 
         Args:
             parent: Parent widget, if any.
@@ -52,8 +49,7 @@ class TimelineDisplayWidget(QWidget):
         layout.addWidget(self._text_display)
 
     def set_relations(self, relations: list[dict[str, Any]]) -> None:
-        """
-        Set the relations to display in the timeline.
+        """Set the relations to display in the timeline.
 
         Args:
             relations: List of relation dicts with source_event_name,
@@ -63,8 +59,7 @@ class TimelineDisplayWidget(QWidget):
         self._refresh_display()
 
     def set_playhead_time(self, time: float) -> None:
-        """
-        Set the current playhead time for highlighting.
+        """Set the current playhead time for highlighting.
 
         Args:
             time: The playhead time in lore_date units.
@@ -73,8 +68,7 @@ class TimelineDisplayWidget(QWidget):
         self._refresh_display()
 
     def set_current_time(self, time: Optional[float]) -> None:
-        """
-        Set the story's 'current time' for the NOW marker.
+        """Set the story's 'current time' for the NOW marker.
 
         Args:
             time: The current time in lore_date units, or None to hide.
@@ -83,8 +77,7 @@ class TimelineDisplayWidget(QWidget):
         self._refresh_display()
 
     def get_display_text(self) -> str:
-        """
-        Get the current display text (for testing).
+        """Get the current display text (for testing).
 
         Returns:
             HTML content currently displayed.
@@ -278,8 +271,7 @@ class TimelineDisplayWidget(QWidget):
         self._text_display.setHtml("\n".join(html_parts))
 
     def _get_event_date(self, rel: dict[str, Any]) -> float:
-        """
-        Get the date to use for sorting/displaying an event.
+        """Get the date to use for sorting/displaying an event.
 
         Uses source_event_date if available, otherwise valid_from.
 

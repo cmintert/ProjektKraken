@@ -1,8 +1,7 @@
-"""
-Obsidian Exporter Service.
+"""Obsidian Exporter Service.
 
-Exports entities and events as Obsidian-compatible markdown files with
-YAML frontmatter. Creates flat folder structure with duplicate name handling.
+Exports entities and events as Obsidian-compatible markdown files with YAML frontmatter.
+Creates flat folder structure with duplicate name handling.
 """
 
 import logging
@@ -29,12 +28,11 @@ class ExportResult:
 
 
 class ObsidianExporter:
-    """
-    Exports entities and events as Obsidian-compatible markdown files.
+    """Exports entities and events as Obsidian-compatible markdown files.
 
     Creates individual .md files with YAML frontmatter for each entity and event.
-    Handles duplicate filenames with counter suffix (e.g., "Name (2).md").
-    Adds "## Related" section with wiki-links to related items.
+    Handles duplicate filenames with counter suffix (e.g., "Name (2).md"). Adds "##
+    Related" section with wiki-links to related items.
     """
 
     # Characters not allowed in filenames
@@ -42,8 +40,7 @@ class ObsidianExporter:
     MAX_FILENAME_LENGTH = 200  # Leave room for counter and .md extension
 
     def __init__(self, db_service: Any) -> None:
-        """
-        Initialize the exporter.
+        """Initialize the exporter.
 
         Args:
             db_service: Database service for fetching entities, events, relations.
@@ -55,8 +52,7 @@ class ObsidianExporter:
         output_dir: Path,
         include_relations: bool = True,
     ) -> ExportResult:
-        """
-        Export all entities and events to a folder as Obsidian-compatible .md files.
+        """Export all entities and events to a folder as Obsidian-compatible .md files.
 
         Args:
             output_dir: Directory to write files to.
@@ -136,8 +132,7 @@ class ObsidianExporter:
         )
 
     def _get_unique_filename(self, name: str, used_filenames: Dict[str, int]) -> str:
-        """
-        Generate a unique filename, adding counter for duplicates.
+        """Generate a unique filename, adding counter for duplicates.
 
         Args:
             name: The desired base name.
@@ -159,8 +154,7 @@ class ObsidianExporter:
         return f"{base_name} ({count}).md"
 
     def _sanitize_filename(self, name: str) -> str:
-        """
-        Remove invalid characters from filename.
+        """Remove invalid characters from filename.
 
         Args:
             name: Original name.
@@ -175,8 +169,7 @@ class ObsidianExporter:
     def _get_relations_for_item(
         self, item_id: str, id_to_name: Dict[str, str]
     ) -> List[Dict[str, str]]:
-        """
-        Get related items for an entity or event.
+        """Get related items for an entity or event.
 
         Args:
             item_id: ID of the source item.
@@ -204,8 +197,7 @@ class ObsidianExporter:
     def _build_entity_markdown(
         self, entity: Entity, relations: List[Dict[str, str]]
     ) -> str:
-        """
-        Build complete markdown content for an entity.
+        """Build complete markdown content for an entity.
 
         Args:
             entity: The entity to export.
@@ -252,8 +244,7 @@ class ObsidianExporter:
     def _build_event_markdown(
         self, event: Event, relations: List[Dict[str, str]]
     ) -> str:
-        """
-        Build complete markdown content for an event.
+        """Build complete markdown content for an event.
 
         Args:
             event: The event to export.

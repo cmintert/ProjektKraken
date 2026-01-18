@@ -1,26 +1,23 @@
-"""
-Style Helper Module.
+"""Style Helper Module.
 
-Provides centralized, theme-aware styling methods that use ThemeManager
-tokens to generate consistent QSS strings. This eliminates hardcoded
-colors and ensures theme switches reliably update the UI.
+Provides centralized, theme-aware styling methods that use ThemeManager tokens to
+generate consistent QSS strings. This eliminates hardcoded colors and ensures theme
+switches reliably update the UI.
 """
 
 from PySide6.QtWidgets import QLayout
 
 
 class StyleHelper:
-    """
-    Centralized style helper that provides theme-aware QSS strings.
+    """Centralized style helper that provides theme-aware QSS strings.
 
-    All methods use ThemeManager.get_theme() to fetch current theme
-    tokens and return formatted QSS strings that adapt to theme changes.
+    All methods use ThemeManager.get_theme() to fetch current theme tokens and return
+    formatted QSS strings that adapt to theme changes.
     """
 
     @staticmethod
     def get_empty_state_style() -> str:
-        """
-        Returns QSS for empty state labels.
+        """Returns QSS for empty state labels.
 
         Empty state labels are shown when no data is available
         (e.g., "No Events Loaded").
@@ -36,8 +33,7 @@ class StyleHelper:
 
     @staticmethod
     def get_preview_label_style() -> str:
-        """
-        Returns QSS for preview labels.
+        """Returns QSS for preview labels.
 
         Preview labels show contextual information (e.g., formatted dates).
         Uses text_dim color and italic style.
@@ -52,8 +48,7 @@ class StyleHelper:
 
     @staticmethod
     def get_error_label_style() -> str:
-        """
-        Returns QSS for error labels.
+        """Returns QSS for error labels.
 
         Error labels display validation errors and warnings.
         Uses error color and bold font weight.
@@ -68,8 +63,7 @@ class StyleHelper:
 
     @staticmethod
     def get_section_header_style() -> str:
-        """
-        Returns QSS for section headers.
+        """Returns QSS for section headers.
 
         Section headers are bold labels that divide content sections.
 
@@ -80,8 +74,7 @@ class StyleHelper:
 
     @staticmethod
     def get_frame_style() -> str:
-        """
-        Returns QSS for standard frames.
+        """Returns QSS for standard frames.
 
         Standard frames provide visual separation with border and padding.
         Uses border color from theme.
@@ -99,8 +92,7 @@ class StyleHelper:
 
     @staticmethod
     def get_lore_frame_style() -> str:
-        """
-        Returns QSS for lore/narrative frames.
+        """Returns QSS for lore/narrative frames.
 
         Lore frames use accent_secondary color for left border to create
         an immersive visual distinction for narrative content.
@@ -120,8 +112,7 @@ class StyleHelper:
 
     @staticmethod
     def get_map_viewport_style() -> str:
-        """
-        Returns QSS for map viewport frames.
+        """Returns QSS for map viewport frames.
 
         Map viewports use primary color border for technical/map content.
 
@@ -138,8 +129,7 @@ class StyleHelper:
 
     @staticmethod
     def get_primary_button_style() -> str:
-        """
-        Returns QSS for primary action buttons.
+        """Returns QSS for primary action buttons.
 
         Primary buttons use the primary theme color and stand out.
 
@@ -160,8 +150,7 @@ class StyleHelper:
 
     @staticmethod
     def get_destructive_button_style() -> str:
-        """
-        Returns QSS for destructive action buttons.
+        """Returns QSS for destructive action buttons.
 
         Destructive buttons (delete, remove) use error color.
 
@@ -181,8 +170,7 @@ class StyleHelper:
 
     @staticmethod
     def get_dialog_button_style(selected: bool) -> str:
-        """
-        Returns QSS for dialog day buttons.
+        """Returns QSS for dialog day buttons.
 
         Used in calendar picker dialogs for day selection buttons.
 
@@ -217,8 +205,7 @@ class StyleHelper:
 
     @staticmethod
     def get_dialog_base_style() -> str:
-        """
-        Returns base QSS for dialogs.
+        """Returns base QSS for dialogs.
 
         Provides consistent dialog background and text colors.
 
@@ -235,8 +222,7 @@ class StyleHelper:
 
     @staticmethod
     def get_scrollbar_style() -> str:
-        """
-        Returns QSS for custom scrollbars.
+        """Returns QSS for custom scrollbars.
 
         Provides themed scrollbar styling matching the current theme.
 
@@ -267,8 +253,7 @@ class StyleHelper:
 
     @staticmethod
     def get_wiki_link_style(broken: bool = False) -> str:
-        """
-        Returns QSS for wiki links.
+        """Returns QSS for wiki links.
 
         Wiki links are styled differently based on whether they're broken
         (target doesn't exist) or valid.
@@ -290,8 +275,7 @@ class StyleHelper:
 
     @staticmethod
     def get_timeline_header_style() -> str:
-        """
-        Returns QSS for timeline headers.
+        """Returns QSS for timeline headers.
 
         Timeline headers use surface background with border.
 
@@ -309,8 +293,7 @@ class StyleHelper:
 
     @staticmethod
     def apply_standard_list_spacing(layout: QLayout) -> None:
-        """
-        Applies standard spacing for list layouts.
+        """Applies standard spacing for list layouts.
 
         Standard list spacing: 8px spacing, 16px margins (8-point grid).
 
@@ -322,8 +305,7 @@ class StyleHelper:
 
     @staticmethod
     def apply_compact_spacing(layout: QLayout) -> None:
-        """
-        Applies compact spacing for dense layouts.
+        """Applies compact spacing for dense layouts.
 
         Compact spacing: 4px spacing, 8px margins.
 
@@ -335,8 +317,7 @@ class StyleHelper:
 
     @staticmethod
     def apply_form_spacing(layout: QLayout) -> None:
-        """
-        Applies form spacing for form layouts.
+        """Applies form spacing for form layouts.
 
         Form spacing: 8px spacing, 12px margins.
 
@@ -348,8 +329,7 @@ class StyleHelper:
 
     @staticmethod
     def apply_no_margins(layout: QLayout) -> None:
-        """
-        Removes margins from a layout.
+        """Removes margins from a layout.
 
         Useful for nested layouts or widgets that need edge-to-edge content.
 
@@ -360,8 +340,7 @@ class StyleHelper:
 
     @staticmethod
     def get_input_field_style() -> str:
-        """
-        Returns QSS for input fields (QLineEdit, QTextEdit).
+        """Returns QSS for input fields (QLineEdit, QTextEdit).
 
         Provides consistent rounded corners and border styling.
 

@@ -1,5 +1,4 @@
-"""
-Timeline Scene and Playhead Items Module.
+"""Timeline Scene and Playhead Items Module.
 
 Provides scene and playhead components for the timeline visualization.
 """
@@ -17,14 +16,13 @@ logger = logging.getLogger(__name__)
 
 
 class TimelineScene(QGraphicsScene):
-    """
-    Custom Graphics Scene for the Timeline.
+    """Custom Graphics Scene for the Timeline.
+
     Sets the background color consistent with the app theme.
     """
 
     def __init__(self, parent: Optional[QObject] = None) -> None:
-        """
-        Initializes the TimelineScene.
+        """Initializes the TimelineScene.
 
         Args:
             parent (QObject, optional): The parent object. Defaults to None.
@@ -40,13 +38,10 @@ class TimelineScene(QGraphicsScene):
 
 
 class PlayheadItem(QGraphicsLineItem):
-    """
-    Draggable vertical line representing the current playback position.
-    """
+    """Draggable vertical line representing the current playback position."""
 
     def __init__(self, parent: Optional[QGraphicsItem] = None) -> None:
-        """
-        Initializes the PlayheadItem.
+        """Initializes the PlayheadItem.
 
         Args:
             parent: Parent graphics item.
@@ -81,8 +76,7 @@ class PlayheadItem(QGraphicsLineItem):
         self._zoom_level = 1.0
 
     def set_zoom(self, zoom: float) -> None:
-        """
-        Updates the zoom level to maintain constant screen-space hit area.
+        """Updates the zoom level to maintain constant screen-space hit area.
 
         Args:
             zoom: Current view zoom level (pixels per time unit * base scale).
@@ -95,8 +89,8 @@ class PlayheadItem(QGraphicsLineItem):
             self.prepareGeometryChange()
 
     def shape(self) -> QPainterPath:
-        """
-        Define a wider hit area for easier grabbing.
+        """Define a wider hit area for easier grabbing.
+
         Returns a path roughly 30px wide (screen space).
         """
         path = QPainterPath()
@@ -113,8 +107,7 @@ class PlayheadItem(QGraphicsLineItem):
         return path
 
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
-        """
-        Handles item changes to constrain dragging to horizontal only.
+        """Handles item changes to constrain dragging to horizontal only.
 
         Args:
             change: The type of change.
@@ -138,8 +131,7 @@ class PlayheadItem(QGraphicsLineItem):
         return super().itemChange(change, value)
 
     def set_time(self, time: Optional[float], scale_factor: float) -> None:
-        """
-        Sets the playhead position to the given time.
+        """Sets the playhead position to the given time.
 
         Args:
             time: The time position in lore_date units.
@@ -155,8 +147,7 @@ class PlayheadItem(QGraphicsLineItem):
         self.setPos(x, 0)
 
     def get_time(self, scale_factor: float) -> float:
-        """
-        Gets the current time position of the playhead.
+        """Gets the current time position of the playhead.
 
         Args:
             scale_factor: Pixels per day conversion factor.
@@ -168,14 +159,13 @@ class PlayheadItem(QGraphicsLineItem):
 
 
 class CurrentTimeLineItem(QGraphicsLineItem):
-    """
-    Non-draggable vertical line representing the current time in the world.
+    """Non-draggable vertical line representing the current time in the world.
+
     This is distinct from the playhead and represents the "now" of the world.
     """
 
     def __init__(self, parent: Optional[QGraphicsItem] = None) -> None:
-        """
-        Initializes the CurrentTimeLineItem.
+        """Initializes the CurrentTimeLineItem.
 
         Args:
             parent: Parent graphics item.
@@ -199,8 +189,7 @@ class CurrentTimeLineItem(QGraphicsLineItem):
         self._time = 0.0
 
     def set_time(self, time: float, scale_factor: float) -> None:
-        """
-        Sets the current time line position to the given time.
+        """Sets the current time line position to the given time.
 
         Args:
             time: The time position in lore_date units.
@@ -211,8 +200,7 @@ class CurrentTimeLineItem(QGraphicsLineItem):
         self.setPos(x, 0)
 
     def get_time(self, scale_factor: float) -> float:
-        """
-        Gets the current time position.
+        """Gets the current time position.
 
         Args:
             scale_factor: Pixels per day conversion factor.

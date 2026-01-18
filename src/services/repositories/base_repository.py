@@ -1,8 +1,7 @@
-"""
-Base Repository Module.
+"""Base Repository Module.
 
-Provides the abstract base class for all repository implementations.
-Repositories handle CRUD operations for specific domain entities.
+Provides the abstract base class for all repository implementations. Repositories handle
+CRUD operations for specific domain entities.
 """
 
 import json
@@ -15,8 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseRepository:
-    """
-    Abstract base class for repository implementations.
+    """Abstract base class for repository implementations.
 
     Provides common functionality for database operations including
     connection management, transaction handling, and JSON serialization.
@@ -26,8 +24,7 @@ class BaseRepository:
     """
 
     def __init__(self, connection: Optional[sqlite3.Connection] = None) -> None:
-        """
-        Initialize the repository.
+        """Initialize the repository.
 
         Args:
             connection: Optional SQLite connection. If None, must be set later.
@@ -35,8 +32,7 @@ class BaseRepository:
         self._connection = connection
 
     def set_connection(self, connection: sqlite3.Connection) -> None:
-        """
-        Set the database connection.
+        """Set the database connection.
 
         Args:
             connection: The SQLite database connection.
@@ -45,8 +41,7 @@ class BaseRepository:
 
     @contextmanager
     def transaction(self) -> Iterator[sqlite3.Connection]:
-        """
-        Context manager for safe transaction handling.
+        """Context manager for safe transaction handling.
 
         Yields:
             The database connection within a transaction context.
@@ -67,8 +62,7 @@ class BaseRepository:
 
     @staticmethod
     def _serialize_json(data: dict) -> str:
-        """
-        Serialize a dictionary to JSON string.
+        """Serialize a dictionary to JSON string.
 
         Args:
             data: Dictionary to serialize.
@@ -80,8 +74,7 @@ class BaseRepository:
 
     @staticmethod
     def _deserialize_json(json_str: str) -> dict:
-        """
-        Deserialize JSON string to dictionary.
+        """Deserialize JSON string to dictionary.
 
         Args:
             json_str: JSON string to deserialize.

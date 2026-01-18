@@ -1,8 +1,7 @@
-"""
-Repository Module.
+"""Repository Module.
 
-Provides specialized repository classes for different domain entities.
-Each repository encapsulates CRUD operations for a specific entity type.
+Provides specialized repository classes for different domain entities. Each repository
+encapsulates CRUD operations for a specific entity type.
 """
 
 from src.services.repositories.attachment_repository import AttachmentRepository

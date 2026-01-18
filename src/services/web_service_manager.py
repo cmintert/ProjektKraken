@@ -1,5 +1,5 @@
-"""
-Web Service Manager Module.
+"""Web Service Manager Module.
+
 Handles the lifecycle of the embedded Uvicorn server within a QThread.
 """
 
@@ -18,9 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class WebServerThread(QThread):
-    """
-    Background thread to run the Uvicorn server.
-    """
+    """Background thread to run the Uvicorn server."""
 
     error_occurred = Signal(str)
 
@@ -78,8 +76,8 @@ class WebServerThread(QThread):
 
 
 class WebServiceManager(QObject):
-    """
-    Manager for the embedded web server.
+    """Manager for the embedded web server.
+
     Provides methods to start/stop coverage and signals for UI updates.
     """
 
@@ -158,8 +156,8 @@ class WebServiceManager(QObject):
     def toggle_server(self) -> None:
         """Toggle the web server on or off.
 
-        If server is running, stops it. If not running, starts it.
-        Emits status_changed signal with the new status.
+        If server is running, stops it. If not running, starts it. Emits status_changed
+        signal with the new status.
         """
         if self.is_running:
             self.stop_server()

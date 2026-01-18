@@ -1,5 +1,4 @@
-"""
-AI Search Panel Widget Module.
+"""AI Search Panel Widget Module.
 
 Provides a dockable panel for semantic search with live results and index status.
 Supports future content creation features.
@@ -26,9 +25,7 @@ from src.gui.utils.style_helper import StyleHelper
 
 
 class SearchResultItem(QWidget):
-    """
-    Custom widget for displaying a single search result with metadata.
-    """
+    """Custom widget for displaying a single search result with metadata."""
 
     # Signal emitted when user clicks to open the result
     open_requested = Signal(str, str)  # object_type, object_id
@@ -42,8 +39,7 @@ class SearchResultItem(QWidget):
         obj_subtype: str = "",
         parent: Optional[QWidget] = None,
     ) -> None:
-        """
-        Initialize a search result item.
+        """Initialize a search result item.
 
         Args:
             name: Object name.
@@ -98,11 +94,10 @@ class SearchResultItem(QWidget):
 
 
 class AISearchPanelWidget(QWidget):
-    """
-    A dockable panel providing semantic search with live results and index status.
+    """A dockable panel providing semantic search with live results and index status.
 
-    Follows the "Dumb UI" pattern: emits signals for all user actions,
-    displays data passed from controller.
+    Follows the "Dumb UI" pattern: emits signals for all user actions, displays data
+    passed from controller.
     """
 
     # Signals for user actions
@@ -110,8 +105,7 @@ class AISearchPanelWidget(QWidget):
     result_selected = Signal(str, str)  # object_type, object_id
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """
-        Initialize the AI Search Panel.
+        """Initialize the AI Search Panel.
 
         Args:
             parent: Parent widget.
@@ -227,8 +221,7 @@ class AISearchPanelWidget(QWidget):
             self.open_requested.emit(widget.object_type, widget.object_id)
 
     def set_results(self, results: List[dict]) -> None:
-        """
-        Display search results.
+        """Display search results.
 
         Args:
             results: List of result dicts with keys:
@@ -270,8 +263,7 @@ class AISearchPanelWidget(QWidget):
         self.set_status(f"Found {len(results)} result(s)")
 
     def set_status(self, message: str) -> None:
-        """
-        Set the status message below results.
+        """Set the status message below results.
 
         Args:
             message: Status message to display.
@@ -279,8 +271,7 @@ class AISearchPanelWidget(QWidget):
         self.status_label.setText(message)
 
     def set_searching(self, searching: bool) -> None:
-        """
-        Update UI to show search in progress.
+        """Update UI to show search in progress.
 
         Args:
             searching: True if search is in progress.

@@ -1,5 +1,4 @@
-"""
-Tag Editor Widget Module.
+"""Tag Editor Widget Module.
 
 Provides a list-based interface for managing tags on entities and events.
 """
@@ -21,8 +20,7 @@ from src.gui.widgets.standard_buttons import StandardButton
 
 
 class TagEditorWidget(QWidget):
-    """
-    A widget for managing tags (list of strings).
+    """A widget for managing tags (list of strings).
 
     Provides an input field for adding tags and a list for viewing/removing them.
 
@@ -33,8 +31,7 @@ class TagEditorWidget(QWidget):
     tags_changed = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """
-        Initializes the TagEditorWidget.
+        """Initializes the TagEditorWidget.
 
         Args:
             parent (QWidget, optional): The parent widget. Defaults to None.
@@ -73,8 +70,7 @@ class TagEditorWidget(QWidget):
         main_layout.addWidget(self.tag_list)
 
     def load_tags(self, tags: List[str]) -> None:
-        """
-        Populates the widget with the given list of tags.
+        """Populates the widget with the given list of tags.
 
         Args:
             tags (list): List of tag strings.
@@ -86,8 +82,7 @@ class TagEditorWidget(QWidget):
             self.tag_list.addItem(item)
 
     def get_tags(self) -> List[str]:
-        """
-        Returns the current list of tags.
+        """Returns the current list of tags.
 
         Returns:
             list: List of tag strings.
@@ -99,8 +94,7 @@ class TagEditorWidget(QWidget):
         return tags
 
     def update_suggestions(self, tags: List[str]) -> None:
-        """
-        Updates the tag completer with new suggestions.
+        """Updates the tag completer with new suggestions.
 
         Args:
             tags: List of existing tags for completion.

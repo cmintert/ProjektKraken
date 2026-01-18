@@ -1,5 +1,4 @@
-"""
-Relation Commands Module.
+"""Relation Commands Module.
 
 Provides command classes for managing relationships between events and entities:
 - AddRelationCommand: Create directed relationships
@@ -19,9 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class AddRelationCommand(BaseCommand):
-    """
-    Command to add a directed relationship between two events/entities.
-    """
+    """Command to add a directed relationship between two events/entities."""
 
     def __init__(
         self,
@@ -31,8 +28,7 @@ class AddRelationCommand(BaseCommand):
         attributes: Optional[Dict[str, Any]] = None,
         bidirectional: bool = False,
     ) -> None:
-        """
-        Initializes the AddRelation command.
+        """Initializes the AddRelation command.
 
         Args:
             source_id (str): The ID of the source object.
@@ -51,8 +47,7 @@ class AddRelationCommand(BaseCommand):
         self._created_rel_ids: list[str] = []  # Store for Undo (list of IDs)
 
     def execute(self, db_service: DatabaseService) -> bool:
-        """
-        Executes insertion of the relation(s).
+        """Executes insertion of the relation(s).
 
         Returns:
             bool: True if successful.
@@ -84,9 +79,7 @@ class AddRelationCommand(BaseCommand):
             return False
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Reverts the action by deleting the created relation(s).
-        """
+        """Reverts the action by deleting the created relation(s)."""
         if self._is_executed and self._created_rel_ids:
             for rel_id in self._created_rel_ids:
                 logger.info(f"Undoing AddRelation: Deleting {rel_id}")
@@ -96,13 +89,10 @@ class AddRelationCommand(BaseCommand):
 
 
 class RemoveRelationCommand(BaseCommand):
-    """
-    Command to remove a relationship.
-    """
+    """Command to remove a relationship."""
 
     def __init__(self, rel_id: str) -> None:
-        """
-        Initializes the RemoveRelation command.
+        """Initializes the RemoveRelation command.
 
         Args:
             rel_id (str): The ID of the relationship to remove.
@@ -112,8 +102,7 @@ class RemoveRelationCommand(BaseCommand):
         self._backup_rel = None
 
     def execute(self, db_service: DatabaseService) -> bool:
-        """
-        Executes the command to delete the relation.
+        """Executes the command to delete the relation.
 
         Returns:
             bool: True if successful, False if error.
@@ -128,16 +117,12 @@ class RemoveRelationCommand(BaseCommand):
             return False
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Reverts the deletion (Not fully implemented yet, needs backup logic).
-        """
+        """Reverts the deletion (Not fully implemented yet, needs backup logic)."""
         pass
 
 
 class UpdateRelationCommand(BaseCommand):
-    """
-    Command to update a relationship.
-    """
+    """Command to update a relationship."""
 
     def __init__(
         self,
@@ -146,8 +131,7 @@ class UpdateRelationCommand(BaseCommand):
         rel_type: str,
         attributes: Optional[Dict[str, Any]] = None,
     ) -> None:
-        """
-        Initializes the UpdateRelation command.
+        """Initializes the UpdateRelation command.
 
         Args:
             rel_id (str): The ID of the relationship.
@@ -164,8 +148,7 @@ class UpdateRelationCommand(BaseCommand):
         self._previous_state: Optional[Dict[str, Any]] = None
 
     def execute(self, db_service: DatabaseService) -> bool:
-        """
-        Executes the update, snapshotting the old state.
+        """Executes the update, snapshotting the old state.
 
         Returns:
             bool: True if successful.
@@ -190,9 +173,7 @@ class UpdateRelationCommand(BaseCommand):
             return False
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Reverts the update.
-        """
+        """Reverts the update."""
         if self._is_executed and self._previous_state:
             logger.info(f"Undoing UpdateRelation: {self.rel_id}")
             db_service.update_relation(

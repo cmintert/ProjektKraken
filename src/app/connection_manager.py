@@ -1,8 +1,7 @@
-"""
-Signal Connection Manager.
+"""Signal Connection Manager.
 
-Handles all signal/slot connections for the MainWindow,
-organizing them by component for better maintainability.
+Handles all signal/slot connections for the MainWindow, organizing them by component for
+better maintainability.
 """
 
 import logging
@@ -15,16 +14,14 @@ logger = logging.getLogger(__name__)
 
 
 class ConnectionManager:
-    """
-    Manages signal/slot connections between UI components.
+    """Manages signal/slot connections between UI components.
 
-    Separates connection logic from MainWindow to improve
-    maintainability and reduce coupling.
+    Separates connection logic from MainWindow to improve maintainability and reduce
+    coupling.
     """
 
     def __init__(self, main_window: "MainWindowProtocol") -> None:
-        """
-        Initialize the connection manager.
+        """Initialize the connection manager.
 
         Args:
             main_window: Reference to the MainWindow instance.
@@ -40,8 +37,7 @@ class ConnectionManager:
         slot: callable,
         obj_description: str = "",
     ) -> bool:
-        """
-        Safely connect a signal with validation and error handling.
+        """Safely connect a signal with validation and error handling.
 
         Args:
             obj: The object containing the signal.
@@ -97,8 +93,7 @@ class ConnectionManager:
             return False
 
     def connect_all(self) -> dict:
-        """
-        Connect all UI signals to their respective slots.
+        """Connect all UI signals to their respective slots.
 
         Returns:
             dict: Connection statistics with keys 'total_attempted', 'total_succeeded',
@@ -130,8 +125,7 @@ class ConnectionManager:
         }
 
     def connect_data_handler(self) -> int:
-        """
-        Connect signals from the data handler.
+        """Connect signals from the data handler.
 
         Returns:
             int: Number of failed connections.
@@ -303,8 +297,7 @@ class ConnectionManager:
         return failed_count
 
     def connect_unified_list(self) -> int:
-        """
-        Connect signals from the unified list widget.
+        """Connect signals from the unified list widget.
 
         Returns:
             int: Number of failed connections.
@@ -363,8 +356,7 @@ class ConnectionManager:
         return failed_count
 
     def connect_editors(self) -> int:
-        """
-        Connect signals from event and entity editors.
+        """Connect signals from event and entity editors.
 
         Returns:
             int: Number of failed connections.
@@ -467,8 +459,7 @@ class ConnectionManager:
         return failed_count
 
     def connect_timeline(self) -> int:
-        """
-        Connect signals from the timeline widget.
+        """Connect signals from the timeline widget.
 
         Returns:
             int: Number of failed connections.
@@ -538,8 +529,7 @@ class ConnectionManager:
         return failed_count
 
     def connect_longform_editor(self) -> int:
-        """
-        Connect signals from the longform editor widget.
+        """Connect signals from the longform editor widget.
 
         Returns:
             int: Number of failed connections.
@@ -631,8 +621,7 @@ class ConnectionManager:
         return failed_count
 
     def connect_map_widget(self) -> int:
-        """
-        Connect signals from the map widget.
+        """Connect signals from the map widget.
 
         Returns:
             int: Number of failed connections.
@@ -769,8 +758,7 @@ class ConnectionManager:
         return failed_count
 
     def connect_ai_search_panel(self) -> int:
-        """
-        Connect signals from the AI search panel widget.
+        """Connect signals from the AI search panel widget.
 
         Returns:
             int: Number of failed connections.
@@ -802,8 +790,7 @@ class ConnectionManager:
         return failed_count
 
     def connect_graph_widget(self) -> int:
-        """
-        Connect signals from the graph widget.
+        """Connect signals from the graph widget.
 
         Returns:
             int: Number of failed connections.

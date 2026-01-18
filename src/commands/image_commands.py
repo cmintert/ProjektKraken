@@ -1,8 +1,7 @@
-"""
-Image Commands Module.
+"""Image Commands Module.
 
-Provides command pattern implementations for image attachment operations
-including adding, removing, reordering, and updating captions.
+Provides command pattern implementations for image attachment operations including
+adding, removing, reordering, and updating captions.
 """
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
@@ -15,13 +14,10 @@ from src.services.db_service import DatabaseService
 
 
 class AddImagesCommand(BaseCommand):
-    """
-    Command to add images to an owner.
-    """
+    """Command to add images to an owner."""
 
     def __init__(self, owner_type: str, owner_id: str, source_paths: List[str]) -> None:
-        """
-        Initialize the add images command.
+        """Initialize the add images command.
 
         Args:
             owner_type: The type of owner ("event" or "entity").
@@ -38,8 +34,7 @@ class AddImagesCommand(BaseCommand):
         ] = {}  # For Redo if needed? No, Undo of Add = Remove.
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Execute the add images command.
+        """Execute the add images command.
 
         Imports images from source paths and adds them to the owner.
 
@@ -77,8 +72,7 @@ class AddImagesCommand(BaseCommand):
             return CommandResult(False, str(e))
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Undo the add images command.
+        """Undo the add images command.
 
         Removes all images that were added by this command.
 
@@ -102,13 +96,10 @@ class AddImagesCommand(BaseCommand):
 
 
 class RemoveImageCommand(BaseCommand):
-    """
-    Command to remove an image attachment.
-    """
+    """Command to remove an image attachment."""
 
     def __init__(self, attachment_id: str) -> None:
-        """
-        Initialize the remove image command.
+        """Initialize the remove image command.
 
         Args:
             attachment_id: The UUID of the attachment to remove.
@@ -118,8 +109,7 @@ class RemoveImageCommand(BaseCommand):
         self._trash_info: Optional[Dict[str, Any]] = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Execute the remove image command.
+        """Execute the remove image command.
 
         Removes the specified attachment, moving files to trash.
 
@@ -149,8 +139,7 @@ class RemoveImageCommand(BaseCommand):
             return CommandResult(False, str(e))
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Undo the remove image command.
+        """Undo the remove image command.
 
         Restores the removed image from trash.
 
@@ -163,15 +152,12 @@ class RemoveImageCommand(BaseCommand):
 
 
 class ReorderImagesCommand(BaseCommand):
-    """
-    Command to reorder attachments for an owner.
-    """
+    """Command to reorder attachments for an owner."""
 
     def __init__(
         self, owner_type: str, owner_id: str, new_order_ids: List[str]
     ) -> None:
-        """
-        Initialize the reorder images command.
+        """Initialize the reorder images command.
 
         Args:
             owner_type: The type of owner ("event" or "entity").
@@ -185,8 +171,7 @@ class ReorderImagesCommand(BaseCommand):
         self._previous_order_ids: List[str] = []
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Execute the reorder images command.
+        """Execute the reorder images command.
 
         Updates the display order of attachments for the owner.
 
@@ -219,8 +204,7 @@ class ReorderImagesCommand(BaseCommand):
             return CommandResult(False, str(e))
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Undo the reorder images command.
+        """Undo the reorder images command.
 
         Restores the previous display order of attachments.
 
@@ -235,13 +219,10 @@ class ReorderImagesCommand(BaseCommand):
 
 
 class UpdateImageCaptionCommand(BaseCommand):
-    """
-    Command to update an image caption.
-    """
+    """Command to update an image caption."""
 
     def __init__(self, attachment_id: str, new_caption: Optional[str]) -> None:
-        """
-        Initialize the update image caption command.
+        """Initialize the update image caption command.
 
         Args:
             attachment_id: The UUID of the attachment.
@@ -253,8 +234,7 @@ class UpdateImageCaptionCommand(BaseCommand):
         self._old_caption: Optional[str] = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Execute the update image caption command.
+        """Execute the update image caption command.
 
         Updates the caption of the specified attachment.
 
@@ -284,8 +264,7 @@ class UpdateImageCaptionCommand(BaseCommand):
             return CommandResult(False, str(e))
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Undo the update image caption command.
+        """Undo the update image caption command.
 
         Restores the previous caption value.
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Backup Management CLI.
+"""Backup Management CLI.
 
 Provides command-line tools for creating, listing, and restoring backups.
 

@@ -1,5 +1,4 @@
-"""
-Calendar Commands Module.
+"""Calendar Commands Module.
 
 Implements the Command pattern for calendar configuration operations.
 All commands support undo/redo functionality.
@@ -22,15 +21,13 @@ logger = logging.getLogger(__name__)
 
 
 class CreateCalendarConfigCommand(BaseCommand):
-    """
-    Creates a new calendar configuration.
+    """Creates a new calendar configuration.
 
     Supports undo by deleting the created configuration.
     """
 
     def __init__(self, config: CalendarConfig) -> None:
-        """
-        Initializes the command.
+        """Initializes the command.
 
         Args:
             config: The calendar configuration to create.
@@ -39,8 +36,7 @@ class CreateCalendarConfigCommand(BaseCommand):
         self._config = config
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Creates the calendar configuration.
+        """Creates the calendar configuration.
 
         Args:
             db_service: The database service to use.
@@ -67,8 +63,7 @@ class CreateCalendarConfigCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Undoes the creation by deleting the config.
+        """Undoes the creation by deleting the config.
 
         Args:
             db_service: The database service to use.
@@ -80,15 +75,13 @@ class CreateCalendarConfigCommand(BaseCommand):
 
 
 class UpdateCalendarConfigCommand(BaseCommand):
-    """
-    Updates an existing calendar configuration.
+    """Updates an existing calendar configuration.
 
     Stores the original config for undo support.
     """
 
     def __init__(self, config: CalendarConfig) -> None:
-        """
-        Initializes the command.
+        """Initializes the command.
 
         Args:
             config: The updated calendar configuration.
@@ -98,8 +91,7 @@ class UpdateCalendarConfigCommand(BaseCommand):
         self._original_config: Optional[CalendarConfig] = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Updates the calendar configuration.
+        """Updates the calendar configuration.
 
         Args:
             db_service: The database service to use.
@@ -129,8 +121,7 @@ class UpdateCalendarConfigCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Undoes the update by restoring the original config.
+        """Undoes the update by restoring the original config.
 
         Args:
             db_service: The database service to use.
@@ -142,15 +133,13 @@ class UpdateCalendarConfigCommand(BaseCommand):
 
 
 class DeleteCalendarConfigCommand(BaseCommand):
-    """
-    Deletes a calendar configuration.
+    """Deletes a calendar configuration.
 
     Stores the deleted config for undo support.
     """
 
     def __init__(self, config_id: str) -> None:
-        """
-        Initializes the command.
+        """Initializes the command.
 
         Args:
             config_id: The ID of the calendar configuration to delete.
@@ -160,8 +149,7 @@ class DeleteCalendarConfigCommand(BaseCommand):
         self._deleted_config: Optional[CalendarConfig] = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Deletes the calendar configuration.
+        """Deletes the calendar configuration.
 
         Args:
             db_service: The database service to use.
@@ -191,8 +179,7 @@ class DeleteCalendarConfigCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Undoes the deletion by restoring the config.
+        """Undoes the deletion by restoring the config.
 
         Args:
             db_service: The database service to use.
@@ -204,15 +191,13 @@ class DeleteCalendarConfigCommand(BaseCommand):
 
 
 class SetActiveCalendarCommand(BaseCommand):
-    """
-    Sets a calendar configuration as the active one.
+    """Sets a calendar configuration as the active one.
 
     Stores the previously active config ID for undo support.
     """
 
     def __init__(self, config_id: str) -> None:
-        """
-        Initializes the command.
+        """Initializes the command.
 
         Args:
             config_id: The ID of the calendar to set as active.
@@ -222,8 +207,7 @@ class SetActiveCalendarCommand(BaseCommand):
         self._previous_active_id: Optional[str] = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Sets the calendar as active.
+        """Sets the calendar as active.
 
         Args:
             db_service: The database service to use.
@@ -254,8 +238,7 @@ class SetActiveCalendarCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Undoes by restoring the previously active calendar.
+        """Undoes by restoring the previously active calendar.
 
         Args:
             db_service: The database service to use.

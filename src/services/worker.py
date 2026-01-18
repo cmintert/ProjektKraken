@@ -1,5 +1,5 @@
-"""
-Database Worker Module.
+"""Database Worker Module.
+
 Handles asynchronous database operations to keep the UI responsive.
 """
 
@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 
 
 class DatabaseWorker(QObject):
-    """
-    Worker object that executes database operations in a separate thread.
+    """Worker object that executes database operations in a separate thread.
+
     Owns the DatabaseService instance to ensure thread affinity.
     """
 
@@ -60,8 +60,7 @@ class DatabaseWorker(QObject):
     operation_finished = Signal(str)
 
     def __init__(self, db_path: str) -> None:
-        """
-        Initializes the worker.
+        """Initializes the worker.
 
         Args:
             db_path: Path to the database file.
@@ -116,8 +115,8 @@ class DatabaseWorker(QObject):
 
     @Slot()
     def cleanup(self) -> None:
-        """
-        Cleanly closes database connections and other resources.
+        """Cleanly closes database connections and other resources.
+
         Should be called before the thread is terminated.
         """
         try:
@@ -207,8 +206,7 @@ class DatabaseWorker(QObject):
     def add_keyframe(
         self, map_id: str, marker_id: str, t: float, x: float, y: float
     ) -> None:
-        """
-        Adds a keyframe to a marker's trajectory and reloads trajectories.
+        """Adds a keyframe to a marker's trajectory and reloads trajectories.
 
         Args:
             map_id: The map ID (for reloading).
@@ -235,8 +233,7 @@ class DatabaseWorker(QObject):
     def update_keyframe_time(
         self, map_id: str, marker_id: str, old_t: float, new_t: float
     ) -> None:
-        """
-        Updates a keyframe's timestamp (Clock Mode) and reloads trajectories.
+        """Updates a keyframe's timestamp (Clock Mode) and reloads trajectories.
 
         Args:
             map_id: The map ID (for reloading).
@@ -259,8 +256,7 @@ class DatabaseWorker(QObject):
 
     @Slot(str, str, float)
     def delete_keyframe(self, map_id: str, marker_id: str, t: float) -> None:
-        """
-        Deletes a keyframe from a marker's trajectory and reloads trajectories.
+        """Deletes a keyframe from a marker's trajectory and reloads trajectories.
 
         Args:
             map_id: The map ID (for reloading).
@@ -332,9 +328,7 @@ class DatabaseWorker(QObject):
 
     @Slot(str, str)
     def load_attachments(self, owner_type: str, owner_id: str) -> None:
-        """
-        Loads attachments for a specific owner.
-        """
+        """Loads attachments for a specific owner."""
         if not self.attachment_service:
             return
 
@@ -352,8 +346,7 @@ class DatabaseWorker(QObject):
     def load_longform_sequence(
         self, doc_id: str, filter_json: Optional[str] = None
     ) -> None:
-        """
-        Loads the longform document sequence.
+        """Loads the longform document sequence.
 
         Args:
             doc_id (str): Document ID to load.
@@ -402,8 +395,7 @@ class DatabaseWorker(QObject):
 
     @Slot()
     def load_calendar_config(self) -> None:
-        """
-        Loads the active calendar configuration.
+        """Loads the active calendar configuration.
 
         Emits calendar_config_loaded with the CalendarConfig or None.
         """
@@ -490,8 +482,7 @@ class DatabaseWorker(QObject):
 
     @Slot()
     def load_current_time(self) -> None:
-        """
-        Loads the current time from the database.
+        """Loads the current time from the database.
 
         Emits:
             current_time_loaded (float or None): The current time value.
@@ -511,8 +502,7 @@ class DatabaseWorker(QObject):
 
     @Slot(float)
     def save_current_time(self, time: float) -> None:
-        """
-        Saves the current time to the database.
+        """Saves the current time to the database.
 
         Args:
             time (float): The current time in lore_date units.
@@ -529,8 +519,7 @@ class DatabaseWorker(QObject):
 
     @Slot()
     def load_grouping_dialog_data(self) -> None:
-        """
-        Loads all necessary data for the grouping configuration dialog.
+        """Loads all necessary data for the grouping configuration dialog.
 
         Emits:
             grouping_dialog_data_loaded (list, dict): tags_data, current_config
@@ -578,8 +567,7 @@ class DatabaseWorker(QObject):
         content: str,
         excluded_attributes: Optional[List[str]] = None,
     ) -> None:
-        """
-        Index a single object (entity or event) for semantic search.
+        """Index a single object (entity or event) for semantic search.
 
         Args:
             object_type: 'entity' or 'event'.
@@ -619,8 +607,7 @@ class DatabaseWorker(QObject):
 
     @Slot(dict)
     def apply_filter(self, filter_config: dict) -> None:
-        """
-        Applies a tag filter and loads the matching objects.
+        """Applies a tag filter and loads the matching objects.
 
         Args:
             filter_config: Dictionary containing 'include', 'include_mode',
@@ -665,8 +652,8 @@ class DatabaseWorker(QObject):
 
     @Slot(str, float)
     def resolve_entity_state(self, entity_id: str, time: float) -> None:
-        """
-        Resolves the state of an entity at a specific time using TemporalManager.
+        """Resolves the state of an entity at a specific time using TemporalManager.
+
         Emits entity_state_resolved.
         """
         if not self.temporal_manager:
@@ -689,8 +676,7 @@ class DatabaseWorker(QObject):
     def load_graph_data(
         self, tags: list[str] | None = None, rel_types: list[str] | None = None
     ) -> None:
-        """
-        Loads graph data filtered by tags and relation types.
+        """Loads graph data filtered by tags and relation types.
 
         Args:
             tags: List of tags to include.
@@ -724,9 +710,7 @@ class DatabaseWorker(QObject):
 
     @Slot()
     def load_completer_data(self) -> None:
-        """
-        Loads data for autocompleters (tags, relation types, attribute keys).
-        """
+        """Loads data for autocompleters (tags, relation types, attribute keys)."""
         if not self.db_service:
             return
 

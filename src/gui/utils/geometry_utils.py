@@ -1,5 +1,4 @@
-"""
-Geometry Utilities.
+"""Geometry Utilities.
 
 Provides helper functions for ensuring windows and widgets remain visible on screen,
 handling multi-monitor boundary checks, and sanitizing geometry rectangles.
@@ -12,14 +11,11 @@ from PySide6.QtGui import QGuiApplication, QScreen
 
 
 class GeometryUtils:
-    """
-    Static utility class for geometry validation and sanitization.
-    """
+    """Static utility class for geometry validation and sanitization."""
 
     @staticmethod
     def ensure_on_screen(rect: QRect) -> QRect:
-        """
-        Adjusts the given rectangle to ensure it is visible on the nearest screen.
+        """Adjusts the given rectangle to ensure it is visible on the nearest screen.
 
         Algorithm:
         1. Find the screen that contains the largest area of the rect.
@@ -96,8 +92,7 @@ class GeometryUtils:
 
     @staticmethod
     def is_safe_geometry(rect: QRect, min_intersection_percent: float = 0.5) -> bool:
-        """
-        Checks if a rectangle is sufficiently visible on any screen.
+        """Checks if a rectangle is sufficiently visible on any screen.
 
         Args:
             rect: The geometry to check.

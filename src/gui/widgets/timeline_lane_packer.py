@@ -1,8 +1,7 @@
-"""
-Timeline Lane Packer Module.
+"""Timeline Lane Packer Module.
 
-Provides the lane packing algorithm for organizing events on the timeline
-without overlaps using a greedy "First Fit" approach.
+Provides the lane packing algorithm for organizing events on the timeline without
+overlaps using a greedy "First Fit" approach.
 """
 
 import logging
@@ -17,12 +16,11 @@ logger = logging.getLogger(__name__)
 
 
 class TimelineLanePacker:
-    """
-    Handles the lane packing algorithm for timeline events.
+    """Handles the lane packing algorithm for timeline events.
 
-    Uses a greedy "First Fit" algorithm to pack events into lanes,
-    minimizing vertical space while preventing visual overlaps.
-    Supports variable-height events by tracking per-lane heights.
+    Uses a greedy "First Fit" algorithm to pack events into lanes, minimizing vertical
+    space while preventing visual overlaps. Supports variable-height events by tracking
+    per-lane heights.
     """
 
     # Constants for spacing
@@ -31,8 +29,7 @@ class TimelineLanePacker:
     LANE_PADDING = 10  # Vertical padding between lanes
 
     def __init__(self, scale_factor: float = 20.0) -> None:
-        """
-        Initializes the TimelineLanePacker.
+        """Initializes the TimelineLanePacker.
 
         Args:
             scale_factor: The current timeline scale factor (pixels per day).
@@ -49,8 +46,7 @@ class TimelineLanePacker:
             self.fm = QFontMetrics(self.font)
 
     def pack_events(self, events: List[Event]) -> Tuple[Dict[str, int], List[int]]:
-        """
-        Packs events into lanes using the First Fit algorithm.
+        """Packs events into lanes using the First Fit algorithm.
 
         Args:
             events: List of Event objects to pack (should be sorted by
@@ -89,8 +85,7 @@ class TimelineLanePacker:
         return event_lane_assignments, lanes_heights
 
     def _calculate_visual_duration(self, event: Event) -> float:
-        """
-        Calculates the visual duration of an event in time units.
+        """Calculates the visual duration of an event in time units.
 
         Takes into account the event's actual duration and text label width
         to determine how much horizontal space it needs.
@@ -133,8 +128,7 @@ class TimelineLanePacker:
         end_time: float,
         event_height: int,
     ) -> int:
-        """
-        Finds the first available lane for an event.
+        """Finds the first available lane for an event.
 
         Args:
             lanes_end_times: List of end times for each existing lane.
@@ -160,8 +154,7 @@ class TimelineLanePacker:
         return len(lanes_end_times) - 1
 
     def update_scale_factor(self, scale_factor: float) -> None:
-        """
-        Updates the scale factor for packing calculations.
+        """Updates the scale factor for packing calculations.
 
         Args:
             scale_factor: New scale factor (pixels per day).

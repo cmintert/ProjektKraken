@@ -1,6 +1,4 @@
-"""
-CLI for managing calendar configurations.
-"""
+"""CLI for managing calendar configurations."""
 
 import argparse
 import logging

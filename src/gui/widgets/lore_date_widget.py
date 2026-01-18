@@ -1,8 +1,7 @@
-"""
-Lore Date Widget Module.
+"""Lore Date Widget Module.
 
-Provides a structured date input widget that adapts to calendar configuration,
-with Year/Month/Day dropdowns and fallback to raw float input.
+Provides a structured date input widget that adapts to calendar configuration, with
+Year/Month/Day dropdowns and fallback to raw float input.
 """
 
 import logging
@@ -26,8 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class LoreDateWidget(QWidget):
-    """
-    A composite widget for entering lore dates with structured fields.
+    """A composite widget for entering lore dates with structured fields.
 
     Provides Year/Month/Day dropdowns that adapt to the configured calendar,
     with a toggle to switch to raw float input mode.
@@ -39,8 +37,7 @@ class LoreDateWidget(QWidget):
     value_changed = Signal(float)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """
-        Initializes the lore date widget.
+        """Initializes the lore date widget.
 
         Args:
             parent: The parent widget, if any.
@@ -122,8 +119,7 @@ class LoreDateWidget(QWidget):
         self._set_structured_enabled(False)
 
     def _set_structured_enabled(self, enabled: bool) -> None:
-        """
-        Enables or disables structured input mode.
+        """Enables or disables structured input mode.
 
         Args:
             enabled: Whether structured mode should be enabled.
@@ -142,8 +138,7 @@ class LoreDateWidget(QWidget):
             self._raw_toggle.setEnabled(True)
 
     def set_calendar_converter(self, converter: CalendarConverter) -> None:
-        """
-        Sets the calendar converter for date formatting.
+        """Sets the calendar converter for date formatting.
 
         Args:
             converter: CalendarConverter instance or None.
@@ -220,8 +215,7 @@ class LoreDateWidget(QWidget):
 
     @Slot(int)
     def _on_month_changed(self, index: int) -> None:
-        """
-        Handles month selection change.
+        """Handles month selection change.
 
         Args:
             index: New month index.
@@ -243,8 +237,7 @@ class LoreDateWidget(QWidget):
 
     @Slot(float)
     def _on_raw_changed(self, value: float) -> None:
-        """
-        Handles changes to raw float spinbox.
+        """Handles changes to raw float spinbox.
 
         Args:
             value: New float value.
@@ -257,8 +250,7 @@ class LoreDateWidget(QWidget):
 
     @Slot(bool)
     def _on_raw_toggle(self, checked: bool) -> None:
-        """
-        Handles raw mode toggle.
+        """Handles raw mode toggle.
 
         Args:
             checked: Whether raw mode is enabled.
@@ -291,8 +283,7 @@ class LoreDateWidget(QWidget):
         self._update_preview()
 
     def _get_structured_value(self) -> float:
-        """
-        Gets the date value from structured fields only.
+        """Gets the date value from structured fields only.
 
         Returns:
             float: The computed float value from Year/Month/Day fields.
@@ -356,8 +347,7 @@ class LoreDateWidget(QWidget):
             self._preview_label.setText("")
 
     def set_value(self, float_value: float) -> None:
-        """
-        Sets the date value from a float.
+        """Sets the date value from a float.
 
         Args:
             float_value: The absolute day float value.
@@ -370,8 +360,7 @@ class LoreDateWidget(QWidget):
         self._update_preview()
 
     def _set_value_internal(self, float_value: float) -> None:
-        """
-        Updates structured fields from a float value.
+        """Updates structured fields from a float value.
 
         Args:
             float_value: The absolute day float value.
@@ -419,8 +408,7 @@ class LoreDateWidget(QWidget):
         self._updating = False
 
     def get_value(self) -> float:
-        """
-        Gets the current date value as a float.
+        """Gets the current date value as a float.
 
         Returns:
             float: The absolute day float value.
@@ -461,8 +449,7 @@ class LoreDateWidget(QWidget):
         return self._converter.to_float(date)
 
     def minimumSizeHint(self) -> "QSize":
-        """
-        Returns the minimum size hint to prevent vertical collapse.
+        """Returns the minimum size hint to prevent vertical collapse.
 
         Returns:
             QSize: Minimum size for the lore date widget.
@@ -472,8 +459,7 @@ class LoreDateWidget(QWidget):
         return QSize(400, 40)  # Single row of controls
 
     def sizeHint(self) -> "QSize":
-        """
-        Returns the preferred size hint.
+        """Returns the preferred size hint.
 
         Returns:
             QSize: Preferred size for comfortable date input.

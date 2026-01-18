@@ -1,5 +1,4 @@
-"""
-Layout Guard Mixin.
+"""Layout Guard Mixin.
 
 Provides hardening logic for QMainWindow layout restoration.
 Protects against:
@@ -18,14 +17,13 @@ logger = get_logger(__name__)
 
 
 class LayoutGuardMixin:
-    """
-    Mixin for QMainWindow to harden layout save/restore operations.
+    """Mixin for QMainWindow to harden layout save/restore operations.
+
     Expected usage: Inherit from this in MainWindow.
     """
 
     def guard_restore_geometry(self, geometry_data: bytes) -> bool:
-        """
-        Safely restores window geometry with off-screen protection.
+        """Safely restores window geometry with off-screen protection.
 
         Args:
             geometry_data: The hex-encoded or raw QByteArray geometry data.
@@ -56,8 +54,8 @@ class LayoutGuardMixin:
         return True
 
     def guard_validate_dock_sizes(self) -> None:
-        """
-        Checks for collapsed (zero-size) docks and forces them open.
+        """Checks for collapsed (zero-size) docks and forces them open.
+
         Should be called AFTER restoreState() and processing events.
         """
         if not isinstance(self, QMainWindow):
@@ -108,10 +106,8 @@ class LayoutGuardMixin:
             logger.info(f"Moved floating dock '{dock.objectName()}' on-screen.")
 
     def _force_expand_dock(self, dock: QDockWidget) -> None:
-        """
-        Forces a dock to expand by setting a temporary minimum size constraint
-        that overrides the QSplitter's collapsed state, then resets it.
-        """
+        """Forces a dock to expand by setting a temporary minimum size constraint that
+        overrides the QSplitter's collapsed state, then resets it."""
         original_min_w = dock.minimumWidth()
         original_min_h = dock.minimumHeight()
 

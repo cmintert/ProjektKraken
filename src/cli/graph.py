@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Graph Data CLI.
+"""Graph Data CLI.
 
 Provides command-line tools for exporting graph data for visualization.
 

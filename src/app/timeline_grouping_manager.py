@@ -24,8 +24,7 @@ logger = get_logger(__name__)
 
 
 class TimelineGroupingManager(QObject):
-    """
-    Manages timeline grouping operations for the MainWindow.
+    """Manages timeline grouping operations for the MainWindow.
 
     This class encapsulates all functionality related to:
     - Loading and applying timeline grouping configurations
@@ -36,8 +35,7 @@ class TimelineGroupingManager(QObject):
     """
 
     def __init__(self, main_window: "MainWindow") -> None:
-        """
-        Initialize the TimelineGroupingManager.
+        """Initialize the TimelineGroupingManager.
 
         Args:
             main_window: Reference to the MainWindow instance.
@@ -56,8 +54,7 @@ class TimelineGroupingManager(QObject):
             logger.warning(f"Failed to load grouping config: {e}")
 
     def on_grouping_config_loaded(self, config: dict) -> None:
-        """
-        Handler for grouping config loaded.
+        """Handler for grouping config loaded.
 
         Args:
             config: Dictionary with 'tag_order' and 'mode', or None.
@@ -87,8 +84,7 @@ class TimelineGroupingManager(QObject):
     def on_grouping_dialog_data_loaded(
         self, tags_data: list, current_config: dict
     ) -> None:
-        """
-        Handler for grouping dialog data loaded from worker.
+        """Handler for grouping dialog data loaded from worker.
 
         Args:
             tags_data: List of dicts with 'name', 'color', 'count' for each tag.
@@ -113,8 +109,7 @@ class TimelineGroupingManager(QObject):
 
     @Slot(list, str)
     def on_grouping_applied(self, tag_order: list, mode: str) -> None:
-        """
-        Handle grouping applied from dialog.
+        """Handle grouping applied from dialog.
 
         Args:
             tag_order: List of tag names in order.
@@ -134,8 +129,7 @@ class TimelineGroupingManager(QObject):
 
     @Slot(str)
     def on_tag_color_change_requested(self, tag_name: str) -> None:
-        """
-        Handle tag color change from band context menu.
+        """Handle tag color change from band context menu.
 
         Args:
             tag_name: The name of the tag to change color for.
@@ -148,8 +142,7 @@ class TimelineGroupingManager(QObject):
 
     @Slot(str)
     def on_remove_from_grouping_requested(self, tag_name: str) -> None:
-        """
-        Remove a tag from current grouping.
+        """Remove a tag from current grouping.
 
         Args:
             tag_name: The name of the tag to remove.

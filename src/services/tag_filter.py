@@ -1,12 +1,11 @@
-"""
-Tag Filter Module.
+"""Tag Filter Module.
 
-Provides a composable FilterClause framework for filtering entities and events
-by tags. Implements include/exclude logic with 'any' and 'all' semantics,
-supporting case-sensitive and case-insensitive matching.
+Provides a composable FilterClause framework for filtering entities and events by tags.
+Implements include/exclude logic with 'any' and 'all' semantics, supporting case-
+sensitive and case-insensitive matching.
 
-This module works with the normalized tag tables (tags, event_tags, entity_tags)
-and returns lightweight (object_type, object_id) tuples for efficiency.
+This module works with the normalized tag tables (tags, event_tags, entity_tags) and
+returns lightweight (object_type, object_id) tuples for efficiency.
 """
 
 import logging
@@ -23,19 +22,16 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class FilterClause(ABC):
-    """
-    Abstract base class for filter clauses.
+    """Abstract base class for filter clauses.
 
-    Subclasses should implement the matches() method to define
-    specific filtering logic.
+    Subclasses should implement the matches() method to define specific filtering logic.
     """
 
     @abstractmethod
     def matches(
         self, conn: sqlite3.Connection, object_type: Optional[str] = None
     ) -> Set[Tuple[str, str]]:
-        """
-        Returns set of (object_type, object_id) tuples that match this clause.
+        """Returns set of (object_type, object_id) tuples that match this clause.
 
         Args:
             conn: SQLite database connection.
@@ -49,8 +45,7 @@ class FilterClause(ABC):
 
 @dataclass
 class TagClause(FilterClause):
-    """
-    Filter clause for tag-based filtering.
+    """Filter clause for tag-based filtering.
 
     Supports include/exclude lists with 'any' or 'all' semantics,
     and case-sensitive or case-insensitive matching.
@@ -75,8 +70,7 @@ class TagClause(FilterClause):
     def matches(
         self, conn: sqlite3.Connection, object_type: Optional[str] = None
     ) -> Set[Tuple[str, str]]:
-        """
-        Returns set of (object_type, object_id) tuples matching tag criteria.
+        """Returns set of (object_type, object_id) tuples matching tag criteria.
 
         Args:
             conn: SQLite database connection.
@@ -102,8 +96,7 @@ class TagClause(FilterClause):
     def _get_all_objects(
         self, conn: sqlite3.Connection, object_type: Optional[str]
     ) -> Set[Tuple[str, str]]:
-        """
-        Get all objects (entities and/or events).
+        """Get all objects (entities and/or events).
 
         Args:
             conn: SQLite database connection.
@@ -129,8 +122,7 @@ class TagClause(FilterClause):
     def _apply_include(
         self, conn: sqlite3.Connection, object_type: Optional[str]
     ) -> Set[Tuple[str, str]]:
-        """
-        Apply include filter with 'any' or 'all' semantics.
+        """Apply include filter with 'any' or 'all' semantics.
 
         Args:
             conn: SQLite database connection.
@@ -161,8 +153,7 @@ class TagClause(FilterClause):
     def _apply_exclude(
         self, conn: sqlite3.Connection, object_type: Optional[str]
     ) -> Set[Tuple[str, str]]:
-        """
-        Apply exclude filter with 'any' or 'all' semantics.
+        """Apply exclude filter with 'any' or 'all' semantics.
 
         Args:
             conn: SQLite database connection.
@@ -197,8 +188,7 @@ class TagClause(FilterClause):
         mode: str,
         case_sensitive: bool,
     ) -> Set[str]:
-        """
-        Filter entities by tags with 'any' or 'all' semantics.
+        """Filter entities by tags with 'any' or 'all' semantics.
 
         Args:
             conn: SQLite database connection.
@@ -222,8 +212,7 @@ class TagClause(FilterClause):
     def _filter_entities_any(
         self, conn: sqlite3.Connection, tag_names: List[str], case_sensitive: bool
     ) -> Set[str]:
-        """
-        Filter entities that have ANY of the specified tags.
+        """Filter entities that have ANY of the specified tags.
 
         Args:
             conn: SQLite database connection.
@@ -257,8 +246,7 @@ class TagClause(FilterClause):
     def _filter_entities_all(
         self, conn: sqlite3.Connection, tag_names: List[str], case_sensitive: bool
     ) -> Set[str]:
-        """
-        Filter entities that have ALL of the specified tags.
+        """Filter entities that have ALL of the specified tags.
 
         Args:
             conn: SQLite database connection.
@@ -302,8 +290,7 @@ class TagClause(FilterClause):
         mode: str,
         case_sensitive: bool,
     ) -> Set[str]:
-        """
-        Filter events by tags with 'any' or 'all' semantics.
+        """Filter events by tags with 'any' or 'all' semantics.
 
         Args:
             conn: SQLite database connection.
@@ -327,8 +314,7 @@ class TagClause(FilterClause):
     def _filter_events_any(
         self, conn: sqlite3.Connection, tag_names: List[str], case_sensitive: bool
     ) -> Set[str]:
-        """
-        Filter events that have ANY of the specified tags.
+        """Filter events that have ANY of the specified tags.
 
         Args:
             conn: SQLite database connection.
@@ -362,8 +348,7 @@ class TagClause(FilterClause):
     def _filter_events_all(
         self, conn: sqlite3.Connection, tag_names: List[str], case_sensitive: bool
     ) -> Set[str]:
-        """
-        Filter events that have ALL of the specified tags.
+        """Filter events that have ALL of the specified tags.
 
         Args:
             conn: SQLite database connection.
@@ -410,8 +395,7 @@ def filter_object_ids(
     exclude_mode: str = "any",
     case_sensitive: bool = False,
 ) -> List[Tuple[str, str]]:
-    """
-    Filter objects (entities and/or events) by tags.
+    """Filter objects (entities and/or events) by tags.
 
     This is the main public API for tag-based filtering. It returns
     lightweight (object_type, object_id) tuples for efficiency.
@@ -483,8 +467,7 @@ def filter_object_ids(
 def _get_connection(
     conn_or_db_service: Union[sqlite3.Connection, "DatabaseService"],
 ) -> sqlite3.Connection:
-    """
-    Extract SQLite connection from DatabaseService or return connection directly.
+    """Extract SQLite connection from DatabaseService or return connection directly.
 
     Args:
         conn_or_db_service: SQLite connection or DatabaseService instance.

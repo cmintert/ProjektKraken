@@ -1,8 +1,7 @@
-"""
-Relation Edit Dialog Module.
+"""Relation Edit Dialog Module.
 
-Provides a consolidated dialog for adding or editing relations,
-featuring autocompletion for target entities/events.
+Provides a consolidated dialog for adding or editing relations, featuring autocompletion
+for target entities/events.
 """
 
 from typing import Any, Dict, Optional
@@ -29,8 +28,8 @@ from src.gui.widgets.compact_date_widget import CompactDateWidget
 
 
 class RelationEditDialog(QDialog):
-    """
-    A dialog for adding or editing a relationship.
+    """A dialog for adding or editing a relationship.
+
     Supports autocompletion for the target field.
     """
 
@@ -47,8 +46,7 @@ class RelationEditDialog(QDialog):
         source_event_name: Optional[str] = None,
         known_types: list[str] = None,
     ) -> None:
-        """
-        Initializes the dialog.
+        """Initializes the dialog.
 
         Args:
             parent: Parent widget.
@@ -446,8 +444,7 @@ class RelationEditDialog(QDialog):
         return attrs
 
     def get_data(self) -> tuple[str, str, bool, Dict[str, Any]]:
-        """
-        Returns the dialog data.
+        """Returns the dialog data.
 
         Returns:
             tuple: (target_id, rel_type, is_bidirectional, attributes)

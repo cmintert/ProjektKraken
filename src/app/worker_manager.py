@@ -38,8 +38,7 @@ logger = get_logger(__name__)
 
 
 class WorkerManager(QObject):
-    """
-    Manages database worker thread operations for the MainWindow.
+    """Manages database worker thread operations for the MainWindow.
 
     This class encapsulates all functionality related to:
     - Initializing the database worker thread
@@ -49,8 +48,7 @@ class WorkerManager(QObject):
     """
 
     def __init__(self, main_window: "MainWindow") -> None:
-        """
-        Initialize the WorkerManager.
+        """Initialize the WorkerManager.
 
         Args:
             main_window: Reference to the MainWindow instance.
@@ -59,9 +57,8 @@ class WorkerManager(QObject):
         self.window = main_window
 
     def init_worker(self) -> None:
-        """
-        Initializes the DatabaseWorker and moves it to a separate thread.
-        Connects all worker signals to MainWindow slots.
+        """Initializes the DatabaseWorker and moves it to a separate thread. Connects
+        all worker signals to MainWindow slots.
 
         Uses portable-only mode: worlds are stored in worlds/ directory
         next to the executable.
@@ -187,8 +184,7 @@ class WorkerManager(QObject):
 
     @Slot(str)
     def update_status_message(self, message: str) -> None:
-        """
-        Updates the status bar message and sets cursor to Wait.
+        """Updates the status bar message and sets cursor to Wait.
 
         Args:
             message: The message to display.
@@ -198,8 +194,7 @@ class WorkerManager(QObject):
         QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
 
     def clear_status_message(self, message: str) -> None:
-        """
-        Clears the status bar message after a delay and restores cursor.
+        """Clears the status bar message after a delay and restores cursor.
 
         Args:
             message: The final completion message.
@@ -209,8 +204,7 @@ class WorkerManager(QObject):
 
     @Slot(str)
     def show_error_message(self, message: str) -> None:
-        """
-        Displays an error message in the status bar and logs it.
+        """Displays an error message in the status bar and logs it.
 
         Args:
             message: The error description.
@@ -221,8 +215,7 @@ class WorkerManager(QObject):
 
     @Slot(bool)
     def on_db_initialized(self, success: bool) -> None:
-        """
-        Handler for database initialization result.
+        """Handler for database initialization result.
 
         Args:
             success: True if connection succeeded, False otherwise.

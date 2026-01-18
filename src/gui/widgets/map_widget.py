@@ -1,5 +1,4 @@
-"""
-Map Widget Module.
+"""Map Widget Module.
 
 Main entry point for map visualization. Provides MapWidget wrapper
 that combines MapGraphicsView with map management controls.
@@ -44,8 +43,7 @@ MARKER_ICONS_PATH = get_resource_path(
 
 
 def get_available_icons() -> List[str]:
-    """
-    Returns a list of available marker icon filenames.
+    """Returns a list of available marker icon filenames.
 
     Returns:
         List[str]: List of .svg filenames in the markers folder.
@@ -56,8 +54,7 @@ def get_available_icons() -> List[str]:
 
 
 class MapWidget(QWidget):
-    """
-    Container widget for the map view.
+    """Container widget for the map view.
 
     Provides a clean interface to the map system with signal routing.
 
@@ -88,8 +85,7 @@ class MapWidget(QWidget):
     show_onboarding_requested = Signal()  # To trigger animation or hints
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """
-        Initializes the MapWidget.
+        """Initializes the MapWidget.
 
         Args:
             parent: Parent widget.
@@ -257,8 +253,7 @@ class MapWidget(QWidget):
                 )
 
     def set_trajectories(self, trajectories: list) -> None:
-        """
-        Sets the active trajectories for the current map.
+        """Sets the active trajectories for the current map.
 
         Args:
             trajectories: List of (marker_id, trajectory_id, keyframes) tuples.
@@ -298,9 +293,8 @@ class MapWidget(QWidget):
 
     @Slot()
     def _on_add_keyframe(self) -> None:
-        """
-        Captures the current position of the selected marker and saves it as a keyframe.
-        """
+        """Captures the current position of the selected marker and saves it as a
+        keyframe."""
         selected_items = self.view.scene.selectedItems()
         if not selected_items:
             logger.warning("Cannot add keyframe: No marker selected.")
@@ -336,8 +330,7 @@ class MapWidget(QWidget):
                 yield marker_id, x, y
 
     def _update_trajectory_positions(self, force_all: bool = False) -> None:
-        """
-        Updates all trajectory-based markers for the current playhead time.
+        """Updates all trajectory-based markers for the current playhead time.
 
         Args:
             force_all: If True, even markers in transient state are snapped back.
@@ -350,8 +343,7 @@ class MapWidget(QWidget):
 
     @Slot(float)
     def on_time_changed(self, time: float) -> None:
-        """
-        Receives playhead time updates from the Timeline.
+        """Receives playhead time updates from the Timeline.
 
         Updates the internal time state, refreshes the status display,
         and updates any trajectory-based markers.
@@ -389,8 +381,7 @@ class MapWidget(QWidget):
 
     @Slot(float)
     def on_current_time_changed(self, time: float) -> None:
-        """
-        Receives current time ("Now") updates from the Timeline.
+        """Receives current time ("Now") updates from the Timeline.
 
         This represents the story's current moment, distinct from the playhead.
 
@@ -417,8 +408,7 @@ class MapWidget(QWidget):
         self.coord_label.setText(f"{current_text} | {time_str}")
 
     def set_maps(self, maps: list) -> None:
-        """
-        Populates the map selector with available maps.
+        """Populates the map selector with available maps.
 
         Args:
             maps: List of Map objects.
@@ -450,8 +440,7 @@ class MapWidget(QWidget):
             self.map_selected.emit(map_id)
 
     def get_selected_map_id(self) -> Optional[str]:
-        """
-        Returns the currently selected map ID.
+        """Returns the currently selected map ID.
 
         Returns:
             Optional[str]: The map ID, or None if no map is selected.
@@ -461,8 +450,7 @@ class MapWidget(QWidget):
 
     @Slot(str, float, float)
     def _on_marker_moved(self, marker_id: str, x: float, y: float) -> None:
-        """
-        Handles marker movement from the view.
+        """Handles marker movement from the view.
 
         Updates the widget's marker position and emits signal for persistence.
 
@@ -494,8 +482,7 @@ class MapWidget(QWidget):
     def _on_mouse_coordinates_changed(
         self, x: float, y: float, in_bounds: bool
     ) -> None:
-        """
-        Updates the coordinate label.
+        """Updates the coordinate label.
 
         Args:
             x: Normalized X [0-1]
@@ -543,8 +530,7 @@ class MapWidget(QWidget):
         self.coord_label.setText(f"{norm_str} | {km_str} | {time_str}")
 
     def load_map(self, image_path: str) -> bool:
-        """
-        Loads a map image.
+        """Loads a map image.
 
         Args:
             image_path: Path to the image file.
@@ -566,8 +552,7 @@ class MapWidget(QWidget):
         description: Optional[str] = None,
         lore_date: Optional[float] = None,
     ) -> None:
-        """
-        Adds a marker to the map.
+        """Adds a marker to the map.
 
         Args:
             marker_id: Unique identifier for the marker.
@@ -584,8 +569,7 @@ class MapWidget(QWidget):
         )
 
     def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
-        """
-        Updates a marker's position.
+        """Updates a marker's position.
 
         Args:
             marker_id: Unique identifier for the marker.
@@ -595,8 +579,7 @@ class MapWidget(QWidget):
         self.view.update_marker_position(marker_id, x, y)
 
     def remove_marker(self, marker_id: str) -> None:
-        """
-        Removes a marker from the map.
+        """Removes a marker from the map.
 
         Args:
             marker_id: ID of the marker to remove.
@@ -838,8 +821,7 @@ class MapWidget(QWidget):
 
     @Slot(str, float)
     def _on_keyframe_delete_requested(self, marker_id: str, t: float) -> None:
-        """
-        Handle keyframe delete request from gizmo.
+        """Handle keyframe delete request from gizmo.
 
         Args:
             marker_id: The ID of the marker (object_id).

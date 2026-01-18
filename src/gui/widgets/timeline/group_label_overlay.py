@@ -1,8 +1,7 @@
-"""
-Group Label Overlay Module.
+"""Group Label Overlay Module.
 
-Provides a fixed overlay widget that displays tag lane labels on the left side
-of the timeline view, remaining visible during horizontal scrolling.
+Provides a fixed overlay widget that displays tag lane labels on the left side of the
+timeline view, remaining visible during horizontal scrolling.
 """
 
 import logging
@@ -18,19 +17,17 @@ logger = logging.getLogger(__name__)
 
 
 class GroupLabelOverlay(QWidget):
-    """
-    An overlay widget that displays fixed tag lane labels.
+    """An overlay widget that displays fixed tag lane labels.
 
-    This widget sits on top of the QGraphicsView and renders labels
-    that remain fixed on the left edge during horizontal scrolling.
+    This widget sits on top of the QGraphicsView and renders labels that remain fixed on
+    the left edge during horizontal scrolling.
     """
 
     LABEL_WIDTH = 150
     LABEL_PADDING = 8
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """
-        Initializes the GroupLabelOverlay.
+        """Initializes the GroupLabelOverlay.
 
         Args:
             parent: Parent widget (should be the TimelineView)
@@ -56,8 +53,7 @@ class GroupLabelOverlay(QWidget):
         self.update()
 
     def set_labels(self, labels: List[Dict]) -> None:
-        """
-        Set the labels to display.
+        """Set the labels to display.
 
         Args:
             labels: List of dicts with keys:

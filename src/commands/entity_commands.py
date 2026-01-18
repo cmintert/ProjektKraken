@@ -1,6 +1,4 @@
-"""
-Commands for manipulating Entity objects.
-"""
+"""Commands for manipulating Entity objects."""
 
 import logging
 from typing import Optional
@@ -13,13 +11,10 @@ logger = logging.getLogger(__name__)
 
 
 class CreateEntityCommand(BaseCommand):
-    """
-    Command to create a new entity.
-    """
+    """Command to create a new entity."""
 
     def __init__(self, entity_data: Optional[dict] = None) -> None:
-        """
-        Initializes the CreateEntityCommand.
+        """Initializes the CreateEntityCommand.
 
         Args:
             entity_data (dict, optional): Dictionary containing entity data.
@@ -32,8 +27,7 @@ class CreateEntityCommand(BaseCommand):
             self._entity = Entity(name="New Entity", type="Concept")
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Executes the command to create the entity.
+        """Executes the command to create the entity.
 
         Args:
             db_service (DatabaseService): The database service to use.
@@ -70,8 +64,7 @@ class CreateEntityCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Reverts the entity creation by deleting it from the database.
+        """Reverts the entity creation by deleting it from the database.
 
         Args:
             db_service (DatabaseService): The database service to operate on.
@@ -83,14 +76,13 @@ class CreateEntityCommand(BaseCommand):
 
 
 class UpdateEntityCommand(BaseCommand):
-    """
-    Command to update an existing entity.
+    """Command to update an existing entity.
+
     Accepts a dictionary of changes.
     """
 
     def __init__(self, entity_id: str, update_data: dict) -> None:
-        """
-        Initializes the UpdateEntityCommand.
+        """Initializes the UpdateEntityCommand.
 
         Args:
             entity_id (str): The ID of the entity to update.
@@ -103,8 +95,7 @@ class UpdateEntityCommand(BaseCommand):
         self._new_entity: Optional[Entity] = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Executes the update.
+        """Executes the update.
 
         Args:
             db_service (DatabaseService): The database service to use.
@@ -175,8 +166,7 @@ class UpdateEntityCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Reverts the entity update by restoring the previous state.
+        """Reverts the entity update by restoring the previous state.
 
         Args:
             db_service (DatabaseService): The database service to operate on.
@@ -188,13 +178,10 @@ class UpdateEntityCommand(BaseCommand):
 
 
 class DeleteEntityCommand(BaseCommand):
-    """
-    Command to delete an entity.
-    """
+    """Command to delete an entity."""
 
     def __init__(self, entity_id: str) -> None:
-        """
-        Initializes the DeleteEntityCommand.
+        """Initializes the DeleteEntityCommand.
 
         Args:
             entity_id (str): The ID of the entity to delete.
@@ -204,8 +191,7 @@ class DeleteEntityCommand(BaseCommand):
         self._backup_entity: Optional[Entity] = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Executes the command to delete the entity.
+        """Executes the command to delete the entity.
 
         Args:
             db_service (DatabaseService): The database service to use.
@@ -241,8 +227,7 @@ class DeleteEntityCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Reverts the entity deletion by restoring it to the database.
+        """Reverts the entity deletion by restoring it to the database.
 
         Args:
             db_service (DatabaseService): The database service to operate on.

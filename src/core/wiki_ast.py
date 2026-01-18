@@ -1,9 +1,8 @@
-"""
-Wiki Abstract Syntax Tree (AST) Module.
+"""Wiki Abstract Syntax Tree (AST) Module.
 
-Provides an intermediate representation for Markdown content,
-enabling precise bidirectional conversion between Markdown and HTML
-with source position tracking for cursor synchronization.
+Provides an intermediate representation for Markdown content, enabling precise
+bidirectional conversion between Markdown and HTML with source position tracking for
+cursor synchronization.
 """
 
 from __future__ import annotations
@@ -30,8 +29,7 @@ class NodeType(Enum):
 
 @dataclass
 class SourceSpan:
-    """
-    Tracks character positions in source text.
+    """Tracks character positions in source text.
 
     Attributes:
         start: Starting character index (inclusive).
@@ -52,8 +50,7 @@ class SourceSpan:
 
 @dataclass
 class WikiNode:
-    """
-    A node in the Wiki AST.
+    """A node in the Wiki AST.
 
     Attributes:
         node_type: The type of this node.
@@ -83,9 +80,7 @@ class WikiNode:
 
 
 class WikiASTParser:
-    """
-    Parses Markdown text into a Wiki AST with source position tracking.
-    """
+    """Parses Markdown text into a Wiki AST with source position tracking."""
 
     # Patterns for parsing
     HEADING_PATTERN = re.compile(r"^(#{1,6})\s+(.+)$", re.MULTILINE)
@@ -95,8 +90,7 @@ class WikiASTParser:
     WIKILINK_PATTERN = re.compile(r"\[\[([^\]|]+)(?:\|([^\]]+))?\]\]")
 
     def parse(self, markdown: str) -> WikiNode:
-        """
-        Parse Markdown text into an AST.
+        """Parse Markdown text into an AST.
 
         Args:
             markdown: The Markdown source text.
@@ -174,8 +168,7 @@ class WikiASTParser:
         return para
 
     def _parse_inline(self, text: str, offset: int) -> List[WikiNode]:
-        """
-        Parse inline formatting (bold, italic, links).
+        """Parse inline formatting (bold, italic, links).
 
         Uses a token-based approach to handle nested formatting.
         """
@@ -283,13 +276,10 @@ class WikiASTParser:
 
 
 class WikiASTSerializer:
-    """
-    Serializes a Wiki AST to Markdown or HTML with position tracking.
-    """
+    """Serializes a Wiki AST to Markdown or HTML with position tracking."""
 
     def to_markdown(self, root: WikiNode) -> Tuple[str, WikiNode]:
-        """
-        Serialize AST to Markdown, updating md_span for all nodes.
+        """Serialize AST to Markdown, updating md_span for all nodes.
 
         Args:
             root: The root node of the AST.
@@ -375,8 +365,7 @@ class WikiASTSerializer:
         return "".join(result), pos
 
     def to_html(self, root: WikiNode) -> Tuple[str, WikiNode]:
-        """
-        Serialize AST to HTML, updating html_span for all nodes.
+        """Serialize AST to HTML, updating html_span for all nodes.
 
         Args:
             root: The root node of the AST.
@@ -475,8 +464,7 @@ class WikiASTSerializer:
         return "".join(result), pos
 
     def to_plaintext(self, root: WikiNode) -> Tuple[str, WikiNode]:
-        """
-        Serialize AST to Plain Text (mimicking QTextEdit output), updating html_span.
+        """Serialize AST to Plain Text (mimicking QTextEdit output), updating html_span.
         We reuse html_span to store the Plain Text spans, as CursorMapper uses html_span
         to map against the "View" representation (which is Plain Text in Qt).
 
@@ -548,13 +536,10 @@ class WikiASTSerializer:
 
 
 class CursorMapper:
-    """
-    Maps cursor positions between Markdown and HTML using the AST.
-    """
+    """Maps cursor positions between Markdown and HTML using the AST."""
 
     def __init__(self, ast: WikiNode) -> None:
-        """
-        Initialize with a parsed AST that has both md_span and html_span set.
+        """Initialize with a parsed AST that has both md_span and html_span set.
 
         Args:
             ast: The root node with source mappings.
@@ -571,8 +556,7 @@ class CursorMapper:
             self._collect_leaves(child)
 
     def md_to_html(self, md_pos: int) -> int:
-        """
-        Map a Markdown cursor position to HTML cursor position.
+        """Map a Markdown cursor position to HTML cursor position.
 
         Args:
             md_pos: Cursor position in Markdown source.
@@ -608,8 +592,7 @@ class CursorMapper:
         return md_pos
 
     def html_to_md(self, html_pos: int) -> int:
-        """
-        Map an HTML cursor position to Markdown cursor position.
+        """Map an HTML cursor position to Markdown cursor position.
 
         Args:
             html_pos: Cursor position in HTML.

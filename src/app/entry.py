@@ -1,5 +1,4 @@
-"""
-Application Entry Point.
+"""Application Entry Point.
 
 This module contains the main() function and cleanup logic for the application.
 Separated from MainWindow to allow for easier testing and future refactoring.

@@ -1,5 +1,4 @@
-"""
-Map Marker Item Module.
+"""Map Marker Item Module.
 
 Provides the MarkerItem class for rendering markers on the map.
 """
@@ -47,8 +46,7 @@ logger = logging.getLogger(__name__)
 
 
 class MarkerItem(QGraphicsObject):
-    """
-    Draggable marker on a map with customizable SVG icon.
+    """Draggable marker on a map with customizable SVG icon.
 
     Represents an entity or event at a specific location on the map.
     Emits signals through the parent MapGraphicsView when dragged.
@@ -81,8 +79,7 @@ class MarkerItem(QGraphicsObject):
         description: Optional[str] = None,
         lore_date: Optional[float] = None,
     ) -> None:
-        """
-        Initializes a MarkerItem.
+        """Initializes a MarkerItem.
 
         Args:
             marker_id: Unique identifier for the marker.
@@ -158,8 +155,7 @@ class MarkerItem(QGraphicsObject):
         self._label_item.setPos(x, y)
 
     def _load_icon(self, icon_name: Optional[str]) -> None:
-        """
-        Loads an SVG icon for the marker.
+        """Loads an SVG icon for the marker.
 
         Args:
             icon_name: Filename of the icon (e.g., 'castle.svg').
@@ -180,8 +176,7 @@ class MarkerItem(QGraphicsObject):
             self._svg_renderer = None
 
     def set_icon(self, icon_name: str) -> None:
-        """
-        Changes the marker's icon.
+        """Changes the marker's icon.
 
         Args:
             icon_name: Filename of the new icon.
@@ -190,8 +185,7 @@ class MarkerItem(QGraphicsObject):
         self.update()
 
     def get_icon(self) -> Optional[str]:
-        """
-        Returns the current icon filename.
+        """Returns the current icon filename.
 
         Returns:
             Optional[str]: The icon filename or None if using fallback.
@@ -199,8 +193,7 @@ class MarkerItem(QGraphicsObject):
         return self._icon_name
 
     def set_color(self, color: str) -> None:
-        """
-        Sets the custom color for the marker.
+        """Sets the custom color for the marker.
 
         Args:
             color: The hex color string (e.g., '#FF5733').
@@ -210,8 +203,7 @@ class MarkerItem(QGraphicsObject):
         self.update()
 
     def get_color(self) -> Optional[str]:
-        """
-        Returns the current custom color.
+        """Returns the current custom color.
 
         Returns:
             Optional[str]: The hex color string or None.
@@ -219,8 +211,7 @@ class MarkerItem(QGraphicsObject):
         return self._custom_color
 
     def set_temporal_state(self, is_future: bool, is_past: bool = False) -> None:
-        """
-        Updates the marker's visual state based on its temporal relation.
+        """Updates the marker's visual state based on its temporal relation.
 
         Args:
             is_future: If True, marker is in the future (dull/faded).
@@ -244,9 +235,8 @@ class MarkerItem(QGraphicsObject):
         self.update()
 
     def _get_effective_color(self) -> QColor:
-        """
-        Returns the color modified by current state (e.g., deseaturated if future).
-        """
+        """Returns the color modified by current state (e.g., deseaturated if
+        future)."""
         color = QColor(self._color)
 
         if self.is_future:
@@ -261,8 +251,7 @@ class MarkerItem(QGraphicsObject):
         return color
 
     def boundingRect(self) -> QRectF:
-        """
-        Returns the bounding rectangle for the marker.
+        """Returns the bounding rectangle for the marker.
 
         Returns:
             QRectF: The bounding rect centered on (0, 0).
@@ -276,8 +265,7 @@ class MarkerItem(QGraphicsObject):
         option: QStyleOptionGraphicsItem,
         widget: Optional[QWidget] = None,
     ) -> None:
-        """
-        Paints the marker, either as an SVG icon or fallback circle.
+        """Paints the marker, either as an SVG icon or fallback circle.
 
         Args:
             painter: The QPainter to use.
@@ -403,8 +391,7 @@ class MarkerItem(QGraphicsObject):
         return norm_x, norm_y
 
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
-        """
-        Called when the item's state changes.
+        """Called when the item's state changes.
 
         Note: We no longer emit marker_moved here. Position updates
         are only emitted on mouseReleaseEvent to avoid flooding.

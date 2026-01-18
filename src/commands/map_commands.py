@@ -1,5 +1,4 @@
-"""
-Commands for manipulating Map and Marker objects.
+"""Commands for manipulating Map and Marker objects.
 
 API Usage Note:
 ===============
@@ -28,13 +27,10 @@ logger = logging.getLogger(__name__)
 
 
 class CreateMapCommand(BaseCommand):
-    """
-    Command to create a new map.
-    """
+    """Command to create a new map."""
 
     def __init__(self, map_data: Optional[dict] = None) -> None:
-        """
-        Initializes the CreateMapCommand.
+        """Initializes the CreateMapCommand.
 
         Args:
             map_data (dict, optional): Dictionary containing map data.
@@ -47,8 +43,7 @@ class CreateMapCommand(BaseCommand):
             self._map = Map(name="New Map", image_path="")
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Executes the command to create the map.
+        """Executes the command to create the map.
 
         Args:
             db_service (DatabaseService): The database service to use.
@@ -75,8 +70,7 @@ class CreateMapCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Reverts the map creation by deleting it from the database.
+        """Reverts the map creation by deleting it from the database.
 
         Args:
             db_service (DatabaseService): The database service to operate on.
@@ -88,14 +82,13 @@ class CreateMapCommand(BaseCommand):
 
 
 class UpdateMapCommand(BaseCommand):
-    """
-    Command to update an existing map.
+    """Command to update an existing map.
+
     Accepts a dictionary of changes.
     """
 
     def __init__(self, map_id: str, update_data: dict) -> None:
-        """
-        Initializes the UpdateMapCommand.
+        """Initializes the UpdateMapCommand.
 
         Args:
             map_id (str): The ID of the map to update.
@@ -108,8 +101,7 @@ class UpdateMapCommand(BaseCommand):
         self._new_map: Optional[Map] = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Executes the update.
+        """Executes the update.
 
         Args:
             db_service (DatabaseService): The database service to use.
@@ -155,8 +147,7 @@ class UpdateMapCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Reverts the map update by restoring the previous state.
+        """Reverts the map update by restoring the previous state.
 
         Args:
             db_service (DatabaseService): The database service to operate on.
@@ -168,13 +159,10 @@ class UpdateMapCommand(BaseCommand):
 
 
 class DeleteMapCommand(BaseCommand):
-    """
-    Command to delete a map and all its markers.
-    """
+    """Command to delete a map and all its markers."""
 
     def __init__(self, map_id: str) -> None:
-        """
-        Initializes the DeleteMapCommand.
+        """Initializes the DeleteMapCommand.
 
         Args:
             map_id (str): The ID of the map to delete.
@@ -185,8 +173,7 @@ class DeleteMapCommand(BaseCommand):
         self._deleted_markers: list = []
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Executes the deletion.
+        """Executes the deletion.
 
         Args:
             db_service (DatabaseService): The database service to use.
@@ -223,8 +210,7 @@ class DeleteMapCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Reverts the deletion by restoring the map and its markers.
+        """Reverts the deletion by restoring the map and its markers.
 
         Args:
             db_service (DatabaseService): The database service to operate on.
@@ -243,13 +229,10 @@ class DeleteMapCommand(BaseCommand):
 
 
 class CreateMarkerCommand(BaseCommand):
-    """
-    Command to create a new marker on a map.
-    """
+    """Command to create a new marker on a map."""
 
     def __init__(self, marker_data: dict) -> None:
-        """
-        Initializes the CreateMarkerCommand.
+        """Initializes the CreateMarkerCommand.
 
         Args:
             marker_data (dict): Dictionary containing marker data.
@@ -260,8 +243,7 @@ class CreateMarkerCommand(BaseCommand):
         self._actual_marker_id: Optional[str] = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Executes the command to create the marker.
+        """Executes the command to create the marker.
 
         Due to upsert behavior on UNIQUE(map_id, object_id, object_type),
         the returned marker ID may differ from the one in marker_data if
@@ -296,8 +278,7 @@ class CreateMarkerCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Reverts the marker creation by deleting it from the database.
+        """Reverts the marker creation by deleting it from the database.
 
         Args:
             db_service (DatabaseService): The database service to operate on.
@@ -309,13 +290,10 @@ class CreateMarkerCommand(BaseCommand):
 
 
 class UpdateMarkerCommand(BaseCommand):
-    """
-    Command to update a marker's position or other properties.
-    """
+    """Command to update a marker's position or other properties."""
 
     def __init__(self, marker_id: str, update_data: dict) -> None:
-        """
-        Initializes the UpdateMarkerCommand.
+        """Initializes the UpdateMarkerCommand.
 
         Args:
             marker_id (str): The ID of the marker to update.
@@ -328,8 +306,7 @@ class UpdateMarkerCommand(BaseCommand):
         self._new_marker: Optional[Marker] = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Executes the update.
+        """Executes the update.
 
         Args:
             db_service (DatabaseService): The database service to use.
@@ -375,8 +352,7 @@ class UpdateMarkerCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Reverts the marker update by restoring the previous state.
+        """Reverts the marker update by restoring the previous state.
 
         Args:
             db_service (DatabaseService): The database service to operate on.
@@ -388,13 +364,10 @@ class UpdateMarkerCommand(BaseCommand):
 
 
 class DeleteMarkerCommand(BaseCommand):
-    """
-    Command to delete a marker from a map.
-    """
+    """Command to delete a marker from a map."""
 
     def __init__(self, marker_id: str) -> None:
-        """
-        Initializes the DeleteMarkerCommand.
+        """Initializes the DeleteMarkerCommand.
 
         Args:
             marker_id (str): The ID of the marker to delete.
@@ -404,8 +377,7 @@ class DeleteMarkerCommand(BaseCommand):
         self._deleted_marker: Optional[Marker] = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Executes the deletion.
+        """Executes the deletion.
 
         Args:
             db_service (DatabaseService): The database service to use.
@@ -440,8 +412,7 @@ class DeleteMarkerCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Reverts the deletion by restoring the marker.
+        """Reverts the deletion by restoring the marker.
 
         Args:
             db_service (DatabaseService): The database service to operate on.
@@ -453,15 +424,13 @@ class DeleteMarkerCommand(BaseCommand):
 
 
 class UpdateMarkerIconCommand(BaseCommand):
-    """
-    Command to update a marker's icon.
+    """Command to update a marker's icon.
 
     Stores the icon filename in the marker's attributes dict.
     """
 
     def __init__(self, marker_id: str, icon: str) -> None:
-        """
-        Initializes the UpdateMarkerIconCommand.
+        """Initializes the UpdateMarkerIconCommand.
 
         Args:
             marker_id (str): The ID of the marker to update.
@@ -474,8 +443,7 @@ class UpdateMarkerIconCommand(BaseCommand):
         self._marker: Optional[Marker] = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Executes the icon update.
+        """Executes the icon update.
 
         Args:
             db_service (DatabaseService): The database service to use.
@@ -521,8 +489,7 @@ class UpdateMarkerIconCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Reverts the icon update by restoring the previous icon.
+        """Reverts the icon update by restoring the previous icon.
 
         Args:
             db_service (DatabaseService): The database service to operate on.
@@ -544,15 +511,13 @@ class UpdateMarkerIconCommand(BaseCommand):
 
 
 class UpdateMarkerColorCommand(BaseCommand):
-    """
-    Command to update a marker's color.
+    """Command to update a marker's color.
 
     Stores the color hex code in the marker's attributes dict.
     """
 
     def __init__(self, marker_id: str, color: str) -> None:
-        """
-        Initializes the UpdateMarkerColorCommand.
+        """Initializes the UpdateMarkerColorCommand.
 
         Args:
             marker_id (str): The ID of the marker to update.
@@ -565,8 +530,7 @@ class UpdateMarkerColorCommand(BaseCommand):
         self._marker: Optional[Marker] = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Executes the color update.
+        """Executes the color update.
 
         Args:
             db_service (DatabaseService): The database service to use.
@@ -612,8 +576,7 @@ class UpdateMarkerColorCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Reverts the color update by restoring the previous color.
+        """Reverts the color update by restoring the previous color.
 
         Args:
             db_service (DatabaseService): The database service to operate on.
@@ -635,13 +598,10 @@ class UpdateMarkerColorCommand(BaseCommand):
 
 
 class DeleteKeyframeCommand(BaseCommand):
-    """
-    Command to delete a keyframe from a marker's trajectory.
-    """
+    """Command to delete a keyframe from a marker's trajectory."""
 
     def __init__(self, map_id: str, marker_id: str, t: float) -> None:
-        """
-        Initializes the DeleteKeyframeCommand.
+        """Initializes the DeleteKeyframeCommand.
 
         Args:
             map_id: The ID of the map.
@@ -655,8 +615,7 @@ class DeleteKeyframeCommand(BaseCommand):
         self._deleted_keyframe: Optional[tuple] = None  # (t, x, y) for undo
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Executes the keyframe deletion.
+        """Executes the keyframe deletion.
 
         Args:
             db_service: The database service to use.
@@ -711,8 +670,7 @@ class DeleteKeyframeCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Reverts the keyframe deletion by restoring it.
+        """Reverts the keyframe deletion by restoring it.
 
         Args:
             db_service: The database service to operate on.

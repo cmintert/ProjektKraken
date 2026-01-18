@@ -1,8 +1,7 @@
-"""
-UI Constants Module.
+"""UI Constants Module.
 
-Provides standardized spacing and margin constants for consistent layout
-following the 8-point grid system.
+Provides standardized spacing and margin constants for consistent layout following the
+8-point grid system.
 """
 
 

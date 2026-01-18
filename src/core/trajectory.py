@@ -1,8 +1,7 @@
-"""
-Trajectory Interpolation Module.
+"""Trajectory Interpolation Module.
 
-Provides utilities for interpolating entity positions along temporal trajectories.
-Uses binary search (bisect) for O(log N) keyframe lookup.
+Provides utilities for interpolating entity positions along temporal trajectories. Uses
+binary search (bisect) for O(log N) keyframe lookup.
 """
 
 import bisect
@@ -11,8 +10,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Keyframe:
-    """
-    A position snapshot at a specific time.
+    """A position snapshot at a specific time.
 
     Attributes:
         t: Time in lore_date units.
@@ -33,8 +31,7 @@ KEYFRAME_TIME_EPSILON: float = 0.01
 def interpolate_position(
     keyframes: list[Keyframe], t: float
 ) -> tuple[float, float] | None:
-    """
-    Returns the interpolated (x, y) position at time t.
+    """Returns the interpolated (x, y) position at time t.
 
     Uses binary search (bisect) for O(log N) lookup, then linear interpolation
     between the two surrounding keyframes.
@@ -96,8 +93,7 @@ def interpolate_position(
 
 
 def keyframes_to_mfjson(keyframes: list[Keyframe]) -> dict:
-    """
-    Serialize a list of Keyframes to an OGC MF-JSON MovingPoint structure.
+    """Serialize a list of Keyframes to an OGC MF-JSON MovingPoint structure.
 
     Args:
         keyframes: List of Keyframe objects.
@@ -125,8 +121,7 @@ def keyframes_to_mfjson(keyframes: list[Keyframe]) -> dict:
 
 
 def mfjson_to_keyframes(data: dict) -> list[Keyframe]:
-    """
-    Deserialize an OGC MF-JSON MovingPoint structure to a list of Keyframes.
+    """Deserialize an OGC MF-JSON MovingPoint structure to a list of Keyframes.
 
     Args:
         data: A dict representing an MF-JSON TemporalPrimitiveGeometry.

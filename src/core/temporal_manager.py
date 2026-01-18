@@ -1,8 +1,7 @@
-"""
-Temporal Manager Module.
+"""Temporal Manager Module.
 
-Acts as the coordinator between the Database, signals, and the TemporalResolver.
-Manages caching of resolved states to ensure performance.
+Acts as the coordinator between the Database, signals, and the TemporalResolver. Manages
+caching of resolved states to ensure performance.
 """
 
 import logging
@@ -16,9 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class TemporalManager(QObject):
-    """
-    Manages temporal state resolution, catching, and invalidation.
-    """
+    """Manages temporal state resolution, catching, and invalidation."""
 
     def __init__(self, db_service: Any) -> None:
         """
@@ -36,8 +33,8 @@ class TemporalManager(QObject):
         self._cache: Dict[Tuple[str, float], Dict[str, Any]] = {}
 
     def get_entity_state_at(self, entity_id: str, time: float) -> Dict[str, Any]:
-        """
-        Returns the resolved state of an entity at a specific time.
+        """Returns the resolved state of an entity at a specific time.
+
         Uses cache if available.
         """
         # 1. Check Cache
@@ -65,16 +62,15 @@ class TemporalManager(QObject):
 
     @Slot(str, str, str)
     def on_relation_changed(self, rel_id: str, source_id: str, target_id: str) -> None:
-        """
-        Slot to handle relation changes (add/edit/delete).
+        """Slot to handle relation changes (add/edit/delete).
+
         Invalidates cache for the target entity.
         """
         self.invalidate_entity(target_id)
 
     @Slot(str)
     def on_event_changed(self, event_id: str) -> None:
-        """
-        Slot to handle event changes (e.g., date moved, event deleted).
+        """Slot to handle event changes (e.g., date moved, event deleted).
 
         When an event changes, all entities linked via relations from that
         event need their caches invalidated, as their resolved states may
@@ -103,8 +99,7 @@ class TemporalManager(QObject):
             logger.error(f"Error invalidating on event change {event_id}: {e}")
 
     def invalidate_entity(self, entity_id: str) -> None:
-        """
-        Clears all cached states for a specific entity.
+        """Clears all cached states for a specific entity.
 
         Args:
             entity_id: ID of the entity to invalidate.

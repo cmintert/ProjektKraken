@@ -1,5 +1,4 @@
-"""
-Longform Document Management CLI.
+"""Longform Document Management CLI.
 
 Provides command-line tools for exporting and manipulating the document structure.
 

@@ -1,5 +1,5 @@
-"""
-Backup Service Module.
+"""Backup Service Module.
+
 Handles automated backup operations, restoration, and retention policies.
 """
 
@@ -40,8 +40,7 @@ class BackupType(Enum):
 
 @dataclass
 class BackupMetadata:
-    """
-    Metadata information for a backup file.
+    """Metadata information for a backup file.
 
     Attributes:
         backup_path: Path to the backup file.
@@ -60,8 +59,7 @@ class BackupMetadata:
     description: str = ""
 
     def to_dict(self) -> dict:
-        """
-        Converts metadata to dictionary for serialization.
+        """Converts metadata to dictionary for serialization.
 
         Returns:
             dict: Dictionary representation of the metadata.
@@ -77,8 +75,7 @@ class BackupMetadata:
 
     @classmethod
     def from_dict(cls, data: dict) -> "BackupMetadata":
-        """
-        Creates BackupMetadata from a dictionary.
+        """Creates BackupMetadata from a dictionary.
 
         Args:
             data: Dictionary containing metadata values.
@@ -99,8 +96,8 @@ class BackupMetadata:
 if HAS_QT:
 
     class BackupWorker(QThread):
-        """
-        Background worker thread for backup operations.
+        """Background worker thread for backup operations.
+
         Prevents blocking the UI during backup/restore operations.
         """
 
@@ -113,8 +110,7 @@ if HAS_QT:
             backup_path: Path,
             operation: str = "backup",
         ) -> None:
-            """
-            Initializes the backup worker.
+            """Initializes the backup worker.
 
             Args:
                 db_path: Path to the database file.
@@ -201,16 +197,14 @@ else:
 
 
 class BackupService:
-    """
-    Main backup service handling all backup operations.
+    """Main backup service handling all backup operations.
 
-    Provides automated backup scheduling, manual backups, restoration,
-    integrity verification, and retention policy enforcement.
+    Provides automated backup scheduling, manual backups, restoration, integrity
+    verification, and retention policy enforcement.
     """
 
     def __init__(self, config: Optional[BackupConfig] = None) -> None:
-        """
-        Initializes the backup service.
+        """Initializes the backup service.
 
         Args:
             config: Backup configuration (uses defaults if not provided).
@@ -226,11 +220,10 @@ class BackupService:
         logger.info("BackupService initialized")
 
     def _ensure_backup_directory_exists(self) -> None:
-        """
-        Ensures the backup directory and its subdirectories exist.
+        """Ensures the backup directory and its subdirectories exist.
 
-        Creates the main backup directory and subdirectories for each
-        backup type (auto, daily, weekly, manual).
+        Creates the main backup directory and subdirectories for each backup type (auto,
+        daily, weekly, manual).
         """
         import os
 
@@ -251,8 +244,7 @@ class BackupService:
                 logger.error(f"Failed to create backup subdirectory {subdir_path}: {e}")
 
     def set_database_path(self, db_path: str) -> None:
-        """
-        Sets the current database path for backup operations.
+        """Sets the current database path for backup operations.
 
         Args:
             db_path: Path to the database file.
@@ -261,8 +253,7 @@ class BackupService:
         logger.debug(f"Database path set to: {self._current_db_path}")
 
     def update_config(self, config: BackupConfig) -> None:
-        """
-        Updates the backup configuration at runtime.
+        """Updates the backup configuration at runtime.
 
         Applies new settings and restarts auto-backup if interval changed.
 
@@ -294,8 +285,7 @@ class BackupService:
         backup_type: BackupType = BackupType.MANUAL,
         description: str = "",
     ) -> Optional[BackupMetadata]:
-        """
-        Creates a backup of the database.
+        """Creates a backup of the database.
 
         Args:
             db_path: Path to database file (uses current if not specified).
@@ -368,8 +358,7 @@ class BackupService:
     def restore_backup(
         self, backup_path: Path, target_path: Optional[Path] = None
     ) -> bool:
-        """
-        Restores a database from a backup.
+        """Restores a database from a backup.
 
         Args:
             backup_path: Path to the backup file to restore.
@@ -428,8 +417,7 @@ class BackupService:
     def list_backups(
         self, backup_type: Optional[BackupType] = None
     ) -> List[BackupMetadata]:
-        """
-        Lists available backups, optionally filtered by type.
+        """Lists available backups, optionally filtered by type.
 
         Args:
             backup_type: Filter backups by type (None = all types).
@@ -448,8 +436,7 @@ class BackupService:
         return backups
 
     def verify_backup(self, backup_path: Path) -> bool:
-        """
-        Verifies the integrity of a backup file.
+        """Verifies the integrity of a backup file.
 
         Args:
             backup_path: Path to the backup file to verify.
@@ -460,16 +447,15 @@ class BackupService:
         return self._verify_backup_file(backup_path)
 
     def cleanup_old_backups(self) -> None:
-        """
-        Enforces retention policy by deleting old backups.
+        """Enforces retention policy by deleting old backups.
+
         Respects retention counts configured for each backup type.
         """
         for backup_type in BackupType:
             self._cleanup_by_type(backup_type)
 
     def start_auto_backup(self, interval_minutes: Optional[int] = None) -> None:
-        """
-        Starts the automated backup timer.
+        """Starts the automated backup timer.
 
         Args:
             interval_minutes: Backup interval (uses config default if not specified).
@@ -511,8 +497,7 @@ class BackupService:
     def _generate_backup_path(
         self, db_path: Path, backup_type: BackupType, description: str = ""
     ) -> Path:
-        """
-        Generates a backup file path based on naming convention.
+        """Generates a backup file path based on naming convention.
 
         Args:
             db_path: Path to the database file.
@@ -554,8 +539,7 @@ class BackupService:
         return type_dir / filename
 
     def _verify_backup_file(self, backup_path: Path) -> bool:
-        """
-        Verifies that a backup file is a valid SQLite database.
+        """Verifies that a backup file is a valid SQLite database.
 
         Performs two checks:
         1. SQLite's internal PRAGMA integrity_check
@@ -604,8 +588,7 @@ class BackupService:
             return False
 
     def _calculate_checksum(self, file_path: Path) -> str:
-        """
-        Calculates SHA256 checksum of a file.
+        """Calculates SHA256 checksum of a file.
 
         Args:
             file_path: Path to file.
@@ -620,8 +603,7 @@ class BackupService:
         return sha256_hash.hexdigest()
 
     def _save_metadata(self, metadata: BackupMetadata) -> None:
-        """
-        Saves backup metadata to index file.
+        """Saves backup metadata to index file.
 
         Args:
             metadata: Backup metadata to save.
@@ -643,8 +625,7 @@ class BackupService:
             json.dump(data, f, indent=2)
 
     def _load_all_metadata(self) -> List[BackupMetadata]:
-        """
-        Loads all backup metadata from index files.
+        """Loads all backup metadata from index files.
 
         Returns:
             List[BackupMetadata]: List of all backup metadata.
@@ -677,8 +658,7 @@ class BackupService:
         return backups
 
     def _cleanup_by_type(self, backup_type: BackupType) -> None:
-        """
-        Cleans up old backups for a specific backup type.
+        """Cleans up old backups for a specific backup type.
 
         Args:
             backup_type: Type of backup to clean up.
@@ -712,8 +692,7 @@ class BackupService:
                     logger.error(f"Failed to delete backup {backup.backup_path}: {e}")
 
     def _copy_to_external(self, backup_path: Path, backup_type: BackupType) -> None:
-        """
-        Copies a backup to an external location if configured.
+        """Copies a backup to an external location if configured.
 
         Args:
             backup_path: Path to the backup file.

@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 import pytest
+
 from src.core.entities import Entity
 from src.core.events import Event
 from src.core.fast_inject import FastInjectManager, FastInjectTemplate
@@ -44,6 +45,12 @@ def test_template_serialization():
     assert restored.tags == original.tags
     assert restored.attributes == original.attributes
     assert restored.target_type == original.target_type
+    assert restored.type_value is None
+
+    # Test with type_value
+    with_type = FastInjectTemplate(name="Typed", type_value="Settlement")
+    restored_type = FastInjectTemplate.from_dict(with_type.to_dict())
+    assert restored_type.type_value == "Settlement"
 
 
 def test_save_and_load_templates(manager):
@@ -82,7 +89,17 @@ def test_create_from_target():
     assert template.attributes["Strength"] == 10
     assert template.attributes["City"] == "Berlin"
     assert "_internal" not in template.attributes  # Internal filtered
-    assert template.target_type == "entity"
+    # Test with include_type=True
+    template_with_type = manager.create_template_from_target(
+        entity, "Typed Template", include_type=True
+    )
+    assert template_with_type.type_value == "Character"
+
+    # Test with include_type=False (default)
+    template_no_type = manager.create_template_from_target(
+        entity, "Untyped Template", include_type=False
+    )
+    assert template_no_type.type_value is None
 
 
 def test_create_from_target_event():
@@ -131,6 +148,23 @@ def test_apply_template_with_overwrite():
     manager.apply_template(entity, template, overwrite=True)
 
     assert entity.attributes["Gold"] == 9999
+
+
+def test_apply_template_type():
+    """Test applying type from template."""
+    manager = FastInjectManager(Path("."))
+    entity = Entity(name="Target", type="Unknown")
+
+    template = FastInjectTemplate(name="Type Change", type_value="NewType")
+
+    manager.apply_template(entity, template)
+
+    assert entity.type == "NewType"
+
+    # Test Variable resolution in Type
+    template_var = FastInjectTemplate(name="Var Type", type_value="{{TYPE_VAR}}")
+    manager.apply_template(entity, template_var, variables={"TYPE_VAR": "ResolvedType"})
+    assert entity.type == "ResolvedType"
 
 
 def test_variable_resolution():

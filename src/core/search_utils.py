@@ -1,8 +1,7 @@
-"""
-Search Utility Module.
+"""Search Utility Module.
 
-Provides shared search logic for filtering domain objects (Entities, Events)
-based on text matching against various properties.
+Provides shared search logic for filtering domain objects (Entities, Events) based on
+text matching against various properties.
 """
 
 from typing import Any
@@ -13,9 +12,8 @@ class SearchUtils:
 
     @staticmethod
     def matches_search(obj: Any, search_term: str) -> bool:
-        """
-        Checks if an object or dictionary matches the search term.
-        Performs full text search on name, type, description, tags, and attributes.
+        """Checks if an object or dictionary matches the search term. Performs full text
+        search on name, type, description, tags, and attributes.
 
         Args:
             obj: The object to check (Entity, Event, or dict).

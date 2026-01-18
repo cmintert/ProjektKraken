@@ -1,8 +1,7 @@
-"""
-Image Attachment Module.
+"""Image Attachment Module.
 
-Defines the domain model for image attachments associated with
-events and entities in the worldbuilding application.
+Defines the domain model for image attachments associated with events and entities in
+the worldbuilding application.
 """
 
 import time
@@ -12,9 +11,7 @@ from typing import Optional, Tuple
 
 @dataclass
 class ImageAttachment:
-    """
-    Domain object representing an image attached to an Event or Entity.
-    """
+    """Domain object representing an image attached to an Event or Entity."""
 
     id: str
     owner_type: str  # "event" or "entity"
@@ -34,8 +31,7 @@ class ImageAttachment:
 
     @property
     def is_thumbnail_available(self) -> bool:
-        """
-        Check if a thumbnail is available for this attachment.
+        """Check if a thumbnail is available for this attachment.
 
         Returns:
             bool: True if thumbnail path is set, False otherwise.

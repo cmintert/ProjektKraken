@@ -1,9 +1,8 @@
-"""
-Database Manager Dialog Module.
+"""Database Manager Dialog Module.
 
-Provides a dialog for managing multiple worlds in portable-only mode.
-Each world is a self-contained folder with its own .kraken database,
-world.json manifest, and assets/ directory.
+Provides a dialog for managing multiple worlds in portable-only mode. Each world is a
+self-contained folder with its own .kraken database, world.json manifest, and assets/
+directory.
 
 Worlds are stored in the worlds/ directory next to the executable.
 """
@@ -35,19 +34,17 @@ logger = logging.getLogger(__name__)
 
 
 class DatabaseManagerDialog(QDialog):
-    """
-    Dialog to manage worlds in portable-only mode.
+    """Dialog to manage worlds in portable-only mode.
 
-    Manages worlds stored in worlds/ directory next to the executable.
-    Each world is a self-contained folder with database, manifest, and assets.
+    Manages worlds stored in worlds/ directory next to the executable. Each world is a
+    self-contained folder with database, manifest, and assets.
     """
 
     # Signal to indicate a restart is requested
     restart_required = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """
-        Initialize the database manager dialog.
+        """Initialize the database manager dialog.
 
         Args:
             parent: Parent widget.

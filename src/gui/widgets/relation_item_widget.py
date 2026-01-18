@@ -1,8 +1,7 @@
-"""
-Relation Item Widget Module.
+"""Relation Item Widget Module.
 
-Provides a custom widget for relation list items with an embedded
-"Go to" button for quick navigation to related entities/events.
+Provides a custom widget for relation list items with an embedded "Go to" button for
+quick navigation to related entities/events.
 """
 
 from typing import Any, Dict, Optional
@@ -14,8 +13,7 @@ from src.gui.widgets.standard_buttons import StandardButton
 
 
 class RelationItemWidget(QWidget):
-    """
-    A custom widget for displaying a relation item with a navigation button.
+    """A custom widget for displaying a relation item with a navigation button.
 
     Displays the relation label (→ Target [type]) on the left and a small
     "Go to →" button on the right for quick navigation.
@@ -35,8 +33,7 @@ class RelationItemWidget(QWidget):
         attributes: Dict[str, Any] = None,
         parent: Optional[QWidget] = None,
     ) -> None:
-        """
-        Initializes the relation item widget.
+        """Initializes the relation item widget.
 
         Args:
             label: The relation label text (e.g., "→ Alice [friend]")
@@ -119,8 +116,7 @@ class RelationItemWidget(QWidget):
         return " • ".join(parts)
 
     def sizeHint(self) -> QSize:
-        """
-        Returns the preferred size hint to ensure proper row height.
+        """Returns the preferred size hint to ensure proper row height.
 
         Returns:
             QSize: Size that accommodates the button plus margins.

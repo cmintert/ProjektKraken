@@ -1,9 +1,8 @@
-"""
-Prompt Template Loader Module.
+"""Prompt Template Loader Module.
 
 Provides functionality for loading and managing prompt templates from the filesystem.
-Templates consist of YAML metadata headers and prompt content, supporting versioning
-and validation.
+Templates consist of YAML metadata headers and prompt content, supporting versioning and
+validation.
 """
 
 import logging
@@ -17,8 +16,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class PromptTemplate:
-    """
-    Data class representing a loaded prompt template.
+    """Data class representing a loaded prompt template.
 
     Attributes:
         template_id: Unique identifier for the template family.
@@ -35,8 +33,7 @@ class PromptTemplate:
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def __str__(self) -> str:
-        """
-        Return a concise human-readable representation of the PromptTemplate.
+        """Return a concise human-readable representation of the PromptTemplate.
 
         Returns:
             str: A string in the form "PromptTemplate({template_id} v{version}: {name})".
@@ -45,19 +42,17 @@ class PromptTemplate:
 
 
 class PromptLoader:
-    """
-    Loads and manages prompt templates from the filesystem.
+    """Loads and manages prompt templates from the filesystem.
 
-    Templates are stored in a directory structure with YAML metadata headers.
-    Supports template discovery, versioning, and validation.
+    Templates are stored in a directory structure with YAML metadata headers. Supports
+    template discovery, versioning, and validation.
 
-    The default templates directory is
-    `default_assets/templates/system_prompts/` relative to the package root.
+    The default templates directory is `default_assets/templates/system_prompts/`
+    relative to the package root.
     """
 
     def __init__(self, templates_dir: Optional[str] = None) -> None:
-        """
-        Initialize the PromptLoader and set the templates directory.
+        """Initialize the PromptLoader and set the templates directory.
 
         If `templates_dir` is provided, uses it; otherwise resolves the default
         templates directory relative to the package root (default_assets/templates/system_prompts).
@@ -85,8 +80,7 @@ class PromptLoader:
     def load_template(
         self, template_id: str, version: Optional[str] = None
     ) -> PromptTemplate:
-        """
-        Load a specific template by ID and optional version.
+        """Load a specific template by ID and optional version.
 
         If no version is specified, loads the latest available version.
 
@@ -141,8 +135,8 @@ class PromptLoader:
         return template
 
     def list_templates(self) -> List[Dict[str, Any]]:
-        """
-        Discover available prompt templates in the templates directory and return their metadata.
+        """Discover available prompt templates in the templates directory and return
+        their metadata.
 
         Scans for files matching the pattern "<template_id>_v<version>.txt", parses each file's metadata header, and collects a summary for each valid template.
 
@@ -196,8 +190,8 @@ class PromptLoader:
         return templates
 
     def get_latest_version(self, template_id: str) -> str:
-        """
-        Determine the highest available version for a given template ID by scanning template files named "{template_id}_v{version}.txt".
+        """Determine the highest available version for a given template ID by scanning
+        template files named "{template_id}_v{version}.txt".
 
         Parameters:
             template_id (str): Template identifier used in filenames (e.g., "welcome_email" for files like "welcome_email_v1.0.txt").
@@ -236,8 +230,7 @@ class PromptLoader:
         return latest
 
     def validate_template(self, file_path: str) -> Tuple[bool, Optional[str]]:
-        """
-        Validate a prompt template file's structure and required metadata.
+        """Validate a prompt template file's structure and required metadata.
 
         Checks that the file exists, begins with a metadata header delimited by '---',
         contains non-empty prompt content after the closing '---', and includes the
@@ -290,8 +283,7 @@ class PromptLoader:
             return False, f"Error reading/parsing template: {str(e)}"
 
     def _parse_template_file(self, file_path: str) -> Tuple[Dict[str, Any], str]:
-        """
-        Parse a template file into metadata and content.
+        """Parse a template file into metadata and content.
 
         Args:
             file_path: Path to the template file.
@@ -320,8 +312,7 @@ class PromptLoader:
         return metadata, prompt_content
 
     def _parse_yaml_metadata(self, yaml_text: str) -> Dict[str, Any]:
-        """
-        Parse a lightweight YAML-like metadata string into a dictionary.
+        """Parse a lightweight YAML-like metadata string into a dictionary.
 
         Supports simple `key: value` pairs and list values written as `[item1, item2]`. Blank lines and lines starting with `#` are ignored; lines without a colon are skipped.
 
@@ -357,8 +348,7 @@ class PromptLoader:
         return metadata
 
     def load_few_shot(self, filename: str = "few_shot_description.txt") -> str:
-        """
-        Load few-shot examples from the templates directory.
+        """Load few-shot examples from the templates directory.
 
         Few-shot examples are plain text files (no metadata header) that contain
         example prompts and outputs to guide LLM generation.

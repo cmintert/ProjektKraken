@@ -1,10 +1,8 @@
-"""
-Database Service Module.
-Provides the low-level SQL interface to the SQLite database.
+"""Database Service Module. Provides the low-level SQL interface to the SQLite database.
 Follows the Hybrid Schema (Strict Columns + JSON Attributes).
 
-This service now uses specialized repository classes for better
-separation of concerns and maintainability.
+This service now uses specialized repository classes for better separation of concerns
+and maintainability.
 """
 
 import json
@@ -38,12 +36,11 @@ logger = logging.getLogger(__name__)
 
 
 class DatabaseService:
-    """
-    Handles all raw interactions with the SQLite database.
-    Implements the Hybrid Schema (Strict Columns + JSON Attributes).
+    """Handles all raw interactions with the SQLite database. Implements the Hybrid
+    Schema (Strict Columns + JSON Attributes).
 
-    This service delegates CRUD operations to specialized repository
-    classes while maintaining schema management and connection handling.
+    This service delegates CRUD operations to specialized repository classes while
+    maintaining schema management and connection handling.
     """
 
     def __init__(self, db_path: str = ":memory:") -> None:
@@ -400,8 +397,7 @@ class DatabaseService:
     # --------------------------------------------------------------------------
 
     def insert_event(self, event: Event) -> None:
-        """
-        Inserts a new event or updates an existing one (Upsert).
+        """Inserts a new event or updates an existing one (Upsert).
 
         Args:
             event (Event): The event domain object to persist.
@@ -414,8 +410,7 @@ class DatabaseService:
         self._event_repo.insert(event)
 
     def get_event(self, event_id: str) -> Optional[Event]:
-        """
-        Retrieves a single event by its UUID.
+        """Retrieves a single event by its UUID.
 
         Args:
             event_id (str): The unique identifier of the event.
@@ -428,8 +423,7 @@ class DatabaseService:
         return self._event_repo.get(event_id)
 
     def get_all_events(self) -> List[Event]:
-        """
-        Retrieves all events from the database, sorted chronologically.
+        """Retrieves all events from the database, sorted chronologically.
 
         Returns:
             List[Event]: A list of all Event objects in the database.
@@ -437,8 +431,7 @@ class DatabaseService:
         return self.get_events()
 
     def get_events(self, event_type: Optional[str] = None) -> List[Event]:
-        """
-        Retrieves events, optionally filtered by type.
+        """Retrieves events, optionally filtered by type.
 
         Args:
             event_type: Optional type filter.
@@ -453,8 +446,7 @@ class DatabaseService:
         return self._event_repo.get_all()
 
     def delete_event(self, event_id: str) -> None:
-        """
-        Deletes an event permanently.
+        """Deletes an event permanently.
 
         Args:
             event_id (str): The unique identifier of the event to delete.
@@ -471,8 +463,7 @@ class DatabaseService:
     # --------------------------------------------------------------------------
 
     def insert_entity(self, entity: Entity) -> None:
-        """
-        Inserts a new entity or updates an existing one (Upsert).
+        """Inserts a new entity or updates an existing one (Upsert).
 
         Args:
             entity (Entity): The entity domain object to persist.
@@ -485,8 +476,7 @@ class DatabaseService:
         self._entity_repo.insert(entity)
 
     def get_entity(self, entity_id: str) -> Optional[Entity]:
-        """
-        Retrieves a single entity by its UUID.
+        """Retrieves a single entity by its UUID.
 
         Args:
             entity_id (str): The unique identifier of the entity.
@@ -499,8 +489,7 @@ class DatabaseService:
         return self._entity_repo.get(entity_id)
 
     def get_all_entities(self) -> List[Entity]:
-        """
-        Retrieves all entities from the database.
+        """Retrieves all entities from the database.
 
         Returns:
             List[Entity]: A list of all Entity objects.
@@ -508,8 +497,7 @@ class DatabaseService:
         return self.get_entities()
 
     def get_entities(self, entity_type: Optional[str] = None) -> List[Entity]:
-        """
-        Retrieves entities, optionally filtered by type.
+        """Retrieves entities, optionally filtered by type.
 
         Args:
             entity_type: Optional type filter.
@@ -524,8 +512,7 @@ class DatabaseService:
         return self._entity_repo.get_all()
 
     def delete_entity(self, entity_id: str) -> None:
-        """
-        Deletes an entity permanently.
+        """Deletes an entity permanently.
 
         Args:
             entity_id (str): The unique identifier of the entity to delete.
@@ -548,8 +535,7 @@ class DatabaseService:
         rel_type: str,
         attributes: Optional[Dict[str, Any]] = None,
     ) -> str:
-        """
-        Creates a directed relationship between two objects.
+        """Creates a directed relationship between two objects.
 
         Args:
             source_id (str): ID of the source object.
@@ -582,8 +568,7 @@ class DatabaseService:
         return rel_id
 
     def get_relations(self, source_id: str) -> List[Dict[str, Any]]:
-        """
-        Retrieves all outgoing relations for a given source object.
+        """Retrieves all outgoing relations for a given source object.
 
         Args:
             source_id (str): The ID of the source object.
@@ -598,8 +583,7 @@ class DatabaseService:
         return self._relation_repo.get_by_source(source_id)
 
     def get_incoming_relations(self, target_id: str) -> List[Dict[str, Any]]:
-        """
-        Retrieves all incoming relations for a given target object.
+        """Retrieves all incoming relations for a given target object.
 
         Args:
             target_id (str): The ID of the target object.
@@ -612,8 +596,7 @@ class DatabaseService:
         return self._relation_repo.get_by_target(target_id)
 
     def get_relation(self, rel_id: str) -> Optional[Dict[str, Any]]:
-        """
-        Retrieves a single relation by its ID.
+        """Retrieves a single relation by its ID.
 
         Args:
             rel_id (str): The unique identifier of the relation.
@@ -628,8 +611,7 @@ class DatabaseService:
         return None
 
     def delete_relation(self, rel_id: str) -> None:
-        """
-        Deletes a relationship by its ID.
+        """Deletes a relationship by its ID.
 
         Args:
             rel_id (str): The unique identifier of the relation.
@@ -645,8 +627,7 @@ class DatabaseService:
         rel_type: str,
         attributes: Optional[Dict[str, Any]] = None,
     ) -> None:
-        """
-        Updates an existing relationship.
+        """Updates an existing relationship.
 
         Args:
             rel_id (str): The ID of the relation to update.
@@ -679,8 +660,7 @@ class DatabaseService:
             )
 
     def get_name(self, object_id: str) -> Optional[str]:
-        """
-        Retrieves the name of an entity or event by its ID.
+        """Retrieves the name of an entity or event by its ID.
 
         Args:
             object_id (str): The ID to resolve.
@@ -711,8 +691,7 @@ class DatabaseService:
         return None
 
     def insert_events_bulk(self, events: List[Event]) -> None:
-        """
-        Inserts multiple events efficiently using executemany.
+        """Inserts multiple events efficiently using executemany.
 
         This method is optimized for bulk operations, reducing the overhead
         of individual inserts by using SQLite's executemany. Provides
@@ -731,8 +710,7 @@ class DatabaseService:
         logger.info(f"Bulk inserted {len(events)} events")
 
     def insert_entities_bulk(self, entities: List[Entity]) -> None:
-        """
-        Inserts multiple entities efficiently using executemany.
+        """Inserts multiple entities efficiently using executemany.
 
         This method is optimized for bulk operations, reducing the overhead
         of individual inserts by using SQLite's executemany. Provides
@@ -755,8 +733,7 @@ class DatabaseService:
     # --------------------------------------------------------------------------
 
     def insert_calendar_config(self, config: CalendarConfig) -> None:
-        """
-        Inserts a new calendar config or updates an existing one (Upsert).
+        """Inserts a new calendar config or updates an existing one (Upsert).
 
         Args:
             config (CalendarConfig): The calendar configuration to persist.
@@ -770,8 +747,7 @@ class DatabaseService:
         logger.debug(f"Inserted/updated calendar config: {config.id}")
 
     def get_calendar_config(self, config_id: str) -> Optional[CalendarConfig]:
-        """
-        Retrieves a single calendar config by its ID.
+        """Retrieves a single calendar config by its ID.
 
         Args:
             config_id (str): The unique identifier of the calendar config.
@@ -784,8 +760,7 @@ class DatabaseService:
         return self._calendar_repo.get(config_id)
 
     def get_all_calendar_configs(self) -> List[CalendarConfig]:
-        """
-        Retrieves all calendar configurations.
+        """Retrieves all calendar configurations.
 
         Returns:
             List[CalendarConfig]: A list of all calendar configs.
@@ -795,8 +770,7 @@ class DatabaseService:
         return self._calendar_repo.get_all()
 
     def delete_calendar_config(self, config_id: str) -> None:
-        """
-        Deletes a calendar config by its ID.
+        """Deletes a calendar config by its ID.
 
         Args:
             config_id (str): The unique identifier of the config to delete.
@@ -810,8 +784,7 @@ class DatabaseService:
         logger.debug(f"Deleted calendar config: {config_id}")
 
     def get_active_calendar_config(self) -> Optional[CalendarConfig]:
-        """
-        Retrieves the currently active calendar configuration.
+        """Retrieves the currently active calendar configuration.
 
         Returns:
             Optional[CalendarConfig]: The active config if one is set, else None.
@@ -830,8 +803,7 @@ class DatabaseService:
         return None
 
     def set_active_calendar_config(self, config_id: str) -> None:
-        """
-        Sets a calendar config as the active one.
+        """Sets a calendar config as the active one.
 
         Deactivates any currently active config and activates the specified one.
 
@@ -851,8 +823,7 @@ class DatabaseService:
     # --------------------------------------------------------------------------
 
     def get_current_time(self) -> Optional[float]:
-        """
-        Retrieves the current time in the world from system_meta.
+        """Retrieves the current time in the world from system_meta.
 
         Returns:
             Optional[float]: The current time in lore_date units, or None if not set.
@@ -874,8 +845,7 @@ class DatabaseService:
         return None
 
     def set_current_time(self, current_time: float) -> None:
-        """
-        Sets the current time in the world and persists it to system_meta.
+        """Sets the current time in the world and persists it to system_meta.
 
         Args:
             current_time (float): The current time in lore_date units.
@@ -897,8 +867,7 @@ class DatabaseService:
     # --------------------------------------------------------------------------
 
     def insert_map(self, map_obj: Map) -> None:
-        """
-        Inserts a new map or updates an existing one (Upsert).
+        """Inserts a new map or updates an existing one (Upsert).
 
         Args:
             map_obj (Map): The map domain object to persist.
@@ -911,8 +880,7 @@ class DatabaseService:
         self._map_repo.insert_map(map_obj)
 
     def get_map(self, map_id: str) -> Optional[Map]:
-        """
-        Retrieves a single map by its UUID.
+        """Retrieves a single map by its UUID.
 
         Args:
             map_id (str): The unique identifier of the map.
@@ -925,8 +893,7 @@ class DatabaseService:
         return self._map_repo.get_map(map_id)
 
     def get_all_maps(self) -> List[Map]:
-        """
-        Retrieves all maps from the database.
+        """Retrieves all maps from the database.
 
         Returns:
             List[Map]: List of all Map objects.
@@ -936,8 +903,7 @@ class DatabaseService:
         return self._map_repo.get_all_maps()
 
     def delete_map(self, map_id: str) -> None:
-        """
-        Deletes a map and all its markers from the database.
+        """Deletes a map and all its markers from the database.
 
         Args:
             map_id (str): The unique identifier of the map to delete.
@@ -954,8 +920,7 @@ class DatabaseService:
     # --------------------------------------------------------------------------
 
     def insert_marker(self, marker: Marker) -> str:
-        """
-        Inserts a new marker or updates an existing one (Upsert).
+        """Inserts a new marker or updates an existing one (Upsert).
 
         Upserts on UNIQUE(map_id, object_id, object_type). On conflict,
         the existing row's id is retained.
@@ -1003,8 +968,7 @@ class DatabaseService:
             return result[0] if result else marker.id
 
     def get_marker(self, marker_id: str) -> Optional[Marker]:
-        """
-        Retrieves a single marker by its UUID.
+        """Retrieves a single marker by its UUID.
 
         Args:
             marker_id (str): The unique identifier of the marker.
@@ -1017,8 +981,7 @@ class DatabaseService:
         return self._map_repo.get_marker(marker_id)
 
     def get_markers_for_map(self, map_id: str) -> List[Marker]:
-        """
-        Retrieves all markers for a specific map.
+        """Retrieves all markers for a specific map.
 
         Args:
             map_id (str): The unique identifier of the map.
@@ -1031,8 +994,7 @@ class DatabaseService:
         return self._map_repo.get_markers_by_map(map_id)
 
     def get_markers_for_object(self, object_id: str, object_type: str) -> List[Marker]:
-        """
-        Retrieves all markers for a specific entity or event.
+        """Retrieves all markers for a specific entity or event.
 
         Args:
             object_id (str): The unique identifier of the entity or event.
@@ -1060,8 +1022,7 @@ class DatabaseService:
     def get_marker_by_composite(
         self, map_id: str, object_id: str, object_type: str
     ) -> Optional[Marker]:
-        """
-        Retrieves a marker by its composite key (map_id, object_id, object_type).
+        """Retrieves a marker by its composite key (map_id, object_id, object_type).
 
         This is useful after an upsert to retrieve the canonical marker with its
         actual database ID.
@@ -1093,8 +1054,7 @@ class DatabaseService:
         return None
 
     def delete_marker(self, marker_id: str) -> None:
-        """
-        Deletes a marker from the database.
+        """Deletes a marker from the database.
 
         Args:
             marker_id (str): The unique identifier of the marker to delete.
@@ -1111,8 +1071,7 @@ class DatabaseService:
     # --------------------------------------------------------------------------
 
     def get_all_tags(self) -> List[Dict[str, Any]]:
-        """
-        Retrieves all tags from the database.
+        """Retrieves all tags from the database.
 
         Returns:
             List[Dict[str, Any]]: List of tag dictionaries with id, name, created_at.
@@ -1129,8 +1088,7 @@ class DatabaseService:
         return [dict(zip(["id", "name", "created_at"], row)) for row in rows]
 
     def get_tags_with_events(self) -> List[Dict[str, Any]]:
-        """
-        Retrieves tags that are associated with at least one event.
+        """Retrieves tags that are associated with at least one event.
 
         Returns:
             List[Dict[str, Any]]: List of distinct tag dictionaries.
@@ -1151,8 +1109,7 @@ class DatabaseService:
         return [dict(row) for row in rows]
 
     def get_active_tags(self) -> List[Dict[str, Any]]:
-        """
-        Retrieves tags that are associated with at least one event OR entity.
+        """Retrieves tags that are associated with at least one event OR entity.
 
         Returns:
             List[Dict[str, Any]]: List of distinct tag dictionaries.
@@ -1173,8 +1130,7 @@ class DatabaseService:
         return [dict(zip(["id", "name", "created_at"], row)) for row in rows]
 
     def create_tag(self, tag_name: str) -> str:
-        """
-        Creates a new tag or returns existing tag ID.
+        """Creates a new tag or returns existing tag ID.
 
         Args:
             tag_name (str): The name of the tag to create.
@@ -1217,8 +1173,7 @@ class DatabaseService:
         return tag_id
 
     def assign_tag_to_event(self, event_id: str, tag_name: str) -> None:
-        """
-        Assigns a tag to an event, creating the tag if it doesn't exist.
+        """Assigns a tag to an event, creating the tag if it doesn't exist.
 
         Args:
             event_id (str): The ID of the event.
@@ -1249,8 +1204,7 @@ class DatabaseService:
             raise
 
     def assign_tag_to_entity(self, entity_id: str, tag_name: str) -> None:
-        """
-        Assigns a tag to an entity, creating the tag if it doesn't exist.
+        """Assigns a tag to an entity, creating the tag if it doesn't exist.
 
         Args:
             entity_id (str): The ID of the entity.
@@ -1283,8 +1237,7 @@ class DatabaseService:
             raise
 
     def remove_tag_from_event(self, event_id: str, tag_name: str) -> None:
-        """
-        Removes a tag from an event.
+        """Removes a tag from an event.
 
         Args:
             event_id (str): The ID of the event.
@@ -1314,8 +1267,7 @@ class DatabaseService:
             )
 
     def remove_tag_from_entity(self, entity_id: str, tag_name: str) -> None:
-        """
-        Removes a tag from an entity.
+        """Removes a tag from an entity.
 
         Args:
             entity_id (str): The ID of the entity.
@@ -1345,8 +1297,7 @@ class DatabaseService:
             )
 
     def get_tags_for_event(self, event_id: str) -> List[Dict[str, Any]]:
-        """
-        Retrieves all tags for a specific event.
+        """Retrieves all tags for a specific event.
 
         Args:
             event_id (str): The ID of the event.
@@ -1372,8 +1323,7 @@ class DatabaseService:
         return [dict(row) for row in rows]
 
     def get_tags_for_entity(self, entity_id: str) -> List[Dict[str, Any]]:
-        """
-        Retrieves all tags for a specific entity.
+        """Retrieves all tags for a specific entity.
 
         Args:
             entity_id (str): The ID of the entity.
@@ -1399,8 +1349,7 @@ class DatabaseService:
         return [dict(row) for row in rows]
 
     def delete_tag(self, tag_name: str) -> None:
-        """
-        Deletes a tag and all its associations.
+        """Deletes a tag and all its associations.
 
         Args:
             tag_name (str): The name of the tag to delete.
@@ -1429,8 +1378,7 @@ class DatabaseService:
         logger.debug(f"Deleted tag: {tag_name}")
 
     def get_events_by_tag(self, tag_name: str) -> List[Event]:
-        """
-        Retrieves all events that have a specific tag.
+        """Retrieves all events that have a specific tag.
 
         Args:
             tag_name (str): The name of the tag.
@@ -1464,8 +1412,7 @@ class DatabaseService:
         return events
 
     def get_entities_by_tag(self, tag_name: str) -> List[Entity]:
-        """
-        Retrieves all entities that have a specific tag.
+        """Retrieves all entities that have a specific tag.
 
         Args:
             tag_name (str): The name of the tag.
@@ -1504,8 +1451,7 @@ class DatabaseService:
         mode: str = "DUPLICATE",
         date_range: Optional[tuple] = None,
     ) -> Dict[str, Any]:
-        """
-        Groups events by tags with support for DUPLICATE and FIRST_MATCH modes.
+        """Groups events by tags with support for DUPLICATE and FIRST_MATCH modes.
 
         In DUPLICATE mode (default), events with multiple tags appear in all
         matching groups. In FIRST_MATCH mode, events appear only in their first
@@ -1621,8 +1567,7 @@ class DatabaseService:
         tag_order: List[str],
         date_range: Optional[tuple] = None,
     ) -> List[Dict[str, Any]]:
-        """
-        Returns count and metadata for each tag group.
+        """Returns count and metadata for each tag group.
 
         Args:
             tag_order: List of tag names to get counts for.
@@ -1680,8 +1625,7 @@ class DatabaseService:
         tag_order: List[str],
         date_range: Optional[tuple] = None,
     ) -> List[Dict[str, Any]]:
-        """
-        Returns metadata for each tag group including color, count, and date span.
+        """Returns metadata for each tag group including color, count, and date span.
 
         Args:
             tag_order: List of tag names to get metadata for.
@@ -1745,8 +1689,7 @@ class DatabaseService:
         tag_name: str,
         date_range: Optional[tuple] = None,
     ) -> List[Event]:
-        """
-        Returns all events for a specific tag group.
+        """Returns all events for a specific tag group.
 
         This is a convenience wrapper around get_events_by_tag with date filtering.
 
@@ -1792,8 +1735,7 @@ class DatabaseService:
         return events
 
     def set_tag_color(self, tag_name: str, color: Optional[str]) -> None:
-        """
-        Sets the color for a tag.
+        """Sets the color for a tag.
 
         Args:
             tag_name: The name of the tag.
@@ -1835,8 +1777,7 @@ class DatabaseService:
         logger.debug(f"Set color {color} for tag '{tag_name}'")
 
     def get_tag_color(self, tag_name: str) -> str:
-        """
-        Gets the color for a tag, generating one if not set.
+        """Gets the color for a tag, generating one if not set.
 
         Args:
             tag_name: The name of the tag.
@@ -1866,8 +1807,7 @@ class DatabaseService:
         return self._generate_tag_color(tag_name)
 
     def _generate_tag_color(self, tag_name: str) -> str:
-        """
-        Generates a deterministic color for a tag based on its name.
+        """Generates a deterministic color for a tag based on its name.
 
         Args:
             tag_name: The name of the tag.
@@ -1893,8 +1833,7 @@ class DatabaseService:
         return f"#{r:02X}{g:02X}{b:02X}"
 
     def get_tag_by_name(self, tag_name: str) -> Optional[Dict[str, Any]]:
-        """
-        Retrieves a tag by its name.
+        """Retrieves a tag by its name.
 
         Args:
             tag_name: The name of the tag.
@@ -1926,8 +1865,7 @@ class DatabaseService:
         exclude_mode: str = "any",
         case_sensitive: bool = False,
     ) -> List[tuple[str, str]]:
-        """
-        Convenience wrapper for tag-based filtering of entities and events.
+        """Convenience wrapper for tag-based filtering of entities and events.
 
         Filters objects by tags using include/exclude lists with 'any' or 'all'
         semantics. Returns lightweight (object_type, object_id) tuples.
@@ -1990,8 +1928,7 @@ class DatabaseService:
     def get_objects_by_ids(
         self, object_ids: List[tuple[str, str]]
     ) -> tuple[List[Event], List[Entity]]:
-        """
-        Retrieves full object instances for a list of (type, id) tuples.
+        """Retrieves full object instances for a list of (type, id) tuples.
 
         This method is used to hydrate results from `filter_ids_by_tags`.
         Results are returned sorted by their natural order:
@@ -2053,8 +1990,7 @@ class DatabaseService:
         tag_order: List[str],
         mode: str = "DUPLICATE",
     ) -> None:
-        """
-        Stores timeline grouping configuration.
+        """Stores timeline grouping configuration.
 
         Args:
             tag_order: List of tag names defining groups and their order.
@@ -2083,8 +2019,7 @@ class DatabaseService:
         )
 
     def get_timeline_grouping_config(self) -> Optional[Dict[str, Any]]:
-        """
-        Retrieves timeline grouping configuration.
+        """Retrieves timeline grouping configuration.
 
         Returns:
             Optional[Dict[str, Any]]: Config dict with tag_order and mode,
@@ -2104,9 +2039,7 @@ class DatabaseService:
         return None
 
     def clear_timeline_grouping_config(self) -> None:
-        """
-        Clears timeline grouping configuration.
-        """
+        """Clears timeline grouping configuration."""
         with self.transaction() as conn:
             conn.execute(
                 "DELETE FROM system_meta WHERE key = 'timeline_grouping_config'"
@@ -2124,8 +2057,7 @@ class DatabaseService:
         trajectory: List["Keyframe"],
         properties: Optional[dict] = None,
     ) -> str:
-        """
-        Inserts a spatial trajectory for a marker.
+        """Inserts a spatial trajectory for a marker.
 
         Args:
             marker_id: UUID of the marker.
@@ -2142,8 +2074,7 @@ class DatabaseService:
     def get_trajectories_by_map(
         self, map_id: str
     ) -> List[Tuple[str, str, List["Keyframe"]]]:
-        """
-        Retrieves all trajectories for a specific map.
+        """Retrieves all trajectories for a specific map.
 
         Args:
             map_id: UUID of the map.
@@ -2158,8 +2089,7 @@ class DatabaseService:
     def get_trajectories_by_marker(
         self, marker_id: str
     ) -> List[Tuple[str, List["Keyframe"]]]:
-        """
-        Retrieves all trajectories for a specific marker.
+        """Retrieves all trajectories for a specific marker.
 
         Args:
             marker_id: UUID of the marker.
@@ -2172,8 +2102,7 @@ class DatabaseService:
         return self._trajectory_repo.get_by_marker_db_id(marker_id)
 
     def add_keyframe(self, map_id: str, object_id: str, keyframe: "Keyframe") -> str:
-        """
-        Adds a keyframe to the marker's trajectory.
+        """Adds a keyframe to the marker's trajectory.
 
         Args:
             map_id: The ID of the map.
@@ -2190,8 +2119,7 @@ class DatabaseService:
     def update_keyframe_time(
         self, map_id: str, object_id: str, old_t: float, new_t: float
     ) -> str:
-        """
-        Updates a keyframe's timestamp (Clock Mode editing).
+        """Updates a keyframe's timestamp (Clock Mode editing).
 
         Args:
             map_id: The ID of the map.
@@ -2209,8 +2137,7 @@ class DatabaseService:
         )
 
     def delete_keyframe(self, map_id: str, object_id: str, t: float) -> Optional[str]:
-        """
-        Deletes a keyframe from a marker's trajectory.
+        """Deletes a keyframe from a marker's trajectory.
 
         Args:
             map_id: The ID of the map.
@@ -2225,8 +2152,7 @@ class DatabaseService:
         return self._trajectory_repo.delete_keyframe(map_id, object_id, t)
 
     def register_backup_service(self, backup_service: Any) -> None:
-        """
-        Registers a backup service for integration with database operations.
+        """Registers a backup service for integration with database operations.
 
         Args:
             backup_service: The BackupService instance to register.
@@ -2235,8 +2161,7 @@ class DatabaseService:
         logger.debug("Backup service registered with DatabaseService")
 
     def get_db_file_path(self) -> str:
-        """
-        Returns the current database file path.
+        """Returns the current database file path.
 
         Returns:
             str: Path to the database file.
@@ -2244,9 +2169,8 @@ class DatabaseService:
         return self.db_path
 
     def vacuum(self) -> bool:
-        """
-        Runs VACUUM on the database to reclaim space and optimize storage.
-        This can be slow for large databases and should be run infrequently.
+        """Runs VACUUM on the database to reclaim space and optimize storage. This can
+        be slow for large databases and should be run infrequently.
 
         Returns:
             bool: True if successful, False otherwise.

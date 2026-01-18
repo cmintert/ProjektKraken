@@ -1,8 +1,7 @@
-"""
-Filter Widget Module.
+"""Filter Widget Module.
 
-Provides a reusable widget for configuring inclusion/exclusion rules
-for a list of text items (tags, types, etc.).
+Provides a reusable widget for configuring inclusion/exclusion rules for a list of text
+items (tags, types, etc.).
 """
 
 from typing import Any, Dict, List, Optional, Set
@@ -22,9 +21,7 @@ from PySide6.QtWidgets import (
 
 
 class FilterWidget(QWidget):
-    """
-    Reusable widget for configuring include/exclude filters.
-    """
+    """Reusable widget for configuring include/exclude filters."""
 
     def __init__(
         self,
@@ -34,8 +31,7 @@ class FilterWidget(QWidget):
         title_include: str = "Include:",
         title_exclude: str = "Exclude:",
     ) -> None:
-        """
-        Initialize the filter widget.
+        """Initialize the filter widget.
 
         Args:
             parent: Parent widget.
@@ -146,8 +142,7 @@ class FilterWidget(QWidget):
             list_widget.addItem(item)
 
     def get_config(self) -> Dict[str, Any]:
-        """
-        Returns the current filter configuration.
+        """Returns the current filter configuration.
 
         Returns:
             Dict: {

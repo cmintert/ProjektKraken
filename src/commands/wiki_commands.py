@@ -1,5 +1,5 @@
-"""
-Wiki Commands Module.
+"""Wiki Commands Module.
+
 Commands for processing WikiLinks and updating relations.
 """
 
@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 
 
 class ProcessWikiLinksCommand(BaseCommand):
-    """
-    Command to process text content, extract WikiLinks, and create 'mentions' relations.
+    """Command to process text content, extract WikiLinks, and create 'mentions'
+    relations.
 
     This command:
     - Parses WikiLinks from text content
@@ -29,8 +29,7 @@ class ProcessWikiLinksCommand(BaseCommand):
     def __init__(
         self, source_id: str, text_content: str, field: str = "description"
     ) -> None:
-        """
-        Initializes the command.
+        """Initializes the command.
 
         Args:
             source_id: The ID of the source entity or event.
@@ -44,8 +43,7 @@ class ProcessWikiLinksCommand(BaseCommand):
         self._created_relations: List[str] = []
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Executes the link processing.
+        """Executes the link processing.
 
         Extracts WikiLinks, resolves them to entities or events, and
         creates 'mentions' relations with metadata including field,
@@ -220,17 +218,14 @@ class ProcessWikiLinksCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Undo operation is not applicable for read-only validation.
-        """
+        """Undo operation is not applicable for read-only validation."""
         pass
 
     @staticmethod
     def _extract_snippet(
         text: str, start: int, end: int, context_chars: int = 40
     ) -> str:
-        """
-        Extracts a snippet of text around the link for context.
+        """Extracts a snippet of text around the link for context.
 
         Args:
             text: The full text content.

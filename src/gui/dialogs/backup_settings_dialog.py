@@ -1,8 +1,7 @@
-"""
-Backup Settings Dialog.
+"""Backup Settings Dialog.
 
-Provides configuration for backup settings including auto-save intervals,
-retention policies, and backup locations.
+Provides configuration for backup settings including auto-save intervals, retention
+policies, and backup locations.
 """
 
 import logging
@@ -46,8 +45,7 @@ BACKUP_EXTERNAL_PATH_KEY = "backup_external_path"
 
 
 class BackupSettingsDialog(QDialog):
-    """
-    Dialog for configuring backup settings.
+    """Dialog for configuring backup settings.
 
     Provides controls for:
     - Enabling/disabling automated backups
@@ -60,8 +58,7 @@ class BackupSettingsDialog(QDialog):
     settings_changed = Signal()  # Emitted when settings are saved
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """
-        Initialize the Backup Settings Dialog.
+        """Initialize the Backup Settings Dialog.
 
         Args:
             parent: Parent widget.

@@ -1,12 +1,11 @@
-"""
-Inject Template Command Module.
+"""Inject Template Command Module.
 
-Handles application of Fast Inject templates via the Command pattern,
-supporting Undo/Redo operations.
+Handles application of Fast Inject templates via the Command pattern, supporting
+Undo/Redo operations.
 """
 
 import copy
-from typing import Any, Dict, Union
+from typing import Dict, Union
 
 from src.commands.base_command import BaseCommand, CommandResult
 from src.core.entities import Entity
@@ -16,8 +15,8 @@ from src.services.db_service import DatabaseService
 
 
 class InjectTemplateCommand(BaseCommand):
-    """
-    Applies a FastInjectTemplate to an Entity or Event.
+    """Applies a FastInjectTemplate to an Entity or Event.
+
     Supports Undo by restoring the previous state of modified attributes/tags.
     """
 
@@ -29,14 +28,15 @@ class InjectTemplateCommand(BaseCommand):
         overwrite: bool = False,
         variables: Dict[str, str] = None,
     ) -> None:
-        """
-        Initialize the command.
+        """Initialize the command.
 
         Args:
             target: The Entity or Event to modify.
             template: The template to apply.
-            manager: FastInjectManager instance (for variable resolution logic, though primarily used for core logic application).
-                     Actually we delegate logic to manager, but we track state diffs here.
+            manager: FastInjectManager instance (for variable resolution logic,
+                     though primarily used for core logic application).
+                     Actually we delegate logic to manager, but we track
+                     state diffs here.
             overwrite: Whether to overwrite existing attributes.
             variables: Variable replacement map.
         """
@@ -50,6 +50,7 @@ class InjectTemplateCommand(BaseCommand):
         # Undo State
         self._previous_tags = []
         self._previous_attributes = {}
+        self._previous_type = None
         # We only need to backup attributes that are going to be changed or added
         # But for simplicity and robustness, creating a snapshot of attributes
         # that overlap with the template + all tags is safer.
@@ -58,8 +59,7 @@ class InjectTemplateCommand(BaseCommand):
         self._target_type_str = "entity" if isinstance(target, Entity) else "event"
 
     def execute(self, db_service: DatabaseService) -> Union[bool, CommandResult]:
-        """
-        Executes the injection.
+        """Executes the injection.
 
         Args:
             db_service: Database service (needed for saving the Modified target).
@@ -70,6 +70,7 @@ class InjectTemplateCommand(BaseCommand):
         try:
             # 1. Snapshot State for Undo
             self._previous_tags = copy.deepcopy(self.target.tags)
+            self._previous_type = self.target.type
 
             # Smart snapshot: only backup attributes that might be touched
             # However, since 'overwrite' logic is inside manager,
@@ -100,7 +101,9 @@ class InjectTemplateCommand(BaseCommand):
 
             return CommandResult(
                 success=True,
-                message=f"Applied template '{self.template.name}' to {self.target.name}",
+                message=(
+                    f"Applied template '{self.template.name}' to {self.target.name}"
+                ),
                 command_name="InjectTemplateCommand",
             )
 
@@ -110,8 +113,7 @@ class InjectTemplateCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Reverts the injection.
+        """Reverts the injection.
 
         Args:
             db_service: Database service.
@@ -122,6 +124,9 @@ class InjectTemplateCommand(BaseCommand):
         try:
             # 1. Restore Tags
             self.target.tags = self._previous_tags
+
+            if self._previous_type is not None:
+                self.target.type = self._previous_type
 
             # 2. Restore Attributes
             # We need to act carefully:

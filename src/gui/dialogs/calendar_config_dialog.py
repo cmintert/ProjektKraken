@@ -1,8 +1,7 @@
-"""
-Calendar Configuration Dialog Module.
+"""Calendar Configuration Dialog Module.
 
-Provides a dialog for editing calendar configurations including
-month definitions, week structure, and year variants.
+Provides a dialog for editing calendar configurations including month definitions, week
+structure, and year variants.
 """
 
 import logging
@@ -42,8 +41,7 @@ logger = logging.getLogger(__name__)
 
 
 class CalendarConfigDialog(QDialog):
-    """
-    A dialog for creating and editing calendar configurations.
+    """A dialog for creating and editing calendar configurations.
 
     Provides editors for:
     - Calendar name and epoch
@@ -62,8 +60,7 @@ class CalendarConfigDialog(QDialog):
         parent: Optional[QWidget] = None,
         config: Optional[CalendarConfig] = None,
     ) -> None:
-        """
-        Initializes the calendar configuration dialog.
+        """Initializes the calendar configuration dialog.
 
         Args:
             parent: Parent widget.
@@ -323,8 +320,7 @@ class CalendarConfigDialog(QDialog):
         self._update_preview()
 
     def _build_config_from_ui(self) -> CalendarConfig:
-        """
-        Builds a CalendarConfig from the current UI state.
+        """Builds a CalendarConfig from the current UI state.
 
         Returns:
             CalendarConfig: The configuration from current form values.
@@ -451,8 +447,7 @@ class CalendarConfigDialog(QDialog):
         self.accept()
 
     def get_config(self) -> CalendarConfig:
-        """
-        Returns the current calendar configuration.
+        """Returns the current calendar configuration.
 
         Returns:
             CalendarConfig: The configuration from the dialog.

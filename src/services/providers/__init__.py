@@ -1,8 +1,6 @@
-"""
-Provider implementations package.
+"""Provider implementations package.
 
-Contains concrete implementations of the Provider interface for various
-LLM backends.
+Contains concrete implementations of the Provider interface for various LLM backends.
 """
 
 from src.services.providers.anthropic_provider import AnthropicProvider

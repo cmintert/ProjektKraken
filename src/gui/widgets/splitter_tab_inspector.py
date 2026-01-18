@@ -1,8 +1,7 @@
-"""
-Splitter Tab Inspector Widget Module.
+"""Splitter Tab Inspector Widget Module.
 
-Provides a custom QSplitter-based widget that supports vertical stacking
-of tabs with drag-and-drop functionality.
+Provides a custom QSplitter-based widget that supports vertical stacking of tabs with
+drag-and-drop functionality.
 """
 
 from typing import Optional
@@ -23,10 +22,8 @@ logger = get_logger(__name__)
 
 
 class DraggableTabBar(QTabBar):
-    """
-    A QTabBar that supports drag-and-drop for rearranging tabs
-    across different QTabWidgets within the same splitter.
-    """
+    """A QTabBar that supports drag-and-drop for rearranging tabs across different
+    QTabWidgets within the same splitter."""
 
     tab_dragged = Signal(int)  # Emitted when a tab drag starts
 
@@ -107,12 +104,11 @@ class DraggableTabBar(QTabBar):
         event.acceptProposedAction()
 
     def _cleanup_empty_pane(self, tab_widget: QTabWidget) -> None:
-        """
-        Remove a tab widget from splitter if it has no tabs left.
-        
+        """Remove a tab widget from splitter if it has no tabs left.
+
         Uses delayed deletion with re-check to avoid race conditions during
         drag/reparent operations.
-        
+
         Args:
             tab_widget: The tab widget to check and potentially remove.
         """
@@ -167,8 +163,8 @@ class DraggableTabWidget(QTabWidget):
             event.acceptProposedAction()
 
     def dropEvent(self, event: QDropEvent) -> None:
-        """
-        Handle drop to create a vertical split.
+        """Handle drop to create a vertical split.
+
         If dropped on the body (not the tab bar), create a new pane.
         """
         # Let the tab bar handle it if the drop is on the tab bar
@@ -220,12 +216,11 @@ class DraggableTabWidget(QTabWidget):
         event.acceptProposedAction()
 
     def _cleanup_empty_pane(self, tab_widget: QTabWidget, splitter: QSplitter) -> None:
-        """
-        Remove a tab widget from splitter if it has no tabs left.
-        
+        """Remove a tab widget from splitter if it has no tabs left.
+
         Uses delayed deletion with re-check to avoid race conditions during
         drag/reparent operations.
-        
+
         Args:
             tab_widget: The tab widget to check and potentially remove.
             splitter: The parent splitter containing the tab widget.
@@ -264,10 +259,10 @@ class DraggableTabWidget(QTabWidget):
 
 
 class SplitterTabInspector(QWidget):
-    """
-    A widget that provides a vertically splittable tab container.
-    Tabs can be dragged to the tab bar to rearrange, or dropped
-    on the body of another tab widget to create a vertical split.
+    """A widget that provides a vertically splittable tab container.
+
+    Tabs can be dragged to the tab bar to rearrange, or dropped on the body of another
+    tab widget to create a vertical split.
     """
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
@@ -293,8 +288,7 @@ class SplitterTabInspector(QWidget):
         self._tab_widgets = [self.main_tabs]
 
     def add_tab(self, widget: QWidget, title: str) -> None:
-        """
-        Add a tab to the main tab widget.
+        """Add a tab to the main tab widget.
 
         Args:
             widget (QWidget): The widget to add.
@@ -307,8 +301,7 @@ class SplitterTabInspector(QWidget):
         return self.main_tabs
 
     def minimumSizeHint(self) -> QSize:
-        """
-        Prevent tab inspector collapse.
+        """Prevent tab inspector collapse.
 
         Returns:
             QSize: Minimum size for usable tab inspector.
@@ -318,8 +311,7 @@ class SplitterTabInspector(QWidget):
         return QSize(200, 150)  # Minimum height for at least one tab visible
 
     def sizeHint(self) -> QSize:
-        """
-        Preferred size for tab inspector.
+        """Preferred size for tab inspector.
 
         Returns:
             QSize: Comfortable working size for inspector tabs.

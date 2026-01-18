@@ -1,9 +1,8 @@
-"""
-Group Band Item Module.
+"""Group Band Item Module.
 
-Provides the GroupBandItem widget for displaying tag-based grouping bands
-on the timeline. Bands are thin, colored, collapsible elements that stack
-above the timeline lanes.
+Provides the GroupBandItem widget for displaying tag-based grouping bands on the
+timeline. Bands are thin, colored, collapsible elements that stack above the timeline
+lanes.
 """
 
 import logging
@@ -33,8 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 class GroupBandItem(QGraphicsObject):
-    """
-    A thin colored band representing a tag group on the timeline.
+    """A thin colored band representing a tag group on the timeline.
 
     Features:
     - Colored bar with tag name
@@ -65,8 +63,7 @@ class GroupBandItem(QGraphicsObject):
         is_collapsed: bool = False,
         parent: Optional[QGraphicsItem] = None,
     ) -> None:
-        """
-        Initializes the GroupBandItem.
+        """Initializes the GroupBandItem.
 
         Args:
             tag_name: The name of the tag this band represents
@@ -126,11 +123,10 @@ class GroupBandItem(QGraphicsObject):
         self.setToolTip(tooltip)
 
     def boundingRect(self) -> QRectF:
-        """
-        Returns the bounding rectangle for the band.
+        """Returns the bounding rectangle for the band.
 
-        The band spans horizontally across the entire visible timeline
-        (effectively infinite) and has a height based on collapsed state.
+        The band spans horizontally across the entire visible timeline (effectively
+        infinite) and has a height based on collapsed state.
         """
         height = (
             self.BAND_HEIGHT_COLLAPSED
@@ -146,8 +142,7 @@ class GroupBandItem(QGraphicsObject):
         option: QStyleOptionGraphicsItem,
         widget: Optional[QWidget] = None,
     ) -> None:
-        """
-        Paints the group band.
+        """Paints the group band.
 
         Args:
             painter: The QPainter to use for drawing
@@ -261,8 +256,7 @@ class GroupBandItem(QGraphicsObject):
         super().hoverLeaveEvent(event)
 
     def set_collapsed(self, collapsed: bool) -> None:
-        """
-        Set the collapsed state of the band.
+        """Set the collapsed state of the band.
 
         Args:
             collapsed: True to collapse, False to expand
@@ -273,8 +267,7 @@ class GroupBandItem(QGraphicsObject):
             self.update()
 
     def set_color(self, color: str) -> None:
-        """
-        Update the band color.
+        """Update the band color.
 
         Args:
             color: Hex color string (e.g., "#FF0000")
@@ -285,8 +278,7 @@ class GroupBandItem(QGraphicsObject):
     def update_metadata(
         self, count: int, earliest_date: float, latest_date: float
     ) -> None:
-        """
-        Update the band metadata.
+        """Update the band metadata.
 
         Args:
             count: Number of events in this group
@@ -300,8 +292,7 @@ class GroupBandItem(QGraphicsObject):
         self.update()
 
     def set_event_dates(self, event_dates: list) -> None:
-        """
-        Set the event dates for tick mark rendering.
+        """Set the event dates for tick mark rendering.
 
         Args:
             event_dates: List of lore_dates for events in this group
@@ -310,8 +301,7 @@ class GroupBandItem(QGraphicsObject):
         self.update()
 
     def get_height(self) -> int:
-        """
-        Get the current height of the band.
+        """Get the current height of the band.
 
         Returns:
             Height in pixels

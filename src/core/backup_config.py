@@ -1,5 +1,5 @@
-"""
-Backup Configuration Module.
+"""Backup Configuration Module.
+
 Defines configuration settings for the backup system.
 """
 
@@ -10,8 +10,7 @@ from typing import Optional
 
 @dataclass
 class BackupConfig:
-    """
-    Configuration settings for the backup system.
+    """Configuration settings for the backup system.
 
     Attributes:
         enabled: Whether automated backups are enabled.
@@ -38,8 +37,7 @@ class BackupConfig:
     vacuum_before_backup: bool = False  # Can be slow for large DBs
 
     def to_dict(self) -> dict:
-        """
-        Converts the config to a dictionary for JSON serialization.
+        """Converts the config to a dictionary for JSON serialization.
 
         Returns:
             dict: Dictionary representation of the configuration.
@@ -61,8 +59,7 @@ class BackupConfig:
 
     @classmethod
     def from_dict(cls, data: dict) -> "BackupConfig":
-        """
-        Creates a BackupConfig from a dictionary.
+        """Creates a BackupConfig from a dictionary.
 
         Args:
             data: Dictionary containing configuration values.

@@ -1,5 +1,5 @@
-"""
-Wiki Text Edit Widget.
+"""Wiki Text Edit Widget.
+
 A specialized QTextEdit that supports WikiLink navigation via Ctrl+Click.
 """
 
@@ -31,8 +31,8 @@ logger = logging.getLogger(__name__)
 
 
 class WikiTextEdit(QTextEdit):
-    """
-    Text Editor with WikiLink support.
+    """Text Editor with WikiLink support.
+
     - Highlights [[Links]]
     - Emits 'link_clicked' on Ctrl+Click
     - Supports Autocompletion for [[Links]]
@@ -42,8 +42,7 @@ class WikiTextEdit(QTextEdit):
     link_added = Signal(str, str)  # Emits (target_id_or_name, display_name) on creation
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """
-        Initializes the WikiTextEdit.
+        """Initializes the WikiTextEdit.
 
         Args:
             parent (QWidget, optional): The parent widget. Defaults to None.
@@ -104,9 +103,7 @@ class WikiTextEdit(QTextEdit):
         self.btn_toggle_view.show()
 
     def resizeEvent(self, event: QResizeEvent) -> None:
-        """
-        Handle resize to reposition the floating button.
-        """
+        """Handle resize to reposition the floating button."""
         super().resizeEvent(event)
         # Top-Right corner with padding
         padding = 5
@@ -124,8 +121,8 @@ class WikiTextEdit(QTextEdit):
 
     @Slot()
     def toggle_view_mode(self) -> None:
-        """
-        Toggles between Rich HTML view and Markdown Source view.
+        """Toggles between Rich HTML view and Markdown Source view.
+
         Uses AST for pixel-perfect cursor position preservation.
         """
         # Capture cursor position before switching
@@ -202,8 +199,7 @@ class WikiTextEdit(QTextEdit):
             self.btn_toggle_view.setToolTip("Switch to Source View")
 
     def set_link_resolver(self, link_resolver: Any) -> None:
-        """
-        Sets the link resolver for checking broken links.
+        """Sets the link resolver for checking broken links.
 
         Args:
             link_resolver: LinkResolver instance for ID resolution and
@@ -220,8 +216,7 @@ class WikiTextEdit(QTextEdit):
         items: list[tuple[str, str, str]] = None,
         names: list[str] = None,
     ) -> None:
-        """
-        Initializes or updates the completer with items.
+        """Initializes or updates the completer with items.
 
         Can be called with either:
         - Positional list of names for legacy compatibility:
@@ -275,8 +270,7 @@ class WikiTextEdit(QTextEdit):
             self._completer.setModel(model)
 
     def _get_theme_css(self) -> str:
-        """
-        Build CSS stylesheet based on current theme settings.
+        """Build CSS stylesheet based on current theme settings.
 
         Retrieves current theme settings and builds CSS for headings,
         paragraphs, and links.
@@ -316,19 +310,16 @@ class WikiTextEdit(QTextEdit):
         return css
 
     def _apply_theme_stylesheet(self) -> None:
-        """
-        Apply theme-based stylesheet to the document.
+        """Apply theme-based stylesheet to the document.
 
-        Retrieves current theme settings and applies font sizes and colors
-        to headings, paragraphs, and links.
+        Retrieves current theme settings and applies font sizes and colors to headings,
+        paragraphs, and links.
         """
         css = self._get_theme_css()
         self.document().setDefaultStyleSheet(css)
 
     def _apply_widget_style(self) -> None:
-        """
-        Apply theme-based styling to the widget (borders, scrollbars).
-        """
+        """Apply theme-based styling to the widget (borders, scrollbars)."""
         tm = ThemeManager()
         theme = tm.get_theme()
 
@@ -392,8 +383,8 @@ class WikiTextEdit(QTextEdit):
         self.setStyleSheet(widget_qss)
 
     def set_wiki_text(self, text: Optional[str]) -> None:
-        """
-        Sets the content using WikiLink syntax, converting it to HTML anchors.
+        """Sets the content using WikiLink syntax, converting it to HTML anchors.
+
         Uses the 'markdown' library for rich text rendering.
         """
         import markdown
@@ -430,8 +421,8 @@ class WikiTextEdit(QTextEdit):
         pattern = re.compile(r"\[\[([^]|]+)(?:\|([^]]+))?\]\]")
 
         def replace_link_md(match: re.Match) -> str:
-            """
-            Convert WikiLink syntax to Markdown link syntax.
+            """Convert WikiLink syntax to Markdown link syntax.
+
             Checks validity of target against known items.
             """
             target = match[1].strip()
@@ -493,8 +484,8 @@ class WikiTextEdit(QTextEdit):
             self.blockSignals(was_blocked)
 
     def get_wiki_text(self) -> str:
-        """
-        Converts the editor content back to WikiLink syntax.
+        """Converts the editor content back to WikiLink syntax.
+
         If in 'source' mode, returns the raw text directly.
         """
         if hasattr(self, "_view_mode") and self._view_mode == "source":
@@ -525,8 +516,8 @@ class WikiTextEdit(QTextEdit):
         return output
 
     def _process_block(self, block: QTextBlock) -> str:
-        """
-        Process a text block to recover block-level formatting (Headings).
+        """Process a text block to recover block-level formatting (Headings).
+
         Then delegates to _process_fragment for inline formatting.
         """
         iterator = block.begin()
@@ -590,9 +581,8 @@ class WikiTextEdit(QTextEdit):
     def _process_fragment(
         self, fragment: QTextFragment, is_heading: bool = False
     ) -> str:
-        """
-        Process a text fragment to recover inline formatting (Bold, Italic, Links).
-        """
+        """Process a text fragment to recover inline formatting (Bold, Italic,
+        Links)."""
         text = fragment.text()
         fmt = fragment.charFormat()
 
@@ -622,9 +612,7 @@ class WikiTextEdit(QTextEdit):
 
     @Slot(str)
     def insert_completion(self, completion: str) -> None:
-        """
-        Inserts the selected completion as an HTML anchor.
-        """
+        """Inserts the selected completion as an HTML anchor."""
         tc = self.textCursor()
         if not self._completer:
             return
@@ -662,8 +650,7 @@ class WikiTextEdit(QTextEdit):
         self.link_added.emit(target, label)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        """
-        Handles key press events for wiki link completion and formatting shortcuts.
+        """Handles key press events for wiki link completion and formatting shortcuts.
 
         Supports:
         - Ctrl+B: Toggle bold
@@ -736,8 +723,7 @@ class WikiTextEdit(QTextEdit):
         self._check_for_completion()
 
     def _toggle_bold(self) -> None:
-        """
-        Toggle bold formatting on selected text or at cursor position.
+        """Toggle bold formatting on selected text or at cursor position.
 
         In Source mode: wraps/unwraps selection with **
         In Rich mode: applies/removes bold QTextCharFormat
@@ -748,8 +734,7 @@ class WikiTextEdit(QTextEdit):
             self._toggle_rich_format("bold")
 
     def _toggle_italic(self) -> None:
-        """
-        Toggle italic formatting on selected text or at cursor position.
+        """Toggle italic formatting on selected text or at cursor position.
 
         In Source mode: wraps/unwraps selection with *
         In Rich mode: applies/removes italic QTextCharFormat
@@ -760,8 +745,7 @@ class WikiTextEdit(QTextEdit):
             self._toggle_rich_format("italic")
 
     def _set_heading(self, level: int) -> None:
-        """
-        Set heading level on the current line.
+        """Set heading level on the current line.
 
         Args:
             level: Heading level (1-3) or 0 to remove heading.
@@ -775,8 +759,7 @@ class WikiTextEdit(QTextEdit):
             self._set_rich_heading(level)
 
     def _set_markdown_heading(self, level: int) -> None:
-        """
-        Set Markdown heading on current line.
+        """Set Markdown heading on current line.
 
         Args:
             level: Heading level (1-3) or 0 to remove.
@@ -801,8 +784,7 @@ class WikiTextEdit(QTextEdit):
         self.setTextCursor(cursor)
 
     def _set_rich_heading(self, level: int) -> None:
-        """
-        Set heading style in Rich mode.
+        """Set heading style in Rich mode.
 
         Args:
             level: Heading level (1-3) or 0 for paragraph.
@@ -882,8 +864,7 @@ class WikiTextEdit(QTextEdit):
         # This prevents cursor jumping and loss of empty lines.
 
     def _toggle_markdown_format(self, marker: str) -> None:
-        """
-        Toggle Markdown formatting markers around selection.
+        """Toggle Markdown formatting markers around selection.
 
         Args:
             marker: The Markdown marker (e.g., "**" for bold, "*" for italic)
@@ -914,8 +895,7 @@ class WikiTextEdit(QTextEdit):
         self.setTextCursor(cursor)
 
     def _toggle_rich_format(self, format_type: str) -> None:
-        """
-        Toggle rich text formatting on selection.
+        """Toggle rich text formatting on selection.
 
         Args:
             format_type: "bold" or "italic"
@@ -956,8 +936,8 @@ class WikiTextEdit(QTextEdit):
         self.setTextCursor(cursor)
 
     def _check_for_link_closure(self) -> None:
-        """
-        Check if user just completed a wiki link with ]].
+        """Check if user just completed a wiki link with ]].
+
         If so, validate and style the link immediately.
         """
         cursor = self.textCursor()
@@ -1023,8 +1003,7 @@ class WikiTextEdit(QTextEdit):
             self.link_added.emit(target, label)
 
     def _validate_link_target(self, target: str) -> bool:
-        """
-        Validate a link target against known items.
+        """Validate a link target against known items.
 
         Args:
             target: The link target (name or id:UUID format).
@@ -1050,11 +1029,10 @@ class WikiTextEdit(QTextEdit):
         return not hasattr(self, "_valid_targets_lower")
 
     def _check_for_completion(self) -> None:
-        """
-        Checks if wiki link completion should be triggered.
+        """Checks if wiki link completion should be triggered.
 
-        Looks backwards from cursor position for "[[" pattern and shows
-        completion popup if found without a closing "]]".
+        Looks backwards from cursor position for "[[" pattern and shows completion popup
+        if found without a closing "]]".
         """
         cursor = self.textCursor()
         block_text = cursor.block().text()
@@ -1088,8 +1066,7 @@ class WikiTextEdit(QTextEdit):
         self._completer.complete(curr_rect)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        """
-        Handles mouse move events to show pointer cursor over links.
+        """Handles mouse move events to show pointer cursor over links.
 
         Args:
             event: QMouseEvent from PySide6.
@@ -1103,8 +1080,7 @@ class WikiTextEdit(QTextEdit):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        """
-        Handles mouse release events for Ctrl+Click navigation.
+        """Handles mouse release events for Ctrl+Click navigation.
 
         Args:
             event: QMouseEvent from PySide6.
@@ -1124,8 +1100,7 @@ class WikiTextEdit(QTextEdit):
 
     @Slot(dict)
     def _on_theme_changed(self, theme_data: dict) -> None:
-        """
-        Updates link color and text style when theme changes.
+        """Updates link color and text style when theme changes.
 
         Re-renders the current content to apply new font sizes and colors.
 

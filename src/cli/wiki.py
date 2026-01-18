@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Wiki Management CLI.
+"""Wiki Management CLI.
 
 Provides command-line tools for wiki operations, such as scanning content for links.
 

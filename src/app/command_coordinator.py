@@ -1,8 +1,7 @@
-"""
-Command Coordinator.
+"""Command Coordinator.
 
-Handles command execution, undo/redo stack management,
-and communication with the database worker thread.
+Handles command execution, undo/redo stack management, and communication with the
+database worker thread.
 """
 
 import logging
@@ -18,8 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class CommandCoordinator(QObject):
-    """
-    Coordinates command execution and worker thread communication.
+    """Coordinates command execution and worker thread communication.
 
     Manages:
     - Command submission to worker thread
@@ -34,8 +32,7 @@ class CommandCoordinator(QObject):
     command_requested = Signal(object)
 
     def __init__(self, main_window: "MainWindowProtocol") -> None:
-        """
-        Initialize the command coordinator.
+        """Initialize the command coordinator.
 
         Args:
             main_window: Reference to the MainWindow instance.
@@ -45,8 +42,7 @@ class CommandCoordinator(QObject):
         logger.debug("CommandCoordinator initialized")
 
     def execute_command(self, command: "BaseCommand") -> None:
-        """
-        Execute a command via the worker thread.
+        """Execute a command via the worker thread.
 
         Args:
             command: The command object to execute.
@@ -56,8 +52,7 @@ class CommandCoordinator(QObject):
 
     @Slot(object)
     def on_command_result(self, result: "CommandResult") -> None:
-        """
-        Handle command execution result from worker thread.
+        """Handle command execution result from worker thread.
 
         Args:
             result: CommandResult object containing execution status.
@@ -71,8 +66,7 @@ class CommandCoordinator(QObject):
             self._show_error(result.message)
 
     def _refresh_after_command(self, result: "CommandResult") -> None:
-        """
-        Refresh UI data after successful command execution.
+        """Refresh UI data after successful command execution.
 
         Args:
             result: CommandResult object.
@@ -83,8 +77,7 @@ class CommandCoordinator(QObject):
             self.window.load_data()
 
     def _show_error(self, message: str) -> None:
-        """
-        Display error message to user.
+        """Display error message to user.
 
         Args:
             message: Error message to display.

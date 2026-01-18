@@ -1,5 +1,5 @@
-"""
-UIManager Module.
+"""UIManager Module.
+
 Handles the creation and layout of dock widgets and menus for the MainWindow.
 """
 
@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional
 # =========================================
 # Uses fully qualified enum paths (e.g., Qt.DockWidgetArea.LeftDockWidgetArea)
 # per PySide6 6.4+ best practices. See src/app/main.py for full explanation.
-from PySide6.QtCore import QEvent, QObject, QSettings, Qt, QTimer
+from PySide6.QtCore import QEvent, QObject, QSettings, Qt
 from PySide6.QtWidgets import (
     QDockWidget,
     QInputDialog,
@@ -45,16 +45,14 @@ from src.core.protocols import MainWindowProtocol
 
 
 class _DockEventFilter(QObject):
-    """
-    Event filter for dock widgets to log visibility and resize events.
+    """Event filter for dock widgets to log visibility and resize events.
 
-    This diagnostic helper logs show/hide/resize events for debugging
-    disappearing widget issues.
+    This diagnostic helper logs show/hide/resize events for debugging disappearing
+    widget issues.
     """
 
-    def __init__(self, dock_name: str, logger):
-        """
-        Initialize the event filter.
+    def __init__(self, dock_name: str, logger) -> None:
+        """Initialize the event filter.
 
         Args:
             dock_name: Name of the dock widget being monitored.
@@ -65,8 +63,7 @@ class _DockEventFilter(QObject):
         self._logger = logger
 
     def eventFilter(self, obj, event):
-        """
-        Filter events and log relevant ones.
+        """Filter events and log relevant ones.
 
         Args:
             obj: Object receiving the event.
@@ -88,16 +85,14 @@ class _DockEventFilter(QObject):
 
 
 class UIManager:
-    """
-    Manages the UI components of the MainWindow, including Docks and Menus.
+    """Manages the UI components of the MainWindow, including Docks and Menus.
 
-    This class uses the MainWindowProtocol to define its expectations of the
-    main window, making the interface explicit and verifiable.
+    This class uses the MainWindowProtocol to define its expectations of the main
+    window, making the interface explicit and verifiable.
     """
 
     def __init__(self, main_window: MainWindowProtocol) -> None:
-        """
-        Initializes the UIManager.
+        """Initializes the UIManager.
 
         Args:
             main_window: A MainWindow instance implementing MainWindowProtocol.
@@ -106,8 +101,7 @@ class UIManager:
         self.docks = {}
 
     def _attach_diagnostics(self, dock: QDockWidget) -> None:
-        """
-        Attach diagnostic logging to a dock widget.
+        """Attach diagnostic logging to a dock widget.
 
         Logs visibility changes, top-level changes, and widget events
         (show/hide/resize) to help diagnose disappearing widget issues.
@@ -124,7 +118,8 @@ class UIManager:
         # Log visibility changes with size info
         dock.visibilityChanged.connect(
             lambda vis, n=name, d=dock: logger.info(
-                f"Dock '{n}' visibilityChanged={vis} size={d.size().width()}x{d.size().height()}"
+                f"Dock '{n}' visibilityChanged={vis} "
+                f"size={d.size().width()}x{d.size().height()}"
             )
         )
 
@@ -142,8 +137,7 @@ class UIManager:
             setattr(dock, "_diag_event_filter", f)
 
     def setup_docks(self, widgets: Dict[str, QWidget]) -> None:
-        """
-        Creates and arranges all dock widgets.
+        """Creates and arranges all dock widgets.
 
         Args:
             widgets (dict): Dictionary containing the widget instances:
@@ -343,8 +337,7 @@ class UIManager:
     def _create_dock(
         self, title: str, obj_name: str, widget: QWidget
     ) -> Optional[QDockWidget]:
-        """
-        Helper to create a configured dock widget with size constraints.
+        """Helper to create a configured dock widget with size constraints.
 
         Sets minimum sizes to prevent dock collapse during resize/rearrangement.
         Includes validation and error handling to ensure robust dock creation.
@@ -376,7 +369,8 @@ class UIManager:
                 return None
 
             logger.debug(
-                f"Creating dock '{title}' ({obj_name}) with widget {type(widget).__name__}"
+                f"Creating dock '{title}' ({obj_name}) "
+                f"with widget {type(widget).__name__}"
             )
 
             # Create dock widget
@@ -556,8 +550,7 @@ class UIManager:
             self.save_layout(name)
 
     def save_layout(self, name: str) -> None:
-        """
-        Saves the current window layout (state and geometry).
+        """Saves the current window layout (state and geometry).
 
         Args:
             name: The name of the layout.
@@ -579,8 +572,7 @@ class UIManager:
         self._refresh_layouts_menu()
 
     def restore_layout(self, name: str) -> None:
-        """
-        Restores a saved window layout.
+        """Restores a saved window layout.
 
         Args:
             name: The name of the layout to restore.
@@ -600,8 +592,7 @@ class UIManager:
             self.main_window.restoreState(layout_data["state"])
 
     def delete_layout(self, name: str) -> None:
-        """
-        Deletes a saved layout.
+        """Deletes a saved layout.
 
         Args:
             name: The name of the layout to delete.
@@ -622,8 +613,7 @@ class UIManager:
                 self._refresh_layouts_menu()
 
     def get_saved_layouts(self) -> list[str]:
-        """
-        Returns a list of saved layout names.
+        """Returns a list of saved layout names.
 
         Returns:
             List[str]: Sorted list of layout names.
@@ -706,8 +696,8 @@ class UIManager:
                 self.docks["map"].show()
 
     def save_as_default_layout(self) -> None:
-        """
-        Saves the current layout as the default factory layout.
+        """Saves the current layout as the default factory layout.
+
         Writes to src/assets/default_layout.json.
         """
         from src.core.paths import get_default_layout_path
@@ -793,8 +783,7 @@ class UIManager:
         )
 
     def show_calendar_dialog(self, current_config: Optional[Any]) -> None:
-        """
-        Shows the calendar configuration dialog.
+        """Shows the calendar configuration dialog.
 
         Args:
             current_config: CalendarConfig or None.
@@ -813,8 +802,7 @@ class UIManager:
         dialog = CalendarConfigDialog(self.main_window, config=current_config)
 
         def on_config_saved(config: Any) -> None:
-            """
-            Handles calendar config save by creating appropriate commands.
+            """Handles calendar config save by creating appropriate commands.
 
             Args:
                 config: The calendar configuration to save.

@@ -1,5 +1,4 @@
-"""
-Relation Repository Module.
+"""Relation Repository Module.
 
 Handles CRUD operations for Relation entities in the database.
 """
@@ -13,11 +12,10 @@ logger = logging.getLogger(__name__)
 
 
 class RelationRepository(BaseRepository):
-    """
-    Repository for Relation entities.
+    """Repository for Relation entities.
 
-    Provides specialized methods for creating, reading, updating,
-    and deleting relations from the database.
+    Provides specialized methods for creating, reading, updating, and deleting relations
+    from the database.
     """
 
     def insert(
@@ -29,8 +27,7 @@ class RelationRepository(BaseRepository):
         attributes: Dict[str, Any],
         created_at: float,
     ) -> None:
-        """
-        Insert a new relation.
+        """Insert a new relation.
 
         Args:
             relation_id: Unique identifier for the relation.
@@ -62,8 +59,7 @@ class RelationRepository(BaseRepository):
             )
 
     def get_all(self) -> List[Dict[str, Any]]:
-        """
-        Retrieve all relations from the database.
+        """Retrieve all relations from the database.
 
         Returns:
             List of relation dictionaries.
@@ -83,8 +79,7 @@ class RelationRepository(BaseRepository):
         return relations
 
     def get_by_source(self, source_id: str) -> List[Dict[str, Any]]:
-        """
-        Retrieve all relations where source_id matches.
+        """Retrieve all relations where source_id matches.
 
         Args:
             source_id: The source entity/event ID.
@@ -107,8 +102,7 @@ class RelationRepository(BaseRepository):
         return relations
 
     def get_by_target(self, target_id: str) -> List[Dict[str, Any]]:
-        """
-        Retrieve all relations where target_id matches.
+        """Retrieve all relations where target_id matches.
 
         Includes 'source_event_date' if the source is an event.
 
@@ -140,8 +134,7 @@ class RelationRepository(BaseRepository):
         return relations
 
     def delete(self, relation_id: str) -> None:
-        """
-        Delete a relation permanently.
+        """Delete a relation permanently.
 
         Args:
             relation_id: The unique identifier of the relation to delete.
@@ -155,8 +148,7 @@ class RelationRepository(BaseRepository):
     def update(
         self, relation_id: str, rel_type: str, attributes: Dict[str, Any]
     ) -> None:
-        """
-        Update a relation's type and attributes.
+        """Update a relation's type and attributes.
 
         Args:
             relation_id: The unique identifier of the relation.

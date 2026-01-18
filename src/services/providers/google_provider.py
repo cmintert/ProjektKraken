@@ -1,5 +1,4 @@
-"""
-Google Vertex AI Provider Implementation.
+"""Google Vertex AI Provider Implementation.
 
 Provides embeddings and text generation via Google Vertex AI API.
 Supports health checks, timeouts, retries, and circuit breaker pattern.
@@ -21,8 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class GoogleProvider(Provider):
-    """
-    Google Vertex AI provider supporting embeddings and text generation.
+    """Google Vertex AI provider supporting embeddings and text generation.
 
     Implements Vertex AI API with retries and circuit breaker.
     """
@@ -37,8 +35,7 @@ class GoogleProvider(Provider):
         timeout: int = 30,
         max_retries: int = 3,
     ) -> None:
-        """
-        Initialize Google Vertex AI provider.
+        """Initialize Google Vertex AI provider.
 
         Args:
             project_id: GCP project ID.
@@ -107,8 +104,7 @@ class GoogleProvider(Provider):
         logger.info(f"Project: {self.project_id}, Location: {self.location}")
 
     def _get_access_token(self) -> str:
-        """
-        Get fresh access token for API requests.
+        """Get fresh access token for API requests.
 
         Returns:
             str: OAuth2 access token.
@@ -153,8 +149,7 @@ class GoogleProvider(Provider):
         raise Exception("Request failed with no exception captured")
 
     def embed(self, texts: List[str]) -> np.ndarray:
-        """
-        Generate embeddings using Vertex AI API.
+        """Generate embeddings using Vertex AI API.
 
         Args:
             texts: List of text strings to embed.
@@ -228,8 +223,7 @@ class GoogleProvider(Provider):
         stop: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """
-        Generate text completion for a prompt.
+        """Generate text completion for a prompt.
 
         Args:
             prompt: Input prompt text.
@@ -319,8 +313,7 @@ class GoogleProvider(Provider):
         stop: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> AsyncIterator[Dict[str, Any]]:
-        """
-        Generate text completion with streaming output.
+        """Generate text completion with streaming output.
 
         Note: Vertex AI streaming support is limited. This implementation
         falls back to non-streaming and yields the complete result.
@@ -349,8 +342,7 @@ class GoogleProvider(Provider):
             raise
 
     def health_check(self) -> Dict[str, Any]:
-        """
-        Check provider health and availability.
+        """Check provider health and availability.
 
         Returns:
             Dict containing status, latency_ms, and message.
@@ -398,8 +390,7 @@ class GoogleProvider(Provider):
             }
 
     def metadata(self) -> Dict[str, Any]:
-        """
-        Get provider metadata and capabilities.
+        """Get provider metadata and capabilities.
 
         Returns:
             Dict containing provider information and capabilities.

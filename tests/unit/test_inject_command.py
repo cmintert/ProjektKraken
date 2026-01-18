@@ -5,6 +5,7 @@ Unit tests for InjectTemplateCommand.
 from unittest.mock import MagicMock
 
 import pytest
+
 from src.commands.inject_commands import InjectTemplateCommand
 from src.core.entities import Entity
 from src.core.fast_inject import FastInjectManager, FastInjectTemplate
@@ -80,3 +81,19 @@ def test_command_no_overwrite(manager, mock_db_service):
     cmd.execute(mock_db_service)
 
     assert entity.attributes["Class"] == "Warrior"  # Unchanged
+
+
+def test_command_undo_type(manager, mock_db_service):
+    """Test undoing type changes."""
+    entity = Entity(name="Hero", type="OriginalType")
+    template = FastInjectTemplate(name="TypeSwap", type_value="NewType")
+
+    cmd = InjectTemplateCommand(entity, template, manager)
+    cmd.execute(mock_db_service)
+
+    assert entity.type == "NewType"
+
+    cmd.undo(mock_db_service)
+
+    assert entity.type == "OriginalType"
+    assert mock_db_service.update_entity.call_count == 2

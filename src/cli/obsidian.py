@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Obsidian Export CLI.
+"""Obsidian Export CLI.
 
 Provides command-line tools for exporting the database to an Obsidian vault.
 
@@ -38,7 +37,7 @@ def export_obsidian(args: argparse.Namespace) -> int:
         )
 
         if result.success:
-            print(f"✓ Export successful!")
+            print("✓ Export successful!")
             print(f"  Files created: {result.files_created}")
             print(f"  Location: {result.output_dir}")
 

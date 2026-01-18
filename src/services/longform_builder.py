@@ -1,5 +1,4 @@
-"""
-Longform Document Builder Service.
+"""Longform Document Builder Service.
 
 Provides functions to build, manipulate, and export a single live longform
 document assembled from Events and Entities. Stores per-record metadata in
@@ -33,8 +32,7 @@ VALID_TABLES = ("events", "entities")
 
 
 def _validate_table_name(table: str) -> None:
-    """
-    Validate table name against whitelist to prevent SQL injection.
+    """Validate table name against whitelist to prevent SQL injection.
 
     This function ensures that table names used in f-string SQL queries
     are safe. While parameterized queries (?) protect against injection
@@ -52,8 +50,7 @@ def _validate_table_name(table: str) -> None:
 
 
 def _safe_json_loads(json_str: str) -> dict:
-    """
-    Safely load JSON string, returning empty dict on failure.
+    """Safely load JSON string, returning empty dict on failure.
 
     Args:
         json_str: JSON string to parse.
@@ -74,8 +71,7 @@ def _safe_json_loads(json_str: str) -> dict:
 def _get_longform_meta(
     attributes: dict, doc_id: str = DOC_ID_DEFAULT
 ) -> Optional[dict]:
-    """
-    Extract longform metadata from attributes dict.
+    """Extract longform metadata from attributes dict.
 
     Args:
         attributes: The attributes dictionary.
@@ -93,8 +89,7 @@ def _get_longform_meta(
 def _set_longform_meta(
     attributes: dict, meta: dict, doc_id: str = DOC_ID_DEFAULT
 ) -> dict:
-    """
-    Set longform metadata in attributes dict.
+    """Set longform metadata in attributes dict.
 
     Args:
         attributes: The attributes dictionary to modify.
@@ -115,8 +110,7 @@ def read_all_longform_items(
     doc_id: str = DOC_ID_DEFAULT,
     allowed_ids: Optional[Set[str]] = None,
 ) -> List[Dict[str, Any]]:
-    """
-    Read all events and entities that have longform metadata.
+    """Read all events and entities that have longform metadata.
 
     Args:
         conn: SQLite connection.
@@ -179,9 +173,8 @@ def read_all_longform_items(
 
 
 def ensure_all_items_indexed(conn: Connection, doc_id: str = DOC_ID_DEFAULT) -> None:
-    """
-    Ensure all events and entities in the database are present in the longform document.
-    Missing items are added to the end of the document, sorted alphabetically.
+    """Ensure all events and entities in the database are present in the longform
+    document. Missing items are added to the end of the document, sorted alphabetically.
 
     Args:
         conn: SQLite connection.
@@ -252,8 +245,7 @@ def build_longform_sequence(
     doc_id: str = DOC_ID_DEFAULT,
     allowed_ids: Optional[Set[str]] = None,
 ) -> List[Dict[str, Any]]:
-    """
-    Build an ordered sequence of longform items for rendering.
+    """Build an ordered sequence of longform items for rendering.
 
     Computes heading_level based on parent-child relationships and depth.
     Returns items in reading order.
@@ -329,8 +321,7 @@ def insert_or_update_longform_meta(
     title_override: Any = ...,
     doc_id: str = DOC_ID_DEFAULT,
 ) -> None:
-    """
-    Insert or update longform metadata for a specific row.
+    """Insert or update longform metadata for a specific row.
 
     Loads current attributes, updates longform metadata, and writes back.
 
@@ -391,8 +382,7 @@ def place_between_siblings_and_set_parent(
     parent_id: Optional[str],
     doc_id: str = DOC_ID_DEFAULT,
 ) -> None:
-    """
-    Place an item between two siblings and set its parent.
+    """Place an item between two siblings and set its parent.
 
     Computes a gap position between prev_sibling and next_sibling.
     If no siblings, assigns a default position.
@@ -482,8 +472,7 @@ def place_between_siblings_and_set_parent(
 
 
 def reindex_document_positions(conn: Connection, doc_id: str = DOC_ID_DEFAULT) -> None:
-    """
-    Reindex all positions to 100, 200, 300... in document order.
+    """Reindex all positions to 100, 200, 300... in document order.
 
     Rebuilds the sequence and assigns clean positions with DEFAULT_POSITION_GAP.
     Useful to avoid float exhaustion after many insertions.
@@ -510,8 +499,7 @@ def reindex_document_positions(conn: Connection, doc_id: str = DOC_ID_DEFAULT) -
 def promote_item(
     conn: Connection, table: str, row_id: str, doc_id: str = DOC_ID_DEFAULT
 ) -> None:
-    """
-    Promote an item (reduce depth, change parent to parent's parent).
+    """Promote an item (reduce depth, change parent to parent's parent).
 
     Equivalent to Shift+Tab in an outline editor.
 
@@ -577,8 +565,7 @@ def promote_item(
 def demote_item(
     conn: Connection, table: str, row_id: str, doc_id: str = DOC_ID_DEFAULT
 ) -> None:
-    """
-    Demote an item (increase depth, make it child of previous sibling).
+    """Demote an item (increase depth, make it child of previous sibling).
 
     Equivalent to Tab in an outline editor.
 
@@ -640,8 +627,7 @@ def demote_item(
 def remove_from_longform(
     conn: Connection, table: str, row_id: str, doc_id: str = DOC_ID_DEFAULT
 ) -> None:
-    """
-    Remove longform metadata from a row.
+    """Remove longform metadata from a row.
 
     The row remains in the database but is no longer part of the longform document.
 
@@ -677,8 +663,7 @@ def remove_from_longform(
 
 
 def export_longform_to_markdown(conn: Connection, doc_id: str = DOC_ID_DEFAULT) -> str:
-    """
-    Export the longform document to Markdown format.
+    """Export the longform document to Markdown format.
 
     Includes HTML comments with ID markers for traceability.
 

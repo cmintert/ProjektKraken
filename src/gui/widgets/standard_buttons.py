@@ -1,8 +1,7 @@
-"""
-Standard Buttons Module.
+"""Standard Buttons Module.
 
-Provides lightweight button wrappers with standardized properties.
-Visual styling is handled via StyleHelper QSS or global QSS.
+Provides lightweight button wrappers with standardized properties. Visual styling is
+handled via StyleHelper QSS or global QSS.
 """
 
 from typing import Optional
@@ -12,15 +11,13 @@ from PySide6.QtWidgets import QPushButton, QWidget
 
 
 class StandardButton(QPushButton):
-    """
-    A standard button with consistent sizing.
+    """A standard button with consistent sizing.
 
     Actual visual styling is applied via StyleHelper or global QSS.
     """
 
     def __init__(self, text: str, parent: Optional[QWidget] = None) -> None:
-        """
-        Initializes a standard button.
+        """Initializes a standard button.
 
         Args:
             text: The button text.
@@ -31,8 +28,7 @@ class StandardButton(QPushButton):
 
 
 class IconButton(QPushButton):
-    """
-    A fixed-size button optimized for icons.
+    """A fixed-size button optimized for icons.
 
     Useful for toolbar buttons with icons only.
     """
@@ -40,8 +36,7 @@ class IconButton(QPushButton):
     def __init__(
         self, text: str = "", parent: Optional[QWidget] = None, size: int = 32
     ) -> None:
-        """
-        Initializes an icon button.
+        """Initializes an icon button.
 
         Args:
             text: The button text or icon character.
@@ -53,15 +48,13 @@ class IconButton(QPushButton):
 
 
 class PrimaryButton(StandardButton):
-    """
-    A primary action button.
+    """A primary action button.
 
     Applies StyleHelper primary button styling.
     """
 
     def __init__(self, text: str, parent: Optional[QWidget] = None) -> None:
-        """
-        Initializes a primary button.
+        """Initializes a primary button.
 
         Args:
             text: The button text.

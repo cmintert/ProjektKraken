@@ -1,8 +1,7 @@
-"""
-Logging Configuration Module.
+"""Logging Configuration Module.
 
-This module provides centralized logging configuration for the application,
-including rotating file handlers and console output.
+This module provides centralized logging configuration for the application, including
+rotating file handlers and console output.
 """
 
 import logging
@@ -21,20 +20,18 @@ DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 class SafeRotatingFileHandler(RotatingFileHandler):
-    """
-    A RotatingFileHandler that handles Windows file locking errors gracefully.
+    """A RotatingFileHandler that handles Windows file locking errors gracefully.
 
-    On Windows, log rotation can fail with PermissionError if the file is still
-    in use by another process or handler. This handler catches those errors
-    and continues logging without crashing.
+    On Windows, log rotation can fail with PermissionError if the file is still in use
+    by another process or handler. This handler catches those errors and continues
+    logging without crashing.
     """
 
     def doRollover(self) -> None:
-        """
-        Perform log file rotation, catching Windows file locking errors.
+        """Perform log file rotation, catching Windows file locking errors.
 
-        If rotation fails due to file locking (common on Windows), the handler
-        continues using the current log file instead of crashing.
+        If rotation fails due to file locking (common on Windows), the handler continues
+        using the current log file instead of crashing.
         """
         try:
             super().doRollover()
@@ -47,9 +44,8 @@ class SafeRotatingFileHandler(RotatingFileHandler):
 
 
 def setup_logging(debug_mode: bool = False, log_to_console: bool = True) -> None:
-    """
-    Configures the root logger with a rotating file handler
-    and optional console handler.
+    """Configures the root logger with a rotating file handler and optional console
+    handler.
 
     This function should be called once at the application startup.
 
@@ -112,8 +108,7 @@ def setup_logging(debug_mode: bool = False, log_to_console: bool = True) -> None
 
 
 def get_logger(name: str) -> logging.Logger:
-    """
-    Convenience function to get a logger with the given name.
+    """Convenience function to get a logger with the given name.
 
     Args:
         name (str): The name of the logger (usually __name__).
@@ -125,7 +120,5 @@ def get_logger(name: str) -> logging.Logger:
 
 
 def shutdown_logging() -> None:
-    """
-    Explicitly closes all logging handlers to release file locks.
-    """
+    """Explicitly closes all logging handlers to release file locks."""
     logging.shutdown()

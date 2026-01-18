@@ -1,5 +1,5 @@
-"""
-Text Parser Service.
+"""Text Parser Service.
+
 Handles parsing of WikiLinks and other text processing tasks.
 """
 
@@ -10,8 +10,7 @@ from typing import List, Optional, Tuple
 
 @dataclass
 class LinkCandidate:
-    """
-    Represents a parsed WikiLink with metadata.
+    """Represents a parsed WikiLink with metadata.
 
     Supports both legacy name-based and ID-based link formats:
     - Legacy: [[Name]] or [[Name|Label]]
@@ -35,8 +34,7 @@ class LinkCandidate:
 
 
 class WikiLinkParser:
-    """
-    Parser for extracting WikiLinks from text.
+    """Parser for extracting WikiLinks from text.
 
     Supports both legacy and ID-based link formats:
     - Legacy: [[Name]] or [[Name|Label]]
@@ -55,8 +53,7 @@ class WikiLinkParser:
 
     @staticmethod
     def extract_links(text: str) -> List[LinkCandidate]:
-        """
-        Extracts WikiLinks from text as ordered LinkCandidate objects.
+        """Extracts WikiLinks from text as ordered LinkCandidate objects.
 
         Each link includes the name or ID, optional modifier, and position offsets.
         Duplicates are preserved in order of appearance.
@@ -113,8 +110,7 @@ class WikiLinkParser:
 
     @staticmethod
     def format_id_link(target_id: str, display_name: str) -> str:
-        """
-        Creates an ID-based wiki link string.
+        """Creates an ID-based wiki link string.
 
         Args:
             target_id: The UUID of the target entity/event.
@@ -127,8 +123,7 @@ class WikiLinkParser:
 
     @staticmethod
     def format_name_link(name: str, display_label: Optional[str] = None) -> str:
-        """
-        Creates a legacy name-based wiki link string.
+        """Creates a legacy name-based wiki link string.
 
         Args:
             name: The target name.

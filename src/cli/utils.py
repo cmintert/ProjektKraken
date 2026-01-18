@@ -1,5 +1,4 @@
-"""
-CLI Utilities Module.
+"""CLI Utilities Module.
 
 Common utility functions for CLI tools.
 """
@@ -11,8 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 def validate_database_path(db_path: str, allow_create: bool = False) -> bool:
-    """
-    Validate that a database file exists.
+    """Validate that a database file exists.
 
     Args:
         db_path: Path to the database file.

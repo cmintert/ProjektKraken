@@ -1,5 +1,4 @@
-"""
-Timeline Ruler Module.
+"""Timeline Ruler Module.
 
 Provides semantic zoom ruler with Aeon Timeline-style behavior:
 - Level-of-detail (LOD) transitions between temporal granularities
@@ -22,11 +21,10 @@ if TYPE_CHECKING:
 
 
 class TickLevel(IntEnum):
-    """
-    Temporal granularity levels for ruler ticks.
+    """Temporal granularity levels for ruler ticks.
 
-    Ordered from coarsest (ERA) to finest (MINUTE).
-    Used to determine which ticks to display at each zoom level.
+    Ordered from coarsest (ERA) to finest (MINUTE). Used to determine which ticks to
+    display at each zoom level.
     """
 
     ERA = 0
@@ -43,8 +41,7 @@ class TickLevel(IntEnum):
 
 @dataclass
 class TickInfo:
-    """
-    Information about a single ruler tick.
+    """Information about a single ruler tick.
 
     Attributes:
         position: Float position in lore_date units.
@@ -64,12 +61,11 @@ class TickInfo:
 
 
 class TimelineRuler:
-    """
-    Semantic zoom ruler engine.
+    """Semantic zoom ruler engine.
 
-    Calculates tick positions and labels based on visible date range
-    and viewport size. Implements smooth LOD transitions, label
-    collision avoidance, and calendar-aware date divisions.
+    Calculates tick positions and labels based on visible date range and viewport size.
+    Implements smooth LOD transitions, label collision avoidance, and calendar-aware
+    date divisions.
     """
 
     # Spacing thresholds for LOD transitions (in pixels)
@@ -98,8 +94,7 @@ class TimelineRuler:
         self._calendar: Optional["CalendarConverter"] = None
 
     def set_calendar_converter(self, converter: Optional["CalendarConverter"]) -> None:
-        """
-        Sets the calendar converter for date-based divisions.
+        """Sets the calendar converter for date-based divisions.
 
         Args:
             converter: CalendarConverter instance or None for numeric mode.
@@ -107,8 +102,7 @@ class TimelineRuler:
         self._calendar = converter
 
     def get_finer_level(self, level: TickLevel) -> TickLevel:
-        """
-        Gets the next finer granularity level.
+        """Gets the next finer granularity level.
 
         Args:
             level: Current tick level.
@@ -121,8 +115,7 @@ class TimelineRuler:
         return level
 
     def get_coarser_level(self, level: TickLevel) -> TickLevel:
-        """
-        Gets the next coarser granularity level.
+        """Gets the next coarser granularity level.
 
         Args:
             level: Current tick level.
@@ -137,8 +130,7 @@ class TimelineRuler:
     def calculate_active_levels(
         self, date_range: float, viewport_width: float
     ) -> Tuple[TickLevel, TickLevel, float]:
-        """
-        Calculates the active major and minor tick levels based on zoom.
+        """Calculates the active major and minor tick levels based on zoom.
 
         Args:
             date_range: Number of days visible in the viewport.
@@ -190,8 +182,7 @@ class TimelineRuler:
         viewport_width: float,
         scale_factor: float,
     ) -> List[TickInfo]:
-        """
-        Calculates all ticks for the visible date range.
+        """Calculates all ticks for the visible date range.
 
         Args:
             start_date: Left edge date value.
@@ -259,8 +250,7 @@ class TimelineRuler:
         is_major: bool,
         effective_scale: float,
     ) -> List[TickInfo]:
-        """
-        Generates ticks for a specific level.
+        """Generates ticks for a specific level.
 
         Args:
             start_date: Start of visible range.
@@ -308,8 +298,7 @@ class TimelineRuler:
         return ticks
 
     def _format_label(self, position: float, level: TickLevel) -> str:
-        """
-        Formats a label for a tick position.
+        """Formats a label for a tick position.
 
         Args:
             position: Date position in lore_date units.
@@ -323,8 +312,7 @@ class TimelineRuler:
         return self._format_numeric_label(position, level)
 
     def _format_calendar_label(self, position: float, level: TickLevel) -> str:
-        """
-        Formats a label using the calendar converter.
+        """Formats a label using the calendar converter.
 
         Args:
             position: Date position.
@@ -384,8 +372,7 @@ class TimelineRuler:
             return self._format_numeric_label(position, level)
 
     def _format_numeric_label(self, position: float, level: TickLevel) -> str:
-        """
-        Formats a numeric (non-calendar) label.
+        """Formats a numeric (non-calendar) label.
 
         Args:
             position: Date position (in days, where 1.0 = 1 day).
@@ -446,8 +433,7 @@ class TimelineRuler:
     def avoid_collisions(
         self, ticks: List[TickInfo], label_width: float = 50
     ) -> List[TickInfo]:
-        """
-        Removes labels that would overlap with higher-priority labels.
+        """Removes labels that would overlap with higher-priority labels.
 
         Args:
             ticks: List of tick info objects.
@@ -501,8 +487,7 @@ class TimelineRuler:
         return result
 
     def get_parent_context(self, start_date: float) -> str:
-        """
-        Gets the parent context label for sticky display.
+        """Gets the parent context label for sticky display.
 
         Args:
             start_date: Left edge date value.

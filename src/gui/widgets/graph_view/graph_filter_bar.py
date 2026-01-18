@@ -1,5 +1,4 @@
-"""
-Graph Filter Bar Module.
+"""Graph Filter Bar Module.
 
 Private internal component providing filter controls for the graph view.
 """
@@ -20,8 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class GraphFilterBar(QWidget):
-    """
-    Internal filter toolbar for graph view.
+    """Internal filter toolbar for graph view.
 
     Provides multi-select filters for tags and relation types.
     This is a private internal component - use GraphWidget for public API.
@@ -37,8 +35,7 @@ class GraphFilterBar(QWidget):
     show_advanced_filter_requested = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """
-        Initializes the GraphFilterBar.
+        """Initializes the GraphFilterBar.
 
         Args:
             parent: Parent widget.
@@ -98,8 +95,7 @@ class GraphFilterBar(QWidget):
         self.filters_changed.emit()
 
     def set_available_tags(self, tags: list[str]) -> None:
-        """
-        Populates the tag filter with available options.
+        """Populates the tag filter with available options.
 
         Args:
             tags: List of tag names.
@@ -120,8 +116,7 @@ class GraphFilterBar(QWidget):
         self._tag_combo.blockSignals(False)
 
     def set_available_relation_types(self, rel_types: list[str]) -> None:
-        """
-        Populates the relation type filter with available options.
+        """Populates the relation type filter with available options.
 
         Args:
             rel_types: List of relation type names.
@@ -142,8 +137,7 @@ class GraphFilterBar(QWidget):
         self._rel_type_combo.blockSignals(False)
 
     def get_selected_tags(self) -> list[str]:
-        """
-        Returns the currently selected tags for filtering.
+        """Returns the currently selected tags for filtering.
 
         Returns:
             List of selected tag names, or empty list for "All".
@@ -152,8 +146,7 @@ class GraphFilterBar(QWidget):
         return [data] if data else []
 
     def get_selected_relation_types(self) -> list[str]:
-        """
-        Returns the currently selected relation types for filtering.
+        """Returns the currently selected relation types for filtering.
 
         Returns:
             List of selected rel_type names, or empty list for "All".

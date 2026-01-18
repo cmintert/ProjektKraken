@@ -1,5 +1,4 @@
-"""
-Event Repository Module.
+"""Event Repository Module.
 
 Handles CRUD operations for Event entities in the database.
 """
@@ -14,16 +13,14 @@ logger = logging.getLogger(__name__)
 
 
 class EventRepository(BaseRepository):
-    """
-    Repository for Event entities.
+    """Repository for Event entities.
 
-    Provides specialized methods for creating, reading, updating,
-    and deleting events from the database.
+    Provides specialized methods for creating, reading, updating, and deleting events
+    from the database.
     """
 
     def insert(self, event: Event) -> None:
-        """
-        Insert a new event or update an existing one (Upsert).
+        """Insert a new event or update an existing one (Upsert).
 
         Args:
             event: The event domain object to persist.
@@ -61,8 +58,7 @@ class EventRepository(BaseRepository):
             )
 
     def get(self, event_id: str) -> Optional[Event]:
-        """
-        Retrieve a single event by its UUID.
+        """Retrieve a single event by its UUID.
 
         Args:
             event_id: The unique identifier of the event.
@@ -86,8 +82,7 @@ class EventRepository(BaseRepository):
         return None
 
     def get_all(self) -> List[Event]:
-        """
-        Retrieve all events from the database, sorted chronologically.
+        """Retrieve all events from the database, sorted chronologically.
 
         Returns:
             List of all Event objects in the database.
@@ -107,8 +102,7 @@ class EventRepository(BaseRepository):
         return events
 
     def delete(self, event_id: str) -> None:
-        """
-        Delete an event permanently.
+        """Delete an event permanently.
 
         Args:
             event_id: The unique identifier of the event to delete.
@@ -120,8 +114,7 @@ class EventRepository(BaseRepository):
             conn.execute("DELETE FROM events WHERE id = ?", (event_id,))
 
     def insert_bulk(self, events: List[Event]) -> None:
-        """
-        Insert multiple events in a single transaction.
+        """Insert multiple events in a single transaction.
 
         Args:
             events: List of event objects to persist.
@@ -162,8 +155,7 @@ class EventRepository(BaseRepository):
             conn.executemany(sql, data)
 
     def get_by_date_range(self, start_date: float, end_date: float) -> List[Event]:
-        """
-        Retrieve events within a date range.
+        """Retrieve events within a date range.
 
         Args:
             start_date: Start of the date range (inclusive).
@@ -191,8 +183,7 @@ class EventRepository(BaseRepository):
         return events
 
     def get_by_type(self, event_type: str) -> List[Event]:
-        """
-        Retrieve events by type.
+        """Retrieve events by type.
 
         Args:
             event_type: The type of events to retrieve.

@@ -1,8 +1,7 @@
-"""
-Unified List Widget Module.
+"""Unified List Widget Module.
 
-Provides a unified list view displaying both events and entities with
-filtering and color-coded differentiation.
+Provides a unified list view displaying both events and entities with filtering and
+color-coded differentiation.
 """
 
 import json
@@ -34,11 +33,10 @@ logger = logging.getLogger(__name__)
 
 
 class DraggableListWidget(QListWidget):
-    """
-    A QListWidget that supports dragging items with custom MIME data.
+    """A QListWidget that supports dragging items with custom MIME data.
 
-    Drag data format (JSON):
-        {"id": "uuid", "type": "event|entity", "name": "Display Name"}
+    Drag data format (JSON):     {"id": "uuid", "type": "event|entity", "name": "Display
+    Name"}
     """
 
     def __init__(self, parent: QWidget = None) -> None:
@@ -48,8 +46,7 @@ class DraggableListWidget(QListWidget):
         self.setDragDropMode(QListWidget.DragOnly)
 
     def startDrag(self, supportedActions: Qt.DropAction) -> None:
-        """
-        Override to provide custom MIME data for dragged items.
+        """Override to provide custom MIME data for dragged items.
 
         Args:
             supportedActions: The drag actions supported.
@@ -82,8 +79,8 @@ class DraggableListWidget(QListWidget):
 
 
 class UnifiedListWidget(QWidget):
-    """
-    A unified list widget determining displaying both Events and Entities.
+    """A unified list widget determining displaying both Events and Entities.
+
     Differentiates items by color.
     """
 
@@ -97,8 +94,7 @@ class UnifiedListWidget(QWidget):
     clear_filter_requested = Signal()  # Request to clear filters
 
     def __init__(self, parent: QWidget = None) -> None:
-        """
-        Initializes the UnifiedListWidget.
+        """Initializes the UnifiedListWidget.
 
         Args:
             parent (QWidget, optional): The parent widget. Defaults to None.
@@ -205,8 +201,7 @@ class UnifiedListWidget(QWidget):
         self._render_list()
 
     def set_data(self, events: List[Event], entities: List[Entity]) -> None:
-        """
-        Sets the data to display in the list.
+        """Sets the data to display in the list.
 
         Args:
             events (List[Event]): List of events to display.
@@ -220,14 +215,11 @@ class UnifiedListWidget(QWidget):
     @Slot()
     @Slot()
     def _request_clear_filters(self) -> None:
-        """
-        Requests clearing backend filters.
-        """
+        """Requests clearing backend filters."""
         self.clear_filter_requested.emit()
 
     def set_filter_active(self, active: bool) -> None:
-        """
-        Updates the filter button appearance to indicate active filter.
+        """Updates the filter button appearance to indicate active filter.
 
         Args:
             active: True if a filter is currently applied.
@@ -245,8 +237,7 @@ class UnifiedListWidget(QWidget):
             self.btn_filter.setText("Filter...")
 
     def set_advanced_filter(self, config: dict) -> None:
-        """
-        Sets the advanced filter configuration (tags) and re-renders the list.
+        """Sets the advanced filter configuration (tags) and re-renders the list.
 
         Args:
             config: Filter configuration dict with 'include', 'exclude', 'match_all' keys.
@@ -257,8 +248,7 @@ class UnifiedListWidget(QWidget):
         self._render_list()
 
     def get_advanced_filter_config(self) -> dict:
-        """
-        Returns the current advanced filter configuration.
+        """Returns the current advanced filter configuration.
 
         Returns:
             dict: The current filter configuration.
@@ -268,8 +258,8 @@ class UnifiedListWidget(QWidget):
     # _clear_filters removed as it's replaced by backend refresh
 
     def _render_list(self) -> None:
-        """
-        Renders the list based on current filter and data.
+        """Renders the list based on current filter and data.
+
         Preserves selection during refresh.
         """
         # Capture current selection
@@ -371,8 +361,7 @@ class UnifiedListWidget(QWidget):
     @Slot(str)
     @Slot(str)
     def _on_search_text_changed(self, text: str) -> None:
-        """
-        Handles search bar text changes for live filtering.
+        """Handles search bar text changes for live filtering.
 
         Args:
             text (str): The search text.
@@ -381,9 +370,8 @@ class UnifiedListWidget(QWidget):
         self._render_list()
 
     def _matches_search(self, obj: Union[Event, Entity]) -> bool:
-        """
-        Checks if an object matches the current search term.
-        Delegates to shared SearchUtils.
+        """Checks if an object matches the current search term. Delegates to shared
+        SearchUtils.
 
         Args:
             obj: Event or Entity object.
@@ -396,8 +384,7 @@ class UnifiedListWidget(QWidget):
         return SearchUtils.matches_search(obj, self._search_term)
 
     def _passes_advanced_filters(self, obj: Union[Event, Entity]) -> bool:
-        """
-        Checks if an object passes the advanced tag filters.
+        """Checks if an object passes the advanced tag filters.
 
         Args:
             obj: Event or Entity object.
@@ -431,8 +418,7 @@ class UnifiedListWidget(QWidget):
         return True
 
     def _passes_filters(self, obj: Union[Event, Entity]) -> bool:
-        """
-        Checks if an object passes all active filters (search + advanced tags).
+        """Checks if an object passes all active filters (search + advanced tags).
 
         Args:
             obj: Event or Entity object.
@@ -453,8 +439,7 @@ class UnifiedListWidget(QWidget):
     @Slot(str)
     @Slot(str)
     def _on_filter_changed(self, text: str) -> None:
-        """
-        Handles filter combo box changes.
+        """Handles filter combo box changes.
 
         Args:
             text (str): The selected filter text.
@@ -464,9 +449,7 @@ class UnifiedListWidget(QWidget):
     @Slot()
     @Slot()
     def _on_selection_changed(self) -> None:
-        """
-        Handles item selection changes in the list.
-        """
+        """Handles item selection changes in the list."""
         items = self.list_widget.selectedItems()
         if items:
             item = items[0]
@@ -480,9 +463,7 @@ class UnifiedListWidget(QWidget):
     @Slot()
     @Slot()
     def _on_delete_clicked(self) -> None:
-        """
-        Handles delete button clicks.
-        """
+        """Handles delete button clicks."""
         items = self.list_widget.selectedItems()
         if items:
             item = items[0]
@@ -491,9 +472,8 @@ class UnifiedListWidget(QWidget):
             self.delete_requested.emit(item_type, item_id)
 
     def select_item(self, item_type: str, item_id: str) -> None:
-        """
-        Programmatically selects an item in the list.
-        Auto-switches filter if item not visible.
+        """Programmatically selects an item in the list. Auto-switches filter if item
+        not visible.
 
         Args:
             item_type (str): "event" or "entity".
@@ -501,11 +481,10 @@ class UnifiedListWidget(QWidget):
         """
 
         def find_and_select() -> bool:
-            """
-            Inner function to search list and select matching item.
+            """Inner function to search list and select matching item.
 
-            Searches all items in the list widget for one matching the given
-            type and ID, then selects and scrolls to it.
+            Searches all items in the list widget for one matching the given type and
+            ID, then selects and scrolls to it.
             """
             for index in range(self.list_widget.count()):
                 item = self.list_widget.item(index)
@@ -543,8 +522,7 @@ class UnifiedListWidget(QWidget):
             self.list_widget.clearSelection()
 
     def minimumSizeHint(self) -> QSize:
-        """
-        Override to prevent dock collapse.
+        """Override to prevent dock collapse.
 
         Returns:
             QSize: Minimum size for usable project explorer.
@@ -552,8 +530,7 @@ class UnifiedListWidget(QWidget):
         return QSize(250, 200)  # Width for list items, height for toolbar + items
 
     def sizeHint(self) -> QSize:
-        """
-        Preferred size for the project explorer.
+        """Preferred size for the project explorer.
 
         Returns:
             QSize: Comfortable working size for browsing items.

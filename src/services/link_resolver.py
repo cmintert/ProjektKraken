@@ -1,8 +1,7 @@
-"""
-Link Resolver Service.
+"""Link Resolver Service.
 
-Handles resolution of ID-based wiki links to current entity/event names.
-Provides caching and broken link detection.
+Handles resolution of ID-based wiki links to current entity/event names. Provides
+caching and broken link detection.
 """
 
 import logging
@@ -14,15 +13,13 @@ logger = logging.getLogger(__name__)
 
 
 class LinkResolver:
-    """
-    Resolves wiki link IDs to current entity/event names.
+    """Resolves wiki link IDs to current entity/event names.
 
     Maintains a cache for performance and provides broken link detection.
     """
 
     def __init__(self, db_service: DatabaseService) -> None:
-        """
-        Initializes the LinkResolver.
+        """Initializes the LinkResolver.
 
         Args:
             db_service: Database service for looking up entities/events.
@@ -31,8 +28,7 @@ class LinkResolver:
         self._cache: Dict[str, Tuple[str, str]] = {}  # id -> (name, type)
 
     def resolve(self, target_id: str) -> Optional[Tuple[str, str]]:
-        """
-        Resolves a target ID to its current name and type.
+        """Resolves a target ID to its current name and type.
 
         Args:
             target_id: The UUID of the target entity or event.
@@ -63,8 +59,7 @@ class LinkResolver:
         return None
 
     def invalidate_cache(self, target_id: Optional[str] = None) -> None:
-        """
-        Invalidates the resolution cache.
+        """Invalidates the resolution cache.
 
         Args:
             target_id: If provided, invalidates only this ID.
@@ -78,8 +73,7 @@ class LinkResolver:
     def get_display_name(
         self, target_id: str, fallback_name: Optional[str] = None
     ) -> str:
-        """
-        Gets the display name for a link, with fallback for broken links.
+        """Gets the display name for a link, with fallback for broken links.
 
         Args:
             target_id: The UUID of the target.
@@ -98,8 +92,7 @@ class LinkResolver:
         return f"[BROKEN LINK: {target_id[:8]}...]"
 
     def find_broken_links(self, text: str) -> List[str]:
-        """
-        Finds all broken links in the given text.
+        """Finds all broken links in the given text.
 
         Args:
             text: Text content to scan for broken links.

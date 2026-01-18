@@ -1,5 +1,4 @@
-"""
-Search Service Module.
+"""Search Service Module.
 
 Provides semantic search functionality with local embeddings and vector similarity.
 Supports LM Studio and optional sentence-transformers as embedding providers.
@@ -42,8 +41,7 @@ logger = logging.getLogger(__name__)
 
 
 def _stable_dump(val: Any) -> str:
-    """
-    Convert a value to a stable string representation.
+    """Convert a value to a stable string representation.
 
     For dicts and lists, uses JSON serialization with sorted keys for
     deterministic output.
@@ -67,8 +65,7 @@ def build_text_for_entity(
     tags: Optional[Sequence[Union[str, Dict[str, str]]]] = None,
     excluded_attributes: Optional[List[str]] = None,
 ) -> str:
-    """
-    Build a deterministic text representation of an entity for embedding.
+    """Build a deterministic text representation of an entity for embedding.
 
     Includes name, type, description, tags, and all JSON attributes
     in a stable, sorted order.
@@ -111,8 +108,7 @@ def build_text_for_event(
     tags: Optional[Sequence[Union[str, Dict[str, str]]]] = None,
     excluded_attributes: Optional[List[str]] = None,
 ) -> str:
-    """
-    Build a deterministic text representation of an event for embedding.
+    """Build a deterministic text representation of an event for embedding.
 
     Includes name, type, date, duration, description, tags, and all JSON
     attributes in a stable, sorted order.
@@ -153,8 +149,7 @@ def build_text_for_event(
 
 
 def text_sha256(text: str) -> str:
-    """
-    Compute SHA-256 hash of text for change detection.
+    """Compute SHA-256 hash of text for change detection.
 
     Args:
         text: The text to hash.
@@ -171,8 +166,7 @@ def text_sha256(text: str) -> str:
 
 
 def normalize_vector(v: np.ndarray) -> np.ndarray:
-    """
-    Normalize a vector to unit length.
+    """Normalize a vector to unit length.
 
     Args:
         v: Input vector as numpy array.
@@ -188,8 +182,7 @@ def normalize_vector(v: np.ndarray) -> np.ndarray:
 
 
 def serialize_vector(v: np.ndarray) -> bytes:
-    """
-    Serialize a vector to bytes for storage in SQLite BLOB.
+    """Serialize a vector to bytes for storage in SQLite BLOB.
 
     Args:
         v: Vector as numpy array.
@@ -202,8 +195,7 @@ def serialize_vector(v: np.ndarray) -> bytes:
 
 
 def deserialize_vector(blob: bytes, dim: int) -> np.ndarray:
-    """
-    Deserialize a vector from SQLite BLOB bytes.
+    """Deserialize a vector from SQLite BLOB bytes.
 
     Args:
         blob: Bytes from database BLOB.
@@ -216,8 +208,7 @@ def deserialize_vector(blob: bytes, dim: int) -> np.ndarray:
 
 
 def dot_scores(q_vec: np.ndarray, V: np.ndarray) -> np.ndarray:
-    """
-    Compute dot product similarity scores between query and matrix of vectors.
+    """Compute dot product similarity scores between query and matrix of vectors.
 
     Assumes both query and matrix rows are already normalized.
 
@@ -234,8 +225,7 @@ def dot_scores(q_vec: np.ndarray, V: np.ndarray) -> np.ndarray:
 def top_k_streaming(
     scores_iter: Iterator[Tuple[float, Any]], k: int
 ) -> List[Tuple[float, Any]]:
-    """
-    Select top-k items from an iterator using a min-heap (streaming approach).
+    """Select top-k items from an iterator using a min-heap (streaming approach).
 
     Args:
         scores_iter: Iterator yielding (score, item) tuples.
@@ -265,16 +255,14 @@ def top_k_streaming(
 
 
 class EmbeddingProvider(ABC):
-    """
-    Abstract base class for embedding providers.
+    """Abstract base class for embedding providers.
 
     All providers must implement embed() and get_dimension() methods.
     """
 
     @abstractmethod
     def embed(self, texts: List[str]) -> np.ndarray:
-        """
-        Generate embeddings for a list of texts.
+        """Generate embeddings for a list of texts.
 
         Args:
             texts: List of text strings to embed.
@@ -286,8 +274,7 @@ class EmbeddingProvider(ABC):
 
     @abstractmethod
     def get_dimension(self) -> int:
-        """
-        Get the dimensionality of the embeddings.
+        """Get the dimensionality of the embeddings.
 
         Returns:
             int: Embedding dimension.
@@ -296,8 +283,7 @@ class EmbeddingProvider(ABC):
 
     @abstractmethod
     def get_model_name(self) -> str:
-        """
-        Get the model name/identifier.
+        """Get the model name/identifier.
 
         Returns:
             str: Model name.
@@ -306,8 +292,7 @@ class EmbeddingProvider(ABC):
 
 
 class LMStudioEmbeddingProvider(EmbeddingProvider):
-    """
-    Embedding provider for LM Studio local embedding API.
+    """Embedding provider for LM Studio local embedding API.
 
     Supports OpenAI-compatible embedding endpoints.
     """
@@ -319,8 +304,7 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
         api_key: Optional[str] = None,
         timeout: int = 30,
     ) -> None:
-        """
-        Initialize LM Studio embedding provider.
+        """Initialize LM Studio embedding provider.
 
         Args:
             url: API endpoint URL (default from env or
@@ -355,8 +339,7 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
         logger.info(f"Model: {self.model}")
 
     def embed(self, texts: List[str]) -> np.ndarray:
-        """
-        Generate embeddings using LM Studio API.
+        """Generate embeddings using LM Studio API.
 
         Args:
             texts: List of text strings to embed.
@@ -419,8 +402,7 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
             raise Exception(f"Invalid response from LM Studio API: {e}") from e
 
     def get_dimension(self) -> int:
-        """
-        Get the dimensionality of embeddings.
+        """Get the dimensionality of embeddings.
 
         Returns:
             int: Embedding dimension.
@@ -432,8 +414,7 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
         return self._dimension
 
     def get_model_name(self) -> str:
-        """
-        Get the model name.
+        """Get the model name.
 
         Returns:
             str: Model identifier with 'lmstudio:' prefix.
@@ -442,15 +423,13 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
 
 
 class SentenceTransformersProvider(EmbeddingProvider):
-    """
-    Fallback embedding provider using sentence-transformers library.
+    """Fallback embedding provider using sentence-transformers library.
 
     Requires sentence-transformers to be installed.
     """
 
     def __init__(self, model: Optional[str] = None) -> None:
-        """
-        Initialize sentence-transformers provider.
+        """Initialize sentence-transformers provider.
 
         Args:
             model: Model name (default from env or 'all-MiniLM-L6-v2').
@@ -474,8 +453,7 @@ class SentenceTransformersProvider(EmbeddingProvider):
         )
 
     def embed(self, texts: List[str]) -> np.ndarray:
-        """
-        Generate embeddings using sentence-transformers.
+        """Generate embeddings using sentence-transformers.
 
         Args:
             texts: List of text strings to embed.
@@ -490,8 +468,7 @@ class SentenceTransformersProvider(EmbeddingProvider):
         return np.array(embeddings, dtype=np.float32)
 
     def get_dimension(self) -> int:
-        """
-        Get embedding dimension.
+        """Get embedding dimension.
 
         Returns:
             int: Embedding dimension.
@@ -499,8 +476,7 @@ class SentenceTransformersProvider(EmbeddingProvider):
         return self._dimension
 
     def get_model_name(self) -> str:
-        """
-        Get model name.
+        """Get model name.
 
         Returns:
             str: Model identifier with 'st:' prefix.
@@ -514,18 +490,16 @@ class SentenceTransformersProvider(EmbeddingProvider):
 
 
 class SearchService:
-    """
-    Service for managing semantic search indexes and queries.
+    """Service for managing semantic search indexes and queries.
 
-    Handles text extraction, embedding generation, and similarity search
-    for entities and events.
+    Handles text extraction, embedding generation, and similarity search for entities
+    and events.
     """
 
     def __init__(
         self, db_connection: sqlite3.Connection, provider: EmbeddingProvider
     ) -> None:
-        """
-        Initialize search service.
+        """Initialize search service.
 
         Args:
             db_connection: SQLite database connection.
@@ -542,8 +516,7 @@ class SearchService:
     def _get_tags_for_object(
         self, object_type: str, object_id: str
     ) -> List[Dict[str, str]]:
-        """
-        Get tags for an entity or event.
+        """Get tags for an entity or event.
 
         Args:
             object_type: 'entity' or 'event'.
@@ -572,8 +545,7 @@ class SearchService:
     def index_entity(
         self, entity_id: str, excluded_attributes: Optional[List[str]] = None
     ) -> None:
-        """
-        Index a single entity.
+        """Index a single entity.
 
         Args:
             entity_id: Entity UUID.
@@ -661,8 +633,7 @@ class SearchService:
     def index_event(
         self, event_id: str, excluded_attributes: Optional[List[str]] = None
     ) -> None:
-        """
-        Index a single event.
+        """Index a single event.
 
         Args:
             event_id: Event UUID.
@@ -753,8 +724,7 @@ class SearchService:
         model: Optional[str] = None,
         excluded_attributes: Optional[List[str]] = None,
     ) -> Dict[str, int]:
-        """
-        Rebuild embeddings index for specified object types.
+        """Rebuild embeddings index for specified object types.
 
         Args:
             object_types: List of object types to index ('entity', 'event').
@@ -801,8 +771,7 @@ class SearchService:
         top_k: int = 10,
         model: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        """
-        Query the index using semantic search.
+        """Query the index using semantic search.
 
         Args:
             text: Query text.
@@ -844,8 +813,7 @@ class SearchService:
 
         # Compute similarities and collect results
         def score_generator() -> Iterator[Tuple[float, Dict[str, Any]]]:
-            """
-            Generator function to compute similarity scores for query results.
+            """Generator function to compute similarity scores for query results.
 
             Yields similarity scores for each embedding vector in the result set.
             """
@@ -888,8 +856,7 @@ class SearchService:
     def delete_index_for_object(
         self, object_type: str, object_id: str, model: Optional[str] = None
     ) -> None:
-        """
-        Delete embeddings for a specific object.
+        """Delete embeddings for a specific object.
 
         Args:
             object_type: 'entity' or 'event'.
@@ -922,8 +889,7 @@ class SearchService:
 
 
 def get_llm_settings_from_qsettings() -> Dict[str, Any]:
-    """
-    Load LLM settings from QSettings.
+    """Load LLM settings from QSettings.
 
     Returns:
         Dict with keys: provider, lm_url, lm_model, lm_api_key, lm_timeout, st_model
@@ -964,8 +930,7 @@ def create_provider(
     api_key: Optional[str] = None,
     timeout: Optional[int] = None,
 ) -> EmbeddingProvider:
-    """
-    Create an embedding provider based on configuration.
+    """Create an embedding provider based on configuration.
 
     Loads settings from QSettings, with environment variable fallbacks.
 
@@ -1021,8 +986,7 @@ def create_search_service(
     provider_name: Optional[str] = None,
     model: Optional[str] = None,
 ) -> SearchService:
-    """
-    Create a SearchService with the specified provider.
+    """Create a SearchService with the specified provider.
 
     Args:
         db_connection: SQLite database connection.

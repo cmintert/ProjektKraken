@@ -1,8 +1,7 @@
-"""
-OpenAI Provider Implementation.
+"""OpenAI Provider Implementation.
 
-Provides embeddings and text generation via OpenAI API.
-Supports streaming, health checks, timeouts, retries, and circuit breaker pattern.
+Provides embeddings and text generation via OpenAI API. Supports streaming, health
+checks, timeouts, retries, and circuit breaker pattern.
 """
 
 import asyncio
@@ -21,8 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class OpenAIProvider(Provider):
-    """
-    OpenAI provider supporting embeddings and text generation.
+    """OpenAI provider supporting embeddings and text generation.
 
     Implements OpenAI API with streaming support, retries, and circuit breaker.
     """
@@ -36,8 +34,7 @@ class OpenAIProvider(Provider):
         timeout: int = 30,
         max_retries: int = 3,
     ) -> None:
-        """
-        Initialize OpenAI provider.
+        """Initialize OpenAI provider.
 
         Args:
             api_key: OpenAI API key.
@@ -99,8 +96,7 @@ class OpenAIProvider(Provider):
         raise Exception("Request failed with no exception captured")
 
     def embed(self, texts: List[str]) -> np.ndarray:
-        """
-        Generate embeddings using OpenAI API.
+        """Generate embeddings using OpenAI API.
 
         Args:
             texts: List of text strings to embed.
@@ -159,8 +155,7 @@ class OpenAIProvider(Provider):
         stop: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """
-        Generate text completion for a prompt.
+        """Generate text completion for a prompt.
 
         Args:
             prompt: Input prompt text.
@@ -237,8 +232,7 @@ class OpenAIProvider(Provider):
         stop: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> AsyncIterator[Dict[str, Any]]:
-        """
-        Generate text completion with streaming output.
+        """Generate text completion with streaming output.
 
         Note: This implementation uses blocking I/O wrapped in run_in_executor
         for the initial request, but iter_lines() still blocks the event loop.
@@ -328,8 +322,7 @@ class OpenAIProvider(Provider):
             ) from e
 
     def health_check(self) -> Dict[str, Any]:
-        """
-        Check provider health and availability.
+        """Check provider health and availability.
 
         Returns:
             Dict containing status, latency_ms, and message.
@@ -376,8 +369,7 @@ class OpenAIProvider(Provider):
             }
 
     def metadata(self) -> Dict[str, Any]:
-        """
-        Get provider metadata and capabilities.
+        """Get provider metadata and capabilities.
 
         Returns:
             Dict containing provider information and capabilities.

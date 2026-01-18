@@ -1,8 +1,6 @@
-"""
-Attachment Repository Module.
+"""Attachment Repository Module.
 
-Provides database persistence layer for image attachments
-using the repository pattern.
+Provides database persistence layer for image attachments using the repository pattern.
 """
 
 import logging
@@ -15,14 +13,10 @@ logger = logging.getLogger(__name__)
 
 
 class AttachmentRepository(BaseRepository):
-    """
-    Repository for managing ImageAttachment persistence in SQLite.
-    """
+    """Repository for managing ImageAttachment persistence in SQLite."""
 
     def insert(self, attachment: ImageAttachment) -> None:
-        """
-        Inserts a new image attachment record.
-        """
+        """Inserts a new image attachment record."""
         sql = """
             INSERT INTO image_attachments (
                 id, owner_type, owner_id, image_rel_path, thumb_rel_path,
@@ -53,9 +47,7 @@ class AttachmentRepository(BaseRepository):
             )
 
     def get(self, attachment_id: str) -> Optional[ImageAttachment]:
-        """
-        Retrieves a single attachment by ID.
-        """
+        """Retrieves a single attachment by ID."""
         sql = "SELECT * FROM image_attachments WHERE id = ?"
         if not self._connection:
             # Should be handled by DatabaseService connecting it, but safety check
@@ -68,9 +60,7 @@ class AttachmentRepository(BaseRepository):
         return None
 
     def list_by_owner(self, owner_type: str, owner_id: str) -> List[ImageAttachment]:
-        """
-        Retrieves all attachments for a specific owner, ordered by index.
-        """
+        """Retrieves all attachments for a specific owner, ordered by index."""
         sql = """
             SELECT * FROM image_attachments
             WHERE owner_type = ? AND owner_id = ?
@@ -83,17 +73,13 @@ class AttachmentRepository(BaseRepository):
         return [self._row_to_domain(row) for row in cursor.fetchall()]
 
     def delete(self, attachment_id: str) -> None:
-        """
-        Deletes an attachment record by ID.
-        """
+        """Deletes an attachment record by ID."""
         sql = "DELETE FROM image_attachments WHERE id = ?"
         with self.transaction() as conn:
             conn.execute(sql, (attachment_id,))
 
     def update_caption(self, attachment_id: str, caption: Optional[str]) -> None:
-        """
-        Updates the caption of an attachment.
-        """
+        """Updates the caption of an attachment."""
         sql = "UPDATE image_attachments SET caption = ? WHERE id = ?"
         with self.transaction() as conn:
             conn.execute(sql, (caption, attachment_id))
@@ -101,9 +87,8 @@ class AttachmentRepository(BaseRepository):
     def update_order(
         self, owner_type: str, owner_id: str, ordered_ids: List[str]
     ) -> None:
-        """
-        Updates the order_index for a list of attachment IDs belonging to an owner.
-        """
+        """Updates the order_index for a list of attachment IDs belonging to an
+        owner."""
         sql = """
             UPDATE image_attachments
             SET order_index = ?
@@ -114,9 +99,7 @@ class AttachmentRepository(BaseRepository):
                 conn.execute(sql, (index, att_id, owner_type, owner_id))
 
     def _row_to_domain(self, row: Any) -> ImageAttachment:
-        """
-        Converts a DB row to an ImageAttachment domain object.
-        """
+        """Converts a DB row to an ImageAttachment domain object."""
         resolution = None
         if row["resolution"]:
             try:

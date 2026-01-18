@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Timeline Grouping CLI.
+"""Timeline Grouping CLI.
 
 Provides command-line tools for managing timeline grouping configurations
 and tag colors.

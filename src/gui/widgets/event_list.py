@@ -1,5 +1,4 @@
-"""
-Event List Widget Module.
+"""Event List Widget Module.
 
 Displays a list of events with controls for refreshing and deleting.
 """
@@ -22,10 +21,9 @@ from src.gui.utils.style_helper import StyleHelper
 
 
 class EventListWidget(QWidget):
-    """
-    A dumb widget that purely displays a list of events.
-    Emits signals when user interacts.
-    Does NOT query the database itself.
+    """A dumb widget that purely displays a list of events.
+
+    Emits signals when user interacts. Does NOT query the database itself.
     """
 
     # Signals for user actions
@@ -34,8 +32,7 @@ class EventListWidget(QWidget):
     delete_requested = Signal(str)  # event_id
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """
-        Initializes the EventListWidget.
+        """Initializes the EventListWidget.
 
         Args:
             parent: The parent widget, if any.
@@ -73,8 +70,7 @@ class EventListWidget(QWidget):
         self.empty_label.hide()
 
     def set_events(self, events: List[Event]) -> None:
-        """
-        Populates the list widget with the provided events.
+        """Populates the list widget with the provided events.
 
         Args:
             events (List[Event]): A list of Event objects to display.
@@ -98,8 +94,7 @@ class EventListWidget(QWidget):
 
     @Slot()
     def _on_selection_changed(self) -> None:
-        """
-        Handles event selection changes.
+        """Handles event selection changes.
 
         Emits the event_selected signal and enables/disables the delete button.
         """
@@ -113,8 +108,7 @@ class EventListWidget(QWidget):
 
     @Slot()
     def _on_delete_clicked(self) -> None:
-        """
-        Handles delete button clicks.
+        """Handles delete button clicks.
 
         Emits the delete_requested signal with the selected event ID.
         """
@@ -124,8 +118,7 @@ class EventListWidget(QWidget):
             self.delete_requested.emit(event_id)
 
     def minimumSizeHint(self) -> QSize:
-        """
-        Override to prevent dock collapse.
+        """Override to prevent dock collapse.
 
         Returns:
             QSize: Minimum size for usable event list.
@@ -135,8 +128,7 @@ class EventListWidget(QWidget):
         return QSize(250, 200)
 
     def sizeHint(self) -> QSize:
-        """
-        Preferred size for the event list.
+        """Preferred size for the event list.
 
         Returns:
             QSize: Comfortable working size.

@@ -1,8 +1,7 @@
-"""
-Data Handler Module.
+"""Data Handler Module.
 
-Handles data loading and UI updates for MainWindow.
-Separates data management logic from the main window class.
+Handles data loading and UI updates for MainWindow. Separates data management logic from
+the main window class.
 """
 
 import logging
@@ -18,8 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class DataHandler(QObject):
-    """
-    Manages data loading and emits signals for UI updates.
+    """Manages data loading and emits signals for UI updates.
 
     This class follows the principle of loose coupling by emitting signals
     rather than directly manipulating UI components. The MainWindow is
@@ -64,8 +62,7 @@ class DataHandler(QObject):
     reload_active_editor_relations = Signal()  # Reload relations for active editor
 
     def __init__(self) -> None:
-        """
-        Initialize the data handler.
+        """Initialize the data handler.
 
         Note: No longer requires MainWindow reference - uses signals instead.
         """
@@ -78,8 +75,7 @@ class DataHandler(QObject):
 
     @Slot(list)
     def on_events_loaded(self, events: List[Event]) -> None:
-        """
-        Processes loaded events and emits signals for UI updates.
+        """Processes loaded events and emits signals for UI updates.
 
         Args:
             events: List of Event objects.
@@ -96,8 +92,7 @@ class DataHandler(QObject):
 
     @Slot(list)
     def on_entities_loaded(self, entities: List[Entity]) -> None:
-        """
-        Processes loaded entities and emits signals for UI updates.
+        """Processes loaded entities and emits signals for UI updates.
 
         Args:
             entities: List of Entity objects.
@@ -113,12 +108,10 @@ class DataHandler(QObject):
             self._pending_select_id = None
 
     def _update_editor_suggestions(self) -> None:
-        """
-        Update editor completers with Event and Entity names.
+        """Update editor completers with Event and Entity names.
 
-        Aggregates all Event and Entity names with IDs and emits
-        signal for the editors' completers to be updated.
-        Provides ID-based completion for robust wiki-linking.
+        Aggregates all Event and Entity names with IDs and emits signal for the editors'
+        completers to be updated. Provides ID-based completion for robust wiki-linking.
         """
         items: List[Tuple[str, str, str]] = []
 
@@ -144,8 +137,7 @@ class DataHandler(QObject):
     def on_event_details_loaded(
         self, event: Event, relations: List[Any], incoming: List[Any]
     ) -> None:
-        """
-        Emits signals for Event Editor to be populated with detailed event data.
+        """Emits signals for Event Editor to be populated with detailed event data.
 
         Args:
             event: The event object.
@@ -161,8 +153,7 @@ class DataHandler(QObject):
     def on_entity_details_loaded(
         self, entity: Entity, relations: List[Any], incoming: List[Any]
     ) -> None:
-        """
-        Emits signals for Entity Editor to be populated with detailed entity data.
+        """Emits signals for Entity Editor to be populated with detailed entity data.
 
         Args:
             entity: The entity object.
@@ -174,8 +165,7 @@ class DataHandler(QObject):
 
     @Slot(list)
     def on_longform_sequence_loaded(self, sequence: List[Any]) -> None:
-        """
-        Emits signal for longform editor to be updated with the loaded sequence.
+        """Emits signal for longform editor to be updated with the loaded sequence.
 
         Args:
             sequence: List of longform items.
@@ -185,8 +175,7 @@ class DataHandler(QObject):
 
     @Slot(list)
     def on_maps_loaded(self, maps: List[Any]) -> None:
-        """
-        Emits signal for map widget to be updated with the loaded maps.
+        """Emits signal for map widget to be updated with the loaded maps.
 
         Args:
             maps: List of Map objects.
@@ -196,8 +185,7 @@ class DataHandler(QObject):
 
     @Slot(str, list)
     def on_markers_loaded(self, map_id: str, markers: List[Any]) -> None:
-        """
-        Emits signal for map widget to be updated with markers for a specific map.
+        """Emits signal for map widget to be updated with markers for a specific map.
 
         Args:
             map_id: The map ID.
@@ -251,15 +239,12 @@ class DataHandler(QObject):
 
     @Slot(list)
     def on_trajectories_loaded(self, trajectories: List[Any]) -> None:
-        """
-        Emits signal for map widget to be updated with trajectories.
-        """
+        """Emits signal for map widget to be updated with trajectories."""
         self.trajectories_ready.emit(trajectories)
 
     @Slot(object)
     def on_command_finished(self, result: CommandResult) -> None:
-        """
-        Handles completion of async commands, emitting signals for necessary UI
+        """Handles completion of async commands, emitting signals for necessary UI
         refreshes.
 
         Args:
@@ -334,15 +319,12 @@ class DataHandler(QObject):
 
     @Slot(str, dict)
     def on_entity_state_resolved(self, entity_id: str, attributes: dict) -> None:
-        """
-        Emits signal when entity state is resolved.
-        """
+        """Emits signal when entity state is resolved."""
         self.entity_state_resolved.emit(entity_id, attributes)
 
     @Slot(list, list)
     def on_graph_data_loaded(self, nodes: List[Any], edges: List[Any]) -> None:
-        """
-        Emits signal for graph widget to be updated with loaded data.
+        """Emits signal for graph widget to be updated with loaded data.
 
         Args:
             nodes: List of node dictionaries.
@@ -353,8 +335,7 @@ class DataHandler(QObject):
 
     @Slot(list, list)
     def on_graph_metadata_loaded(self, tags: List[str], rel_types: List[str]) -> None:
-        """
-        Emits signal for graph widget to be updated with metadata.
+        """Emits signal for graph widget to be updated with metadata.
 
         Args:
             tags: List of tag strings.

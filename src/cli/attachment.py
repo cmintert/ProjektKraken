@@ -1,6 +1,4 @@
-"""
-CLI for managing image attachments.
-"""
+"""CLI for managing image attachments."""
 
 import argparse
 import logging

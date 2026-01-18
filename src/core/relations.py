@@ -17,8 +17,7 @@ from typing import Any, Dict
 
 @dataclass
 class Relation:
-    """
-    Represents a directed relationship between two objects.
+    """Represents a directed relationship between two objects.
 
     Relations connect events to events, entities to entities, or
     events to entities. They support:
@@ -53,8 +52,7 @@ class Relation:
     created_at: float = field(default_factory=time.time)
 
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the Relation instance to a dictionary for storage or serialization.
+        """Converts the Relation instance to a dictionary for storage or serialization.
 
         Returns:
             Dict[str, Any]: A dictionary containing all the relation's data.
@@ -70,8 +68,7 @@ class Relation:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Relation":
-        """
-        Creates a Relation instance from a dictionary.
+        """Creates a Relation instance from a dictionary.
 
         Args:
             data: A dictionary containing relation data.
@@ -87,8 +84,7 @@ class Relation:
 
     @property
     def weight(self) -> float:
-        """
-        Returns the weight of this relation for graph analysis.
+        """Returns the weight of this relation for graph analysis.
 
         Returns:
             float: Weight value (default 1.0 if not set).
@@ -97,8 +93,7 @@ class Relation:
 
     @weight.setter
     def weight(self, value: float) -> None:
-        """
-        Sets the weight of this relation.
+        """Sets the weight of this relation.
 
         Args:
             value: Weight value (typically 0.0-1.0 but not enforced).
@@ -107,8 +102,7 @@ class Relation:
 
     @property
     def confidence(self) -> float:
-        """
-        Returns the confidence/certainty of this relation.
+        """Returns the confidence/certainty of this relation.
 
         Returns:
             float: Confidence value (default 1.0 if not set).
@@ -117,8 +111,7 @@ class Relation:
 
     @confidence.setter
     def confidence(self, value: float) -> None:
-        """
-        Sets the confidence/certainty of this relation.
+        """Sets the confidence/certainty of this relation.
 
         Args:
             value: Confidence value (0.0 = uncertain, 1.0 = certain).

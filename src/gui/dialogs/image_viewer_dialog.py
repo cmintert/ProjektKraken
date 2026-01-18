@@ -1,8 +1,7 @@
-"""
-Image Viewer Dialog Module.
+"""Image Viewer Dialog Module.
 
-Provides a full-screen image viewer with navigation controls
-for browsing through image attachments.
+Provides a full-screen image viewer with navigation controls for browsing through image
+attachments.
 """
 
 import logging
@@ -27,9 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class ImageViewerDialog(QDialog):
-    """
-    Modal dialog for viewing image attachments with navigation.
-    """
+    """Modal dialog for viewing image attachments with navigation."""
 
     def __init__(
         self,
@@ -37,8 +34,7 @@ class ImageViewerDialog(QDialog):
         attachments: List[ImageAttachment] = None,
         current_index: int = 0,
     ) -> None:
-        """
-        Initialize the image viewer dialog.
+        """Initialize the image viewer dialog.
 
         Args:
             parent: Parent widget.
@@ -216,8 +212,8 @@ class ImageViewerDialog(QDialog):
         self.btn_next.setEnabled(self.current_index < len(self.attachments) - 1)
 
     def _update_image(self) -> None:
-        """
-        Updates the displayed image based on scroll area size.
+        """Updates the displayed image based on scroll area size.
+
         - Downscales if viewport < base image.
         - Centers base image if viewport > base image (No Upscale).
         """

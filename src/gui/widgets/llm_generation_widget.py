@@ -1,8 +1,7 @@
-"""
-LLM Generation Widget Module.
+"""LLM Generation Widget Module.
 
-Provides a compact UI for generating text using configured LLM providers.
-Supports streaming output and appending to existing text.
+Provides a compact UI for generating text using configured LLM providers. Supports
+streaming output and appending to existing text.
 """
 
 import asyncio
@@ -48,8 +47,7 @@ _REASONING_TAG_PATTERN = re.compile(
 
 
 def filter_reasoning_tags(text: str) -> str:
-    """
-    Remove reasoning/thinking tags from LLM output.
+    """Remove reasoning/thinking tags from LLM output.
 
     Filters out content between common reasoning tags used by various models:
     - DeepSeek R1: <think>...</think>
@@ -91,8 +89,7 @@ class ContextProvider(Protocol):
 
 
 def perform_rag_search(prompt: str, db_path: Optional[str], top_k: int = 3) -> str:
-    """
-    Perform RAG search using search service.
+    """Perform RAG search using search service.
 
     Args:
         prompt: The prompt text to query with.
@@ -181,8 +178,7 @@ def perform_rag_search(prompt: str, db_path: Optional[str], top_k: int = 3) -> s
 
 
 class GenerationWorker(QThread):
-    """
-    Worker thread for LLM text generation.
+    """Worker thread for LLM text generation.
 
     Runs generation in background to avoid blocking the UI.
     """
@@ -200,8 +196,7 @@ class GenerationWorker(QThread):
         db_path: Optional[str] = None,
         rag_limit: int = 3,
     ) -> None:
-        """
-        Initialize generation worker.
+        """Initialize generation worker.
 
         Args:
             provider: LLM provider instance.
@@ -222,8 +217,7 @@ class GenerationWorker(QThread):
         self._cancelled = False
 
     def _perform_rag_search(self, query_text: str) -> str:
-        """
-        Perform RAG search if db_path is set.
+        """Perform RAG search if db_path is set.
 
         Args:
             query_text: Text to use for RAG query.
@@ -341,11 +335,10 @@ class GenerationWorker(QThread):
 
 
 class LLMGenerationWidget(QWidget):
-    """
-    Widget for LLM text generation with streaming output.
+    """Widget for LLM text generation with streaming output.
 
-    Provides a compact UI below description fields to generate text
-    using configured LLM providers.
+    Provides a compact UI below description fields to generate text using configured LLM
+    providers.
     """
 
     text_generated = Signal(str)  # Emitted when generation completes
@@ -355,8 +348,7 @@ class LLMGenerationWidget(QWidget):
         parent: Optional[QWidget] = None,
         context_provider: Optional[ContextProvider] = None,
     ) -> None:
-        """
-        Initialize LLM generation widget.
+        """Initialize LLM generation widget.
 
         Args:
             parent: Parent widget.
@@ -732,8 +724,7 @@ class LLMGenerationWidget(QWidget):
             self.status_label.setText(f"Error: {str(e)}")
 
     def _get_system_prompt(self) -> str:
-        """
-        Get the system prompt from settings or selected template.
+        """Get the system prompt from settings or selected template.
 
         Loads the system prompt using the following priority:
         1. Template selected in the UI dropdown (ai_gen_template_id)
@@ -807,8 +798,7 @@ class LLMGenerationWidget(QWidget):
             return DEFAULT_SYSTEM_PROMPT
 
     def _get_few_shot_examples(self) -> str:
-        """
-        Load few-shot examples for inclusion in prompts.
+        """Load few-shot examples for inclusion in prompts.
 
         Returns:
             str: Few-shot examples content, or empty string if not available.
@@ -826,8 +816,7 @@ class LLMGenerationWidget(QWidget):
             return ""
 
     def _get_generation_context(self) -> Optional[dict]:
-        """
-        Get context from provider or parent editor for prompt construction.
+        """Get context from provider or parent editor for prompt construction.
 
         Returns:
             dict: Context with name, type, description, etc.
@@ -876,8 +865,8 @@ class LLMGenerationWidget(QWidget):
         return context if found_editor else None
 
     def _construct_prompt(self, context_str: str, user_prompt: str) -> dict:
-        """
-        Construct the final prompt with system prompt, few-shot examples, and context.
+        """Construct the final prompt with system prompt, few-shot examples, and
+        context.
 
         Args:
             context_str: Formatted context string with entity/event details.

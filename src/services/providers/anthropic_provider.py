@@ -1,5 +1,4 @@
-"""
-Anthropic Provider Implementation.
+"""Anthropic Provider Implementation.
 
 Provides text generation via Anthropic's Claude API.
 Note: Anthropic does not provide embeddings API, so embeddings are not supported.
@@ -22,8 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class AnthropicProvider(Provider):
-    """
-    Anthropic Claude provider supporting text generation.
+    """Anthropic Claude provider supporting text generation.
 
     Implements Anthropic API with streaming support, retries, and circuit breaker.
     Note: Does not support embeddings (Anthropic doesn't offer embedding models).
@@ -37,8 +35,7 @@ class AnthropicProvider(Provider):
         timeout: int = 30,
         max_retries: int = 3,
     ) -> None:
-        """
-        Initialize Anthropic provider.
+        """Initialize Anthropic provider.
 
         Args:
             api_key: Anthropic API key.
@@ -97,8 +94,7 @@ class AnthropicProvider(Provider):
         raise Exception("Request failed with no exception captured")
 
     def embed(self, texts: List[str]) -> np.ndarray:
-        """
-        Generate embeddings (NOT SUPPORTED by Anthropic).
+        """Generate embeddings (NOT SUPPORTED by Anthropic).
 
         Args:
             texts: List of text strings to embed.
@@ -122,8 +118,7 @@ class AnthropicProvider(Provider):
         stop: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """
-        Generate text completion for a prompt.
+        """Generate text completion for a prompt.
 
         Args:
             prompt: Input prompt text.
@@ -210,8 +205,7 @@ class AnthropicProvider(Provider):
         stop: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> AsyncIterator[Dict[str, Any]]:
-        """
-        Generate text completion with streaming output.
+        """Generate text completion with streaming output.
 
         Note: This implementation uses blocking I/O wrapped in run_in_executor
         for the initial request, but iter_lines() still blocks the event loop.
@@ -297,8 +291,7 @@ class AnthropicProvider(Provider):
             ) from e
 
     def health_check(self) -> Dict[str, Any]:
-        """
-        Check provider health and availability.
+        """Check provider health and availability.
 
         Returns:
             Dict containing status, latency_ms, and message.
@@ -351,8 +344,7 @@ class AnthropicProvider(Provider):
             }
 
     def metadata(self) -> Dict[str, Any]:
-        """
-        Get provider metadata and capabilities.
+        """Get provider metadata and capabilities.
 
         Returns:
             Dict containing provider information and capabilities.

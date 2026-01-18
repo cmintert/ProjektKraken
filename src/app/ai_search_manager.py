@@ -21,8 +21,7 @@ logger = get_logger(__name__)
 
 
 class AISearchManager(QObject):
-    """
-    Manages AI search and semantic indexing operations for the MainWindow.
+    """Manages AI search and semantic indexing operations for the MainWindow.
 
     This class encapsulates all functionality related to:
     - AI settings dialog management
@@ -33,8 +32,7 @@ class AISearchManager(QObject):
     """
 
     def __init__(self, main_window: "MainWindow") -> None:
-        """
-        Initialize the AISearchManager.
+        """Initialize the AISearchManager.
 
         Args:
             main_window: Reference to the MainWindow instance.
@@ -71,8 +69,7 @@ class AISearchManager(QObject):
     def perform_semantic_search(
         self, query: str, object_type_filter: str, top_k: int
     ) -> None:
-        """
-        Perform semantic search and display results.
+        """Perform semantic search and display results.
 
         Args:
             query: Search query text.
@@ -113,8 +110,7 @@ class AISearchManager(QObject):
 
     @Slot(str)
     def rebuild_search_index(self, object_type: str) -> None:
-        """
-        Rebuild the semantic search index.
+        """Rebuild the semantic search index.
 
         Args:
             object_type: Type to rebuild ('all', 'entity', 'event').
@@ -169,8 +165,7 @@ class AISearchManager(QObject):
 
     @Slot(str, str)
     def on_search_result_selected(self, object_type: str, object_id: str) -> None:
-        """
-        Handle selection of a search result.
+        """Handle selection of a search result.
 
         Args:
             object_type: 'entity' or 'event'.

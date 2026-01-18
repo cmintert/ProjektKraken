@@ -1,8 +1,7 @@
-"""
-Graph Filter Dialog Module.
+"""Graph Filter Dialog Module.
 
-Provides a tabbed dialog for configuring advanced filters for the Graph View,
-allowing inclusion/exclusion of both Tags and Relation Types.
+Provides a tabbed dialog for configuring advanced filters for the Graph View, allowing
+inclusion/exclusion of both Tags and Relation Types.
 """
 
 from typing import Any, Dict, List, Optional
@@ -19,8 +18,8 @@ from src.gui.widgets.filter_widget import FilterWidget
 
 
 class GraphFilterDialog(QDialog):
-    """
-    Advanced filter configuration dialog for Graph View.
+    """Advanced filter configuration dialog for Graph View.
+
     Contains tabs for Tags and Relation Types.
     """
 
@@ -31,8 +30,7 @@ class GraphFilterDialog(QDialog):
         available_rel_types: List[str] = None,
         current_config: Dict[str, Any] = None,
     ) -> None:
-        """
-        Initialize the graph filter dialog.
+        """Initialize the graph filter dialog.
 
         Args:
             parent: Optional parent widget.
@@ -91,8 +89,7 @@ class GraphFilterDialog(QDialog):
         main_layout.addWidget(self.buttons)
 
     def get_filter_config(self) -> Dict[str, Any]:
-        """
-        Returns the combined filter configuration.
+        """Returns the combined filter configuration.
 
         Returns:
             Dict: {

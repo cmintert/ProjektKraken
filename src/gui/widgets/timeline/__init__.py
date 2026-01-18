@@ -1,5 +1,4 @@
-"""
-Timeline Widget Package.
+"""Timeline Widget Package.
 
 Main entry point for timeline visualization. Provides TimelineWidget wrapper
 that combines TimelineView with playback controls.
@@ -31,9 +30,7 @@ from src.gui.widgets.timeline.timeline_view import TimelineView
 
 
 class TimelineWidget(QWidget):
-    """
-    Wrapper widget for TimelineView + Toolbar.
-    """
+    """Wrapper widget for TimelineView + Toolbar."""
 
     event_selected = Signal(str)
     playhead_time_changed = Signal(float)  # Expose playhead signal from view
@@ -41,8 +38,7 @@ class TimelineWidget(QWidget):
     event_date_changed = Signal(str, float)  # (event_id, new_lore_date)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """
-        Initializes the TimelineWidget.
+        """Initializes the TimelineWidget.
 
         Args:
             parent (QWidget, optional): The parent widget. Defaults to None.
@@ -115,8 +111,7 @@ class TimelineWidget(QWidget):
         main_layout.addWidget(self.view)
 
     def set_data_provider(self, provider: Any) -> None:
-        """
-        Sets the data provider for timeline grouping features.
+        """Sets the data provider for timeline grouping features.
 
         Args:
             provider: Object implementing the data provider interface.
@@ -136,9 +131,7 @@ class TimelineWidget(QWidget):
         self.view.fit_all()
 
     def toggle_playback(self) -> None:
-        """
-        Toggles playback on/off and updates button state.
-        """
+        """Toggles playback on/off and updates button state."""
         if self.view.is_playing():
             self.view.stop_playback()
             self.btn_play_pause.setText("▶")
@@ -157,8 +150,7 @@ class TimelineWidget(QWidget):
         self.view.step_backward()
 
     def set_playhead_time(self, time: float) -> None:
-        """
-        Sets the playhead to a specific time.
+        """Sets the playhead to a specific time.
 
         Args:
             time: Time in lore_date units.
@@ -166,8 +158,7 @@ class TimelineWidget(QWidget):
         self.view.set_playhead_time(time)
 
     def get_playhead_time(self) -> float:
-        """
-        Gets the current playhead time.
+        """Gets the current playhead time.
 
         Returns:
             float: Current time in lore_date units.
@@ -175,8 +166,7 @@ class TimelineWidget(QWidget):
         return self.view.get_playhead_time()
 
     def set_current_time(self, time: float) -> None:
-        """
-        Sets the current time in the world.
+        """Sets the current time in the world.
 
         Args:
             time: Time in lore_date units.
@@ -184,8 +174,7 @@ class TimelineWidget(QWidget):
         self.view.set_current_time(time)
 
     def get_current_time(self) -> float:
-        """
-        Gets the current time in the world.
+        """Gets the current time in the world.
 
         Returns:
             float: Current time in lore_date units.
@@ -193,8 +182,8 @@ class TimelineWidget(QWidget):
         return self.view.get_current_time()
 
     def set_current_time_to_playhead(self) -> None:
-        """
-        Sets the current time to match the playhead position.
+        """Sets the current time to match the playhead position.
+
         This is the typical workflow: move playhead, then set as current time.
         """
         playhead_time = self.get_playhead_time()
@@ -202,15 +191,12 @@ class TimelineWidget(QWidget):
         self.set_current_time(playhead_time)
 
     def return_to_present(self) -> None:
-        """
-        Sets the playhead position to match the current story time.
-        """
+        """Sets the playhead position to match the current story time."""
         current_time = self.get_current_time()
         self.set_playhead_time(current_time)
 
     def set_calendar_converter(self, converter: Any) -> None:
-        """
-        Sets the calendar converter for formatted date display.
+        """Sets the calendar converter for formatted date display.
 
         Args:
             converter: CalendarConverter instance or None.
@@ -222,8 +208,8 @@ class TimelineWidget(QWidget):
         self.view.viewport().update()
 
     def update_event_preview(self, event_data: dict) -> None:
-        """
-        Updates the visual representation of an event in real-time.
+        """Updates the visual representation of an event in real-time.
+
         Delegates to the view.
         """
         self.view.update_event_preview(event_data)

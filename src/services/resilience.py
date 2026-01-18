@@ -1,5 +1,4 @@
-"""
-Resilience Utilities Module.
+"""Resilience Utilities Module.
 
 Provides fault tolerance patterns like circuit breakers for robust API interactions.
 """
@@ -12,8 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class CircuitBreaker:
-    """
-    Simple circuit breaker implementation for fault tolerance.
+    """Simple circuit breaker implementation for fault tolerance.
 
     Tracks failures and opens circuit after threshold is reached,
     preventing further requests until a timeout period passes.
@@ -21,8 +19,7 @@ class CircuitBreaker:
     """
 
     def __init__(self, failure_threshold: int = 5, timeout: float = 60.0) -> None:
-        """
-        Initialize circuit breaker.
+        """Initialize circuit breaker.
 
         Args:
             failure_threshold: Number of failures before opening circuit.
@@ -35,8 +32,7 @@ class CircuitBreaker:
         self.state = "closed"  # closed, open, half-open
 
     def call(self, func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
-        """
-        Execute function with circuit breaker protection.
+        """Execute function with circuit breaker protection.
 
         Args:
             func: Function to execute.
@@ -81,8 +77,7 @@ class CircuitBreaker:
         logger.info("Circuit breaker manually reset")
 
     def get_state(self) -> dict:
-        """
-        Get current circuit breaker state.
+        """Get current circuit breaker state.
 
         Returns:
             dict: State information including status, failures, and time since last failure.

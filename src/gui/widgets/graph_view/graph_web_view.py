@@ -1,5 +1,4 @@
-"""
-Graph Web View Module.
+"""Graph Web View Module.
 
 Private internal component encapsulating QWebEngineView for graph display.
 """
@@ -29,8 +28,7 @@ class GraphBridge(QObject):
 
 
 class GraphWebView(QWidget):
-    """
-    Internal widget encapsulating QWebEngineView for graph display.
+    """Internal widget encapsulating QWebEngineView for graph display.
 
     Isolates browser-specific logic from the main GraphWidget.
     This is a private internal component - use GraphWidget for public API.
@@ -42,8 +40,7 @@ class GraphWebView(QWidget):
     node_clicked = Signal(str, str)  # (object_type, object_id)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """
-        Initializes the GraphWebView.
+        """Initializes the GraphWebView.
 
         Args:
             parent: Parent widget.
@@ -75,8 +72,7 @@ class GraphWebView(QWidget):
         layout.addWidget(self._web_view)
 
     def load_html(self, html: str) -> None:
-        """
-        Loads HTML content into the web view.
+        """Loads HTML content into the web view.
 
         Args:
             html: HTML string to display.
@@ -84,8 +80,7 @@ class GraphWebView(QWidget):
         self._web_view.setHtml(html)
 
     def set_background_color(self, color: str) -> None:
-        """
-        Sets the background color of the web view.
+        """Sets the background color of the web view.
 
         Args:
             color: Hex color string (e.g. "#1e1e1e").

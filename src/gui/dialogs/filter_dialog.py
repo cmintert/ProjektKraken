@@ -11,8 +11,8 @@ from src.gui.widgets.filter_widget import FilterWidget
 
 
 class FilterDialog(QDialog):
-    """
-    Advanced filter configuration dialog.
+    """Advanced filter configuration dialog.
+
     Wraps FilterWidget for backward compatibility.
     """
 

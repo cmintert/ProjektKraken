@@ -1,8 +1,7 @@
-"""
-Base Theme Manager Module (Headless).
+"""Base Theme Manager Module (Headless).
 
-Provides core theme management functionality without Qt dependencies.
-This allows the theme system to work in headless environments.
+Provides core theme management functionality without Qt dependencies. This allows the
+theme system to work in headless environments.
 """
 
 import json
@@ -16,8 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseThemeManager:
-    """
-    Base theme manager without Qt dependencies.
+    """Base theme manager without Qt dependencies.
 
     Manages loading and applying UI themes (Dark/Light) in a framework-agnostic way.
     Implements a singleton pattern to ensure consistent theming across the app.
@@ -26,8 +24,7 @@ class BaseThemeManager:
     _instance: Optional["BaseThemeManager"] = None
 
     def __new__(cls, *args: Any, **kwargs: Any) -> "BaseThemeManager":
-        """
-        Create or return the singleton instance of BaseThemeManager.
+        """Create or return the singleton instance of BaseThemeManager.
 
         Implements the singleton pattern to ensure only one ThemeManager
         instance exists throughout the application lifecycle. This is
@@ -45,8 +42,7 @@ class BaseThemeManager:
         return cls._instance
 
     def __init__(self, theme_file: str = "themes.json") -> None:
-        """
-        Initializes the BaseThemeManager.
+        """Initializes the BaseThemeManager.
 
         Args:
             theme_file: Path to the themes JSON file.
@@ -122,8 +118,7 @@ class BaseThemeManager:
             logger.error(f"Error loading themes: {e}")
 
     def load_stylesheet(self, path: str) -> None:
-        """
-        Loads and caches the stylesheet template.
+        """Loads and caches the stylesheet template.
 
         Args:
             path: Path to the stylesheet file.
@@ -135,8 +130,7 @@ class BaseThemeManager:
             logger.error(f"Style template not found: {path}")
 
     def get_available_themes(self) -> list[str]:
-        """
-        Returns a list of available theme names.
+        """Returns a list of available theme names.
 
         Returns:
             List of theme names.
@@ -144,8 +138,7 @@ class BaseThemeManager:
         return list(self.themes.keys())
 
     def get_theme(self) -> Dict[str, str]:
-        """
-        Returns the current theme dictionary.
+        """Returns the current theme dictionary.
 
         Returns:
             Dictionary containing theme colors and settings.
@@ -155,8 +148,7 @@ class BaseThemeManager:
         )
 
     def set_theme(self, theme_name: str) -> None:
-        """
-        Switches the current theme.
+        """Switches the current theme.
 
         Args:
             theme_name: The key of the theme to switch to.
@@ -174,8 +166,7 @@ class BaseThemeManager:
         logger.info(f"Theme switched to: {theme_name}")
 
     def on_theme_changed(self, callback: Callable[[Dict[str, Any]], None]) -> None:
-        """
-        Register a callback to be called when the theme changes.
+        """Register a callback to be called when the theme changes.
 
         Args:
             callback: Function to call with theme data when theme changes.
@@ -183,8 +174,7 @@ class BaseThemeManager:
         self._theme_changed_callbacks.append(callback)
 
     def _notify_theme_changed(self, theme_data: Dict[str, Any]) -> None:
-        """
-        Notify all registered callbacks of theme change.
+        """Notify all registered callbacks of theme change.
 
         Args:
             theme_data: The new theme data dictionary.
@@ -196,8 +186,7 @@ class BaseThemeManager:
                 logger.error(f"Error in theme changed callback: {e}")
 
     def format_stylesheet(self, template: Optional[str] = None) -> str:
-        """
-        Formats a stylesheet template with current theme values.
+        """Formats a stylesheet template with current theme values.
 
         Args:
             template: Optional stylesheet template. If None, uses cached template.

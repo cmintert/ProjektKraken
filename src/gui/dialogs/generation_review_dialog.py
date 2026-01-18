@@ -1,8 +1,7 @@
-"""
-Generation Review Dialog.
+"""Generation Review Dialog.
 
-Modal dialog for reviewing and editing LLM-generated content before
-applying it to the description field.
+Modal dialog for reviewing and editing LLM-generated content before applying it to the
+description field.
 """
 
 import logging
@@ -34,11 +33,10 @@ class ReviewAction(Enum):
 
 
 class GenerationReviewDialog(QDialog):
-    """
-    Dialog for reviewing LLM-generated content before applying.
+    """Dialog for reviewing LLM-generated content before applying.
 
-    Provides editable preview, rating buttons, and action choices
-    (replace, append, or discard).
+    Provides editable preview, rating buttons, and action choices (replace, append, or
+    discard).
     """
 
     def __init__(
@@ -46,8 +44,7 @@ class GenerationReviewDialog(QDialog):
         generated_text: str,
         parent: Optional[QWidget] = None,
     ) -> None:
-        """
-        Initialize the generation review dialog.
+        """Initialize the generation review dialog.
 
         Args:
             generated_text: The LLM-generated text to review.
@@ -66,8 +63,7 @@ class GenerationReviewDialog(QDialog):
         self._setup_ui(generated_text)
 
     def _setup_ui(self, generated_text: str) -> None:
-        """
-        Set up the dialog UI.
+        """Set up the dialog UI.
 
         Args:
             generated_text: Initial text to display in editor.
@@ -139,8 +135,7 @@ class GenerationReviewDialog(QDialog):
         main_layout.addLayout(buttons_layout)
 
     def get_text(self) -> str:
-        """
-        Get the current text from the editor.
+        """Get the current text from the editor.
 
         Returns:
             str: The text in the editor (possibly edited by user).
@@ -148,8 +143,7 @@ class GenerationReviewDialog(QDialog):
         return self.text_edit.toPlainText()
 
     def get_result(self) -> dict:
-        """
-        Get the dialog result including action, text, and rating.
+        """Get the dialog result including action, text, and rating.
 
         Returns:
             dict: Result with 'action', 'text', and 'rating' keys.

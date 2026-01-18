@@ -1,5 +1,5 @@
-"""
-Application Constants.
+"""Application Constants.
+
 Stores default values for UI configuration and magic numbers.
 """
 

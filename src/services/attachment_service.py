@@ -1,8 +1,7 @@
-"""
-Attachment Service Module.
+"""Attachment Service Module.
 
-Orchestrates database and filesystem operations for image attachments,
-providing a high-level API for image management with undo/redo support.
+Orchestrates database and filesystem operations for image attachments, providing a high-
+level API for image management with undo/redo support.
 """
 
 import logging
@@ -16,15 +15,15 @@ logger = logging.getLogger(__name__)
 
 
 class AttachmentService:
-    """
-    Service for managing image attachments. Orchestrates DB and Filesystem operations.
+    """Service for managing image attachments.
+
+    Orchestrates DB and Filesystem operations.
     """
 
     def __init__(
         self, repository: AttachmentRepository, asset_store: AssetStore
     ) -> None:
-        """
-        Initialize the attachment service.
+        """Initialize the attachment service.
 
         Args:
             repository: Repository for database operations.
@@ -36,8 +35,7 @@ class AttachmentService:
     def add_images(
         self, owner_type: str, owner_id: str, source_paths: List[str]
     ) -> List[ImageAttachment]:
-        """
-        Imports multiple images and adds them to the database for the given owner.
+        """Imports multiple images and adds them to the database for the given owner.
 
         Args:
             owner_type: The type of the owner ("event" or "entity").
@@ -101,8 +99,7 @@ class AttachmentService:
         return created_attachments
 
     def remove_image(self, attachment_id: str) -> Tuple[bool, Optional[Dict[str, Any]]]:
-        """
-        Removes an image attachment. Moves files to trash and deletes DB record.
+        """Removes an image attachment. Moves files to trash and deletes DB record.
 
         Returns:
             (success, trash_info)
@@ -137,9 +134,7 @@ class AttachmentService:
             raise
 
     def restore_image(self, trash_info: Dict[str, Any]) -> None:
-        """
-        Restores an image from trash and re-inserts into DB.
-        """
+        """Restores an image from trash and re-inserts into DB."""
         attachment: ImageAttachment = trash_info["attachment_data"]
         img_trash = trash_info["img_trash_path"]
         thumb_trash = trash_info["thumb_trash_path"]

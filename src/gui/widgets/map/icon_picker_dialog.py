@@ -1,5 +1,4 @@
-"""
-Icon Picker Dialog Module.
+"""Icon Picker Dialog Module.
 
 Provides the IconPickerDialog for selecting marker icons.
 """
@@ -45,15 +44,13 @@ logger = logging.getLogger(__name__)
 
 
 class IconPickerDialog(QDialog):
-    """
-    Dialog for selecting a marker icon from available SVG icons.
+    """Dialog for selecting a marker icon from available SVG icons.
 
     Displays a grid of icon buttons that the user can click to select.
     """
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """
-        Initializes the IconPickerDialog.
+        """Initializes the IconPickerDialog.
 
         Args:
             parent: Parent widget.
@@ -113,8 +110,7 @@ class IconPickerDialog(QDialog):
         layout.addWidget(scroll)
 
     def _on_icon_selected(self, icon_name: str) -> None:
-        """
-        Handles icon selection.
+        """Handles icon selection.
 
         Args:
             icon_name: The selected icon filename.

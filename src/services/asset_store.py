@@ -1,8 +1,7 @@
-"""
-Asset Store Module.
+"""Asset Store Module.
 
-Manages filesystem operations for project assets including images,
-thumbnails, and trash functionality for undo/redo support.
+Manages filesystem operations for project assets including images, thumbnails, and trash
+functionality for undo/redo support.
 """
 
 import logging
@@ -17,17 +16,15 @@ logger = logging.getLogger(__name__)
 
 
 class AssetStore:
-    """
-    Manages filesystem operations for project assets (images, thumbnails).
-    Ensures deterministic paths and safe file handling.
+    """Manages filesystem operations for project assets (images, thumbnails). Ensures
+    deterministic paths and safe file handling.
 
-    In portable-only mode, assets are stored within the world directory
-    at <world_dir>/assets/ rather than a separate project root.
+    In portable-only mode, assets are stored within the world directory at
+    <world_dir>/assets/ rather than a separate project root.
     """
 
     def __init__(self, project_root: str) -> None:
-        """
-        Initialize the asset store.
+        """Initialize the asset store.
 
         Args:
             project_root: Root directory of the world containing assets folder.
@@ -49,8 +46,8 @@ class AssetStore:
     def get_owner_dir(
         self, owner_type: str, owner_id: str, is_thumbnail: bool = False
     ) -> Path:
-        """
-        Returns the directory path for a specific owner's images.
+        """Returns the directory path for a specific owner's images.
+
         Example: assets/images/event/<uuid>/
         """
         base_dir = self.thumbs_dir if is_thumbnail else self.images_dir
@@ -134,8 +131,8 @@ class AssetStore:
     def delete_files(
         self, image_rel_path: str, thumb_rel_path: Optional[str] = None
     ) -> Tuple[Optional[str], Optional[str]]:
-        """
-        Moves files to trash instead of permanent deletion.
+        """Moves files to trash instead of permanent deletion.
+
         Returns path to moved files in trash (relative to project root).
         """
         import time
@@ -179,9 +176,7 @@ class AssetStore:
         thumb_trash_rel: Optional[str],
         thumb_target_rel: Optional[str],
     ) -> None:
-        """
-        Restores files from trash to their original location.
-        """
+        """Restores files from trash to their original location."""
         try:
             if img_trash_rel:
                 trash_path = self.project_root / img_trash_rel

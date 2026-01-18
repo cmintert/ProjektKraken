@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Relation Management CLI.
+"""Relation Management CLI.
 
 Provides command-line tools for creating, listing, and deleting relations
 between events and entities.

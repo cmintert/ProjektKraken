@@ -1,5 +1,4 @@
-"""
-Entity List Widget Module.
+"""Entity List Widget Module.
 
 Displays a list of entities with controls for creating, refreshing, and deleting.
 """
@@ -22,8 +21,8 @@ from src.gui.utils.style_helper import StyleHelper
 
 
 class EntityListWidget(QWidget):
-    """
-    A dumb widget that purely displays a list of entities.
+    """A dumb widget that purely displays a list of entities.
+
     Emits signals when user interacts.
     """
 
@@ -34,8 +33,7 @@ class EntityListWidget(QWidget):
     create_requested = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """
-        Initializes the EntityListWidget.
+        """Initializes the EntityListWidget.
 
         Args:
             parent (QWidget, optional): The parent widget. Defaults to None.
@@ -77,9 +75,7 @@ class EntityListWidget(QWidget):
         self.empty_label.hide()
 
     def set_entities(self, entities: List[Entity]) -> None:
-        """
-        Populates the list widget with the provided entities.
-        """
+        """Populates the list widget with the provided entities."""
         self.list_widget.clear()
 
         if not entities:
@@ -99,8 +95,7 @@ class EntityListWidget(QWidget):
 
     @Slot()
     def _on_selection_changed(self) -> None:
-        """
-        Handles entity selection changes.
+        """Handles entity selection changes.
 
         Emits the entity_selected signal and enables/disables the delete button.
         """
@@ -114,8 +109,7 @@ class EntityListWidget(QWidget):
 
     @Slot()
     def _on_delete_clicked(self) -> None:
-        """
-        Handles delete button clicks.
+        """Handles delete button clicks.
 
         Emits the delete_requested signal with the selected entity ID.
         """
@@ -125,8 +119,7 @@ class EntityListWidget(QWidget):
             self.delete_requested.emit(entity_id)
 
     def minimumSizeHint(self) -> QSize:
-        """
-        Override to prevent dock collapse.
+        """Override to prevent dock collapse.
 
         Returns:
             QSize: Minimum size for usable entity list.
@@ -136,8 +129,7 @@ class EntityListWidget(QWidget):
         return QSize(250, 200)
 
     def sizeHint(self) -> QSize:
-        """
-        Preferred size for the entity list.
+        """Preferred size for the entity list.
 
         Returns:
             QSize: Comfortable working size.

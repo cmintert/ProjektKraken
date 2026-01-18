@@ -1,5 +1,4 @@
-"""
-Main Application Module (Legacy Shim).
+"""Main Application Module (Legacy Shim).
 
 This module has been refactored:
 - MainWindow class is now in src.app.main_window

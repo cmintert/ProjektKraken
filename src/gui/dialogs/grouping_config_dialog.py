@@ -1,9 +1,7 @@
-"""
-Grouping Configuration Dialog Module.
+"""Grouping Configuration Dialog Module.
 
-Provides a dialog for configuring timeline grouping by tags.
-Allows selecting tags, reordering them, choosing grouping mode,
-and editing tag colors.
+Provides a dialog for configuring timeline grouping by tags. Allows selecting tags,
+reordering them, choosing grouping mode, and editing tag colors.
 """
 
 import logging
@@ -37,8 +35,8 @@ logger = logging.getLogger(__name__)
 
 
 class ColorSwatch(QFrame):
-    """
-    Clickable color swatch widget.
+    """Clickable color swatch widget.
+
     Subclasses QFrame to avoid QPushButton styling issues.
     """
 
@@ -47,8 +45,7 @@ class ColorSwatch(QFrame):
     def __init__(
         self, color: str, size: int = 16, parent: Optional[QWidget] = None
     ) -> None:
-        """
-        Initialize the color swatch.
+        """Initialize the color swatch.
 
         Args:
             color: Hex color code (e.g., "#ff0000").
@@ -76,9 +73,8 @@ class ColorSwatch(QFrame):
 
 
 class TagListItem(QWidget):
-    """
-    Custom widget for displaying a tag in the list with checkbox,
-    color button, and event count.
+    """Custom widget for displaying a tag in the list with checkbox, color button, and
+    event count.
 
     Signals:
         color_changed: Emitted when color button is clicked.
@@ -93,8 +89,7 @@ class TagListItem(QWidget):
         event_count: int,
         parent: Optional[QWidget] = None,
     ) -> None:
-        """
-        Initializes the TagListItem.
+        """Initializes the TagListItem.
 
         Args:
             tag_name: The name of the tag.
@@ -147,8 +142,7 @@ class TagListItem(QWidget):
 
 
 class GroupingConfigDialog(QDialog):
-    """
-    Dialog for configuring timeline grouping.
+    """Dialog for configuring timeline grouping.
 
     Allows users to:
     - Select which tags to group by
@@ -166,8 +160,7 @@ class GroupingConfigDialog(QDialog):
         command_coordinator: Any,
         parent: Optional[QWidget] = None,
     ) -> None:
-        """
-        Initializes the GroupingConfigDialog.
+        """Initializes the GroupingConfigDialog.
 
         Args:
             tags_data: List of dicts with 'name', 'color', 'count' for each tag.
@@ -316,8 +309,7 @@ class GroupingConfigDialog(QDialog):
             logger.warning(f"Failed to load current grouping config: {e}")
 
     def _reorder_items_by_tags(self, tag_order: List[str]) -> None:
-        """
-        Reorders list items to match the given tag order.
+        """Reorders list items to match the given tag order.
 
         Args:
             tag_order: List of tag names in desired order.
@@ -347,8 +339,8 @@ class GroupingConfigDialog(QDialog):
             self._move_item(current_row, current_row + 1)
 
     def _move_item(self, source_row: int, target_row: int) -> None:
-        """
-        Moves an item from source_row to target_row by cloning and re-inserting.
+        """Moves an item from source_row to target_row by cloning and re-inserting.
+
         This avoids issues with takeItem causing widget destruction.
         """
         # 1. Get source item and widget
@@ -409,8 +401,7 @@ class GroupingConfigDialog(QDialog):
         self.list_widget.setCurrentRow(new_index)
 
     def _on_tag_color_changed(self, tag_name: str, color: str) -> None:
-        """
-        Handles tag color change.
+        """Handles tag color change.
 
         Args:
             tag_name: The name of the tag.

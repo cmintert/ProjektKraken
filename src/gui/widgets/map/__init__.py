@@ -1,5 +1,4 @@
-"""
-Map Widget Package.
+"""Map Widget Package.
 
 Provides map visualization components organized into separate modules.
 """

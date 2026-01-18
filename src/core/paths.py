@@ -1,10 +1,8 @@
-"""
-Path Utility Module.
-Handles resource path resolution for both development and bundled environments.
-Also manages user data directories for persistent storage.
+"""Path Utility Module. Handles resource path resolution for both development and
+bundled environments. Also manages user data directories for persistent storage.
 
-In portable-only mode (0.6.0+), worlds are stored next to the executable in a
-worlds/ directory rather than in the system's AppData folder.
+In portable-only mode (0.6.0+), worlds are stored next to the executable in a worlds/
+directory rather than in the system's AppData folder.
 """
 
 import os
@@ -13,9 +11,8 @@ from pathlib import Path
 
 
 def get_resource_path(relative_path: str) -> str:
-    """
-    Resolves the absolute path to a resource file.
-    Works for both development (venv) and PyInstaller bundled application.
+    """Resolves the absolute path to a resource file. Works for both development (venv)
+    and PyInstaller bundled application.
 
     Args:
         relative_path: The relative path to the resource from project root.
@@ -29,8 +26,7 @@ def get_resource_path(relative_path: str) -> str:
 
 
 def get_user_data_path(filename: str = "") -> str:
-    """
-    Returns the absolute path to a file in the user's application data directory.
+    """Returns the absolute path to a file in the user's application data directory.
     Creates the directory if it doesn't exist.
 
     Note: For Microsoft Store Python installations, APPDATA is virtualized.
@@ -67,8 +63,7 @@ def get_user_data_path(filename: str = "") -> str:
 
 
 def _resolve_ms_store_path(virtualized_path: Path) -> Path:
-    """
-    Resolves virtualized AppData path to actual filesystem path.
+    """Resolves virtualized AppData path to actual filesystem path.
 
     Microsoft Store Python redirects APPDATA writes to a sandboxed
     LocalCache folder. This function detects and returns the real path.
@@ -113,16 +108,15 @@ def _resolve_ms_store_path(virtualized_path: Path) -> Path:
 
 
 def get_default_layout_path() -> str:
-    """
-    Returns the absolute path to the default layout file.
+    """Returns the absolute path to the default layout file.
+
     Default layout is stored in src/assets/default_layout.json.
     """
     return get_resource_path(os.path.join("src", "assets", "default_layout.json"))
 
 
 def get_backup_directory() -> Path:
-    """
-    Returns the backup directory, creating it if necessary.
+    """Returns the backup directory, creating it if necessary.
 
     Returns:
         Path: Path to the backups directory in user data folder.
@@ -133,8 +127,7 @@ def get_backup_directory() -> Path:
 
 
 def get_executable_dir() -> Path:
-    """
-    Returns the directory containing the executable or main script.
+    """Returns the directory containing the executable or main script.
 
     For development: Returns the project root directory.
     For PyInstaller: Returns the directory containing the .exe.
@@ -152,8 +145,7 @@ def get_executable_dir() -> Path:
 
 
 def get_worlds_dir() -> Path:
-    """
-    Returns the worlds directory for portable-only mode.
+    """Returns the worlds directory for portable-only mode.
 
     The worlds directory is created next to the executable and contains
     all world subdirectories. Each world is a self-contained folder with
@@ -168,8 +160,7 @@ def get_worlds_dir() -> Path:
 
 
 def ensure_worlds_directory() -> Path:
-    """
-    Ensures the worlds directory exists and is writable.
+    """Ensures the worlds directory exists and is writable.
 
     Creates the worlds/ directory next to the executable if it doesn't exist.
     Validates write permissions.

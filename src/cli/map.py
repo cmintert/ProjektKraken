@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Map Management CLI.
+"""Map Management CLI.
 
 Provides command-line tools for creating, listing, updating, and deleting
 maps and markers.

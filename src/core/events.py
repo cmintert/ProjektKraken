@@ -16,8 +16,8 @@ from typing import Any, Dict
 
 @dataclass
 class Event:
-    """
-    Represents a specific point or span in time.
+    """Represents a specific point or span in time.
+
     Core unit of the Timeline.
     """
 
@@ -34,8 +34,7 @@ class Event:
     modified_at: float = field(default_factory=time.time)
 
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the Event instance to a dictionary for storage or serialization.
+        """Converts the Event instance to a dictionary for storage or serialization.
 
         Returns:
             Dict[str, Any]: A dictionary containing all the event's data,
@@ -55,8 +54,7 @@ class Event:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Event":
-        """
-        Creates an Event instance from a dictionary.
+        """Creates an Event instance from a dictionary.
 
         Args:
             data (Dict[str, Any]): A dictionary containing event data.
@@ -72,8 +70,7 @@ class Event:
 
     @property
     def tags(self) -> list[str]:
-        """
-        Returns the list of tags for this event.
+        """Returns the list of tags for this event.
 
         Tags are stored in the attributes dict under the "_tags" key.
 
@@ -84,8 +81,7 @@ class Event:
 
     @tags.setter
     def tags(self, value: list[str]) -> None:
-        """
-        Sets the tags for this event.
+        """Sets the tags for this event.
 
         Args:
             value (list[str]): List of tag strings.

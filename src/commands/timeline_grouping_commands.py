@@ -1,5 +1,4 @@
-"""
-Timeline Grouping Commands Module.
+"""Timeline Grouping Commands Module.
 
 Provides command classes for managing timeline grouping configurations:
 - SetTimelineGroupingCommand: Set or update tag order and mode
@@ -19,13 +18,10 @@ logger = logging.getLogger(__name__)
 
 
 class SetTimelineGroupingCommand(BaseCommand):
-    """
-    Command to set or update timeline grouping configuration.
-    """
+    """Command to set or update timeline grouping configuration."""
 
     def __init__(self, tag_order: List[str], mode: str = "DUPLICATE") -> None:
-        """
-        Initializes the SetTimelineGroupingCommand.
+        """Initializes the SetTimelineGroupingCommand.
 
         Args:
             tag_order: List of tag names defining groups and their order.
@@ -37,8 +33,7 @@ class SetTimelineGroupingCommand(BaseCommand):
         self._previous_config = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Executes the command to set timeline grouping configuration.
+        """Executes the command to set timeline grouping configuration.
 
         Args:
             db_service: The database service to use.
@@ -83,8 +78,7 @@ class SetTimelineGroupingCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Reverts timeline grouping configuration to previous state.
+        """Reverts timeline grouping configuration to previous state.
 
         Args:
             db_service: The database service to operate on.
@@ -108,20 +102,15 @@ class SetTimelineGroupingCommand(BaseCommand):
 
 
 class ClearTimelineGroupingCommand(BaseCommand):
-    """
-    Command to clear timeline grouping configuration.
-    """
+    """Command to clear timeline grouping configuration."""
 
     def __init__(self) -> None:
-        """
-        Initializes the ClearTimelineGroupingCommand.
-        """
+        """Initializes the ClearTimelineGroupingCommand."""
         super().__init__()
         self._previous_config = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Executes the command to clear timeline grouping configuration.
+        """Executes the command to clear timeline grouping configuration.
 
         Args:
             db_service: The database service to use.
@@ -153,8 +142,7 @@ class ClearTimelineGroupingCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Reverts clearing by restoring previous configuration.
+        """Reverts clearing by restoring previous configuration.
 
         Args:
             db_service: The database service to operate on.
@@ -175,13 +163,10 @@ class ClearTimelineGroupingCommand(BaseCommand):
 
 
 class UpdateTagColorCommand(BaseCommand):
-    """
-    Command to update a tag's color.
-    """
+    """Command to update a tag's color."""
 
     def __init__(self, tag_name: str, color: str) -> None:
-        """
-        Initializes the UpdateTagColorCommand.
+        """Initializes the UpdateTagColorCommand.
 
         Args:
             tag_name: The name of the tag to update.
@@ -193,8 +178,7 @@ class UpdateTagColorCommand(BaseCommand):
         self._previous_color = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """
-        Executes the command to update tag color.
+        """Executes the command to update tag color.
 
         Args:
             db_service: The database service to use.
@@ -241,8 +225,7 @@ class UpdateTagColorCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Reverts tag color to previous value.
+        """Reverts tag color to previous value.
 
         Args:
             db_service: The database service to operate on.

@@ -1,8 +1,7 @@
-"""
-Graph Widget Module.
+"""Graph Widget Module.
 
-Public facade widget for graph visualization of item relationships.
-This is the only public interface for the graph view functionality.
+Public facade widget for graph visualization of item relationships. This is the only
+public interface for the graph view functionality.
 """
 
 from typing import Any, Optional
@@ -20,8 +19,7 @@ MIN_GRAPH_HEIGHT = 100
 
 
 class GraphWidget(QWidget):
-    """
-    Public widget for visualizing item relationships as an interactive graph.
+    """Public widget for visualizing item relationships as an interactive graph.
 
     Encapsulates internal components (GraphFilterBar, GraphWebView, GraphBuilder)
     and exposes a clean public API for MainWindow integration.
@@ -47,8 +45,7 @@ class GraphWidget(QWidget):
     filter_changed = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """
-        Initializes the GraphWidget.
+        """Initializes the GraphWidget.
 
         Args:
             parent: Parent widget.
@@ -88,8 +85,7 @@ class GraphWidget(QWidget):
         self._show_empty_state()
 
     def _setup_ui(self) -> None:
-        """
-        Sets up the widget UI layout.
+        """Sets up the widget UI layout.
 
         Creates the vertical layout and adds the filter bar and web view components.
         """
@@ -106,11 +102,10 @@ class GraphWidget(QWidget):
         layout.addWidget(self._web_view, 1)
 
     def _connect_internal_signals(self) -> None:
-        """
-        Connects internal component signals to public signals.
+        """Connects internal component signals to public signals.
 
-        Wires up the web view and filter bar signals to the appropriate
-        GraphWidget signals or internal handlers.
+        Wires up the web view and filter bar signals to the appropriate GraphWidget
+        signals or internal handlers.
         """
         # Forward web view node clicks
         self._web_view.node_clicked.connect(self.node_clicked.emit)
@@ -123,8 +118,7 @@ class GraphWidget(QWidget):
         self._filter_bar.show_advanced_filter_requested.connect(self.show_filter_dialog)
 
     def _on_theme_changed(self, theme_data: dict[str, Any]) -> None:
-        """
-        Handles theme changes by refreshing the graph with new colors.
+        """Handles theme changes by refreshing the graph with new colors.
 
         Args:
             theme_data: Dictionary containing the new theme colors.
@@ -139,8 +133,7 @@ class GraphWidget(QWidget):
         self._refresh_display_locally()
 
     def _get_current_theme_config(self) -> dict[str, str]:
-        """
-        Extracts relevant colors from the current theme for the graph.
+        """Extracts relevant colors from the current theme for the graph.
 
         Returns:
             dict[str, str]: A dictionary of color codes for graph elements
@@ -162,11 +155,10 @@ class GraphWidget(QWidget):
     # --- Internal Logic ---
 
     def _on_toolbar_filter_changed(self) -> None:
-        """
-        Handles changes from toolbar combo boxes.
+        """Handles changes from toolbar combo boxes.
 
-        Syncs the toolbar selection to the advanced configuration's include lists
-        and emits the filter_changed signal.
+        Syncs the toolbar selection to the advanced configuration's include lists and
+        emits the filter_changed signal.
         """
         # Sync toolbar selection to advanced config "include"
         tags = self._filter_bar.get_selected_tags()
@@ -181,8 +173,7 @@ class GraphWidget(QWidget):
         self.filter_changed.emit()
 
     def _on_search_text_changed(self, text: str) -> None:
-        """
-        Handles search text changes for local filtering.
+        """Handles search text changes for local filtering.
 
         Args:
             text: The new search text.
@@ -191,11 +182,10 @@ class GraphWidget(QWidget):
         self._refresh_display_locally()
 
     def show_filter_dialog(self) -> None:
-        """
-        Shows the advanced filter dialog.
+        """Shows the advanced filter dialog.
 
-        If the dialog is accepted, updates the filter configuration and
-        emits the filter_changed signal.
+        If the dialog is accepted, updates the filter configuration and emits the
+        filter_changed signal.
         """
         from PySide6.QtWidgets import QDialog
 
@@ -219,8 +209,7 @@ class GraphWidget(QWidget):
             self.filter_changed.emit()
 
     def _refresh_display_locally(self, focus_node_id: str | None = None) -> None:
-        """
-        Refreshes the graph display using cached data and local filters.
+        """Refreshes the graph display using cached data and local filters.
 
         Args:
             focus_node_id: Optional ID of a node to focus on after refresh.
@@ -289,8 +278,7 @@ class GraphWidget(QWidget):
             )
 
     def _passes_tag_filter(self, node: dict, config: dict) -> bool:
-        """
-        Checks if a node passes the tag filter configuration.
+        """Checks if a node passes the tag filter configuration.
 
         Args:
             node: The node data dictionary.
@@ -334,8 +322,7 @@ class GraphWidget(QWidget):
             return len(matches) > 0
 
     def _passes_rel_type_filter(self, edge: dict, config: dict) -> bool:
-        """
-        Checks if an edge passes the relation type filter configuration.
+        """Checks if an edge passes the relation type filter configuration.
 
         Args:
             edge: The edge data dictionary.
@@ -363,8 +350,7 @@ class GraphWidget(QWidget):
     # --- Public API ---
 
     def set_available_tags(self, tags: list[str]) -> None:
-        """
-        Sets the list of available tags.
+        """Sets the list of available tags.
 
         Args:
             tags: A list of tag strings.
@@ -373,8 +359,7 @@ class GraphWidget(QWidget):
         self._filter_bar.set_available_tags(tags)
 
     def set_available_relation_types(self, rel_types: list[str]) -> None:
-        """
-        Sets the list of available relation types.
+        """Sets the list of available relation types.
 
         Args:
             rel_types: A list of relation type strings.
@@ -383,8 +368,7 @@ class GraphWidget(QWidget):
         self._filter_bar.set_available_relation_types(rel_types)
 
     def get_filter_config(self) -> dict[str, list[str]]:
-        """
-        Returns the current filter configuration.
+        """Returns the current filter configuration.
 
         Returns:
             dict[str, list[str]]: The current filter configuration, containing
@@ -405,8 +389,7 @@ class GraphWidget(QWidget):
         edges: list[dict[str, Any]],
         focus_node_id: str | None = None,
     ) -> None:
-        """
-        Displays the graph with the provided nodes and edges.
+        """Displays the graph with the provided nodes and edges.
 
         Caches the data and triggers a local refresh of the display.
 
@@ -431,16 +414,13 @@ class GraphWidget(QWidget):
         self._web_view.load_html(html)
 
     def clear(self) -> None:
-        """
-        Clears the graph display and internal data cache.
-        """
+        """Clears the graph display and internal data cache."""
         self._web_view.clear()
         self._all_nodes = []
         self._all_edges = []
 
     def showEvent(self, event):
-        """
-        Handle widget show event.
+        """Handle widget show event.
 
         Logs visibility and schedules a refresh of the web view to recover
         from transient invisibility or reparent issues.
@@ -467,8 +447,7 @@ class GraphWidget(QWidget):
         QTimer.singleShot(0, _refresh)
 
     def hideEvent(self, event):
-        """
-        Handle widget hide event.
+        """Handle widget hide event.
 
         Logs when the widget is hidden for diagnostic purposes.
 
@@ -479,8 +458,7 @@ class GraphWidget(QWidget):
         self._logger.info("GraphWidget.hideEvent — hidden")
 
     def resizeEvent(self, event):
-        """
-        Handle widget resize event.
+        """Handle widget resize event.
 
         Logs widget resizes for diagnostic purposes.
 

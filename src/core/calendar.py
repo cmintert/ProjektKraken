@@ -1,5 +1,4 @@
-"""
-Calendar System Module.
+"""Calendar System Module.
 
 Provides domain models and conversion logic for custom fantasy calendars.
 Supports variable month lengths, year variants, and bidirectional
@@ -26,8 +25,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class LeapYearRule:
-    """
-    Rule for calculating algorithmic leap years.
+    """Rule for calculating algorithmic leap years.
 
     Attributes:
         interval: Add leap day every N years (e.g., 4).
@@ -78,8 +76,7 @@ class LeapYearRule:
 
 @dataclass
 class MonthDefinition:
-    """
-    Definition of a calendar month.
+    """Definition of a calendar month.
 
     Attributes:
         name: Full month name (e.g., "Hammer", "January").
@@ -92,8 +89,7 @@ class MonthDefinition:
     days: int
 
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the MonthDefinition to a dictionary for serialization.
+        """Converts the MonthDefinition to a dictionary for serialization.
 
         Returns:
             Dict[str, Any]: Dictionary representation.
@@ -106,8 +102,7 @@ class MonthDefinition:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "MonthDefinition":
-        """
-        Creates a MonthDefinition from a dictionary.
+        """Creates a MonthDefinition from a dictionary.
 
         Args:
             data: Dictionary containing month data.
@@ -124,8 +119,7 @@ class MonthDefinition:
 
 @dataclass
 class WeekDefinition:
-    """
-    Definition of week structure.
+    """Definition of week structure.
 
     Attributes:
         day_names: Full names for each day of the week.
@@ -136,8 +130,7 @@ class WeekDefinition:
     day_abbreviations: List[str]
 
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the WeekDefinition to a dictionary for serialization.
+        """Converts the WeekDefinition to a dictionary for serialization.
 
         Returns:
             Dict[str, Any]: Dictionary representation.
@@ -149,8 +142,7 @@ class WeekDefinition:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "WeekDefinition":
-        """
-        Creates a WeekDefinition from a dictionary.
+        """Creates a WeekDefinition from a dictionary.
 
         Args:
             data: Dictionary containing week data.
@@ -166,8 +158,7 @@ class WeekDefinition:
 
 @dataclass
 class YearVariant:
-    """
-    Year-specific structure override for non-repeating calendars.
+    """Year-specific structure override for non-repeating calendars.
 
     Some fantasy calendars have years that differ from the standard
     structure (e.g., a special "Festival Year" with extra months).
@@ -181,8 +172,7 @@ class YearVariant:
     months: List[MonthDefinition]
 
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the YearVariant to a dictionary for serialization.
+        """Converts the YearVariant to a dictionary for serialization.
 
         Returns:
             Dict[str, Any]: Dictionary representation.
@@ -194,8 +184,7 @@ class YearVariant:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "YearVariant":
-        """
-        Creates a YearVariant from a dictionary.
+        """Creates a YearVariant from a dictionary.
 
         Args:
             data: Dictionary containing year variant data.
@@ -211,8 +200,7 @@ class YearVariant:
 
 @dataclass
 class CalendarConfig:
-    """
-    Complete calendar configuration for a world.
+    """Complete calendar configuration for a world.
 
     Defines the structure of a fantasy calendar including months,
     week days, and any year-specific variations.
@@ -240,8 +228,7 @@ class CalendarConfig:
     modified_at: float = field(default_factory=time.time)
 
     def validate(self) -> List[str]:
-        """
-        Validates the calendar configuration.
+        """Validates the calendar configuration.
 
         Returns:
             List[str]: List of validation error messages.
@@ -288,8 +275,7 @@ class CalendarConfig:
         return errors
 
     def get_months_for_year(self, year: int) -> List[MonthDefinition]:
-        """
-        Gets the month structure for a specific year.
+        """Gets the month structure for a specific year.
 
         Args:
             year: The year to get months for.
@@ -318,8 +304,7 @@ class CalendarConfig:
         return months
 
     def get_year_length(self, year: int) -> int:
-        """
-        Gets the total number of days in a specific year.
+        """Gets the total number of days in a specific year.
 
         Args:
             year: The year to calculate length for.
@@ -331,8 +316,7 @@ class CalendarConfig:
         return sum(m.days for m in months)
 
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Converts the CalendarConfig to a dictionary for serialization.
+        """Converts the CalendarConfig to a dictionary for serialization.
 
         Returns:
             Dict[str, Any]: Dictionary representation.
@@ -351,8 +335,7 @@ class CalendarConfig:
         }
 
     def to_json(self) -> str:
-        """
-        Converts the CalendarConfig to a JSON string.
+        """Converts the CalendarConfig to a JSON string.
 
         Returns:
             str: JSON representation.
@@ -361,8 +344,7 @@ class CalendarConfig:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "CalendarConfig":
-        """
-        Creates a CalendarConfig from a dictionary.
+        """Creates a CalendarConfig from a dictionary.
 
         Args:
             data: Dictionary containing calendar data.
@@ -389,8 +371,7 @@ class CalendarConfig:
 
     @classmethod
     def from_json(cls, json_str: str) -> "CalendarConfig":
-        """
-        Creates a CalendarConfig from a JSON string.
+        """Creates a CalendarConfig from a JSON string.
 
         Args:
             json_str: JSON string containing calendar data.
@@ -402,8 +383,7 @@ class CalendarConfig:
 
     @classmethod
     def create_default(cls) -> "CalendarConfig":
-        """
-        Creates a default calendar configuration (Gregorian).
+        """Creates a default calendar configuration (Gregorian).
 
         Returns:
             CalendarConfig: A Gregorian calendar.
@@ -465,8 +445,7 @@ class CalendarConfig:
 
 @dataclass
 class CalendarDate:
-    """
-    A structured representation of a calendar date.
+    """A structured representation of a calendar date.
 
     Uses 1-based indexing for user display (Year 1, Month 1, Day 1).
 
@@ -487,8 +466,7 @@ class CalendarDate:
     day_of_week_name: Optional[str] = None
 
     def __str__(self) -> str:
-        """
-        Returns human-readable string representation.
+        """Returns human-readable string representation.
 
         Returns:
             str: Formatted date string.
@@ -498,8 +476,7 @@ class CalendarDate:
 
 
 class CalendarConverter:
-    """
-    Bidirectional converter between float and CalendarDate.
+    """Bidirectional converter between float and CalendarDate.
 
     Handles the math to convert continuous float time values to
     structured calendar dates and vice versa. Supports:
@@ -512,8 +489,7 @@ class CalendarConverter:
     """
 
     def __init__(self, config: CalendarConfig) -> None:
-        """
-        Initializes the converter with a calendar configuration.
+        """Initializes the converter with a calendar configuration.
 
         Args:
             config: The calendar configuration to use.
@@ -523,8 +499,7 @@ class CalendarConverter:
         self._year_cache: Dict[int, float] = {}
 
     def to_float(self, date: CalendarDate) -> float:
-        """
-        Converts a structured date to an absolute day float.
+        """Converts a structured date to an absolute day float.
 
         Args:
             date: The CalendarDate to convert.
@@ -542,8 +517,7 @@ class CalendarConverter:
             return self._to_float_negative(date)
 
     def _to_float_positive(self, date: CalendarDate) -> float:
-        """
-        Converts a positive-year date to float.
+        """Converts a positive-year date to float.
 
         Args:
             date: Date with year >= 1.
@@ -579,8 +553,7 @@ class CalendarConverter:
         return total_days
 
     def _to_float_negative(self, date: CalendarDate) -> float:
-        """
-        Converts a negative/zero-year date to float.
+        """Converts a negative/zero-year date to float.
 
         Pre-Epoch dates (year <= 0) produce negative floats.
 
@@ -611,8 +584,7 @@ class CalendarConverter:
         return -(total_years_days - days_in_year)
 
     def from_float(self, absolute_day: float) -> CalendarDate:
-        """
-        Converts an absolute day float to a structured date.
+        """Converts an absolute day float to a structured date.
 
         Args:
             absolute_day: The float value to convert.
@@ -630,8 +602,7 @@ class CalendarConverter:
             return self._from_float_negative(absolute_day)
 
     def _from_float_positive(self, absolute_day: float) -> CalendarDate:
-        """
-        Converts a non-negative float to date.
+        """Converts a non-negative float to date.
 
         Args:
             absolute_day: Float >= 0.
@@ -679,8 +650,7 @@ class CalendarConverter:
         )
 
     def _from_float_negative(self, absolute_day: float) -> CalendarDate:
-        """
-        Converts a negative float to pre-Epoch date.
+        """Converts a negative float to pre-Epoch date.
 
         Args:
             absolute_day: Float < 0.
@@ -736,8 +706,7 @@ class CalendarConverter:
         )
 
     def format_date(self, absolute_day: float, format_str: Optional[str] = None) -> str:
-        """
-        Formats a float date as a human-readable string.
+        """Formats a float date as a human-readable string.
 
         Args:
             absolute_day: The float value to format.
