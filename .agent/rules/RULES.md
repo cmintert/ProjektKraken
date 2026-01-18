@@ -14,9 +14,6 @@ Desktop worldbuilding app - timeline-first lore creation with Trinity view (Edit
 - Virtual environment .venv
 
 ## Architecture
-```
-UI → Signal → Command → Service → Database
-```
 - **Core** (`src/core/`): Business logic, dataclasses, no UI deps
 - **Services** (`src/services/`): Database, workers, parsers
 - **Commands** (`src/commands/`): Undo/redo pattern (inherit `BaseCommand`)

@@ -44,7 +44,7 @@ class MockDbService:
     def get_relations(self, source_id: str) -> list:
         """
         Return mock relations for a source ID.
-        Relations are returned as List[Dict], consistent with DatabseService.
+        Relations are returned as List[Dict], consistent with DatabaseService.
         """
         return self._relations.get(source_id, [])
 
