@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-18
-### Internal
-- chore: Bump version to 0.7.0
+### Added
+- Feat: Implement Gregorian defaults and algorithmic leap years
 
 
 *This changelog was automatically generated.*

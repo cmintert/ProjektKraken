@@ -298,7 +298,7 @@ CalendarConverter: Bidirectional float/date converter.</p>
 </dl>
 <dl class="py class">
 <dt class="sig sig-object py" id="core.calendar.CalendarConfig">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.calendar.</span></span><span class="sig-name descname"><span class="pre">CalendarConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">id:</span> <span class="pre">str,</span> <span class="pre">name:</span> <span class="pre">str,</span> <span class="pre">months:</span> <span class="pre">~typing.List[~core.calendar.MonthDefinition],</span> <span class="pre">week:</span> <span class="pre">~core.calendar.WeekDefinition,</span> <span class="pre">year_variants:</span> <span class="pre">~typing.List[~core.calendar.YearVariant],</span> <span class="pre">epoch_name:</span> <span class="pre">str,</span> <span class="pre">is_active:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">False,</span> <span class="pre">created_at:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">modified_at:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/calendar.html#CalendarConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.CalendarConfig" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.calendar.</span></span><span class="sig-name descname"><span class="pre">CalendarConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">id:</span> <span class="pre">str,</span> <span class="pre">name:</span> <span class="pre">str,</span> <span class="pre">months:</span> <span class="pre">~typing.List[~core.calendar.MonthDefinition],</span> <span class="pre">week:</span> <span class="pre">~core.calendar.WeekDefinition,</span> <span class="pre">year_variants:</span> <span class="pre">~typing.List[~core.calendar.YearVariant],</span> <span class="pre">epoch_name:</span> <span class="pre">str,</span> <span class="pre">leap_year_rules:</span> <span class="pre">~typing.List[~core.calendar.LeapYearRule]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">is_active:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">False,</span> <span class="pre">created_at:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">modified_at:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/calendar.html#CalendarConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.CalendarConfig" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Complete calendar configuration for a world.</p>
 <p>Defines the structure of a fantasy calendar including months,
@@ -394,10 +394,10 @@ week days, and any year-specific variations.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="core.calendar.CalendarConfig.create_default">
 <em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create_default</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#core.calendar.CalendarConfig" title="core.calendar.CalendarConfig"><span class="pre">CalendarConfig</span></a></span></span><a class="reference internal" href="_modules/core/calendar.html#CalendarConfig.create_default"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.CalendarConfig.create_default" title="Link to this definition">¶</a></dt>
-<dd><p>Creates a default calendar configuration (simple 12x30 structure).</p>
+<dd><p>Creates a default calendar configuration (Gregorian).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A basic calendar with 12 months of 30 days.</p>
+<dd class="field-odd"><p>A Gregorian calendar.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="#core.calendar.CalendarConfig" title="core.calendar.CalendarConfig">CalendarConfig</a></p>
@@ -459,7 +459,7 @@ week days, and any year-specific variations.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><dl class="simple">
-<dt>Months for that year (may differ</dt><dd><p>if a YearVariant exists).</p>
+<dt>Months for that year (may differ</dt><dd><p>if a YearVariant exists or LeapYearRules apply).</p>
 </dd>
 </dl>
 </p>
@@ -495,6 +495,11 @@ week days, and any year-specific variations.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="core.calendar.CalendarConfig.is_active">
 <span class="sig-name descname"><span class="pre">is_active</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#core.calendar.CalendarConfig.is_active" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.CalendarConfig.leap_year_rules">
+<span class="sig-name descname"><span class="pre">leap_year_rules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#core.calendar.LeapYearRule" title="core.calendar.LeapYearRule"><span class="pre">LeapYearRule</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#core.calendar.CalendarConfig.leap_year_rules" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -778,6 +783,109 @@ Negative years produce negative floats.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="core.calendar.LeapYearRule">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.calendar.</span></span><span class="sig-name descname"><span class="pre">LeapYearRule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_interval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset_interval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">month_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_days</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/calendar.html#LeapYearRule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.LeapYearRule" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Rule for calculating algorithmic leap years.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.LeapYearRule.interval">
+<span class="sig-name descname"><span class="pre">interval</span></span><a class="headerlink" href="#core.calendar.LeapYearRule.interval" title="Link to this definition">¶</a></dt>
+<dd><p>Add leap day every N years (e.g., 4).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.LeapYearRule.skip_interval">
+<span class="sig-name descname"><span class="pre">skip_interval</span></span><a class="headerlink" href="#core.calendar.LeapYearRule.skip_interval" title="Link to this definition">¶</a></dt>
+<dd><p>Skip adding every N years (e.g., 100). 0 = no skip.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.LeapYearRule.reset_interval">
+<span class="sig-name descname"><span class="pre">reset_interval</span></span><a class="headerlink" href="#core.calendar.LeapYearRule.reset_interval" title="Link to this definition">¶</a></dt>
+<dd><p>Re-add every N years (e.g., 400). 0 = no reset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.LeapYearRule.month_index">
+<span class="sig-name descname"><span class="pre">month_index</span></span><a class="headerlink" href="#core.calendar.LeapYearRule.month_index" title="Link to this definition">¶</a></dt>
+<dd><p>Index of month to modify (0-based).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.calendar.LeapYearRule.extra_days">
+<span class="sig-name descname"><span class="pre">extra_days</span></span><a class="headerlink" href="#core.calendar.LeapYearRule.extra_days" title="Link to this definition">¶</a></dt>
+<dd><p>Number of days to add (usually 1).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.calendar.LeapYearRule.applies_to_year">
+<span class="sig-name descname"><span class="pre">applies_to_year</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">year</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/core/calendar.html#LeapYearRule.applies_to_year"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.LeapYearRule.applies_to_year" title="Link to this definition">¶</a></dt>
+<dd><p>Checks if this rule applies to the given year.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id14">
+<span class="sig-name descname"><span class="pre">extra_days</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#id14" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.calendar.LeapYearRule.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#core.calendar.LeapYearRule" title="core.calendar.LeapYearRule"><span class="pre">LeapYearRule</span></a></span></span><a class="reference internal" href="_modules/core/calendar.html#LeapYearRule.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.LeapYearRule.from_dict" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id15">
+<span class="sig-name descname"><span class="pre">interval</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#id15" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id16">
+<span class="sig-name descname"><span class="pre">month_index</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#id16" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id17">
+<span class="sig-name descname"><span class="pre">reset_interval</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#id17" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id18">
+<span class="sig-name descname"><span class="pre">skip_interval</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#id18" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.calendar.LeapYearRule.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/core/calendar.html#LeapYearRule.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.LeapYearRule.to_dict" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="core.calendar.MonthDefinition">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.calendar.</span></span><span class="sig-name descname"><span class="pre">MonthDefinition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">abbreviation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">days</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/calendar.html#MonthDefinition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.calendar.MonthDefinition" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
@@ -816,13 +924,13 @@ Negative years produce negative floats.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="id14">
-<span class="sig-name descname"><span class="pre">abbreviation</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#id14" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="id19">
+<span class="sig-name descname"><span class="pre">abbreviation</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#id19" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="id15">
-<span class="sig-name descname"><span class="pre">days</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#id15" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="id20">
+<span class="sig-name descname"><span class="pre">days</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#id20" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -843,8 +951,8 @@ Negative years produce negative floats.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="id16">
-<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#id16" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="id21">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#id21" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -891,13 +999,13 @@ Negative years produce negative floats.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="id17">
-<span class="sig-name descname"><span class="pre">day_abbreviations</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#id17" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="id22">
+<span class="sig-name descname"><span class="pre">day_abbreviations</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#id22" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="id18">
-<span class="sig-name descname"><span class="pre">day_names</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#id18" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="id23">
+<span class="sig-name descname"><span class="pre">day_names</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#id23" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -980,8 +1088,8 @@ structure (e.g., a special “Festival Year” with extra months).</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="id19">
-<span class="sig-name descname"><span class="pre">months</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#core.calendar.MonthDefinition" title="core.calendar.MonthDefinition"><span class="pre">MonthDefinition</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#id19" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="id24">
+<span class="sig-name descname"><span class="pre">months</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#core.calendar.MonthDefinition" title="core.calendar.MonthDefinition"><span class="pre">MonthDefinition</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#id24" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -999,8 +1107,8 @@ structure (e.g., a special “Festival Year” with extra months).</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="id20">
-<span class="sig-name descname"><span class="pre">year</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#id20" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="id25">
+<span class="sig-name descname"><span class="pre">year</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#id25" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1366,6 +1474,7 @@ logging configuration, and theme management.</p>
 <li><a class="reference internal" href="#core.calendar.CalendarConfig.get_year_length"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.get_year_length()</span></code></a></li>
 <li><a class="reference internal" href="#id2"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.id</span></code></a></li>
 <li><a class="reference internal" href="#core.calendar.CalendarConfig.is_active"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.is_active</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.CalendarConfig.leap_year_rules"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.leap_year_rules</span></code></a></li>
 <li><a class="reference internal" href="#id3"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.modified_at</span></code></a></li>
 <li><a class="reference internal" href="#id4"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.months</span></code></a></li>
 <li><a class="reference internal" href="#id5"><code class="docutils literal notranslate"><span class="pre">CalendarConfig.name</span></code></a></li>
@@ -1399,22 +1508,38 @@ logging configuration, and theme management.</p>
 <li><a class="reference internal" href="#id13"><code class="docutils literal notranslate"><span class="pre">CalendarDate.year</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#core.calendar.LeapYearRule"><code class="docutils literal notranslate"><span class="pre">LeapYearRule</span></code></a><ul>
+<li><a class="reference internal" href="#core.calendar.LeapYearRule.interval"><code class="docutils literal notranslate"><span class="pre">LeapYearRule.interval</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.LeapYearRule.skip_interval"><code class="docutils literal notranslate"><span class="pre">LeapYearRule.skip_interval</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.LeapYearRule.reset_interval"><code class="docutils literal notranslate"><span class="pre">LeapYearRule.reset_interval</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.LeapYearRule.month_index"><code class="docutils literal notranslate"><span class="pre">LeapYearRule.month_index</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.LeapYearRule.extra_days"><code class="docutils literal notranslate"><span class="pre">LeapYearRule.extra_days</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.LeapYearRule.applies_to_year"><code class="docutils literal notranslate"><span class="pre">LeapYearRule.applies_to_year()</span></code></a></li>
+<li><a class="reference internal" href="#id14"><code class="docutils literal notranslate"><span class="pre">LeapYearRule.extra_days</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.LeapYearRule.from_dict"><code class="docutils literal notranslate"><span class="pre">LeapYearRule.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#id15"><code class="docutils literal notranslate"><span class="pre">LeapYearRule.interval</span></code></a></li>
+<li><a class="reference internal" href="#id16"><code class="docutils literal notranslate"><span class="pre">LeapYearRule.month_index</span></code></a></li>
+<li><a class="reference internal" href="#id17"><code class="docutils literal notranslate"><span class="pre">LeapYearRule.reset_interval</span></code></a></li>
+<li><a class="reference internal" href="#id18"><code class="docutils literal notranslate"><span class="pre">LeapYearRule.skip_interval</span></code></a></li>
+<li><a class="reference internal" href="#core.calendar.LeapYearRule.to_dict"><code class="docutils literal notranslate"><span class="pre">LeapYearRule.to_dict()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#core.calendar.MonthDefinition"><code class="docutils literal notranslate"><span class="pre">MonthDefinition</span></code></a><ul>
 <li><a class="reference internal" href="#core.calendar.MonthDefinition.name"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.name</span></code></a></li>
 <li><a class="reference internal" href="#core.calendar.MonthDefinition.abbreviation"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.abbreviation</span></code></a></li>
 <li><a class="reference internal" href="#core.calendar.MonthDefinition.days"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.days</span></code></a></li>
-<li><a class="reference internal" href="#id14"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.abbreviation</span></code></a></li>
-<li><a class="reference internal" href="#id15"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.days</span></code></a></li>
+<li><a class="reference internal" href="#id19"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.abbreviation</span></code></a></li>
+<li><a class="reference internal" href="#id20"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.days</span></code></a></li>
 <li><a class="reference internal" href="#core.calendar.MonthDefinition.from_dict"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.from_dict()</span></code></a></li>
-<li><a class="reference internal" href="#id16"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.name</span></code></a></li>
+<li><a class="reference internal" href="#id21"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.name</span></code></a></li>
 <li><a class="reference internal" href="#core.calendar.MonthDefinition.to_dict"><code class="docutils literal notranslate"><span class="pre">MonthDefinition.to_dict()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#core.calendar.WeekDefinition"><code class="docutils literal notranslate"><span class="pre">WeekDefinition</span></code></a><ul>
 <li><a class="reference internal" href="#core.calendar.WeekDefinition.day_names"><code class="docutils literal notranslate"><span class="pre">WeekDefinition.day_names</span></code></a></li>
 <li><a class="reference internal" href="#core.calendar.WeekDefinition.day_abbreviations"><code class="docutils literal notranslate"><span class="pre">WeekDefinition.day_abbreviations</span></code></a></li>
-<li><a class="reference internal" href="#id17"><code class="docutils literal notranslate"><span class="pre">WeekDefinition.day_abbreviations</span></code></a></li>
-<li><a class="reference internal" href="#id18"><code class="docutils literal notranslate"><span class="pre">WeekDefinition.day_names</span></code></a></li>
+<li><a class="reference internal" href="#id22"><code class="docutils literal notranslate"><span class="pre">WeekDefinition.day_abbreviations</span></code></a></li>
+<li><a class="reference internal" href="#id23"><code class="docutils literal notranslate"><span class="pre">WeekDefinition.day_names</span></code></a></li>
 <li><a class="reference internal" href="#core.calendar.WeekDefinition.from_dict"><code class="docutils literal notranslate"><span class="pre">WeekDefinition.from_dict()</span></code></a></li>
 <li><a class="reference internal" href="#core.calendar.WeekDefinition.to_dict"><code class="docutils literal notranslate"><span class="pre">WeekDefinition.to_dict()</span></code></a></li>
 </ul>
@@ -1423,9 +1548,9 @@ logging configuration, and theme management.</p>
 <li><a class="reference internal" href="#core.calendar.YearVariant.year"><code class="docutils literal notranslate"><span class="pre">YearVariant.year</span></code></a></li>
 <li><a class="reference internal" href="#core.calendar.YearVariant.months"><code class="docutils literal notranslate"><span class="pre">YearVariant.months</span></code></a></li>
 <li><a class="reference internal" href="#core.calendar.YearVariant.from_dict"><code class="docutils literal notranslate"><span class="pre">YearVariant.from_dict()</span></code></a></li>
-<li><a class="reference internal" href="#id19"><code class="docutils literal notranslate"><span class="pre">YearVariant.months</span></code></a></li>
+<li><a class="reference internal" href="#id24"><code class="docutils literal notranslate"><span class="pre">YearVariant.months</span></code></a></li>
 <li><a class="reference internal" href="#core.calendar.YearVariant.to_dict"><code class="docutils literal notranslate"><span class="pre">YearVariant.to_dict()</span></code></a></li>
-<li><a class="reference internal" href="#id20"><code class="docutils literal notranslate"><span class="pre">YearVariant.year</span></code></a></li>
+<li><a class="reference internal" href="#id25"><code class="docutils literal notranslate"><span class="pre">YearVariant.year</span></code></a></li>
 </ul>
 </li>
 </ul>

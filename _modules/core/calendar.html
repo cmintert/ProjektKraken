@@ -296,6 +296,70 @@
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
+<div class="viewcode-block" id="LeapYearRule">
+<a class="viewcode-back" href="../../core.html#core.calendar.LeapYearRule">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">LeapYearRule</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Rule for calculating algorithmic leap years.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        interval: Add leap day every N years (e.g., 4).</span>
+<span class="sd">        skip_interval: Skip adding every N years (e.g., 100). 0 = no skip.</span>
+<span class="sd">        reset_interval: Re-add every N years (e.g., 400). 0 = no reset.</span>
+<span class="sd">        month_index: Index of month to modify (0-based).</span>
+<span class="sd">        extra_days: Number of days to add (usually 1).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">interval</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">skip_interval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">reset_interval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">month_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># Default to 2nd month (Feb)</span>
+    <span class="n">extra_days</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+
+<div class="viewcode-block" id="LeapYearRule.applies_to_year">
+<a class="viewcode-back" href="../../core.html#core.calendar.LeapYearRule.applies_to_year">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">applies_to_year</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">year</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Checks if this rule applies to the given year.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">year</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">skip_interval</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">year</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">skip_interval</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">reset_interval</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">year</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">reset_interval</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">pass</span>  <span class="c1"># It is a leap year</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="LeapYearRule.to_dict">
+<a class="viewcode-back" href="../../core.html#core.calendar.LeapYearRule.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;interval&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">,</span>
+            <span class="s2">&quot;skip_interval&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">skip_interval</span><span class="p">,</span>
+            <span class="s2">&quot;reset_interval&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">reset_interval</span><span class="p">,</span>
+            <span class="s2">&quot;month_index&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">month_index</span><span class="p">,</span>
+            <span class="s2">&quot;extra_days&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">extra_days</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="LeapYearRule.from_dict">
+<a class="viewcode-back" href="../../core.html#core.calendar.LeapYearRule.from_dict">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;LeapYearRule&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">interval</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;interval&quot;</span><span class="p">],</span>
+            <span class="n">skip_interval</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;skip_interval&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="n">reset_interval</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reset_interval&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="n">month_index</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;month_index&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="n">extra_days</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;extra_days&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
 <div class="viewcode-block" id="MonthDefinition">
 <a class="viewcode-back" href="../../core.html#core.calendar.MonthDefinition">[docs]</a>
 <span class="nd">@dataclass</span>
@@ -483,6 +547,7 @@
     <span class="n">week</span><span class="p">:</span> <span class="n">WeekDefinition</span>
     <span class="n">year_variants</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">YearVariant</span><span class="p">]</span>
     <span class="n">epoch_name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">leap_year_rules</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">LeapYearRule</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
     <span class="n">is_active</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">created_at</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">)</span>
     <span class="n">modified_at</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">)</span>
@@ -549,12 +614,26 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[MonthDefinition]: Months for that year (may differ</span>
-<span class="sd">                                   if a YearVariant exists).</span>
+<span class="sd">                                   if a YearVariant exists or LeapYearRules apply).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># 1. Check for manual override (YearVariant)</span>
         <span class="k">for</span> <span class="n">variant</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">year_variants</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">variant</span><span class="o">.</span><span class="n">year</span> <span class="o">==</span> <span class="n">year</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">variant</span><span class="o">.</span><span class="n">months</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">months</span></div>
+
+        <span class="c1"># 2. Start with base months</span>
+        <span class="c1"># We must copy them because we might modify days</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+
+        <span class="n">months</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">months</span><span class="p">)</span>
+
+        <span class="c1"># 3. Apply algorithmic leap year rules</span>
+        <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">leap_year_rules</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">rule</span><span class="o">.</span><span class="n">applies_to_year</span><span class="p">(</span><span class="n">year</span><span class="p">):</span>
+                <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">rule</span><span class="o">.</span><span class="n">month_index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">months</span><span class="p">):</span>
+                    <span class="n">months</span><span class="p">[</span><span class="n">rule</span><span class="o">.</span><span class="n">month_index</span><span class="p">]</span><span class="o">.</span><span class="n">days</span> <span class="o">+=</span> <span class="n">rule</span><span class="o">.</span><span class="n">extra_days</span>
+
+        <span class="k">return</span> <span class="n">months</span></div>
 
 
 <div class="viewcode-block" id="CalendarConfig.get_year_length">
@@ -588,6 +667,7 @@
             <span class="s2">&quot;months&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">months</span><span class="p">],</span>
             <span class="s2">&quot;week&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">week</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
             <span class="s2">&quot;year_variants&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">v</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">year_variants</span><span class="p">],</span>
+            <span class="s2">&quot;leap_year_rules&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">leap_year_rules</span><span class="p">],</span>
             <span class="s2">&quot;epoch_name&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">epoch_name</span><span class="p">,</span>
             <span class="s2">&quot;is_active&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_active</span><span class="p">,</span>
             <span class="s2">&quot;created_at&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">created_at</span><span class="p">,</span>
@@ -628,6 +708,9 @@
             <span class="n">year_variants</span><span class="o">=</span><span class="p">[</span>
                 <span class="n">YearVariant</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;year_variants&quot;</span><span class="p">,</span> <span class="p">[])</span>
             <span class="p">],</span>
+            <span class="n">leap_year_rules</span><span class="o">=</span><span class="p">[</span>
+                <span class="n">LeapYearRule</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;leap_year_rules&quot;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="p">],</span>
             <span class="n">epoch_name</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;epoch_name&quot;</span><span class="p">],</span>
             <span class="n">is_active</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;is_active&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
             <span class="n">created_at</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;created_at&quot;</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()),</span>
@@ -656,34 +739,63 @@
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">create_default</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;CalendarConfig&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates a default calendar configuration (simple 12x30 structure).</span>
+<span class="sd">        Creates a default calendar configuration (Gregorian).</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            CalendarConfig: A basic calendar with 12 months of 30 days.</span>
+<span class="sd">            CalendarConfig: A Gregorian calendar.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">months</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">MonthDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Month </span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">abbreviation</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;M</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">days</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+        <span class="c1"># Standard Gregorian Months</span>
+        <span class="n">month_data</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="s2">&quot;January&quot;</span><span class="p">,</span> <span class="s2">&quot;Jan&quot;</span><span class="p">,</span> <span class="mi">31</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;February&quot;</span><span class="p">,</span> <span class="s2">&quot;Feb&quot;</span><span class="p">,</span> <span class="mi">28</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;March&quot;</span><span class="p">,</span> <span class="s2">&quot;Mar&quot;</span><span class="p">,</span> <span class="mi">31</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;April&quot;</span><span class="p">,</span> <span class="s2">&quot;Apr&quot;</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;May&quot;</span><span class="p">,</span> <span class="s2">&quot;May&quot;</span><span class="p">,</span> <span class="mi">31</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;June&quot;</span><span class="p">,</span> <span class="s2">&quot;Jun&quot;</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;July&quot;</span><span class="p">,</span> <span class="s2">&quot;Jul&quot;</span><span class="p">,</span> <span class="mi">31</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;August&quot;</span><span class="p">,</span> <span class="s2">&quot;Aug&quot;</span><span class="p">,</span> <span class="mi">31</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;September&quot;</span><span class="p">,</span> <span class="s2">&quot;Sep&quot;</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;October&quot;</span><span class="p">,</span> <span class="s2">&quot;Oct&quot;</span><span class="p">,</span> <span class="mi">31</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;November&quot;</span><span class="p">,</span> <span class="s2">&quot;Nov&quot;</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;December&quot;</span><span class="p">,</span> <span class="s2">&quot;Dec&quot;</span><span class="p">,</span> <span class="mi">31</span><span class="p">),</span>
         <span class="p">]</span>
+
+        <span class="n">months</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">MonthDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">abbreviation</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">days</span><span class="o">=</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">month_data</span>
+        <span class="p">]</span>
+
         <span class="n">week</span> <span class="o">=</span> <span class="n">WeekDefinition</span><span class="p">(</span>
             <span class="n">day_names</span><span class="o">=</span><span class="p">[</span>
-                <span class="s2">&quot;Starday&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Monday&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Tuesday&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Wednesday&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Thursday&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Friday&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Saturday&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;Sunday&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;Moonday&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;Godsday&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;Waterday&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;Earthday&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;Freeday&quot;</span><span class="p">,</span>
             <span class="p">],</span>
-            <span class="n">day_abbreviations</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;St&quot;</span><span class="p">,</span> <span class="s2">&quot;Su&quot;</span><span class="p">,</span> <span class="s2">&quot;Mo&quot;</span><span class="p">,</span> <span class="s2">&quot;Go&quot;</span><span class="p">,</span> <span class="s2">&quot;Wa&quot;</span><span class="p">,</span> <span class="s2">&quot;Ea&quot;</span><span class="p">,</span> <span class="s2">&quot;Fr&quot;</span><span class="p">],</span>
+            <span class="n">day_abbreviations</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Mon&quot;</span><span class="p">,</span> <span class="s2">&quot;Tue&quot;</span><span class="p">,</span> <span class="s2">&quot;Wed&quot;</span><span class="p">,</span> <span class="s2">&quot;Thu&quot;</span><span class="p">,</span> <span class="s2">&quot;Fri&quot;</span><span class="p">,</span> <span class="s2">&quot;Sat&quot;</span><span class="p">,</span> <span class="s2">&quot;Sun&quot;</span><span class="p">],</span>
         <span class="p">)</span>
+
+        <span class="c1"># Gregorian Leap Year Rule:</span>
+        <span class="c1"># Every 4 years, except every 100, unless every 400.</span>
+        <span class="c1"># Adds 1 day to index 1 (February).</span>
+        <span class="n">leap_rule</span> <span class="o">=</span> <span class="n">LeapYearRule</span><span class="p">(</span>
+            <span class="n">interval</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+            <span class="n">skip_interval</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+            <span class="n">reset_interval</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span>
+            <span class="n">month_index</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">extra_days</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
             <span class="nb">id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()),</span>
-            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Default Calendar&quot;</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Gregorian Calendar&quot;</span><span class="p">,</span>
             <span class="n">months</span><span class="o">=</span><span class="n">months</span><span class="p">,</span>
             <span class="n">week</span><span class="o">=</span><span class="n">week</span><span class="p">,</span>
             <span class="n">year_variants</span><span class="o">=</span><span class="p">[],</span>
-            <span class="n">epoch_name</span><span class="o">=</span><span class="s2">&quot;Year&quot;</span><span class="p">,</span>
+            <span class="n">leap_year_rules</span><span class="o">=</span><span class="p">[</span><span class="n">leap_rule</span><span class="p">],</span>
+            <span class="n">epoch_name</span><span class="o">=</span><span class="s2">&quot;AD&quot;</span><span class="p">,</span>
         <span class="p">)</span></div>
 </div>
 
@@ -794,6 +906,14 @@
         <span class="n">total_days</span> <span class="o">=</span> <span class="mf">0.0</span>
 
         <span class="c1"># Sum all complete years before target year</span>
+        <span class="c1"># Optimization: If we have no variants and simple rules, we could calculate faster</span>
+        <span class="c1"># But for now, correctness first. Iterate years.</span>
+        <span class="c1"># To avoid massive loops for huge years (e.g. Year 20000), we could optimize later.</span>
+
+        <span class="c1"># Simple optimization: if no variants and logic is regular...</span>
+        <span class="c1"># For now, just sum (naive implementation - O(N) where N is year)</span>
+        <span class="c1"># TODO: Implement O(1) calculation for standard Gregorian</span>
+
         <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="p">):</span>
             <span class="n">total_days</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">get_year_length</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
 
@@ -1000,6 +1120,18 @@
                 <span class="n">time_str</span> <span class="o">=</span> <span class="s2">&quot;, Morning&quot;</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">time_str</span> <span class="o">=</span> <span class="s2">&quot;, Evening&quot;</span>
+
+        <span class="c1"># Day of week</span>
+        <span class="c1"># 0.0 is the start of the epoch. Assuming epoch starts on first day of week.</span>
+        <span class="n">week_days</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">week</span><span class="o">.</span><span class="n">day_names</span>
+        <span class="k">if</span> <span class="n">week_days</span><span class="p">:</span>
+            <span class="c1"># floor(absolute_day) gives the integer day count from epoch</span>
+            <span class="c1"># e.g. 0.5 -&gt; 0 -&gt; index 0</span>
+            <span class="n">day_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">absolute_day</span><span class="p">)</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">week_days</span><span class="p">)</span>
+            <span class="c1"># handle negative modulo correctly in python?</span>
+            <span class="c1"># -1 % 7 = 6 (correct, previous day)</span>
+            <span class="n">day_name</span> <span class="o">=</span> <span class="n">week_days</span><span class="p">[</span><span class="n">day_idx</span><span class="p">]</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Year </span><span class="si">{</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">month_name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">date</span><span class="o">.</span><span class="n">day</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">day_name</span><span class="si">}{</span><span class="n">time_str</span><span class="si">}</span><span class="s2">&quot;</span>
 
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Year </span><span class="si">{</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">month_name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">date</span><span class="o">.</span><span class="n">day</span><span class="si">}{</span><span class="n">time_str</span><span class="si">}</span><span class="s2">&quot;</span></div>
 </div>
