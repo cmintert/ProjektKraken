@@ -347,13 +347,13 @@ class FastInjectDialog(QDialog):
 
     def _add_row(self, row: int, key: str, value: Any, type_: str) -> None:
         """Add a row for an attribute or tag."""
+        import re
+
         # Expect scalar values only (string, int, etc.)
         display_value = str(value)
         original_type = type(value)
 
         # Check if this is a pure variable (entire value is {{VAR}} or {{VAR:opts}})
-        import re
-
         pure_var_pattern = re.compile(r"^\{\{([A-Za-z0-9_]+)(?::([^}]+))?\}\}$")
         match = pure_var_pattern.match(display_value)
 
@@ -364,8 +364,10 @@ class FastInjectDialog(QDialog):
 
         # Determine input widget type
         input_widget = None
+        has_sub_controls = False
+
         if match:
-            # Pure variable
+            # Pure variable - use dropdown or text input in main row
             options = match.group(2)
 
             if options:
@@ -380,15 +382,106 @@ class FastInjectDialog(QDialog):
                 input_widget.setStyleSheet(StyleHelper.get_input_field_style())
                 input_widget.setPlaceholderText(display_value)
         else:
-            # Fixed value or mixed content -> Text input
-            input_widget = QLineEdit(display_value)
-            input_widget.setStyleSheet(StyleHelper.get_input_field_style())
+            # Check for mixed content (variables embedded in text)
+            var_pattern = re.compile(r"\{\{([A-Za-z0-9_]+)(?::([^}]+))?\}\}")
+            matches = list(var_pattern.finditer(display_value))
+
+            if matches:
+                # Mixed content with variables - show result + sub-controls
+                has_sub_controls = True
+                input_widget = QLineEdit()
+                input_widget.setStyleSheet(StyleHelper.get_input_field_style())
+                input_widget.setReadOnly(True)  # Make read-only for mixed content
+                # Will set text after creating sub-controls
+            else:
+                # Fixed value -> Text input
+                input_widget = QLineEdit(display_value)
+                input_widget.setStyleSheet(StyleHelper.get_input_field_style())
 
         self.form_layout.addWidget(lbl, row, 0)
         self.form_layout.addWidget(input_widget, row, 1)
         self.form_layout.addWidget(chk, row, 2)
 
         self._form_widgets.append((type_, key, chk, input_widget, original_type))
+
+        # Add sub-controls for mixed content
+        if has_sub_controls:
+            sub_vars = {}  # VarName -> Widget
+
+            # Extract unique variables
+            unique_vars = {}
+            for m in matches:
+                v_name = m.group(1)
+                opts = m.group(2)
+                if v_name not in unique_vars:
+                    unique_vars[v_name] = opts
+                elif opts and not unique_vars.get(v_name):
+                    unique_vars[v_name] = opts
+
+            # Create sub-rows for each variable
+            for v_name, opts in unique_vars.items():
+                row += 1
+
+                sub_lbl = QLabel(f"  ↳ {v_name}:")
+                sub_lbl.setStyleSheet("color: #888888; font-style: italic;")
+
+                sub_inp = None
+                if opts:
+                    sub_inp = QComboBox()
+                    sub_inp.setStyleSheet(StyleHelper.get_input_field_style())
+                    sub_inp.addItems([o.strip() for o in opts.split("|")])
+                else:
+                    sub_inp = QLineEdit()
+                    sub_inp.setPlaceholderText(f"Value for {v_name}")
+                    sub_inp.setStyleSheet(StyleHelper.get_input_field_style())
+
+                # Position in grid (no checkbox for sub-controls)
+                self.form_layout.addWidget(sub_lbl, row, 0)
+                self.form_layout.addWidget(sub_inp, row, 1)
+
+                sub_vars[v_name] = sub_inp
+
+                # Connect signal to update main input
+                if isinstance(sub_inp, QComboBox):
+                    sub_inp.currentTextChanged.connect(
+                        lambda _, m=input_widget, t=display_value, s=sub_vars: self._update_result_field(
+                            m, t, s
+                        )
+                    )
+                else:
+                    sub_inp.textChanged.connect(
+                        lambda _, m=input_widget, t=display_value, s=sub_vars: self._update_result_field(
+                            m, t, s
+                        )
+                    )
+
+            # Store the sub-controls reference on the main widget for later retrieval
+            input_widget.setProperty("sub_vars", sub_vars)
+            input_widget.setProperty("template_str", display_value)
+
+            # Initial update to show resolved result
+            self._update_result_field(input_widget, display_value, sub_vars)
+
+    def _update_result_field(
+        self, result_field: QLineEdit, template_str: str, sub_vars: Dict[str, QWidget]
+    ) -> None:
+        """Update result field based on sub-variable values."""
+        import re
+
+        var_pattern = re.compile(r"\{\{([A-Za-z0-9_]+)(?::([^}]+))?\}\}")
+
+        def replacer(match):
+            v_name = match.group(1)
+            if v_name in sub_vars:
+                widget = sub_vars[v_name]
+                if isinstance(widget, QComboBox):
+                    return widget.currentText()
+                else:
+                    return widget.text()
+            return match.group(0)  # Keep original if no replacement
+
+        result_text = var_pattern.sub(replacer, template_str)
+        result_field.setText(result_text)
 
     def _on_apply(self) -> None:
         """Collect values and create resolved template."""
