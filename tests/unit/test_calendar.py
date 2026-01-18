@@ -605,3 +605,15 @@ class TestCalendarConverterFormatDate:
         result = converter.format_date(14.0)  # Day 15
 
         assert "15" in result
+
+    def test_format_includes_weekday(self, simple_calendar: CalendarConfig):
+        """Test that formatted date includes week day name."""
+        converter = CalendarConverter(simple_calendar)
+
+        # 0.0 = Day 1 = Index 0 = "Day1" (from fixture)
+        result_start = converter.format_date(0.0)
+        assert "Day1" in result_start
+
+        # 1.0 = Day 2 = Index 1 = "Day2"
+        result_next = converter.format_date(1.0)
+        assert "Day2" in result_next

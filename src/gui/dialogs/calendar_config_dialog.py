@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
 from src.core.calendar import (
     CalendarConfig,
     CalendarConverter,
+    LeapYearRule,
     MonthDefinition,
     WeekDefinition,
 )
@@ -162,6 +163,36 @@ class CalendarConfigDialog(QDialog):
 
         self.tabs.addTab(self.week_tab, "Week Days")
 
+        # Tab 3: Leap Rules
+        self.leap_tab = QWidget()
+        leap_layout = QVBoxLayout(self.leap_tab)
+
+        # Leap rules table
+        self.leap_table = QTableWidget()
+        self.leap_table.setColumnCount(5)
+        self.leap_table.setHorizontalHeaderLabels(
+            ["Interval", "Skip", "Reset", "Month Idx", "Days"]
+        )
+        self.leap_table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
+        self.leap_table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.leap_table.itemChanged.connect(self._update_preview)
+        leap_layout.addWidget(self.leap_table)
+
+        # Leap buttons
+        leap_btn_layout = QHBoxLayout()
+        self.btn_add_rule = QPushButton("Add Rule")
+        self.btn_add_rule.clicked.connect(self._on_add_rule)
+        self.btn_remove_rule = QPushButton("Remove Selected")
+        self.btn_remove_rule.clicked.connect(self._on_remove_rule)
+        leap_btn_layout.addWidget(self.btn_add_rule)
+        leap_btn_layout.addWidget(self.btn_remove_rule)
+        leap_btn_layout.addStretch()
+        leap_layout.addLayout(leap_btn_layout)
+
+        self.tabs.addTab(self.leap_tab, "Leap Rules")
+
         # --- Preview Section ---
         preview_group = QGroupBox("Date Preview")
         preview_layout = QHBoxLayout()
@@ -219,7 +250,40 @@ class CalendarConfigDialog(QDialog):
         self.day_names_edit.setText(", ".join(self._config.week.day_names))
         self.day_abbrev_edit.setText(", ".join(self._config.week.day_abbreviations))
 
+        # Load leap rules
+        self.leap_table.blockSignals(True)
+        self.leap_table.setRowCount(len(self._config.leap_year_rules))
+        for row, rule in enumerate(self._config.leap_year_rules):
+            self.leap_table.setItem(row, 0, QTableWidgetItem(str(rule.interval)))
+            self.leap_table.setItem(row, 1, QTableWidgetItem(str(rule.skip_interval)))
+            self.leap_table.setItem(row, 2, QTableWidgetItem(str(rule.reset_interval)))
+            self.leap_table.setItem(row, 3, QTableWidgetItem(str(rule.month_index)))
+            self.leap_table.setItem(row, 4, QTableWidgetItem(str(rule.extra_days)))
+        self.leap_table.blockSignals(False)
+
         self._update_preview()
+
+    @Slot()
+    def _on_add_rule(self) -> None:
+        """Adds a new leap rule row."""
+        row = self.leap_table.rowCount()
+        self.leap_table.insertRow(row)
+        # Default: Every 4 years, add 1 day to month 2 (Feb) -> Index 2 in UI
+        self.leap_table.setItem(row, 0, QTableWidgetItem("4"))
+        self.leap_table.setItem(row, 1, QTableWidgetItem("0"))
+        self.leap_table.setItem(row, 2, QTableWidgetItem("0"))
+        # Default to 2nd month (Feb), so show "2"
+        self.leap_table.setItem(row, 3, QTableWidgetItem("2"))
+        self.leap_table.setItem(row, 4, QTableWidgetItem("1"))
+        self._update_preview()
+
+    @Slot()
+    def _on_remove_rule(self) -> None:
+        """Removes the selected leap rule row."""
+        current_row = self.leap_table.currentRow()
+        if current_row >= 0:
+            self.leap_table.removeRow(current_row)
+            self._update_preview()
 
     @Slot()
     def _on_add_month(self) -> None:
@@ -297,7 +361,7 @@ class CalendarConfigDialog(QDialog):
 
         week = WeekDefinition(day_names=day_names, day_abbreviations=day_abbrevs)
 
-        return CalendarConfig(
+        config = CalendarConfig(
             id=self._config.id,
             name=self.name_edit.text() or "Unnamed Calendar",
             months=months,
@@ -306,6 +370,35 @@ class CalendarConfigDialog(QDialog):
             epoch_name=self.epoch_edit.text() or "Year",
             created_at=self._config.created_at,
         )
+
+        # Build leap rules
+        rules = []
+        for row in range(self.leap_table.rowCount()):
+            try:
+                interval = int(self.leap_table.item(row, 0).text())
+                skip = int(self.leap_table.item(row, 1).text())
+                reset = int(self.leap_table.item(row, 2).text())
+                # UI is 1-based, internal is 0-based
+                month_idx = int(self.leap_table.item(row, 3).text()) - 1
+                days = int(self.leap_table.item(row, 4).text())
+
+                # Basic validation
+                if interval > 0:
+                    rules.append(
+                        LeapYearRule(
+                            interval=interval,
+                            skip_interval=skip,
+                            reset_interval=reset,
+                            month_index=month_idx,
+                            extra_days=days,
+                        )
+                    )
+            except (ValueError, AttributeError):
+                continue  # Skip invalid rows
+
+        config.leap_year_rules = rules
+
+        return config
 
     @Slot()
     def _update_preview(self) -> None:

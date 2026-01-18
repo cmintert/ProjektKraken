@@ -171,6 +171,18 @@ def show_calendar(args: argparse.Namespace) -> int:
             print("\nWeek Days:")
             print(f"  {', '.join(config.week.day_names)}")
 
+            if config.leap_year_rules:
+                print("\nLeap Year Rules:")
+                for i, r in enumerate(config.leap_year_rules):
+                    skip_str = f", Skip: {r.skip_interval}" if r.skip_interval else ""
+                    reset_str = (
+                        f", Reset: {r.reset_interval}" if r.reset_interval else ""
+                    )
+                    print(
+                        f"  {i + 1}. Every {r.interval} years{skip_str}{reset_str} "
+                        f"-> Add {r.extra_days} day(s) to Month {r.month_index + 1}"
+                    )
+
         return 0
     except Exception as e:
         logger.error(f"Failed to show calendar: {e}")

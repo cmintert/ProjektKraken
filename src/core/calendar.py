@@ -25,6 +25,58 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
+class LeapYearRule:
+    """
+    Rule for calculating algorithmic leap years.
+
+    Attributes:
+        interval: Add leap day every N years (e.g., 4).
+        skip_interval: Skip adding every N years (e.g., 100). 0 = no skip.
+        reset_interval: Re-add every N years (e.g., 400). 0 = no reset.
+        month_index: Index of month to modify (0-based).
+        extra_days: Number of days to add (usually 1).
+    """
+
+    interval: int
+    skip_interval: int = 0
+    reset_interval: int = 0
+    month_index: int = 1  # Default to 2nd month (Feb)
+    extra_days: int = 1
+
+    def applies_to_year(self, year: int) -> bool:
+        """Checks if this rule applies to the given year."""
+        if year % self.interval != 0:
+            return False
+
+        if self.skip_interval > 0 and year % self.skip_interval == 0:
+            if self.reset_interval > 0 and year % self.reset_interval == 0:
+                pass  # It is a leap year
+            else:
+                return False
+
+        return True
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "interval": self.interval,
+            "skip_interval": self.skip_interval,
+            "reset_interval": self.reset_interval,
+            "month_index": self.month_index,
+            "extra_days": self.extra_days,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "LeapYearRule":
+        return cls(
+            interval=data["interval"],
+            skip_interval=data.get("skip_interval", 0),
+            reset_interval=data.get("reset_interval", 0),
+            month_index=data.get("month_index", 1),
+            extra_days=data.get("extra_days", 1),
+        )
+
+
+@dataclass
 class MonthDefinition:
     """
     Definition of a calendar month.
@@ -182,6 +234,7 @@ class CalendarConfig:
     week: WeekDefinition
     year_variants: List[YearVariant]
     epoch_name: str
+    leap_year_rules: List[LeapYearRule] = field(default_factory=list)
     is_active: bool = False
     created_at: float = field(default_factory=time.time)
     modified_at: float = field(default_factory=time.time)
@@ -243,12 +296,26 @@ class CalendarConfig:
 
         Returns:
             List[MonthDefinition]: Months for that year (may differ
-                                   if a YearVariant exists).
+                                   if a YearVariant exists or LeapYearRules apply).
         """
+        # 1. Check for manual override (YearVariant)
         for variant in self.year_variants:
             if variant.year == year:
                 return variant.months
-        return self.months
+
+        # 2. Start with base months
+        # We must copy them because we might modify days
+        import copy
+
+        months = copy.deepcopy(self.months)
+
+        # 3. Apply algorithmic leap year rules
+        for rule in self.leap_year_rules:
+            if rule.applies_to_year(year):
+                if 0 <= rule.month_index < len(months):
+                    months[rule.month_index].days += rule.extra_days
+
+        return months
 
     def get_year_length(self, year: int) -> int:
         """
@@ -276,6 +343,7 @@ class CalendarConfig:
             "months": [m.to_dict() for m in self.months],
             "week": self.week.to_dict(),
             "year_variants": [v.to_dict() for v in self.year_variants],
+            "leap_year_rules": [r.to_dict() for r in self.leap_year_rules],
             "epoch_name": self.epoch_name,
             "is_active": self.is_active,
             "created_at": self.created_at,
@@ -310,6 +378,9 @@ class CalendarConfig:
             year_variants=[
                 YearVariant.from_dict(v) for v in data.get("year_variants", [])
             ],
+            leap_year_rules=[
+                LeapYearRule.from_dict(r) for r in data.get("leap_year_rules", [])
+            ],
             epoch_name=data["epoch_name"],
             is_active=data.get("is_active", False),
             created_at=data.get("created_at", time.time()),
@@ -332,34 +403,63 @@ class CalendarConfig:
     @classmethod
     def create_default(cls) -> "CalendarConfig":
         """
-        Creates a default calendar configuration (simple 12x30 structure).
+        Creates a default calendar configuration (Gregorian).
 
         Returns:
-            CalendarConfig: A basic calendar with 12 months of 30 days.
+            CalendarConfig: A Gregorian calendar.
         """
-        months = [
-            MonthDefinition(name=f"Month {i + 1}", abbreviation=f"M{i + 1}", days=30)
-            for i in range(12)
+        # Standard Gregorian Months
+        month_data = [
+            ("January", "Jan", 31),
+            ("February", "Feb", 28),
+            ("March", "Mar", 31),
+            ("April", "Apr", 30),
+            ("May", "May", 31),
+            ("June", "Jun", 30),
+            ("July", "Jul", 31),
+            ("August", "Aug", 31),
+            ("September", "Sep", 30),
+            ("October", "Oct", 31),
+            ("November", "Nov", 30),
+            ("December", "Dec", 31),
         ]
+
+        months = [
+            MonthDefinition(name=n, abbreviation=a, days=d) for n, a, d in month_data
+        ]
+
         week = WeekDefinition(
             day_names=[
-                "Starday",
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
                 "Sunday",
-                "Moonday",
-                "Godsday",
-                "Waterday",
-                "Earthday",
-                "Freeday",
             ],
-            day_abbreviations=["St", "Su", "Mo", "Go", "Wa", "Ea", "Fr"],
+            day_abbreviations=["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
         )
+
+        # Gregorian Leap Year Rule:
+        # Every 4 years, except every 100, unless every 400.
+        # Adds 1 day to index 1 (February).
+        leap_rule = LeapYearRule(
+            interval=4,
+            skip_interval=100,
+            reset_interval=400,
+            month_index=1,
+            extra_days=1,
+        )
+
         return cls(
             id=str(uuid.uuid4()),
-            name="Default Calendar",
+            name="Gregorian Calendar",
             months=months,
             week=week,
             year_variants=[],
-            epoch_name="Year",
+            leap_year_rules=[leap_rule],
+            epoch_name="AD",
         )
 
 
@@ -454,6 +554,14 @@ class CalendarConverter:
         total_days = 0.0
 
         # Sum all complete years before target year
+        # Optimization: If we have no variants and simple rules, we could calculate faster
+        # But for now, correctness first. Iterate years.
+        # To avoid massive loops for huge years (e.g. Year 20000), we could optimize later.
+
+        # Simple optimization: if no variants and logic is regular...
+        # For now, just sum (naive implementation - O(N) where N is year)
+        # TODO: Implement O(1) calculation for standard Gregorian
+
         for y in range(1, date.year):
             total_days += self._config.get_year_length(y)
 
@@ -655,5 +763,17 @@ class CalendarConverter:
                 time_str = ", Morning"
             else:
                 time_str = ", Evening"
+
+        # Day of week
+        # 0.0 is the start of the epoch. Assuming epoch starts on first day of week.
+        week_days = self._config.week.day_names
+        if week_days:
+            # floor(absolute_day) gives the integer day count from epoch
+            # e.g. 0.5 -> 0 -> index 0
+            day_idx = int(absolute_day) % len(week_days)
+            # handle negative modulo correctly in python?
+            # -1 % 7 = 6 (correct, previous day)
+            day_name = week_days[day_idx]
+            return f"Year {date.year}, {month_name} {date.day}, {day_name}{time_str}"
 
         return f"Year {date.year}, {month_name} {date.day}{time_str}"
