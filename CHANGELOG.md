@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-01-18  
-**Commit:** `0.8.0`  
+**Commit:** `0.8.1`  
 ---
 
 # Changelog
@@ -10,6 +10,25 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [0.8.1]
+
+### Stability
+- *(2026-01-18)* **Review**: Completed extended code review of 162 files, covering Service, App, and Repository layers.
+- *(2026-01-18)* **Exceptions**: Resolved 34 bare exception handlers across critical service and GUI modules to improve error visibility.
+- *(2026-01-18)* **Signals**: Fixed duplicate signal definitions in `EntityEditorWidget` that could cause connection ambiguity.
+
+### Testing
+- *(2026-01-18)* **Coverage**: Increased overall test coverage from 61.2% to 70.5% (+9.3% improvement).
+  - Added 9 new test files covering Core, Services, and App modules.
+  - Achieved 94.7% coverage for core business logic.
+- *(2026-01-18)* **Bug**: Fixed `test_shutdown.py` to properly mock `QSettings` during application termination.
+
+### Refactor
+- *(2026-01-18)* **Logging**: Replaced direct `print()` statements in `entry.py` with standard library `logging`.
+
+### Architecture
+- *(2026-01-18)* **Audit**: Validated threading (DatabaseWorker), Command patterns, and Repository abstraction layers.
 
 ## [0.8.0]
 
