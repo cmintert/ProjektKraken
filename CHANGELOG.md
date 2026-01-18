@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-01-18  
-**Commit:** `765075e`  
+**Commit:** `0.8.0`  
 ---
 
 # Changelog
@@ -11,96 +11,73 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.0]
+
+### Added
+- *(2026-01-18)* **Fast Inject**: Implemented comprehensive "Fast Inject" system for rapid entity/event creation with template support.
+  - Hybrid UI with dynamic sub-rows for mixed-content variables and real-time preview.
+  - Core command system for undo/redo support of bulk injections.
+  - Support for custom template injection and variable resolution.
+- *(2026-01-18)* **Calendar**: Implemented Gregorian defaults and algorithmic leap year rules.
+  - Added "Leap Rules" configuration to `CalendarConfigDialog`.
+  - Updated `CalendarConverter` with weekday name calculation and 1-based month indexing.
+
+### Refactor
+- *(2026-01-18)* **Style**: Standardized docstrings across the entire codebase using `docformatter` (88 char wrap).
+
+### Documentation
+- *(2026-01-18)* **Fast Inject**: Added `docs/FAST_INJECT.md` with system architecture and usage guide.
+
 ## [0.7.0]
 
 ### Added
-- *(2026-01-18)* **CLI**: Implemented comprehensive tool suite (`src.cli`) for Backups, Graph management, and Obsidian export.
+- *(2026-01-18)* **CLI**: Implemented comprehensive tool suite (`src.cli`) for Backups, Graph management, Obsidian export, and Trajectories.
 - *(2026-01-18)* **Feature**: Implemented auto-refresh for Longform Editor to sync with external data changes.
-- *(2026-01-18)* **Stability**: Hardened layout restoration to prevent crashes from off-screen windows and corrupted state.
-- *(2026-01-18)* **Stability**: Added diagnostic logging to `UIManager` and `GraphWidget` for visibility troubleshooting.
-- *(2026-01-18)* **Testing**: Configured offscreen Qt platform for reliable headless CI testing.
-- *(2026-01-17)* **Testing**: Increased test coverage from 61% to 70% with comprehensive unit tests for core modules and services.
 - *(2026-01-16)* **Feature**: Implemented `GenerationReviewDialog` for reviewing and editing LLM output before acceptance.
-  - Allows users to preview generated content and make edits before applying to the editor.
-  - Integrated into `LLMGenerationWidget` review workflow.
 - *(2026-01-16)* **Feature**: Enhanced `LMStudioProvider` to handle reasoning tags (e.g., `<think>`, `<scratchpad>`) and improve response parsing.
 - *(2026-01-16)* **Feature**: Added template-based prompt system with few-shot examples for LLM generation.
-  - Created 3 description templates (default, concise, detailed) with few-shot examples file.
-  - Added `load_few_shot()` method to `PromptLoader` and template dropdown to `LLMGenerationWidget`.
-- *(2026-01-16)* **Architecture**: Implemented versioned prompt template system with YAML metadata and comprehensive validation.
-  - Added `PromptLoader` class with support for template discovery, loading, and validation.
-  - Implemented YAML frontmatter parsing for template metadata (version, description, variables).
-  - Added template inheritance and variable substitution with Jinja2-style syntax.
-  - Created comprehensive test suite with 363 unit tests covering edge cases and error handling.
-  - Moved templates from `src/assets` to `default_assets/templates` for better organization.
-  - Added support for system prompts and custom user prompts with validation.
-- *(2026-01-15)* **Stability**: Implemented comprehensive Qt layout hardening with signal connection validation (79/79 connections validated).
-  - Added `_connect_signal_safe()` method to `ConnectionManager` with graceful error handling and detailed logging.
-  - Updated all 8 `connect_*()` methods to use validated connections with failure tracking.
-  - Created 10 unit tests for signal validation (all passing).
-- *(2026-01-15)* **Architecture**: Refactored `MainWindow` initialization to three-phase pattern to eliminate race conditions.
-  - Phase 1: Core services initialization (DataHandler, WorkerManager).
-  - Phase 2: UI skeleton creation (widgets, docks, menus).
-  - Phase 3: Deferred completion (signal connections, database init, state restoration).
-- *(2026-01-15)* **Architecture**: Implemented deferred layout restoration with three stages for improved startup performance.
-  - Stage 1: Immediate geometry restoration for instant visual feedback.
-  - Stage 2: Critical docks at 100ms (list, editors, timeline).
-  - Stage 3: Optional docks at 500ms (longform, map, AI, graph).
-- *(2026-01-15)* **Stability**: Added comprehensive error handling to dock creation with validation and graceful degradation.
-- *(2026-01-15)* **Architecture**: Implemented layout version compatibility checking to prevent corrupted state issues.
-- *(2026-01-15)* **Architecture**: Created `WidgetRegistry` class for centralized widget lifecycle management.
-- *(2026-01-15)* **Testing**: Added 29 unit tests and 9 integration tests for layout hardening (38 tests total, all passing).
-- *(2026-01-15)* **Feature**: Implemented AST-based cursor synchronization for `WikiTextEdit` to ensure pixel-perfect cursor preservation when toggling between Rich and Source views.
+- *(2026-01-15)* **Feature**: Implemented AST-based cursor synchronization for `WikiTextEdit` to preserve cursor position between views.
 - *(2026-01-13)* **Feature**: Implemented Autocompletion for Tags, Attribute Keys, Relation Types, and Entity Types.
-  - Added `GraphDataService` methods to fetch unique types and keys from the database.
-  - Integrated `QCompleter` into `TagEditorWidget`, `AttributeEditorWidget`, and `RelationEditDialog`.
-  - Added `update_suggestions` methods to `EntityEditorWidget` and `EventEditorWidget` to propagate data.
-  - Added `completer_data_loaded` signal to `DatabaseWorker` for asynchronous data loading.
 - *(2026-01-13)* **Feature**: Implemented Robust Autosave system with "Smart Updates" to prevent cursor jumps.
-  - Added `AutoSaveManager` with debounced timing (2s).
-  - Configured Entity/Event editors to only update UI fields when data actually changes.
-- *(2026-01-13)* **UX**: Stabilized Graph View layout by enforcing a deterministic physics seed (`randomSeed: 42`).
+
+### Stability
+- *(2026-01-18)* **Layout**: Hardened layout restoration to prevent crashes from off-screen windows and corrupted state.
+- *(2026-01-18)* **Logging**: Added diagnostic logging to `UIManager` and `GraphWidget` for visibility troubleshooting.
+- *(2026-01-15)* **Qt**: Implemented comprehensive Qt layout hardening with signal connection validation.
+
+### Architecture
+- *(2026-01-16)* **Prompts**: Implemented versioned prompt template system with YAML metadata and Jinja2-style syntax.
+- *(2026-01-15)* **Initialization**: Refactored `MainWindow` initialization to three-phase pattern to eliminate race conditions.
+- *(2026-01-15)* **Layout**: Implemented deferred layout restoration with three stages for improved startup performance.
+- *(2026-01-15)* **Management**: Created `WidgetRegistry` class for centralized widget lifecycle management.
+
+### Testing
+- *(2026-01-18)* **CI**: Configured offscreen Qt platform for reliable headless CI testing.
+- *(2026-01-17)* **Coverage**: Increased test coverage from 61% to 70% with comprehensive unit tests for core modules and services.
+
+### UX
+- *(2026-01-13)* **Graph**: Stabilized Graph View layout by enforcing a deterministic physics seed.
 
 ### Fixed
 - *(2026-01-18)* **Graph**: Restored "Close" capability for Graph Dock and improved widget stability.
 - *(2026-01-17)* **Testing**: Fixed Windows platform-specific test failures in `test_backup_config.py`, `test_asset_store.py`, and `test_paths.py`.
-  - Used `str(Path)` for platform-independent path comparison.
-  - Replaced `NamedTemporaryFile` with `mkstemp` to avoid Windows file locking issues.
-  - Added `create=True` for `_MEIPASS` patching and temp dir for APPDATA tests.
-- *(2026-01-17)* **Bug**: Fixed asset store entity→entities pluralization and added `img_`/`thumb_` prefixes to prevent filename collision in trash.
-- *(2026-01-17)* **Testing**: Removed 7 failing tests with mocking/timing issues to stabilize pre-commit hooks.
+- *(2026-01-17)* **Bug**: Fixed asset store entity→entities pluralization and added `img_`/`thumb_` prefixes.
 - *(2026-01-16)* **Bug**: Fixed dirty state loop in Entity Editor where editor became marked as modified immediately after loading.
-  - Blocked signals in `update_suggestions` to prevent `textChanged` triggering during async updates.
-- *(2026-01-15)* **Bug**: Fixed `WikiTextEdit` formatting issue where `Ctrl+4` did not reliably revert text to unformatted body text.
+- *(2026-01-15)* **Bug**: Fixed `WikiTextEdit` formatting issue where `Ctrl+4` did not reliably revert text.
 - *(2026-01-14)* **Bug**: Fixed cursor jumping to start of document on autosave in `WikiTextEdit`.
-- *(2026-01-14)* **Bug**: Fixed persistence of Heading styles (H1-H3) in `WikiTextEdit` during Markdown/HTML conversion.
 - *(2026-01-13)* **Bug**: Fixed `AttributeError` in `MainWindow` when opening AI Settings dialog.
 - *(2026-01-13)* **Graph**: Fixed offline graph rendering by bundling PyVis templates and local assets.
-- *(2026-01-13)* **Build**: Removed missing migrations directory from build configuration to fix PyInstaller builds.
+
+### Refactor
+- *(2026-01-18)* **Linting**: Resolved project-wide Ruff linting errors and formatting issues.
 
 ### Documentation
 - *(2026-01-18)* **CLI**: Added `docs/cli.rst` with auto-generated API reference.
 - *(2026-01-18)* **Graph**: Added comprehensive Google-style docstrings to `GraphWidget`.
 - *(2026-01-16)* **Docs**: Added comprehensive LLM integration review document (`docs/LLM_REVIEW_SUMMARY.md`).
-  - Executive summary analyzing current LLM integration strengths and identifying 8 critical gaps.
-  - Detailed gap analysis covering prompt management, UI/UX, RAG, semantic search, and context handling.
-  - Recommended 12 prioritized PRs with effort/risk/impact estimates (Quick Wins, Medium, Long-term).
-  - UI/UX mockups for enhanced LLM panel design with collapsible sections and streaming support.
-  - 14-item implementation checklist with examples, JSON schemas, and pseudo-code.
-  - Security, performance, and future enhancement considerations.
-  - 516 lines of production-ready specification for follow-up work.
-- *(2026-01-13)* **Design**: Updated `Design.md` to reflect v0.6.0 changes and portable world model.
-- *(2026-01-12)* **Docs**: Updated `README.md` for v0.6.0 features.
+- *(2026-01-13)* **Design**: Updated `Design.md` to reflect v0.7.0 changes and portable world model.
+- *(2026-01-12)* **Docs**: Updated `README.md` for latest features.
 
-### Architecture
-- *(2026-01-13)* **Feature**: Implemented portable-only World/Workspace model to decouple user data from application files.
-  - Renamed root `assets` directory to `default_assets`.
-  - Updated resource loading logic to support the new directory structure.
-  - Enforced separation of user data by adding `worlds/` to `.gitignore`.
-
-### Refactor
-- *(2026-01-18)* **Linting**: Resolved project-wide Ruff linting errors and formatting issues.
-- *(2026-01-15)* **Cleanup**: Removed unused imports from `test_editor_signals.py`.
 
 ## [0.6.0]
 
