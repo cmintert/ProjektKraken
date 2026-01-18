@@ -401,6 +401,7 @@ class LongformEditorWidget(QWidget):
     demote_requested = Signal(str, str, dict)  # table, id, old_meta
     refresh_requested = Signal()
     export_requested = Signal()
+    export_vault_requested = Signal()  # For Obsidian-compatible vault export
     item_selected = Signal(str, str)  # table, id
     item_moved = Signal(str, str, dict, dict)  # table, id, old_meta, new_meta
     link_clicked = Signal(str)
@@ -465,6 +466,14 @@ class LongformEditorWidget(QWidget):
         btn_export = QPushButton("Export to Markdown")
         btn_export.clicked.connect(self.export_requested.emit)
         toolbar.addWidget(btn_export)
+
+        # Export as Vault Button (Obsidian-compatible)
+        btn_export_vault = QPushButton("Export as Vault")
+        btn_export_vault.setToolTip(
+            "Export each entity and event as separate Obsidian-compatible .md files"
+        )
+        btn_export_vault.clicked.connect(self.export_vault_requested.emit)
+        toolbar.addWidget(btn_export_vault)
 
         # Publish Button
         self.btn_publish = QPushButton("Publish to Web")

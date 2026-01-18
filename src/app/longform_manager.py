@@ -179,3 +179,52 @@ class LongformManager(QObject):
             except Exception as e:
                 logger.error(f"Failed to export longform document: {e}")
                 self.window.status_bar.showMessage(f"Export failed: {e}", 5000)
+
+    def export_as_vault(self) -> None:
+        """
+        Exports entities and events as individual Obsidian-compatible .md files.
+
+        Opens a folder dialog for the user to choose export location.
+        Each entity/event becomes a separate file with YAML frontmatter.
+        """
+        from pathlib import Path
+
+        from src.services.obsidian_exporter import ObsidianExporter
+
+        # Get output directory from user
+        output_dir = QFileDialog.getExistingDirectory(
+            self.window,
+            "Select Export Folder for Vault",
+            "",
+            QFileDialog.Option.ShowDirsOnly,
+        )
+
+        if not output_dir:
+            return
+
+        if not self.window.gui_db_service:
+            self.window.status_bar.showMessage("No database connection", 3000)
+            return
+
+        try:
+            exporter = ObsidianExporter(self.window.gui_db_service)
+            result = exporter.export_to_folder(
+                output_dir=Path(output_dir),
+                include_relations=True,
+            )
+
+            if result.success:
+                self.window.status_bar.showMessage(
+                    f"Exported {result.files_created} files to {output_dir}", 5000
+                )
+                logger.info(f"Vault export complete: {result.files_created} files")
+            else:
+                error_summary = "; ".join(result.errors[:3])
+                self.window.status_bar.showMessage(
+                    f"Export completed with errors: {error_summary}", 5000
+                )
+                logger.warning(f"Vault export errors: {result.errors}")
+
+        except Exception as e:
+            logger.error(f"Failed to export vault: {e}")
+            self.window.status_bar.showMessage(f"Export failed: {e}", 5000)

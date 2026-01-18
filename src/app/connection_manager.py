@@ -580,6 +580,14 @@ class ConnectionManager:
             failed_count += 1
 
         if not self._connect_signal_safe(
+            longform,
+            "export_vault_requested",
+            self.window.longform_manager.export_as_vault,
+            "LongformEditor",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
             longform, "item_selected", self.window._on_item_selected, "LongformEditor"
         ):
             failed_count += 1
@@ -617,7 +625,7 @@ class ConnectionManager:
             failed_count += 1
 
         logger.debug(
-            f"LongformEditor connections: {9 - failed_count}/9 succeeded, "
+            f"LongformEditor connections: {10 - failed_count}/10 succeeded, "
             f"{failed_count} failed"
         )
         return failed_count
