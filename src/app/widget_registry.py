@@ -127,7 +127,8 @@ class WidgetRegistry:
                 if logger:
                     logger.debug(f"Widget '{name}' destroyed")
             except Exception:
-                # Ignore errors during destruction logging (e.g. at shutdown)
+                # Intentionally bare: Ignore errors during destruction logging
+                # (e.g., logger may be destroyed during application shutdown)
                 pass
 
     def cleanup_all(self) -> None:

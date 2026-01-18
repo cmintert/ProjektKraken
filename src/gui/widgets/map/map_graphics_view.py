@@ -974,7 +974,8 @@ class MapGraphicsView(QGraphicsView):
             if self._calendar_converter:
                 try:
                     date_str = self._calendar_converter.format_date(kf.t)
-                except Exception:
+                except Exception as e:
+                    logger.warning(f"Calendar formatting failed for keyframe at {kf.t}: {e}")
                     date_str = f"{kf.t:.0f}"
             else:
                 date_str = f"{kf.t:.0f}"
@@ -1199,7 +1200,8 @@ class MapGraphicsView(QGraphicsView):
                     if self._calendar_converter:
                         try:
                             text = self._calendar_converter.format_date(new_time)
-                        except Exception:
+                        except Exception as e:
+                            logger.warning(f"Calendar formatting failed for time {new_time}: {e}")
                             text = f"{new_time:.0f}"
                     else:
                         text = f"{new_time:.0f}"

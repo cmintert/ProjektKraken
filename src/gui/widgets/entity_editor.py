@@ -53,11 +53,6 @@ class EntityEditorWidget(QWidget):
     update_relation_requested = Signal(str, str, str, dict)
     link_clicked = Signal(str)
     navigate_to_relation = Signal(str)  # target_id for Go to button
-    navigate_to_relation = Signal(str)  # target_id for Go to button
-    dirty_changed = Signal(bool)
-    navigate_to_relation = Signal(str)  # target_id for Go to button
-    dirty_changed = Signal(bool)
-    navigate_to_relation = Signal(str)  # target_id for Go to button
     dirty_changed = Signal(bool)
     return_to_present_requested = Signal()  # Request to exit past/future view
     inject_ui_requested = Signal(str)  # entity_id

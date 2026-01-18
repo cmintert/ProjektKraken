@@ -158,7 +158,8 @@ if HAS_QT:
                 self.backup_completed.emit(True, str(self.backup_path))
 
             except Exception:
-                # Clean up temp file on error
+                # Intentionally bare: Clean up temp file on error, then re-raise
+                # for caller to handle (cleanup-only exception handler)
                 if temp_path.exists():
                     temp_path.unlink()
                 raise
@@ -186,7 +187,8 @@ if HAS_QT:
                 self.backup_completed.emit(True, "Database restored successfully")
 
             except Exception:
-                # Clean up temp file on error
+                # Intentionally bare: Clean up temp file on error, then re-raise
+                # for caller to handle (cleanup-only exception handler)
                 if temp_path.exists():
                     temp_path.unlink()
                 raise
