@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-01-17  
-**Commit:** `ce31a2a`  
+**Last Updated:** 2026-01-18  
+**Commit:** `765075e`  
 ---
 
 # Changelog
@@ -11,7 +11,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.0]
+
 ### Added
+- *(2026-01-18)* **CLI**: Implemented comprehensive tool suite (`src.cli`) for Backups, Graph management, and Obsidian export.
+- *(2026-01-18)* **Feature**: Implemented auto-refresh for Longform Editor to sync with external data changes.
+- *(2026-01-18)* **Stability**: Hardened layout restoration to prevent crashes from off-screen windows and corrupted state.
+- *(2026-01-18)* **Stability**: Added diagnostic logging to `UIManager` and `GraphWidget` for visibility troubleshooting.
+- *(2026-01-18)* **Testing**: Configured offscreen Qt platform for reliable headless CI testing.
 - *(2026-01-17)* **Testing**: Increased test coverage from 61% to 70% with comprehensive unit tests for core modules and services.
 - *(2026-01-16)* **Feature**: Implemented `GenerationReviewDialog` for reviewing and editing LLM output before acceptance.
   - Allows users to preview generated content and make edits before applying to the editor.
@@ -55,6 +62,7 @@ All notable changes to this project will be documented in this file.
 - *(2026-01-13)* **UX**: Stabilized Graph View layout by enforcing a deterministic physics seed (`randomSeed: 42`).
 
 ### Fixed
+- *(2026-01-18)* **Graph**: Restored "Close" capability for Graph Dock and improved widget stability.
 - *(2026-01-17)* **Testing**: Fixed Windows platform-specific test failures in `test_backup_config.py`, `test_asset_store.py`, and `test_paths.py`.
   - Used `str(Path)` for platform-independent path comparison.
   - Replaced `NamedTemporaryFile` with `mkstemp` to avoid Windows file locking issues.
@@ -71,6 +79,8 @@ All notable changes to this project will be documented in this file.
 - *(2026-01-13)* **Build**: Removed missing migrations directory from build configuration to fix PyInstaller builds.
 
 ### Documentation
+- *(2026-01-18)* **CLI**: Added `docs/cli.rst` with auto-generated API reference.
+- *(2026-01-18)* **Graph**: Added comprehensive Google-style docstrings to `GraphWidget`.
 - *(2026-01-16)* **Docs**: Added comprehensive LLM integration review document (`docs/LLM_REVIEW_SUMMARY.md`).
   - Executive summary analyzing current LLM integration strengths and identifying 8 critical gaps.
   - Detailed gap analysis covering prompt management, UI/UX, RAG, semantic search, and context handling.
@@ -89,6 +99,7 @@ All notable changes to this project will be documented in this file.
   - Enforced separation of user data by adding `worlds/` to `.gitignore`.
 
 ### Refactor
+- *(2026-01-18)* **Linting**: Resolved project-wide Ruff linting errors and formatting issues.
 - *(2026-01-15)* **Cleanup**: Removed unused imports from `test_editor_signals.py`.
 
 ## [0.6.0]
