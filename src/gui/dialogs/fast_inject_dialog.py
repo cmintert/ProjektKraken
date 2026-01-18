@@ -3,9 +3,9 @@
 Provides the UI for listing, previewing, and applying Fast Inject templates.
 """
 
+import json
 import logging
 from typing import Any, Dict, List, Optional
-
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -13,22 +13,22 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QFileDialog,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QListWidget,
     QListWidgetItem,
     QMessageBox,
+    QScrollArea,
     QSplitter,
+    QTabWidget,
     QTextEdit,
     QVBoxLayout,
     QWidget,
-    QTabWidget,
-    QScrollArea,
-    QGridLayout,
 )
-import json
-from src.core.fast_inject import FastInjectTemplate, FastInjectManager
+
+from src.core.fast_inject import FastInjectManager, FastInjectTemplate
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
 
@@ -470,7 +470,7 @@ class FastInjectDialog(QDialog):
 
         var_pattern = re.compile(r"\{\{([A-Za-z0-9_]+)(?::([^}]+))?\}\}")
 
-        def replacer(match):
+        def replacer(match: re.Match[str]) -> str:
             v_name = match.group(1)
             if v_name in sub_vars:
                 widget = sub_vars[v_name]
@@ -505,7 +505,7 @@ class FastInjectDialog(QDialog):
 
             # Attempt to restore type
             final_val = val_str
-            if orig_type == int:
+            if orig_type is int:
                 try:
                     final_val = int(val_str)
                 except ValueError:
