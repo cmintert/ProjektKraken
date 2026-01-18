@@ -81,13 +81,13 @@ def main() -> None:
 
         # Check for reset settings flag
         if "--reset-settings" in sys.argv:
-            print("Resetting Application Settings...")
+            logger.info("Resetting Application Settings...")
             from PySide6.QtCore import QSettings
 
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
             settings.clear()
             settings.sync()
-            print("Settings cleared. Starting in default state.")
+            logger.info("Settings cleared. Starting in default state.")
 
         window = MainWindow(capture_layout_on_exit=capture_layout)
         window.show()
@@ -96,7 +96,7 @@ def main() -> None:
         exit_code = app.exec()
         cleanup_app()
         sys.exit(exit_code)
-    except Exception:
+    except Exception as e:
         logger.exception("CRITICAL: Unhandled exception in main application loop")
         sys.exit(1)
 

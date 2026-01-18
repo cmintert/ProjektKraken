@@ -113,7 +113,8 @@ class WebServiceManager(QObject):
             ip = s.getsockname()[0]
             s.close()
             return ip
-        except Exception:
+        except Exception as e:
+            # Network unavailable or other error - use localhost
             return "127.0.0.1"
 
     def start_server(self, port: int = 8000, db_path: Optional[str] = None) -> None:

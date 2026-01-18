@@ -3,6 +3,7 @@
 Handles the creation and layout of dock widgets and menus for the MainWindow.
 """
 
+import logging
 from typing import Any, Dict, Optional
 
 # NOTE: PySide6 Fully Qualified Enum Paths
@@ -42,6 +43,8 @@ from src.app.constants import (
     WINDOW_SETTINGS_KEY,
 )
 from src.core.protocols import MainWindowProtocol
+
+logger = logging.getLogger(__name__)
 
 
 class _DockEventFilter(QObject):
@@ -666,8 +669,9 @@ class UIManager:
                 if "state" in layout_data:
                     self.main_window.restoreState(bytes.fromhex(layout_data["state"]))
                 return
-            except Exception:
+            except Exception as e:
                 # Fallback if load fails
+                logger.warning(f"Failed to load custom layout: {e}")
                 pass
 
         # 2. Hardcoded fallback
