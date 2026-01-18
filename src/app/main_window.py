@@ -913,7 +913,12 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         # Load templates
         templates = self.fast_inject_manager.load_templates()
 
-        dlg = FastInjectDialog(templates, target_name=target_entity.name, parent=self)
+        dlg = FastInjectDialog(
+            templates,
+            target_name=target_entity.name,
+            parent=self,
+            manager=self.fast_inject_manager,
+        )
         result = dlg.exec()
 
         # Handle import request (result code 2)

@@ -253,11 +253,16 @@ class FastInjectManager:
             List of unique variable names found.
         """
         vars_found = set()
-        pattern = re.compile(r"\{\{([A-Za-z0-9_]+)\}\}")
+        # Match {{VAR}} or {{VAR:Opt1|Opt2}}
+        # Group 1 is the VAR name
+        pattern = re.compile(r"\{\{([A-Za-z0-9_]+)(?::[^}]+)?\}\}")
 
         def scan_value(val: Any) -> None:
             if isinstance(val, str):
                 for match in pattern.findall(val):
+                    # findall returns just the group 1 (var name) if 1 capturing group exists?
+                    # Yes, findall returns list of groups.
+                    # Since we have one capturing group ([A-Za-z0-9_]+), it returns strings.
                     vars_found.add(match)
             elif isinstance(val, dict):
                 for v in val.values():
@@ -272,6 +277,10 @@ class FastInjectManager:
         # Also scan type_value if it's a string
         if isinstance(template.type_value, str):
             scan_value(template.type_value)
+
+        # Also scan tags?? Tags are list of strings.
+        if template.tags:
+            scan_value(template.tags)
 
         return sorted(list(vars_found))
 
@@ -293,14 +302,26 @@ class FastInjectManager:
             overwrite: If True, existing attribute keys are overwritten.
             variables: Dict of variable names to replacement values.
         """
+        logger.info(
+            f"Applying template '{template.name}' to target '{target.name if hasattr(target, 'name') else 'Unknown'}'"
+        )
+        logger.debug(f"Variables provided: {variables}")
         vars_map = variables or {}
 
         # Helper to resolve variables
         def resolve_vars(val: Any) -> Any:
             if isinstance(val, str):
-                for var_name, var_val in vars_map.items():
-                    val = val.replace(f"{{{{{var_name}}}}}", str(var_val))
-                return val
+                # We need to replace {{VAR}} AND {{VAR:Options}} with the value.
+                # Since simple .replace() won't match the variable options,
+                # we should use regex sub.
+
+                pattern = re.compile(r"\{\{([A-Za-z0-9_]+)(?::[^}]+)?\}\}")
+
+                def replacer(match: re.Match) -> str:
+                    var_name = match.group(1)
+                    return str(vars_map.get(var_name, match.group(0)))
+
+                return pattern.sub(replacer, val)
             elif isinstance(val, list):
                 return [resolve_vars(v) for v in val]
             elif isinstance(val, dict):
