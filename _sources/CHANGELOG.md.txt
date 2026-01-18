@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-18
 ### Internal
-- chore: bump version to 0.8.0 and update changelog
+- Merge pull request #62 from cmintert/copilot/code-review-pyside6-application
 
 
 *This changelog was automatically generated.*
