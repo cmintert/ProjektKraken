@@ -40,3 +40,10 @@ httpx==0.28.1
 # Graph Visualization
 pyvis==0.3.2
 networkx==3.6.1
+
+# Spatial Operations (Optional but recommended for road features)
+# Install with: pip install -r requirements.txt
+# For better performance with large road networks
+shapely>=2.0.0  # Geometry operations and spatial indexing
+scipy>=1.11.0   # KDTree for fast nearest-neighbor queries
+
