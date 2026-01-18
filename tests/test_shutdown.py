@@ -68,16 +68,18 @@ def test_mainwindow_close_event_cleanups_worker(qapp, mock_db_service):
 
             # Assertions
             # 1. Check worker cleanup invoked
-            # Use QMetaObject.invokeMethod, so we can't easily assert assert_called on the slot directly
-            # if it's invoked via Qt meta system, UNLESS we patch QMetaObject.invokeMethod.
-            # However, since we are in python, invokeMethod usually works on the python object.
+            # Use QMetaObject.invokeMethod, so we can't easily assert assert_called
+            # on the slot directly if it's invoked via Qt meta system, UNLESS we
+            # patch QMetaObject.invokeMethod.
+            # However, since we are in python, invokeMethod usually works on the
+            # python object.
             # Let's verify via patching QMetaObject.
             pass
 
 
 def test_mainwindow_close_calls_worker_cleanup_logic(qapp):
     """
-    More direct test of the clean up sequence logic without full Qt event loop if possible.
+    More direct test of cleanup logic without full Qt event loop if possible.
     """
     with (
         patch("src.app.worker_manager.DatabaseWorker"),
@@ -87,7 +89,13 @@ def test_mainwindow_close_calls_worker_cleanup_logic(qapp):
     ):
         # Configure QSettings mock to return None to avoid restoreGeometry TypeError
         mock_settings_instance = MockSettings.return_value
-        mock_settings_instance.value.return_value = None
+
+        def settings_value_side_effect(key, default=None, **kwargs):
+            if key == "active_world":
+                return "Default World"
+            return None
+
+        mock_settings_instance.value.side_effect = settings_value_side_effect
 
         window = MainWindow()
         window.check_unsaved_changes = MagicMock(return_value=True)

@@ -93,9 +93,9 @@ class InjectTemplateCommand(BaseCommand):
 
             # 3. Persist Changes
             if isinstance(self.target, Entity):
-                db_service.update_entity(self.target)
+                db_service.insert_entity(self.target)
             elif isinstance(self.target, Event):
-                db_service.update_event(self.target)
+                db_service.insert_event(self.target)
 
             self._is_executed = True
 
@@ -147,9 +147,9 @@ class InjectTemplateCommand(BaseCommand):
 
             # 3. Persist Reversion
             if isinstance(self.target, Entity):
-                db_service.update_entity(self.target)
+                db_service.insert_entity(self.target)
             elif isinstance(self.target, Event):
-                db_service.update_event(self.target)
+                db_service.insert_event(self.target)
 
             self._is_executed = False
 

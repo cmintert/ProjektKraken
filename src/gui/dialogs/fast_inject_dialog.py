@@ -10,6 +10,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
+    QFileDialog,
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
@@ -277,11 +278,20 @@ class FastInjectDialog(QDialog):
         self.accept()
 
     def _on_import_clicked(self) -> None:
-        """Handle import request."""
-        # Signal parent or handle locally?
-        # For M1, we'll just show message or return a special code?
-        # Actually better to emit a custom signal or let parent handle via
-        # separate button.
-        # But Requirement says button is IN dialog.
-        # Minimal implementation: Just close with a special result code or emit signal?
+        """Handle import request - opens file picker to import external templates."""
+        from pathlib import Path
+
+        file_paths, _ = QFileDialog.getOpenFileNames(
+            self,
+            "Import Fast Inject Templates",
+            "",
+            "Fast Inject Templates (*.fastinject);;All Files (*)",
+        )
+
+        if not file_paths:
+            return
+
+        # We need the manager to import. Signal parent to handle it.
+        # Store paths and close with special code.
+        self._import_paths = [Path(p) for p in file_paths]
         self.done(2)  # Custom code 2 = Import Requested

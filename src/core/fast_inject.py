@@ -68,7 +68,7 @@ class FastInjectTemplate:
 class FastInjectManager:
     """Manages loading, validation, and application of Fast Inject templates."""
 
-    def __init__(self, world_path: Path):
+    def __init__(self, world_path: Path) -> None:
         """Initialize manager for a specific world.
 
         Args:
@@ -135,6 +135,57 @@ class FastInjectManager:
             if template in self._templates:
                 self._templates.remove(template)
 
+    def import_template(self, source_path: Path) -> FastInjectTemplate:
+        """Import a template from an external location into the project.
+
+        Args:
+            source_path: Path to the .fastinject file to import.
+
+        Returns:
+            The imported FastInjectTemplate.
+
+        Raises:
+            FileNotFoundError: If source file doesn't exist.
+            json.JSONDecodeError: If file is not valid JSON.
+            ValueError: If file is not a valid template.
+        """
+        import shutil
+
+        if not source_path.exists():
+            raise FileNotFoundError(f"Template file not found: {source_path}")
+
+        # Load and validate the template
+        with open(source_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        template = FastInjectTemplate.from_dict(data)
+
+        # Ensure target directory exists
+        self.ensure_directory()
+
+        # Determine target filename (handle duplicates)
+        target_filename = source_path.name
+        target_path = self.templates_dir / target_filename
+
+        # If file exists, add a suffix
+        counter = 1
+        while target_path.exists():
+            stem = source_path.stem
+            target_filename = f"{stem}_{counter}.fastinject"
+            target_path = self.templates_dir / target_filename
+            counter += 1
+
+        # Copy the file
+        shutil.copy2(source_path, target_path)
+        template.source_path = target_path
+
+        # Add to cache
+        self._templates.append(template)
+        self._templates.sort(key=lambda t: t.name.lower())
+
+        logger.info(f"Imported template '{template.name}' to {target_path}")
+        return template
+
     def create_template_from_target(
         self,
         target: Union[Entity, Event],
@@ -195,35 +246,6 @@ class FastInjectManager:
             target_type=target_type_str,
         )
 
-    def import_template(self, source_path: Path) -> Optional[FastInjectTemplate]:
-        """Import a generic .fastinject file from anywhere into the project.
-
-        Args:
-            source_path: Path to external file.
-
-        Returns:
-            Imported Template if successful, None otherwise.
-        """
-        try:
-            with open(source_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-
-            # Create object to validate structure
-            template = FastInjectTemplate.from_dict(data)
-
-            # Save to local directory
-            saved_path = self.save_template(template)
-
-            # Reload to ensure clean state
-            with open(saved_path, "r", encoding="utf-8") as f:
-                reloaded_data = json.load(f)
-
-            return FastInjectTemplate.from_dict(reloaded_data, path=saved_path)
-
-        except Exception as e:
-            logger.error(f"Failed to import template from {source_path}: {e}")
-            return None
-
     def find_variables(self, template: FastInjectTemplate) -> List[str]:
         """Scan template values for {{VAR_NAME}} patterns.
 
@@ -233,7 +255,7 @@ class FastInjectManager:
         vars_found = set()
         pattern = re.compile(r"\{\{([A-Za-z0-9_]+)\}\}")
 
-        def scan_value(val: Any):
+        def scan_value(val: Any) -> None:
             if isinstance(val, str):
                 for match in pattern.findall(val):
                     vars_found.add(match)

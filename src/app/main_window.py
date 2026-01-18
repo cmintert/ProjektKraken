@@ -914,53 +914,69 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         templates = self.fast_inject_manager.load_templates()
 
         dlg = FastInjectDialog(templates, target_name=target_entity.name, parent=self)
-        if dlg.exec():
-            if not dlg.selected_template:
-                return
+        result = dlg.exec()
 
-            # Create Command
-            # We must pass a COPY or be careful? Command modifies it.
-            # actually we should pass a copy because the command runs in a worker
-            # and might race with UI if we pass the cached object directly?
-            # Safe to copy.
-            import copy
+        # Handle import request (result code 2)
+        if result == 2:
+            import_paths = getattr(dlg, "_import_paths", [])
+            if import_paths:
+                imported_count = 0
+                for path in import_paths:
+                    try:
+                        self.fast_inject_manager.import_template(path)
+                        imported_count += 1
+                    except Exception as e:
+                        logger.error(f"Failed to import template {path}: {e}")
 
-            target_clone = copy.deepcopy(target_entity)
+                if imported_count > 0:
+                    self.status_bar.showMessage(
+                        f"Imported {imported_count} template(s). Reopening dialog..."
+                    )
+                    # Reopen dialog with updated templates
+                    self._on_fast_inject_ui_requested(entity_id)
+            return
 
-            cmd = InjectTemplateCommand(
-                target=target_clone,
-                template=dlg.selected_template,
-                manager=self.fast_inject_manager,
-                overwrite=dlg.should_overwrite,
-                variables=dlg.variable_values,
-            )
+        if not result:
+            return
 
-            # Execute
-            # We connect a success callback to reload the editor
-            # The `command_coordinator` doesn't easily support ad-hoc callbacks
-            # per command instance
-            # unless we wrap it or listen to general signals.
-            # But `MainWindow` listens to `data_changed` signals?
-            # If `InjectTemplateCommand` calls `update_entity`, `DataHandler`
-            # should pick it up?
-            # Yes, `db_service.update_entity` usually triggers a notification.
-            # WorkerManager -> _on_entity_updated -> DataHandler ->
-            # entity_updated signal.
-            # MainWindow listens to data_handler.entity_updated.
-            # I didn't see explicit `entity_updated` connection in
-            # `_complete_initialization`.
-            # `DataHandler` isn't fully shown in the 800 lines.
+        if not dlg.selected_template:
+            return
 
-            # Assuming standard architecture handles refresh:
-            self.command_requested.emit(cmd)
+        # Create Command
+        # We must pass a COPY or be careful? Command modifies it.
+        # actually we should pass a copy because the command runs in a worker
+        # and might race with UI if we pass the cached object directly?
+        # Safe to copy.
+        import copy
 
-            # Manually trigger reload?
-            # If the command is async, we can't reload immediately.
-            # We rely on the system to notify us of the update.
-            # If `InjectTemplateCommand` calls `db_service.update_entity`,
-            # and that emits an event, the UI should auto-update if wired correctly.
+        target_clone = copy.deepcopy(target_entity)
 
-            pass
+        cmd = InjectTemplateCommand(
+            target=target_clone,
+            template=dlg.selected_template,
+            manager=self.fast_inject_manager,
+            overwrite=dlg.should_overwrite,
+            variables=dlg.variable_values,
+        )
+
+        # Execute
+        # We connect a success callback to reload the editor
+        # The `command_coordinator` doesn't easily support ad-hoc callbacks
+        # per command instance
+        # unless we wrap it or listen to general signals.
+        # But `MainWindow` listens to `data_changed` signals?
+        # If `InjectTemplateCommand` calls `insert_entity`, `DataHandler`
+        # should pick it up?
+        # Yes, `db_service.insert_entity` usually triggers a notification.
+        # WorkerManager -> _on_entity_updated -> DataHandler ->
+        # entity_updated signal.
+        # MainWindow listens to data_handler.entity_updated.
+        # I didn't see explicit `entity_updated` connection in
+        # `_complete_initialization`.
+        # `DataHandler` isn't fully shown in the 800 lines.
+
+        # Assuming standard architecture handles refresh:
+        self.command_requested.emit(cmd)
 
     @Slot(str)
     def _on_fast_inject_ui_requested_event(self, event_id: str) -> None:
@@ -986,23 +1002,47 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         templates = self.fast_inject_manager.load_templates()
 
         dlg = FastInjectDialog(templates, target_name=target_event.name, parent=self)
-        if dlg.exec():
-            if not dlg.selected_template:
-                return
+        result = dlg.exec()
 
-            import copy
+        # Handle import request (result code 2)
+        if result == 2:
+            import_paths = getattr(dlg, "_import_paths", [])
+            if import_paths:
+                imported_count = 0
+                for path in import_paths:
+                    try:
+                        self.fast_inject_manager.import_template(path)
+                        imported_count += 1
+                    except Exception as e:
+                        logger.error(f"Failed to import template {path}: {e}")
 
-            target_clone = copy.deepcopy(target_event)
+                if imported_count > 0:
+                    self.status_bar.showMessage(
+                        f"Imported {imported_count} template(s). Reopening dialog..."
+                    )
+                    # Reopen dialog with updated templates
+                    self._on_fast_inject_ui_requested_event(event_id)
+            return
 
-            cmd = InjectTemplateCommand(
-                target=target_clone,
-                template=dlg.selected_template,
-                manager=self.fast_inject_manager,
-                overwrite=dlg.should_overwrite,
-                variables=dlg.variable_values,
-            )
+        if not result:
+            return
 
-            self.command_requested.emit(cmd)
+        if not dlg.selected_template:
+            return
+
+        import copy
+
+        target_clone = copy.deepcopy(target_event)
+
+        cmd = InjectTemplateCommand(
+            target=target_clone,
+            template=dlg.selected_template,
+            manager=self.fast_inject_manager,
+            overwrite=dlg.should_overwrite,
+            variables=dlg.variable_values,
+        )
+
+        self.command_requested.emit(cmd)
 
     @Slot(dict)
     def _on_create_template_requested(self, data: dict) -> None:
@@ -1926,28 +1966,19 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             # has_filter = bool(config.get("include") or config.get("exclude"))
             # self.unified_list.set_filter_active(has_filter)
 
+    @Slot()
     def clear_filter(self) -> None:
-        """Clears the current filter configuration and reloads data."""
+        """Clears the current filter configuration."""
         logger.info("Clearing filters")
         self.unified_list.set_advanced_filter({})
 
         # Clear settings
+        from PySide6.QtCore import QSettings
+
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         settings.remove(SETTINGS_FILTER_CONFIG_KEY)
 
-        # Update UI state - handled by set_advanced_filter
         self.status_bar.showMessage("Filters cleared.")
-
-        # Reload full data? Not strictly needed if we just clear the filter,
-        # but if we want to ensure sync...
-        # Actually set_advanced_filter triggers re-render.
-        # But if the user expects a "Reload", we can keep it.
-        # Let's keep load_data() to be safe, though likely redundant for the
-        # list itself.
-        self.load_data()
-        self.status_bar.showMessage("Filters cleared.")
-
-        # Reload full data
         self.load_data()
 
     @Slot()
@@ -1955,7 +1986,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """Shows filter dialog for the Longform editor (independent state)."""
         self.longform_manager.show_longform_filter_dialog()
 
-    @Slot()
     def clear_longform_filter(self) -> None:
         """Clears the longform filter and reloads the longform view."""
         self.longform_manager.clear_longform_filter()
