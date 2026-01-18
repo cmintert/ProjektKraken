@@ -16,6 +16,7 @@ from src.core.entities import Entity
 from src.core.events import Event
 from src.core.map import Map
 from src.core.marker import Marker
+from src.core.road import RoadNetwork
 
 # Import repositories for modular CRUD operations
 from src.services.repositories import (
@@ -1065,6 +1066,52 @@ class DatabaseService:
         sql = "DELETE FROM markers WHERE id = ?"
         with self.transaction() as conn:
             conn.execute(sql, (marker_id,))
+
+    # --------------------------------------------------------------------------
+    # Road Network Helpers
+    # --------------------------------------------------------------------------
+
+    def get_road_network(self, map_id: str) -> Optional[RoadNetwork]:
+        """Retrieves the road network for a map.
+
+        Args:
+            map_id: The unique identifier of the map.
+
+        Returns:
+            Optional[RoadNetwork]: Road network if present, else None.
+        """
+        if not self._connection:
+            self.connect()
+        map_obj = self._map_repo.get_map(map_id)
+        if not map_obj or "_roads" not in map_obj.attributes:
+            return None
+        return RoadNetwork.from_dict(map_obj.attributes["_roads"])
+
+    def update_road_network(self, map_id: str, road_network: RoadNetwork) -> None:
+        """Updates the road network for a map.
+
+        This is a convenience method. For undo/redo support,
+        use UpdateMapRoadsCommand instead.
+
+        Args:
+            map_id: The unique identifier of the map.
+            road_network: RoadNetwork instance to store.
+
+        Raises:
+            ValueError: If map not found.
+        """
+        if not self._connection:
+            self.connect()
+        map_obj = self._map_repo.get_map(map_id)
+        if not map_obj:
+            raise ValueError(f"Map with ID {map_id} not found")
+
+        import time
+
+        road_network.meta["modified_at"] = time.time()
+        map_obj.attributes["_roads"] = road_network.to_dict()
+        map_obj.modified_at = time.time()
+        self._map_repo.insert_map(map_obj)
 
     # --------------------------------------------------------------------------
     # Tag Management - Normalized Tags
