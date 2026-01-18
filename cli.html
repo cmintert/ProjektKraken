@@ -281,8 +281,614 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
 </section>
-<section id="cli-export-longform-module">
-<h2>cli.export_longform module<a class="headerlink" href="#cli-export-longform-module" title="Link to this heading">¶</a></h2>
+<section id="module-cli.attachment">
+<span id="cli-attachment-module"></span><h2>cli.attachment module<a class="headerlink" href="#module-cli.attachment" title="Link to this heading">¶</a></h2>
+<p>CLI for managing image attachments.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.attachment.add_attachments">
+<span class="sig-prename descclassname"><span class="pre">cli.attachment.</span></span><span class="sig-name descname"><span class="pre">add_attachments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/attachment.html#add_attachments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.attachment.add_attachments" title="Link to this definition">¶</a></dt>
+<dd><p>Add image attachments to an entity or event.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.attachment.list_attachments">
+<span class="sig-prename descclassname"><span class="pre">cli.attachment.</span></span><span class="sig-name descname"><span class="pre">list_attachments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/attachment.html#list_attachments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.attachment.list_attachments" title="Link to this definition">¶</a></dt>
+<dd><p>List attachments for an entity or event.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.attachment.main">
+<span class="sig-prename descclassname"><span class="pre">cli.attachment.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/attachment.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.attachment.main" title="Link to this definition">¶</a></dt>
+<dd><p>Main entry point for the attachment CLI tool.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.attachment.remove_attachment">
+<span class="sig-prename descclassname"><span class="pre">cli.attachment.</span></span><span class="sig-name descname"><span class="pre">remove_attachment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/attachment.html#remove_attachment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.attachment.remove_attachment" title="Link to this definition">¶</a></dt>
+<dd><p>Remove an image attachment.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.attachment.reorder_attachments">
+<span class="sig-prename descclassname"><span class="pre">cli.attachment.</span></span><span class="sig-name descname"><span class="pre">reorder_attachments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/attachment.html#reorder_attachments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.attachment.reorder_attachments" title="Link to this definition">¶</a></dt>
+<dd><p>Reorder attachments for an owner.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.attachment.update_caption">
+<span class="sig-prename descclassname"><span class="pre">cli.attachment.</span></span><span class="sig-name descname"><span class="pre">update_caption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/attachment.html#update_caption"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.attachment.update_caption" title="Link to this definition">¶</a></dt>
+<dd><p>Update the caption of an attachment.</p>
+</dd></dl>
+
+</section>
+<section id="module-cli.backup">
+<span id="cli-backup-module"></span><h2>cli.backup module<a class="headerlink" href="#module-cli.backup" title="Link to this heading">¶</a></h2>
+<p>Backup Management CLI.</p>
+<p>Provides command-line tools for creating, listing, and restoring backups.</p>
+<dl class="simple">
+<dt>Usage:</dt><dd><p>python -m src.cli.backup create –database world.kraken –description “Pre-update”
+python -m src.cli.backup list –database world.kraken
+python -m src.cli.backup restore –database world.kraken –file “path/to/backup.kraken”</p>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.backup.create_backup">
+<span class="sig-prename descclassname"><span class="pre">cli.backup.</span></span><span class="sig-name descname"><span class="pre">create_backup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/backup.html#create_backup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.backup.create_backup" title="Link to this definition">¶</a></dt>
+<dd><p>Create a new backup.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.backup.list_backups">
+<span class="sig-prename descclassname"><span class="pre">cli.backup.</span></span><span class="sig-name descname"><span class="pre">list_backups</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/backup.html#list_backups"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.backup.list_backups" title="Link to this definition">¶</a></dt>
+<dd><p>List available backups.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.backup.main">
+<span class="sig-prename descclassname"><span class="pre">cli.backup.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/backup.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.backup.main" title="Link to this definition">¶</a></dt>
+<dd><p>Main CLI entry point for backup tools.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.backup.restore_backup">
+<span class="sig-prename descclassname"><span class="pre">cli.backup.</span></span><span class="sig-name descname"><span class="pre">restore_backup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/backup.html#restore_backup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.backup.restore_backup" title="Link to this definition">¶</a></dt>
+<dd><p>Restore from a backup.</p>
+</dd></dl>
+
+</section>
+<section id="module-cli.calendar">
+<span id="cli-calendar-module"></span><h2>cli.calendar module<a class="headerlink" href="#module-cli.calendar" title="Link to this heading">¶</a></h2>
+<p>CLI for managing calendar configurations.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.calendar.create_calendar">
+<span class="sig-prename descclassname"><span class="pre">cli.calendar.</span></span><span class="sig-name descname"><span class="pre">create_calendar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/calendar.html#create_calendar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.calendar.create_calendar" title="Link to this definition">¶</a></dt>
+<dd><p>Create a new calendar configuration.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.calendar.delete_calendar">
+<span class="sig-prename descclassname"><span class="pre">cli.calendar.</span></span><span class="sig-name descname"><span class="pre">delete_calendar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/calendar.html#delete_calendar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.calendar.delete_calendar" title="Link to this definition">¶</a></dt>
+<dd><p>Delete a calendar configuration.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.calendar.list_calendars">
+<span class="sig-prename descclassname"><span class="pre">cli.calendar.</span></span><span class="sig-name descname"><span class="pre">list_calendars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/calendar.html#list_calendars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.calendar.list_calendars" title="Link to this definition">¶</a></dt>
+<dd><p>List all calendar configurations.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.calendar.main">
+<span class="sig-prename descclassname"><span class="pre">cli.calendar.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/calendar.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.calendar.main" title="Link to this definition">¶</a></dt>
+<dd><p>Main entry point for the calendar CLI tool.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.calendar.set_active_calendar">
+<span class="sig-prename descclassname"><span class="pre">cli.calendar.</span></span><span class="sig-name descname"><span class="pre">set_active_calendar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/calendar.html#set_active_calendar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.calendar.set_active_calendar" title="Link to this definition">¶</a></dt>
+<dd><p>Set a calendar configuration as active.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.calendar.show_calendar">
+<span class="sig-prename descclassname"><span class="pre">cli.calendar.</span></span><span class="sig-name descname"><span class="pre">show_calendar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/calendar.html#show_calendar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.calendar.show_calendar" title="Link to this definition">¶</a></dt>
+<dd><p>Show details of a calendar configuration.</p>
+</dd></dl>
+
+</section>
+<section id="module-cli.entity">
+<span id="cli-entity-module"></span><h2>cli.entity module<a class="headerlink" href="#module-cli.entity" title="Link to this heading">¶</a></h2>
+<p>Entity Management CLI.</p>
+<p>Provides command-line tools for creating, listing, updating, and deleting
+entities.</p>
+<dl>
+<dt>Usage:</dt><dd><dl class="simple">
+<dt>python -m src.cli.entity create –database world.kraken</dt><dd><p>–name “Entity Name” –type character</p>
+</dd>
+</dl>
+<p>python -m src.cli.entity list –database world.kraken
+python -m src.cli.entity show –database world.kraken</p>
+<blockquote>
+<div><p>–id &lt;entity-id&gt;</p>
+</div></blockquote>
+<dl class="simple">
+<dt>python -m src.cli.entity update –database world.kraken</dt><dd><p>–id &lt;entity-id&gt; –name “New Name”</p>
+</dd>
+<dt>python -m src.cli.entity delete –database world.kraken</dt><dd><p>–id &lt;entity-id&gt;</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.entity.create_entity">
+<span class="sig-prename descclassname"><span class="pre">cli.entity.</span></span><span class="sig-name descname"><span class="pre">create_entity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/entity.html#create_entity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.entity.create_entity" title="Link to this definition">¶</a></dt>
+<dd><p>Create a new entity.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.entity.delete_entity">
+<span class="sig-prename descclassname"><span class="pre">cli.entity.</span></span><span class="sig-name descname"><span class="pre">delete_entity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/entity.html#delete_entity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.entity.delete_entity" title="Link to this definition">¶</a></dt>
+<dd><p>Delete an entity.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.entity.list_entities">
+<span class="sig-prename descclassname"><span class="pre">cli.entity.</span></span><span class="sig-name descname"><span class="pre">list_entities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/entity.html#list_entities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.entity.list_entities" title="Link to this definition">¶</a></dt>
+<dd><p>List all entities.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.entity.main">
+<span class="sig-prename descclassname"><span class="pre">cli.entity.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/entity.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.entity.main" title="Link to this definition">¶</a></dt>
+<dd><p>Main CLI entry point.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.entity.show_entity">
+<span class="sig-prename descclassname"><span class="pre">cli.entity.</span></span><span class="sig-name descname"><span class="pre">show_entity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/entity.html#show_entity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.entity.show_entity" title="Link to this definition">¶</a></dt>
+<dd><p>Show detailed information about a specific entity.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.entity.update_entity">
+<span class="sig-prename descclassname"><span class="pre">cli.entity.</span></span><span class="sig-name descname"><span class="pre">update_entity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/entity.html#update_entity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.entity.update_entity" title="Link to this definition">¶</a></dt>
+<dd><p>Update an existing entity.</p>
+</dd></dl>
+
+</section>
+<section id="module-cli.event">
+<span id="cli-event-module"></span><h2>cli.event module<a class="headerlink" href="#module-cli.event" title="Link to this heading">¶</a></h2>
+<p>Event Management CLI.</p>
+<p>Provides command-line tools for creating, listing, updating, and deleting
+events.</p>
+<dl>
+<dt>Usage:</dt><dd><dl class="simple">
+<dt>python -m src.cli.event create –database world.kraken</dt><dd><p>–name “Event Name” –date 100.5</p>
+</dd>
+</dl>
+<p>python -m src.cli.event list –database world.kraken
+python -m src.cli.event show –database world.kraken</p>
+<blockquote>
+<div><p>–id &lt;event-id&gt;</p>
+</div></blockquote>
+<dl class="simple">
+<dt>python -m src.cli.event update –database world.kraken</dt><dd><p>–id &lt;event-id&gt; –name “New Name”</p>
+</dd>
+<dt>python -m src.cli.event delete –database world.kraken</dt><dd><p>–id &lt;event-id&gt;</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.event.create_event">
+<span class="sig-prename descclassname"><span class="pre">cli.event.</span></span><span class="sig-name descname"><span class="pre">create_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/event.html#create_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.event.create_event" title="Link to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.event.delete_event">
+<span class="sig-prename descclassname"><span class="pre">cli.event.</span></span><span class="sig-name descname"><span class="pre">delete_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/event.html#delete_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.event.delete_event" title="Link to this definition">¶</a></dt>
+<dd><p>Delete an event.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.event.list_events">
+<span class="sig-prename descclassname"><span class="pre">cli.event.</span></span><span class="sig-name descname"><span class="pre">list_events</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/event.html#list_events"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.event.list_events" title="Link to this definition">¶</a></dt>
+<dd><p>List all events.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.event.main">
+<span class="sig-prename descclassname"><span class="pre">cli.event.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/event.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.event.main" title="Link to this definition">¶</a></dt>
+<dd><p>Main CLI entry point.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.event.show_event">
+<span class="sig-prename descclassname"><span class="pre">cli.event.</span></span><span class="sig-name descname"><span class="pre">show_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/event.html#show_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.event.show_event" title="Link to this definition">¶</a></dt>
+<dd><p>Show detailed information about a specific event.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.event.update_event">
+<span class="sig-prename descclassname"><span class="pre">cli.event.</span></span><span class="sig-name descname"><span class="pre">update_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/event.html#update_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.event.update_event" title="Link to this definition">¶</a></dt>
+<dd><p>Update an existing event.</p>
+</dd></dl>
+
+</section>
+<section id="module-cli.graph">
+<span id="cli-graph-module"></span><h2>cli.graph module<a class="headerlink" href="#module-cli.graph" title="Link to this heading">¶</a></h2>
+<p>Graph Data CLI.</p>
+<p>Provides command-line tools for exporting graph data for visualization.</p>
+<dl class="simple">
+<dt>Usage:</dt><dd><p>python -m src.cli.graph export –database world.kraken –out-file graph.json</p>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.graph.export_graph">
+<span class="sig-prename descclassname"><span class="pre">cli.graph.</span></span><span class="sig-name descname"><span class="pre">export_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/graph.html#export_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.graph.export_graph" title="Link to this definition">¶</a></dt>
+<dd><p>Export graph data to JSON.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.graph.main">
+<span class="sig-prename descclassname"><span class="pre">cli.graph.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/graph.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.graph.main" title="Link to this definition">¶</a></dt>
+<dd><p>Main CLI entry point for graph tools.</p>
+</dd></dl>
+
+</section>
+<section id="module-cli.index">
+<span id="cli-index-module"></span><h2>cli.index module<a class="headerlink" href="#module-cli.index" title="Link to this heading">¶</a></h2>
+<p>Semantic Search Index Management CLI.</p>
+<p>Provides command-line tools for building, querying, and managing
+the semantic search index.</p>
+<dl class="simple">
+<dt>Usage:</dt><dd><p>python -m src.cli.index rebuild –database world.kraken
+python -m src.cli.index rebuild –database world.kraken –type entity
+python -m src.cli.index query –database world.kraken         –text “find the wizard”
+python -m src.cli.index index-object –database world.kraken         –type entity –id &lt;uuid&gt;</p>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.index.delete_object">
+<span class="sig-prename descclassname"><span class="pre">cli.index.</span></span><span class="sig-name descname"><span class="pre">delete_object</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/index.html#delete_object"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.index.delete_object" title="Link to this definition">¶</a></dt>
+<dd><p>Delete embeddings for a single object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>args</strong> – Command-line arguments.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Exit code.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.index.index_object">
+<span class="sig-prename descclassname"><span class="pre">cli.index.</span></span><span class="sig-name descname"><span class="pre">index_object</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/index.html#index_object"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.index.index_object" title="Link to this definition">¶</a></dt>
+<dd><p>Index a single object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>args</strong> – Command-line arguments.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Exit code (0 for success, 1 for failure).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.index.main">
+<span class="sig-prename descclassname"><span class="pre">cli.index.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/index.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.index.main" title="Link to this definition">¶</a></dt>
+<dd><p>Main entry point for the CLI.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.index.query_index">
+<span class="sig-prename descclassname"><span class="pre">cli.index.</span></span><span class="sig-name descname"><span class="pre">query_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/index.html#query_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.index.query_index" title="Link to this definition">¶</a></dt>
+<dd><p>Query the semantic search index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>args</strong> – Command-line arguments.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Exit code (0 for success, 1 for failure).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.index.rebuild_index">
+<span class="sig-prename descclassname"><span class="pre">cli.index.</span></span><span class="sig-name descname"><span class="pre">rebuild_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/index.html#rebuild_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.index.rebuild_index" title="Link to this definition">¶</a></dt>
+<dd><p>Rebuild the semantic search index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>args</strong> – Command-line arguments.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Exit code (0 for success, 1 for failure).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-cli.longform">
+<span id="cli-longform-module"></span><h2>cli.longform module<a class="headerlink" href="#module-cli.longform" title="Link to this heading">¶</a></h2>
+<p>Longform Document Management CLI.</p>
+<p>Provides command-line tools for exporting and manipulating the document structure.</p>
+<dl class="simple">
+<dt>Usage:</dt><dd><p>python -m src.cli.longform export –database world.kraken
+python -m src.cli.longform move –database world.kraken –table events         –id &lt;id&gt; –parent &lt;pid&gt;</p>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.longform.demote_entry">
+<span class="sig-prename descclassname"><span class="pre">cli.longform.</span></span><span class="sig-name descname"><span class="pre">demote_entry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/longform.html#demote_entry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.longform.demote_entry" title="Link to this definition">¶</a></dt>
+<dd><p>Demote a longform entry (increase depth).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.longform.export_longform">
+<span class="sig-prename descclassname"><span class="pre">cli.longform.</span></span><span class="sig-name descname"><span class="pre">export_longform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/longform.html#export_longform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.longform.export_longform" title="Link to this definition">¶</a></dt>
+<dd><p>Export longform document.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.longform.main">
+<span class="sig-prename descclassname"><span class="pre">cli.longform.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/longform.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.longform.main" title="Link to this definition">¶</a></dt>
+<dd><p>Main entry point for the longform document CLI tool.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.longform.move_entry">
+<span class="sig-prename descclassname"><span class="pre">cli.longform.</span></span><span class="sig-name descname"><span class="pre">move_entry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/longform.html#move_entry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.longform.move_entry" title="Link to this definition">¶</a></dt>
+<dd><p>Move a longform entry (or add it if missing).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.longform.promote_entry">
+<span class="sig-prename descclassname"><span class="pre">cli.longform.</span></span><span class="sig-name descname"><span class="pre">promote_entry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/longform.html#promote_entry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.longform.promote_entry" title="Link to this definition">¶</a></dt>
+<dd><p>Promote a longform entry (reduce depth).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.longform.reindex_longform">
+<span class="sig-prename descclassname"><span class="pre">cli.longform.</span></span><span class="sig-name descname"><span class="pre">reindex_longform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/longform.html#reindex_longform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.longform.reindex_longform" title="Link to this definition">¶</a></dt>
+<dd><p>Reindex all positions in the longform document.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.longform.remove_entry">
+<span class="sig-prename descclassname"><span class="pre">cli.longform.</span></span><span class="sig-name descname"><span class="pre">remove_entry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/longform.html#remove_entry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.longform.remove_entry" title="Link to this definition">¶</a></dt>
+<dd><p>Remove entry from longform.</p>
+</dd></dl>
+
+</section>
+<section id="module-cli.map">
+<span id="cli-map-module"></span><h2>cli.map module<a class="headerlink" href="#module-cli.map" title="Link to this heading">¶</a></h2>
+<p>Map Management CLI.</p>
+<p>Provides command-line tools for creating, listing, updating, and deleting
+maps and markers.</p>
+<dl class="simple">
+<dt>Usage:</dt><dd><p>python -m src.cli.map create –database world.kraken –name “World Map”
+python -m src.cli.map list –database world.kraken
+python -m src.cli.map marker-add –database world.kraken –map-id &lt;id&gt; …</p>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.map.add_marker">
+<span class="sig-prename descclassname"><span class="pre">cli.map.</span></span><span class="sig-name descname"><span class="pre">add_marker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/map.html#add_marker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.map.add_marker" title="Link to this definition">¶</a></dt>
+<dd><p>Add a marker to a map.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.map.create_map">
+<span class="sig-prename descclassname"><span class="pre">cli.map.</span></span><span class="sig-name descname"><span class="pre">create_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/map.html#create_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.map.create_map" title="Link to this definition">¶</a></dt>
+<dd><p>Create a new map.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.map.delete_map">
+<span class="sig-prename descclassname"><span class="pre">cli.map.</span></span><span class="sig-name descname"><span class="pre">delete_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/map.html#delete_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.map.delete_map" title="Link to this definition">¶</a></dt>
+<dd><p>Delete a map.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.map.list_maps">
+<span class="sig-prename descclassname"><span class="pre">cli.map.</span></span><span class="sig-name descname"><span class="pre">list_maps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/map.html#list_maps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.map.list_maps" title="Link to this definition">¶</a></dt>
+<dd><p>List all maps.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.map.main">
+<span class="sig-prename descclassname"><span class="pre">cli.map.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/map.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.map.main" title="Link to this definition">¶</a></dt>
+<dd><p>Main entry point for the map CLI tool.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.map.marker_delete">
+<span class="sig-prename descclassname"><span class="pre">cli.map.</span></span><span class="sig-name descname"><span class="pre">marker_delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/map.html#marker_delete"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.map.marker_delete" title="Link to this definition">¶</a></dt>
+<dd><p>Delete a marker.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.map.marker_list">
+<span class="sig-prename descclassname"><span class="pre">cli.map.</span></span><span class="sig-name descname"><span class="pre">marker_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/map.html#marker_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.map.marker_list" title="Link to this definition">¶</a></dt>
+<dd><p>List markers for a map.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.map.marker_update">
+<span class="sig-prename descclassname"><span class="pre">cli.map.</span></span><span class="sig-name descname"><span class="pre">marker_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/map.html#marker_update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.map.marker_update" title="Link to this definition">¶</a></dt>
+<dd><p>Update an existing marker.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.map.update_map">
+<span class="sig-prename descclassname"><span class="pre">cli.map.</span></span><span class="sig-name descname"><span class="pre">update_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/map.html#update_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.map.update_map" title="Link to this definition">¶</a></dt>
+<dd><p>Update an existing map.</p>
+</dd></dl>
+
+</section>
+<section id="module-cli.obsidian">
+<span id="cli-obsidian-module"></span><h2>cli.obsidian module<a class="headerlink" href="#module-cli.obsidian" title="Link to this heading">¶</a></h2>
+<p>Obsidian Export CLI.</p>
+<p>Provides command-line tools for exporting the database to an Obsidian vault.</p>
+<dl class="simple">
+<dt>Usage:</dt><dd><p>python -m src.cli.obsidian export –database world.kraken –out-dir ./obsidian_export</p>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.obsidian.export_obsidian">
+<span class="sig-prename descclassname"><span class="pre">cli.obsidian.</span></span><span class="sig-name descname"><span class="pre">export_obsidian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/obsidian.html#export_obsidian"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.obsidian.export_obsidian" title="Link to this definition">¶</a></dt>
+<dd><p>Export database to Obsidian vault.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.obsidian.main">
+<span class="sig-prename descclassname"><span class="pre">cli.obsidian.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/obsidian.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.obsidian.main" title="Link to this definition">¶</a></dt>
+<dd><p>Main CLI entry point for obsidian tools.</p>
+</dd></dl>
+
+</section>
+<section id="module-cli.relation">
+<span id="cli-relation-module"></span><h2>cli.relation module<a class="headerlink" href="#module-cli.relation" title="Link to this heading">¶</a></h2>
+<p>Relation Management CLI.</p>
+<p>Provides command-line tools for creating, listing, and deleting relations
+between events and entities.</p>
+<dl class="simple">
+<dt>Usage:</dt><dd><dl class="simple">
+<dt>python -m src.cli.relation add –database world.kraken</dt><dd><p>–source &lt;id&gt; –target &lt;id&gt; –type “caused”</p>
+</dd>
+<dt>python -m src.cli.relation list –database world.kraken</dt><dd><p>–source &lt;id&gt;</p>
+</dd>
+<dt>python -m src.cli.relation delete –database world.kraken</dt><dd><p>–id &lt;relation-id&gt;</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.relation.add_relation">
+<span class="sig-prename descclassname"><span class="pre">cli.relation.</span></span><span class="sig-name descname"><span class="pre">add_relation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/relation.html#add_relation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.relation.add_relation" title="Link to this definition">¶</a></dt>
+<dd><p>Add a relation between two entities/events.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.relation.delete_relation">
+<span class="sig-prename descclassname"><span class="pre">cli.relation.</span></span><span class="sig-name descname"><span class="pre">delete_relation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/relation.html#delete_relation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.relation.delete_relation" title="Link to this definition">¶</a></dt>
+<dd><p>Delete a relation.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.relation.list_relations">
+<span class="sig-prename descclassname"><span class="pre">cli.relation.</span></span><span class="sig-name descname"><span class="pre">list_relations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/relation.html#list_relations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.relation.list_relations" title="Link to this definition">¶</a></dt>
+<dd><p>List relations for an entity/event.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.relation.main">
+<span class="sig-prename descclassname"><span class="pre">cli.relation.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/relation.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.relation.main" title="Link to this definition">¶</a></dt>
+<dd><p>Main CLI entry point.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.relation.update_relation">
+<span class="sig-prename descclassname"><span class="pre">cli.relation.</span></span><span class="sig-name descname"><span class="pre">update_relation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/relation.html#update_relation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.relation.update_relation" title="Link to this definition">¶</a></dt>
+<dd><p>Update an existing relation.</p>
+</dd></dl>
+
+</section>
+<section id="module-cli.timeline">
+<span id="cli-timeline-module"></span><h2>cli.timeline module<a class="headerlink" href="#module-cli.timeline" title="Link to this heading">¶</a></h2>
+<p>Timeline Grouping CLI.</p>
+<p>Provides command-line tools for managing timeline grouping configurations
+and tag colors.</p>
+<dl class="simple">
+<dt>Usage:</dt><dd><p>python -m src.cli.timeline group –database world.kraken         –tags “Type,Faction” –mode DUPLICATE
+python -m src.cli.timeline clear –database world.kraken
+python -m src.cli.timeline tag-color –database world.kraken         –tag “Faction” –color “#FF0000”</p>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.timeline.clear_grouping">
+<span class="sig-prename descclassname"><span class="pre">cli.timeline.</span></span><span class="sig-name descname"><span class="pre">clear_grouping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/timeline.html#clear_grouping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.timeline.clear_grouping" title="Link to this definition">¶</a></dt>
+<dd><p>Clear timeline grouping configuration.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.timeline.main">
+<span class="sig-prename descclassname"><span class="pre">cli.timeline.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/timeline.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.timeline.main" title="Link to this definition">¶</a></dt>
+<dd><p>Main CLI entry point.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.timeline.set_grouping">
+<span class="sig-prename descclassname"><span class="pre">cli.timeline.</span></span><span class="sig-name descname"><span class="pre">set_grouping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/timeline.html#set_grouping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.timeline.set_grouping" title="Link to this definition">¶</a></dt>
+<dd><p>Set timeline grouping configuration.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.timeline.update_tag_color">
+<span class="sig-prename descclassname"><span class="pre">cli.timeline.</span></span><span class="sig-name descname"><span class="pre">update_tag_color</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/timeline.html#update_tag_color"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.timeline.update_tag_color" title="Link to this definition">¶</a></dt>
+<dd><p>Update color for a tag.</p>
+</dd></dl>
+
+</section>
+<section id="module-cli.utils">
+<span id="cli-utils-module"></span><h2>cli.utils module<a class="headerlink" href="#module-cli.utils" title="Link to this heading">¶</a></h2>
+<p>CLI Utilities Module.</p>
+<p>Common utility functions for CLI tools.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.utils.validate_database_path">
+<span class="sig-prename descclassname"><span class="pre">cli.utils.</span></span><span class="sig-name descname"><span class="pre">validate_database_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_create</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/cli/utils.html#validate_database_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.utils.validate_database_path" title="Link to this definition">¶</a></dt>
+<dd><p>Validate that a database file exists.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db_path</strong> – Path to the database file.</p></li>
+<li><p><strong>allow_create</strong> – If True, allows non-existent databases (for create
+operations).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if valid, False otherwise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-cli.wiki">
+<span id="cli-wiki-module"></span><h2>cli.wiki module<a class="headerlink" href="#module-cli.wiki" title="Link to this heading">¶</a></h2>
+<p>Wiki Management CLI.</p>
+<p>Provides command-line tools for wiki operations, such as scanning content for links.</p>
+<dl class="simple">
+<dt>Usage:</dt><dd><p>python -m src.cli.wiki scan –database world.kraken –source &lt;id&gt; -f description</p>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.wiki.main">
+<span class="sig-prename descclassname"><span class="pre">cli.wiki.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/wiki.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.wiki.main" title="Link to this definition">¶</a></dt>
+<dd><p>Main entry point for the wiki content CLI tool.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.wiki.scan_links">
+<span class="sig-prename descclassname"><span class="pre">cli.wiki.</span></span><span class="sig-name descname"><span class="pre">scan_links</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/wiki.html#scan_links"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.wiki.scan_links" title="Link to this definition">¶</a></dt>
+<dd><p>Scan a source object for wiki links.</p>
+</dd></dl>
+
 </section>
 <section id="module-cli">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-cli" title="Link to this heading">¶</a></h2>
@@ -347,7 +953,113 @@
             <ul>
 <li><a class="reference internal" href="#">cli package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#cli-export-longform-module">cli.export_longform module</a></li>
+<li><a class="reference internal" href="#module-cli.attachment">cli.attachment module</a><ul>
+<li><a class="reference internal" href="#cli.attachment.add_attachments"><code class="docutils literal notranslate"><span class="pre">add_attachments()</span></code></a></li>
+<li><a class="reference internal" href="#cli.attachment.list_attachments"><code class="docutils literal notranslate"><span class="pre">list_attachments()</span></code></a></li>
+<li><a class="reference internal" href="#cli.attachment.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#cli.attachment.remove_attachment"><code class="docutils literal notranslate"><span class="pre">remove_attachment()</span></code></a></li>
+<li><a class="reference internal" href="#cli.attachment.reorder_attachments"><code class="docutils literal notranslate"><span class="pre">reorder_attachments()</span></code></a></li>
+<li><a class="reference internal" href="#cli.attachment.update_caption"><code class="docutils literal notranslate"><span class="pre">update_caption()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-cli.backup">cli.backup module</a><ul>
+<li><a class="reference internal" href="#cli.backup.create_backup"><code class="docutils literal notranslate"><span class="pre">create_backup()</span></code></a></li>
+<li><a class="reference internal" href="#cli.backup.list_backups"><code class="docutils literal notranslate"><span class="pre">list_backups()</span></code></a></li>
+<li><a class="reference internal" href="#cli.backup.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#cli.backup.restore_backup"><code class="docutils literal notranslate"><span class="pre">restore_backup()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-cli.calendar">cli.calendar module</a><ul>
+<li><a class="reference internal" href="#cli.calendar.create_calendar"><code class="docutils literal notranslate"><span class="pre">create_calendar()</span></code></a></li>
+<li><a class="reference internal" href="#cli.calendar.delete_calendar"><code class="docutils literal notranslate"><span class="pre">delete_calendar()</span></code></a></li>
+<li><a class="reference internal" href="#cli.calendar.list_calendars"><code class="docutils literal notranslate"><span class="pre">list_calendars()</span></code></a></li>
+<li><a class="reference internal" href="#cli.calendar.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#cli.calendar.set_active_calendar"><code class="docutils literal notranslate"><span class="pre">set_active_calendar()</span></code></a></li>
+<li><a class="reference internal" href="#cli.calendar.show_calendar"><code class="docutils literal notranslate"><span class="pre">show_calendar()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-cli.entity">cli.entity module</a><ul>
+<li><a class="reference internal" href="#cli.entity.create_entity"><code class="docutils literal notranslate"><span class="pre">create_entity()</span></code></a></li>
+<li><a class="reference internal" href="#cli.entity.delete_entity"><code class="docutils literal notranslate"><span class="pre">delete_entity()</span></code></a></li>
+<li><a class="reference internal" href="#cli.entity.list_entities"><code class="docutils literal notranslate"><span class="pre">list_entities()</span></code></a></li>
+<li><a class="reference internal" href="#cli.entity.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#cli.entity.show_entity"><code class="docutils literal notranslate"><span class="pre">show_entity()</span></code></a></li>
+<li><a class="reference internal" href="#cli.entity.update_entity"><code class="docutils literal notranslate"><span class="pre">update_entity()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-cli.event">cli.event module</a><ul>
+<li><a class="reference internal" href="#cli.event.create_event"><code class="docutils literal notranslate"><span class="pre">create_event()</span></code></a></li>
+<li><a class="reference internal" href="#cli.event.delete_event"><code class="docutils literal notranslate"><span class="pre">delete_event()</span></code></a></li>
+<li><a class="reference internal" href="#cli.event.list_events"><code class="docutils literal notranslate"><span class="pre">list_events()</span></code></a></li>
+<li><a class="reference internal" href="#cli.event.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#cli.event.show_event"><code class="docutils literal notranslate"><span class="pre">show_event()</span></code></a></li>
+<li><a class="reference internal" href="#cli.event.update_event"><code class="docutils literal notranslate"><span class="pre">update_event()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-cli.graph">cli.graph module</a><ul>
+<li><a class="reference internal" href="#cli.graph.export_graph"><code class="docutils literal notranslate"><span class="pre">export_graph()</span></code></a></li>
+<li><a class="reference internal" href="#cli.graph.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-cli.index">cli.index module</a><ul>
+<li><a class="reference internal" href="#cli.index.delete_object"><code class="docutils literal notranslate"><span class="pre">delete_object()</span></code></a></li>
+<li><a class="reference internal" href="#cli.index.index_object"><code class="docutils literal notranslate"><span class="pre">index_object()</span></code></a></li>
+<li><a class="reference internal" href="#cli.index.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#cli.index.query_index"><code class="docutils literal notranslate"><span class="pre">query_index()</span></code></a></li>
+<li><a class="reference internal" href="#cli.index.rebuild_index"><code class="docutils literal notranslate"><span class="pre">rebuild_index()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-cli.longform">cli.longform module</a><ul>
+<li><a class="reference internal" href="#cli.longform.demote_entry"><code class="docutils literal notranslate"><span class="pre">demote_entry()</span></code></a></li>
+<li><a class="reference internal" href="#cli.longform.export_longform"><code class="docutils literal notranslate"><span class="pre">export_longform()</span></code></a></li>
+<li><a class="reference internal" href="#cli.longform.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#cli.longform.move_entry"><code class="docutils literal notranslate"><span class="pre">move_entry()</span></code></a></li>
+<li><a class="reference internal" href="#cli.longform.promote_entry"><code class="docutils literal notranslate"><span class="pre">promote_entry()</span></code></a></li>
+<li><a class="reference internal" href="#cli.longform.reindex_longform"><code class="docutils literal notranslate"><span class="pre">reindex_longform()</span></code></a></li>
+<li><a class="reference internal" href="#cli.longform.remove_entry"><code class="docutils literal notranslate"><span class="pre">remove_entry()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-cli.map">cli.map module</a><ul>
+<li><a class="reference internal" href="#cli.map.add_marker"><code class="docutils literal notranslate"><span class="pre">add_marker()</span></code></a></li>
+<li><a class="reference internal" href="#cli.map.create_map"><code class="docutils literal notranslate"><span class="pre">create_map()</span></code></a></li>
+<li><a class="reference internal" href="#cli.map.delete_map"><code class="docutils literal notranslate"><span class="pre">delete_map()</span></code></a></li>
+<li><a class="reference internal" href="#cli.map.list_maps"><code class="docutils literal notranslate"><span class="pre">list_maps()</span></code></a></li>
+<li><a class="reference internal" href="#cli.map.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#cli.map.marker_delete"><code class="docutils literal notranslate"><span class="pre">marker_delete()</span></code></a></li>
+<li><a class="reference internal" href="#cli.map.marker_list"><code class="docutils literal notranslate"><span class="pre">marker_list()</span></code></a></li>
+<li><a class="reference internal" href="#cli.map.marker_update"><code class="docutils literal notranslate"><span class="pre">marker_update()</span></code></a></li>
+<li><a class="reference internal" href="#cli.map.update_map"><code class="docutils literal notranslate"><span class="pre">update_map()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-cli.obsidian">cli.obsidian module</a><ul>
+<li><a class="reference internal" href="#cli.obsidian.export_obsidian"><code class="docutils literal notranslate"><span class="pre">export_obsidian()</span></code></a></li>
+<li><a class="reference internal" href="#cli.obsidian.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-cli.relation">cli.relation module</a><ul>
+<li><a class="reference internal" href="#cli.relation.add_relation"><code class="docutils literal notranslate"><span class="pre">add_relation()</span></code></a></li>
+<li><a class="reference internal" href="#cli.relation.delete_relation"><code class="docutils literal notranslate"><span class="pre">delete_relation()</span></code></a></li>
+<li><a class="reference internal" href="#cli.relation.list_relations"><code class="docutils literal notranslate"><span class="pre">list_relations()</span></code></a></li>
+<li><a class="reference internal" href="#cli.relation.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#cli.relation.update_relation"><code class="docutils literal notranslate"><span class="pre">update_relation()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-cli.timeline">cli.timeline module</a><ul>
+<li><a class="reference internal" href="#cli.timeline.clear_grouping"><code class="docutils literal notranslate"><span class="pre">clear_grouping()</span></code></a></li>
+<li><a class="reference internal" href="#cli.timeline.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#cli.timeline.set_grouping"><code class="docutils literal notranslate"><span class="pre">set_grouping()</span></code></a></li>
+<li><a class="reference internal" href="#cli.timeline.update_tag_color"><code class="docutils literal notranslate"><span class="pre">update_tag_color()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-cli.utils">cli.utils module</a><ul>
+<li><a class="reference internal" href="#cli.utils.validate_database_path"><code class="docutils literal notranslate"><span class="pre">validate_database_path()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-cli.wiki">cli.wiki module</a><ul>
+<li><a class="reference internal" href="#cli.wiki.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#cli.wiki.scan_links"><code class="docutils literal notranslate"><span class="pre">scan_links()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#module-cli">Module contents</a></li>
 </ul>
 </li>
