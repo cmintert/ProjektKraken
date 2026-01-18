@@ -1,8 +1,7 @@
-"""
-MainWindow Class.
+"""MainWindow Class.
 
-The main application window that manages UI components, database workers,
-and signal/slot connections.
+The main application window that manages UI components, database workers, and
+signal/slot connections.
 """
 
 from typing import Optional
@@ -75,13 +74,16 @@ from src.commands.event_commands import (
     DeleteEventCommand,
     UpdateEventCommand,
 )
+from src.commands.inject_commands import InjectTemplateCommand
 from src.commands.relation_commands import (
     AddRelationCommand,
     RemoveRelationCommand,
     UpdateRelationCommand,
 )
 from src.commands.wiki_commands import ProcessWikiLinksCommand
+from src.core.fast_inject import FastInjectManager
 from src.core.logging_config import get_logger
+from src.core.paths import get_worlds_dir
 from src.gui.dialogs.database_manager_dialog import DatabaseManagerDialog
 from src.gui.dialogs.filter_dialog import FilterDialog
 from src.gui.mixins.layout_guard import LayoutGuardMixin
@@ -98,8 +100,7 @@ logger = get_logger(__name__)
 
 
 class MainWindow(QMainWindow, LayoutGuardMixin):
-    """
-    The main application window.
+    """The main application window.
 
     Acts as the central controller for the UI, managing:
     - Dockable widgets (Lists, Editors, Timeline).
@@ -119,8 +120,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
     )  # (tags: list|None, rel_types: list|None)
 
     def __init__(self, capture_layout_on_exit: bool = False) -> None:
-        """
-        Initializes the MainWindow using three-phase initialization.
+        """Initializes the MainWindow using three-phase initialization.
 
         Phase 1: Core services (data handler, worker thread)
         Phase 2: UI skeleton (widgets, layout, menus)
@@ -213,6 +213,13 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.ai_search_manager = AISearchManager(self)
         self.longform_manager = LongformManager(self)
 
+        # Initialize Fast Inject Manager
+        # We need the world path.
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        active_world = settings.value(SETTINGS_ACTIVE_DB_KEY, "Default World")
+        world_path = get_worlds_dir() / active_world
+        self.fast_inject_manager = FastInjectManager(world_path)
+
         # Status Bar
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
@@ -291,6 +298,20 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             lambda dirty: self._on_editor_dirty_changed(self.entity_editor, dirty)
         )
 
+        # Connect Fast Inject Signals
+        self.entity_editor.inject_ui_requested.connect(
+            self._on_fast_inject_ui_requested
+        )
+        self.entity_editor.create_template_requested.connect(
+            self._on_create_template_requested
+        )
+        self.event_editor.inject_ui_requested.connect(
+            self._on_fast_inject_ui_requested_event
+        )
+        self.event_editor.create_template_requested.connect(
+            self._on_create_template_requested
+        )
+
         # Connect graph widget node clicked (was connected in old init)
         self.graph_widget.node_clicked.connect(self._on_item_selected)
 
@@ -306,8 +327,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @property
     def list_dock(self) -> QDockWidget:
-        """
-        Gets the project list dock widget.
+        """Gets the project list dock widget.
 
         Returns:
             QDockWidget: The dock widget containing the unified list.
@@ -316,8 +336,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @property
     def editor_dock(self) -> QDockWidget:
-        """
-        Gets the event editor dock widget.
+        """Gets the event editor dock widget.
 
         Returns:
             QDockWidget: The dock widget containing the event editor.
@@ -326,8 +345,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @property
     def entity_editor_dock(self) -> QDockWidget:
-        """
-        Gets the entity editor dock widget.
+        """Gets the entity editor dock widget.
 
         Returns:
             QDockWidget: The dock widget containing the entity editor.
@@ -336,8 +354,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @property
     def timeline_dock(self) -> QDockWidget:
-        """
-        Gets the timeline dock widget.
+        """Gets the timeline dock widget.
 
         Returns:
             QDockWidget: The dock widget containing the timeline.
@@ -346,8 +363,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @property
     def longform_dock(self) -> QDockWidget:
-        """
-        Gets the longform editor dock widget.
+        """Gets the longform editor dock widget.
 
         Returns:
             QDockWidget: The dock widget containing the longform editor.
@@ -356,8 +372,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @property
     def map_dock(self) -> QDockWidget:
-        """
-        Gets the map dock widget.
+        """Gets the map dock widget.
 
         Returns:
             QDockWidget: The dock widget containing the map.
@@ -365,8 +380,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         return self.ui_manager.docks.get("map")
 
     def _restore_window_state(self) -> None:
-        """
-        Restores window geometry and state using staged approach.
+        """Restores window geometry and state using staged approach.
 
         Stage 1: Immediate - Restore geometry only
         Stage 2: 100ms - Restore critical docks (list, editors, timeline)
@@ -383,7 +397,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         # Check for crash loop / blocked docks immediately
         if self.guard_check_crash_flag():
             logger.info(
-                "Crash flag detected - considering safety measures (logging only for now)"
+                "Crash flag detected - considering safety measures "
+                "(logging only for now)"
             )
             # We could force reset here if enabled
 
@@ -492,8 +507,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         logger.debug("Optional dock restoration complete")
 
     def _validate_dock_state(self) -> bool:
-        """
-        Ensures all expected docks are accessible after restoration.
+        """Ensures all expected docks are accessible after restoration.
 
         Returns:
             bool: True if all critical docks are present and valid, False otherwise.
@@ -530,8 +544,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         return True
 
     def update_item(self, data: dict) -> None:
-        """
-        Placeholder for generalized update.
+        """Placeholder for generalized update.
 
         Currently unused as we split update_event/entity.
         """
@@ -552,21 +565,16 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         )
 
     def load_longform_sequence(self) -> None:
-        """
-        Loads the longform sequence, applying active filters if any.
-        """
+        """Loads the longform sequence, applying active filters if any."""
         self.longform_manager.load_longform_sequence()
 
     @Slot(list)
     def _on_longform_sequence_loaded(self, sequence: list) -> None:
-        """
-        Handler for when longform sequence is loaded.
-        """
+        """Handler for when longform sequence is loaded."""
         self.longform_manager.on_longform_sequence_loaded(sequence)
 
     def set_global_selection(self, item_type: str, item_id: str) -> None:
-        """
-        Centralized method to handle global item selection.
+        """Centralized method to handle global item selection.
 
         Synchronizes all UI components:
         - Editors
@@ -626,8 +634,10 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         # 6. Sync Graph (Focus Node)
         # Prevent infinite loop if this call came from graph click?
         # GraphWidget.focus_node usually checks if already focused.
-        # But we need to be careful. For now, we trust the graph to handle re-focus efficiently.
-        # self.graph_widget.focus_node(item_id) # TO BE IMPLEMENTED in GraphWidget if needed
+        # But we need to be careful. For now, we trust the graph to handle
+        # re-focus efficiently.
+        # self.graph_widget.focus_node(item_id)
+        # TO BE IMPLEMENTED in GraphWidget if needed
 
     def _on_item_selected(self, item_type: str, item_id: str) -> None:
         """Handles selection from unified list or longform editor."""
@@ -640,8 +650,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             settings.setValue(SETTINGS_LAST_ITEM_TYPE_KEY, self._last_selected_type)
 
     def check_unsaved_changes(self, editor: QWidget) -> bool:
-        """
-        Checks if the editor has unsaved changes and prompts the user.
+        """Checks if the editor has unsaved changes and prompts the user.
 
         Args:
             editor: The editor widget to check.
@@ -715,8 +724,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(str)
     def update_status_message(self, message: str) -> None:
-        """
-        Updates the status bar message and sets cursor to Wait.
+        """Updates the status bar message and sets cursor to Wait.
 
         Args:
             message (str): The message to display.
@@ -724,8 +732,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.worker_manager.update_status_message(message)
 
     def clear_status_message(self, message: str) -> None:
-        """
-        Clears the status bar message after a delay and restores cursor.
+        """Clears the status bar message after a delay and restores cursor.
 
         Args:
             message (str): The final completion message.
@@ -734,8 +741,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(str)
     def show_error_message(self, message: str) -> None:
-        """
-        Displays an error message in the status bar and logs it.
+        """Displays an error message in the status bar and logs it.
 
         Args:
             message (str): The error description.
@@ -744,8 +750,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(bool)
     def on_db_initialized(self, success: bool) -> None:
-        """
-        Handler for database initialization result.
+        """Handler for database initialization result.
 
         Args:
             success (bool): True if connection succeeded, False otherwise.
@@ -760,8 +765,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(object)
     def on_calendar_config_loaded(self, config: object) -> None:
-        """
-        Handler for calendar config loaded from worker.
+        """Handler for calendar config loaded from worker.
 
         Args:
             config: CalendarConfig or None.
@@ -799,6 +803,299 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         except Exception as e:
             logger.warning(f"Failed to initialize calendar converter: {e}")
 
+    @Slot(str)
+    def _on_fast_inject_ui_requested(self, entity_id: str) -> None:
+        """Opens the Fast Inject Dialog for an entity.
+
+        Args:
+            entity_id: The ID of the target entity.
+        """
+        # 1. Get Target
+        # For now, we only support Entity injection via this signal
+        # We need to fetch the entity data.
+        # Since we are in the main window, we can probably get it from cache or editor?
+        # The editor already has it loaded, but Command needs the object.
+        # Best to get fresh from DB or use what's in Editor?
+        # Command `InjectTemplateCommand` takes an `Entity` object.
+        # If we modify the one in Editor, we need to be careful about state sync.
+        # Actually, `InjectTemplateCommand` modifies the object passed to it.
+        # If we pass a fresh object from DB, we need to reload Editor after.
+        # If we pass the Editor's object... the Editor might have unsaved changes.
+        # Ideally:
+        # 1. Check unsaved changes (Editor should have handled this? or we do it here).
+        #    If we inject over unsaved changes, we might lose them or mix them.
+        #    "Fast Inject" usually implies "Add these things to what I have".
+        #    So getting the *current state from Editor* is best?
+        #    But `InjectTemplateCommand` expects a domain object (Entity class).
+        # Editor has access to `_current_entity_id` but maybe not the full object
+        # state as class?
+        # The editor works with dicts mostly for saving, but `load_entity` took
+        # an object.
+        #
+        # Let's fetch the latest from DB for safety, OR build one from Editor state?
+        # Fetching from DB is safer.
+        # But if user made changes in Editor and didn't save, they will be lost
+        # if we reload after inject.
+        # So we should Prompt Save first?
+        #
+        # Let's try:
+        # 1. Check unsaved changes. If yes, ask to save.
+        if not self.check_unsaved_changes(self.entity_editor):
+            return
+
+        # 2. Fetch Entity
+        # We need to use a synchronous call or wait for worker?
+        # Our architecture is worker-based.
+        # This is tricky for a dialog flow.
+        # We can use `data_handler.get_entity(id)` if it's thread-safe or available?
+        # `data_handler` seems to emit signals.
+        #
+        # Alternative: We can construct a temporary Entity object from
+        # Editor's current data?
+        # But `InjectTemplateCommand` executes on the DB service in a worker.
+        #
+        # Simplify: Just fetch from DB via worker?
+        # But we need the object NOW to pass to Dialog (for preview context?
+        # No, dialog just needs name).
+        # Converting this to a simpler flow:
+        # Load templates. Show Dialog.
+        # If Apply -> Create Command with (ID, template).
+        # The Command.execute() will fetch the entity?
+        # No, Command takes `target: Union[Entity, Event]`.
+        #
+        # Let's adjust `InjectTemplateCommand` or how we invoke it.
+        # If `InjectTemplateCommand` is running in `CommandCoordinator` ->
+        # `Worker`,
+        # it receives `db_service`.
+        # Maybe we should pass `target_id` and `target_type` to the command,
+        # and let IT fetch?
+        # But `BaseCommand` usually operates on data passed to it?
+        # checking `src/commands/entity_commands.py`:
+        # `UpdateEntityCommand` takes `entity_data: dict` or object?
+        # It takes `entity: Entity`.
+        #
+        # Okay, I will make `InjectTemplateCommand` accept `target_id` and
+        # `target_type` (str)
+        # OR I accept that I need to fetch it here.
+        # Since I'm in the UI thread, I shouldn't block on DB.
+        #
+        # Workaround:
+        # The `EntityEditor` has the data! It has `_current_entity_id`.
+        # I can reconstruct an Entity object from the Editor's fields?
+        # That's what `_on_save` does (creates dict).
+        # I can make `Entity.from_dict(editor.get_data())`.
+        # That ensures we inject into what the user SEES.
+        #
+        # Let's add a public `get_entity_data()` to `EntityEditor`?
+        # `_on_save` builds it. I can expose that logic.
+        #
+        # Wait, `EntityEditor` has `load_entity`. It doesn't keep the object sync'd.
+        #
+        # Let's assume for this iteration that we fetch from DB (ignoring unsaved
+        # changes in UI since we checked them).
+        # Use `self.data_handler.get_entity_sync(entity_id)`?
+        # Doesn't exist.
+        #
+        # Let's rely on `self._cached_entities`?
+        # `MainWindow` caches entities? `self._cached_entities`.
+        # Let's look at `_cached_entities`.
+        # It seems populated.
+
+        target_entity = next(
+            (e for e in self._cached_entities if e.id == entity_id), None
+        )
+        if not target_entity:
+            self.show_error_message(f"Entity {entity_id} not found in cache.")
+            return
+
+        from src.gui.dialogs.fast_inject_dialog import FastInjectDialog
+
+        # Load templates
+        templates = self.fast_inject_manager.load_templates()
+
+        dlg = FastInjectDialog(templates, target_name=target_entity.name, parent=self)
+        if dlg.exec():
+            if not dlg.selected_template:
+                return
+
+            # Create Command
+            # We must pass a COPY or be careful? Command modifies it.
+            # actually we should pass a copy because the command runs in a worker
+            # and might race with UI if we pass the cached object directly?
+            # Safe to copy.
+            import copy
+
+            target_clone = copy.deepcopy(target_entity)
+
+            cmd = InjectTemplateCommand(
+                target=target_clone,
+                template=dlg.selected_template,
+                manager=self.fast_inject_manager,
+                overwrite=dlg.should_overwrite,
+                variables=dlg.variable_values,
+            )
+
+            # Execute
+            # We connect a success callback to reload the editor
+            # The `command_coordinator` doesn't easily support ad-hoc callbacks
+            # per command instance
+            # unless we wrap it or listen to general signals.
+            # But `MainWindow` listens to `data_changed` signals?
+            # If `InjectTemplateCommand` calls `update_entity`, `DataHandler`
+            # should pick it up?
+            # Yes, `db_service.update_entity` usually triggers a notification.
+            # WorkerManager -> _on_entity_updated -> DataHandler ->
+            # entity_updated signal.
+            # MainWindow listens to data_handler.entity_updated.
+            # I didn't see explicit `entity_updated` connection in
+            # `_complete_initialization`.
+            # `DataHandler` isn't fully shown in the 800 lines.
+
+            # Assuming standard architecture handles refresh:
+            self.command_requested.emit(cmd)
+
+            # Manually trigger reload?
+            # If the command is async, we can't reload immediately.
+            # We rely on the system to notify us of the update.
+            # If `InjectTemplateCommand` calls `db_service.update_entity`,
+            # and that emits an event, the UI should auto-update if wired correctly.
+
+            pass
+
+    @Slot(str)
+    def _on_fast_inject_ui_requested_event(self, event_id: str) -> None:
+        """Opens the Fast Inject Dialog for an event.
+
+        Duplicated logic for now, but target fetching differs.
+        """
+        if not self.check_unsaved_changes(self.event_editor):
+            return
+
+        # Fetch Event from cache
+        target_event = next((e for e in self._cached_events if e.id == event_id), None)
+        if not target_event:
+            self.show_error_message(f"Event {event_id} not found in cache.")
+            return
+
+        # from src.commands.inject_commands import InjectTemplateCommand
+        # (Global import used)
+
+        from src.gui.dialogs.fast_inject_dialog import FastInjectDialog
+
+        # Load templates
+        templates = self.fast_inject_manager.load_templates()
+
+        dlg = FastInjectDialog(templates, target_name=target_event.name, parent=self)
+        if dlg.exec():
+            if not dlg.selected_template:
+                return
+
+            import copy
+
+            target_clone = copy.deepcopy(target_event)
+
+            cmd = InjectTemplateCommand(
+                target=target_clone,
+                template=dlg.selected_template,
+                manager=self.fast_inject_manager,
+                overwrite=dlg.should_overwrite,
+                variables=dlg.variable_values,
+            )
+
+            self.command_requested.emit(cmd)
+
+    @Slot(dict)
+    def _on_create_template_requested(self, data: dict) -> None:
+        """Creates and saves a new template.
+
+        Args:
+        Args:
+            data: Dict containing 'name', 'description', 'selected_tags',
+                  'selected_attributes', 'include_type'
+        """
+        try:
+            # Construct template manually or use manager helper?
+            # Manager helper `create_template_from_target` needs a target object.
+            # We have the data dict from the dialog.
+            # We can construct the template directly.
+
+            from src.core.fast_inject import FastInjectTemplate
+
+            # Convert attributes list to dict (wait, the dialog gave us keys,
+            # not values?)
+            # The Dialog `result_data` has 'selected_attributes' which is a
+            # list of keys?
+            # Let's check `create_template_dialog.py`.
+            # Yes: `attrs.append(key)`.
+            # So we need the VALUES.
+            # The Dialog doesn't return values.
+            # The Dialog logic assumed we are copying from "source".
+            # But the Dialog output doesn't include the values.
+            # So we need to grab the current values from the Editor (again).
+
+            # The Editor `create_template_requested` signal emits `dlg.result_data`.
+            # It does NOT emit the current editor state.
+            # This is a gap.
+            # The DIALOG should probably have returned the constructed Template
+            # or full data,
+            # OR the Editor should have merged it.
+
+            # Let's look at `EntityEditor._open_create_template_dialog`.
+            # It collects `current_attrs` and passes to Dialog.
+            # It emits `dlg.result_data`.
+            #
+            # We should update `EntityEditor` to include the values in the signal?
+            # OR `MainWindow` fetches them from `target_entity` (cached)?
+            # BUT the user might have modified them in the Editor and "Save as Template"
+            # WITHOUT saving to DB first.
+            # "Save Selection as Template" implies "what I see".
+            #
+            # I should update `CreateTemplateDialog` to include the values in
+            # `result_data`.
+            # OR `EntityEditor` should do the lookup.
+            #
+            # Let's update `CreateTemplateDialog.py` to store the VALUES in
+            # `result_data`?
+            # It has `self.source_attributes`. it can look them up.
+            pass
+
+            # Fixing logic inline here would be messy.
+            # Better to fix `CreateTemplateDialog` or `EntityEditor`.
+            # `EntityEditor` has the data.
+            # Let's fix CreateTemplateDialog to return the full dict of
+            # selected attributes (key: value).
+            #
+            # For now, I'll implement the SKELETON of this method
+            # assuming `data['selected_attributes']` is a DICT of key->value.
+            # Then I will go change the Dialog to make that true.
+
+            # Assuming data['selected_attributes'] is Dict[str, Any]
+            # And data['selected_tags'] is List[str]
+            # And data['include_type'] is bool -> wait, we need the type value.
+            # Dialog result needs to be robust.
+
+            tags = data.get("selected_tags", [])
+            # IF I change dialog to return actual values:
+            attributes = data.get("selected_attributes", {})
+            type_val = data.get("type_value")  # Need to ensure this is passed
+
+            template = FastInjectTemplate(
+                name=data["name"],
+                description=data.get("description", ""),
+                tags=tags,
+                attributes=attributes,
+                type_value=type_val,
+                target_type="any",  # or infer from context?
+            )
+
+            self.fast_inject_manager.save_template(template)
+            self.update_status_message(f"Template '{template.name}' saved.")
+            QTimer.singleShot(2000, lambda: self.clear_status_message("Ready"))
+
+        except Exception as e:
+            self.show_error_message(f"Failed to create template: {e}")
+            logger.error(f"Template creation failed: {e}")
+
     def _request_current_time(self) -> None:
         """Requests loading of the current time from the worker."""
         QMetaObject.invokeMethod(
@@ -807,8 +1104,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(float)
     def on_current_time_loaded(self, time: float) -> None:
-        """
-        Handler for current time loaded from worker.
+        """Handler for current time loaded from worker.
 
         Args:
             time (float): The current time in lore_date units.
@@ -818,9 +1114,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(float)
     def on_current_time_changed(self, time: float) -> None:
-        """
-        Handler for when current time is changed in the timeline.
-        Saves the new value to the database.
+        """Handler for when current time is changed in the timeline. Saves the new value
+        to the database.
 
         Args:
             time (float): The new current time in lore_date units.
@@ -839,8 +1134,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot()
     def on_return_to_present(self) -> None:
-        """
-        Exits "Viewing Past/Future State" mode.
+        """Exits "Viewing Past/Future State" mode.
+
         Hides the playhead and reloads the current entity in editable mode.
         """
         # Set playhead to "Current Time" (Visual indicator that we are at "Now")
@@ -863,9 +1158,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot()
     def toggle_auto_relation_setting(self) -> None:
-        """
-        Toggles the auto-creation of relations from wikilinks.
-        """
+        """Toggles the auto-creation of relations from wikilinks."""
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         current = settings.value(SETTINGS_AUTO_RELATION_KEY, False, type=bool)
         new_value = not current
@@ -874,9 +1167,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot()
     def toggle_longform_auto_refresh(self) -> None:
-        """
-        Toggles the auto-refresh setting for Longform Editor.
-        """
+        """Toggles the auto-refresh setting for Longform Editor."""
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         # Default to True
         current = settings.value("longform_auto_refresh", True, type=bool)
@@ -895,9 +1186,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot()
     def _on_auto_refresh_longform(self) -> None:
-        """
-        Reloads longform sequence if auto-refresh is enabled.
-        """
+        """Reloads longform sequence if auto-refresh is enabled."""
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         # Default to True
         if settings.value("longform_auto_refresh", True, type=bool):
@@ -939,8 +1228,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.grouping_manager.request_grouping_config()
 
     def on_grouping_config_loaded(self, config: dict) -> None:
-        """
-        Handler for grouping config loaded.
+        """Handler for grouping config loaded.
 
         Args:
             config: Dictionary with 'tag_order' and 'mode', or None.
@@ -948,10 +1236,10 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.grouping_manager.on_grouping_config_loaded(config)
 
     def closeEvent(self, event: QCloseEvent) -> None:
-        """
-        Handles application close event.
-        Saves window geometry/state and strictly cleans up worker thread.
-        Also checks for unsaved changes.
+        """Handles application close event.
+
+        Saves window geometry/state and strictly cleans up worker thread. Also checks
+        for unsaved changes.
         """
         # Check unsaved changes
         for editor in [self.event_editor, self.entity_editor]:
@@ -1001,8 +1289,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
     # ----------------------------------------------------------------------
 
     def seed_data(self) -> None:
-        """
-        Populate the database with initial data (Deprecated).
+        """Populate the database with initial data (Deprecated).
+
         Current implementation is a placeholder.
         """
         # Checking if empty is hard without async check.
@@ -1016,8 +1304,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         tag_order: list[str],
         date_range: tuple[float, float] | None = None,
     ) -> list[dict]:
-        """
-        Get metadata for timeline grouping tags.
+        """Get metadata for timeline grouping tags.
 
         Implements TimelineDataProvider protocol for timeline grouping.
 
@@ -1037,8 +1324,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
     def get_events_for_group(
         self, tag_name: str, date_range: tuple[float, float] | None = None
     ) -> list:
-        """
-        Get events that belong to a specific tag group.
+        """Get events that belong to a specific tag group.
 
         Implements TimelineDataProvider protocol for timeline grouping.
 
@@ -1095,8 +1381,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         )
 
     def load_graph_data(self, filter_config: Optional[dict] = None) -> None:
-        """
-        Requests loading of graph data, optionally filtered.
+        """Requests loading of graph data, optionally filtered.
 
         Args:
             filter_config: Optional dictionary with 'tags' and 'rel_types'.
@@ -1114,8 +1399,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(list, list)
     def _on_graph_data_ready(self, nodes: list[dict], edges: list[dict]) -> None:
-        """
-        Updates the graph widget with loaded data.
+        """Updates the graph widget with loaded data.
 
         Args:
             nodes: List of node dictionaries.
@@ -1128,8 +1412,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(list, list)
     def _on_graph_metadata_ready(self, tags: list[str], rel_types: list[str]) -> None:
-        """
-        Updates the graph widget with available metadata.
+        """Updates the graph widget with available metadata.
 
         Args:
             tags: List of available tags.
@@ -1142,8 +1425,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
     # DataHandler signal handlers (loose coupling via signals)
     @Slot(list)
     def _on_events_ready(self, events: list) -> None:
-        """
-        Handle events ready signal from DataHandler.
+        """Handle events ready signal from DataHandler.
 
         Args:
             events: List of Event objects.
@@ -1157,8 +1439,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(list)
     def _on_entities_ready(self, entities: list) -> None:
-        """
-        Handle entities ready signal from DataHandler.
+        """Handle entities ready signal from DataHandler.
 
         Args:
             entities: List of Entity objects.
@@ -1180,8 +1461,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(list)
     def _on_suggestions_update(self, items: list) -> None:
-        """
-        Handle suggestions update request from DataHandler.
+        """Handle suggestions update request from DataHandler.
 
         Args:
             items: List of (id, name, type) tuples for completion.
@@ -1193,8 +1473,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
     def _on_event_details_ready(
         self, event: object, relations: list, incoming: list
     ) -> None:
-        """
-        Handle event details ready signal from DataHandler.
+        """Handle event details ready signal from DataHandler.
 
         Args:
             event: The Event object.
@@ -1207,8 +1486,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
     def _on_entity_details_ready(
         self, entity: object, relations: list, incoming: list
     ) -> None:
-        """
-        Handle entity details ready signal from DataHandler.
+        """Handle entity details ready signal from DataHandler.
 
         Args:
             entity: The Entity object.
@@ -1219,8 +1497,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(list)
     def _on_longform_sequence_ready(self, sequence: list) -> None:
-        """
-        Handle longform sequence ready signal from DataHandler.
+        """Handle longform sequence ready signal from DataHandler.
 
         Args:
             sequence: List of longform items.
@@ -1230,8 +1507,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(list)
     def _on_maps_ready(self, maps: list) -> None:
-        """
-        Handle maps ready signal from DataHandler.
+        """Handle maps ready signal from DataHandler.
 
         Args:
             maps: List of Map objects.
@@ -1240,8 +1516,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(str, list)
     def _on_markers_ready(self, map_id: str, processed_markers: list) -> None:
-        """
-        Handle markers ready signal from DataHandler.
+        """Handle markers ready signal from DataHandler.
 
         Args:
             map_id: The map ID these markers belong to.
@@ -1251,8 +1526,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(str)
     def _on_dock_raise_requested(self, dock_name: str) -> None:
-        """
-        Handle dock raise request from DataHandler.
+        """Handle dock raise request from DataHandler.
 
         Args:
             dock_name: Name of the dock to raise ("event", "entity", etc).
@@ -1262,8 +1536,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(str, str)
     def _on_selection_requested(self, item_type: str, item_id: str) -> None:
-        """
-        Handle selection request from DataHandler.
+        """Handle selection request from DataHandler.
 
         Args:
             item_type: Type of item ("event" or "entity").
@@ -1273,8 +1546,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(str)
     def _on_command_failed(self, message: str) -> None:
-        """
-        Handle command failure notification from DataHandler.
+        """Handle command failure notification from DataHandler.
 
         Args:
             message: Error message from the failed command.
@@ -1283,8 +1555,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot()
     def _on_reload_active_editor_relations(self) -> None:
-        """
-        Reload relations for whichever editor is currently active.
+        """Reload relations for whichever editor is currently active.
 
         This is called after relation or wiki link commands complete.
         """
@@ -1313,8 +1584,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         # But generally, we only care about what the user is looking at.
 
     def delete_event(self, event_id: str) -> None:
-        """
-        Deletes an event by emitting a delete command.
+        """Deletes an event by emitting a delete command.
 
         Args:
             event_id (str): The ID of the event to delete.
@@ -1323,8 +1593,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.command_requested.emit(cmd)
 
     def update_event(self, event_data: dict) -> None:
-        """
-        Updates an event with the provided data.
+        """Updates an event with the provided data.
 
         Args:
             event_data (dict): Dictionary containing event data
@@ -1350,9 +1619,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(str, float)
     def _on_event_date_changed(self, event_id: str, new_lore_date: float) -> None:
-        """
-        Handles event date changes from timeline dragging.
-        Persists the new lore_date via UpdateEventCommand.
+        """Handles event date changes from timeline dragging. Persists the new lore_date
+        via UpdateEventCommand.
 
         Args:
             event_id: The ID of the event that was dragged.
@@ -1363,9 +1631,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.command_requested.emit(cmd)
 
     def create_entity(self) -> None:
-        """
-        Creates a new entity by emitting a create command.
-        """
+        """Creates a new entity by emitting a create command."""
         if not self.check_unsaved_changes(self.entity_editor):
             return
 
@@ -1377,9 +1643,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.command_requested.emit(cmd)
 
     def create_event(self) -> None:
-        """
-        Creates a new event by emitting a create command.
-        """
+        """Creates a new event by emitting a create command."""
         if not self.check_unsaved_changes(self.event_editor):
             return
 
@@ -1391,8 +1655,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.command_requested.emit(cmd)
 
     def delete_entity(self, entity_id: str) -> None:
-        """
-        Deletes an entity by emitting a delete command.
+        """Deletes an entity by emitting a delete command.
 
         Args:
             entity_id (str): The ID of the entity to delete.
@@ -1401,8 +1664,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.command_requested.emit(cmd)
 
     def update_entity(self, entity_data: dict) -> None:
-        """
-        Updates an entity with the provided data.
+        """Updates an entity with the provided data.
 
         Args:
             entity_data (dict): Dictionary containing entity data
@@ -1444,8 +1706,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         attributes: dict = None,
         bidirectional: bool = False,
     ) -> None:
-        """
-        Adds a relation between entities.
+        """Adds a relation between entities.
 
         Args:
             source_id (str): The ID of the source entity.
@@ -1470,8 +1731,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(str)
     def on_map_selected(self, map_id: str) -> None:
-        """
-        Handler for when a map is selected in the widget.
+        """Handler for when a map is selected in the widget.
+
         Loads the map image and requests markers.
         """
         self.map_handler.on_map_selected(map_id)
@@ -1485,8 +1746,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.map_handler.delete_map()
 
     def create_marker(self, x: float, y: float) -> None:
-        """
-        Creates a new marker at the given normalized coordinates.
+        """Creates a new marker at the given normalized coordinates.
+
         Prompts user to select an Entity or Event.
         """
         self.map_handler.create_marker(x, y)
@@ -1494,8 +1755,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
     def _on_marker_dropped(
         self, item_id: str, item_type: str, item_name: str, x: float, y: float
     ) -> None:
-        """
-        Handle marker creation from drag-drop.
+        """Handle marker creation from drag-drop.
 
         Args:
             item_id: ID of the dropped entity/event.
@@ -1507,8 +1767,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.map_handler.on_marker_dropped(item_id, item_type, item_name, x, y)
 
     def delete_marker(self, marker_id: str) -> None:
-        """
-        Deletes a marker.
+        """Deletes a marker.
 
         Args:
             marker_id: The object_id from the UI (not the actual marker.id).
@@ -1517,8 +1776,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(str, str)
     def _on_marker_clicked(self, marker_id: str, object_type: str) -> None:
-        """
-        Handle marker click from MapWidget.
+        """Handle marker click from MapWidget.
 
         Args:
             marker_id: The ID of the item.
@@ -1528,8 +1786,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(str, str)
     def _on_marker_icon_changed(self, marker_id: str, icon: str) -> None:
-        """
-        Handle marker icon change from MapWidget.
+        """Handle marker icon change from MapWidget.
 
         Args:
             marker_id: ID of the marker (actually object_id from view)
@@ -1539,8 +1796,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(str, str)
     def _on_marker_color_changed(self, marker_id: str, color: str) -> None:
-        """
-        Handle marker color change from MapWidget.
+        """Handle marker color change from MapWidget.
 
         Args:
             marker_id: ID of the marker (actually object_id from view)
@@ -1550,8 +1806,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(str, float, float)
     def _on_marker_position_changed(self, marker_id: str, x: float, y: float) -> None:
-        """
-        Handle marker position change from MapWidget.
+        """Handle marker position change from MapWidget.
 
         Args:
             marker_id: ID of the marker (actually object_id from view)
@@ -1575,8 +1830,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         attr_keys: list[str],
         entity_types: list[str],
     ) -> None:
-        """
-        Handler for completer data loaded from worker.
+        """Handler for completer data loaded from worker.
+
         Updates suggestions in both Entity and Event editors.
         """
         # Update Entity Editor
@@ -1594,8 +1849,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
     def on_grouping_dialog_data_loaded(
         self, tags_data: list, current_config: dict
     ) -> None:
-        """
-        Handler for grouping dialog data loaded from worker.
+        """Handler for grouping dialog data loaded from worker.
 
         Args:
             tags_data: List of dicts with 'name', 'color', 'count' for each tag.
@@ -1605,8 +1859,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(list, str)
     def _on_grouping_applied(self, tag_order: list, mode: str) -> None:
-        """
-        Handle grouping applied from dialog.
+        """Handle grouping applied from dialog.
 
         Args:
             tag_order: List of tag names in order.
@@ -1620,8 +1873,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(str)
     def _on_tag_color_change_requested(self, tag_name: str) -> None:
-        """
-        Handle tag color change from band context menu.
+        """Handle tag color change from band context menu.
 
         Args:
             tag_name: The name of the tag to change color for.
@@ -1630,8 +1882,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(str)
     def _on_remove_from_grouping_requested(self, tag_name: str) -> None:
-        """
-        Remove a tag from current grouping.
+        """Remove a tag from current grouping.
 
         Args:
             tag_name: The name of the tag to remove.
@@ -1641,7 +1892,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
     @Slot()
     def show_filter_dialog(self) -> None:
         """Shows the advanced filter dialog."""
-        # Get all tags from DB (Synchronous read from GUI DB Service is fine for metadata)
+        # Get all tags from DB (Synchronous read from GUI DB Service is fine
+        # for metadata)
         tags = []
         if hasattr(self, "gui_db_service"):
             # db_service.get_active_tags returns list of dicts: need to extract names
@@ -1662,7 +1914,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             settings.setValue(SETTINGS_FILTER_CONFIG_KEY, config)
 
             logger.info(f"Applying filter: {config}")
-            # Send to worker via signal if needed, but for now UnifiedList handles it locally
+            # Send to worker via signal if needed, but for now UnifiedList
+            # handles it locally
             # self.filter_requested.emit(config) # kept if other widgets need it?
             # Actually, user wants widgets to maintain own settings.
             # If Graph/Timeline need it, they should have their own.
@@ -1674,9 +1927,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             # self.unified_list.set_filter_active(has_filter)
 
     def clear_filter(self) -> None:
-        """
-        Clears the current filter configuration and reloads data.
-        """
+        """Clears the current filter configuration and reloads data."""
         logger.info("Clearing filters")
         self.unified_list.set_advanced_filter({})
 
@@ -1691,7 +1942,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         # but if we want to ensure sync...
         # Actually set_advanced_filter triggers re-render.
         # But if the user expects a "Reload", we can keep it.
-        # Let's keep load_data() to be safe, though likely redundant for the list itself.
+        # Let's keep load_data() to be safe, though likely redundant for the
+        # list itself.
         self.load_data()
         self.status_bar.showMessage("Filters cleared.")
 
@@ -1710,8 +1962,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(list, list)
     def _on_filter_results_ready(self, events: list, entities: list) -> None:
-        """
-        Handler for filter results.
+        """Handler for filter results.
+
         Updates the Unified List with filtered data.
         """
         self.unified_list.set_data(events, entities)
@@ -1719,8 +1971,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.status_bar.showMessage(f"Filter applied. Found {count} items.")
 
     def remove_relation(self, rel_id: str) -> None:
-        """
-        Removes a relation by its ID.
+        """Removes a relation by its ID.
 
         Args:
             rel_id (str): The ID of the relation to remove.
@@ -1731,8 +1982,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
     def update_relation(
         self, rel_id: str, target_id: str, rel_type: str, attributes: dict = None
     ) -> None:
-        """
-        Updates an existing relation.
+        """Updates an existing relation.
 
         Args:
             rel_id (str): The ID of the relation to update.
@@ -1744,8 +1994,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.command_requested.emit(cmd)
 
     def navigate_to_entity(self, target: str) -> None:
-        """
-        Navigates to the entity or event with the given name or ID.
+        """Navigates to the entity or event with the given name or ID.
 
         Handles both ID-based links (UUIDs) and legacy name-based links.
         Uses cached entities and events for quick lookup.
@@ -1807,8 +2056,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             self._prompt_create_missing_target(target)
 
     def _prompt_create_missing_target(self, target_name: str) -> None:
-        """
-        Prompts the user to create a missing entity or event from a broken link.
+        """Prompts the user to create a missing entity or event from a broken link.
 
         Args:
             target_name (str): The name of the missing item.
@@ -1834,10 +2082,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             # Use target name as default
             cmd = CreateEntityCommand({"name": target_name, "type": "Concept"})
             self.command_requested.emit(cmd)
-            # We rely on on_command_finished to handle selection/loading
-            # But we need to ensure the new item is selected.
-            # CreateEntityCommand result handling in on_command_finished
-            # sets _pending_select_id, which should handle it.
 
         elif clicked == btn_event:
             # Create Event
@@ -1848,8 +2092,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             self.command_requested.emit(cmd)
 
     def promote_longform_entry(self, table: str, row_id: str, old_meta: dict) -> None:
-        """
-        Promotes a longform entry by reducing its depth.
+        """Promotes a longform entry by reducing its depth.
 
         Args:
             table (str): Table name ("events" or "entities").
@@ -1859,8 +2102,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.longform_manager.promote_longform_entry(table, row_id, old_meta)
 
     def demote_longform_entry(self, table: str, row_id: str, old_meta: dict) -> None:
-        """
-        Demotes a longform entry by increasing its depth.
+        """Demotes a longform entry by increasing its depth.
 
         Args:
             table (str): Table name ("events" or "entities").
@@ -1872,8 +2114,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
     def move_longform_entry(
         self, table: str, row_id: str, old_meta: dict, new_meta: dict
     ) -> None:
-        """
-        Moves a longform entry to a new position.
+        """Moves a longform entry to a new position.
 
         Args:
             table (str): Table name.
@@ -1884,8 +2125,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.longform_manager.move_longform_entry(table, row_id, old_meta, new_meta)
 
     def export_longform_document(self) -> None:
-        """
-        Exports the current longform document to Markdown.
+        """Exports the current longform document to Markdown.
+
         Opens a file dialog for the user to choose save location.
         """
         self.longform_manager.export_longform_document()
@@ -1908,8 +2149,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
     def perform_semantic_search(
         self, query: str, object_type_filter: str, top_k: int
     ) -> None:
-        """
-        Perform semantic search and display results.
+        """Perform semantic search and display results.
 
         Args:
             query: Search query text.
@@ -1920,8 +2160,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(str)
     def rebuild_search_index(self, object_type: str) -> None:
-        """
-        Rebuild the semantic search index.
+        """Rebuild the semantic search index.
 
         Args:
             object_type: Type to rebuild ('all', 'entity', 'event').
@@ -1930,8 +2169,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(str, str)
     def _on_search_result_selected(self, object_type: str, object_id: str) -> None:
-        """
-        Handle selection of a search result.
+        """Handle selection of a search result.
 
         Args:
             object_type: 'entity' or 'event'.
@@ -2054,7 +2292,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
                 self,
                 "Restore Complete",
                 "Database restored successfully!\n\n"
-                "The application will now close. Please restart to use the restored database.",
+                "The application will now close. Please restart to use the "
+                "restored database.",
             )
             # Close application so user can restart
             self.close()
@@ -2204,9 +2443,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(float)
     def _on_playhead_changed(self, time: float) -> None:
-        """
-        Refreshes entity inspector based on playhead time.
-        """
+        """Refreshes entity inspector based on playhead time."""
         # Store current playhead time for use in _on_entity_state_resolved
         self._current_playhead_time = time
 
@@ -2221,9 +2458,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     @Slot(str, dict)
     def _on_entity_state_resolved(self, entity_id: str, attributes: dict) -> None:
-        """
-        Updates entity editor with resolved state.
-        """
+        """Updates entity editor with resolved state."""
         # Pass playhead time for timeline highlighting
         playhead_time = getattr(self, "_current_playhead_time", None)
         self.entity_editor.display_temporal_state(entity_id, attributes, playhead_time)

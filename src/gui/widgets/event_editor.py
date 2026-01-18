@@ -1,8 +1,7 @@
-"""
-Event Editor Widget Module.
+"""Event Editor Widget Module.
 
-Provides a form interface for editing event details including name, date,
-description, attributes, and relations.
+Provides a form interface for editing event details including name, date, description,
+attributes, and relations.
 """
 
 import logging
@@ -39,10 +38,10 @@ logger = logging.getLogger(__name__)
 
 
 class EventEditorWidget(QWidget):
-    """
-    A form to edit the details of an Event.
-    Emits 'save_requested' signal with the modified Event object.
-    Emits 'add_relation_requested' signal (source, target, type).
+    """A form to edit the details of an Event.
+
+    Emits 'save_requested' signal with the modified Event object. Emits
+    'add_relation_requested' signal (source, target, type).
     """
 
     save_requested = Signal(dict)
@@ -55,6 +54,11 @@ class EventEditorWidget(QWidget):
         str, str, str, dict
     )  # rel_id, target_id, rel_type, attributes, attributes
 
+    inject_ui_requested = Signal(
+        str
+    )  # Signals that main window should open inject dialog
+    create_template_requested = Signal(dict)  # Signals to create a new template
+
     # ... (omitted)
 
     link_clicked = Signal(str)  # target_name
@@ -63,8 +67,7 @@ class EventEditorWidget(QWidget):
     current_data_changed = Signal(dict)  # Emits current event data for preview
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """
-        Initializes the editor widget with form fields.
+        """Initializes the editor widget with form fields.
 
         Args:
             parent: The parent widget, if any.
@@ -101,6 +104,28 @@ class EventEditorWidget(QWidget):
         # Configure form layout to respect widget minimum sizes
         self.form_layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
         self.form_layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
+
+        self.form_layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+        self.form_layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
+
+        # Inject Button Header
+        header_layout = QHBoxLayout()
+        # Inject Button (QToolButton with Menu)
+        from PySide6.QtWidgets import QToolButton
+
+        self.btn_inject = QToolButton()
+        self.btn_inject.setText("Fast Inject \u25bc")  # Down arrow
+        self.btn_inject.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        self.btn_inject.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
+
+        self.inject_menu = QMenu(self.btn_inject)
+        self.btn_inject.setMenu(self.inject_menu)
+        self.inject_menu.aboutToShow.connect(self._populate_inject_menu)
+
+        header_layout.addStretch()
+        header_layout.addWidget(self.btn_inject)
+
+        details_layout.addLayout(header_layout)
 
         self.name_edit = QLineEdit()
 
@@ -346,8 +371,7 @@ class EventEditorWidget(QWidget):
         self.attribute_editor.attributes_changed.connect(lambda: self.set_dirty(True))
 
     def set_dirty(self, dirty: bool) -> None:
-        """
-        Sets the dirty state of the editor.
+        """Sets the dirty state of the editor.
 
         Args:
             dirty (bool): True if changes are unsaved, False otherwise.
@@ -408,8 +432,7 @@ class EventEditorWidget(QWidget):
         self.duration_widget.blockSignals(False)
 
     def set_calendar_converter(self, converter: Any) -> None:
-        """
-        Sets the calendar converter for date formatting.
+        """Sets the calendar converter for date formatting.
 
         Args:
             converter: CalendarConverter instance or None.
@@ -423,8 +446,7 @@ class EventEditorWidget(QWidget):
     def update_suggestions(
         self, items: list[tuple[str, str, str]] = None, names: list[str] = None
     ) -> None:
-        """
-        Updates the autocomplete suggestions for the description field.
+        """Updates the autocomplete suggestions for the description field.
 
         Can be called with either:
         - items: List of (id, name, type) tuples for ID-based completion
@@ -461,8 +483,7 @@ class EventEditorWidget(QWidget):
     def load_event(
         self, event: Event, relations: list = None, incoming_relations: list = None
     ) -> None:
-        """
-        Populates the form with event data and relationships.
+        """Populates the form with event data and relationships.
 
         Args:
             event (Event): The event to edit.
@@ -488,7 +509,7 @@ class EventEditorWidget(QWidget):
 
             # Date/Time widgets have set_value which triggers internal updates
             # Ideally we check value equality first.
-            # LoreDate and LoreDuration override __eq__? Assuming they do or are value types.
+            # Lore/Duration override eq? Assuming they do or are value types.
             if self.date_edit.get_value() != event.lore_date:
                 self.date_edit.set_value(event.lore_date)
 
@@ -598,8 +619,8 @@ class EventEditorWidget(QWidget):
 
     @Slot()
     def _on_save(self) -> None:
-        """
-        Collects data from form fields and emits the `save_requested` signal.
+        """Collects data from form fields and emits the `save_requested` signal.
+
         Emits a dictionary with the updated properties and the ID.
         """
         logger.info(
@@ -644,18 +665,57 @@ class EventEditorWidget(QWidget):
 
     @Slot()
     def _on_discard(self) -> None:
-        """
-        Discards changes by emitting signal to reload the current event.
-        """
+        """Discards changes by emitting signal to reload the current event."""
         if not self._current_event_id:
             return
 
         self.discard_requested.emit(self._current_event_id)
 
+    def _populate_inject_menu(self) -> None:
+        """Populate the Fast Inject menu."""
+        self.inject_menu.clear()
+
+        action_dialog = self.inject_menu.addAction("Open Inject Dialog...")
+        action_dialog.triggered.connect(self._open_inject_dialog)
+
+        self.inject_menu.addSeparator()
+
+        action_save_tmpl = self.inject_menu.addAction("Save Selection as Template...")
+        action_save_tmpl.triggered.connect(self._open_create_template_dialog)
+
+    def _open_inject_dialog(self) -> None:
+        """Shim to emit inject signal."""
+        if self._current_event_id:
+            logger.debug(f"Requesting inject UI for event {self._current_event_id}")
+            self.inject_ui_requested.emit(self._current_event_id)
+
+    def _open_create_template_dialog(self) -> None:
+        """Open create template dialog."""
+        if not self._current_event_id:
+            return
+
+        from src.gui.dialogs.create_template_dialog import CreateTemplateDialog
+
+        # Collect current data
+        current_tags = self.tag_editor.get_tags()
+        current_attrs = self.attribute_editor.get_attributes()
+        current_type = self.type_edit.currentText()
+
+        dlg = CreateTemplateDialog(
+            source_tags=current_tags,
+            source_attributes=current_attrs,
+            source_type=current_type,
+            parent=self,
+        )
+
+        if dlg.exec():
+            # Emit signal to save this template
+            self.create_template_requested.emit(dlg.result_data)
+
     @Slot(object)  # Allow Any/object for checked signal
     def _on_add_relation(self, rel_type: Any = "involved") -> None:
-        """
-        Prompts user for relation details and emits signal.
+        """Prompts user for relation details and emits signal.
+
         Uses RelationEditDialog with autocompletion.
         """
         if not self._current_event_id:
@@ -781,8 +841,7 @@ class EventEditorWidget(QWidget):
             )
 
     def get_generation_context(self) -> dict:
-        """
-        Get context for LLM generation.
+        """Get context for LLM generation.
 
         Returns:
             dict: Context dictionary with 'name', 'type', 'lore_date', etc.
@@ -831,8 +890,7 @@ class EventEditorWidget(QWidget):
 
     @Slot(str)
     def _on_text_generated(self, text: str) -> None:
-        """
-        Handle text generated from LLM.
+        """Handle text generated from LLM.
 
         Appends generated text to the description field.
 
@@ -858,8 +916,7 @@ class EventEditorWidget(QWidget):
         self.set_dirty(True)
 
     def minimumSizeHint(self) -> QSize:
-        """
-        Override to prevent dock collapse.
+        """Override to prevent dock collapse.
 
         Returns:
             QSize: Minimum size for usable event editor.
@@ -867,8 +924,7 @@ class EventEditorWidget(QWidget):
         return QSize(300, 200)  # Width for form labels, height for controls
 
     def sizeHint(self) -> QSize:
-        """
-        Preferred size for the event editor.
+        """Preferred size for the event editor.
 
         Returns:
             QSize: Comfortable working size for editing events.
@@ -876,8 +932,8 @@ class EventEditorWidget(QWidget):
         return QSize(400, 600)  # Ideal size for editing
 
     def _on_wikilink_added(self, target_id: str, target_name: str) -> None:
-        """
-        Handles a new wikilink addition.
+        """Handles a new wikilink addition.
+
         Checks setting and prompts for relation creation if enabled.
         """
         from PySide6.QtCore import QSettings

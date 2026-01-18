@@ -89,3 +89,7 @@ skip-magic-trailing-comma = false
 
 # Like Black, automatically detect the appropriate line ending.
 line-ending = "auto"
+
+[tool.docformatter]
+wrap-summaries = 88
+wrap-descriptions = 88

@@ -1,8 +1,7 @@
-"""
-Entity Editor Widget Module.
+"""Entity Editor Widget Module.
 
-Provides a GUI form for creating and editing Entity objects with support
-for wiki-style text editing, custom attributes, tags, and relationship management.
+Provides a GUI form for creating and editing Entity objects with support for wiki-style
+text editing, custom attributes, tags, and relationship management.
 """
 
 import logging
@@ -37,13 +36,16 @@ logger = logging.getLogger(__name__)
 
 
 class EntityEditorWidget(QWidget):
-    """
-    A form to edit the details of an Entity.
+    """A form to edit the details of an Entity.
+
     Emits 'save_requested' signal with the modified Entity object.
     """
 
     save_requested = Signal(dict)
     discard_requested = Signal(str)  # item_id to reload
+    inject_requested = Signal(
+        dict
+    )  # Signals that main window should run the inject command
     add_relation_requested = Signal(
         str, str, str, dict, bool
     )  # src, tgt, type, attrs, bi
@@ -53,11 +55,15 @@ class EntityEditorWidget(QWidget):
     navigate_to_relation = Signal(str)  # target_id for Go to button
     navigate_to_relation = Signal(str)  # target_id for Go to button
     dirty_changed = Signal(bool)
+    navigate_to_relation = Signal(str)  # target_id for Go to button
+    dirty_changed = Signal(bool)
+    navigate_to_relation = Signal(str)  # target_id for Go to button
+    dirty_changed = Signal(bool)
     return_to_present_requested = Signal()  # Request to exit past/future view
+    inject_ui_requested = Signal(str)  # entity_id
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """
-        Initializes the EntityEditorWidget.
+        """Initializes the EntityEditorWidget.
 
         Args:
             parent (QWidget, optional): The parent widget. Defaults to None.
@@ -85,7 +91,30 @@ class EntityEditorWidget(QWidget):
         details_layout = QVBoxLayout(self.tab_details)
         StyleHelper.apply_compact_spacing(details_layout)
 
+        # Header with Name and inject button
+        header_layout = QHBoxLayout()
         self.form_layout = QFormLayout()
+
+        # Inject Button (QToolButton with Menu)
+        from PySide6.QtWidgets import QToolButton
+
+        self.btn_inject = QToolButton()
+        self.btn_inject.setText("Fast Inject \u25bc")  # Down arrow
+        self.btn_inject.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        self.btn_inject.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
+
+        self.inject_menu = QMenu(self.btn_inject)
+        self.btn_inject.setMenu(self.inject_menu)
+        self.inject_menu.aboutToShow.connect(self._populate_inject_menu)
+
+        # We'll place it at the top right, or embedded in form row?
+        # Plan said "beside Name or separate header row".
+        # Let's put it on top right of the tab.
+        header_layout.addStretch()
+        header_layout.addWidget(self.btn_inject)
+
+        details_layout.addLayout(header_layout)
+
         self.name_edit = QLineEdit()
         self.type_edit = QComboBox()
         self.type_edit.addItems(["Character", "Location", "Faction", "Item", "Concept"])
@@ -304,8 +333,7 @@ class EntityEditorWidget(QWidget):
     def update_suggestions(
         self, items: list[tuple[str, str, str]] = None, names: list[str] = None
     ) -> None:
-        """
-        Updates the autocomplete suggestions for the description field.
+        """Updates the autocomplete suggestions for the description field.
 
         Can be called with either:
         - items: List of (id, name, type) tuples for ID-based completion
@@ -344,8 +372,7 @@ class EntityEditorWidget(QWidget):
         self._suggestion_types = types
 
     def update_entity_type_suggestions(self, types: list[str]) -> None:
-        """
-        Updates entity type suggestions.
+        """Updates entity type suggestions.
 
         Merges fetched types with default types and updates the combobox.
         """
@@ -362,9 +389,7 @@ class EntityEditorWidget(QWidget):
     def load_entity(
         self, entity: Entity, relations: list = None, incoming_relations: list = None
     ) -> None:
-        """
-        Populates the form with entity data and relations.
-        """
+        """Populates the form with entity data and relations."""
         self._is_loading = True
         try:
             self._current_entity_id = entity.id
@@ -473,9 +498,7 @@ class EntityEditorWidget(QWidget):
 
     @Slot()
     def _on_save(self) -> None:
-        """
-        Collects data and emits save signal.
-        """
+        """Collects data and emits save signal."""
         logger.info(
             f"[EntityEditor] _on_save() called (entity_id={self._current_entity_id})"
         )
@@ -527,9 +550,7 @@ class EntityEditorWidget(QWidget):
 
     @Slot()
     def _on_discard(self) -> None:
-        """
-        Discards changes by emitting signal to reload the current entity.
-        """
+        """Discards changes by emitting signal to reload the current entity."""
         if not self._current_entity_id:
             return
 
@@ -545,8 +566,8 @@ class EntityEditorWidget(QWidget):
 
     @Slot()
     def _on_add_relation(self) -> None:
-        """
-        Handles adding a new relation.
+        """Handles adding a new relation.
+
         Uses RelationEditDialog with autocompletion.
         """
         if not self._current_entity_id:
@@ -572,8 +593,7 @@ class EntityEditorWidget(QWidget):
                 )
 
     def _show_rel_menu(self, pos: QPoint) -> None:
-        """
-        Shows a context menu for relation items.
+        """Shows a context menu for relation items.
 
         Args:
             pos (QPoint): The position where the menu should appear.
@@ -591,8 +611,7 @@ class EntityEditorWidget(QWidget):
             self._on_edit_relation(item)
 
     def _on_remove_relation_item(self, item: QListWidgetItem) -> None:
-        """
-        Handles removing a relation item.
+        """Handles removing a relation item.
 
         Args:
             item (QListWidgetItem): The relation item to remove.
@@ -612,8 +631,7 @@ class EntityEditorWidget(QWidget):
 
     @Slot(QListWidgetItem)
     def _on_edit_relation(self, item: QListWidgetItem) -> None:
-        """
-        Handles editing a relation item.
+        """Handles editing a relation item.
 
         Args:
             item (QListWidgetItem): The relation item to edit.
@@ -646,25 +664,20 @@ class EntityEditorWidget(QWidget):
 
     @Slot()
     def _on_edit_selected_relation(self) -> None:
-        """
-        Handles editing the currently selected relation.
-        """
+        """Handles editing the currently selected relation."""
         item = self.rel_list.currentItem()
         if item:
             self._on_edit_relation(item)
 
     @Slot()
     def _on_remove_selected_relation(self) -> None:
-        """
-        Handles removing the currently selected relation.
-        """
+        """Handles removing the currently selected relation."""
         item = self.rel_list.currentItem()
         if item:
             self._on_remove_relation_item(item)
 
     def get_generation_context(self) -> dict:
-        """
-        Get context for LLM generation.
+        """Get context for LLM generation.
 
         Returns:
             dict: Context dictionary with 'name', 'type', etc.
@@ -678,8 +691,7 @@ class EntityEditorWidget(QWidget):
 
     @Slot(str)
     def _on_text_generated(self, text: str) -> None:
-        """
-        Handle text generated from LLM.
+        """Handle text generated from LLM.
 
         Appends generated text to the description field.
 
@@ -705,8 +717,7 @@ class EntityEditorWidget(QWidget):
         self.set_dirty(True)
 
     def minimumSizeHint(self) -> QSize:
-        """
-        Override to prevent dock collapse.
+        """Override to prevent dock collapse.
 
         Returns:
             QSize: Minimum size for usable entity editor.
@@ -716,8 +727,7 @@ class EntityEditorWidget(QWidget):
         return QSize(300, 200)  # Width for form labels, height for controls
 
     def sizeHint(self) -> QSize:
-        """
-        Preferred size for the entity editor.
+        """Preferred size for the entity editor.
 
         Returns:
             QSize: Comfortable working size for editing entities.
@@ -728,8 +738,8 @@ class EntityEditorWidget(QWidget):
 
     @Slot(str, str)
     def _on_wikilink_added(self, target_id: str, target_name: str) -> None:
-        """
-        Handles a new wikilink addition.
+        """Handles a new wikilink addition.
+
         Checks setting and prompts for relation creation if enabled.
         """
         from PySide6.QtCore import QSettings
@@ -772,9 +782,8 @@ class EntityEditorWidget(QWidget):
     def display_temporal_state(
         self, entity_id: str, attributes: dict, playhead_time: float = None
     ) -> None:
-        """
-        Displays the resolved temporal state for the current entity.
-        Sets the editor to read-only mode.
+        """Displays the resolved temporal state for the current entity. Sets the editor
+        to read-only mode.
 
         Args:
             entity_id: ID of the entity being displayed.
@@ -795,10 +804,56 @@ class EntityEditorWidget(QWidget):
         # Enter Read-Only Mode
         self.set_read_only_mode(True, reason="Viewing Past/Future State")
 
-    def set_read_only_mode(self, readonly: bool, reason: str = "") -> None:
-        """
-        Enables or disables read-only mode.
-        """
+    def _populate_inject_menu(self) -> None:
+        """Populate the Fast Inject menu."""
+        self.inject_menu.clear()
+
+        # Quick Slots (Top 3 - Placeholder logic for now, or just basic "Open Dialog")
+        # In a real app we'd query usage stats.
+
+        action_dialog = self.inject_menu.addAction("Open Inject Dialog...")
+        action_dialog.triggered.connect(self._open_inject_dialog)
+
+        self.inject_menu.addSeparator()
+
+        action_save_tmpl = self.inject_menu.addAction("Save Selection as Template...")
+        action_save_tmpl.triggered.connect(self._open_create_template_dialog)
+
+    def _open_inject_dialog(self) -> None:
+        """Open the Fast Inject Dialog."""
+        if not self._current_entity_id:
+            return
+
+        self.inject_ui_requested.emit(self._current_entity_id)
+
+    def _open_create_template_dialog(self) -> None:
+        """Open create template dialog."""
+        if not self._current_entity_id:
+            return
+
+        from src.gui.dialogs.create_template_dialog import CreateTemplateDialog
+
+        # Collect current data
+        current_tags = self.tag_editor.get_tags()
+        current_attrs = self.attribute_editor.get_attributes()
+        current_type = self.type_edit.currentText()
+
+        dlg = CreateTemplateDialog(
+            source_tags=current_tags,
+            source_attributes=current_attrs,
+            source_type=current_type,
+            parent=self,
+        )
+
+        if dlg.exec():
+            # Emit signal to save this template
+            # create_template_requested = Signal(dict)
+            self.create_template_requested.emit(dlg.result_data)
+
+    create_template_requested = Signal(dict)
+
+    def set_read_only_mode(self, readonly: bool, reason: str = None) -> None:
+        """Sets the editor to read-only mode."""
         # Disable form fields
         self.name_edit.setReadOnly(readonly)
         self.type_edit.setEnabled(not readonly)
