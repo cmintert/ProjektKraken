@@ -1,0 +1,301 @@
+"""
+Fast Inject Core Module.
+
+Handles logic for defining, loading, saving, and applying "Fast Inject" templates.
+Templates allow rapid application of tags and attributes to Entities and Events.
+"""
+
+import json
+import logging
+import re
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+
+from src.core.entities import Entity
+from src.core.events import Event
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class FastInjectTemplate:
+    """
+    Represents a reusable template of tags and attributes.
+    """
+
+    name: str
+    description: str = ""
+    tags: List[str] = field(default_factory=list)
+    attributes: Dict[str, Any] = field(default_factory=dict)
+    target_type: str = "any"  # "entity", "event", or "any"
+    version: str = "1.0"
+    source_path: Optional[Path] = None  # Not serialized, used for UI tracking
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dict for JSON storage."""
+        return {
+            "meta": {
+                "name": self.name,
+                "description": self.description,
+                "target_type": self.target_type,
+                "version": self.version,
+            },
+            "inject": {
+                "tags": self.tags,
+                "attributes": self.attributes,
+            },
+        }
+
+    @classmethod
+    def from_dict(
+        cls, data: Dict[str, Any], path: Optional[Path] = None
+    ) -> "FastInjectTemplate":
+        """Create from dictionary."""
+        meta = data.get("meta", {})
+        inject = data.get("inject", {})
+        return cls(
+            name=meta.get("name", "Unnamed Template"),
+            description=meta.get("description", ""),
+            target_type=meta.get("target_type", "any"),
+            version=meta.get("version", "1.0"),
+            tags=inject.get("tags", []),
+            attributes=inject.get("attributes", {}),
+            source_path=path,
+        )
+
+
+class FastInjectManager:
+    """
+    Manages loading, validation, and application of Fast Inject templates.
+    """
+
+    def __init__(self, world_path: Path):
+        """
+        Initialize manager for a specific world.
+
+        Args:
+            world_path: Root directory of the world.
+        """
+        self.world_path = world_path
+        self.templates_dir = world_path / "fastinject"
+        self._templates: List[FastInjectTemplate] = []
+
+    def ensure_directory(self) -> None:
+        """Ensure the fastinject directory exists."""
+        self.templates_dir.mkdir(parents=True, exist_ok=True)
+
+    def load_templates(self) -> List[FastInjectTemplate]:
+        """
+        Load all valid .fastinject files from the directory.
+
+        Returns:
+            List of loaded templates.
+        """
+        self.ensure_directory()
+        self._templates = []
+
+        for file_path in self.templates_dir.glob("*.fastinject"):
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                template = FastInjectTemplate.from_dict(data, path=file_path)
+                self._templates.append(template)
+            except (json.JSONDecodeError, IOError) as e:
+                logger.error(f"Failed to load template {file_path}: {e}")
+
+        # Sort by name
+        self._templates.sort(key=lambda t: t.name.lower())
+        return self._templates
+
+    def save_template(self, template: FastInjectTemplate) -> Path:
+        """
+        Save a template to disk.
+
+        Args:
+            template: The template to save.
+
+        Returns:
+            Path to the saved file.
+        """
+        self.ensure_directory()
+
+        # Sanitize filename
+        safe_name = "".join(
+            c for c in template.name if c.isalnum() or c in (" ", "_", "-")
+        ).strip()
+        filename = f"{safe_name}.fastinject"
+        file_path = self.templates_dir / filename
+
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(template.to_dict(), f, indent=2)
+
+        template.source_path = file_path
+        return file_path
+
+    def delete_template(self, template: FastInjectTemplate) -> None:
+        """Delete a template file."""
+        if template.source_path and template.source_path.exists():
+            template.source_path.unlink()
+            if template in self._templates:
+                self._templates.remove(template)
+
+    def create_template_from_target(
+        self,
+        target: Union[Entity, Event],
+        name: str,
+        description: str = "",
+        include_tags: bool = True,
+        include_attributes: List[str] = None,
+    ) -> FastInjectTemplate:
+        """
+        Create a new template object from an existing target.
+
+        Args:
+            target: Entity or Event to copy from.
+            name: Name for the new template.
+            description: Description.
+            include_tags: Whether to include all tags.
+            include_attributes: List of attribute keys to include. None means all (excluding internal).
+
+        Returns:
+            New FastInjectTemplate object (not saved to disk yet).
+        """
+        tags = target.tags.copy() if include_tags else []
+
+        # Filter attributes
+        attrs = {}
+        source_attrs = target.attributes.copy()
+
+        # Exclude internal keys
+        source_attrs.pop("_tags", None)
+
+        if include_attributes is None:
+            # Include all non-internal
+            for k, v in source_attrs.items():
+                if not k.startswith("_"):
+                    attrs[k] = v
+        else:
+            # Include only specific keys
+            for k in include_attributes:
+                if k in source_attrs:
+                    attrs[k] = source_attrs[k]
+
+        target_type = "object"
+        if isinstance(target, Entity):
+            target_type = "entity"
+        elif isinstance(target, Event):
+            target_type = "event"
+
+        return FastInjectTemplate(
+            name=name,
+            description=description,
+            tags=tags,
+            attributes=attrs,
+            target_type=target_type,
+        )
+
+    def import_template(self, source_path: Path) -> Optional[FastInjectTemplate]:
+        """
+        Import a generic .fastinject file from anywhere into the project.
+
+        Args:
+            source_path: Path to external file.
+
+        Returns:
+            Imported Template if successful, None otherwise.
+        """
+        try:
+            with open(source_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            # Create object to validate structure
+            template = FastInjectTemplate.from_dict(data)
+
+            # Save to local directory
+            saved_path = self.save_template(template)
+
+            # Reload to ensure clean state
+            with open(saved_path, "r", encoding="utf-8") as f:
+                reloaded_data = json.load(f)
+
+            return FastInjectTemplate.from_dict(reloaded_data, path=saved_path)
+
+        except Exception as e:
+            logger.error(f"Failed to import template from {source_path}: {e}")
+            return None
+
+    def find_variables(self, template: FastInjectTemplate) -> List[str]:
+        """
+        Scan template values for {{VAR_NAME}} patterns.
+
+        Returns:
+            List of unique variable names found.
+        """
+        vars_found = set()
+        pattern = re.compile(r"\{\{([A-Za-z0-9_]+)\}\}")
+
+        def scan_value(val: Any):
+            if isinstance(val, str):
+                for match in pattern.findall(val):
+                    vars_found.add(match)
+            elif isinstance(val, dict):
+                for v in val.values():
+                    scan_value(v)
+            elif isinstance(val, list):
+                for v in val:
+                    scan_value(v)
+
+        for val in template.attributes.values():
+            scan_value(val)
+
+        return sorted(list(vars_found))
+
+    def apply_template(
+        self,
+        target: Union[Entity, Event],
+        template: FastInjectTemplate,
+        overwrite: bool = False,
+        variables: Dict[str, str] = None,
+    ) -> None:
+        """
+        Apply tags and attributes to a target object.
+        NOTE: This modifies the object in memory. Database save must be called separately.
+
+        Args:
+            target: The Entity or Event to modify.
+            template: The template to apply.
+            overwrite: If True, existing attribute keys are overwritten.
+            variables: Dict of variable names to replacement values.
+        """
+        vars_map = variables or {}
+
+        # Helper to resolve variables
+        def resolve_vars(val: Any) -> Any:
+            if isinstance(val, str):
+                for var_name, var_val in vars_map.items():
+                    val = val.replace(f"{{{{{var_name}}}}}", str(var_val))
+                return val
+            elif isinstance(val, list):
+                return [resolve_vars(v) for v in val]
+            elif isinstance(val, dict):
+                return {k: resolve_vars(v) for k, v in val.items()}
+            return val
+
+        # 1. Apply Tags (Merge sets)
+        if template.tags:
+            current_tags = set(target.tags)
+            new_tags = set(template.tags)
+            target.tags = list(current_tags | new_tags)
+
+        # 2. Apply Attributes
+        for key, raw_val in template.attributes.items():
+            # Resolve variables first
+            final_val = resolve_vars(raw_val)
+
+            # Check existence
+            if key in target.attributes and not overwrite:
+                # Conflict - skip
+                continue
+
+            target.attributes[key] = final_val
