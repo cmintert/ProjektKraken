@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-18
-### Added
-- feat: Implement CLI tool suite and update docs
+### Internal
+- chore: Bump version to 0.7.0
 
 
 *This changelog was automatically generated.*
