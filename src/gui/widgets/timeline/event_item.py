@@ -287,7 +287,10 @@ class EventItem(QGraphicsItem):
                 date_str = EventItem._calendar_converter.format_date(
                     self.event.lore_date
                 )
-            except Exception:
+            except Exception as e:
+                logger.warning(
+                    f"Calendar conversion failed for date {self.event.lore_date}: {e}"
+                )
                 date_str = f"{self.event.lore_date:,.1f}"
         else:
             date_str = f"{self.event.lore_date:,.1f}"
@@ -341,7 +344,10 @@ class EventItem(QGraphicsItem):
                 date_str = EventItem._calendar_converter.format_date(
                     self.event.lore_date
                 )
-            except Exception:
+            except Exception as e:
+                logger.warning(
+                    f"Calendar conversion failed for date {self.event.lore_date}: {e}"
+                )
                 date_str = f"{self.event.lore_date:,.1f}"
         else:
             date_str = f"{self.event.lore_date:,.1f}"

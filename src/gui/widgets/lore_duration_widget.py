@@ -325,7 +325,8 @@ class LoreDurationWidget(QWidget):
                             curr_float = candidate_float
                         else:
                             break
-                    except Exception:
+                    except Exception as e:
+                        logger.warning(f"Year calculation failed: {e}")
                         break
 
                 # --- Count Months ---
@@ -367,7 +368,8 @@ class LoreDurationWidget(QWidget):
                             curr_float = candidate_float
                         else:
                             break
-                    except Exception:
+                    except Exception as e:
+                        logger.warning(f"Month calculation failed: {e}")
                         break
 
                 # --- Remaining Days / Time ---

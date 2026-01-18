@@ -9,6 +9,7 @@ Provides a polished, calendar-aware date input widget with:
 - Live preview of formatted date
 """
 
+import logging
 from typing import Optional
 
 from PySide6.QtCore import QSize, Signal, Slot
@@ -27,6 +28,8 @@ from PySide6.QtWidgets import (
 
 from src.core.calendar import CalendarConverter, CalendarDate
 from src.gui.utils.style_helper import StyleHelper
+
+logger = logging.getLogger(__name__)
 
 
 class CompactDateWidget(QWidget):
@@ -253,7 +256,8 @@ class CompactDateWidget(QWidget):
             value = self.get_value()
             formatted = self._converter.format_date(value)
             self.lbl_preview.setText(formatted)
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Date formatting failed: {e}")
             self.lbl_preview.setText("")
 
     def get_value(self) -> float:
