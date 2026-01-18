@@ -212,6 +212,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAST_INJECT.html">Fast Inject Service</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
 <ul>
@@ -270,8 +271,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for services.longform_builder</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Longform Document Builder Service.</span>
+<span></span><span class="sd">&quot;&quot;&quot;Longform Document Builder Service.</span>
 
 <span class="sd">Provides functions to build, manipulate, and export a single live longform</span>
 <span class="sd">document assembled from Events and Entities. Stores per-record metadata in</span>
@@ -305,8 +305,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_validate_table_name</span><span class="p">(</span><span class="n">table</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Validate table name against whitelist to prevent SQL injection.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate table name against whitelist to prevent SQL injection.</span>
 
 <span class="sd">    This function ensures that table names used in f-string SQL queries</span>
 <span class="sd">    are safe. While parameterized queries (?) protect against injection</span>
@@ -324,8 +323,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_safe_json_loads</span><span class="p">(</span><span class="n">json_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Safely load JSON string, returning empty dict on failure.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Safely load JSON string, returning empty dict on failure.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        json_str: JSON string to parse.</span>
@@ -346,8 +344,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_get_longform_meta</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DOC_ID_DEFAULT</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Extract longform metadata from attributes dict.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract longform metadata from attributes dict.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        attributes: The attributes dictionary.</span>
@@ -365,8 +362,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_set_longform_meta</span><span class="p">(</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">meta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DOC_ID_DEFAULT</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Set longform metadata in attributes dict.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set longform metadata in attributes dict.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        attributes: The attributes dictionary to modify.</span>
@@ -389,8 +385,7 @@
     <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DOC_ID_DEFAULT</span><span class="p">,</span>
     <span class="n">allowed_ids</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Read all events and entities that have longform metadata.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read all events and entities that have longform metadata.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        conn: SQLite connection.</span>
@@ -456,9 +451,8 @@
 <div class="viewcode-block" id="ensure_all_items_indexed">
 <a class="viewcode-back" href="../../services.html#services.longform_builder.ensure_all_items_indexed">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">ensure_all_items_indexed</span><span class="p">(</span><span class="n">conn</span><span class="p">:</span> <span class="n">Connection</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DOC_ID_DEFAULT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Ensure all events and entities in the database are present in the longform document.</span>
-<span class="sd">    Missing items are added to the end of the document, sorted alphabetically.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Ensure all events and entities in the database are present in the longform</span>
+<span class="sd">    document. Missing items are added to the end of the document, sorted alphabetically.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        conn: SQLite connection.</span>
@@ -532,8 +526,7 @@
     <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DOC_ID_DEFAULT</span><span class="p">,</span>
     <span class="n">allowed_ids</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Build an ordered sequence of longform items for rendering.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build an ordered sequence of longform items for rendering.</span>
 
 <span class="sd">    Computes heading_level based on parent-child relationships and depth.</span>
 <span class="sd">    Returns items in reading order.</span>
@@ -612,8 +605,7 @@
     <span class="n">title_override</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="o">...</span><span class="p">,</span>
     <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DOC_ID_DEFAULT</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Insert or update longform metadata for a specific row.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Insert or update longform metadata for a specific row.</span>
 
 <span class="sd">    Loads current attributes, updates longform metadata, and writes back.</span>
 
@@ -677,8 +669,7 @@
     <span class="n">parent_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DOC_ID_DEFAULT</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Place an item between two siblings and set its parent.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Place an item between two siblings and set its parent.</span>
 
 <span class="sd">    Computes a gap position between prev_sibling and next_sibling.</span>
 <span class="sd">    If no siblings, assigns a default position.</span>
@@ -771,8 +762,7 @@
 <div class="viewcode-block" id="reindex_document_positions">
 <a class="viewcode-back" href="../../services.html#services.longform_builder.reindex_document_positions">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">reindex_document_positions</span><span class="p">(</span><span class="n">conn</span><span class="p">:</span> <span class="n">Connection</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DOC_ID_DEFAULT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Reindex all positions to 100, 200, 300... in document order.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reindex all positions to 100, 200, 300... in document order.</span>
 
 <span class="sd">    Rebuilds the sequence and assigns clean positions with DEFAULT_POSITION_GAP.</span>
 <span class="sd">    Useful to avoid float exhaustion after many insertions.</span>
@@ -802,8 +792,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">promote_item</span><span class="p">(</span>
     <span class="n">conn</span><span class="p">:</span> <span class="n">Connection</span><span class="p">,</span> <span class="n">table</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">row_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DOC_ID_DEFAULT</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Promote an item (reduce depth, change parent to parent&#39;s parent).</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Promote an item (reduce depth, change parent to parent&#39;s parent).</span>
 
 <span class="sd">    Equivalent to Shift+Tab in an outline editor.</span>
 
@@ -872,8 +861,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">demote_item</span><span class="p">(</span>
     <span class="n">conn</span><span class="p">:</span> <span class="n">Connection</span><span class="p">,</span> <span class="n">table</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">row_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DOC_ID_DEFAULT</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Demote an item (increase depth, make it child of previous sibling).</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Demote an item (increase depth, make it child of previous sibling).</span>
 
 <span class="sd">    Equivalent to Tab in an outline editor.</span>
 
@@ -938,8 +926,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">remove_from_longform</span><span class="p">(</span>
     <span class="n">conn</span><span class="p">:</span> <span class="n">Connection</span><span class="p">,</span> <span class="n">table</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">row_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DOC_ID_DEFAULT</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Remove longform metadata from a row.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove longform metadata from a row.</span>
 
 <span class="sd">    The row remains in the database but is no longer part of the longform document.</span>
 
@@ -978,8 +965,7 @@
 <div class="viewcode-block" id="export_longform_to_markdown">
 <a class="viewcode-back" href="../../services.html#services.longform_builder.export_longform_to_markdown">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">export_longform_to_markdown</span><span class="p">(</span><span class="n">conn</span><span class="p">:</span> <span class="n">Connection</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DOC_ID_DEFAULT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Export the longform document to Markdown format.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Export the longform document to Markdown format.</span>
 
 <span class="sd">    Includes HTML comments with ID markers for traceability.</span>
 

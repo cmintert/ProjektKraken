@@ -211,6 +211,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
 <li class="toctree-l1"><a class="reference internal" href="LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAST_INJECT.html">Fast Inject Service</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
 <ul>
@@ -318,6 +319,8 @@
 </li>
           <li><a href="core.html#core.calendar.CalendarConverter.__init__">(core.calendar.CalendarConverter method)</a>
 </li>
+          <li><a href="core.html#core.fast_inject.FastInjectManager.__init__">(core.fast_inject.FastInjectManager method)</a>
+</li>
           <li><a href="services.html#services.db_service.DatabaseService.__init__">(services.db_service.DatabaseService method)</a>
 </li>
           <li><a href="services.html#services.link_resolver.LinkResolver.__init__">(services.link_resolver.LinkResolver method)</a>
@@ -360,8 +363,6 @@
           <li><a href="app.html#module-app">module</a>
 </li>
         </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li>
     app.constants
 
@@ -369,9 +370,13 @@
           <li><a href="app.html#module-app.constants">module</a>
 </li>
         </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="core.html#core.calendar.LeapYearRule.applies_to_year">applies_to_year() (core.calendar.LeapYearRule method)</a>
 </li>
         <li><a href="services.html#services.worker.DatabaseWorker.apply_filter">apply_filter() (services.worker.DatabaseWorker method)</a>
+</li>
+        <li><a href="core.html#core.fast_inject.FastInjectManager.apply_template">apply_template() (core.fast_inject.FastInjectManager method)</a>
 </li>
         <li><a href="services.html#services.db_service.DatabaseService.assign_tag_to_entity">assign_tag_to_entity() (services.db_service.DatabaseService method)</a>
 </li>
@@ -383,6 +388,8 @@
 
         <ul>
           <li><a href="core.html#core.events.Event.attributes">(core.events.Event attribute)</a>
+</li>
+          <li><a href="core.html#core.fast_inject.FastInjectTemplate.attributes">(core.fast_inject.FastInjectTemplate attribute)</a>
 </li>
         </ul></li>
     </ul></td>
@@ -534,8 +541,6 @@
 </li>
         <li><a href="commands.html#commands.base_command.CommandResult">CommandResult (class in commands.base_command)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li>
     commands
 
@@ -543,6 +548,8 @@
           <li><a href="commands.html#module-commands">module</a>
 </li>
         </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li>
     commands.base_command
 
@@ -625,6 +632,13 @@
 </li>
         </ul></li>
         <li>
+    core.fast_inject
+
+        <ul>
+          <li><a href="core.html#module-core.fast_inject">module</a>
+</li>
+        </ul></li>
+        <li>
     core.logging_config
 
         <ul>
@@ -644,6 +658,8 @@
         <li><a href="cli.html#cli.map.create_map">create_map() (in module cli.map)</a>
 </li>
         <li><a href="services.html#services.db_service.DatabaseService.create_tag">create_tag() (services.db_service.DatabaseService method)</a>
+</li>
+        <li><a href="core.html#core.fast_inject.FastInjectManager.create_template_from_target">create_template_from_target() (core.fast_inject.FastInjectManager method)</a>
 </li>
         <li><a href="commands.html#commands.calendar_commands.CreateCalendarConfigCommand">CreateCalendarConfigCommand (class in commands.calendar_commands)</a>
 </li>
@@ -707,14 +723,14 @@
           <li><a href="services.html#services.worker.DatabaseWorker.delete_keyframe">(services.worker.DatabaseWorker method)</a>
 </li>
         </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="cli.html#cli.map.delete_map">delete_map() (in module cli.map)</a>
 
         <ul>
           <li><a href="services.html#services.db_service.DatabaseService.delete_map">(services.db_service.DatabaseService method)</a>
 </li>
         </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="services.html#services.db_service.DatabaseService.delete_marker">delete_marker() (services.db_service.DatabaseService method)</a>
 </li>
         <li><a href="cli.html#cli.index.delete_object">delete_object() (in module cli.index)</a>
@@ -726,6 +742,8 @@
 </li>
         </ul></li>
         <li><a href="services.html#services.db_service.DatabaseService.delete_tag">delete_tag() (services.db_service.DatabaseService method)</a>
+</li>
+        <li><a href="core.html#core.fast_inject.FastInjectManager.delete_template">delete_template() (core.fast_inject.FastInjectManager method)</a>
 </li>
         <li><a href="commands.html#commands.calendar_commands.DeleteCalendarConfigCommand">DeleteCalendarConfigCommand (class in commands.calendar_commands)</a>
 </li>
@@ -744,6 +762,8 @@
         <ul>
           <li><a href="core.html#core.events.Event.description">(core.events.Event attribute)</a>
 </li>
+          <li><a href="core.html#core.fast_inject.FastInjectTemplate.description">(core.fast_inject.FastInjectTemplate attribute)</a>
+</li>
         </ul></li>
         <li><a href="core.html#core.logging_config.SafeRotatingFileHandler.doRollover">doRollover() (core.logging_config.SafeRotatingFileHandler method)</a>
 </li>
@@ -756,6 +776,8 @@
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="services.html#services.longform_builder.ensure_all_items_indexed">ensure_all_items_indexed() (in module services.longform_builder)</a>
+</li>
+        <li><a href="core.html#core.fast_inject.FastInjectManager.ensure_directory">ensure_directory() (core.fast_inject.FastInjectManager method)</a>
 </li>
         <li><a href="services.html#services.worker.DatabaseWorker.entities_loaded">entities_loaded (services.worker.DatabaseWorker attribute)</a>
 </li>
@@ -839,11 +861,17 @@
   <h2>F</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="core.html#core.fast_inject.FastInjectManager">FastInjectManager (class in core.fast_inject)</a>
+</li>
+        <li><a href="core.html#core.fast_inject.FastInjectTemplate">FastInjectTemplate (class in core.fast_inject)</a>
+</li>
         <li><a href="services.html#services.db_service.DatabaseService.filter_ids_by_tags">filter_ids_by_tags() (services.db_service.DatabaseService method)</a>
 </li>
         <li><a href="services.html#services.worker.DatabaseWorker.filter_results_ready">filter_results_ready (services.worker.DatabaseWorker attribute)</a>
 </li>
         <li><a href="services.html#services.link_resolver.LinkResolver.find_broken_links">find_broken_links() (services.link_resolver.LinkResolver method)</a>
+</li>
+        <li><a href="core.html#core.fast_inject.FastInjectManager.find_variables">find_variables() (core.fast_inject.FastInjectManager method)</a>
 </li>
         <li><a href="core.html#core.calendar.CalendarConverter.format_date">format_date() (core.calendar.CalendarConverter method)</a>
 </li>
@@ -851,6 +879,8 @@
 </li>
         <li><a href="services.html#services.text_parser.WikiLinkParser.format_name_link">format_name_link() (services.text_parser.WikiLinkParser static method)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="core.html#core.calendar.CalendarConfig.from_dict">from_dict() (core.calendar.CalendarConfig class method)</a>
 
         <ul>
@@ -866,9 +896,9 @@
 </li>
           <li><a href="core.html#core.events.Event.from_dict">(core.events.Event class method)</a>
 </li>
+          <li><a href="core.html#core.fast_inject.FastInjectTemplate.from_dict">(core.fast_inject.FastInjectTemplate class method)</a>
+</li>
         </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="core.html#core.calendar.CalendarConverter.from_float">from_float() (core.calendar.CalendarConverter method)</a>
 </li>
         <li><a href="core.html#core.calendar.CalendarConfig.from_json">from_json() (core.calendar.CalendarConfig class method)</a>
@@ -1012,6 +1042,8 @@
         </ul></li>
         <li><a href="services.html#services.text_parser.WikiLinkParser.ID_PREFIX_RE">ID_PREFIX_RE (services.text_parser.WikiLinkParser attribute)</a>
 </li>
+        <li><a href="core.html#core.fast_inject.FastInjectManager.import_template">import_template() (core.fast_inject.FastInjectManager method)</a>
+</li>
         <li><a href="cli.html#cli.index.index_object">index_object() (in module cli.index)</a>
 
         <ul>
@@ -1111,6 +1143,8 @@
         <li><a href="services.html#services.worker.DatabaseWorker.load_maps">load_maps() (services.worker.DatabaseWorker method)</a>
 </li>
         <li><a href="services.html#services.worker.DatabaseWorker.load_markers">load_markers() (services.worker.DatabaseWorker method)</a>
+</li>
+        <li><a href="core.html#core.fast_inject.FastInjectManager.load_templates">load_templates() (core.fast_inject.FastInjectManager method)</a>
 </li>
         <li><a href="services.html#services.worker.DatabaseWorker.load_trajectories">load_trajectories() (services.worker.DatabaseWorker method)</a>
 </li>
@@ -1240,6 +1274,8 @@
 </li>
           <li><a href="core.html#module-core.events">core.events</a>
 </li>
+          <li><a href="core.html#module-core.fast_inject">core.fast_inject</a>
+</li>
           <li><a href="core.html#module-core.logging_config">core.logging_config</a>
 </li>
           <li><a href="gui.html#module-gui">gui</a>
@@ -1297,6 +1333,8 @@
           <li><a href="core.html#core.entities.Entity.name">(core.entities.Entity attribute)</a>
 </li>
           <li><a href="core.html#core.events.Event.name">(core.events.Event attribute)</a>
+</li>
+          <li><a href="core.html#core.fast_inject.FastInjectTemplate.name">(core.fast_inject.FastInjectTemplate attribute)</a>
 </li>
           <li><a href="services.html#id2">(services.text_parser.LinkCandidate attribute)</a>, <a href="services.html#services.text_parser.LinkCandidate.name">[1]</a>
 </li>
@@ -1405,6 +1443,8 @@
 </li>
         <li><a href="services.html#services.worker.DatabaseWorker.save_current_time">save_current_time() (services.worker.DatabaseWorker method)</a>
 </li>
+        <li><a href="core.html#core.fast_inject.FastInjectManager.save_template">save_template() (core.fast_inject.FastInjectManager method)</a>
+</li>
         <li><a href="cli.html#cli.wiki.scan_links">scan_links() (in module cli.wiki)</a>
 </li>
         <li>
@@ -1477,6 +1517,8 @@
 </li>
         <li><a href="core.html#core.calendar.LeapYearRule.skip_interval">skip_interval (core.calendar.LeapYearRule attribute)</a>, <a href="core.html#id18">[1]</a>
 </li>
+        <li><a href="core.html#core.fast_inject.FastInjectTemplate.source_path">source_path (core.fast_inject.FastInjectTemplate attribute)</a>
+</li>
         <li><a href="services.html#id4">span (services.text_parser.LinkCandidate attribute)</a>, <a href="services.html#services.text_parser.LinkCandidate.span">[1]</a>
 </li>
         <li><a href="services.html#services.worker.DatabaseWorker.staticMetaObject">staticMetaObject (services.worker.DatabaseWorker attribute)</a>
@@ -1496,8 +1538,12 @@
         <ul>
           <li><a href="core.html#core.events.Event.tags">(core.events.Event property)</a>
 </li>
+          <li><a href="core.html#core.fast_inject.FastInjectTemplate.tags">(core.fast_inject.FastInjectTemplate attribute)</a>
+</li>
         </ul></li>
         <li><a href="services.html#id5">target_id (services.text_parser.LinkCandidate attribute)</a>, <a href="services.html#services.text_parser.LinkCandidate.target_id">[1]</a>
+</li>
+        <li><a href="core.html#core.fast_inject.FastInjectTemplate.target_type">target_type (core.fast_inject.FastInjectTemplate attribute)</a>
 </li>
         <li><a href="core.html#core.calendar.CalendarDate.time_fraction">time_fraction (core.calendar.CalendarDate attribute)</a>, <a href="core.html#id12">[1]</a>
 </li>
@@ -1516,6 +1562,8 @@
 </li>
           <li><a href="core.html#core.events.Event.to_dict">(core.events.Event method)</a>
 </li>
+          <li><a href="core.html#core.fast_inject.FastInjectTemplate.to_dict">(core.fast_inject.FastInjectTemplate method)</a>
+</li>
         </ul></li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
@@ -1533,6 +1581,8 @@
           <li><a href="core.html#core.events.Event.type">(core.events.Event attribute)</a>
 </li>
         </ul></li>
+        <li><a href="core.html#core.fast_inject.FastInjectTemplate.type_value">type_value (core.fast_inject.FastInjectTemplate attribute)</a>
+</li>
     </ul></td>
   </tr></table>
 </section>
@@ -1623,11 +1673,13 @@
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="services.html#services.db_service.DatabaseService.vacuum">vacuum() (services.db_service.DatabaseService method)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="core.html#core.calendar.CalendarConfig.validate">validate() (core.calendar.CalendarConfig method)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="cli.html#cli.utils.validate_database_path">validate_database_path() (in module cli.utils)</a>
+</li>
+        <li><a href="core.html#core.fast_inject.FastInjectTemplate.version">version (core.fast_inject.FastInjectTemplate attribute)</a>
 </li>
     </ul></td>
   </tr></table>

@@ -12,6 +12,14 @@ core.calendar module
    :show-inheritance:
    :undoc-members:
 
+core.fast_inject module
+-----------------------
+
+.. automodule:: core.fast_inject
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 core.entities module
 --------------------
 

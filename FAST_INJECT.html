@@ -3,10 +3,10 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Database Schema Reference" href="SCHEMA_REFERENCE.html"><link rel="prev" title="Database Architecture and Best Practices" href="DATABASE.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Tag Normalization Migration Guide" href="TAG_MIGRATION_GUIDE.html"><link rel="prev" title="Multi-Provider LLM Integration Guide" href="LLM_INTEGRATION.html">
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
-        <title>Development Guide - Project Kraken 0.7.0 documentation</title>
+        <title>Fast Inject Service - Project Kraken 0.7.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -203,17 +203,17 @@
 <li class="toctree-l1"><a class="reference internal" href="LONGFORM.html">Longform Document Feature</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
-<ul class="current">
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="DATABASE.html">Database Architecture and Best Practices</a></li>
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DEVELOPMENT.html">Development Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security Best Practices</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Advanced Features</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
 <li class="toctree-l1"><a class="reference internal" href="LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAST_INJECT.html">Fast Inject Service</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Fast Inject Service</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
 <ul>
@@ -259,7 +259,7 @@
         </a>
         <div class="content-icon-container">
           <div class="view-this-page">
-  <a class="muted-link" href="_sources/DEVELOPMENT.md.txt" title="View this page">
+  <a class="muted-link" href="_sources/FAST_INJECT.md.txt" title="View this page">
     <svg><use href="#svg-eye"></use></svg>
     <span class="visually-hidden">View this page</span>
   </a>
@@ -277,47 +277,75 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="development-guide">
-<h1>Development Guide<a class="headerlink" href="#development-guide" title="Link to this heading">¶</a></h1>
-<section id="environment-setup">
-<h2>Environment Setup<a class="headerlink" href="#environment-setup" title="Link to this heading">¶</a></h2>
-<p>This project uses a local virtual environment (<code class="docutils literal notranslate"><span class="pre">.venv</span></code>) on Windows.</p>
+          <section id="fast-inject-service">
+<h1>Fast Inject Service<a class="headerlink" href="#fast-inject-service" title="Link to this heading">¶</a></h1>
+<p>The Fast Inject service provides a powerful templating system for quickly generating and injecting entities, events, and complex data structures into the ProjektKraken world.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>Fast Inject allows you to define templates in JSON format (<code class="docutils literal notranslate"><span class="pre">.fastinject</span></code>) that can be resolved through a dynamic UI and applied to your project. It supports variables, choices, and complex nested data structures.</p>
 </section>
-<section id="pre-commit-hooks">
-<h2>Pre-commit Hooks<a class="headerlink" href="#pre-commit-hooks" title="Link to this heading">¶</a></h2>
-<p>We use <code class="docutils literal notranslate"><span class="pre">pre-commit</span></code> to ensure code quality with <code class="docutils literal notranslate"><span class="pre">ruff</span></code> and <code class="docutils literal notranslate"><span class="pre">pytest</span></code>.</p>
-<section id="configuration-rules">
-<h3>Configuration Rules<a class="headerlink" href="#configuration-rules" title="Link to this heading">¶</a></h3>
-<p>When modifying <code class="docutils literal notranslate"><span class="pre">.pre-commit-config.yaml</span></code>, always define hooks using <code class="docutils literal notranslate"><span class="pre">entry:</span> <span class="pre">python</span> <span class="pre">-m</span> <span class="pre">&lt;module&gt;</span></code>.</p>
-<p><strong>Correct:</strong></p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ruff-check</span>
-<span class="w">  </span><span class="nt">entry</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">python -m ruff check --fix</span>
-</pre></div>
-</div>
-<p><strong>Incorrect:</strong></p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ruff-check</span>
-<span class="w">  </span><span class="nt">entry</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ruff check --fix</span>
-</pre></div>
-</div>
-<p><strong>Reason:</strong>
-On Windows, executing the module via <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span></code> ensures that the command runs within the correct Python environment (the active <code class="docutils literal notranslate"><span class="pre">.venv</span></code>), resolving imports and paths correctly. Direct executable calls may fail or pick up the wrong environment.</p>
+<section id="template-structure">
+<h2>Template Structure<a class="headerlink" href="#template-structure" title="Link to this heading">¶</a></h2>
+<p>Templates are defined using the <code class="docutils literal notranslate"><span class="pre">FastInjectTemplate</span></code> dataclass.</p>
+<section id="attributes">
+<h3>Attributes<a class="headerlink" href="#attributes" title="Link to this heading">¶</a></h3>
+<p>Attributes can be simple values or complex nested structures (dictionaries and lists).</p>
+<ul class="simple">
+<li><p><strong>Simple</strong>: <code class="docutils literal notranslate"><span class="pre">&quot;Age&quot;:</span> <span class="pre">12</span></code></p></li>
+<li><p><strong>Nested Dict</strong>: <code class="docutils literal notranslate"><span class="pre">&quot;Details&quot;:</span> <span class="pre">{&quot;HP&quot;:</span> <span class="pre">100,</span> <span class="pre">&quot;MP&quot;:</span> <span class="pre">50}</span></code></p></li>
+<li><p><strong>Nested List</strong>: <code class="docutils literal notranslate"><span class="pre">&quot;Inventory&quot;:</span> <span class="pre">[&quot;Sword&quot;,</span> <span class="pre">&quot;Shield&quot;]</span></code></p></li>
+</ul>
 </section>
-<section id="running-hooks">
-<h3>Running Hooks<a class="headerlink" href="#running-hooks" title="Link to this heading">¶</a></h3>
-<p>The hooks run automatically on <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">commit</span></code>. To run them manually:</p>
-<ol class="arabic">
-<li><p>Activate the virtual environment:</p>
-<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="p">.</span> <span class="p">.\.</span><span class="n">venv</span><span class="p">\</span><span class="n">Scripts</span><span class="p">\</span><span class="n">activate</span><span class="p">.</span><span class="n">ps1</span>
-</pre></div>
-</div>
+<section id="variables">
+<h3>Variables<a class="headerlink" href="#variables" title="Link to this heading">¶</a></h3>
+<p>Templates support dynamic resolution through variables:</p>
+<ul class="simple">
+<li><p><strong>Open Variable</strong>: <code class="docutils literal notranslate"><span class="pre">{{VAR_NAME}}</span></code> (Prompt for input)</p></li>
+<li><p><strong>Choice Variable</strong>: <code class="docutils literal notranslate"><span class="pre">{{VAR:Option1|Option2|Option3}}</span></code> (Renders as a dropdown)</p></li>
+</ul>
+<p>Variables can be embedded within strings:
+<code class="docutils literal notranslate"><span class="pre">To</span> <span class="pre">{{GoalVerb:find|destroy|protect}}</span> <span class="pre">the</span> <span class="pre">{{GoalObject}}.</span></code></p>
+</section>
+</section>
+<section id="fastinjectdialog-ui">
+<h2>FastInjectDialog (UI)<a class="headerlink" href="#fastinjectdialog-ui" title="Link to this heading">¶</a></h2>
+<p>The UI provides a unified editor with two tabs:</p>
+<section id="configure-tab">
+<h3>1. Configure Tab<a class="headerlink" href="#configure-tab" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Flattened View</strong>: Complex structures are flattened into individual rows for easy editing (e.g., <code class="docutils literal notranslate"><span class="pre">Details.HP</span></code>, <code class="docutils literal notranslate"><span class="pre">Inventory[0]</span></code>).</p></li>
+<li><p><strong>Smart Widgets</strong>:</p>
+<ul>
+<li><p>Pure variables with choices → <strong>Dropdowns</strong></p></li>
+<li><p>Pure variables without choices → <strong>Text Inputs</strong></p></li>
+<li><p>Mixed content → <strong>Live Result Preview</strong> with sub-controls for each variable.</p></li>
+</ul>
 </li>
-<li><p>Run the hooks:</p>
-<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="n">pre-commit</span> <span class="n">run</span> <span class="p">-</span><span class="n">-all-files</span>
-</pre></div>
-</div>
-</li>
+<li><p><strong>Selection</strong>: Use checkboxes at the end of each row to include/exclude specific attributes.</p></li>
+</ul>
+</section>
+<section id="edit-source-tab">
+<h3>2. Edit Source Tab<a class="headerlink" href="#edit-source-tab" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Direct access to the raw JSON of the template.</p></li>
+<li><p>Supports saving manual changes directly to the template file on disk.</p></li>
+</ul>
+</section>
+</section>
+<section id="resolution-logic">
+<h2>Resolution Logic<a class="headerlink" href="#resolution-logic" title="Link to this heading">¶</a></h2>
+<p>When applying a template:</p>
+<ol class="arabic simple">
+<li><p><strong>Flattening</strong>: The template is decomposed into simple scalar rows for the UI.</p></li>
+<li><p><strong>Editing</strong>: User interacts with dropdowns and text fields.</p></li>
+<li><p><strong>Reconstruction</strong>: The service rebuilds the original nested dictionary/list structure from the flattened keys.</p></li>
+<li><p><strong>Type Restoration</strong>: Integer values are automatically restored from strings.</p></li>
+<li><p><strong>Application</strong>: The resolved template is applied to the target entity or project.</p></li>
 </ol>
 </section>
+<section id="file-support">
+<h2>File Support<a class="headerlink" href="#file-support" title="Link to this heading">¶</a></h2>
+<p>Templates are typically saved with the <code class="docutils literal notranslate"><span class="pre">.fastinject</span></code> extension and can be imported/exported through the UI.</p>
 </section>
 </section>
 
@@ -326,23 +354,23 @@ On Windows, executing the module via <code class="docutils literal notranslate">
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="SCHEMA_REFERENCE.html">
+          <a class="next-page" href="TAG_MIGRATION_GUIDE.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Database Schema Reference</div>
+                <div class="title">Tag Normalization Migration Guide</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="DATABASE.html">
+          <a class="prev-page" href="LLM_INTEGRATION.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Database Architecture and Best Practices</div>
+                <div class="title">Multi-Provider LLM Integration Guide</div>
                 
               </div>
             </a>
@@ -376,13 +404,20 @@ On Windows, executing the module via <code class="docutils literal notranslate">
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Development Guide</a><ul>
-<li><a class="reference internal" href="#environment-setup">Environment Setup</a></li>
-<li><a class="reference internal" href="#pre-commit-hooks">Pre-commit Hooks</a><ul>
-<li><a class="reference internal" href="#configuration-rules">Configuration Rules</a></li>
-<li><a class="reference internal" href="#running-hooks">Running Hooks</a></li>
+<li><a class="reference internal" href="#">Fast Inject Service</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#template-structure">Template Structure</a><ul>
+<li><a class="reference internal" href="#attributes">Attributes</a></li>
+<li><a class="reference internal" href="#variables">Variables</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#fastinjectdialog-ui">FastInjectDialog (UI)</a><ul>
+<li><a class="reference internal" href="#configure-tab">1. Configure Tab</a></li>
+<li><a class="reference internal" href="#edit-source-tab">2. Edit Source Tab</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#resolution-logic">Resolution Logic</a></li>
+<li><a class="reference internal" href="#file-support">File Support</a></li>
 </ul>
 </li>
 </ul>

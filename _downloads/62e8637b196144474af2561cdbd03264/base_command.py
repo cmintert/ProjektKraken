@@ -1,5 +1,4 @@
-"""
-Base Command Module.
+"""Base Command Module.
 
 Defines the abstract base class and result type for all commands in the application.
 
@@ -17,8 +16,7 @@ from src.services.db_service import DatabaseService
 
 @dataclass
 class CommandResult:
-    """
-    Standardized result object for command execution.
+    """Standardized result object for command execution.
 
     Attributes:
         success (bool): True if the command executed successfully,
@@ -38,21 +36,18 @@ class CommandResult:
 
 
 class BaseCommand(ABC):
-    """
-    Abstract base class for all user actions.
+    """Abstract base class for all user actions.
+
     Encapsulates logic to generic execution and undo/redo support.
     """
 
     def __init__(self) -> None:
-        """
-        Initializes the command.
-        """
+        """Initializes the command."""
         self._is_executed = False
 
     @abstractmethod
     def execute(self, db_service: DatabaseService) -> Union[bool, CommandResult]:
-        """
-        Performs the action.
+        """Performs the action.
 
         Args:
             db_service (DatabaseService): The database service to operate on.
@@ -64,8 +59,7 @@ class BaseCommand(ABC):
 
     @abstractmethod
     def undo(self, db_service: DatabaseService) -> None:
-        """
-        Reverts the action.
+        """Reverts the action.
 
         Args:
             db_service (DatabaseService): The database service to operate on.
@@ -74,8 +68,7 @@ class BaseCommand(ABC):
 
     @property
     def is_executed(self) -> bool:
-        """
-        Checks if the command has been executed.
+        """Checks if the command has been executed.
 
         Returns:
             bool: True if the command has been executed, False otherwise.

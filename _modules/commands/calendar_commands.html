@@ -212,6 +212,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAST_INJECT.html">Fast Inject Service</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
 <ul>
@@ -270,8 +271,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for commands.calendar_commands</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Calendar Commands Module.</span>
+<span></span><span class="sd">&quot;&quot;&quot;Calendar Commands Module.</span>
 
 <span class="sd">Implements the Command pattern for calendar configuration operations.</span>
 <span class="sd">All commands support undo/redo functionality.</span>
@@ -296,8 +296,7 @@
 <div class="viewcode-block" id="CreateCalendarConfigCommand">
 <a class="viewcode-back" href="../../commands.html#commands.calendar_commands.CreateCalendarConfigCommand">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CreateCalendarConfigCommand</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Creates a new calendar configuration.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a new calendar configuration.</span>
 
 <span class="sd">    Supports undo by deleting the created configuration.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -305,8 +304,7 @@
 <div class="viewcode-block" id="CreateCalendarConfigCommand.__init__">
 <a class="viewcode-back" href="../../commands.html#commands.calendar_commands.CreateCalendarConfigCommand.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">CalendarConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the command.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the command.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            config: The calendar configuration to create.</span>
@@ -318,8 +316,7 @@
 <div class="viewcode-block" id="CreateCalendarConfigCommand.execute">
 <a class="viewcode-back" href="../../commands.html#commands.calendar_commands.CreateCalendarConfigCommand.execute">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CommandResult</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates the calendar configuration.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates the calendar configuration.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service: The database service to use.</span>
@@ -349,8 +346,7 @@
 <div class="viewcode-block" id="CreateCalendarConfigCommand.undo">
 <a class="viewcode-back" href="../../commands.html#commands.calendar_commands.CreateCalendarConfigCommand.undo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Undoes the creation by deleting the config.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Undoes the creation by deleting the config.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service: The database service to use.</span>
@@ -366,8 +362,7 @@
 <div class="viewcode-block" id="UpdateCalendarConfigCommand">
 <a class="viewcode-back" href="../../commands.html#commands.calendar_commands.UpdateCalendarConfigCommand">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">UpdateCalendarConfigCommand</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Updates an existing calendar configuration.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Updates an existing calendar configuration.</span>
 
 <span class="sd">    Stores the original config for undo support.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -375,8 +370,7 @@
 <div class="viewcode-block" id="UpdateCalendarConfigCommand.__init__">
 <a class="viewcode-back" href="../../commands.html#commands.calendar_commands.UpdateCalendarConfigCommand.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">CalendarConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the command.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the command.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            config: The updated calendar configuration.</span>
@@ -389,8 +383,7 @@
 <div class="viewcode-block" id="UpdateCalendarConfigCommand.execute">
 <a class="viewcode-back" href="../../commands.html#commands.calendar_commands.UpdateCalendarConfigCommand.execute">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CommandResult</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Updates the calendar configuration.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Updates the calendar configuration.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service: The database service to use.</span>
@@ -423,8 +416,7 @@
 <div class="viewcode-block" id="UpdateCalendarConfigCommand.undo">
 <a class="viewcode-back" href="../../commands.html#commands.calendar_commands.UpdateCalendarConfigCommand.undo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Undoes the update by restoring the original config.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Undoes the update by restoring the original config.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service: The database service to use.</span>
@@ -440,8 +432,7 @@
 <div class="viewcode-block" id="DeleteCalendarConfigCommand">
 <a class="viewcode-back" href="../../commands.html#commands.calendar_commands.DeleteCalendarConfigCommand">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DeleteCalendarConfigCommand</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Deletes a calendar configuration.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Deletes a calendar configuration.</span>
 
 <span class="sd">    Stores the deleted config for undo support.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -449,8 +440,7 @@
 <div class="viewcode-block" id="DeleteCalendarConfigCommand.__init__">
 <a class="viewcode-back" href="../../commands.html#commands.calendar_commands.DeleteCalendarConfigCommand.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the command.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the command.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            config_id: The ID of the calendar configuration to delete.</span>
@@ -463,8 +453,7 @@
 <div class="viewcode-block" id="DeleteCalendarConfigCommand.execute">
 <a class="viewcode-back" href="../../commands.html#commands.calendar_commands.DeleteCalendarConfigCommand.execute">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CommandResult</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Deletes the calendar configuration.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deletes the calendar configuration.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service: The database service to use.</span>
@@ -497,8 +486,7 @@
 <div class="viewcode-block" id="DeleteCalendarConfigCommand.undo">
 <a class="viewcode-back" href="../../commands.html#commands.calendar_commands.DeleteCalendarConfigCommand.undo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Undoes the deletion by restoring the config.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Undoes the deletion by restoring the config.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service: The database service to use.</span>
@@ -514,8 +502,7 @@
 <div class="viewcode-block" id="SetActiveCalendarCommand">
 <a class="viewcode-back" href="../../commands.html#commands.calendar_commands.SetActiveCalendarCommand">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SetActiveCalendarCommand</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Sets a calendar configuration as the active one.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sets a calendar configuration as the active one.</span>
 
 <span class="sd">    Stores the previously active config ID for undo support.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -523,8 +510,7 @@
 <div class="viewcode-block" id="SetActiveCalendarCommand.__init__">
 <a class="viewcode-back" href="../../commands.html#commands.calendar_commands.SetActiveCalendarCommand.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the command.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the command.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            config_id: The ID of the calendar to set as active.</span>
@@ -537,8 +523,7 @@
 <div class="viewcode-block" id="SetActiveCalendarCommand.execute">
 <a class="viewcode-back" href="../../commands.html#commands.calendar_commands.SetActiveCalendarCommand.execute">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CommandResult</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Sets the calendar as active.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the calendar as active.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service: The database service to use.</span>
@@ -572,8 +557,7 @@
 <div class="viewcode-block" id="SetActiveCalendarCommand.undo">
 <a class="viewcode-back" href="../../commands.html#commands.calendar_commands.SetActiveCalendarCommand.undo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Undoes by restoring the previously active calendar.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Undoes by restoring the previously active calendar.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service: The database service to use.</span>

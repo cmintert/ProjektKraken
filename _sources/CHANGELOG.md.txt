@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-18
-### Added
-- Feat: Implement Gregorian defaults and algorithmic leap years
+### Documentation
+- docs: Fast Inject system documentation and lint fixes
 
 
 *This changelog was automatically generated.*

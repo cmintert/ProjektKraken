@@ -213,6 +213,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
 <li class="toctree-l1"><a class="reference internal" href="LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAST_INJECT.html">Fast Inject Service</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
 <ul>
@@ -294,8 +295,8 @@ BaseCommand: Abstract base class implementing command pattern with undo/redo.</p
 <dt class="sig sig-object py" id="commands.base_command.BaseCommand">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.base_command.</span></span><span class="sig-name descname"><span class="pre">BaseCommand</span></span><a class="reference internal" href="_modules/commands/base_command.html#BaseCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.base_command.BaseCommand" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
-<p>Abstract base class for all user actions.
-Encapsulates logic to generic execution and undo/redo support.</p>
+<p>Abstract base class for all user actions.</p>
+<p>Encapsulates logic to generic execution and undo/redo support.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="commands.base_command.BaseCommand.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/base_command.html#BaseCommand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.base_command.BaseCommand.__init__" title="Link to this definition">¶</a></dt>
@@ -727,8 +728,8 @@ If None, default values are used.</p>
 <dt class="sig sig-object py" id="commands.entity_commands.UpdateEntityCommand">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.entity_commands.</span></span><span class="sig-name descname"><span class="pre">UpdateEntityCommand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/entity_commands.html#UpdateEntityCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.entity_commands.UpdateEntityCommand" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCommand</span></code></p>
-<p>Command to update an existing entity.
-Accepts a dictionary of changes.</p>
+<p>Command to update an existing entity.</p>
+<p>Accepts a dictionary of changes.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="commands.entity_commands.UpdateEntityCommand.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/entity_commands.html#UpdateEntityCommand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.entity_commands.UpdateEntityCommand.__init__" title="Link to this definition">¶</a></dt>
@@ -879,9 +880,9 @@ If None, default values are used.</p>
 <dt class="sig sig-object py" id="commands.event_commands.UpdateEventCommand">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.event_commands.</span></span><span class="sig-name descname"><span class="pre">UpdateEventCommand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/event_commands.html#UpdateEventCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.event_commands.UpdateEventCommand" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCommand</span></code></p>
-<p>Command to update an existing event.
-Accepts a dictionary of changes to apply to the existing event.
-Snapshots the clean state before update for undo.</p>
+<p>Command to update an existing event.</p>
+<p>Accepts a dictionary of changes to apply to the existing event. Snapshots the clean
+state before update for undo.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="commands.event_commands.UpdateEventCommand.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/event_commands.html#UpdateEventCommand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.event_commands.UpdateEventCommand.__init__" title="Link to this definition">¶</a></dt>
@@ -1277,13 +1278,14 @@ Snapshots the clean state before update for undo.</p>
 </section>
 <section id="module-commands.wiki_commands">
 <span id="commands-wiki-commands-module"></span><h2>commands.wiki_commands module<a class="headerlink" href="#module-commands.wiki_commands" title="Link to this heading">¶</a></h2>
-<p>Wiki Commands Module.
-Commands for processing WikiLinks and updating relations.</p>
+<p>Wiki Commands Module.</p>
+<p>Commands for processing WikiLinks and updating relations.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="commands.wiki_commands.ProcessWikiLinksCommand">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.wiki_commands.</span></span><span class="sig-name descname"><span class="pre">ProcessWikiLinksCommand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_content</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'description'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/wiki_commands.html#ProcessWikiLinksCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.wiki_commands.ProcessWikiLinksCommand" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseCommand</span></code></p>
-<p>Command to process text content, extract WikiLinks, and create ‘mentions’ relations.</p>
+<p>Command to process text content, extract WikiLinks, and create ‘mentions’
+relations.</p>
 <p>This command:
 - Parses WikiLinks from text content
 - Resolves names to entities (case-insensitive, including aliases)
@@ -1337,9 +1339,8 @@ snippet, and offsets.</p>
 <section id="module-commands">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-commands" title="Link to this heading">¶</a></h2>
 <p>Commands Package.</p>
-<p>This package contains all command classes implementing the Command pattern
-for undo/redo functionality. Commands encapsulate actions related to entities,
-events, and relations.</p>
+<p>This package contains all command classes implementing the Command pattern for undo/redo
+functionality. Commands encapsulate actions related to entities, events, and relations.</p>
 </section>
 </section>
 

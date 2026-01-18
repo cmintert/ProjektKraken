@@ -213,6 +213,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
 <li class="toctree-l1"><a class="reference internal" href="LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAST_INJECT.html">Fast Inject Service</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
 <ul>
@@ -283,19 +284,18 @@
 </section>
 <section id="module-services.db_service">
 <span id="services-db-service-module"></span><h2>services.db_service module<a class="headerlink" href="#module-services.db_service" title="Link to this heading">¶</a></h2>
-<p>Database Service Module.
-Provides the low-level SQL interface to the SQLite database.
+<p>Database Service Module. Provides the low-level SQL interface to the SQLite database.
 Follows the Hybrid Schema (Strict Columns + JSON Attributes).</p>
-<p>This service now uses specialized repository classes for better
-separation of concerns and maintainability.</p>
+<p>This service now uses specialized repository classes for better separation of concerns
+and maintainability.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="services.db_service.DatabaseService">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">services.db_service.</span></span><span class="sig-name descname"><span class="pre">DatabaseService</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">':memory:'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Handles all raw interactions with the SQLite database.
-Implements the Hybrid Schema (Strict Columns + JSON Attributes).</p>
-<p>This service delegates CRUD operations to specialized repository
-classes while maintaining schema management and connection handling.</p>
+<p>Handles all raw interactions with the SQLite database. Implements the Hybrid
+Schema (Strict Columns + JSON Attributes).</p>
+<p>This service delegates CRUD operations to specialized repository classes while
+maintaining schema management and connection handling.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">':memory:'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.__init__" title="Link to this definition">¶</a></dt>
@@ -1531,8 +1531,8 @@ the existing row’s id is retained.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.vacuum">
 <span class="sig-name descname"><span class="pre">vacuum</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.vacuum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.vacuum" title="Link to this definition">¶</a></dt>
-<dd><p>Runs VACUUM on the database to reclaim space and optimize storage.
-This can be slow for large databases and should be run infrequently.</p>
+<dd><p>Runs VACUUM on the database to reclaim space and optimize storage. This can
+be slow for large databases and should be run infrequently.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>True if successful, False otherwise.</p>
@@ -1549,8 +1549,8 @@ This can be slow for large databases and should be run infrequently.</p>
 <section id="module-services.link_resolver">
 <span id="services-link-resolver-module"></span><h2>services.link_resolver module<a class="headerlink" href="#module-services.link_resolver" title="Link to this heading">¶</a></h2>
 <p>Link Resolver Service.</p>
-<p>Handles resolution of ID-based wiki links to current entity/event names.
-Provides caching and broken link detection.</p>
+<p>Handles resolution of ID-based wiki links to current entity/event names. Provides
+caching and broken link detection.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="services.link_resolver.LinkResolver">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">services.link_resolver.</span></span><span class="sig-name descname"><span class="pre">LinkResolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/link_resolver.html#LinkResolver"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.link_resolver.LinkResolver" title="Link to this definition">¶</a></dt>
@@ -1699,8 +1699,8 @@ Returns items in reading order.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="services.longform_builder.ensure_all_items_indexed">
 <span class="sig-prename descclassname"><span class="pre">services.longform_builder.</span></span><span class="sig-name descname"><span class="pre">ensure_all_items_indexed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Connection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/longform_builder.html#ensure_all_items_indexed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.longform_builder.ensure_all_items_indexed" title="Link to this definition">¶</a></dt>
-<dd><p>Ensure all events and entities in the database are present in the longform document.
-Missing items are added to the end of the document, sorted alphabetically.</p>
+<dd><p>Ensure all events and entities in the database are present in the longform
+document. Missing items are added to the end of the document, sorted alphabetically.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1854,8 +1854,8 @@ Useful to avoid float exhaustion after many insertions.</p>
 </section>
 <section id="module-services.text_parser">
 <span id="services-text-parser-module"></span><h2>services.text_parser module<a class="headerlink" href="#module-services.text_parser" title="Link to this heading">¶</a></h2>
-<p>Text Parser Service.
-Handles parsing of WikiLinks and other text processing tasks.</p>
+<p>Text Parser Service.</p>
+<p>Handles parsing of WikiLinks and other text processing tasks.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="services.text_parser.LinkCandidate">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">services.text_parser.</span></span><span class="sig-name descname"><span class="pre">LinkCandidate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modifier</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">span</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_id_based</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/text_parser.html#LinkCandidate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.text_parser.LinkCandidate" title="Link to this definition">¶</a></dt>
@@ -2048,14 +2048,14 @@ Duplicates are preserved in order of appearance.</p>
 </section>
 <section id="module-services.worker">
 <span id="services-worker-module"></span><h2>services.worker module<a class="headerlink" href="#module-services.worker" title="Link to this heading">¶</a></h2>
-<p>Database Worker Module.
-Handles asynchronous database operations to keep the UI responsive.</p>
+<p>Database Worker Module.</p>
+<p>Handles asynchronous database operations to keep the UI responsive.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="services.worker.DatabaseWorker">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">services.worker.</span></span><span class="sig-name descname"><span class="pre">DatabaseWorker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QObject</span></code></p>
-<p>Worker object that executes database operations in a separate thread.
-Owns the DatabaseService instance to ensure thread affinity.</p>
+<p>Worker object that executes database operations in a separate thread.</p>
+<p>Owns the DatabaseService instance to ensure thread affinity.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="services.worker.DatabaseWorker.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.__init__" title="Link to this definition">¶</a></dt>
@@ -2109,8 +2109,8 @@ Owns the DatabaseService instance to ensure thread affinity.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="services.worker.DatabaseWorker.cleanup">
 <span class="sig-name descname"><span class="pre">cleanup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.cleanup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.cleanup" title="Link to this definition">¶</a></dt>
-<dd><p>Cleanly closes database connections and other resources.
-Should be called before the thread is terminated.</p>
+<dd><p>Cleanly closes database connections and other resources.</p>
+<p>Should be called before the thread is terminated.</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -2358,8 +2358,8 @@ Should be called before the thread is terminated.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="services.worker.DatabaseWorker.resolve_entity_state">
 <span class="sig-name descname"><span class="pre">resolve_entity_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/worker.html#DatabaseWorker.resolve_entity_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.worker.DatabaseWorker.resolve_entity_state" title="Link to this definition">¶</a></dt>
-<dd><p>Resolves the state of an entity at a specific time using TemporalManager.
-Emits entity_state_resolved.</p>
+<dd><p>Resolves the state of an entity at a specific time using TemporalManager.</p>
+<p>Emits entity_state_resolved.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -2429,8 +2429,8 @@ operation_finished (str): Status update.</p>
 <section id="module-services">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-services" title="Link to this heading">¶</a></h2>
 <p>Services Package.</p>
-<p>This package contains service layer classes for database operations,
-text parsing, and background workers.</p>
+<p>This package contains service layer classes for database operations, text parsing, and
+background workers.</p>
 </section>
 </section>
 

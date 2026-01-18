@@ -212,6 +212,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAST_INJECT.html">Fast Inject Service</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
 <ul>
@@ -270,8 +271,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for core.calendar</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Calendar System Module.</span>
+<span></span><span class="sd">&quot;&quot;&quot;Calendar System Module.</span>
 
 <span class="sd">Provides domain models and conversion logic for custom fantasy calendars.</span>
 <span class="sd">Supports variable month lengths, year variants, and bidirectional</span>
@@ -300,8 +300,7 @@
 <a class="viewcode-back" href="../../core.html#core.calendar.LeapYearRule">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">LeapYearRule</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Rule for calculating algorithmic leap years.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Rule for calculating algorithmic leap years.</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        interval: Add leap day every N years (e.g., 4).</span>
@@ -364,8 +363,7 @@
 <a class="viewcode-back" href="../../core.html#core.calendar.MonthDefinition">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">MonthDefinition</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Definition of a calendar month.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Definition of a calendar month.</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        name: Full month name (e.g., &quot;Hammer&quot;, &quot;January&quot;).</span>
@@ -380,8 +378,7 @@
 <div class="viewcode-block" id="MonthDefinition.to_dict">
 <a class="viewcode-back" href="../../core.html#core.calendar.MonthDefinition.to_dict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Converts the MonthDefinition to a dictionary for serialization.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts the MonthDefinition to a dictionary for serialization.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Dict[str, Any]: Dictionary representation.</span>
@@ -397,8 +394,7 @@
 <a class="viewcode-back" href="../../core.html#core.calendar.MonthDefinition.from_dict">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;MonthDefinition&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates a MonthDefinition from a dictionary.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a MonthDefinition from a dictionary.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            data: Dictionary containing month data.</span>
@@ -419,8 +415,7 @@
 <a class="viewcode-back" href="../../core.html#core.calendar.WeekDefinition">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">WeekDefinition</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Definition of week structure.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Definition of week structure.</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        day_names: Full names for each day of the week.</span>
@@ -433,8 +428,7 @@
 <div class="viewcode-block" id="WeekDefinition.to_dict">
 <a class="viewcode-back" href="../../core.html#core.calendar.WeekDefinition.to_dict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Converts the WeekDefinition to a dictionary for serialization.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts the WeekDefinition to a dictionary for serialization.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Dict[str, Any]: Dictionary representation.</span>
@@ -449,8 +443,7 @@
 <a class="viewcode-back" href="../../core.html#core.calendar.WeekDefinition.from_dict">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;WeekDefinition&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates a WeekDefinition from a dictionary.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a WeekDefinition from a dictionary.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            data: Dictionary containing week data.</span>
@@ -470,8 +463,7 @@
 <a class="viewcode-back" href="../../core.html#core.calendar.YearVariant">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">YearVariant</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Year-specific structure override for non-repeating calendars.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Year-specific structure override for non-repeating calendars.</span>
 
 <span class="sd">    Some fantasy calendars have years that differ from the standard</span>
 <span class="sd">    structure (e.g., a special &quot;Festival Year&quot; with extra months).</span>
@@ -487,8 +479,7 @@
 <div class="viewcode-block" id="YearVariant.to_dict">
 <a class="viewcode-back" href="../../core.html#core.calendar.YearVariant.to_dict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Converts the YearVariant to a dictionary for serialization.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts the YearVariant to a dictionary for serialization.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Dict[str, Any]: Dictionary representation.</span>
@@ -503,8 +494,7 @@
 <a class="viewcode-back" href="../../core.html#core.calendar.YearVariant.from_dict">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;YearVariant&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates a YearVariant from a dictionary.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a YearVariant from a dictionary.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            data: Dictionary containing year variant data.</span>
@@ -524,8 +514,7 @@
 <a class="viewcode-back" href="../../core.html#core.calendar.CalendarConfig">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">CalendarConfig</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Complete calendar configuration for a world.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Complete calendar configuration for a world.</span>
 
 <span class="sd">    Defines the structure of a fantasy calendar including months,</span>
 <span class="sd">    week days, and any year-specific variations.</span>
@@ -555,8 +544,7 @@
 <div class="viewcode-block" id="CalendarConfig.validate">
 <a class="viewcode-back" href="../../core.html#core.calendar.CalendarConfig.validate">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validates the calendar configuration.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validates the calendar configuration.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[str]: List of validation error messages.</span>
@@ -606,8 +594,7 @@
 <div class="viewcode-block" id="CalendarConfig.get_months_for_year">
 <a class="viewcode-back" href="../../core.html#core.calendar.CalendarConfig.get_months_for_year">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_months_for_year</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">year</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">MonthDefinition</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Gets the month structure for a specific year.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets the month structure for a specific year.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            year: The year to get months for.</span>
@@ -639,8 +626,7 @@
 <div class="viewcode-block" id="CalendarConfig.get_year_length">
 <a class="viewcode-back" href="../../core.html#core.calendar.CalendarConfig.get_year_length">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_year_length</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">year</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Gets the total number of days in a specific year.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets the total number of days in a specific year.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            year: The year to calculate length for.</span>
@@ -655,8 +641,7 @@
 <div class="viewcode-block" id="CalendarConfig.to_dict">
 <a class="viewcode-back" href="../../core.html#core.calendar.CalendarConfig.to_dict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Converts the CalendarConfig to a dictionary for serialization.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts the CalendarConfig to a dictionary for serialization.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Dict[str, Any]: Dictionary representation.</span>
@@ -678,8 +663,7 @@
 <div class="viewcode-block" id="CalendarConfig.to_json">
 <a class="viewcode-back" href="../../core.html#core.calendar.CalendarConfig.to_json">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Converts the CalendarConfig to a JSON string.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts the CalendarConfig to a JSON string.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            str: JSON representation.</span>
@@ -691,8 +675,7 @@
 <a class="viewcode-back" href="../../core.html#core.calendar.CalendarConfig.from_dict">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;CalendarConfig&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates a CalendarConfig from a dictionary.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a CalendarConfig from a dictionary.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            data: Dictionary containing calendar data.</span>
@@ -722,8 +705,7 @@
 <a class="viewcode-back" href="../../core.html#core.calendar.CalendarConfig.from_json">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">json_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;CalendarConfig&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates a CalendarConfig from a JSON string.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a CalendarConfig from a JSON string.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            json_str: JSON string containing calendar data.</span>
@@ -738,8 +720,7 @@
 <a class="viewcode-back" href="../../core.html#core.calendar.CalendarConfig.create_default">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">create_default</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;CalendarConfig&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates a default calendar configuration (Gregorian).</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a default calendar configuration (Gregorian).</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            CalendarConfig: A Gregorian calendar.</span>
@@ -805,8 +786,7 @@
 <a class="viewcode-back" href="../../core.html#core.calendar.CalendarDate">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">CalendarDate</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A structured representation of a calendar date.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A structured representation of a calendar date.</span>
 
 <span class="sd">    Uses 1-based indexing for user display (Year 1, Month 1, Day 1).</span>
 
@@ -829,8 +809,7 @@
 <div class="viewcode-block" id="CalendarDate.__str__">
 <a class="viewcode-back" href="../../core.html#core.calendar.CalendarDate.__str__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns human-readable string representation.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns human-readable string representation.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            str: Formatted date string.</span>
@@ -844,8 +823,7 @@
 <div class="viewcode-block" id="CalendarConverter">
 <a class="viewcode-back" href="../../core.html#core.calendar.CalendarConverter">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CalendarConverter</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Bidirectional converter between float and CalendarDate.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Bidirectional converter between float and CalendarDate.</span>
 
 <span class="sd">    Handles the math to convert continuous float time values to</span>
 <span class="sd">    structured calendar dates and vice versa. Supports:</span>
@@ -860,8 +838,7 @@
 <div class="viewcode-block" id="CalendarConverter.__init__">
 <a class="viewcode-back" href="../../core.html#core.calendar.CalendarConverter.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">CalendarConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the converter with a calendar configuration.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the converter with a calendar configuration.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            config: The calendar configuration to use.</span>
@@ -874,8 +851,7 @@
 <div class="viewcode-block" id="CalendarConverter.to_float">
 <a class="viewcode-back" href="../../core.html#core.calendar.CalendarConverter.to_float">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_float</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">date</span><span class="p">:</span> <span class="n">CalendarDate</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Converts a structured date to an absolute day float.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts a structured date to an absolute day float.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            date: The CalendarDate to convert.</span>
@@ -894,8 +870,7 @@
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_to_float_positive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">date</span><span class="p">:</span> <span class="n">CalendarDate</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Converts a positive-year date to float.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts a positive-year date to float.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            date: Date with year &gt;= 1.</span>
@@ -931,8 +906,7 @@
         <span class="k">return</span> <span class="n">total_days</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_to_float_negative</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">date</span><span class="p">:</span> <span class="n">CalendarDate</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Converts a negative/zero-year date to float.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts a negative/zero-year date to float.</span>
 
 <span class="sd">        Pre-Epoch dates (year &lt;= 0) produce negative floats.</span>
 
@@ -965,8 +939,7 @@
 <div class="viewcode-block" id="CalendarConverter.from_float">
 <a class="viewcode-back" href="../../core.html#core.calendar.CalendarConverter.from_float">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_float</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">absolute_day</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CalendarDate</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Converts an absolute day float to a structured date.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts an absolute day float to a structured date.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            absolute_day: The float value to convert.</span>
@@ -985,8 +958,7 @@
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_from_float_positive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">absolute_day</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CalendarDate</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Converts a non-negative float to date.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts a non-negative float to date.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            absolute_day: Float &gt;= 0.</span>
@@ -1034,8 +1006,7 @@
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_from_float_negative</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">absolute_day</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CalendarDate</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Converts a negative float to pre-Epoch date.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts a negative float to pre-Epoch date.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            absolute_day: Float &lt; 0.</span>
@@ -1093,8 +1064,7 @@
 <div class="viewcode-block" id="CalendarConverter.format_date">
 <a class="viewcode-back" href="../../core.html#core.calendar.CalendarConverter.format_date">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">format_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">absolute_day</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">format_str</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Formats a float date as a human-readable string.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Formats a float date as a human-readable string.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            absolute_day: The float value to format.</span>

@@ -212,6 +212,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAST_INJECT.html">Fast Inject Service</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
 <ul>
@@ -271,8 +272,7 @@
         <article role="main" id="furo-main-content">
           <h1>Source code for cli.obsidian</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python3</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Obsidian Export CLI.</span>
+<span class="sd">&quot;&quot;&quot;Obsidian Export CLI.</span>
 
 <span class="sd">Provides command-line tools for exporting the database to an Obsidian vault.</span>
 
@@ -312,7 +312,7 @@
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;✓ Export successful!&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;✓ Export successful!&quot;</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Files created: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">files_created</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Location: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">output_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 

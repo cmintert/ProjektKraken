@@ -212,6 +212,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAST_INJECT.html">Fast Inject Service</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
 <ul>
@@ -270,11 +271,10 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for core.logging_config</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Logging Configuration Module.</span>
+<span></span><span class="sd">&quot;&quot;&quot;Logging Configuration Module.</span>
 
-<span class="sd">This module provides centralized logging configuration for the application,</span>
-<span class="sd">including rotating file handlers and console output.</span>
+<span class="sd">This module provides centralized logging configuration for the application, including</span>
+<span class="sd">rotating file handlers and console output.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
@@ -295,22 +295,20 @@
 <div class="viewcode-block" id="SafeRotatingFileHandler">
 <a class="viewcode-back" href="../../core.html#core.logging_config.SafeRotatingFileHandler">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SafeRotatingFileHandler</span><span class="p">(</span><span class="n">RotatingFileHandler</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A RotatingFileHandler that handles Windows file locking errors gracefully.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A RotatingFileHandler that handles Windows file locking errors gracefully.</span>
 
-<span class="sd">    On Windows, log rotation can fail with PermissionError if the file is still</span>
-<span class="sd">    in use by another process or handler. This handler catches those errors</span>
-<span class="sd">    and continues logging without crashing.</span>
+<span class="sd">    On Windows, log rotation can fail with PermissionError if the file is still in use</span>
+<span class="sd">    by another process or handler. This handler catches those errors and continues</span>
+<span class="sd">    logging without crashing.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="SafeRotatingFileHandler.doRollover">
 <a class="viewcode-back" href="../../core.html#core.logging_config.SafeRotatingFileHandler.doRollover">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">doRollover</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Perform log file rotation, catching Windows file locking errors.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform log file rotation, catching Windows file locking errors.</span>
 
-<span class="sd">        If rotation fails due to file locking (common on Windows), the handler</span>
-<span class="sd">        continues using the current log file instead of crashing.</span>
+<span class="sd">        If rotation fails due to file locking (common on Windows), the handler continues</span>
+<span class="sd">        using the current log file instead of crashing.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">doRollover</span><span class="p">()</span>
@@ -327,9 +325,8 @@
 <div class="viewcode-block" id="setup_logging">
 <a class="viewcode-back" href="../../core.html#core.logging_config.setup_logging">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">setup_logging</span><span class="p">(</span><span class="n">debug_mode</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">log_to_console</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Configures the root logger with a rotating file handler</span>
-<span class="sd">    and optional console handler.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configures the root logger with a rotating file handler and optional console</span>
+<span class="sd">    handler.</span>
 
 <span class="sd">    This function should be called once at the application startup.</span>
 
@@ -395,8 +392,7 @@
 <div class="viewcode-block" id="get_logger">
 <a class="viewcode-back" href="../../core.html#core.logging_config.get_logger">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_logger</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Convenience function to get a logger with the given name.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convenience function to get a logger with the given name.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        name (str): The name of the logger (usually __name__).</span>
@@ -411,9 +407,7 @@
 <div class="viewcode-block" id="shutdown_logging">
 <a class="viewcode-back" href="../../core.html#core.logging_config.shutdown_logging">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">shutdown_logging</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Explicitly closes all logging handlers to release file locks.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Explicitly closes all logging handlers to release file locks.&quot;&quot;&quot;</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span></div>
 
 </pre></div>

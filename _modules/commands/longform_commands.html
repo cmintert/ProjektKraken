@@ -212,6 +212,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAST_INJECT.html">Fast Inject Service</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
 <ul>
@@ -270,8 +271,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for commands.longform_commands</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Longform Commands Module.</span>
+<span></span><span class="sd">&quot;&quot;&quot;Longform Commands Module.</span>
 
 <span class="sd">Provides command classes for manipulating longform document structure:</span>
 <span class="sd">- MoveLongformEntryCommand: Move an entry to a new position</span>
@@ -295,8 +295,7 @@
 <div class="viewcode-block" id="MoveLongformEntryCommand">
 <a class="viewcode-back" href="../../commands.html#commands.longform_commands.MoveLongformEntryCommand">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MoveLongformEntryCommand</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Command to move a longform entry to a new position.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Command to move a longform entry to a new position.</span>
 
 <span class="sd">    Stores old and new metadata for undo/redo support.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -311,8 +310,7 @@
         <span class="n">new_meta</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
         <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">longform_builder</span><span class="o">.</span><span class="n">DOC_ID_DEFAULT</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initialize the MoveLongformEntryCommand.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the MoveLongformEntryCommand.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            table: Table name (&quot;events&quot; or &quot;entities&quot;).</span>
@@ -332,8 +330,7 @@
 <div class="viewcode-block" id="MoveLongformEntryCommand.execute">
 <a class="viewcode-back" href="../../commands.html#commands.longform_commands.MoveLongformEntryCommand.execute">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CommandResult</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Execute the move by applying new metadata.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute the move by applying new metadata.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service: The database service to operate on.</span>
@@ -375,8 +372,7 @@
 <div class="viewcode-block" id="MoveLongformEntryCommand.undo">
 <a class="viewcode-back" href="../../commands.html#commands.longform_commands.MoveLongformEntryCommand.undo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Undo the move by restoring old metadata.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Undo the move by restoring old metadata.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service: The database service to operate on.</span>
@@ -407,8 +403,7 @@
 <div class="viewcode-block" id="PromoteLongformEntryCommand">
 <a class="viewcode-back" href="../../commands.html#commands.longform_commands.PromoteLongformEntryCommand">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PromoteLongformEntryCommand</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Command to promote a longform entry (reduce depth).</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Command to promote a longform entry (reduce depth).</span>
 
 <span class="sd">    Stores old metadata for undo support.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -422,8 +417,7 @@
         <span class="n">old_meta</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
         <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">longform_builder</span><span class="o">.</span><span class="n">DOC_ID_DEFAULT</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initialize the PromoteLongformEntryCommand.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the PromoteLongformEntryCommand.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            table: Table name (&quot;events&quot; or &quot;entities&quot;).</span>
@@ -441,8 +435,7 @@
 <div class="viewcode-block" id="PromoteLongformEntryCommand.execute">
 <a class="viewcode-back" href="../../commands.html#commands.longform_commands.PromoteLongformEntryCommand.execute">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CommandResult</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Execute the promote operation.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute the promote operation.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service: The database service to operate on.</span>
@@ -480,8 +473,7 @@
 <div class="viewcode-block" id="PromoteLongformEntryCommand.undo">
 <a class="viewcode-back" href="../../commands.html#commands.longform_commands.PromoteLongformEntryCommand.undo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Undo the promote by restoring old metadata.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Undo the promote by restoring old metadata.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service: The database service to operate on.</span>
@@ -512,8 +504,7 @@
 <div class="viewcode-block" id="DemoteLongformEntryCommand">
 <a class="viewcode-back" href="../../commands.html#commands.longform_commands.DemoteLongformEntryCommand">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DemoteLongformEntryCommand</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Command to demote a longform entry (increase depth).</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Command to demote a longform entry (increase depth).</span>
 
 <span class="sd">    Stores old metadata for undo support.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -527,8 +518,7 @@
         <span class="n">old_meta</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
         <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">longform_builder</span><span class="o">.</span><span class="n">DOC_ID_DEFAULT</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initialize the DemoteLongformEntryCommand.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the DemoteLongformEntryCommand.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            table: Table name (&quot;events&quot; or &quot;entities&quot;).</span>
@@ -546,8 +536,7 @@
 <div class="viewcode-block" id="DemoteLongformEntryCommand.execute">
 <a class="viewcode-back" href="../../commands.html#commands.longform_commands.DemoteLongformEntryCommand.execute">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CommandResult</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Execute the demote operation.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute the demote operation.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service: The database service to operate on.</span>
@@ -585,8 +574,7 @@
 <div class="viewcode-block" id="DemoteLongformEntryCommand.undo">
 <a class="viewcode-back" href="../../commands.html#commands.longform_commands.DemoteLongformEntryCommand.undo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Undo the demote by restoring old metadata.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Undo the demote by restoring old metadata.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service: The database service to operate on.</span>
@@ -617,8 +605,7 @@
 <div class="viewcode-block" id="RemoveLongformEntryCommand">
 <a class="viewcode-back" href="../../commands.html#commands.longform_commands.RemoveLongformEntryCommand">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">RemoveLongformEntryCommand</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Command to remove an entry from the longform document.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Command to remove an entry from the longform document.</span>
 
 <span class="sd">    Stores old metadata for undo support.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -632,8 +619,7 @@
         <span class="n">old_meta</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
         <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">longform_builder</span><span class="o">.</span><span class="n">DOC_ID_DEFAULT</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initialize the RemoveLongformEntryCommand.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the RemoveLongformEntryCommand.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            table: Table name (&quot;events&quot; or &quot;entities&quot;).</span>
@@ -651,8 +637,7 @@
 <div class="viewcode-block" id="RemoveLongformEntryCommand.execute">
 <a class="viewcode-back" href="../../commands.html#commands.longform_commands.RemoveLongformEntryCommand.execute">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CommandResult</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Execute the removal operation.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute the removal operation.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service: The database service to operate on.</span>
@@ -690,8 +675,7 @@
 <div class="viewcode-block" id="RemoveLongformEntryCommand.undo">
 <a class="viewcode-back" href="../../commands.html#commands.longform_commands.RemoveLongformEntryCommand.undo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Undo the removal by restoring old metadata.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Undo the removal by restoring old metadata.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service: The database service to operate on.</span>

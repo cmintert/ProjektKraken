@@ -213,6 +213,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
 <li class="toctree-l1"><a class="reference internal" href="LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAST_INJECT.html">Fast Inject Service</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
 <ul>
@@ -1114,6 +1115,198 @@ structure (e.g., a special “Festival Year” with extra months).</p>
 </dd></dl>
 
 </section>
+<section id="module-core.fast_inject">
+<span id="core-fast-inject-module"></span><h2>core.fast_inject module<a class="headerlink" href="#module-core.fast_inject" title="Link to this heading">¶</a></h2>
+<p>Fast Inject Core Module.</p>
+<p>Handles logic for defining, loading, saving, and applying “Fast Inject” templates.
+Templates allow rapid application of tags and attributes to Entities and Events.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="core.fast_inject.FastInjectManager">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.fast_inject.</span></span><span class="sig-name descname"><span class="pre">FastInjectManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">world_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/fast_inject.html#FastInjectManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.fast_inject.FastInjectManager" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Manages loading, validation, and application of Fast Inject templates.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.fast_inject.FastInjectManager.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">world_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/core/fast_inject.html#FastInjectManager.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.fast_inject.FastInjectManager.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initialize manager for a specific world.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>world_path</strong> – Root directory of the world.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.fast_inject.FastInjectManager.apply_template">
+<span class="sig-name descname"><span class="pre">apply_template</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Entity</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#core.fast_inject.FastInjectTemplate" title="core.fast_inject.FastInjectTemplate"><span class="pre">FastInjectTemplate</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/core/fast_inject.html#FastInjectManager.apply_template"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.fast_inject.FastInjectManager.apply_template" title="Link to this definition">¶</a></dt>
+<dd><p>Apply tags and attributes to a target object.
+NOTE: This modifies the object in memory. Database save must be called
+separately.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>target</strong> – The Entity or Event to modify.</p></li>
+<li><p><strong>template</strong> – The template to apply.</p></li>
+<li><p><strong>overwrite</strong> – If True, existing attribute keys are overwritten.</p></li>
+<li><p><strong>variables</strong> – Dict of variable names to replacement values.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.fast_inject.FastInjectManager.create_template_from_target">
+<span class="sig-name descname"><span class="pre">create_template_from_target</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Entity</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_tags</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_attributes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#core.fast_inject.FastInjectTemplate" title="core.fast_inject.FastInjectTemplate"><span class="pre">FastInjectTemplate</span></a></span></span><a class="reference internal" href="_modules/core/fast_inject.html#FastInjectManager.create_template_from_target"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.fast_inject.FastInjectManager.create_template_from_target" title="Link to this definition">¶</a></dt>
+<dd><p>Create a new template object from an existing target.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>target</strong> – Entity or Event to copy from.</p></li>
+<li><p><strong>name</strong> – Name for the new template.</p></li>
+<li><p><strong>description</strong> – Description.</p></li>
+<li><p><strong>include_tags</strong> – Whether to include all tags.</p></li>
+<li><p><strong>include_attributes</strong> – List of attribute keys to include.
+None means all (excluding internal).</p></li>
+<li><p><strong>include_type</strong> – Whether to include the target’s type.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>New FastInjectTemplate object (not saved to disk yet).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.fast_inject.FastInjectManager.delete_template">
+<span class="sig-name descname"><span class="pre">delete_template</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">template</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#core.fast_inject.FastInjectTemplate" title="core.fast_inject.FastInjectTemplate"><span class="pre">FastInjectTemplate</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/core/fast_inject.html#FastInjectManager.delete_template"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.fast_inject.FastInjectManager.delete_template" title="Link to this definition">¶</a></dt>
+<dd><p>Delete a template file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.fast_inject.FastInjectManager.ensure_directory">
+<span class="sig-name descname"><span class="pre">ensure_directory</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/core/fast_inject.html#FastInjectManager.ensure_directory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.fast_inject.FastInjectManager.ensure_directory" title="Link to this definition">¶</a></dt>
+<dd><p>Ensure the fastinject directory exists.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.fast_inject.FastInjectManager.find_variables">
+<span class="sig-name descname"><span class="pre">find_variables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">template</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#core.fast_inject.FastInjectTemplate" title="core.fast_inject.FastInjectTemplate"><span class="pre">FastInjectTemplate</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/core/fast_inject.html#FastInjectManager.find_variables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.fast_inject.FastInjectManager.find_variables" title="Link to this definition">¶</a></dt>
+<dd><p>Scan template values for {{VAR_NAME}} patterns.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of unique variable names found.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.fast_inject.FastInjectManager.import_template">
+<span class="sig-name descname"><span class="pre">import_template</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#core.fast_inject.FastInjectTemplate" title="core.fast_inject.FastInjectTemplate"><span class="pre">FastInjectTemplate</span></a></span></span><a class="reference internal" href="_modules/core/fast_inject.html#FastInjectManager.import_template"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.fast_inject.FastInjectManager.import_template" title="Link to this definition">¶</a></dt>
+<dd><p>Import a template from an external location into the project.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>source_path</strong> – Path to the .fastinject file to import.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The imported FastInjectTemplate.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>FileNotFoundError</strong> – If source file doesn’t exist.</p></li>
+<li><p><strong>json.JSONDecodeError</strong> – If file is not valid JSON.</p></li>
+<li><p><strong>ValueError</strong> – If file is not a valid template.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.fast_inject.FastInjectManager.load_templates">
+<span class="sig-name descname"><span class="pre">load_templates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#core.fast_inject.FastInjectTemplate" title="core.fast_inject.FastInjectTemplate"><span class="pre">FastInjectTemplate</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/core/fast_inject.html#FastInjectManager.load_templates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.fast_inject.FastInjectManager.load_templates" title="Link to this definition">¶</a></dt>
+<dd><p>Load all valid .fastinject files from the directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of loaded templates.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.fast_inject.FastInjectManager.save_template">
+<span class="sig-name descname"><span class="pre">save_template</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">template</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#core.fast_inject.FastInjectTemplate" title="core.fast_inject.FastInjectTemplate"><span class="pre">FastInjectTemplate</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Path</span></span></span><a class="reference internal" href="_modules/core/fast_inject.html#FastInjectManager.save_template"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.fast_inject.FastInjectManager.save_template" title="Link to this definition">¶</a></dt>
+<dd><p>Save a template to disk.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>template</strong> – The template to save.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Path to the saved file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.fast_inject.FastInjectTemplate">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.fast_inject.</span></span><span class="sig-name descname"><span class="pre">FastInjectTemplate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags:</span> <span class="pre">~typing.List[str]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attributes:</span> <span class="pre">~typing.Dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_value:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_type:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'any'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'1.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_path:</span> <span class="pre">~pathlib.Path</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/fast_inject.html#FastInjectTemplate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.fast_inject.FastInjectTemplate" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Represents a reusable template of tags and attributes.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.fast_inject.FastInjectTemplate.attributes">
+<span class="sig-name descname"><span class="pre">attributes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#core.fast_inject.FastInjectTemplate.attributes" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.fast_inject.FastInjectTemplate.description">
+<span class="sig-name descname"><span class="pre">description</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#core.fast_inject.FastInjectTemplate.description" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.fast_inject.FastInjectTemplate.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#core.fast_inject.FastInjectTemplate" title="core.fast_inject.FastInjectTemplate"><span class="pre">FastInjectTemplate</span></a></span></span><a class="reference internal" href="_modules/core/fast_inject.html#FastInjectTemplate.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.fast_inject.FastInjectTemplate.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Create from dictionary.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.fast_inject.FastInjectTemplate.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#core.fast_inject.FastInjectTemplate.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.fast_inject.FastInjectTemplate.source_path">
+<span class="sig-name descname"><span class="pre">source_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Path</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#core.fast_inject.FastInjectTemplate.source_path" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.fast_inject.FastInjectTemplate.tags">
+<span class="sig-name descname"><span class="pre">tags</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#core.fast_inject.FastInjectTemplate.tags" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.fast_inject.FastInjectTemplate.target_type">
+<span class="sig-name descname"><span class="pre">target_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'any'</span></em><a class="headerlink" href="#core.fast_inject.FastInjectTemplate.target_type" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.fast_inject.FastInjectTemplate.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/core/fast_inject.html#FastInjectTemplate.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.fast_inject.FastInjectTemplate.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Convert to dict for JSON storage.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.fast_inject.FastInjectTemplate.type_value">
+<span class="sig-name descname"><span class="pre">type_value</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#core.fast_inject.FastInjectTemplate.type_value" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="core.fast_inject.FastInjectTemplate.version">
+<span class="sig-name descname"><span class="pre">version</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'1.0'</span></em><a class="headerlink" href="#core.fast_inject.FastInjectTemplate.version" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
 <section id="module-core.entities">
 <span id="core-entities-module"></span><h2>core.entities module<a class="headerlink" href="#module-core.entities" title="Link to this heading">¶</a></h2>
 <p>Core Entities Module.</p>
@@ -1224,8 +1417,8 @@ objects that exist across time with:
 <dt class="sig sig-object py" id="core.events.Event">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.events.</span></span><span class="sig-name descname"><span class="pre">Event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lore_date:</span> <span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'generic'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lore_duration:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attributes:</span> <span class="pre">~typing.Dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">created_at:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modified_at:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/events.html#Event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.events.Event" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Represents a specific point or span in time.
-Core unit of the Timeline.</p>
+<p>Represents a specific point or span in time.</p>
+<p>Core unit of the Timeline.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="core.events.Event.attributes">
 <span class="sig-name descname"><span class="pre">attributes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#core.events.Event.attributes" title="Link to this definition">¶</a></dt>
@@ -1327,22 +1520,22 @@ Core unit of the Timeline.</p>
 <section id="module-core.logging_config">
 <span id="core-logging-config-module"></span><h2>core.logging_config module<a class="headerlink" href="#module-core.logging_config" title="Link to this heading">¶</a></h2>
 <p>Logging Configuration Module.</p>
-<p>This module provides centralized logging configuration for the application,
-including rotating file handlers and console output.</p>
+<p>This module provides centralized logging configuration for the application, including
+rotating file handlers and console output.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="core.logging_config.SafeRotatingFileHandler">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.logging_config.</span></span><span class="sig-name descname"><span class="pre">SafeRotatingFileHandler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'a'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxBytes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backupCount</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/logging_config.html#SafeRotatingFileHandler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.logging_config.SafeRotatingFileHandler" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">RotatingFileHandler</span></code></p>
 <p>A RotatingFileHandler that handles Windows file locking errors gracefully.</p>
-<p>On Windows, log rotation can fail with PermissionError if the file is still
-in use by another process or handler. This handler catches those errors
-and continues logging without crashing.</p>
+<p>On Windows, log rotation can fail with PermissionError if the file is still in use
+by another process or handler. This handler catches those errors and continues
+logging without crashing.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="core.logging_config.SafeRotatingFileHandler.doRollover">
 <span class="sig-name descname"><span class="pre">doRollover</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/core/logging_config.html#SafeRotatingFileHandler.doRollover"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.logging_config.SafeRotatingFileHandler.doRollover" title="Link to this definition">¶</a></dt>
 <dd><p>Perform log file rotation, catching Windows file locking errors.</p>
-<p>If rotation fails due to file locking (common on Windows), the handler
-continues using the current log file instead of crashing.</p>
+<p>If rotation fails due to file locking (common on Windows), the handler continues
+using the current log file instead of crashing.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1367,8 +1560,8 @@ continues using the current log file instead of crashing.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="core.logging_config.setup_logging">
 <span class="sig-prename descclassname"><span class="pre">core.logging_config.</span></span><span class="sig-name descname"><span class="pre">setup_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">debug_mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_to_console</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/core/logging_config.html#setup_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.logging_config.setup_logging" title="Link to this definition">¶</a></dt>
-<dd><p>Configures the root logger with a rotating file handler
-and optional console handler.</p>
+<dd><p>Configures the root logger with a rotating file handler and optional console
+handler.</p>
 <p>This function should be called once at the application startup.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1393,8 +1586,8 @@ and optional console handler.</p>
 <section id="module-core">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-core" title="Link to this heading">¶</a></h2>
 <p>Core Package.</p>
-<p>This package contains core business logic including entity and event models,
-logging configuration, and theme management.</p>
+<p>This package contains core business logic including entity and event models, logging
+configuration, and theme management.</p>
 </section>
 </section>
 
@@ -1551,6 +1744,34 @@ logging configuration, and theme management.</p>
 <li><a class="reference internal" href="#id24"><code class="docutils literal notranslate"><span class="pre">YearVariant.months</span></code></a></li>
 <li><a class="reference internal" href="#core.calendar.YearVariant.to_dict"><code class="docutils literal notranslate"><span class="pre">YearVariant.to_dict()</span></code></a></li>
 <li><a class="reference internal" href="#id25"><code class="docutils literal notranslate"><span class="pre">YearVariant.year</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-core.fast_inject">core.fast_inject module</a><ul>
+<li><a class="reference internal" href="#core.fast_inject.FastInjectManager"><code class="docutils literal notranslate"><span class="pre">FastInjectManager</span></code></a><ul>
+<li><a class="reference internal" href="#core.fast_inject.FastInjectManager.__init__"><code class="docutils literal notranslate"><span class="pre">FastInjectManager.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#core.fast_inject.FastInjectManager.apply_template"><code class="docutils literal notranslate"><span class="pre">FastInjectManager.apply_template()</span></code></a></li>
+<li><a class="reference internal" href="#core.fast_inject.FastInjectManager.create_template_from_target"><code class="docutils literal notranslate"><span class="pre">FastInjectManager.create_template_from_target()</span></code></a></li>
+<li><a class="reference internal" href="#core.fast_inject.FastInjectManager.delete_template"><code class="docutils literal notranslate"><span class="pre">FastInjectManager.delete_template()</span></code></a></li>
+<li><a class="reference internal" href="#core.fast_inject.FastInjectManager.ensure_directory"><code class="docutils literal notranslate"><span class="pre">FastInjectManager.ensure_directory()</span></code></a></li>
+<li><a class="reference internal" href="#core.fast_inject.FastInjectManager.find_variables"><code class="docutils literal notranslate"><span class="pre">FastInjectManager.find_variables()</span></code></a></li>
+<li><a class="reference internal" href="#core.fast_inject.FastInjectManager.import_template"><code class="docutils literal notranslate"><span class="pre">FastInjectManager.import_template()</span></code></a></li>
+<li><a class="reference internal" href="#core.fast_inject.FastInjectManager.load_templates"><code class="docutils literal notranslate"><span class="pre">FastInjectManager.load_templates()</span></code></a></li>
+<li><a class="reference internal" href="#core.fast_inject.FastInjectManager.save_template"><code class="docutils literal notranslate"><span class="pre">FastInjectManager.save_template()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#core.fast_inject.FastInjectTemplate"><code class="docutils literal notranslate"><span class="pre">FastInjectTemplate</span></code></a><ul>
+<li><a class="reference internal" href="#core.fast_inject.FastInjectTemplate.attributes"><code class="docutils literal notranslate"><span class="pre">FastInjectTemplate.attributes</span></code></a></li>
+<li><a class="reference internal" href="#core.fast_inject.FastInjectTemplate.description"><code class="docutils literal notranslate"><span class="pre">FastInjectTemplate.description</span></code></a></li>
+<li><a class="reference internal" href="#core.fast_inject.FastInjectTemplate.from_dict"><code class="docutils literal notranslate"><span class="pre">FastInjectTemplate.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#core.fast_inject.FastInjectTemplate.name"><code class="docutils literal notranslate"><span class="pre">FastInjectTemplate.name</span></code></a></li>
+<li><a class="reference internal" href="#core.fast_inject.FastInjectTemplate.source_path"><code class="docutils literal notranslate"><span class="pre">FastInjectTemplate.source_path</span></code></a></li>
+<li><a class="reference internal" href="#core.fast_inject.FastInjectTemplate.tags"><code class="docutils literal notranslate"><span class="pre">FastInjectTemplate.tags</span></code></a></li>
+<li><a class="reference internal" href="#core.fast_inject.FastInjectTemplate.target_type"><code class="docutils literal notranslate"><span class="pre">FastInjectTemplate.target_type</span></code></a></li>
+<li><a class="reference internal" href="#core.fast_inject.FastInjectTemplate.to_dict"><code class="docutils literal notranslate"><span class="pre">FastInjectTemplate.to_dict()</span></code></a></li>
+<li><a class="reference internal" href="#core.fast_inject.FastInjectTemplate.type_value"><code class="docutils literal notranslate"><span class="pre">FastInjectTemplate.type_value</span></code></a></li>
+<li><a class="reference internal" href="#core.fast_inject.FastInjectTemplate.version"><code class="docutils literal notranslate"><span class="pre">FastInjectTemplate.version</span></code></a></li>
 </ul>
 </li>
 </ul>

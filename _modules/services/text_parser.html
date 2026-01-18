@@ -212,6 +212,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAST_INJECT.html">Fast Inject Service</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
 <ul>
@@ -270,8 +271,8 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for services.text_parser</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Text Parser Service.</span>
+<span></span><span class="sd">&quot;&quot;&quot;Text Parser Service.</span>
+
 <span class="sd">Handles parsing of WikiLinks and other text processing tasks.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -284,8 +285,7 @@
 <a class="viewcode-back" href="../../services.html#services.text_parser.LinkCandidate">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">LinkCandidate</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Represents a parsed WikiLink with metadata.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Represents a parsed WikiLink with metadata.</span>
 
 <span class="sd">    Supports both legacy name-based and ID-based link formats:</span>
 <span class="sd">    - Legacy: [[Name]] or [[Name|Label]]</span>
@@ -312,8 +312,7 @@
 <div class="viewcode-block" id="WikiLinkParser">
 <a class="viewcode-back" href="../../services.html#services.text_parser.WikiLinkParser">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">WikiLinkParser</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Parser for extracting WikiLinks from text.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parser for extracting WikiLinks from text.</span>
 
 <span class="sd">    Supports both legacy and ID-based link formats:</span>
 <span class="sd">    - Legacy: [[Name]] or [[Name|Label]]</span>
@@ -334,8 +333,7 @@
 <a class="viewcode-back" href="../../services.html#services.text_parser.WikiLinkParser.extract_links">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">extract_links</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">LinkCandidate</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Extracts WikiLinks from text as ordered LinkCandidate objects.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extracts WikiLinks from text as ordered LinkCandidate objects.</span>
 
 <span class="sd">        Each link includes the name or ID, optional modifier, and position offsets.</span>
 <span class="sd">        Duplicates are preserved in order of appearance.</span>
@@ -395,8 +393,7 @@
 <a class="viewcode-back" href="../../services.html#services.text_parser.WikiLinkParser.format_id_link">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">format_id_link</span><span class="p">(</span><span class="n">target_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">display_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates an ID-based wiki link string.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates an ID-based wiki link string.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            target_id: The UUID of the target entity/event.</span>
@@ -412,8 +409,7 @@
 <a class="viewcode-back" href="../../services.html#services.text_parser.WikiLinkParser.format_name_link">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">format_name_link</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">display_label</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates a legacy name-based wiki link string.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a legacy name-based wiki link string.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            name: The target name.</span>

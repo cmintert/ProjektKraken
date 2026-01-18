@@ -212,6 +212,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAST_INJECT.html">Fast Inject Service</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
 <ul>
@@ -270,13 +271,11 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for services.db_service</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Database Service Module.</span>
-<span class="sd">Provides the low-level SQL interface to the SQLite database.</span>
+<span></span><span class="sd">&quot;&quot;&quot;Database Service Module. Provides the low-level SQL interface to the SQLite database.</span>
 <span class="sd">Follows the Hybrid Schema (Strict Columns + JSON Attributes).</span>
 
-<span class="sd">This service now uses specialized repository classes for better</span>
-<span class="sd">separation of concerns and maintainability.</span>
+<span class="sd">This service now uses specialized repository classes for better separation of concerns</span>
+<span class="sd">and maintainability.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
@@ -312,12 +311,11 @@
 <div class="viewcode-block" id="DatabaseService">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DatabaseService</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Handles all raw interactions with the SQLite database.</span>
-<span class="sd">    Implements the Hybrid Schema (Strict Columns + JSON Attributes).</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Handles all raw interactions with the SQLite database. Implements the Hybrid</span>
+<span class="sd">    Schema (Strict Columns + JSON Attributes).</span>
 
-<span class="sd">    This service delegates CRUD operations to specialized repository</span>
-<span class="sd">    classes while maintaining schema management and connection handling.</span>
+<span class="sd">    This service delegates CRUD operations to specialized repository classes while</span>
+<span class="sd">    maintaining schema management and connection handling.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="DatabaseService.__init__">
@@ -688,8 +686,7 @@
 <div class="viewcode-block" id="DatabaseService.insert_event">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.insert_event">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">insert_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Inserts a new event or updates an existing one (Upsert).</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Inserts a new event or updates an existing one (Upsert).</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            event (Event): The event domain object to persist.</span>
@@ -705,8 +702,7 @@
 <div class="viewcode-block" id="DatabaseService.get_event">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_event">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Event</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves a single event by its UUID.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves a single event by its UUID.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            event_id (str): The unique identifier of the event.</span>
@@ -722,8 +718,7 @@
 <div class="viewcode-block" id="DatabaseService.get_all_events">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_all_events">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_all_events</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Event</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves all events from the database, sorted chronologically.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all events from the database, sorted chronologically.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Event]: A list of all Event objects in the database.</span>
@@ -734,8 +729,7 @@
 <div class="viewcode-block" id="DatabaseService.get_events">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_events">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_events</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Event</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves events, optionally filtered by type.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves events, optionally filtered by type.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            event_type: Optional type filter.</span>
@@ -753,8 +747,7 @@
 <div class="viewcode-block" id="DatabaseService.delete_event">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.delete_event">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">delete_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Deletes an event permanently.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deletes an event permanently.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            event_id (str): The unique identifier of the event to delete.</span>
@@ -774,8 +767,7 @@
 <div class="viewcode-block" id="DatabaseService.insert_entity">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.insert_entity">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">insert_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity</span><span class="p">:</span> <span class="n">Entity</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Inserts a new entity or updates an existing one (Upsert).</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Inserts a new entity or updates an existing one (Upsert).</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            entity (Entity): The entity domain object to persist.</span>
@@ -791,8 +783,7 @@
 <div class="viewcode-block" id="DatabaseService.get_entity">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_entity">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Entity</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves a single entity by its UUID.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves a single entity by its UUID.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            entity_id (str): The unique identifier of the entity.</span>
@@ -808,8 +799,7 @@
 <div class="viewcode-block" id="DatabaseService.get_all_entities">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_all_entities">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_all_entities</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Entity</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves all entities from the database.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all entities from the database.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Entity]: A list of all Entity objects.</span>
@@ -820,8 +810,7 @@
 <div class="viewcode-block" id="DatabaseService.get_entities">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_entities">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_entities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Entity</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves entities, optionally filtered by type.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves entities, optionally filtered by type.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            entity_type: Optional type filter.</span>
@@ -839,8 +828,7 @@
 <div class="viewcode-block" id="DatabaseService.delete_entity">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.delete_entity">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">delete_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Deletes an entity permanently.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deletes an entity permanently.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            entity_id (str): The unique identifier of the entity to delete.</span>
@@ -866,8 +854,7 @@
         <span class="n">rel_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">attributes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates a directed relationship between two objects.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a directed relationship between two objects.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            source_id (str): ID of the source object.</span>
@@ -903,8 +890,7 @@
 <div class="viewcode-block" id="DatabaseService.get_relations">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_relations">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_relations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves all outgoing relations for a given source object.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all outgoing relations for a given source object.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            source_id (str): The ID of the source object.</span>
@@ -922,8 +908,7 @@
 <div class="viewcode-block" id="DatabaseService.get_incoming_relations">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_incoming_relations">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_incoming_relations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves all incoming relations for a given target object.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all incoming relations for a given target object.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            target_id (str): The ID of the target object.</span>
@@ -939,8 +924,7 @@
 <div class="viewcode-block" id="DatabaseService.get_relation">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_relation">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_relation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rel_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves a single relation by its ID.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves a single relation by its ID.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            rel_id (str): The unique identifier of the relation.</span>
@@ -958,8 +942,7 @@
 <div class="viewcode-block" id="DatabaseService.delete_relation">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.delete_relation">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">delete_relation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rel_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Deletes a relationship by its ID.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deletes a relationship by its ID.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            rel_id (str): The unique identifier of the relation.</span>
@@ -978,8 +961,7 @@
         <span class="n">rel_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">attributes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Updates an existing relationship.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Updates an existing relationship.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            rel_id (str): The ID of the relation to update.</span>
@@ -1015,8 +997,7 @@
 <div class="viewcode-block" id="DatabaseService.get_name">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_name">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves the name of an entity or event by its ID.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the name of an entity or event by its ID.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            object_id (str): The ID to resolve.</span>
@@ -1050,8 +1031,7 @@
 <div class="viewcode-block" id="DatabaseService.insert_events_bulk">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.insert_events_bulk">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">insert_events_bulk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">events</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Event</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Inserts multiple events efficiently using executemany.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Inserts multiple events efficiently using executemany.</span>
 
 <span class="sd">        This method is optimized for bulk operations, reducing the overhead</span>
 <span class="sd">        of individual inserts by using SQLite&#39;s executemany. Provides</span>
@@ -1073,8 +1053,7 @@
 <div class="viewcode-block" id="DatabaseService.insert_entities_bulk">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.insert_entities_bulk">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">insert_entities_bulk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entities</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Entity</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Inserts multiple entities efficiently using executemany.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Inserts multiple entities efficiently using executemany.</span>
 
 <span class="sd">        This method is optimized for bulk operations, reducing the overhead</span>
 <span class="sd">        of individual inserts by using SQLite&#39;s executemany. Provides</span>
@@ -1100,8 +1079,7 @@
 <div class="viewcode-block" id="DatabaseService.insert_calendar_config">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.insert_calendar_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">insert_calendar_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">CalendarConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Inserts a new calendar config or updates an existing one (Upsert).</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Inserts a new calendar config or updates an existing one (Upsert).</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            config (CalendarConfig): The calendar configuration to persist.</span>
@@ -1118,8 +1096,7 @@
 <div class="viewcode-block" id="DatabaseService.get_calendar_config">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_calendar_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_calendar_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">CalendarConfig</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves a single calendar config by its ID.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves a single calendar config by its ID.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            config_id (str): The unique identifier of the calendar config.</span>
@@ -1135,8 +1112,7 @@
 <div class="viewcode-block" id="DatabaseService.get_all_calendar_configs">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_all_calendar_configs">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_all_calendar_configs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">CalendarConfig</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves all calendar configurations.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all calendar configurations.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[CalendarConfig]: A list of all calendar configs.</span>
@@ -1149,8 +1125,7 @@
 <div class="viewcode-block" id="DatabaseService.delete_calendar_config">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.delete_calendar_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">delete_calendar_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Deletes a calendar config by its ID.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deletes a calendar config by its ID.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            config_id (str): The unique identifier of the config to delete.</span>
@@ -1167,8 +1142,7 @@
 <div class="viewcode-block" id="DatabaseService.get_active_calendar_config">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_active_calendar_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_active_calendar_config</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">CalendarConfig</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves the currently active calendar configuration.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the currently active calendar configuration.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Optional[CalendarConfig]: The active config if one is set, else None.</span>
@@ -1190,8 +1164,7 @@
 <div class="viewcode-block" id="DatabaseService.set_active_calendar_config">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.set_active_calendar_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_active_calendar_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Sets a calendar config as the active one.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets a calendar config as the active one.</span>
 
 <span class="sd">        Deactivates any currently active config and activates the specified one.</span>
 
@@ -1214,8 +1187,7 @@
 <div class="viewcode-block" id="DatabaseService.get_current_time">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_current_time">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_current_time</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves the current time in the world from system_meta.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the current time in the world from system_meta.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Optional[float]: The current time in lore_date units, or None if not set.</span>
@@ -1240,8 +1212,7 @@
 <div class="viewcode-block" id="DatabaseService.set_current_time">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.set_current_time">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_current_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_time</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Sets the current time in the world and persists it to system_meta.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the current time in the world and persists it to system_meta.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            current_time (float): The current time in lore_date units.</span>
@@ -1266,8 +1237,7 @@
 <div class="viewcode-block" id="DatabaseService.insert_map">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.insert_map">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">insert_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_obj</span><span class="p">:</span> <span class="n">Map</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Inserts a new map or updates an existing one (Upsert).</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Inserts a new map or updates an existing one (Upsert).</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            map_obj (Map): The map domain object to persist.</span>
@@ -1283,8 +1253,7 @@
 <div class="viewcode-block" id="DatabaseService.get_map">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_map">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Map</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves a single map by its UUID.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves a single map by its UUID.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            map_id (str): The unique identifier of the map.</span>
@@ -1300,8 +1269,7 @@
 <div class="viewcode-block" id="DatabaseService.get_all_maps">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_all_maps">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_all_maps</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Map</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves all maps from the database.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all maps from the database.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Map]: List of all Map objects.</span>
@@ -1314,8 +1282,7 @@
 <div class="viewcode-block" id="DatabaseService.delete_map">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.delete_map">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">delete_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Deletes a map and all its markers from the database.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deletes a map and all its markers from the database.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            map_id (str): The unique identifier of the map to delete.</span>
@@ -1335,8 +1302,7 @@
 <div class="viewcode-block" id="DatabaseService.insert_marker">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.insert_marker">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">insert_marker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker</span><span class="p">:</span> <span class="n">Marker</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Inserts a new marker or updates an existing one (Upsert).</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Inserts a new marker or updates an existing one (Upsert).</span>
 
 <span class="sd">        Upserts on UNIQUE(map_id, object_id, object_type). On conflict,</span>
 <span class="sd">        the existing row&#39;s id is retained.</span>
@@ -1387,8 +1353,7 @@
 <div class="viewcode-block" id="DatabaseService.get_marker">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_marker">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_marker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Marker</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves a single marker by its UUID.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves a single marker by its UUID.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            marker_id (str): The unique identifier of the marker.</span>
@@ -1404,8 +1369,7 @@
 <div class="viewcode-block" id="DatabaseService.get_markers_for_map">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_markers_for_map">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_markers_for_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Marker</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves all markers for a specific map.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all markers for a specific map.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            map_id (str): The unique identifier of the map.</span>
@@ -1421,8 +1385,7 @@
 <div class="viewcode-block" id="DatabaseService.get_markers_for_object">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_markers_for_object">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_markers_for_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Marker</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves all markers for a specific entity or event.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all markers for a specific entity or event.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            object_id (str): The unique identifier of the entity or event.</span>
@@ -1453,8 +1416,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">get_marker_by_composite</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">map_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">object_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Marker</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves a marker by its composite key (map_id, object_id, object_type).</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves a marker by its composite key (map_id, object_id, object_type).</span>
 
 <span class="sd">        This is useful after an upsert to retrieve the canonical marker with its</span>
 <span class="sd">        actual database ID.</span>
@@ -1489,8 +1451,7 @@
 <div class="viewcode-block" id="DatabaseService.delete_marker">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.delete_marker">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">delete_marker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Deletes a marker from the database.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deletes a marker from the database.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            marker_id (str): The unique identifier of the marker to delete.</span>
@@ -1510,8 +1471,7 @@
 <div class="viewcode-block" id="DatabaseService.get_all_tags">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_all_tags">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_all_tags</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves all tags from the database.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all tags from the database.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Dict[str, Any]]: List of tag dictionaries with id, name, created_at.</span>
@@ -1531,8 +1491,7 @@
 <div class="viewcode-block" id="DatabaseService.get_tags_with_events">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_tags_with_events">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_tags_with_events</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves tags that are associated with at least one event.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves tags that are associated with at least one event.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Dict[str, Any]]: List of distinct tag dictionaries.</span>
@@ -1556,8 +1515,7 @@
 <div class="viewcode-block" id="DatabaseService.get_active_tags">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_active_tags">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_active_tags</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves tags that are associated with at least one event OR entity.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves tags that are associated with at least one event OR entity.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Dict[str, Any]]: List of distinct tag dictionaries.</span>
@@ -1581,8 +1539,7 @@
 <div class="viewcode-block" id="DatabaseService.create_tag">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.create_tag">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">create_tag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates a new tag or returns existing tag ID.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a new tag or returns existing tag ID.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            tag_name (str): The name of the tag to create.</span>
@@ -1628,8 +1585,7 @@
 <div class="viewcode-block" id="DatabaseService.assign_tag_to_event">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.assign_tag_to_event">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">assign_tag_to_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Assigns a tag to an event, creating the tag if it doesn&#39;t exist.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assigns a tag to an event, creating the tag if it doesn&#39;t exist.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            event_id (str): The ID of the event.</span>
@@ -1663,8 +1619,7 @@
 <div class="viewcode-block" id="DatabaseService.assign_tag_to_entity">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.assign_tag_to_entity">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">assign_tag_to_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Assigns a tag to an entity, creating the tag if it doesn&#39;t exist.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assigns a tag to an entity, creating the tag if it doesn&#39;t exist.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            entity_id (str): The ID of the entity.</span>
@@ -1700,8 +1655,7 @@
 <div class="viewcode-block" id="DatabaseService.remove_tag_from_event">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.remove_tag_from_event">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">remove_tag_from_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Removes a tag from an event.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Removes a tag from an event.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            event_id (str): The ID of the event.</span>
@@ -1734,8 +1688,7 @@
 <div class="viewcode-block" id="DatabaseService.remove_tag_from_entity">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.remove_tag_from_entity">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">remove_tag_from_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Removes a tag from an entity.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Removes a tag from an entity.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            entity_id (str): The ID of the entity.</span>
@@ -1768,8 +1721,7 @@
 <div class="viewcode-block" id="DatabaseService.get_tags_for_event">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_tags_for_event">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_tags_for_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves all tags for a specific event.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all tags for a specific event.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            event_id (str): The ID of the event.</span>
@@ -1798,8 +1750,7 @@
 <div class="viewcode-block" id="DatabaseService.get_tags_for_entity">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_tags_for_entity">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_tags_for_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves all tags for a specific entity.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all tags for a specific entity.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            entity_id (str): The ID of the entity.</span>
@@ -1828,8 +1779,7 @@
 <div class="viewcode-block" id="DatabaseService.delete_tag">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.delete_tag">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">delete_tag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Deletes a tag and all its associations.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deletes a tag and all its associations.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            tag_name (str): The name of the tag to delete.</span>
@@ -1861,8 +1811,7 @@
 <div class="viewcode-block" id="DatabaseService.get_events_by_tag">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_events_by_tag">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_events_by_tag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Event</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves all events that have a specific tag.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all events that have a specific tag.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            tag_name (str): The name of the tag.</span>
@@ -1899,8 +1848,7 @@
 <div class="viewcode-block" id="DatabaseService.get_entities_by_tag">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_entities_by_tag">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_entities_by_tag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Entity</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves all entities that have a specific tag.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all entities that have a specific tag.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            tag_name (str): The name of the tag.</span>
@@ -1942,8 +1890,7 @@
         <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;DUPLICATE&quot;</span><span class="p">,</span>
         <span class="n">date_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Groups events by tags with support for DUPLICATE and FIRST_MATCH modes.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Groups events by tags with support for DUPLICATE and FIRST_MATCH modes.</span>
 
 <span class="sd">        In DUPLICATE mode (default), events with multiple tags appear in all</span>
 <span class="sd">        matching groups. In FIRST_MATCH mode, events appear only in their first</span>
@@ -2062,8 +2009,7 @@
         <span class="n">tag_order</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
         <span class="n">date_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns count and metadata for each tag group.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns count and metadata for each tag group.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            tag_order: List of tag names to get counts for.</span>
@@ -2124,8 +2070,7 @@
         <span class="n">tag_order</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
         <span class="n">date_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns metadata for each tag group including color, count, and date span.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns metadata for each tag group including color, count, and date span.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            tag_order: List of tag names to get metadata for.</span>
@@ -2192,8 +2137,7 @@
         <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">date_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Event</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns all events for a specific tag group.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns all events for a specific tag group.</span>
 
 <span class="sd">        This is a convenience wrapper around get_events_by_tag with date filtering.</span>
 
@@ -2242,8 +2186,7 @@
 <div class="viewcode-block" id="DatabaseService.set_tag_color">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.set_tag_color">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_tag_color</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">color</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Sets the color for a tag.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the color for a tag.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            tag_name: The name of the tag.</span>
@@ -2288,8 +2231,7 @@
 <div class="viewcode-block" id="DatabaseService.get_tag_color">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_tag_color">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_tag_color</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Gets the color for a tag, generating one if not set.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets the color for a tag, generating one if not set.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            tag_name: The name of the tag.</span>
@@ -2320,8 +2262,7 @@
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_generate_tag_color</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Generates a deterministic color for a tag based on its name.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates a deterministic color for a tag based on its name.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            tag_name: The name of the tag.</span>
@@ -2349,8 +2290,7 @@
 <div class="viewcode-block" id="DatabaseService.get_tag_by_name">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_tag_by_name">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_tag_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves a tag by its name.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves a tag by its name.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            tag_name: The name of the tag.</span>
@@ -2385,8 +2325,7 @@
         <span class="n">exclude_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;any&quot;</span><span class="p">,</span>
         <span class="n">case_sensitive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Convenience wrapper for tag-based filtering of entities and events.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience wrapper for tag-based filtering of entities and events.</span>
 
 <span class="sd">        Filters objects by tags using include/exclude lists with &#39;any&#39; or &#39;all&#39;</span>
 <span class="sd">        semantics. Returns lightweight (object_type, object_id) tuples.</span>
@@ -2452,8 +2391,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">get_objects_by_ids</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">object_ids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Event</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">Entity</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves full object instances for a list of (type, id) tuples.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves full object instances for a list of (type, id) tuples.</span>
 
 <span class="sd">        This method is used to hydrate results from `filter_ids_by_tags`.</span>
 <span class="sd">        Results are returned sorted by their natural order:</span>
@@ -2518,8 +2456,7 @@
         <span class="n">tag_order</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
         <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;DUPLICATE&quot;</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Stores timeline grouping configuration.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Stores timeline grouping configuration.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            tag_order: List of tag names defining groups and their order.</span>
@@ -2551,8 +2488,7 @@
 <div class="viewcode-block" id="DatabaseService.get_timeline_grouping_config">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_timeline_grouping_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_timeline_grouping_config</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves timeline grouping configuration.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves timeline grouping configuration.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Optional[Dict[str, Any]]: Config dict with tag_order and mode,</span>
@@ -2575,9 +2511,7 @@
 <div class="viewcode-block" id="DatabaseService.clear_timeline_grouping_config">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.clear_timeline_grouping_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">clear_timeline_grouping_config</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Clears timeline grouping configuration.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clears timeline grouping configuration.&quot;&quot;&quot;</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
             <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
                 <span class="s2">&quot;DELETE FROM system_meta WHERE key = &#39;timeline_grouping_config&#39;&quot;</span>
@@ -2598,8 +2532,7 @@
         <span class="n">trajectory</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="s2">&quot;Keyframe&quot;</span><span class="p">],</span>
         <span class="n">properties</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Inserts a spatial trajectory for a marker.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Inserts a spatial trajectory for a marker.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            marker_id: UUID of the marker.</span>
@@ -2619,8 +2552,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">get_trajectories_by_map</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">map_id</span><span class="p">:</span> <span class="nb">str</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="s2">&quot;Keyframe&quot;</span><span class="p">]]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves all trajectories for a specific map.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all trajectories for a specific map.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            map_id: UUID of the map.</span>
@@ -2638,8 +2570,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">get_trajectories_by_marker</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">marker_id</span><span class="p">:</span> <span class="nb">str</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="s2">&quot;Keyframe&quot;</span><span class="p">]]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves all trajectories for a specific marker.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all trajectories for a specific marker.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            marker_id: UUID of the marker.</span>
@@ -2655,8 +2586,7 @@
 <div class="viewcode-block" id="DatabaseService.add_keyframe">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.add_keyframe">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">add_keyframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">object_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">keyframe</span><span class="p">:</span> <span class="s2">&quot;Keyframe&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Adds a keyframe to the marker&#39;s trajectory.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds a keyframe to the marker&#39;s trajectory.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            map_id: The ID of the map.</span>
@@ -2676,8 +2606,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">update_keyframe_time</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">map_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">object_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">old_t</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">new_t</span><span class="p">:</span> <span class="nb">float</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Updates a keyframe&#39;s timestamp (Clock Mode editing).</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Updates a keyframe&#39;s timestamp (Clock Mode editing).</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            map_id: The ID of the map.</span>
@@ -2698,8 +2627,7 @@
 <div class="viewcode-block" id="DatabaseService.delete_keyframe">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.delete_keyframe">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">delete_keyframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">object_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Deletes a keyframe from a marker&#39;s trajectory.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deletes a keyframe from a marker&#39;s trajectory.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            map_id: The ID of the map.</span>
@@ -2717,8 +2645,7 @@
 <div class="viewcode-block" id="DatabaseService.register_backup_service">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.register_backup_service">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">register_backup_service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backup_service</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Registers a backup service for integration with database operations.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Registers a backup service for integration with database operations.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            backup_service: The BackupService instance to register.</span>
@@ -2730,8 +2657,7 @@
 <div class="viewcode-block" id="DatabaseService.get_db_file_path">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_db_file_path">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_db_file_path</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the current database file path.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the current database file path.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            str: Path to the database file.</span>
@@ -2742,9 +2668,8 @@
 <div class="viewcode-block" id="DatabaseService.vacuum">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.vacuum">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">vacuum</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Runs VACUUM on the database to reclaim space and optimize storage.</span>
-<span class="sd">        This can be slow for large databases and should be run infrequently.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Runs VACUUM on the database to reclaim space and optimize storage. This can</span>
+<span class="sd">        be slow for large databases and should be run infrequently.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            bool: True if successful, False otherwise.</span>

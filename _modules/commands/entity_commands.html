@@ -212,6 +212,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAST_INJECT.html">Fast Inject Service</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
 <ul>
@@ -270,9 +271,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for commands.entity_commands</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Commands for manipulating Entity objects.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;Commands for manipulating Entity objects.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
@@ -287,15 +286,12 @@
 <div class="viewcode-block" id="CreateEntityCommand">
 <a class="viewcode-back" href="../../commands.html#commands.entity_commands.CreateEntityCommand">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CreateEntityCommand</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Command to create a new entity.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Command to create a new entity.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="CreateEntityCommand.__init__">
 <a class="viewcode-back" href="../../commands.html#commands.entity_commands.CreateEntityCommand.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the CreateEntityCommand.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the CreateEntityCommand.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            entity_data (dict, optional): Dictionary containing entity data.</span>
@@ -311,8 +307,7 @@
 <div class="viewcode-block" id="CreateEntityCommand.execute">
 <a class="viewcode-back" href="../../commands.html#commands.entity_commands.CreateEntityCommand.execute">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CommandResult</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Executes the command to create the entity.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Executes the command to create the entity.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service (DatabaseService): The database service to use.</span>
@@ -352,8 +347,7 @@
 <div class="viewcode-block" id="CreateEntityCommand.undo">
 <a class="viewcode-back" href="../../commands.html#commands.entity_commands.CreateEntityCommand.undo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Reverts the entity creation by deleting it from the database.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reverts the entity creation by deleting it from the database.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service (DatabaseService): The database service to operate on.</span>
@@ -369,16 +363,15 @@
 <div class="viewcode-block" id="UpdateEntityCommand">
 <a class="viewcode-back" href="../../commands.html#commands.entity_commands.UpdateEntityCommand">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">UpdateEntityCommand</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Command to update an existing entity.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Command to update an existing entity.</span>
+
 <span class="sd">    Accepts a dictionary of changes.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="UpdateEntityCommand.__init__">
 <a class="viewcode-back" href="../../commands.html#commands.entity_commands.UpdateEntityCommand.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">update_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the UpdateEntityCommand.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the UpdateEntityCommand.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            entity_id (str): The ID of the entity to update.</span>
@@ -394,8 +387,7 @@
 <div class="viewcode-block" id="UpdateEntityCommand.execute">
 <a class="viewcode-back" href="../../commands.html#commands.entity_commands.UpdateEntityCommand.execute">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CommandResult</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Executes the update.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Executes the update.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service (DatabaseService): The database service to use.</span>
@@ -469,8 +461,7 @@
 <div class="viewcode-block" id="UpdateEntityCommand.undo">
 <a class="viewcode-back" href="../../commands.html#commands.entity_commands.UpdateEntityCommand.undo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Reverts the entity update by restoring the previous state.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reverts the entity update by restoring the previous state.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service (DatabaseService): The database service to operate on.</span>
@@ -486,15 +477,12 @@
 <div class="viewcode-block" id="DeleteEntityCommand">
 <a class="viewcode-back" href="../../commands.html#commands.entity_commands.DeleteEntityCommand">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DeleteEntityCommand</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Command to delete an entity.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Command to delete an entity.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="DeleteEntityCommand.__init__">
 <a class="viewcode-back" href="../../commands.html#commands.entity_commands.DeleteEntityCommand.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the DeleteEntityCommand.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the DeleteEntityCommand.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            entity_id (str): The ID of the entity to delete.</span>
@@ -507,8 +495,7 @@
 <div class="viewcode-block" id="DeleteEntityCommand.execute">
 <a class="viewcode-back" href="../../commands.html#commands.entity_commands.DeleteEntityCommand.execute">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CommandResult</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Executes the command to delete the entity.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Executes the command to delete the entity.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service (DatabaseService): The database service to use.</span>
@@ -547,8 +534,7 @@
 <div class="viewcode-block" id="DeleteEntityCommand.undo">
 <a class="viewcode-back" href="../../commands.html#commands.entity_commands.DeleteEntityCommand.undo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Reverts the entity deletion by restoring it to the database.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reverts the entity deletion by restoring it to the database.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service (DatabaseService): The database service to operate on.</span>

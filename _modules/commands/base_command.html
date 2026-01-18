@@ -212,6 +212,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAST_INJECT.html">Fast Inject Service</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
 <ul>
@@ -270,8 +271,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for commands.base_command</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Base Command Module.</span>
+<span></span><span class="sd">&quot;&quot;&quot;Base Command Module.</span>
 
 <span class="sd">Defines the abstract base class and result type for all commands in the application.</span>
 
@@ -291,8 +291,7 @@
 <a class="viewcode-back" href="../../commands.html#commands.base_command.CommandResult">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">CommandResult</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Standardized result object for command execution.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Standardized result object for command execution.</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        success (bool): True if the command executed successfully,</span>
@@ -315,17 +314,15 @@
 <div class="viewcode-block" id="BaseCommand">
 <a class="viewcode-back" href="../../commands.html#commands.base_command.BaseCommand">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseCommand</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Abstract base class for all user actions.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base class for all user actions.</span>
+
 <span class="sd">    Encapsulates logic to generic execution and undo/redo support.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="BaseCommand.__init__">
 <a class="viewcode-back" href="../../commands.html#commands.base_command.BaseCommand.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the command.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the command.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 
@@ -333,8 +330,7 @@
 <a class="viewcode-back" href="../../commands.html#commands.base_command.BaseCommand.execute">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">CommandResult</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Performs the action.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Performs the action.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service (DatabaseService): The database service to operate on.</span>
@@ -349,8 +345,7 @@
 <a class="viewcode-back" href="../../commands.html#commands.base_command.BaseCommand.undo">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Reverts the action.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reverts the action.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service (DatabaseService): The database service to operate on.</span>
@@ -360,8 +355,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_executed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Checks if the command has been executed.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Checks if the command has been executed.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            bool: True if the command has been executed, False otherwise.</span>

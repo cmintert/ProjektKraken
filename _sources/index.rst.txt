@@ -29,6 +29,7 @@ Welcome to Project Kraken's documentation!
 
    SEMANTIC_SEARCH
    LLM_INTEGRATION
+   FAST_INJECT
 
 .. toctree::
    :maxdepth: 2

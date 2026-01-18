@@ -212,6 +212,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAST_INJECT.html">Fast Inject Service</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
 <ul>
@@ -291,9 +292,7 @@
 <a class="viewcode-back" href="../../core.html#core.entities.Entity">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Entity</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Represents a timeless object (Character, Location, Artifact).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Represents a timeless object (Character, Location, Artifact).&quot;&quot;&quot;</span>
 
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># e.g., &quot;character&quot;, &quot;location&quot;, &quot;faction&quot;</span>
@@ -308,8 +307,7 @@
 <div class="viewcode-block" id="Entity.to_dict">
 <a class="viewcode-back" href="../../core.html#core.entities.Entity.to_dict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Converts the Entity instance to a dictionary for storage or serialization.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts the Entity instance to a dictionary for storage or serialization.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Dict[str, Any]: A dictionary containing all the entity&#39;s data.</span>
@@ -329,8 +327,7 @@
 <a class="viewcode-back" href="../../core.html#core.entities.Entity.from_dict">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;Entity&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates an Entity instance from a dictionary.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates an Entity instance from a dictionary.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            data (Dict[str, Any]): A dictionary containing entity data.</span>
@@ -344,8 +341,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">tags</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the list of tags for this entity.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the list of tags for this entity.</span>
 
 <span class="sd">        Tags are stored in the attributes dict under the &quot;_tags&quot; key.</span>
 
@@ -356,8 +352,7 @@
 
     <span class="nd">@tags</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">tags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Sets the tags for this entity.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the tags for this entity.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            value (list[str]): List of tag strings.</span>

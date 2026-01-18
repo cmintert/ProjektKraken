@@ -212,6 +212,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAST_INJECT.html">Fast Inject Service</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
 <ul>
@@ -271,8 +272,7 @@
         <article role="main" id="furo-main-content">
           <h1>Source code for cli.index</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python3</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Semantic Search Index Management CLI.</span>
+<span class="sd">&quot;&quot;&quot;Semantic Search Index Management CLI.</span>
 
 <span class="sd">Provides command-line tools for building, querying, and managing</span>
 <span class="sd">the semantic search index.</span>
@@ -303,8 +303,7 @@
 <div class="viewcode-block" id="rebuild_index">
 <a class="viewcode-back" href="../../cli.html#cli.index.rebuild_index">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">rebuild_index</span><span class="p">(</span><span class="n">args</span><span class="p">:</span> <span class="n">argparse</span><span class="o">.</span><span class="n">Namespace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Rebuild the semantic search index.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Rebuild the semantic search index.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        args: Command-line arguments.</span>
@@ -365,8 +364,7 @@
 <div class="viewcode-block" id="delete_object">
 <a class="viewcode-back" href="../../cli.html#cli.index.delete_object">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">delete_object</span><span class="p">(</span><span class="n">args</span><span class="p">:</span> <span class="n">argparse</span><span class="o">.</span><span class="n">Namespace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Delete embeddings for a single object.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Delete embeddings for a single object.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        args: Command-line arguments.</span>
@@ -410,8 +408,7 @@
 <div class="viewcode-block" id="index_object">
 <a class="viewcode-back" href="../../cli.html#cli.index.index_object">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">index_object</span><span class="p">(</span><span class="n">args</span><span class="p">:</span> <span class="n">argparse</span><span class="o">.</span><span class="n">Namespace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Index a single object.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Index a single object.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        args: Command-line arguments.</span>
@@ -467,8 +464,7 @@
 <div class="viewcode-block" id="query_index">
 <a class="viewcode-back" href="../../cli.html#cli.index.query_index">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">query_index</span><span class="p">(</span><span class="n">args</span><span class="p">:</span> <span class="n">argparse</span><span class="o">.</span><span class="n">Namespace</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Query the semantic search index.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Query the semantic search index.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        args: Command-line arguments.</span>

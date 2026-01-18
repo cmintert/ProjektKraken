@@ -212,6 +212,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../FAST_INJECT.html">Fast Inject Service</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
 <ul>
@@ -270,11 +271,10 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for services.link_resolver</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Link Resolver Service.</span>
+<span></span><span class="sd">&quot;&quot;&quot;Link Resolver Service.</span>
 
-<span class="sd">Handles resolution of ID-based wiki links to current entity/event names.</span>
-<span class="sd">Provides caching and broken link detection.</span>
+<span class="sd">Handles resolution of ID-based wiki links to current entity/event names. Provides</span>
+<span class="sd">caching and broken link detection.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
@@ -288,8 +288,7 @@
 <div class="viewcode-block" id="LinkResolver">
 <a class="viewcode-back" href="../../services.html#services.link_resolver.LinkResolver">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">LinkResolver</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Resolves wiki link IDs to current entity/event names.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolves wiki link IDs to current entity/event names.</span>
 
 <span class="sd">    Maintains a cache for performance and provides broken link detection.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -297,8 +296,7 @@
 <div class="viewcode-block" id="LinkResolver.__init__">
 <a class="viewcode-back" href="../../services.html#services.link_resolver.LinkResolver.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the LinkResolver.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the LinkResolver.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service: Database service for looking up entities/events.</span>
@@ -310,8 +308,7 @@
 <div class="viewcode-block" id="LinkResolver.resolve">
 <a class="viewcode-back" href="../../services.html#services.link_resolver.LinkResolver.resolve">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Resolves a target ID to its current name and type.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolves a target ID to its current name and type.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            target_id: The UUID of the target entity or event.</span>
@@ -345,8 +342,7 @@
 <div class="viewcode-block" id="LinkResolver.invalidate_cache">
 <a class="viewcode-back" href="../../services.html#services.link_resolver.LinkResolver.invalidate_cache">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">invalidate_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Invalidates the resolution cache.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Invalidates the resolution cache.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            target_id: If provided, invalidates only this ID.</span>
@@ -363,8 +359,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">get_display_name</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">target_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">fallback_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Gets the display name for a link, with fallback for broken links.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets the display name for a link, with fallback for broken links.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            target_id: The UUID of the target.</span>
@@ -386,8 +381,7 @@
 <div class="viewcode-block" id="LinkResolver.find_broken_links">
 <a class="viewcode-back" href="../../services.html#services.link_resolver.LinkResolver.find_broken_links">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">find_broken_links</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Finds all broken links in the given text.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Finds all broken links in the given text.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            text: Text content to scan for broken links.</span>
