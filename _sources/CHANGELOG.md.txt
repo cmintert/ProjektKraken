@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-18
-### Documentation
-- docs: Fast Inject system documentation and lint fixes
+### Internal
+- chore: bump version to 0.8.0 and update changelog
 
 
 *This changelog was automatically generated.*
