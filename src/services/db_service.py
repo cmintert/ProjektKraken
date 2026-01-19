@@ -117,6 +117,27 @@ class DatabaseService:
             logger.error(f"Transaction rolled back due to error: {e}")
             raise
 
+    def ensure_fresh_view(self) -> None:
+        """Ensures the connection sees the most recent data (refreshes snapshot).
+
+        This is critical in WAL mode if another connection has written data.
+        We use a two-pronged approach:
+        1. Commit any open transaction to release the snapshot.
+        2. Execute a WAL checkpoint to force visibility of changes.
+        """
+        if not self._connection:
+            return
+
+        # First, close any open transaction
+        if self._connection.in_transaction:
+            self._connection.commit()
+
+        # Then force a WAL checkpoint to ensure visibility
+        try:
+            self._connection.execute("PRAGMA wal_checkpoint(PASSIVE);")
+        except Exception:
+            pass  # Ignore errors, this is best-effort
+
     def _init_schema(self) -> None:
         """Creates the core tables if they don't exist."""
         schema_sql = """

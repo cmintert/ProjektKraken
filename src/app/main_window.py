@@ -34,6 +34,7 @@ from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QDialog,
     QDockWidget,
+    QFileDialog,
     QInputDialog,
     QLabel,
     QMainWindow,
@@ -86,8 +87,10 @@ from src.core.logging_config import get_logger
 from src.core.paths import get_worlds_dir
 from src.gui.dialogs.database_manager_dialog import DatabaseManagerDialog
 from src.gui.dialogs.filter_dialog import FilterDialog
+from src.gui.dialogs.import_preview_dialog import ImportPreviewDialog
 from src.gui.mixins.layout_guard import LayoutGuardMixin
 from src.gui.widgets.ai_search_panel import AISearchPanelWidget
+from src.services.import_service import ImportService
 from src.gui.widgets.entity_editor import EntityEditorWidget
 from src.gui.widgets.event_editor import EventEditorWidget
 from src.gui.widgets.graph_view import GraphWidget
@@ -1007,6 +1010,10 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             events: List of Event objects.
         """
         self._cached_events = events
+        from src.core.logging_config import get_logger
+
+        logger = get_logger(__name__)
+        logger.info(f"DEBUG: _on_events_ready received {len(events)} events")
         self.unified_list.set_data(self._cached_events, self._cached_entities)
         self.timeline.set_events(events)
 
@@ -1667,3 +1674,79 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             # qApp.quit()
             # QProcess.startDetached(sys.executable, sys.argv)
             pass
+
+    @Slot()
+    def import_item_requested(self) -> None:
+        """Handles the request to import an item from a JSON file."""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Import Item", "", "JSON Files (*.json);;All Files (*)"
+        )
+
+        if not file_path:
+            return
+
+        try:
+            # 1. Initialize Service (using Worker's DB service if available, or create new?)
+            # MainWindow has self.worker.db_service ideally, but worker is a Thread.
+            # We need a direct DB connection or use the one from WorkerManager if exposed.
+            # Best practice here: Use a transient service with the same DB path.
+
+            # Wait, creating a new service might lock the DB if not careful.
+            # However, ImportService expects a DatabaseService instance.
+            # We can borrow the one from worker if we are meticulous, or create a new one.
+            # Since we are in the GUI thread, we must be careful not to block too long.
+            # But the IMPORT action itself (commit) should probably run on the thread?
+            # For now, let's do it synchronously for simplicity as agreed in plan,
+            # but using a fresh connection properly.
+
+            # Use the same db_path that the worker uses (set by WorkerManager)
+            db_path = self.db_path
+            logger.info(f"ImportService using db_path: {db_path}")
+
+            from src.services.db_service import DatabaseService
+
+            db_service = DatabaseService(db_path)
+            db_service.connect()
+
+            import_service = ImportService(db_service)
+
+            # 2. Read and Parse
+            with open(file_path, "r", encoding="utf-8") as f:
+                json_content = f.read()
+
+            parsed_data = import_service.parse_only(json_content)
+
+            # 3. Show Preview Dialog
+            dialog = ImportPreviewDialog(self, parsed_data)
+            if dialog.exec() == QDialog.DialogCode.Accepted:
+                # 4. Commit Import
+                result = import_service.import_batch(parsed_data)
+
+                if result.success:
+                    msg = (
+                        "Import Successful!\n\n"
+                        f"Entities: {len(result.created_entities)}\n"
+                        f"Events: {len(result.created_events)}\n"
+                        f"Relations: {len(result.created_relations)}"
+                    )
+                    if result.warnings:
+                        msg += "\n\nWarnings:\n" + "\n".join(result.warnings[:5])
+                        if len(result.warnings) > 5:
+                            msg += f"\n...and {len(result.warnings)-5} more."
+
+                    QMessageBox.information(self, "Import Complete", msg)
+
+                    # Refresh UI using the standard load_data method
+                    self.load_data()
+
+                else:
+                    err_msg = "\n".join(result.errors[:10])
+                    QMessageBox.critical(
+                        self, "Import Failed", f"Errors occurred:\n{err_msg}"
+                    )
+
+            db_service.close()
+
+        except Exception as e:
+            logger.exception("Import error")
+            QMessageBox.critical(self, "Import Error", f"An error occurred: {e}")

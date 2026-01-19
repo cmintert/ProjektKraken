@@ -133,6 +133,7 @@ class DatabaseWorker(QObject):
             return
 
         try:
+            self.db_service.ensure_fresh_view()
             self.operation_started.emit("Loading Events...")
             events = self.db_service.get_all_events()
             self.events_loaded.emit(events)
@@ -148,6 +149,7 @@ class DatabaseWorker(QObject):
             return
 
         try:
+            self.db_service.ensure_fresh_view()
             self.operation_started.emit("Loading Entities...")
             entities = self.db_service.get_all_entities()
             self.entities_loaded.emit(entities)
@@ -163,6 +165,7 @@ class DatabaseWorker(QObject):
             return
 
         try:
+            self.db_service.ensure_fresh_view()
             self.operation_started.emit("Loading Maps...")
             maps = self.db_service.get_all_maps()
             self.maps_loaded.emit(maps)
@@ -382,6 +385,7 @@ class DatabaseWorker(QObject):
 
             if not self.db_service._connection:
                 self.db_service.connect()
+            self.db_service.ensure_fresh_view()
             assert self.db_service._connection is not None
 
             sequence = longform_builder.build_longform_sequence(

@@ -422,6 +422,11 @@ class UIManager:
         db_action = file_menu.addAction("Manage Databases...")
         db_action.triggered.connect(self.main_window.show_database_manager)
 
+        # Import Item
+        import_action = file_menu.addAction("Import Item...")
+        if hasattr(self.main_window, "import_item_requested"):
+            import_action.triggered.connect(self.main_window.import_item_requested)
+
         file_menu.addSeparator()
 
         # Backup submenu

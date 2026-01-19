@@ -46,6 +46,15 @@ def main() -> None:
     setup_logging(debug_mode=True)
     from datetime import datetime
 
+    # CLI Command Routing
+    if len(sys.argv) > 1 and sys.argv[1] == "import":
+        from src.cli.importer import run_import_cli
+
+        # Pass arguments after 'import'
+        exit_code = run_import_cli(sys.argv[2:])
+        shutdown_logging()
+        sys.exit(exit_code)
+
     logger.info("=" * 60)
     logger.info(f"Project Kraken Session Started at {datetime.now().isoformat()}")
     logger.info("=" * 60)
@@ -96,7 +105,7 @@ def main() -> None:
         exit_code = app.exec()
         cleanup_app()
         sys.exit(exit_code)
-    except Exception as e:
+    except Exception:
         logger.exception("CRITICAL: Unhandled exception in main application loop")
         sys.exit(1)
 
