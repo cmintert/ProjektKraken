@@ -68,3 +68,6 @@ test_result*.txt
 
 # World Data
 worlds/
+
+# Temporary test logs
+failed_tests*.log
