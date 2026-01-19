@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-19
-### Internal
-- chore: add failed_tests*.log to gitignore
+### Changed
+- Refactor Coordinators to Public API and Fix Tests
 
 
 *This changelog was automatically generated.*
