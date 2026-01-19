@@ -1,13 +1,13 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Design Specification  
-**Last Updated:** 2026-01-13  
+**Last Updated:** 2026-01-19  
 **Commit:** `HEAD`  
 ---
 
 # Project Kraken: Comprehensive Design Specification
 
-Version: 0.8.1  
+Version: 0.8.2  
 Status: Beta  
 Target Audience: Software Developers, UX Designers
 

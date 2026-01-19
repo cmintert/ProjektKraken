@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-19
-### Changed
-- Refactor Coordinators to Public API and Fix Tests
+### Internal
+- Bump version to 0.8.2
 
 
 *This changelog was automatically generated.*
