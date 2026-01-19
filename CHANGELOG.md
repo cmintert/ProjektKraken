@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-01-19
-**Commit:** `b0d6213`
+**Commit:** `c2c2264`
 ---
 
 # Changelog
@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file.
 - *(2026-01-19)* **Timeline**: Added performance logging to `drawForeground`, `repack_events`, `fit_all`, and `wheelEvent` for diagnostic monitoring.
 
 ### Fixed
+- *(2026-01-19)* **AI Search**: Fixed entity/event selection from search results by correcting signal emission in click handlers and replacing non-existent method call with proper `UnifiedListWidget.select_item()` access.
 - *(2026-01-19)* **Timeline**: Fixed Fit View to include Playhead and Current Time in the visible range.
 - *(2026-01-19)* **Timeline**: Fixed panning clipping by updating Scene Rect calculation to include Playhead/Current Time positions.
 - *(2026-01-19)* **Timeline**: Restored large Scene Rect buffer (50M px) for smooth infinite-feeling panning after performance bottleneck was resolved.
