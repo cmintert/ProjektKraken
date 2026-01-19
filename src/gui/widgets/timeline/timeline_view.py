@@ -4,6 +4,7 @@ Provides the TimelineView class for rendering and interacting with the timeline.
 """
 
 import logging
+import time
 from typing import Any
 
 from PySide6.QtCore import QPointF, QRectF, QSettings, QSize, Qt, QTimer, Signal
@@ -254,6 +255,8 @@ class TimelineView(QGraphicsView):
         - Label collision avoidance
         - Sticky parent context label
         """
+        start_time = time.perf_counter()
+
         # 1. Switch to Screen Coordinates
         painter.save()
         painter.resetTransform()
@@ -377,6 +380,9 @@ class TimelineView(QGraphicsView):
 
         # 9. Clean up
         painter.restore()
+
+        elapsed = (time.perf_counter() - start_time) * 1000
+        logger.debug(f"DrawForeground took {elapsed:.2f}ms")
 
     def _draw_playhead_handle(self, painter: QPainter, rect: QRectF) -> None:
         """Draws a handle for the playhead in the ruler area."""
@@ -593,6 +599,9 @@ class TimelineView(QGraphicsView):
         if not self.events:
             return
 
+        start_time = time.perf_counter()
+        event_count = len(self.events)
+
         # Cleanup duplicates before scanning scene for layout
         self._clear_duplicates()
 
@@ -679,6 +688,9 @@ class TimelineView(QGraphicsView):
             self.scene.setSceneRect(
                 current_rect.x(), current_rect.y(), current_rect.width(), max_y
             )
+
+        elapsed = (time.perf_counter() - start_time) * 1000
+        logger.debug(f"Repack events ({event_count} items) took {elapsed:.2f}ms")
 
     def _partition_events(self, events: list, tag_order: list, mode: str) -> dict:
         """Partition events into groups based on tags."""
@@ -898,18 +910,35 @@ class TimelineView(QGraphicsView):
         self._update_label_overlay()
 
     def fit_all(self) -> None:
-        """Fits the view to encompass all event items, ignoring the infinite axis.
+        """Fits the view to encompass all event items, playhead, and current time line.
 
         Adds a 10% margin on the sides.
         """
-        if not self.events:
+        dates = []
+
+        # 1. Collect dates from Events
+        if self.events:
+            # Events are sorted by date in set_events
+            dates.append(self.events[0].lore_date)
+            dates.append(self.events[-1].lore_date)
+
+        # 2. Include Playhead
+        # Playhead is always present
+        dates.append(self.get_playhead_time())
+
+        # 3. Include Current Time Line if visible
+        if self._current_time_line.isVisible():
+            dates.append(self.get_current_time())
+
+        if not dates:
             return
 
-        # 1. Calculate X bounds based on events
-        min_date = self.events[0].lore_date
-        max_date = self.events[-1].lore_date
+        min_date = min(dates)
+        max_date = max(dates)
 
-        # Handle single event case with a default range
+        logger.info(f"Fit All: Range [{min_date}, {max_date}]")
+
+        # Handle single point or zero range
         if min_date == max_date:
             min_date -= 10
             max_date += 10
@@ -922,7 +951,7 @@ class TimelineView(QGraphicsView):
         end_x = (max_date + margin) * self.scale_factor
         width = end_x - start_x
 
-        # 2. Fit Horizontal Only
+        # 4. Fit Horizontal Only
         viewport_width = self.viewport().width()
         if viewport_width > 0 and width > 0:
             scale_x = viewport_width / width
@@ -939,7 +968,7 @@ class TimelineView(QGraphicsView):
 
             self.centerOn(center_x, scene_top + vh / 2)
 
-            # Explicitly ensure we are at the top (redundancy for safety)
+            # Explicitly ensure we are at the top
             self.verticalScrollBar().setValue(self.verticalScrollBar().minimum())
 
     def wheelEvent(self, event: QWheelEvent) -> None:
@@ -955,6 +984,8 @@ class TimelineView(QGraphicsView):
 
         # Calculate new zoom level
         new_zoom = self._current_zoom * factor
+
+        logger.debug(f"Zoom change: {self._current_zoom:.4f} -> {new_zoom:.4f}")
 
         # Enforce zoom limits
         if new_zoom < self.MIN_ZOOM:
@@ -1401,22 +1432,36 @@ class TimelineView(QGraphicsView):
 
     def _update_scene_rect_from_events(self, sorted_events: list) -> None:
         """Updates the scene rectangle based on event bounds."""
-        # Calculate event center
+        # Calculate content bounds (Events + Playhead + Current Time)
         min_date = sorted_events[0].lore_date
         max_date = sorted_events[-1].lore_date
 
-        # Determine center of events to center the infinite canvas
+        # Include playhead
+        ph_time = self.get_playhead_time()
+        min_date = min(min_date, ph_time)
+        max_date = max(max_date, ph_time)
+
+        # Include current time if visible
+        if self._current_time_line.isVisible():
+            ct_time = self.get_current_time()
+            min_date = min(min_date, ct_time)
+            max_date = max(max_date, ct_time)
+
+        # Determine center of content
         center_date = (min_date + max_date) / 2
         center_x = center_date * self.scale_factor
 
         # "Infinite" horizontal range
-        # Use a large buffer (e.g. 100M pixels) to allow free panning
-        # proper infinite scrolling would require dynamic scene rect updates,
-        # but a massive fixed rect is a robust and simple approximation.
-        HUGE_BUFFER = 100_000_000  # 100 million pixels
+        # Use a large buffer (e.g. 50M pixels) to allow free panning
+        # Since rendering is now optimized, a larger buffer is safe.
+        HUGE_BUFFER = 50_000_000  # 50 million pixels
 
-        start_x = center_x - HUGE_BUFFER
-        end_x = center_x + HUGE_BUFFER
+        # Ensure buffer extends at least slightly beyond the content
+        content_width = (max_date - min_date) * self.scale_factor
+        buffer_padding = max(HUGE_BUFFER, content_width * 2)
+
+        start_x = center_x - buffer_padding
+        end_x = center_x + buffer_padding
 
         # Y bounds - inspect items to find max Y
         max_y_found = 60
@@ -1428,15 +1473,15 @@ class TimelineView(QGraphicsView):
         min_y = 0
 
         # Set Scene Rect explicitly
-        # Horizontal: Massive range centered on events
-        # Vertical: Tight fit to content
         self.scene.setSceneRect(start_x, min_y, end_x - start_x, max_y - min_y)
 
     def _update_scene_rect_default(self) -> None:
         """Sets a default infinite scene rect when no events are present."""
-        # Center near 0
-        center_x = 0
-        HUGE_BUFFER = 100_000_000
+        # Center near playhead if possible, else 0
+        center_date = self.get_playhead_time()
+        center_x = center_date * self.scale_factor
+
+        HUGE_BUFFER = 50_000_000  # 50 million pixels
 
         start_x = center_x - HUGE_BUFFER
         end_x = center_x + HUGE_BUFFER

@@ -32,7 +32,6 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
-    QApplication,
     QDialog,
     QDockWidget,
     QInputDialog,
@@ -188,6 +187,14 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self._pending_select_type = None
         self._graph_reload_timer: QTimer | None = None
 
+    def _create_status_label(self, text: str, color: str) -> QLabel:
+        """Creates a styled status bar label."""
+        lbl = QLabel(text)
+        lbl.setMinimumWidth(250)
+        lbl.setStyleSheet(f"color: {color}; font-weight: bold;")
+        self.status_bar.addPermanentWidget(lbl)
+        return lbl
+
     def _init_widgets_skeleton(self) -> None:
         """
         Phase 2: Create UI skeleton without data dependencies.
@@ -249,15 +256,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.centralWidget().hide()
 
         # Status Bar Time Labels
-        self.lbl_world_time = QLabel("World: --")
-        self.lbl_world_time.setMinimumWidth(250)
-        self.lbl_world_time.setStyleSheet("color: #3498db; font-weight: bold;")
-        self.status_bar.addPermanentWidget(self.lbl_world_time)
-
-        self.lbl_playhead_time = QLabel("Playhead: --")
-        self.lbl_playhead_time.setMinimumWidth(250)
-        self.lbl_playhead_time.setStyleSheet("color: #e74c3c; font-weight: bold;")
-        self.status_bar.addPermanentWidget(self.lbl_playhead_time)
+        self.lbl_world_time = self._create_status_label("World: --", "#3498db")
+        self.lbl_playhead_time = self._create_status_label("Playhead: --", "#e74c3c")
 
         # Create Menus
         self.ui_manager.create_file_menu(self.menuBar())
@@ -445,8 +445,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             return
 
         # Restore geometry only (fast)
-        geometry = settings.value("geometry")
-        if geometry:
+        if geometry := settings.value("geometry"):
             # Use Guard implementation
             if self.guard_restore_geometry(geometry):
                 logger.debug("Window geometry restored safely")
@@ -478,8 +477,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             return
 
         # Restore window state (includes dock positions)
-        state = settings.value("windowState")
-        if state:
+        if state := settings.value("windowState"):
             if self.restoreState(state):
                 logger.debug("Critical docks state restored")
 
@@ -510,8 +508,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 
         # Restore Advanced Filter for Unified List
-        filter_config = settings.value(SETTINGS_FILTER_CONFIG_KEY)
-        if filter_config:
+        if filter_config := settings.value(SETTINGS_FILTER_CONFIG_KEY):
             self.unified_list.set_advanced_filter(filter_config)
             logger.debug("Advanced filter configuration restored")
 
@@ -650,8 +647,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             base_title = "Entity Inspector"
 
         if dock_key:
-            dock = self.ui_manager.docks.get(dock_key)
-            if dock:
+            if dock := self.ui_manager.docks.get(dock_key):
                 new_title = base_title + (" *" if dirty else "")
                 dock.setWindowTitle(new_title)
 
@@ -1566,7 +1562,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         cmd = UpdateRelationCommand(rel_id, target_id, rel_type, attributes=attributes)
         self.command_requested.emit(cmd)
 
-    # Removed: navigate_to_entity and _prompt_create_missing_target moved to NavigationCoordinator
+    # Removed: navigate_to_entity/prompt_create moved to NavigationCoordinator
 
     def promote_longform_entry(self, table: str, row_id: str, old_meta: dict) -> None:
         """Promotes a longform entry by reducing its depth.

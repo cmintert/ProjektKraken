@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
@@ -114,18 +114,16 @@ class NavigationCoordinator(BaseCoordinator):
 
         if is_uuid:
             # ID-based navigation - direct lookup
-            entity = next(
+            if entity := next(
                 (e for e in self.main_window._cached_entities if e.id == target),
                 None,
-            )
-            if entity:
+            ):
                 self.set_global_selection("entity", entity.id)
                 return
 
-            event = next(
+            if event := next(
                 (e for e in self.main_window._cached_events if e.id == target), None
-            )
-            if event:
+            ):
                 self.set_global_selection("event", event.id)
                 return
 
@@ -137,30 +135,26 @@ class NavigationCoordinator(BaseCoordinator):
             )
         else:
             # Name-based navigation (legacy) - case-insensitive match
-            entity = next(
+            if entity := next(
                 (
                     e
                     for e in self.main_window._cached_entities
                     if e.name.lower() == target.lower()
                 ),
                 None,
-            )
-
-            if entity:
+            ):
                 self.set_global_selection("entity", entity.id)
                 return
 
             # Also check events for name-based links
-            event = next(
+            if event := next(
                 (
                     e
                     for e in self.main_window._cached_events
                     if e.name.lower() == target.lower()
                 ),
                 None,
-            )
-
-            if event:
+            ):
                 self.set_global_selection("event", event.id)
                 return
 

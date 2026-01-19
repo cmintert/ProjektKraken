@@ -527,17 +527,28 @@ class CalendarConverter:
         """
         total_days = 0.0
 
-        # Sum all complete years before target year
-        # Optimization: If we have no variants and simple rules, we could calculate faster
-        # But for now, correctness first. Iterate years.
-        # To avoid massive loops for huge years (e.g. Year 20000), we could optimize later.
+        # Optimization: Check cache for closest starting point
+        # Find highest cached year < date.year
+        cached_years = sorted(self._year_cache.keys())
+        current_year = 1
 
-        # Simple optimization: if no variants and logic is regular...
-        # For now, just sum (naive implementation - O(N) where N is year)
-        # TODO: Implement O(1) calculation for standard Gregorian
+        for y in reversed(cached_years):
+            if y < date.year:
+                current_year = y
+                total_days = self._year_cache[y]
+                break
 
-        for y in range(1, date.year):
+        # Sum years from current_year to target
+        for y in range(current_year, date.year):
+            # Cache the start of this year if not known
+            if y not in self._year_cache:
+                self._year_cache[y] = total_days
+
             total_days += self._config.get_year_length(y)
+
+        # Ensure target year start is cached
+        if date.year not in self._year_cache:
+            self._year_cache[date.year] = total_days
 
         # Sum all complete months before target month
         months = self._config.get_months_for_year(date.year)
@@ -613,8 +624,31 @@ class CalendarConverter:
         remaining = absolute_day
         year = 1
 
+        # Optimization: Check cache for closest starting point
+        # Sorted keys from cache
+        cached_years = sorted(self._year_cache.keys())
+        # Find highest cached year <= needed
+        # Since we don't know the exact year yet, we check absolute_days
+        # But wait, cache is year -> absolute_day.
+        # We need absolute_day -> year lookup for this.
+
+        # Let's use a simple linear scan of cached items for now or bisect if we invert it
+        # Or just remember the last queried year?
+
+        # Better: Iterate cached years in reverse to find where cache[y] <= absolute_day
+        for y in reversed(cached_years):
+            start_of_y = self._year_cache[y]
+            if start_of_y <= absolute_day:
+                year = y
+                remaining = absolute_day - start_of_y
+                break
+
         # Find the year
         while True:
+            # Add to cache
+            if year not in self._year_cache:
+                self._year_cache[year] = absolute_day - remaining
+
             year_length = self._config.get_year_length(year)
             if remaining < year_length:
                 break

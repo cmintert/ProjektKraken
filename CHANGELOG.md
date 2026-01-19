@@ -11,6 +11,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.2]
+
 ### Refactor
 - *(2026-01-19)* **Coordinators**: Major architectural refactor extracting logic from `MainWindow` into dedicated coordinators: `NavigationCoordinator`, `TimeCoordinator`, and `FastInjectCoordinator`.
   - Reduced `MainWindow` size by ~1000 lines, improving maintainability.
