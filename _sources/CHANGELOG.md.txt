@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-19
-### Documentation
-- docs: Update changelog with timeline performance optimizations, view fixes, and new tests.
+### Fixed
+- fix(ai-search): Enable entity/event selection from AI search results
 
 
 *This changelog was automatically generated.*
