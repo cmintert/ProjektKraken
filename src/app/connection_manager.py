@@ -197,7 +197,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             dh,
             "entity_state_resolved",
-            self.window.time_coordinator._on_entity_state_resolved,
+            self.window.time_coordinator.on_entity_state_resolved,
             "DataHandler",
         ):
             failed_count += 1
@@ -331,7 +331,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             ul,
             "item_selected",
-            self.window.navigation_coordinator._on_item_selected,
+            self.window.navigation_coordinator.on_item_selected,
             "UnifiedList",
         ):
             failed_count += 1
@@ -497,7 +497,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             timeline,
             "playhead_time_changed",
-            self.window.time_coordinator._on_playhead_changed,
+            self.window.time_coordinator.on_playhead_changed,
             "Timeline",
         ):
             failed_count += 1
@@ -586,7 +586,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             longform,
             "item_selected",
-            self.window.navigation_coordinator._on_item_selected,
+            self.window.navigation_coordinator.on_item_selected,
             "LongformEditor",
         ):
             failed_count += 1
@@ -820,7 +820,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             graph,
             "node_clicked",
-            self.window.navigation_coordinator._on_item_selected,
+            self.window.navigation_coordinator.on_item_selected,
             "GraphWidget",
         ):
             failed_count += 1

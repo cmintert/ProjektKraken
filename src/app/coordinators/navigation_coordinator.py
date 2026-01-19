@@ -167,8 +167,28 @@ class NavigationCoordinator(BaseCoordinator):
             # Name not found - Prompt for Creation
             self._prompt_create_missing_target(target)
 
+    @property
+    def selected_id(self) -> Optional[str]:
+        """Returns the currently selected item ID."""
+        return self._last_selected_id
+
+    @selected_id.setter
+    def selected_id(self, value: Optional[str]) -> None:
+        """Sets the selected item ID."""
+        self._last_selected_id = value
+
+    @property
+    def selected_type(self) -> Optional[str]:
+        """Returns the currently selected item type."""
+        return self._last_selected_type
+
+    @selected_type.setter
+    def selected_type(self, value: Optional[str]) -> None:
+        """Sets the selected item type."""
+        self._last_selected_type = value
+
     @Slot(str, str)
-    def _on_item_selected(self, item_type: str, item_id: str) -> None:
+    def on_item_selected(self, item_type: str, item_id: str) -> None:
         """Handles selection from unified list or longform editor."""
         self.set_global_selection(item_type, item_id)
 

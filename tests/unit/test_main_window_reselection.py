@@ -36,8 +36,8 @@ def mock_main_window():
 def test_event_reselection_skipped(mock_main_window):
     """Test that selecting the same event again skips reload."""
     # Setup state: Event "1" is already selected
-    mock_main_window.navigation_coordinator._last_selected_id = "1"
-    mock_main_window.navigation_coordinator._last_selected_type = "event"
+    mock_main_window.navigation_coordinator.selected_id = "1"
+    mock_main_window.navigation_coordinator.selected_type = "event"
 
     # Action: Select "1" again
     mock_main_window.navigation_coordinator.set_global_selection("event", "1")
@@ -50,8 +50,8 @@ def test_event_reselection_skipped(mock_main_window):
 def test_entity_reselection_skipped(mock_main_window):
     """Test that selecting the same entity again skips reload."""
     # Setup state: Entity "2" is already selected
-    mock_main_window.navigation_coordinator._last_selected_id = "2"
-    mock_main_window.navigation_coordinator._last_selected_type = "entity"
+    mock_main_window.navigation_coordinator.selected_id = "2"
+    mock_main_window.navigation_coordinator.selected_type = "entity"
 
     # Action: Select "2" again
     mock_main_window.navigation_coordinator.set_global_selection("entity", "2")
@@ -64,8 +64,8 @@ def test_entity_reselection_skipped(mock_main_window):
 def test_different_item_reloads(mock_main_window):
     """Test that selecting a different item strictly reloads."""
     # Setup state: Event "1" is selected
-    mock_main_window.navigation_coordinator._last_selected_id = "1"
-    mock_main_window.navigation_coordinator._last_selected_type = "event"
+    mock_main_window.navigation_coordinator.selected_id = "1"
+    mock_main_window.navigation_coordinator.selected_type = "event"
 
     # Action: Select Event "2"
     mock_main_window.navigation_coordinator.set_global_selection("event", "2")
@@ -80,8 +80,8 @@ def test_different_item_reloads(mock_main_window):
 def test_switch_type_reloads(mock_main_window):
     """Test that switching type (even if ID coincidentally same) reloads."""
     # Setup state: Event "1" is selected
-    mock_main_window.navigation_coordinator._last_selected_id = "1"
-    mock_main_window.navigation_coordinator._last_selected_type = "event"
+    mock_main_window.navigation_coordinator.selected_id = "1"
+    mock_main_window.navigation_coordinator.selected_type = "event"
 
     # Action: Select Entity "1"
     mock_main_window.navigation_coordinator.set_global_selection("entity", "1")

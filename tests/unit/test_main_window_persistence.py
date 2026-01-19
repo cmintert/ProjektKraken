@@ -110,8 +110,8 @@ def test_on_item_selected_saves_settings(main_window):
     assert settings.value(SETTINGS_LAST_ITEM_TYPE_KEY) == test_type
 
     # Verify attributes updated
-    assert main_window.navigation_coordinator._last_selected_id == test_id
-    assert main_window.navigation_coordinator._last_selected_type == test_type
+    assert main_window.navigation_coordinator.selected_id == test_id
+    assert main_window.navigation_coordinator.selected_type == test_type
 
 
 def test_restore_last_selection_event(main_window):

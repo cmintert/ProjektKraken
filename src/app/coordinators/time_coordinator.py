@@ -89,7 +89,7 @@ class TimeCoordinator(BaseCoordinator):
         return f"{time_val:.2f}"
 
     @Slot(float)
-    def _on_playhead_changed(self, time: float) -> None:
+    def on_playhead_changed(self, time: float) -> None:
         """Refreshes entity inspector based on playhead time."""
         # Store current playhead time
         self._current_playhead_time = time
@@ -108,7 +108,7 @@ class TimeCoordinator(BaseCoordinator):
             )
 
     @Slot(str, dict)
-    def _on_entity_state_resolved(self, entity_id: str, attributes: dict) -> None:
+    def on_entity_state_resolved(self, entity_id: str, attributes: dict) -> None:
         """Updates entity editor with resolved state."""
         # Pass playhead time for timeline highlighting
         self.main_window.entity_editor.display_temporal_state(

@@ -99,9 +99,9 @@ def mock_main_window(qapp):
     window.time_coordinator = Mock()
     window.time_coordinator.on_current_time_changed = Mock()
     window.time_coordinator.update_playhead_time_label = Mock()
-    window.time_coordinator._on_playhead_changed = Mock()
+    window.time_coordinator.on_playhead_changed = Mock()
     window.time_coordinator.on_return_to_present = Mock()
-    window.time_coordinator._on_entity_state_resolved = Mock()
+    window.time_coordinator.on_entity_state_resolved = Mock()
 
     window._on_event_date_changed = Mock()
     window._on_tag_color_change_requested = Mock()

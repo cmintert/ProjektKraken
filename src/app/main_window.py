@@ -987,7 +987,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """
         if self.graph_widget:
             # Pass the last selected ID to preserve focus
-            focus_id = self.navigation_coordinator._last_selected_id
+            focus_id = self.navigation_coordinator.selected_id
             self.graph_widget.display_graph(nodes, edges, focus_node_id=focus_id)
 
     @Slot(list, list)
@@ -1143,21 +1143,21 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             f"[MainWindow] _on_reload_active_editor_relations: "
             f"event_id={self.event_editor._current_event_id}, "
             f"entity_id={self.entity_editor._current_entity_id}, "
-            f"active_type={self.navigation_coordinator._last_selected_type}"
+            f"active_type={self.navigation_coordinator.selected_type}"
         )
 
         # Only reload the currently selected type to prevent focus jumping
         # If we reload both, the DataHandler triggers 'raise_dock' for each,
         # causing the last one loaded (usually Entity) to steal focus.
         if (
-            self.navigation_coordinator._last_selected_type == "event"
+            self.navigation_coordinator.selected_type == "event"
             and self.event_editor._current_event_id
         ):
             logger.debug("[MainWindow] Reloading active event details")
             self.load_event_details(self.event_editor._current_event_id)
 
         elif (
-            self.navigation_coordinator._last_selected_type == "entity"
+            self.navigation_coordinator.selected_type == "entity"
             and self.entity_editor._current_entity_id
         ):
             logger.debug("[MainWindow] Reloading active entity details")

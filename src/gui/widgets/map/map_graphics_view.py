@@ -902,19 +902,22 @@ class MapGraphicsView(QGraphicsView):
         menu = QMenu(self)
 
         # Change Icon action
-        change_icon_action = QAction("Change Icon...", self)
+        change_icon_action = QAction(self)
+        change_icon_action.setText("Change Icon...")
         change_icon_action.triggered.connect(lambda: self._show_icon_picker(item))
         menu.addAction(change_icon_action)
 
         # Change Color action
-        change_color_action = QAction("Change Color...", self)
+        change_color_action = QAction(self)
+        change_color_action.setText("Change Color...")
         change_color_action.triggered.connect(lambda: self._show_color_picker(item))
         menu.addAction(change_color_action)
 
         menu.addSeparator()
 
         # Delete action
-        delete_action = QAction("Delete Marker", self)
+        delete_action = QAction(self)
+        delete_action.setText("Delete Marker")
         delete_action.triggered.connect(
             lambda: self.delete_marker_requested.emit(item.marker_id)
         )
@@ -928,7 +931,8 @@ class MapGraphicsView(QGraphicsView):
         # Unpack tuple to avoid closure issues with lambda
         norm_x, norm_y = self.coord_system.to_normalized(scene_pos)
         menu = QMenu(self)
-        add_action = QAction("Add Marker Here", self)
+        add_action = QAction(self)
+        add_action.setText("Add Marker Here")
         add_action.triggered.connect(
             lambda: self.add_marker_requested.emit(norm_x, norm_y)
         )
@@ -975,7 +979,9 @@ class MapGraphicsView(QGraphicsView):
                 try:
                     date_str = self._calendar_converter.format_date(kf.t)
                 except Exception as e:
-                    logger.warning(f"Calendar formatting failed for keyframe at {kf.t}: {e}")
+                    logger.warning(
+                        f"Calendar formatting failed for keyframe at {kf.t}: {e}"
+                    )
                     date_str = f"{kf.t:.0f}"
             else:
                 date_str = f"{kf.t:.0f}"
@@ -1201,7 +1207,9 @@ class MapGraphicsView(QGraphicsView):
                         try:
                             text = self._calendar_converter.format_date(new_time)
                         except Exception as e:
-                            logger.warning(f"Calendar formatting failed for time {new_time}: {e}")
+                            logger.warning(
+                                f"Calendar formatting failed for time {new_time}: {e}"
+                            )
                             text = f"{new_time:.0f}"
                     else:
                         text = f"{new_time:.0f}"

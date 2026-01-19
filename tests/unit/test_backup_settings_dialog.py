@@ -17,6 +17,8 @@ from src.gui.dialogs.backup_settings_dialog import (
     BackupSettingsDialog,
 )
 
+from src.app.constants import WINDOW_SETTINGS_APP
+
 
 @pytest.fixture(scope="session")
 def qapp():
@@ -30,7 +32,16 @@ def qapp():
 
 
 @pytest.fixture
-def dialog(qapp):
+def clean_settings():
+    """Clean QSettings before and after test."""
+    settings = QSettings(WINDOW_SETTINGS_APP)
+    settings.clear()
+    yield settings
+    settings.clear()
+
+
+@pytest.fixture
+def dialog(qapp, clean_settings):
     """Create a BackupSettingsDialog instance."""
     # Don't mock QSettings - let it use defaults
     dlg = BackupSettingsDialog()

@@ -90,6 +90,7 @@ def test_navigate_to_entity_not_found(qtbot, monkeypatch):
         # Mock the _prompt_create_missing_target method to prevent blocking dialog
         # Mock the _prompt_create_missing_target method on coordinator
         mock_prompt = MagicMock()
+        # Accessing internal method for mocking purposes
         window.navigation_coordinator._prompt_create_missing_target = mock_prompt
 
         window.navigation_coordinator.navigate_to_entity("Unknown")
