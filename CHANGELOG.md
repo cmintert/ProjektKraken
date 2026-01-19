@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-01-18  
-**Commit:** `0.8.1`  
+**Last Updated:** 2026-01-19
+**Commit:** `0.8.2`
 ---
 
 # Changelog
@@ -10,6 +10,11 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [0.8.2]
+
+### Refactor
+- *(2026-01-19)* **Coordinators**: Refactored `NavigationCoordinator` and `TimeCoordinator` to use public API surface (properties/methods) for better encapsulation and testability.
 
 ## [0.8.1]
 
