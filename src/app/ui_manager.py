@@ -429,21 +429,29 @@ class UIManager:
 
         # Create Backup
         backup_action = backup_menu.addAction("Create Backup...")
-        backup_action.triggered.connect(self.main_window.create_manual_backup)
+        backup_action.triggered.connect(
+            self.main_window.backup_coordinator.create_manual_backup
+        )
 
         # Restore from Backup
         restore_action = backup_menu.addAction("Restore from Backup...")
-        restore_action.triggered.connect(self.main_window.restore_from_backup)
+        restore_action.triggered.connect(
+            self.main_window.backup_coordinator.restore_from_backup
+        )
 
         backup_menu.addSeparator()
 
         # Show Backup Location
         location_action = backup_menu.addAction("Show Backup Location")
-        location_action.triggered.connect(self.main_window.show_backup_location)
+        location_action.triggered.connect(
+            self.main_window.backup_coordinator.show_backup_location
+        )
 
         # Backup Settings
         settings_action = backup_menu.addAction("Backup Settings...")
-        settings_action.triggered.connect(self.main_window.show_backup_settings)
+        settings_action.triggered.connect(
+            self.main_window.backup_coordinator.show_backup_settings
+        )
 
         file_menu.addSeparator()
 

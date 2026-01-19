@@ -34,7 +34,7 @@ def test_navigate_to_entity_success(qtbot):
         window.load_entity_details = MagicMock()
 
         # Execute
-        window.navigate_to_entity("Gandalf")
+        window.navigation_coordinator.navigate_to_entity("Gandalf")
 
         # Verify
         window.load_entity_details.assert_called_once_with("ent-1")
@@ -61,7 +61,7 @@ def test_navigate_to_entity_case_insensitive(qtbot):
         window._cached_entities = [Entity(id="ent-1", name="Gandalf", type="Character")]
         window.load_entity_details = MagicMock()
 
-        window.navigate_to_entity("gAnDaLf")
+        window.navigation_coordinator.navigate_to_entity("gAnDaLf")
 
         window.load_entity_details.assert_called_once_with("ent-1")
         window.close()
@@ -88,10 +88,11 @@ def test_navigate_to_entity_not_found(qtbot, monkeypatch):
         window.load_entity_details = MagicMock()
 
         # Mock the _prompt_create_missing_target method to prevent blocking dialog
+        # Mock the _prompt_create_missing_target method on coordinator
         mock_prompt = MagicMock()
-        window._prompt_create_missing_target = mock_prompt
+        window.navigation_coordinator._prompt_create_missing_target = mock_prompt
 
-        window.navigate_to_entity("Unknown")
+        window.navigation_coordinator.navigate_to_entity("Unknown")
 
         window.load_entity_details.assert_not_called()
         mock_prompt.assert_called_once_with("Unknown")

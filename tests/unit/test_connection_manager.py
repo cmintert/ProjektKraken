@@ -38,6 +38,7 @@ def mock_main_window(qapp):
     # Add minimal required attributes
     window.data_handler = Mock()
     window.unified_list = Mock()
+    window.navigation_coordinator = Mock()  # Add NavigationCoordinator mock
     window.event_editor = MockWidget()
     window.entity_editor = MockWidget()
     window.timeline = Mock()
@@ -57,7 +58,7 @@ def mock_main_window(qapp):
     window.navigate_to_entity = Mock()
     window.remove_relation = Mock()
     window.update_relation = Mock()
-    window.on_return_to_present = Mock()
+    # window.on_return_to_present = Mock() # Moved to time coordinator
     window.load_event_details = Mock()
     window.load_entity_details = Mock()
     window._on_events_ready = Mock()
@@ -75,7 +76,7 @@ def mock_main_window(qapp):
     window.load_maps = Mock()
     window.load_longform_sequence = Mock()
     window._on_reload_active_editor_relations = Mock()
-    window._on_entity_state_resolved = Mock()
+    # window._on_entity_state_resolved = Mock() # Moved to time coordinator
     window.status_bar = Mock()
     window.create_event = Mock()
     window.create_entity = Mock()
@@ -85,9 +86,14 @@ def mock_main_window(qapp):
     window.clear_filter = Mock()
 
     # Timeline methods
-    window.on_current_time_changed = Mock()
-    window.update_playhead_time_label = Mock()
-    window._on_playhead_changed = Mock()
+    window.time_coordinator = Mock()
+    window.time_coordinator.on_current_time_changed = Mock()
+    window.time_coordinator.update_playhead_time_label = Mock()
+    window.time_coordinator._on_playhead_changed = Mock()
+    window.time_coordinator._on_entity_state_resolved = Mock()
+    window.time_coordinator.on_return_to_present = Mock()
+
+    # Other Timeline signals
     window._on_event_date_changed = Mock()
     window._on_tag_color_change_requested = Mock()
     window._on_remove_from_grouping_requested = Mock()

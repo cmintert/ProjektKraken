@@ -291,6 +291,8 @@ class WorkerManager(QObject):
                 self.window.unified_list.set_filter_active(has_filter)
 
             # Restore last selected item (delayed to ensure data loaded)
-            QTimer.singleShot(200, self.window._restore_last_selection)
+            QTimer.singleShot(
+                200, self.window.navigation_coordinator.restore_last_selection
+            )
         else:
             self.window.status_bar.showMessage(STATUS_DB_INIT_FAIL)

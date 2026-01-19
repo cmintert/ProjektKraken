@@ -52,12 +52,14 @@ from src.app.constants import (
     SETTINGS_ACTIVE_DB_KEY,
     SETTINGS_AUTO_RELATION_KEY,
     SETTINGS_FILTER_CONFIG_KEY,
-    SETTINGS_LAST_ITEM_ID_KEY,
-    SETTINGS_LAST_ITEM_TYPE_KEY,
     WINDOW_SETTINGS_APP,
     WINDOW_SETTINGS_KEY,
     WINDOW_TITLE,
 )
+from src.app.coordinators.backup_coordinator import BackupCoordinator
+from src.app.coordinators.fast_inject_coordinator import FastInjectCoordinator
+from src.app.coordinators.navigation_coordinator import NavigationCoordinator
+from src.app.coordinators.time_coordinator import TimeCoordinator
 from src.app.data_handler import DataHandler
 from src.app.longform_manager import LongformManager
 from src.app.map_handler import MapHandler
@@ -74,7 +76,6 @@ from src.commands.event_commands import (
     DeleteEventCommand,
     UpdateEventCommand,
 )
-from src.commands.inject_commands import InjectTemplateCommand
 from src.commands.relation_commands import (
     AddRelationCommand,
     RemoveRelationCommand,
@@ -185,8 +186,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.calendar_converter = None
         self._pending_select_id = None
         self._pending_select_type = None
-        self._last_selected_id = None
-        self._last_selected_type = None
         self._graph_reload_timer: QTimer | None = None
 
     def _init_widgets_skeleton(self) -> None:
@@ -219,6 +218,12 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         active_world = settings.value(SETTINGS_ACTIVE_DB_KEY, "Default World")
         world_path = get_worlds_dir() / active_world
         self.fast_inject_manager = FastInjectManager(world_path)
+
+        # Initialize Coordinators (Phase 1)
+        self.fast_inject_coordinator = FastInjectCoordinator(self)
+        self.navigation_coordinator = NavigationCoordinator(self)
+        self.backup_coordinator = BackupCoordinator(self)
+        self.time_coordinator = TimeCoordinator(self)
 
         # Status Bar
         self.status_bar = QStatusBar()
@@ -298,22 +303,27 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             lambda dirty: self._on_editor_dirty_changed(self.entity_editor, dirty)
         )
 
-        # Connect Fast Inject Signals
+        # Connect Fast Inject Signals (Delegated to Coordinator)
         self.entity_editor.inject_ui_requested.connect(
-            self._on_fast_inject_ui_requested
+            self.fast_inject_coordinator.request_fast_inject_for_entity
         )
         self.entity_editor.create_template_requested.connect(
-            self._on_create_template_requested
+            self.fast_inject_coordinator.request_create_template
         )
         self.event_editor.inject_ui_requested.connect(
-            self._on_fast_inject_ui_requested_event
+            self.fast_inject_coordinator.request_fast_inject_for_event
         )
         self.event_editor.create_template_requested.connect(
-            self._on_create_template_requested
+            self.fast_inject_coordinator.request_create_template
         )
 
-        # Connect graph widget node clicked (was connected in old init)
-        self.graph_widget.node_clicked.connect(self._on_item_selected)
+        # Connect Coordinator Signals
+        self.fast_inject_coordinator.command_requested.connect(
+            lambda cmd: self.command_requested.emit(cmd)
+        )
+        self.fast_inject_coordinator.status_message_requested.connect(
+            lambda msg, timeout: self.status_bar.showMessage(msg, timeout)
+        )
 
         # Initialize Database
         QMetaObject.invokeMethod(
@@ -322,6 +332,9 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         # Restore Window State
         self._restore_window_state()
+
+        # Restore Selection (delegated)
+        self.navigation_coordinator.restore_last_selection()
 
         logger.debug("Initialization complete")
 
@@ -573,81 +586,9 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """Handler for when longform sequence is loaded."""
         self.longform_manager.on_longform_sequence_loaded(sequence)
 
-    def set_global_selection(self, item_type: str, item_id: str) -> None:
-        """Centralized method to handle global item selection.
+    # Removed: set_global_selection logic moved to NavigationCoordinator
 
-        Synchronizes all UI components:
-        - Editors
-        - Unified List (Project Explorer)
-        - Graph Focus
-        - Timeline Selection
-        - Last Selected State
-
-        Args:
-            item_type (str): 'event' or 'entity' (or 'events'/'entities').
-            item_id (str): The ID of the item to select.
-        """
-        # 1. Normalize type
-        if item_type == "events":
-            item_type = "event"
-        elif item_type == "entities":
-            item_type = "entity"
-
-        # 2. Avoid redundant updates if already selected
-        if item_id == self._last_selected_id and item_type == self._last_selected_type:
-            return
-
-        # 3. Check for unsaved changes before switching context
-        # Determine target editor to check
-        target_editor = (
-            self.event_editor if item_type == "event" else self.entity_editor
-        )
-        if not self.check_unsaved_changes(target_editor):
-            return
-
-        # 4. Perform Selection & UI Updates
-        logger.debug(f"[MainWindow] Global selection: {item_type}/{item_id}")
-
-        self._last_selected_id = item_id
-        self._last_selected_type = item_type
-
-        # Update Settings
-        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-        settings.setValue(SETTINGS_LAST_ITEM_ID_KEY, item_id)
-        settings.setValue(SETTINGS_LAST_ITEM_TYPE_KEY, item_type)
-
-        if item_type == "event":
-            self.ui_manager.docks["event"].raise_()
-            self.load_event_details(item_id)
-            # Sync Timeline (if method exists)
-            # if hasattr(self.timeline, "select_event"):
-            #     self.timeline.select_event(item_id)
-
-        elif item_type == "entity":
-            self.ui_manager.docks["entity"].raise_()
-            self.load_entity_details(item_id)
-
-        # 5. Sync Project Explorer (Unified List)
-        # This ensures the list highlights the item even if selected via Graph/Link
-        self.unified_list.select_item(item_type, item_id)
-
-        # 6. Sync Graph (Focus Node)
-        # Prevent infinite loop if this call came from graph click?
-        # GraphWidget.focus_node usually checks if already focused.
-        # But we need to be careful. For now, we trust the graph to handle
-        # re-focus efficiently.
-        # self.graph_widget.focus_node(item_id)
-        # TO BE IMPLEMENTED in GraphWidget if needed
-
-    def _on_item_selected(self, item_type: str, item_id: str) -> None:
-        """Handles selection from unified list or longform editor."""
-        self.set_global_selection(item_type, item_id)
-
-        # Save selection for persistence
-        if self._last_selected_id and self._last_selected_type:
-            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-            settings.setValue(SETTINGS_LAST_ITEM_ID_KEY, self._last_selected_id)
-            settings.setValue(SETTINGS_LAST_ITEM_TYPE_KEY, self._last_selected_type)
+    # Removed: _on_item_selected logic moved to NavigationCoordinator
 
     def check_unsaved_changes(self, editor: QWidget) -> bool:
         """Checks if the editor has unsaved changes and prompts the user.
@@ -803,344 +744,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         except Exception as e:
             logger.warning(f"Failed to initialize calendar converter: {e}")
 
-    @Slot(str)
-    def _on_fast_inject_ui_requested(self, entity_id: str) -> None:
-        """Opens the Fast Inject Dialog for an entity.
-
-        Args:
-            entity_id: The ID of the target entity.
-        """
-        # 1. Get Target
-        # For now, we only support Entity injection via this signal
-        # We need to fetch the entity data.
-        # Since we are in the main window, we can probably get it from cache or editor?
-        # The editor already has it loaded, but Command needs the object.
-        # Best to get fresh from DB or use what's in Editor?
-        # Command `InjectTemplateCommand` takes an `Entity` object.
-        # If we modify the one in Editor, we need to be careful about state sync.
-        # Actually, `InjectTemplateCommand` modifies the object passed to it.
-        # If we pass a fresh object from DB, we need to reload Editor after.
-        # If we pass the Editor's object... the Editor might have unsaved changes.
-        # Ideally:
-        # 1. Check unsaved changes (Editor should have handled this? or we do it here).
-        #    If we inject over unsaved changes, we might lose them or mix them.
-        #    "Fast Inject" usually implies "Add these things to what I have".
-        #    So getting the *current state from Editor* is best?
-        #    But `InjectTemplateCommand` expects a domain object (Entity class).
-        # Editor has access to `_current_entity_id` but maybe not the full object
-        # state as class?
-        # The editor works with dicts mostly for saving, but `load_entity` took
-        # an object.
-        #
-        # Let's fetch the latest from DB for safety, OR build one from Editor state?
-        # Fetching from DB is safer.
-        # But if user made changes in Editor and didn't save, they will be lost
-        # if we reload after inject.
-        # So we should Prompt Save first?
-        #
-        # Let's try:
-        # 1. Check unsaved changes. If yes, ask to save.
-        if not self.check_unsaved_changes(self.entity_editor):
-            return
-
-        # 2. Fetch Entity
-        # We need to use a synchronous call or wait for worker?
-        # Our architecture is worker-based.
-        # This is tricky for a dialog flow.
-        # We can use `data_handler.get_entity(id)` if it's thread-safe or available?
-        # `data_handler` seems to emit signals.
-        #
-        # Alternative: We can construct a temporary Entity object from
-        # Editor's current data?
-        # But `InjectTemplateCommand` executes on the DB service in a worker.
-        #
-        # Simplify: Just fetch from DB via worker?
-        # But we need the object NOW to pass to Dialog (for preview context?
-        # No, dialog just needs name).
-        # Converting this to a simpler flow:
-        # Load templates. Show Dialog.
-        # If Apply -> Create Command with (ID, template).
-        # The Command.execute() will fetch the entity?
-        # No, Command takes `target: Union[Entity, Event]`.
-        #
-        # Let's adjust `InjectTemplateCommand` or how we invoke it.
-        # If `InjectTemplateCommand` is running in `CommandCoordinator` ->
-        # `Worker`,
-        # it receives `db_service`.
-        # Maybe we should pass `target_id` and `target_type` to the command,
-        # and let IT fetch?
-        # But `BaseCommand` usually operates on data passed to it?
-        # checking `src/commands/entity_commands.py`:
-        # `UpdateEntityCommand` takes `entity_data: dict` or object?
-        # It takes `entity: Entity`.
-        #
-        # Okay, I will make `InjectTemplateCommand` accept `target_id` and
-        # `target_type` (str)
-        # OR I accept that I need to fetch it here.
-        # Since I'm in the UI thread, I shouldn't block on DB.
-        #
-        # Workaround:
-        # The `EntityEditor` has the data! It has `_current_entity_id`.
-        # I can reconstruct an Entity object from the Editor's fields?
-        # That's what `_on_save` does (creates dict).
-        # I can make `Entity.from_dict(editor.get_data())`.
-        # That ensures we inject into what the user SEES.
-        #
-        # Let's add a public `get_entity_data()` to `EntityEditor`?
-        # `_on_save` builds it. I can expose that logic.
-        #
-        # Wait, `EntityEditor` has `load_entity`. It doesn't keep the object sync'd.
-        #
-        # Let's assume for this iteration that we fetch from DB (ignoring unsaved
-        # changes in UI since we checked them).
-        # Use `self.data_handler.get_entity_sync(entity_id)`?
-        # Doesn't exist.
-        #
-        # Let's rely on `self._cached_entities`?
-        # `MainWindow` caches entities? `self._cached_entities`.
-        # Let's look at `_cached_entities`.
-        # It seems populated.
-
-        target_entity = next(
-            (e for e in self._cached_entities if e.id == entity_id), None
-        )
-        if not target_entity:
-            self.show_error_message(f"Entity {entity_id} not found in cache.")
-            return
-
-        from src.gui.dialogs.fast_inject_dialog import FastInjectDialog
-
-        # Load templates
-        templates = self.fast_inject_manager.load_templates()
-
-        dlg = FastInjectDialog(
-            templates,
-            target_name=target_entity.name,
-            parent=self,
-            manager=self.fast_inject_manager,
-        )
-        result = dlg.exec()
-
-        # Handle import request (result code 2)
-        if result == 2:
-            import_paths = getattr(dlg, "_import_paths", [])
-            if import_paths:
-                imported_count = 0
-                for path in import_paths:
-                    try:
-                        self.fast_inject_manager.import_template(path)
-                        imported_count += 1
-                    except Exception as e:
-                        logger.error(f"Failed to import template {path}: {e}")
-
-                if imported_count > 0:
-                    self.status_bar.showMessage(
-                        f"Imported {imported_count} template(s). Reopening dialog..."
-                    )
-                    # Reopen dialog with updated templates
-                    self._on_fast_inject_ui_requested(entity_id)
-            return
-
-        if not result:
-            return
-
-        if not dlg.selected_template:
-            return
-
-        # Create Command
-        # We must pass a COPY or be careful? Command modifies it.
-        # actually we should pass a copy because the command runs in a worker
-        # and might race with UI if we pass the cached object directly?
-        # Safe to copy.
-        import copy
-
-        target_clone = copy.deepcopy(target_entity)
-
-        cmd = InjectTemplateCommand(
-            target=target_clone,
-            template=dlg.selected_template,
-            manager=self.fast_inject_manager,
-            overwrite=dlg.should_overwrite,
-            variables=dlg.variable_values,
-        )
-
-        # Execute
-        # We connect a success callback to reload the editor
-        # The `command_coordinator` doesn't easily support ad-hoc callbacks
-        # per command instance
-        # unless we wrap it or listen to general signals.
-        # But `MainWindow` listens to `data_changed` signals?
-        # If `InjectTemplateCommand` calls `insert_entity`, `DataHandler`
-        # should pick it up?
-        # Yes, `db_service.insert_entity` usually triggers a notification.
-        # WorkerManager -> _on_entity_updated -> DataHandler ->
-        # entity_updated signal.
-        # MainWindow listens to data_handler.entity_updated.
-        # I didn't see explicit `entity_updated` connection in
-        # `_complete_initialization`.
-        # `DataHandler` isn't fully shown in the 800 lines.
-
-        # Assuming standard architecture handles refresh:
-        self.command_requested.emit(cmd)
-
-    @Slot(str)
-    def _on_fast_inject_ui_requested_event(self, event_id: str) -> None:
-        """Opens the Fast Inject Dialog for an event.
-
-        Duplicated logic for now, but target fetching differs.
-        """
-        if not self.check_unsaved_changes(self.event_editor):
-            return
-
-        # Fetch Event from cache
-        target_event = next((e for e in self._cached_events if e.id == event_id), None)
-        if not target_event:
-            self.show_error_message(f"Event {event_id} not found in cache.")
-            return
-
-        # from src.commands.inject_commands import InjectTemplateCommand
-        # (Global import used)
-
-        from src.gui.dialogs.fast_inject_dialog import FastInjectDialog
-
-        # Load templates
-        templates = self.fast_inject_manager.load_templates()
-
-        dlg = FastInjectDialog(templates, target_name=target_event.name, parent=self)
-        result = dlg.exec()
-
-        # Handle import request (result code 2)
-        if result == 2:
-            import_paths = getattr(dlg, "_import_paths", [])
-            if import_paths:
-                imported_count = 0
-                for path in import_paths:
-                    try:
-                        self.fast_inject_manager.import_template(path)
-                        imported_count += 1
-                    except Exception as e:
-                        logger.error(f"Failed to import template {path}: {e}")
-
-                if imported_count > 0:
-                    self.status_bar.showMessage(
-                        f"Imported {imported_count} template(s). Reopening dialog..."
-                    )
-                    # Reopen dialog with updated templates
-                    self._on_fast_inject_ui_requested_event(event_id)
-            return
-
-        if not result:
-            return
-
-        if not dlg.selected_template:
-            return
-
-        import copy
-
-        target_clone = copy.deepcopy(target_event)
-
-        cmd = InjectTemplateCommand(
-            target=target_clone,
-            template=dlg.selected_template,
-            manager=self.fast_inject_manager,
-            overwrite=dlg.should_overwrite,
-            variables=dlg.variable_values,
-        )
-
-        self.command_requested.emit(cmd)
-
-    @Slot(dict)
-    def _on_create_template_requested(self, data: dict) -> None:
-        """Creates and saves a new template.
-
-        Args:
-        Args:
-            data: Dict containing 'name', 'description', 'selected_tags',
-                  'selected_attributes', 'include_type'
-        """
-        try:
-            # Construct template manually or use manager helper?
-            # Manager helper `create_template_from_target` needs a target object.
-            # We have the data dict from the dialog.
-            # We can construct the template directly.
-
-            from src.core.fast_inject import FastInjectTemplate
-
-            # Convert attributes list to dict (wait, the dialog gave us keys,
-            # not values?)
-            # The Dialog `result_data` has 'selected_attributes' which is a
-            # list of keys?
-            # Let's check `create_template_dialog.py`.
-            # Yes: `attrs.append(key)`.
-            # So we need the VALUES.
-            # The Dialog doesn't return values.
-            # The Dialog logic assumed we are copying from "source".
-            # But the Dialog output doesn't include the values.
-            # So we need to grab the current values from the Editor (again).
-
-            # The Editor `create_template_requested` signal emits `dlg.result_data`.
-            # It does NOT emit the current editor state.
-            # This is a gap.
-            # The DIALOG should probably have returned the constructed Template
-            # or full data,
-            # OR the Editor should have merged it.
-
-            # Let's look at `EntityEditor._open_create_template_dialog`.
-            # It collects `current_attrs` and passes to Dialog.
-            # It emits `dlg.result_data`.
-            #
-            # We should update `EntityEditor` to include the values in the signal?
-            # OR `MainWindow` fetches them from `target_entity` (cached)?
-            # BUT the user might have modified them in the Editor and "Save as Template"
-            # WITHOUT saving to DB first.
-            # "Save Selection as Template" implies "what I see".
-            #
-            # I should update `CreateTemplateDialog` to include the values in
-            # `result_data`.
-            # OR `EntityEditor` should do the lookup.
-            #
-            # Let's update `CreateTemplateDialog.py` to store the VALUES in
-            # `result_data`?
-            # It has `self.source_attributes`. it can look them up.
-            pass
-
-            # Fixing logic inline here would be messy.
-            # Better to fix `CreateTemplateDialog` or `EntityEditor`.
-            # `EntityEditor` has the data.
-            # Let's fix CreateTemplateDialog to return the full dict of
-            # selected attributes (key: value).
-            #
-            # For now, I'll implement the SKELETON of this method
-            # assuming `data['selected_attributes']` is a DICT of key->value.
-            # Then I will go change the Dialog to make that true.
-
-            # Assuming data['selected_attributes'] is Dict[str, Any]
-            # And data['selected_tags'] is List[str]
-            # And data['include_type'] is bool -> wait, we need the type value.
-            # Dialog result needs to be robust.
-
-            tags = data.get("selected_tags", [])
-            # IF I change dialog to return actual values:
-            attributes = data.get("selected_attributes", {})
-            type_val = data.get("type_value")  # Need to ensure this is passed
-
-            template = FastInjectTemplate(
-                name=data["name"],
-                description=data.get("description", ""),
-                tags=tags,
-                attributes=attributes,
-                type_value=type_val,
-                target_type="any",  # or infer from context?
-            )
-
-            self.fast_inject_manager.save_template(template)
-            self.update_status_message(f"Template '{template.name}' saved.")
-            QTimer.singleShot(2000, lambda: self.clear_status_message("Ready"))
-
-        except Exception as e:
-            self.show_error_message(f"Failed to create template: {e}")
-            logger.error(f"Template creation failed: {e}")
-
     def _request_current_time(self) -> None:
         """Requests loading of the current time from the worker."""
         QMetaObject.invokeMethod(
@@ -1156,50 +759,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """
         self.timeline.set_current_time(time)
         logger.debug(f"Current time loaded: {time}")
-
-    @Slot(float)
-    def on_current_time_changed(self, time: float) -> None:
-        """Handler for when current time is changed in the timeline. Saves the new value
-        to the database.
-
-        Args:
-            time (float): The new current time in lore_date units.
-        """
-        QMetaObject.invokeMethod(
-            self.worker,
-            "save_current_time",
-            Qt.ConnectionType.QueuedConnection,
-            Q_ARG(float, time),
-        )
-        logger.debug(f"Current time changed to: {time}")
-
-        # Update entity editor's timeline display with NOW marker
-        self.entity_editor.timeline_display.set_current_time(time)
-        self.update_world_time_label(time)
-
-    @Slot()
-    def on_return_to_present(self) -> None:
-        """Exits "Viewing Past/Future State" mode.
-
-        Hides the playhead and reloads the current entity in editable mode.
-        """
-        # Set playhead to "Current Time" (Visual indicator that we are at "Now")
-        current_time = self.timeline.get_current_time()
-        self.timeline.set_playhead_time(current_time)
-
-        # Reload entity in normal editable mode
-        if self.entity_editor.isVisible() and self.entity_editor._current_entity_id:
-            self.load_entity_details(self.entity_editor._current_entity_id)
-
-    def update_world_time_label(self, time_val: float) -> None:
-        """Updates the blue world time label."""
-        text = self._format_time_string(time_val)
-        self.lbl_world_time.setText(f"World: {text}")
-
-    def update_playhead_time_label(self, time_val: float) -> None:
-        """Updates the red playhead time label."""
-        text = self._format_time_string(time_val)
-        self.lbl_playhead_time.setText(f"Playhead: {text}")
 
     @Slot()
     def toggle_auto_relation_setting(self) -> None:
@@ -1238,31 +797,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             logger.debug("Auto-refreshing longform editor")
             self.longform_manager.load_longform_sequence()
 
-    def _restore_last_selection(self) -> None:
-        """Restores the last selected item from settings."""
-        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-        last_id = settings.value(SETTINGS_LAST_ITEM_ID_KEY)
-        last_type = settings.value(SETTINGS_LAST_ITEM_TYPE_KEY)
-
-        if last_id and last_type:
-            logger.info(f"Restoring last selection: {last_type} {last_id}")
-            # Load details (this opens the editor)
-            if last_type == "event":
-                self.load_event_details(last_id)
-                self.ui_manager.docks["event"].raise_()
-            elif last_type == "entity":
-                self.load_entity_details(last_id)
-                self.ui_manager.docks["entity"].raise_()
-
-            # Try to select in list
-            # (might fail if list populate is slow, but editor is key)
-            self.unified_list.select_item(last_type, last_id)
-
-    def _format_time_string(self, time_val: float) -> str:
-        """Formats time using calendar converter if available."""
-        if self.calendar_converter:
-            return self.calendar_converter.format_date(time_val)
-        return f"{time_val:.2f}"
+    # Removed: _restore_last_selection logic moved to NavigationCoordinator
 
     def on_command_finished_reload_longform(self) -> None:
         """Handler to reload longform sequence after command completion."""
@@ -1452,7 +987,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """
         if self.graph_widget:
             # Pass the last selected ID to preserve focus
-            focus_id = self._last_selected_id
+            focus_id = self.navigation_coordinator._last_selected_id
             self.graph_widget.display_graph(nodes, edges, focus_node_id=focus_id)
 
     @Slot(list, list)
@@ -1608,18 +1143,21 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             f"[MainWindow] _on_reload_active_editor_relations: "
             f"event_id={self.event_editor._current_event_id}, "
             f"entity_id={self.entity_editor._current_entity_id}, "
-            f"active_type={self._last_selected_type}"
+            f"active_type={self.navigation_coordinator._last_selected_type}"
         )
 
         # Only reload the currently selected type to prevent focus jumping
         # If we reload both, the DataHandler triggers 'raise_dock' for each,
         # causing the last one loaded (usually Entity) to steal focus.
-        if self._last_selected_type == "event" and self.event_editor._current_event_id:
+        if (
+            self.navigation_coordinator._last_selected_type == "event"
+            and self.event_editor._current_event_id
+        ):
             logger.debug("[MainWindow] Reloading active event details")
             self.load_event_details(self.event_editor._current_event_id)
 
         elif (
-            self._last_selected_type == "entity"
+            self.navigation_coordinator._last_selected_type == "entity"
             and self.entity_editor._current_entity_id
         ):
             logger.debug("[MainWindow] Reloading active entity details")
@@ -2028,103 +1566,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         cmd = UpdateRelationCommand(rel_id, target_id, rel_type, attributes=attributes)
         self.command_requested.emit(cmd)
 
-    def navigate_to_entity(self, target: str) -> None:
-        """Navigates to the entity or event with the given name or ID.
-
-        Handles both ID-based links (UUIDs) and legacy name-based links.
-        Uses cached entities and events for quick lookup.
-
-        Args:
-            target (str): Entity/event name or UUID.
-        """
-        logger.info(f"Navigating to target: {target}")
-
-        # Check if target is a valid UUID format
-        import re
-
-        uuid_pattern = re.compile(
-            r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
-            re.IGNORECASE,
-        )
-        is_uuid = uuid_pattern.match(target) is not None
-
-        if is_uuid:
-            # ID-based navigation - direct lookup
-            entity = next((e for e in self._cached_entities if e.id == target), None)
-            if entity:
-                self.set_global_selection("entity", entity.id)
-                return
-
-            event = next((e for e in self._cached_events if e.id == target), None)
-            if event:
-                self.set_global_selection("event", event.id)
-                return
-
-            # ID not found - broken link
-            QMessageBox.warning(
-                self,
-                "Broken Link",
-                f"The linked item (ID: {target[:8]}...) no longer exists.",
-            )
-        else:
-            # Name-based navigation (legacy) - case-insensitive match
-            entity = next(
-                (e for e in self._cached_entities if e.name.lower() == target.lower()),
-                None,
-            )
-
-            if entity:
-                self.set_global_selection("entity", entity.id)
-                return
-
-            # Also check events for name-based links
-            event = next(
-                (e for e in self._cached_events if e.name.lower() == target.lower()),
-                None,
-            )
-
-            if event:
-                self.set_global_selection("event", event.id)
-                return
-
-            # Name not found - Prompt for Creation
-            self._prompt_create_missing_target(target)
-
-    def _prompt_create_missing_target(self, target_name: str) -> None:
-        """Prompts the user to create a missing entity or event from a broken link.
-
-        Args:
-            target_name (str): The name of the missing item.
-        """
-        msg = QMessageBox(self)
-        msg.setWindowTitle("Target Not Found")
-        msg.setText(f"Item '{target_name}' does not exist.")
-        msg.setInformativeText("Would you like to create it?")
-
-        btn_entity = msg.addButton("Create Entity", QMessageBox.ButtonRole.AcceptRole)
-        btn_event = msg.addButton("Create Event", QMessageBox.ButtonRole.AcceptRole)
-        msg.addButton(QMessageBox.StandardButton.Cancel)
-
-        msg.exec()
-
-        clicked = msg.clickedButton()
-
-        if clicked == btn_entity:
-            # Create Entity
-            if not self.check_unsaved_changes(self.entity_editor):
-                return
-
-            # Use target name as default
-            cmd = CreateEntityCommand({"name": target_name, "type": "Concept"})
-            self.command_requested.emit(cmd)
-
-        elif clicked == btn_event:
-            # Create Event
-            if not self.check_unsaved_changes(self.event_editor):
-                return
-
-            cmd = CreateEventCommand({"name": target_name, "lore_date": 0.0})
-            self.command_requested.emit(cmd)
+    # Removed: navigate_to_entity and _prompt_create_missing_target moved to NavigationCoordinator
 
     def promote_longform_entry(self, table: str, row_id: str, old_meta: dict) -> None:
         """Promotes a longform entry by reducing its depth.
@@ -2229,271 +1671,3 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             # qApp.quit()
             # QProcess.startDetached(sys.executable, sys.argv)
             pass
-
-    @Slot()
-    def create_manual_backup(self) -> None:
-        """Creates a manual backup with optional description."""
-        if self.backup_service is None:
-            QMessageBox.warning(
-                self, "Backup Unavailable", "Backup service is not initialized."
-            )
-            return
-
-        # Ask user for optional description
-        description, ok = QInputDialog.getText(
-            self, "Create Backup", "Backup description (optional):"
-        )
-        if not ok:
-            return  # User cancelled
-
-        from src.services.backup_service import BackupType
-
-        # Create backup
-        self.status_bar.showMessage("Creating backup...")
-        QApplication.processEvents()
-
-        metadata = self.backup_service.create_backup(
-            backup_type=BackupType.MANUAL, description=description
-        )
-
-        if metadata:
-            self.status_bar.showMessage(
-                f"Backup created: {metadata.backup_path.name}", 5000
-            )
-            QMessageBox.information(
-                self,
-                "Backup Created",
-                f"Backup created successfully!\n\n"
-                f"Location: {metadata.backup_path}\n"
-                f"Size: {metadata.size / 1024:.1f} KB",
-            )
-        else:
-            self.status_bar.showMessage("Backup failed", 5000)
-            QMessageBox.critical(
-                self,
-                "Backup Failed",
-                "Failed to create backup. Check logs for details.",
-            )
-
-    @Slot()
-    def restore_from_backup(self) -> None:
-        """Restores database from a backup file."""
-        if self.backup_service is None:
-            QMessageBox.warning(
-                self, "Backup Unavailable", "Backup service is not initialized."
-            )
-            return
-
-        from PySide6.QtWidgets import QFileDialog
-
-        # Get backup file from user
-        backup_file, _ = QFileDialog.getOpenFileName(
-            self,
-            "Select Backup File",
-            str(self.backup_service.config.backup_dir or ""),
-            "Kraken Database (*.kraken)",
-        )
-
-        if not backup_file:
-            return  # User cancelled
-
-        from pathlib import Path
-
-        # Warn user about restoration
-        reply = QMessageBox.question(
-            self,
-            "Restore Backup",
-            "Restoring will replace the current database.\n"
-            "A safety backup will be created first.\n\n"
-            "Do you want to continue?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No,
-        )
-
-        if reply != QMessageBox.StandardButton.Yes:
-            return
-
-        # Restore backup
-        self.status_bar.showMessage("Restoring from backup...")
-        QApplication.processEvents()
-
-        success = self.backup_service.restore_backup(
-            Path(backup_file), Path(self.db_path)
-        )
-
-        if success:
-            self.status_bar.showMessage("Restore completed", 5000)
-            QMessageBox.information(
-                self,
-                "Restore Complete",
-                "Database restored successfully!\n\n"
-                "The application will now close. Please restart to use the "
-                "restored database.",
-            )
-            # Close application so user can restart
-            self.close()
-        else:
-            self.status_bar.showMessage("Restore failed", 5000)
-            QMessageBox.critical(
-                self,
-                "Restore Failed",
-                "Failed to restore backup. Check logs for details.",
-            )
-
-    @Slot()
-    def show_backup_location(self) -> None:
-        """Opens the backup directory in the system file explorer."""
-        if self.backup_service is None:
-            QMessageBox.warning(
-                self, "Backup Unavailable", "Backup service is not initialized."
-            )
-            return
-
-        import os
-        import subprocess
-        import sys
-        from pathlib import Path
-
-        from src.core.paths import get_backup_directory
-
-        # Use configured backup directory if set, otherwise use default
-        if self.backup_service.config.backup_dir:
-            backup_dir = Path(self.backup_service.config.backup_dir)
-        else:
-            backup_dir = get_backup_directory()
-
-        backup_dir_str = str(backup_dir)
-        logger.debug(f"show_backup_location: backup_dir = {backup_dir_str}")
-
-        # Ensure directory exists - use os.makedirs for explicit creation
-        try:
-            os.makedirs(backup_dir_str, exist_ok=True)
-            logger.debug("show_backup_location: os.makedirs completed")
-        except OSError as e:
-            logger.error(f"Failed to create backup directory: {e}")
-            QMessageBox.warning(
-                self,
-                "Backup Location Error",
-                f"Could not create backup directory:\n{backup_dir_str}\n\nError: {e}",
-            )
-            return
-
-        # Verify directory actually exists before opening
-        exists = os.path.isdir(backup_dir_str)
-        logger.debug(f"show_backup_location: exists check = {exists}")
-        if not exists:
-            logger.error(f"Backup directory does not exist: {backup_dir_str}")
-            QMessageBox.warning(
-                self,
-                "Backup Location Error",
-                f"Backup directory could not be created:\n{backup_dir_str}",
-            )
-            return
-
-        logger.info(f"Opening backup location: {backup_dir_str}")
-
-        # Open directory in file explorer
-        try:
-            if sys.platform == "win32":
-                # Use os.startfile on Windows - more reliable than subprocess
-                os.startfile(backup_dir_str)
-            elif sys.platform == "darwin":
-                subprocess.run(["open", backup_dir_str], check=False)
-            else:  # Linux
-                subprocess.run(["xdg-open", backup_dir_str], check=False)
-        except Exception as e:
-            logger.error(f"Failed to open backup directory: {e}")
-            QMessageBox.information(
-                self, "Backup Location", f"Backup directory:\n{backup_dir_str}"
-            )
-
-    @Slot()
-    def show_backup_settings(self) -> None:
-        """Opens the backup settings dialog and applies changes to BackupService."""
-        from pathlib import Path
-
-        from PySide6.QtCore import QSettings
-
-        from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
-        from src.core.backup_config import BackupConfig
-        from src.gui.dialogs.backup_settings_dialog import (
-            BACKUP_AUTO_SAVE_INTERVAL_KEY,
-            BACKUP_AUTO_SAVE_RETENTION_KEY,
-            BACKUP_CUSTOM_DIR_KEY,
-            BACKUP_DAILY_RETENTION_KEY,
-            BACKUP_ENABLED_KEY,
-            BACKUP_EXTERNAL_PATH_KEY,
-            BACKUP_MANUAL_RETENTION_KEY,
-            BACKUP_VACUUM_BEFORE_KEY,
-            BACKUP_VERIFY_AFTER_KEY,
-            BACKUP_WEEKLY_RETENTION_KEY,
-            BackupSettingsDialog,
-        )
-
-        dialog = BackupSettingsDialog(self)
-
-        def apply_settings() -> None:
-            """Apply dialog settings to BackupService."""
-            if self.backup_service is None:
-                return
-
-            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-
-            # Build config from QSettings
-            custom_dir = settings.value(BACKUP_CUSTOM_DIR_KEY, "")
-            external_path = settings.value(BACKUP_EXTERNAL_PATH_KEY, "")
-
-            config = BackupConfig(
-                enabled=settings.value(BACKUP_ENABLED_KEY, True, type=bool),
-                auto_save_interval_minutes=int(
-                    settings.value(BACKUP_AUTO_SAVE_INTERVAL_KEY, 5)
-                ),
-                auto_save_retention_count=int(
-                    settings.value(BACKUP_AUTO_SAVE_RETENTION_KEY, 12)
-                ),
-                daily_retention_count=int(
-                    settings.value(BACKUP_DAILY_RETENTION_KEY, 7)
-                ),
-                weekly_retention_count=int(
-                    settings.value(BACKUP_WEEKLY_RETENTION_KEY, 4)
-                ),
-                manual_retention_count=int(
-                    settings.value(BACKUP_MANUAL_RETENTION_KEY, -1)
-                ),
-                verify_after_backup=settings.value(
-                    BACKUP_VERIFY_AFTER_KEY, True, type=bool
-                ),
-                vacuum_before_backup=settings.value(
-                    BACKUP_VACUUM_BEFORE_KEY, False, type=bool
-                ),
-                backup_dir=Path(custom_dir) if custom_dir else None,
-                external_backup_path=Path(external_path) if external_path else None,
-            )
-
-            self.backup_service.update_config(config)
-            logger.info("Backup settings applied to service")
-
-        dialog.settings_changed.connect(apply_settings)
-        dialog.exec()
-
-    @Slot(float)
-    def _on_playhead_changed(self, time: float) -> None:
-        """Refreshes entity inspector based on playhead time."""
-        # Store current playhead time for use in _on_entity_state_resolved
-        self._current_playhead_time = time
-
-        if self.entity_editor.isVisible() and self.entity_editor._current_entity_id:
-            QMetaObject.invokeMethod(
-                self.worker,
-                "resolve_entity_state",
-                Qt.ConnectionType.QueuedConnection,
-                Q_ARG(str, self.entity_editor._current_entity_id),
-                Q_ARG(float, time),
-            )
-
-    @Slot(str, dict)
-    def _on_entity_state_resolved(self, entity_id: str, attributes: dict) -> None:
-        """Updates entity editor with resolved state."""
-        # Pass playhead time for timeline highlighting
-        playhead_time = getattr(self, "_current_playhead_time", None)
-        self.entity_editor.display_temporal_state(entity_id, attributes, playhead_time)

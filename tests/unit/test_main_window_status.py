@@ -19,7 +19,7 @@ def main_window(qtbot):
     ):
         mock_worker = MockWorker.return_value
         mock_db = mock_worker.db_service
-        # Default return for get_all_events to avoid iteration errors if used during init
+        # Default return for get_all_events to avoid iteration errors
         mock_db.get_all_events.return_value = []
 
         window = MainWindow()
@@ -43,12 +43,12 @@ def test_status_bar_updates(main_window):
     """Test that status bar labels update correctly."""
 
     # World Time
-    main_window.update_world_time_label(123.45)
+    main_window.time_coordinator.update_world_time_label(123.45)
     assert "123.45" in main_window.lbl_world_time.text()
     assert "World:" in main_window.lbl_world_time.text()
 
     # Playhead Time
-    main_window.update_playhead_time_label(678.90)
+    main_window.time_coordinator.update_playhead_time_label(678.90)
     assert "678.90" in main_window.lbl_playhead_time.text()
     assert "Playhead:" in main_window.lbl_playhead_time.text()
 
@@ -60,7 +60,7 @@ def test_status_bar_formatting_with_converter(main_window):
 
     main_window.calendar_converter = mock_converter
 
-    main_window.update_world_time_label(100.0)
+    main_window.time_coordinator.update_world_time_label(100.0)
     assert "Year 10" in main_window.lbl_world_time.text()
 
     mock_converter.format_date.assert_called_with(100.0)

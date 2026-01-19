@@ -197,7 +197,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             dh,
             "entity_state_resolved",
-            self.window._on_entity_state_resolved,
+            self.window.time_coordinator._on_entity_state_resolved,
             "DataHandler",
         ):
             failed_count += 1
@@ -329,7 +329,10 @@ class ConnectionManager:
             failed_count += 1
 
         if not self._connect_signal_safe(
-            ul, "item_selected", self.window._on_item_selected, "UnifiedList"
+            ul,
+            "item_selected",
+            self.window.navigation_coordinator._on_item_selected,
+            "UnifiedList",
         ):
             failed_count += 1
 
@@ -389,14 +392,17 @@ class ConnectionManager:
                 failed_count += 1
 
             if not self._connect_signal_safe(
-                editor, "link_clicked", self.window.navigate_to_entity, editor_name
+                editor,
+                "link_clicked",
+                self.window.navigation_coordinator.navigate_to_entity,
+                editor_name,
             ):
                 failed_count += 1
 
             if not self._connect_signal_safe(
                 editor,
                 "navigate_to_relation",
-                self.window.navigate_to_entity,
+                self.window.navigation_coordinator.navigate_to_entity,
                 editor_name,
             ):
                 failed_count += 1
@@ -421,7 +427,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             self.window.entity_editor,
             "return_to_present_requested",
-            self.window.on_return_to_present,
+            self.window.time_coordinator.on_return_to_present,
             "EntityEditor",
         ):
             failed_count += 1
@@ -475,7 +481,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             timeline,
             "current_time_changed",
-            self.window.on_current_time_changed,
+            self.window.time_coordinator.on_current_time_changed,
             "Timeline",
         ):
             failed_count += 1
@@ -483,7 +489,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             timeline,
             "playhead_time_changed",
-            self.window.update_playhead_time_label,
+            self.window.time_coordinator.update_playhead_time_label,
             "Timeline",
         ):
             failed_count += 1
@@ -491,7 +497,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             timeline,
             "playhead_time_changed",
-            self.window._on_playhead_changed,
+            self.window.time_coordinator._on_playhead_changed,
             "Timeline",
         ):
             failed_count += 1
@@ -578,7 +584,10 @@ class ConnectionManager:
             failed_count += 1
 
         if not self._connect_signal_safe(
-            longform, "item_selected", self.window._on_item_selected, "LongformEditor"
+            longform,
+            "item_selected",
+            self.window.navigation_coordinator._on_item_selected,
+            "LongformEditor",
         ):
             failed_count += 1
 
@@ -593,7 +602,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             longform,
             "link_clicked",
-            self.window.navigate_to_entity,
+            self.window.navigation_coordinator.navigate_to_entity,
             "LongformEditor",
         ):
             failed_count += 1
@@ -809,7 +818,10 @@ class ConnectionManager:
             failed_count += 1
 
         if not self._connect_signal_safe(
-            graph, "node_clicked", self.window._on_item_selected, "GraphWidget"
+            graph,
+            "node_clicked",
+            self.window.navigation_coordinator._on_item_selected,
+            "GraphWidget",
         ):
             failed_count += 1
 

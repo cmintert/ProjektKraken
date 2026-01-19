@@ -19,19 +19,28 @@ def mock_main_window():
         window.load_event_details = MagicMock()
         window.load_entity_details = MagicMock()
         window.check_unsaved_changes = MagicMock(return_value=True)
-        window._last_selected_id = None
-        window._last_selected_type = None
+
+        # Initialize NavigationCoordinator manually since __init__ is mocked
+        from src.app.coordinators.navigation_coordinator import NavigationCoordinator
+
+        # Pass None as parent to avoid RuntimeError with uninitialized QMainWindow
+        window.navigation_coordinator = NavigationCoordinator(None)
+        # Manually set main_window since we passed None to super().__init__
+        window.navigation_coordinator.main_window = window
+        # Prevent persistence in tests
+        window.navigation_coordinator._restore_last_selection = MagicMock()
+
         return window
 
 
 def test_event_reselection_skipped(mock_main_window):
     """Test that selecting the same event again skips reload."""
     # Setup state: Event "1" is already selected
-    mock_main_window._last_selected_id = "1"
-    mock_main_window._last_selected_type = "event"
+    mock_main_window.navigation_coordinator._last_selected_id = "1"
+    mock_main_window.navigation_coordinator._last_selected_type = "event"
 
     # Action: Select "1" again
-    mock_main_window._on_item_selected("event", "1")
+    mock_main_window.navigation_coordinator.set_global_selection("event", "1")
 
     # Assert: logic skipped
     mock_main_window.check_unsaved_changes.assert_not_called()
@@ -41,11 +50,11 @@ def test_event_reselection_skipped(mock_main_window):
 def test_entity_reselection_skipped(mock_main_window):
     """Test that selecting the same entity again skips reload."""
     # Setup state: Entity "2" is already selected
-    mock_main_window._last_selected_id = "2"
-    mock_main_window._last_selected_type = "entity"
+    mock_main_window.navigation_coordinator._last_selected_id = "2"
+    mock_main_window.navigation_coordinator._last_selected_type = "entity"
 
     # Action: Select "2" again
-    mock_main_window._on_item_selected("entity", "2")
+    mock_main_window.navigation_coordinator.set_global_selection("entity", "2")
 
     # Assert: logic skipped
     mock_main_window.check_unsaved_changes.assert_not_called()
@@ -55,11 +64,11 @@ def test_entity_reselection_skipped(mock_main_window):
 def test_different_item_reloads(mock_main_window):
     """Test that selecting a different item strictly reloads."""
     # Setup state: Event "1" is selected
-    mock_main_window._last_selected_id = "1"
-    mock_main_window._last_selected_type = "event"
+    mock_main_window.navigation_coordinator._last_selected_id = "1"
+    mock_main_window.navigation_coordinator._last_selected_type = "event"
 
     # Action: Select Event "2"
-    mock_main_window._on_item_selected("event", "2")
+    mock_main_window.navigation_coordinator.set_global_selection("event", "2")
 
     # Assert: Reload happens
     mock_main_window.check_unsaved_changes.assert_called_once_with(
@@ -71,11 +80,11 @@ def test_different_item_reloads(mock_main_window):
 def test_switch_type_reloads(mock_main_window):
     """Test that switching type (even if ID coincidentally same) reloads."""
     # Setup state: Event "1" is selected
-    mock_main_window._last_selected_id = "1"
-    mock_main_window._last_selected_type = "event"
+    mock_main_window.navigation_coordinator._last_selected_id = "1"
+    mock_main_window.navigation_coordinator._last_selected_type = "event"
 
     # Action: Select Entity "1"
-    mock_main_window._on_item_selected("entity", "1")
+    mock_main_window.navigation_coordinator.set_global_selection("entity", "1")
 
     # Assert: Reload happens
     mock_main_window.check_unsaved_changes.assert_called_once_with(

@@ -41,7 +41,7 @@ def test_command_execute_entity(manager, mock_db_service):
     assert "Buffed" in entity.tags
 
     # Verify DB call
-    mock_db_service.update_entity.assert_called_once_with(entity)
+    mock_db_service.insert_entity.assert_called_once_with(entity)
 
 
 def test_command_undo_entity(manager, mock_db_service):
@@ -69,7 +69,7 @@ def test_command_undo_entity(manager, mock_db_service):
     assert "Base" in entity.tags  # Preserved
 
     # Verify DB update called again for undo
-    assert mock_db_service.update_entity.call_count == 2
+    assert mock_db_service.insert_entity.call_count == 2
 
 
 def test_command_no_overwrite(manager, mock_db_service):
@@ -96,4 +96,4 @@ def test_command_undo_type(manager, mock_db_service):
     cmd.undo(mock_db_service)
 
     assert entity.type == "OriginalType"
-    assert mock_db_service.update_entity.call_count == 2
+    assert mock_db_service.insert_entity.call_count == 2

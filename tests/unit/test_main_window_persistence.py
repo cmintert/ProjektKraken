@@ -20,7 +20,13 @@ from src.app.main import MainWindow
 @pytest.fixture
 def mock_settings():
     """Mock QSettings to prevent real persistence usage."""
-    with patch("src.app.main_window.QSettings") as MockSettings:
+    with (
+        patch("src.app.main_window.QSettings") as MockSettings,
+        patch(
+            "src.app.coordinators.navigation_coordinator.QSettings",
+            new_callable=MagicMock,
+        ) as MockNavSettings,
+    ):
         storage = {}
 
         def mock_init(*args):
@@ -42,6 +48,7 @@ def mock_settings():
             return mock
 
         MockSettings.side_effect = mock_init
+        MockNavSettings.side_effect = mock_init
 
         # Also patch QtCore.QSettings for the test functions themselves
         with patch("PySide6.QtCore.QSettings", new=MockSettings):
@@ -96,15 +103,15 @@ def test_on_item_selected_saves_settings(main_window):
     settings.remove(SETTINGS_LAST_ITEM_TYPE_KEY)
 
     # Trigger selection
-    main_window._on_item_selected(test_type, test_id)
+    main_window.navigation_coordinator.set_global_selection(test_type, test_id)
 
     # Verify settings updated
     assert settings.value(SETTINGS_LAST_ITEM_ID_KEY) == test_id
     assert settings.value(SETTINGS_LAST_ITEM_TYPE_KEY) == test_type
 
     # Verify attributes updated
-    assert main_window._last_selected_id == test_id
-    assert main_window._last_selected_type == test_type
+    assert main_window.navigation_coordinator._last_selected_id == test_id
+    assert main_window.navigation_coordinator._last_selected_type == test_type
 
 
 def test_restore_last_selection_event(main_window):
@@ -118,7 +125,7 @@ def test_restore_last_selection_event(main_window):
     settings.setValue(SETTINGS_LAST_ITEM_TYPE_KEY, test_type)
 
     # Trigger restore
-    main_window._restore_last_selection()
+    main_window.navigation_coordinator.restore_last_selection()
 
     # Verify actions
     main_window.load_event_details.assert_called_with(test_id)
@@ -138,7 +145,7 @@ def test_restore_last_selection_entity(main_window):
     settings.setValue(SETTINGS_LAST_ITEM_TYPE_KEY, test_type)
 
     # Trigger restore
-    main_window._restore_last_selection()
+    main_window.navigation_coordinator.restore_last_selection()
 
     # Verify actions
     main_window.load_entity_details.assert_called_with(test_id)
@@ -155,7 +162,7 @@ def test_restore_last_selection_none(main_window):
     settings.remove(SETTINGS_LAST_ITEM_TYPE_KEY)
 
     # Trigger restore
-    main_window._restore_last_selection()
+    main_window.navigation_coordinator.restore_last_selection()
 
     # Verify no actions
     main_window.load_event_details.assert_not_called()
