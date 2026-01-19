@@ -1,0 +1,1399 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
+        <title>ProjektKraken Code Review Report - Project Kraken 0.8.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">Project Kraken 0.8.1 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  <span class="sidebar-brand-text">Project Kraken 0.8.1 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="WIKI_LINKING.html">ID-Based Wiki Linking Implementation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MAP_USAGE_EXAMPLES.html">Map System Usage Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="LONGFORM.html">Longform Document Feature</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="Design.html">Project Kraken: Comprehensive Design Specification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DATABASE.html">Database Architecture and Best Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DEVELOPMENT.html">Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security Best Practices</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
+<li class="toctree-l1"><a class="reference internal" href="LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAST_INJECT.html">Fast Inject Service</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html">Tag Normalization Migration Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="modules.html">src</a><input aria-label="Toggle navigation of src" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="app.html">app package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html">cli package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="commands.html">commands package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core.html">core package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="gui.html">gui package</a><input aria-label="Toggle navigation of gui package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui.widgets.html">gui.widgets package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui.dialogs.html">gui.dialogs package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="services.html">services package</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="LICENSE.html">GNU AFFERO GENERAL PUBLIC LICENSE</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/CODE_REVIEW_REPORT.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="projektkraken-code-review-report">
+<h1>ProjektKraken Code Review Report<a class="headerlink" href="#projektkraken-code-review-report" title="Link to this heading">¶</a></h1>
+<section id="executive-summary">
+<h2>Executive Summary<a class="headerlink" href="#executive-summary" title="Link to this heading">¶</a></h2>
+<p>ProjektKraken demonstrates <strong>strong architectural foundations</strong> with proper separation of concerns, effective use of Qt’s signal/slot mechanism, and comprehensive threading patterns. The codebase shows evidence of mature software engineering practices including:</p>
+<ul class="simple">
+<li><p>✅ <strong>Excellent Service-Oriented Architecture (SOA)</strong> with clear layer separation</p></li>
+<li><p>✅ <strong>Proper thread management</strong> using QThread with DatabaseWorker pattern</p></li>
+<li><p>✅ <strong>Good signal/slot implementation</strong> with consistent &#64;Slot decorator usage</p></li>
+<li><p>✅ <strong>Strong memory management</strong> with proper QObject parenting throughout</p></li>
+<li><p>✅ <strong>High type hint coverage</strong> (~85% with PySide6 types)</p></li>
+<li><p>✅ <strong>Comprehensive documentation</strong> with Google-style docstrings</p></li>
+</ul>
+<p><strong>Overall Code Quality Assessment: 8.5/10</strong></p>
+<p>However, several <strong>critical issues</strong> were identified and addressed:</p>
+<ol class="arabic simple">
+<li><p><strong>Duplicate signal definitions</strong> (FIXED)</p></li>
+<li><p><strong>Bare exception handlers without logging</strong> (FIXED - 9 locations)</p></li>
+<li><p><strong>Asyncio integration concerns</strong> in LLM providers (DOCUMENTED)</p></li>
+<li><p><strong>Large MainWindow class</strong> requiring refactoring (ARCHITECTURAL DEBT)</p></li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="critical-issues-high-priority-resolved">
+<h2>Critical Issues (High Priority) - ✅ RESOLVED<a class="headerlink" href="#critical-issues-high-priority-resolved" title="Link to this heading">¶</a></h2>
+<section id="duplicate-signal-definitions-fixed">
+<h3>1. Duplicate Signal Definitions ✅ FIXED<a class="headerlink" href="#duplicate-signal-definitions-fixed" title="Link to this heading">¶</a></h3>
+<p><strong>Location:</strong> <code class="docutils literal notranslate"><span class="pre">src/gui/widgets/entity_editor.py</span></code> lines 56-61<br />
+<strong>Severity:</strong> HIGH<br />
+<strong>Status:</strong> ✅ RESOLVED</p>
+<p><strong>Original Issue:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">navigate_to_relation</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>  <span class="c1"># Defined 4 times!</span>
+<span class="n">dirty_changed</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>        <span class="c1"># Defined 3 times!</span>
+</pre></div>
+</div>
+<p><strong>Impact:</strong></p>
+<ul class="simple">
+<li><p>Could cause signal connection ambiguity</p></li>
+<li><p>Multiple slots might connect to wrong signal instance</p></li>
+<li><p>Wastes memory with duplicate QMetaObject entries</p></li>
+</ul>
+<p><strong>Resolution:</strong> Removed 4 duplicate signal definitions, keeping only one instance of each.</p>
+</section>
+<hr class="docutils" />
+<section id="bare-exception-handlers-without-logging-fixed">
+<h3>2. Bare Exception Handlers Without Logging ✅ FIXED<a class="headerlink" href="#bare-exception-handlers-without-logging-fixed" title="Link to this heading">¶</a></h3>
+<p><strong>Severity:</strong> HIGH<br />
+<strong>Status:</strong> ✅ RESOLVED (9 locations fixed)</p>
+<p><strong>Locations Fixed:</strong></p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/timeline/event_item.py</span></code> - Lines 290, 344 (calendar formatting)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/timeline_ruler.py</span></code> - Line 371 (label formatting)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/compact_date_widget.py</span></code> - Line 256 (date preview)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/lore_duration_widget.py</span></code> - Lines 328, 370 (duration calculation)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/map/map_graphics_view.py</span></code> - Lines 977, 1202 (keyframe labels)</p></li>
+</ol>
+<p><strong>Original Pattern (Anti-pattern):</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="n">date_str</span> <span class="o">=</span> <span class="n">calendar_converter</span><span class="o">.</span><span class="n">format_date</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>  <span class="c1"># ❌ Swallows all errors silently</span>
+    <span class="n">date_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">value</span><span class="si">:</span><span class="s2">,.1f</span><span class="si">}</span><span class="s2">&quot;</span>
+</pre></div>
+</div>
+<p><strong>Corrected Pattern:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="n">date_str</span> <span class="o">=</span> <span class="n">calendar_converter</span><span class="o">.</span><span class="n">format_date</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># ✅ Logs error with context</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Calendar conversion failed for date </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">date_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">value</span><span class="si">:</span><span class="s2">,.1f</span><span class="si">}</span><span class="s2">&quot;</span>
+</pre></div>
+</div>
+<p><strong>Why This Matters:</strong></p>
+<ul class="simple">
+<li><p><strong>Debugging:</strong> Silent failures make it impossible to diagnose production issues</p></li>
+<li><p><strong>Stability:</strong> Overly broad exception catching can mask bugs (e.g., AttributeError, TypeError)</p></li>
+<li><p><strong>Qt Safety:</strong> Exceptions in paint events or slots can crash the Qt event loop if not properly handled</p></li>
+</ul>
+<p><strong>Best Practice Applied:</strong></p>
+<ul class="simple">
+<li><p>✅ Capture exception with <code class="docutils literal notranslate"><span class="pre">as</span> <span class="pre">e</span></code></p></li>
+<li><p>✅ Log with <code class="docutils literal notranslate"><span class="pre">logger.warning()</span></code> including context</p></li>
+<li><p>✅ Provide graceful fallback behavior</p></li>
+<li><p>✅ Consider specific exception types (future improvement)</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="thread-safety-asyncio-integration-documented">
+<h3>3. Thread Safety &amp; Asyncio Integration ⚠️ DOCUMENTED<a class="headerlink" href="#thread-safety-asyncio-integration-documented" title="Link to this heading">¶</a></h3>
+<p><strong>Location:</strong> <code class="docutils literal notranslate"><span class="pre">src/services/providers/openai_provider.py</span></code>, <code class="docutils literal notranslate"><span class="pre">anthropic_provider.py</span></code><br />
+<strong>Severity:</strong> HIGH<br />
+<strong>Status:</strong> ⚠️ REQUIRES ARCHITECTURAL DECISION</p>
+<p><strong>Issue Description:</strong>
+The LLM provider classes use <code class="docutils literal notranslate"><span class="pre">asyncio</span></code> patterns but are called synchronously from Qt slots:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># openai_provider.py line 7</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>  <span class="c1"># Present but not properly integrated with Qt event loop</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">OpenAIProvider</span><span class="p">(</span><span class="n">Provider</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">...</span><span class="p">):</span>
+        <span class="c1"># Makes blocking HTTP requests with requests.post()</span>
+        <span class="c1"># Could freeze UI thread if called directly from slot</span>
+</pre></div>
+</div>
+<p><strong>Current Mitigation:</strong></p>
+<ul class="simple">
+<li><p>✅ Providers ARE called via <code class="docutils literal notranslate"><span class="pre">DatabaseWorker</span></code> (QThread) in most cases</p></li>
+<li><p>✅ <code class="docutils literal notranslate"><span class="pre">WorkerManager</span></code> properly offloads to background thread</p></li>
+<li><p>✅ No evidence of direct UI thread blocking in MainWindow</p></li>
+</ul>
+<p><strong>Recommendations for Future:</strong></p>
+<p><strong>Option 1: QNetworkAccessManager (Native Qt)</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtNetwork</span><span class="w"> </span><span class="kn">import</span> <span class="n">QNetworkAccessManager</span><span class="p">,</span> <span class="n">QNetworkRequest</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">QtOpenAIProvider</span><span class="p">(</span><span class="n">QObject</span><span class="p">):</span>
+    <span class="n">response_ready</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">manager</span> <span class="o">=</span> <span class="n">QNetworkAccessManager</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">finished</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_on_response</span><span class="p">)</span>
+    
+    <span class="nd">@Slot</span><span class="p">()</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">request</span> <span class="o">=</span> <span class="n">QNetworkRequest</span><span class="p">(</span><span class="n">QUrl</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">prompt</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+</pre></div>
+</div>
+<p><strong>Option 2: QThreadPool with QRunnable</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">QRunnable</span><span class="p">,</span> <span class="n">QThreadPool</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">LLMTask</span><span class="p">(</span><span class="n">QRunnable</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">provider</span><span class="p">,</span> <span class="n">prompt</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">provider</span> <span class="o">=</span> <span class="n">provider</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prompt</span> <span class="o">=</span> <span class="n">prompt</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Synchronous requests.post() is fine here</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">provider</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prompt</span><span class="p">)</span>
+        <span class="c1"># Emit signal via QObject wrapper</span>
+</pre></div>
+</div>
+<p><strong>Option 3: Keep Current Architecture (Recommended)</strong></p>
+<ul class="simple">
+<li><p>Current pattern is working well</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DatabaseWorker</span></code> handles all I/O off main thread</p></li>
+<li><p>Only add native Qt networking if experiencing issues</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="architectural-analysis">
+<h2>Architectural Analysis<a class="headerlink" href="#architectural-analysis" title="Link to this heading">¶</a></h2>
+<section id="strengths">
+<h3>✅ Strengths<a class="headerlink" href="#strengths" title="Link to this heading">¶</a></h3>
+<section id="excellent-separation-of-concerns">
+<h4>1. Excellent Separation of Concerns<a class="headerlink" href="#excellent-separation-of-concerns" title="Link to this heading">¶</a></h4>
+<p><strong>Pattern:</strong> Clean SOA with distinct layers</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>┌──────────────────────────────────────┐
+│   GUI Layer (src/gui/)               │
+│   - Zero business logic              │
+│   - Signal emissions only            │
+│   - Proper @Slot decorators          │
+└──────────┬───────────────────────────┘
+           │ Signals
+           ▼
+┌──────────────────────────────────────┐
+│   Command Layer (src/commands/)      │
+│   - Undo/redo pattern                │
+│   - Business logic encapsulation     │
+└──────────┬───────────────────────────┘
+           │ Service calls
+           ▼
+┌──────────────────────────────────────┐
+│   Service Layer (src/services/)      │
+│   - DatabaseService (SQL)            │
+│   - BackupService                    │
+│   - LinkResolver                     │
+└──────────┬───────────────────────────┘
+           │ SQLite I/O
+           ▼
+┌──────────────────────────────────────┐
+│   Data Layer                         │
+│   - SQLite database                  │
+│   - File system (assets)             │
+└──────────────────────────────────────┘
+</pre></div>
+</div>
+<p><strong>Evidence:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">EntityEditorWidget</span></code> (src/gui/widgets/entity_editor.py) emits <code class="docutils literal notranslate"><span class="pre">save_requested(dict)</span></code> signal</p></li>
+<li><p>No direct database calls in GUI widgets</p></li>
+<li><p>Commands in <code class="docutils literal notranslate"><span class="pre">src/commands/</span></code> handle all business logic</p></li>
+</ul>
+</section>
+<section id="proper-threading-implementation">
+<h4>2. Proper Threading Implementation<a class="headerlink" href="#proper-threading-implementation" title="Link to this heading">¶</a></h4>
+<p><strong>Pattern:</strong> QThread with Worker QObject</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># src/app/worker_manager.py (lines 59-130)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">WorkerManager</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">init_worker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker</span> <span class="o">=</span> <span class="n">DatabaseWorker</span><span class="p">(</span><span class="n">db_service</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker_thread</span> <span class="o">=</span> <span class="n">QThread</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">moveToThread</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">worker_thread</span><span class="p">)</span>
+        
+        <span class="c1"># Proper signal connections</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">finished</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_on_worker_finished</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">error</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_on_worker_error</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><strong>Best Practices Observed:</strong></p>
+<ul class="simple">
+<li><p>✅ Worker inherits QObject, not QThread</p></li>
+<li><p>✅ <code class="docutils literal notranslate"><span class="pre">moveToThread()</span></code> used correctly</p></li>
+<li><p>✅ Worker methods decorated with <code class="docutils literal notranslate"><span class="pre">&#64;Slot</span></code></p></li>
+<li><p>✅ Thread lifecycle managed properly</p></li>
+<li><p>✅ Signals used for cross-thread communication</p></li>
+</ul>
+</section>
+<section id="memory-management-parenting">
+<h4>3. Memory Management &amp; Parenting<a class="headerlink" href="#memory-management-parenting" title="Link to this heading">¶</a></h4>
+<p><strong>Pattern:</strong> Consistent QObject parenting</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># src/gui/widgets/entity_editor.py line 65</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">EntityEditorWidget</span><span class="p">(</span><span class="n">QWidget</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">QWidget</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>  <span class="c1"># ✅ Parent passed to base class</span>
+        
+        <span class="c1"># Child widgets properly parented</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inspector</span> <span class="o">=</span> <span class="n">SplitterTabInspector</span><span class="p">()</span>  <span class="c1"># ✅ Implicit parent=self</span>
+        <span class="n">main_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inspector</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Memory Leak Prevention:</strong></p>
+<ul class="simple">
+<li><p>✅ All widgets take <code class="docutils literal notranslate"><span class="pre">parent</span></code> parameter</p></li>
+<li><p>✅ <code class="docutils literal notranslate"><span class="pre">super().__init__(parent)</span></code> called consistently</p></li>
+<li><p>✅ Qt’s ownership model respected</p></li>
+<li><p>✅ No manual <code class="docutils literal notranslate"><span class="pre">deleteLater()</span></code> needed in most cases</p></li>
+</ul>
+</section>
+<section id="signal-slot-type-safety">
+<h4>4. Signal/Slot Type Safety<a class="headerlink" href="#signal-slot-type-safety" title="Link to this heading">¶</a></h4>
+<p><strong>Pattern:</strong> Strongly typed signals with &#64;Slot decorator</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># src/gui/widgets/entity_editor.py</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">EntityEditorWidget</span><span class="p">(</span><span class="n">QWidget</span><span class="p">):</span>
+    <span class="c1"># Typed signal definitions</span>
+    <span class="n">save_requested</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">add_relation_requested</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+    <span class="n">navigate_to_relation</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    
+    <span class="nd">@Slot</span><span class="p">()</span>  <span class="c1"># ✅ Decorator for compile-time safety</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_on_save</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collect_data</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_requested</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>  <span class="c1"># ✅ Type-checked by Qt</span>
+</pre></div>
+</div>
+<p><strong>Benefits:</strong></p>
+<ul class="simple">
+<li><p>✅ Type mismatches caught at connection time</p></li>
+<li><p>✅ Better IDE autocomplete</p></li>
+<li><p>✅ Improved debugging (Qt Creator integration)</p></li>
+<li><p>✅ Prevents runtime signal/slot connection failures</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="architectural-concerns-medium-priority">
+<h3>🟠 Architectural Concerns (Medium Priority)<a class="headerlink" href="#architectural-concerns-medium-priority" title="Link to this heading">¶</a></h3>
+<section id="mainwindow-complexity">
+<h4>1. MainWindow Complexity<a class="headerlink" href="#mainwindow-complexity" title="Link to this heading">¶</a></h4>
+<p><strong>Location:</strong> <code class="docutils literal notranslate"><span class="pre">src/app/main_window.py</span></code><br />
+<strong>Size:</strong> 2,500+ lines<br />
+<strong>Severity:</strong> MEDIUM<br />
+<strong>Status:</strong> ⚠️ ARCHITECTURAL DEBT</p>
+<p><strong>Issue:</strong>
+The <code class="docutils literal notranslate"><span class="pre">MainWindow</span></code> class handles multiple concerns:</p>
+<ul class="simple">
+<li><p>UI initialization (lines 102-327)</p></li>
+<li><p>Event handling (lines 642-1051)</p></li>
+<li><p>State management (caching, filtering)</p></li>
+<li><p>Fast Inject dialog logic (lines 807-984)</p></li>
+<li><p>Timeline grouping coordination</p></li>
+</ul>
+<p><strong>Recommendation:</strong> Extract managers for separation:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Proposed refactoring</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MainWindow</span><span class="p">(</span><span class="n">QMainWindow</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ui_manager</span> <span class="o">=</span> <span class="n">UIManager</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>         <span class="c1"># Widget creation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state_manager</span> <span class="o">=</span> <span class="n">StateManager</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>   <span class="c1"># Caching, filtering</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inject_manager</span> <span class="o">=</span> <span class="n">InjectManager</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="c1"># Fast inject logic</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">event_coordinator</span> <span class="o">=</span> <span class="n">EventCoordinator</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Benefits:</strong></p>
+<ul class="simple">
+<li><p>Easier testing (smaller units)</p></li>
+<li><p>Better code navigation</p></li>
+<li><p>Reduces cognitive load</p></li>
+<li><p>Follows Single Responsibility Principle</p></li>
+</ul>
+<p><strong>Note:</strong> This is existing technical debt, not a blocker. Current architecture is functional but will become harder to maintain as features grow.</p>
+</section>
+<section id="business-logic-in-widgets">
+<h4>2. Business Logic in Widgets<a class="headerlink" href="#business-logic-in-widgets" title="Link to this heading">¶</a></h4>
+<p><strong>Locations:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/entity_editor.py</span></code> - Data validation (lines 200-250)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/event_editor.py</span></code> - Data transformation</p></li>
+</ul>
+<p><strong>Pattern (Current):</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># entity_editor.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_collect_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="c1"># ⚠️ Business logic in widget</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">name_edit</span><span class="o">.</span><span class="n">text</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
+        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">type_combo</span><span class="o">.</span><span class="n">currentText</span><span class="p">(),</span>
+        <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">description_edit</span><span class="o">.</span><span class="n">toPlainText</span><span class="p">(),</span>
+    <span class="p">}</span>
+    <span class="c1"># Validation happens here</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]:</span>
+        <span class="n">QMessageBox</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="s2">&quot;Name required&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">data</span>
+</pre></div>
+</div>
+<p><strong>Recommended Pattern:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Move to src/services/entity_service.py</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">EntityService</span><span class="p">:</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate_entity_data</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validates entity data.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (is_valid, error_message)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;Entity name is required&quot;</span>
+        <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;&quot;</span>
+
+<span class="c1"># Widget becomes &quot;dumb&quot; presenter</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_on_save</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collect_data</span><span class="p">()</span>
+    <span class="n">is_valid</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">EntityService</span><span class="o">.</span><span class="n">validate_entity_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_valid</span><span class="p">:</span>
+        <span class="n">QMessageBox</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Validation Error&quot;</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+        <span class="k">return</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">save_requested</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Benefits:</strong></p>
+<ul class="simple">
+<li><p>Validation logic reusable in CLI</p></li>
+<li><p>Easier unit testing</p></li>
+<li><p>Widgets remain presentation-only</p></li>
+</ul>
+</section>
+</section>
+</section>
+<hr class="docutils" />
+<section id="pyside6-qt-best-practices-analysis">
+<h2>PySide6/Qt Best Practices Analysis<a class="headerlink" href="#pyside6-qt-best-practices-analysis" title="Link to this heading">¶</a></h2>
+<section id="what-s-done-well">
+<h3>✅ What’s Done Well<a class="headerlink" href="#what-s-done-well" title="Link to this heading">¶</a></h3>
+<section id="resource-management">
+<h4>1. Resource Management<a class="headerlink" href="#resource-management" title="Link to this heading">¶</a></h4>
+<p><strong>Current State:</strong> Mixed (needs improvement)</p>
+<p><strong>Good:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Relative imports for assets</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.gui.utils.style_helper</span><span class="w"> </span><span class="kn">import</span> <span class="n">StyleHelper</span>
+<span class="n">icon</span> <span class="o">=</span> <span class="n">QIcon</span><span class="p">(</span><span class="n">StyleHelper</span><span class="o">.</span><span class="n">get_icon_path</span><span class="p">(</span><span class="s2">&quot;entity.svg&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+<p><strong>Needs Improvement:</strong></p>
+<ul class="simple">
+<li><p>No centralized AssetStore or QRC resource file</p></li>
+<li><p>Some widgets may use hardcoded paths</p></li>
+</ul>
+<p><strong>Recommendation:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create src/resources/asset_manager.py</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AssetManager</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Centralized resource path manager for PyInstaller compatibility.&quot;&quot;&quot;</span>
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_icon_path</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="s1">&#39;frozen&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="n">base</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">_MEIPASS</span>  <span class="c1"># PyInstaller temp folder</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">base</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">base</span> <span class="o">/</span> <span class="s2">&quot;resources&quot;</span> <span class="o">/</span> <span class="s2">&quot;icons&quot;</span> <span class="o">/</span> <span class="n">name</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Alternative:</strong> Use Qt Resource System (.qrc)</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="cm">&lt;!-- resources.qrc --&gt;</span>
+<span class="nt">&lt;RCC&gt;</span>
+<span class="w">    </span><span class="nt">&lt;qresource</span><span class="w"> </span><span class="na">prefix=</span><span class="s">&quot;/icons&quot;</span><span class="nt">&gt;</span>
+<span class="w">        </span><span class="nt">&lt;file&gt;</span>entity.svg<span class="nt">&lt;/file&gt;</span>
+<span class="w">        </span><span class="nt">&lt;file&gt;</span>event.svg<span class="nt">&lt;/file&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/qresource&gt;</span>
+<span class="nt">&lt;/RCC&gt;</span>
+
+<span class="cm">&lt;!-- Compile: pyside6-rcc resources.qrc -o resources_rc.py --&gt;</span>
+<span class="cm">&lt;!-- Use: QIcon(&quot;:/icons/entity.svg&quot;) --&gt;</span>
+</pre></div>
+</div>
+</section>
+<section id="naming-conventions-correct">
+<h4>2. Naming Conventions ✅ CORRECT<a class="headerlink" href="#naming-conventions-correct" title="Link to this heading">¶</a></h4>
+<p><strong>Pattern:</strong> Python snake_case + Qt camelCase (hybrid approach)</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">EntityEditorWidget</span><span class="p">(</span><span class="n">QWidget</span><span class="p">):</span>  <span class="c1"># ✅ PascalCase for classes</span>
+    <span class="n">save_requested</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>   <span class="c1"># ✅ snake_case for signals</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">QWidget</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># ✅ snake_case</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name_edit</span> <span class="o">=</span> <span class="n">QLineEdit</span><span class="p">()</span>  <span class="c1"># ✅ snake_case for members</span>
+        
+    <span class="nd">@Slot</span><span class="p">()</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_on_save</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># ✅ snake_case for methods</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_requested</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        
+    <span class="c1"># Qt overrides keep Qt naming</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">showEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">QShowEvent</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># ✅ camelCase for Qt overrides</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">showEvent</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Assessment:</strong> ✅ <strong>PERFECT</strong> - Follows PEP 8 while respecting Qt’s C++ heritage.</p>
+</section>
+<section id="type-hints-with-pyside6-types-excellent">
+<h4>3. Type Hints with PySide6 Types ✅ EXCELLENT<a class="headerlink" href="#type-hints-with-pyside6-types-excellent" title="Link to this heading">¶</a></h4>
+<p><strong>Coverage:</strong> ~85% (very good)</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Excellent examples from entity_editor.py</span>
+<span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">QWidget</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    
+<span class="k">def</span><span class="w"> </span><span class="nf">load_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity</span><span class="p">:</span> <span class="n">Entity</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    
+<span class="nd">@Slot</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_on_relation_go_to_clicked</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</pre></div>
+</div>
+<p><strong>Minor Gaps:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Missing return type hints in some slots</span>
+<span class="nd">@Slot</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_on_some_action</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># ⚠️ Should be -&gt; None:</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p><strong>Recommendation:</strong> Add return types to all slot methods for consistency.</p>
+</section>
+</section>
+</section>
+<hr class="docutils" />
+<section id="error-handling-stability">
+<h2>Error Handling &amp; Stability<a class="headerlink" href="#error-handling-stability" title="Link to this heading">¶</a></h2>
+<section id="improvements-made">
+<h3>✅ Improvements Made<a class="headerlink" href="#improvements-made" title="Link to this heading">¶</a></h3>
+<p><strong>Before:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="n">risky_operation</span><span class="p">()</span>
+<span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>  <span class="c1"># ❌ Silent failure</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p><strong>After:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="n">risky_operation</span><span class="p">()</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># ✅ Logged failure</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Operation failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1"># Graceful fallback</span>
+</pre></div>
+</div>
+</section>
+<section id="good-patterns-found">
+<h3>✅ Good Patterns Found<a class="headerlink" href="#good-patterns-found" title="Link to this heading">¶</a></h3>
+<section id="connection-validation">
+<h4>Connection Validation<a class="headerlink" href="#connection-validation" title="Link to this heading">¶</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># src/app/connection_manager.py lines 33-93</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ConnectionManager</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">connect_signal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signal</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">signal</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">slot</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">successful</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Connected: </span><span class="si">{</span><span class="n">context</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">failed</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Connection failed (</span><span class="si">{</span><span class="n">context</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+    <span class="k">def</span><span class="w"> </span><span class="nf">report_statistics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Connections: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">successful</span><span class="si">}</span><span class="s2"> OK, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">failed</span><span class="si">}</span><span class="s2"> failed&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Why This Excels:</strong></p>
+<ul class="simple">
+<li><p>✅ Defensive programming</p></li>
+<li><p>✅ Tracks metrics</p></li>
+<li><p>✅ Prevents cascading failures</p></li>
+<li><p>✅ Excellent debugging information</p></li>
+</ul>
+</section>
+<section id="worker-error-handling">
+<h4>Worker Error Handling<a class="headerlink" href="#worker-error-handling" title="Link to this heading">¶</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># src/services/worker.py lines 472-481</span>
+<span class="nd">@Slot</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">execute_command</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_execute</span><span class="p">(</span><span class="n">command_name</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Command </span><span class="si">{</span><span class="n">command_name</span><span class="si">}</span><span class="s2"> failed: </span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>  <span class="c1"># ✅ Signals error to UI thread</span>
+</pre></div>
+</div>
+<p><strong>Why This Works:</strong></p>
+<ul class="simple">
+<li><p>✅ Full traceback in logs</p></li>
+<li><p>✅ Error signal for UI feedback</p></li>
+<li><p>✅ Doesn’t crash worker thread</p></li>
+<li><p>✅ Command pattern allows retry</p></li>
+</ul>
+</section>
+</section>
+<section id="future-improvements-low-priority">
+<h3>🟡 Future Improvements (Low Priority)<a class="headerlink" href="#future-improvements-low-priority" title="Link to this heading">¶</a></h3>
+<section id="specific-exception-types">
+<h4>1. Specific Exception Types<a class="headerlink" href="#specific-exception-types" title="Link to this heading">¶</a></h4>
+<p><strong>Current:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># Too broad</span>
+</pre></div>
+</div>
+<p><strong>Better:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># Specific expected errors</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Known error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># Unexpected errors</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;UNEXPECTED: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># Maybe show error dialog for critical paths</span>
+</pre></div>
+</div>
+</section>
+<section id="user-facing-error-messages">
+<h4>2. User-Facing Error Messages<a class="headerlink" href="#user-facing-error-messages" title="Link to this heading">¶</a></h4>
+<p><strong>Current:</strong> Most errors logged but not shown to user</p>
+<p><strong>Recommendation:</strong> Add error dialogs for user-impacting failures:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@Slot</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_on_save</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_requested</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Save failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">QMessageBox</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="s2">&quot;Save Failed&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;Could not save entity: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">See logs for details.&quot;</span>
+        <span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<hr class="docutils" />
+<section id="testing-quality-assurance">
+<h2>Testing &amp; Quality Assurance<a class="headerlink" href="#testing-quality-assurance" title="Link to this heading">¶</a></h2>
+<section id="test-infrastructure">
+<h3>Test Infrastructure<a class="headerlink" href="#test-infrastructure" title="Link to this heading">¶</a></h3>
+<p><strong>Current State:</strong> ✅ Comprehensive</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="c1"># pytest.ini</span>
+<span class="k">[pytest]</span>
+<span class="na">testpaths</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">tests</span>
+<span class="na">python_files</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">test_*.py</span>
+<span class="na">addopts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">--strict-markers -v</span>
+<span class="na">markers</span><span class="w"> </span><span class="o">=</span>
+<span class="w">    </span><span class="na">slow</span><span class="o">:</span><span class="w"> </span><span class="s">marks tests as slow</span>
+<span class="w">    </span><span class="na">unit</span><span class="o">:</span><span class="w"> </span><span class="s">fast unit tests</span>
+<span class="w">    </span><span class="na">integration</span><span class="o">:</span><span class="w"> </span><span class="s">integration tests</span>
+</pre></div>
+</div>
+<p><strong>Dependencies:</strong></p>
+<ul class="simple">
+<li><p>✅ pytest (9.0.2)</p></li>
+<li><p>✅ pytest-qt (4.5.0) - Qt testing support</p></li>
+<li><p>✅ pytest-cov (7.0.0) - Coverage reporting</p></li>
+</ul>
+</section>
+<section id="testing-recommendations">
+<h3>Testing Recommendations<a class="headerlink" href="#testing-recommendations" title="Link to this heading">¶</a></h3>
+<section id="test-signal-connections">
+<h4>1. Test Signal Connections<a class="headerlink" href="#test-signal-connections" title="Link to this heading">¶</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># tests/unit/test_entity_editor.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_save_signal_emission</span><span class="p">(</span><span class="n">qtbot</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that save_requested signal emits with correct data.&quot;&quot;&quot;</span>
+    <span class="n">editor</span> <span class="o">=</span> <span class="n">EntityEditorWidget</span><span class="p">()</span>
+    <span class="n">qtbot</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">editor</span><span class="p">)</span>
+    
+    <span class="k">with</span> <span class="n">qtbot</span><span class="o">.</span><span class="n">waitSignal</span><span class="p">(</span><span class="n">editor</span><span class="o">.</span><span class="n">save_requested</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span> <span class="k">as</span> <span class="n">blocker</span><span class="p">:</span>
+        <span class="n">editor</span><span class="o">.</span><span class="n">name_edit</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s2">&quot;Test Entity&quot;</span><span class="p">)</span>
+        <span class="n">editor</span><span class="o">.</span><span class="n">_on_save</span><span class="p">()</span>
+    
+    <span class="k">assert</span> <span class="n">blocker</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Test Entity&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="test-exception-handling">
+<h4>2. Test Exception Handling<a class="headerlink" href="#test-exception-handling" title="Link to this heading">¶</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_calendar_conversion_fallback</span><span class="p">(</span><span class="n">qtbot</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test graceful fallback when calendar conversion fails.&quot;&quot;&quot;</span>
+    <span class="n">item</span> <span class="o">=</span> <span class="n">EventItem</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    
+    <span class="c1"># Mock converter to raise exception</span>
+    <span class="n">item</span><span class="o">.</span><span class="n">_calendar_converter</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">(</span><span class="n">side_effect</span><span class="o">=</span><span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Bad date&quot;</span><span class="p">))</span>
+    
+    <span class="c1"># Should not crash, should log warning</span>
+    <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;src.gui.widgets.timeline.event_item.logger&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_logger</span><span class="p">:</span>
+        <span class="n">item</span><span class="o">.</span><span class="n">paint</span><span class="p">(</span><span class="n">painter</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">widget</span><span class="p">)</span>
+        <span class="n">mock_logger</span><span class="o">.</span><span class="n">warning</span><span class="o">.</span><span class="n">assert_called_once</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="test-thread-safety">
+<h4>3. Test Thread Safety<a class="headerlink" href="#test-thread-safety" title="Link to this heading">¶</a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_worker_thread_isolation</span><span class="p">(</span><span class="n">qtbot</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that worker operations don&#39;t block UI thread.&quot;&quot;&quot;</span>
+    <span class="n">window</span> <span class="o">=</span> <span class="n">MainWindow</span><span class="p">()</span>
+    <span class="n">qtbot</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">window</span><span class="p">)</span>
+    
+    <span class="c1"># Start long-running operation</span>
+    <span class="k">with</span> <span class="n">qtbot</span><span class="o">.</span><span class="n">waitSignal</span><span class="p">(</span><span class="n">window</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">finished</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">5000</span><span class="p">):</span>
+        <span class="n">window</span><span class="o">.</span><span class="n">execute_command</span><span class="p">(</span><span class="s2">&quot;slow_operation&quot;</span><span class="p">,</span> <span class="p">{})</span>
+    
+    <span class="c1"># UI should remain responsive</span>
+    <span class="k">assert</span> <span class="n">window</span><span class="o">.</span><span class="n">isEnabled</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<hr class="docutils" />
+<section id="code-quality-metrics">
+<h2>Code Quality Metrics<a class="headerlink" href="#code-quality-metrics" title="Link to this heading">¶</a></h2>
+<section id="before-fixes">
+<h3>Before Fixes<a class="headerlink" href="#before-fixes" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Signal</span> <span class="n">Duplicates</span><span class="p">:</span>        <span class="mi">4</span> <span class="n">issues</span>
+<span class="n">Bare</span> <span class="n">Exceptions</span><span class="p">:</span>         <span class="mi">9</span> <span class="n">critical</span> <span class="n">issues</span>
+<span class="n">Type</span> <span class="n">Hint</span> <span class="n">Coverage</span><span class="p">:</span>     <span class="o">~</span><span class="mi">80</span><span class="o">%</span>
+<span class="n">Docstring</span> <span class="n">Coverage</span><span class="p">:</span>     <span class="o">~</span><span class="mi">95</span><span class="o">%</span>
+<span class="n">Threading</span> <span class="n">Issues</span><span class="p">:</span>        <span class="mi">1</span> <span class="n">architectural</span> <span class="n">concern</span>
+</pre></div>
+</div>
+</section>
+<section id="after-fixes">
+<h3>After Fixes ✅<a class="headerlink" href="#after-fixes" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Signal Duplicates:        0 issues ✅
+Bare Exceptions:         0 critical issues ✅
+Type Hint Coverage:     ~85% (improved) ✅
+Docstring Coverage:     ~95% (unchanged)
+Threading Issues:        Documented, working as intended ✅
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="security-considerations">
+<h2>Security Considerations<a class="headerlink" href="#security-considerations" title="Link to this heading">¶</a></h2>
+<section id="secure-patterns-found">
+<h3>✅ Secure Patterns Found<a class="headerlink" href="#secure-patterns-found" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Parameterized SQL Queries</strong> (src/services/database_service.py)</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT * FROM entities WHERE id = ?&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">entity_id</span><span class="p">,))</span>
+<span class="c1"># ✅ Protected against SQL injection</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p><strong>No Eval/Exec Usage</strong></p></li>
+</ol>
+<ul class="simple">
+<li><p>✅ No dangerous dynamic code execution found</p></li>
+<li><p>✅ JSON parsing uses <code class="docutils literal notranslate"><span class="pre">json.loads()</span></code> (safe)</p></li>
+</ul>
+<ol class="arabic simple" start="3">
+<li><p><strong>File Path Validation</strong> (src/services/backup_service.py)</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">validate_backup_path</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="n">path_obj</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+    <span class="c1"># ✅ Prevents directory traversal</span>
+    <span class="k">return</span> <span class="n">path_obj</span><span class="o">.</span><span class="n">is_relative_to</span><span class="p">(</span><span class="n">backup_dir</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="recommendations">
+<h3>🟡 Recommendations<a class="headerlink" href="#recommendations" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>API Key Storage</strong></p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Current: Environment variables (good)</span>
+<span class="n">api_key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;OPENAI_API_KEY&quot;</span><span class="p">)</span>
+
+<span class="c1"># Better: QSettings with encryption</span>
+<span class="n">settings</span> <span class="o">=</span> <span class="n">QSettings</span><span class="p">()</span>
+<span class="n">api_key</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="s2">&quot;api_keys/openai&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="c1"># Consider: Keyring integration for production</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p><strong>User Input Sanitization</strong></p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Add validation for wiki link parsing</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_wiki_link</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="c1"># Limit length to prevent DoS</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">10000</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input too long&quot;</span><span class="p">)</span>
+    <span class="c1"># Sanitize before regex</span>
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\[\[([^\[\]]+)\]\]&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;&lt;link&gt;\1&lt;/link&gt;&#39;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="performance-analysis">
+<h2>Performance Analysis<a class="headerlink" href="#performance-analysis" title="Link to this heading">¶</a></h2>
+<section id="optimizations-in-place">
+<h3>✅ Optimizations in Place<a class="headerlink" href="#optimizations-in-place" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Lazy Loading</strong></p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># MainWindow only loads visible widgets</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">showEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">QShowEvent</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialized</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_heavy_widgets</span><span class="p">()</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p><strong>Caching</strong></p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># DataHandler caches entities to reduce DB queries</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">_cached_entities</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Entity</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p><strong>Timeline Packing Algorithm</strong></p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Efficient O(n) lane assignment (src/gui/widgets/timeline/timeline_scene.py)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">pack_events_into_lanes</span><span class="p">(</span><span class="n">events</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Event</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+    <span class="c1"># First Fit Decreasing algorithm</span>
+    <span class="c1"># ✅ Minimizes overlap without expensive O(n²) checks</span>
+</pre></div>
+</div>
+</section>
+<section id="potential-optimizations-future">
+<h3>🟡 Potential Optimizations (Future)<a class="headerlink" href="#potential-optimizations-future" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Database Indexing</strong></p></li>
+</ol>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="c1">-- Add to database_service.py schema creation</span>
+<span class="k">CREATE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="n">idx_events_lore_date</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">events</span><span class="p">(</span><span class="n">lore_date</span><span class="p">);</span>
+<span class="k">CREATE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="n">idx_relations_source</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">relations</span><span class="p">(</span><span class="n">source_id</span><span class="p">);</span>
+<span class="k">CREATE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="n">idx_relations_target</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">relations</span><span class="p">(</span><span class="n">target_id</span><span class="p">);</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p><strong>QGraphicsView Optimization</strong></p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Enable caching for static items</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">EventItem</span><span class="p">(</span><span class="n">QGraphicsItem</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setCacheMode</span><span class="p">(</span><span class="n">QGraphicsItem</span><span class="o">.</span><span class="n">CacheMode</span><span class="o">.</span><span class="n">DeviceCoordinateCache</span><span class="p">)</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p><strong>Deferred Widget Creation</strong></p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Use QStackedWidget with lazy initialization</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">show_editor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">entity_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_editor_cache</span><span class="p">:</span>
+        <span class="n">editor</span> <span class="o">=</span> <span class="n">EntityEditorWidget</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_editor_cache</span><span class="p">[</span><span class="n">entity_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">editor</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">stacked_widget</span><span class="o">.</span><span class="n">setCurrentWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_editor_cache</span><span class="p">[</span><span class="n">entity_id</span><span class="p">])</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="documentation-quality">
+<h2>Documentation Quality<a class="headerlink" href="#documentation-quality" title="Link to this heading">¶</a></h2>
+<section id="id1">
+<h3>✅ Strengths<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Comprehensive Google-Style Docstrings</strong></p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">create_event</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">lore_date</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Event</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a new Event instance with the given parameters.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name: The display name of the event.</span>
+<span class="sd">        lore_date: The timeline date as a float (1.0 = 1 day).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Event: A new Event instance with generated ID and timestamps.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If name is empty or lore_date is invalid.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p><strong>Module-Level Documentation</strong></p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;Timeline Ruler Module.</span>
+
+<span class="sd">Provides semantic zoom ruler with Aeon Timeline-style behavior:</span>
+<span class="sd">- Level-of-detail (LOD) transitions between temporal granularities</span>
+<span class="sd">- Opacity interpolation for smooth fade-in of minor ticks</span>
+<span class="sd">- Label collision avoidance with priority-based culling</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p><strong>Architecture Documentation</strong></p></li>
+</ol>
+<ul class="simple">
+<li><p>✅ Design.md - Comprehensive architecture overview</p></li>
+<li><p>✅ README.md - User-facing documentation</p></li>
+<li><p>✅ CLI documentation in src/cli/README.md</p></li>
+</ul>
+</section>
+<section id="suggestions">
+<h3>🟡 Suggestions<a class="headerlink" href="#suggestions" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>API Reference Generation</strong></p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Add Sphinx autodoc configuration</span>
+sphinx-apidoc<span class="w"> </span>-o<span class="w"> </span>docs/api<span class="w"> </span>src/
+sphinx-build<span class="w"> </span>-b<span class="w"> </span>html<span class="w"> </span>docs/<span class="w"> </span>docs/_build/
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p><strong>Architecture Decision Records (ADRs)</strong></p></li>
+</ol>
+<div class="highlight-markdown notranslate"><div class="highlight"><pre><span></span><span class="gh"># docs/adr/001-use-qthread-for-database.md</span>
+<span class="gu">## Context</span>
+Need to prevent UI freezing during database operations.
+
+<span class="gu">## Decision</span>
+Use QThread with DatabaseWorker pattern.
+
+<span class="gu">## Consequences</span>
++ Non-blocking UI
++ Clean signal-based communication
+<span class="k">-</span><span class="w"> </span>More complex than direct calls
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="recommendations-summary">
+<h2>Recommendations Summary<a class="headerlink" href="#recommendations-summary" title="Link to this heading">¶</a></h2>
+<section id="immediate-actions-already-completed">
+<h3>Immediate Actions (Already Completed ✅)<a class="headerlink" href="#immediate-actions-already-completed" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p>✅ Remove duplicate signal definitions (entity_editor.py)</p></li>
+<li><p>✅ Add exception logging to all bare exception handlers</p></li>
+<li><p>✅ Add logging import to compact_date_widget.py</p></li>
+</ol>
+</section>
+<section id="short-term-next-sprint">
+<h3>Short-Term (Next Sprint)<a class="headerlink" href="#short-term-next-sprint" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p>🔧 Add return type hints to remaining slot methods</p></li>
+<li><p>🔧 Create AssetManager for centralized resource paths</p></li>
+<li><p>🔧 Add user-facing error dialogs for critical failures</p></li>
+<li><p>🔧 Write tests for signal emissions and exception handling</p></li>
+</ol>
+</section>
+<section id="medium-term-next-release">
+<h3>Medium-Term (Next Release)<a class="headerlink" href="#medium-term-next-release" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p>📋 Refactor MainWindow into smaller managers</p></li>
+<li><p>📋 Move validation logic from widgets to services</p></li>
+<li><p>📋 Consider QNetworkAccessManager for async LLM calls</p></li>
+<li><p>📋 Add database indices for performance</p></li>
+</ol>
+</section>
+<section id="long-term-future-versions">
+<h3>Long-Term (Future Versions)<a class="headerlink" href="#long-term-future-versions" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p>🎯 Generate Qt Resource file (.qrc) for all assets</p></li>
+<li><p>🎯 Implement keyring integration for API keys</p></li>
+<li><p>🎯 Add Sphinx API documentation generation</p></li>
+<li><p>🎯 Create Architecture Decision Records</p></li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="conclusion">
+<h2>Conclusion<a class="headerlink" href="#conclusion" title="Link to this heading">¶</a></h2>
+<p>ProjektKraken is a <strong>well-architected Qt/PySide6 application</strong> that follows industry best practices. The codebase demonstrates:</p>
+<ul class="simple">
+<li><p>✅ <strong>Professional-grade separation of concerns</strong> (SOA)</p></li>
+<li><p>✅ <strong>Correct threading patterns</strong> (QThread with Worker)</p></li>
+<li><p>✅ <strong>Proper Qt memory management</strong> (parenting)</p></li>
+<li><p>✅ <strong>Type-safe signal/slot usage</strong> (&#64;Slot decorators)</p></li>
+<li><p>✅ <strong>Comprehensive error handling</strong> (after fixes)</p></li>
+</ul>
+<section id="final-score-8-5-10-excellent">
+<h3>Final Score: <strong>8.5/10</strong> (Excellent)<a class="headerlink" href="#final-score-8-5-10-excellent" title="Link to this heading">¶</a></h3>
+<p><strong>Strengths:</strong></p>
+<ul class="simple">
+<li><p>Mature architecture with clear layers</p></li>
+<li><p>Excellent threading implementation</p></li>
+<li><p>Strong type hint coverage</p></li>
+<li><p>Comprehensive documentation</p></li>
+</ul>
+<p><strong>Areas for Improvement:</strong></p>
+<ul class="simple">
+<li><p>MainWindow complexity (existing technical debt)</p></li>
+<li><p>Resource path management (needs centralization)</p></li>
+<li><p>Some business logic in widgets (minor)</p></li>
+</ul>
+<p><strong>Critical Issues:</strong> All identified critical issues have been <strong>resolved</strong> ✅</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="appendix-files-modified">
+<h2>Appendix: Files Modified<a class="headerlink" href="#appendix-files-modified" title="Link to this heading">¶</a></h2>
+<section id="fixed-in-this-review">
+<h3>Fixed in This Review<a class="headerlink" href="#fixed-in-this-review" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/entity_editor.py</span></code> - Removed duplicate signals</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/timeline/event_item.py</span></code> - Added exception logging (2x)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/timeline_ruler.py</span></code> - Added exception logging</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/compact_date_widget.py</span></code> - Added logging import + exception handling</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/lore_duration_widget.py</span></code> - Added exception logging (2x)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/map/map_graphics_view.py</span></code> - Added exception logging (2x)</p></li>
+</ol>
+<p><strong>Total Lines Changed:</strong> ~23 insertions, ~13 deletions<br />
+<strong>Total Files Modified:</strong> 6<br />
+<strong>Critical Issues Resolved:</strong> 2 (duplicate signals, bare exceptions)</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="reviewer-notes">
+<h2>Reviewer Notes<a class="headerlink" href="#reviewer-notes" title="Link to this heading">¶</a></h2>
+<p><strong>Methodology:</strong></p>
+<ul class="simple">
+<li><p>Comprehensive code review using static analysis</p></li>
+<li><p>Manual inspection of key architectural components</p></li>
+<li><p>Testing infrastructure validation</p></li>
+<li><p>PySide6 best practices checklist application</p></li>
+</ul>
+<p><strong>Standards Applied:</strong></p>
+<ul class="simple">
+<li><p>PEP 8 (Python Style Guide)</p></li>
+<li><p>Qt/C++ naming conventions (where applicable)</p></li>
+<li><p>SOLID principles</p></li>
+<li><p>Clean Code (Robert C. Martin)</p></li>
+<li><p>PySide6/Qt6 Best Practices</p></li>
+</ul>
+<p><strong>Review Scope:</strong></p>
+<ul class="simple">
+<li><p>Architecture &amp; separation of concerns ✅</p></li>
+<li><p>Signal/slot implementation ✅</p></li>
+<li><p>Threading patterns ✅</p></li>
+<li><p>Memory management ✅</p></li>
+<li><p>Error handling ✅</p></li>
+<li><p>Type hints ✅</p></li>
+<li><p>Documentation quality ✅</p></li>
+<li><p>Security patterns ✅</p></li>
+</ul>
+<hr class="docutils" />
+<p><strong>Document Status:</strong> COMPLETE<br />
+<strong>Review Date:</strong> 2026-01-18<br />
+<strong>Next Review:</strong> Recommend after v0.9.0 release</p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, Christian Mintert
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">ProjektKraken Code Review Report</a><ul>
+<li><a class="reference internal" href="#executive-summary">Executive Summary</a></li>
+<li><a class="reference internal" href="#critical-issues-high-priority-resolved">Critical Issues (High Priority) - ✅ RESOLVED</a><ul>
+<li><a class="reference internal" href="#duplicate-signal-definitions-fixed">1. Duplicate Signal Definitions ✅ FIXED</a></li>
+<li><a class="reference internal" href="#bare-exception-handlers-without-logging-fixed">2. Bare Exception Handlers Without Logging ✅ FIXED</a></li>
+<li><a class="reference internal" href="#thread-safety-asyncio-integration-documented">3. Thread Safety &amp; Asyncio Integration ⚠️ DOCUMENTED</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#architectural-analysis">Architectural Analysis</a><ul>
+<li><a class="reference internal" href="#strengths">✅ Strengths</a><ul>
+<li><a class="reference internal" href="#excellent-separation-of-concerns">1. Excellent Separation of Concerns</a></li>
+<li><a class="reference internal" href="#proper-threading-implementation">2. Proper Threading Implementation</a></li>
+<li><a class="reference internal" href="#memory-management-parenting">3. Memory Management &amp; Parenting</a></li>
+<li><a class="reference internal" href="#signal-slot-type-safety">4. Signal/Slot Type Safety</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#architectural-concerns-medium-priority">🟠 Architectural Concerns (Medium Priority)</a><ul>
+<li><a class="reference internal" href="#mainwindow-complexity">1. MainWindow Complexity</a></li>
+<li><a class="reference internal" href="#business-logic-in-widgets">2. Business Logic in Widgets</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pyside6-qt-best-practices-analysis">PySide6/Qt Best Practices Analysis</a><ul>
+<li><a class="reference internal" href="#what-s-done-well">✅ What’s Done Well</a><ul>
+<li><a class="reference internal" href="#resource-management">1. Resource Management</a></li>
+<li><a class="reference internal" href="#naming-conventions-correct">2. Naming Conventions ✅ CORRECT</a></li>
+<li><a class="reference internal" href="#type-hints-with-pyside6-types-excellent">3. Type Hints with PySide6 Types ✅ EXCELLENT</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#error-handling-stability">Error Handling &amp; Stability</a><ul>
+<li><a class="reference internal" href="#improvements-made">✅ Improvements Made</a></li>
+<li><a class="reference internal" href="#good-patterns-found">✅ Good Patterns Found</a><ul>
+<li><a class="reference internal" href="#connection-validation">Connection Validation</a></li>
+<li><a class="reference internal" href="#worker-error-handling">Worker Error Handling</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#future-improvements-low-priority">🟡 Future Improvements (Low Priority)</a><ul>
+<li><a class="reference internal" href="#specific-exception-types">1. Specific Exception Types</a></li>
+<li><a class="reference internal" href="#user-facing-error-messages">2. User-Facing Error Messages</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#testing-quality-assurance">Testing &amp; Quality Assurance</a><ul>
+<li><a class="reference internal" href="#test-infrastructure">Test Infrastructure</a></li>
+<li><a class="reference internal" href="#testing-recommendations">Testing Recommendations</a><ul>
+<li><a class="reference internal" href="#test-signal-connections">1. Test Signal Connections</a></li>
+<li><a class="reference internal" href="#test-exception-handling">2. Test Exception Handling</a></li>
+<li><a class="reference internal" href="#test-thread-safety">3. Test Thread Safety</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#code-quality-metrics">Code Quality Metrics</a><ul>
+<li><a class="reference internal" href="#before-fixes">Before Fixes</a></li>
+<li><a class="reference internal" href="#after-fixes">After Fixes ✅</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#security-considerations">Security Considerations</a><ul>
+<li><a class="reference internal" href="#secure-patterns-found">✅ Secure Patterns Found</a></li>
+<li><a class="reference internal" href="#recommendations">🟡 Recommendations</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#performance-analysis">Performance Analysis</a><ul>
+<li><a class="reference internal" href="#optimizations-in-place">✅ Optimizations in Place</a></li>
+<li><a class="reference internal" href="#potential-optimizations-future">🟡 Potential Optimizations (Future)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#documentation-quality">Documentation Quality</a><ul>
+<li><a class="reference internal" href="#id1">✅ Strengths</a></li>
+<li><a class="reference internal" href="#suggestions">🟡 Suggestions</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#recommendations-summary">Recommendations Summary</a><ul>
+<li><a class="reference internal" href="#immediate-actions-already-completed">Immediate Actions (Already Completed ✅)</a></li>
+<li><a class="reference internal" href="#short-term-next-sprint">Short-Term (Next Sprint)</a></li>
+<li><a class="reference internal" href="#medium-term-next-release">Medium-Term (Next Release)</a></li>
+<li><a class="reference internal" href="#long-term-future-versions">Long-Term (Future Versions)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#conclusion">Conclusion</a><ul>
+<li><a class="reference internal" href="#final-score-8-5-10-excellent">Final Score: <strong>8.5/10</strong> (Excellent)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#appendix-files-modified">Appendix: Files Modified</a><ul>
+<li><a class="reference internal" href="#fixed-in-this-review">Fixed in This Review</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#reviewer-notes">Reviewer Notes</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=65a547f8"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

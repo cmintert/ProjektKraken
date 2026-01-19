@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-01-18
+## [Development] - 2026-01-19
 ### Internal
-- chore(release): v0.8.1
+- chore: add failed_tests*.log to gitignore
 
 
 *This changelog was automatically generated.*
