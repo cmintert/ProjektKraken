@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-01-19
-**Commit:** `74dd89f`
+**Commit:** `b0d6213`
 ---
 
 # Changelog
@@ -10,6 +10,18 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Performance
+- *(2026-01-19)* **Timeline**: Optimized `CalendarConverter` with year caching for >50x speedup on high-year date conversions (from >5ms to <0.1ms).
+- *(2026-01-19)* **Timeline**: Added performance logging to `drawForeground`, `repack_events`, `fit_all`, and `wheelEvent` for diagnostic monitoring.
+
+### Fixed
+- *(2026-01-19)* **Timeline**: Fixed Fit View to include Playhead and Current Time in the visible range.
+- *(2026-01-19)* **Timeline**: Fixed panning clipping by updating Scene Rect calculation to include Playhead/Current Time positions.
+- *(2026-01-19)* **Timeline**: Restored large Scene Rect buffer (50M px) for smooth infinite-feeling panning after performance bottleneck was resolved.
+
+### Testing
+- *(2026-01-19)* **Timeline**: Added `test_timeline_fit.py` with comprehensive tests for Fit View logic across different scenarios.
 
 ## [0.8.2]
 
