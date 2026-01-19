@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-19
 ### Fixed
-- fix(ai-search): Enable entity/event selection from AI search results
+- fix: Corrected AI Search entity/event selection by fixing signal emission and replacing a non-existent method call.
 
 
 *This changelog was automatically generated.*
