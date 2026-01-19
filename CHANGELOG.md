@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-01-19
-**Commit:** `c2c2264`
+**Commit:** `2233616`
 ---
 
 # Changelog
@@ -10,6 +10,23 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Added
+- *(2026-01-19)* **Import**: Implemented comprehensive JSON import system with GUI and CLI support.
+  - `ImportService` for parsing and persisting entities, events, and relations with transaction support.
+  - `ImportPreviewDialog` for reviewing import data before committing.
+  - "Import Item..." menu action in File menu.
+  - CLI import command: `python -m src.app.main import --file <path>`.
+  - Comprehensive documentation with JSON schemas (`docs/imports.md`).
+  - Unit and integration tests for import functionality.
+
+### Architecture
+- *(2026-01-19)* **Import**: Refactored import to run entirely on worker thread.
+  - Eliminates multi-connection WAL isolation issues.
+  - Single DB connection architecture (worker's db_service).
+  - JSON serialization for thread-safe cross-thread data transfer.
+  - Auto-refresh events/entities after successful import.
+- *(2026-01-19)* **Database**: Added `ensure_fresh_view()` method with WAL checkpoint for visibility guarantees.
 
 ### Performance
 - *(2026-01-19)* **Timeline**: Optimized `CalendarConverter` with year caching for >50x speedup on high-year date conversions (from >5ms to <0.1ms).
@@ -23,6 +40,7 @@ All notable changes to this project will be documented in this file.
 
 ### Testing
 - *(2026-01-19)* **Timeline**: Added `test_timeline_fit.py` with comprehensive tests for Fit View logic across different scenarios.
+- *(2026-01-19)* **Import**: Added `test_import_service.py` and `test_db_isolation.py` for import validation.
 
 ## [0.8.2]
 
