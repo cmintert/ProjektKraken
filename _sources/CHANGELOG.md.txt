@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-19
-### Documentation
-- docs: update changelog for 0.8.2
+### Internal
+- perf: Optimize Timeline rendering and panning logic
 
 
 *This changelog was automatically generated.*

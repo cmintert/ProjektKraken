@@ -881,17 +881,28 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">total_days</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-        <span class="c1"># Sum all complete years before target year</span>
-        <span class="c1"># Optimization: If we have no variants and simple rules, we could calculate faster</span>
-        <span class="c1"># But for now, correctness first. Iterate years.</span>
-        <span class="c1"># To avoid massive loops for huge years (e.g. Year 20000), we could optimize later.</span>
+        <span class="c1"># Optimization: Check cache for closest starting point</span>
+        <span class="c1"># Find highest cached year &lt; date.year</span>
+        <span class="n">cached_years</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_year_cache</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">current_year</span> <span class="o">=</span> <span class="mi">1</span>
 
-        <span class="c1"># Simple optimization: if no variants and logic is regular...</span>
-        <span class="c1"># For now, just sum (naive implementation - O(N) where N is year)</span>
-        <span class="c1"># TODO: Implement O(1) calculation for standard Gregorian</span>
+        <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">cached_years</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="p">:</span>
+                <span class="n">current_year</span> <span class="o">=</span> <span class="n">y</span>
+                <span class="n">total_days</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_year_cache</span><span class="p">[</span><span class="n">y</span><span class="p">]</span>
+                <span class="k">break</span>
 
-        <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="p">):</span>
+        <span class="c1"># Sum years from current_year to target</span>
+        <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">current_year</span><span class="p">,</span> <span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="p">):</span>
+            <span class="c1"># Cache the start of this year if not known</span>
+            <span class="k">if</span> <span class="n">y</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_year_cache</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_year_cache</span><span class="p">[</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="n">total_days</span>
+
             <span class="n">total_days</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">get_year_length</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+
+        <span class="c1"># Ensure target year start is cached</span>
+        <span class="k">if</span> <span class="n">date</span><span class="o">.</span><span class="n">year</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_year_cache</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_year_cache</span><span class="p">[</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="p">]</span> <span class="o">=</span> <span class="n">total_days</span>
 
         <span class="c1"># Sum all complete months before target month</span>
         <span class="n">months</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">get_months_for_year</span><span class="p">(</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="p">)</span>
@@ -970,8 +981,31 @@
         <span class="n">remaining</span> <span class="o">=</span> <span class="n">absolute_day</span>
         <span class="n">year</span> <span class="o">=</span> <span class="mi">1</span>
 
+        <span class="c1"># Optimization: Check cache for closest starting point</span>
+        <span class="c1"># Sorted keys from cache</span>
+        <span class="n">cached_years</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_year_cache</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="c1"># Find highest cached year &lt;= needed</span>
+        <span class="c1"># Since we don&#39;t know the exact year yet, we check absolute_days</span>
+        <span class="c1"># But wait, cache is year -&gt; absolute_day.</span>
+        <span class="c1"># We need absolute_day -&gt; year lookup for this.</span>
+
+        <span class="c1"># Let&#39;s use a simple linear scan of cached items for now or bisect if we invert it</span>
+        <span class="c1"># Or just remember the last queried year?</span>
+
+        <span class="c1"># Better: Iterate cached years in reverse to find where cache[y] &lt;= absolute_day</span>
+        <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">cached_years</span><span class="p">):</span>
+            <span class="n">start_of_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_year_cache</span><span class="p">[</span><span class="n">y</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">start_of_y</span> <span class="o">&lt;=</span> <span class="n">absolute_day</span><span class="p">:</span>
+                <span class="n">year</span> <span class="o">=</span> <span class="n">y</span>
+                <span class="n">remaining</span> <span class="o">=</span> <span class="n">absolute_day</span> <span class="o">-</span> <span class="n">start_of_y</span>
+                <span class="k">break</span>
+
         <span class="c1"># Find the year</span>
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="c1"># Add to cache</span>
+            <span class="k">if</span> <span class="n">year</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_year_cache</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_year_cache</span><span class="p">[</span><span class="n">year</span><span class="p">]</span> <span class="o">=</span> <span class="n">absolute_day</span> <span class="o">-</span> <span class="n">remaining</span>
+
             <span class="n">year_length</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">get_year_length</span><span class="p">(</span><span class="n">year</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">remaining</span> <span class="o">&lt;</span> <span class="n">year_length</span><span class="p">:</span>
                 <span class="k">break</span>
