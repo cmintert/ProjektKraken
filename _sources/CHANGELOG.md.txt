@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-19
-### Fixed
-- fix: Corrected AI Search entity/event selection by fixing signal emission and replacing a non-existent method call.
+### Documentation
+- docs: Update changelog with JSON import system and architecture refactor
 
 
 *This changelog was automatically generated.*
