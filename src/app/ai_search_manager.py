@@ -171,8 +171,15 @@ class AISearchManager(QObject):
             object_type: 'entity' or 'event'.
             object_id: Object UUID.
         """
-        # Navigate to the selected item using centralized global selection
-        self.window.set_global_selection(object_type, object_id)
+        # Select the item in the unified list via the dock widget
+        if (
+            hasattr(self.window, "ui_manager")
+            and "list" in self.window.ui_manager.docks
+        ):
+            list_dock = self.window.ui_manager.docks["list"]
+            list_widget = list_dock.widget()
+            if list_widget and hasattr(list_widget, "select_item"):
+                list_widget.select_item(object_type, object_id)
 
     @Slot()
     def refresh_search_index_status(self) -> None:

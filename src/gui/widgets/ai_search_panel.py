@@ -211,14 +211,14 @@ class AISearchPanelWidget(QWidget):
         """Handle mouse click on search result."""
         widget = self.results_list.itemWidget(item)
         if isinstance(widget, SearchResultItem):
-            self.open_requested.emit(widget.object_type, widget.object_id)
+            self.result_selected.emit(widget.object_type, widget.object_id)
 
     @Slot()
     def _on_result_activated(self, item: QListWidgetItem) -> None:
         """Handle keyboard activation (Enter/Return) on search result."""
         widget = self.results_list.itemWidget(item)
         if isinstance(widget, SearchResultItem):
-            self.open_requested.emit(widget.object_type, widget.object_id)
+            self.result_selected.emit(widget.object_type, widget.object_id)
 
     def set_results(self, results: List[dict]) -> None:
         """Display search results.
@@ -252,6 +252,7 @@ class AISearchPanelWidget(QWidget):
                 score=result.get("score", 0.0),
                 obj_subtype=result.get("type", ""),
             )
+            # Widget's internal signal forwards to panel's result_selected signal
             result_widget.open_requested.connect(self.result_selected.emit)
 
             # Add to list
