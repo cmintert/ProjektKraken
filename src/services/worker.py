@@ -59,6 +59,9 @@ class DatabaseWorker(QObject):
     operation_started = Signal(str)
     operation_finished = Signal(str)
 
+    # Import signals
+    import_finished = Signal(object)  # ImportResult
+
     def __init__(self, db_path: str) -> None:
         """Initializes the worker.
 
@@ -734,3 +737,47 @@ class DatabaseWorker(QObject):
         except Exception as e:
             logger.error(f"Failed to load completer data: {traceback.format_exc()}")
             # self.error_occurred.emit("Failed to load completer data.")
+
+    @Slot(str)
+    def run_import(self, parsed_json: str) -> None:
+        """Runs import batch using worker's db_service.
+
+        This ensures all DB operations happen on the worker thread with its
+        single connection, avoiding WAL isolation issues.
+
+        Args:
+            parsed_json: JSON string of pre-parsed data from MainWindow
+        """
+        if not self.db_service:
+            from src.services.import_service import ImportResult
+
+            result = ImportResult(success=False, errors=["Database not ready"])
+            self.import_finished.emit(result)
+            return
+
+        try:
+            self.operation_started.emit("Importing data...")
+            from src.services.import_service import ImportService
+
+            # Deserialize JSON string to dict
+            parsed_data = json.loads(parsed_json)
+
+            import_service = ImportService(self.db_service)
+            result = import_service.import_batch(parsed_data)
+
+            self.import_finished.emit(result)
+
+            if result.success:
+                # Auto-refresh data so UI updates immediately
+                self.load_events()
+                self.load_entities()
+                self.operation_finished.emit("Import complete.")
+            else:
+                self.operation_finished.emit("Import failed.")
+
+        except Exception as e:
+            logger.error(f"Import failed: {traceback.format_exc()}")
+            from src.services.import_service import ImportResult
+
+            result = ImportResult(success=False, errors=[str(e)])
+            self.import_finished.emit(result)

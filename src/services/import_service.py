@@ -40,7 +40,8 @@ class ImportService:
         """
         self._db = db_service
 
-    def parse_only(self, json_data: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
+    @staticmethod
+    def parse_only(json_data: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
         """Parses and validates JSON structure without persisting.
 
         Args:

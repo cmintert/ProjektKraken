@@ -170,6 +170,7 @@ class WorkerManager(QObject):
         self.window.worker.completer_data_loaded.connect(
             self.window.on_completer_data_loaded
         )
+        self.window.worker.import_finished.connect(self.window._on_import_finished)
         # Connect filtering request
         self.window.filter_requested.connect(self.window.worker.apply_filter)
 
