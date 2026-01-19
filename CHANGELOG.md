@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-01-19
-**Commit:** `0.8.2`
+**Commit:** `74dd89f`
 ---
 
 # Changelog
@@ -11,10 +11,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [0.8.2]
-
 ### Refactor
-- *(2026-01-19)* **Coordinators**: Refactored `NavigationCoordinator` and `TimeCoordinator` to use public API surface (properties/methods) for better encapsulation and testability.
+- *(2026-01-19)* **Coordinators**: Major architectural refactor extracting logic from `MainWindow` into dedicated coordinators: `NavigationCoordinator`, `TimeCoordinator`, and `FastInjectCoordinator`.
+  - Reduced `MainWindow` size by ~1000 lines, improving maintainability.
+  - Enforced public API surface (properties/methods) for better encapsulation and testability.
 
 ## [0.8.1]
 
