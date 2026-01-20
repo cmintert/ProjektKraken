@@ -113,7 +113,7 @@ class WebServiceManager(QObject):
             ip = s.getsockname()[0]
             s.close()
             return ip
-        except Exception as e:
+        except Exception:
             # Network unavailable or other error - use localhost
             return "127.0.0.1"
 

@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from PySide6.QtCore import QSettings
 
+from src.app.constants import WINDOW_SETTINGS_APP
 from src.gui.dialogs.backup_settings_dialog import (
     BACKUP_AUTO_SAVE_INTERVAL_KEY,
     BACKUP_AUTO_SAVE_RETENTION_KEY,
@@ -16,8 +17,6 @@ from src.gui.dialogs.backup_settings_dialog import (
     BACKUP_VERIFY_AFTER_KEY,
     BackupSettingsDialog,
 )
-
-from src.app.constants import WINDOW_SETTINGS_APP
 
 
 @pytest.fixture(scope="session")

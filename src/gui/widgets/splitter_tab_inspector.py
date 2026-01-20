@@ -96,7 +96,9 @@ class DraggableTabBar(QTabBar):
         target_tab_widget.insertTab(drop_idx, widget, title)
         target_tab_widget.setCurrentIndex(drop_idx)
 
-        logger.debug("DraggableTabBar.dropEvent: moved tab, scheduling cleanup check for source pane")
+        logger.debug(
+            "DraggableTabBar.dropEvent: moved tab, scheduling cleanup check for source pane"
+        )
 
         # Cleanup empty source pane - schedule on next tick
         QTimer.singleShot(0, lambda: self._cleanup_empty_pane(source_tab_widget))
@@ -116,24 +118,28 @@ class DraggableTabBar(QTabBar):
             f"DraggableTabBar._cleanup_empty_pane: checking tab_widget="
             f"{getattr(tab_widget, 'objectName', lambda: None)()}"
         )
-        
+
         if tab_widget.count() == 0:
             splitter = self._find_parent_splitter(tab_widget)
             if splitter and splitter.count() > 1:
                 logger.info("Pane empty — hiding and scheduling deletion")
                 tab_widget.hide()
-                
-                def _maybe_delete():
+
+                def _maybe_delete() -> None:
                     # Re-check conditions before deleting
-                    if (tab_widget.count() == 0 and 
-                        tab_widget.parent() is splitter and 
-                        splitter.count() > 1):
+                    if (
+                        tab_widget.count() == 0
+                        and tab_widget.parent() is splitter
+                        and splitter.count() > 1
+                    ):
                         logger.info("Deleting empty pane now")
                         tab_widget.setParent(None)
                         tab_widget.deleteLater()
                     else:
-                        logger.debug("Skipping deletion; pane no longer empty or reparented")
-                
+                        logger.debug(
+                            "Skipping deletion; pane no longer empty or reparented"
+                        )
+
                 # Delay deletion by 200ms to let reparent operations complete
                 QTimer.singleShot(200, _maybe_delete)
 
@@ -207,11 +213,15 @@ class DraggableTabWidget(QTabWidget):
             idx = splitter.indexOf(self)
             splitter.insertWidget(idx + 1, new_tab_widget)
 
-            logger.debug("dropEvent: moved tab, scheduling cleanup check for source pane")
-            
+            logger.debug(
+                "dropEvent: moved tab, scheduling cleanup check for source pane"
+            )
+
             # Cleanup empty source pane (after creating new one)
             # Schedule on next tick to avoid race between removeTab and cleanup
-            QTimer.singleShot(0, lambda: self._cleanup_empty_pane(source_tab_widget, splitter))
+            QTimer.singleShot(
+                0, lambda: self._cleanup_empty_pane(source_tab_widget, splitter)
+            )
 
         event.acceptProposedAction()
 
@@ -229,22 +239,26 @@ class DraggableTabWidget(QTabWidget):
             f"_cleanup_empty_pane: checking tab_widget="
             f"{getattr(tab_widget, 'objectName', lambda: None)()}"
         )
-        
+
         if tab_widget.count() == 0 and splitter.count() > 1:
             logger.info("Pane empty — hiding and scheduling deletion")
             tab_widget.hide()
-            
-            def _maybe_delete():
+
+            def _maybe_delete() -> None:
                 # Re-check conditions before deleting
-                if (tab_widget.count() == 0 and 
-                    tab_widget.parent() is splitter and 
-                    splitter.count() > 1):
+                if (
+                    tab_widget.count() == 0
+                    and tab_widget.parent() is splitter
+                    and splitter.count() > 1
+                ):
                     logger.info("Deleting empty pane now")
                     tab_widget.setParent(None)
                     tab_widget.deleteLater()
                 else:
-                    logger.debug("Skipping deletion; pane no longer empty or reparented")
-            
+                    logger.debug(
+                        "Skipping deletion; pane no longer empty or reparented"
+                    )
+
             # Delay deletion by 200ms to let reparent operations complete
             QTimer.singleShot(200, _maybe_delete)
 

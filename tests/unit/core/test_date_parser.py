@@ -1,4 +1,5 @@
 import pytest
+
 from src.core.calendar import CalendarConfig, MonthDefinition, WeekDefinition
 from src.core.parsed_date import DatePrecision
 

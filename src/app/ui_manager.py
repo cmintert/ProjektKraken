@@ -54,7 +54,7 @@ class _DockEventFilter(QObject):
     widget issues.
     """
 
-    def __init__(self, dock_name: str, logger) -> None:
+    def __init__(self, dock_name: str, logger: Any) -> None:
         """Initialize the event filter.
 
         Args:
@@ -65,7 +65,7 @@ class _DockEventFilter(QObject):
         self._name = dock_name
         self._logger = logger
 
-    def eventFilter(self, obj, event):
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         """Filter events and log relevant ones.
 
         Args:

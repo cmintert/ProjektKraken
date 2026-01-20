@@ -1,8 +1,7 @@
-import sqlite3
 import pytest
-import os
-from src.services.db_service import DatabaseService
+
 from src.core.entities import Entity
+from src.services.db_service import DatabaseService
 
 
 @pytest.fixture

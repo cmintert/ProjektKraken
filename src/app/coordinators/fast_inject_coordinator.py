@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from PySide6.QtCore import Signal, Slot
 
@@ -24,7 +25,7 @@ class FastInjectCoordinator(BaseCoordinator):
     # We might need signals for status updates if MainWindow needs to show them
     status_message_requested = Signal(str, int)
 
-    def __init__(self, main_window) -> None:
+    def __init__(self, main_window: Any) -> None:
         super().__init__(main_window)
         # We access managers via main_window properties or arguments?
         # Ideally, we should receive them. But for Refactor Phase 1,
@@ -71,7 +72,7 @@ class FastInjectCoordinator(BaseCoordinator):
 
         self._show_fast_inject_dialog(target_event)
 
-    def _show_fast_inject_dialog(self, target) -> None:
+    def _show_fast_inject_dialog(self, target: Any) -> None:
         """Shows the dialog for a generic target (Entity or Event)."""
         # Load templates
         templates = self.fast_inject_manager.load_templates()
@@ -107,7 +108,7 @@ class FastInjectCoordinator(BaseCoordinator):
 
         self.command_requested.emit(cmd)
 
-    def _handle_import_result(self, dlg: FastInjectDialog, target) -> None:
+    def _handle_import_result(self, dlg: FastInjectDialog, target: Any) -> None:
         """Handles the import result from the dialog."""
         import_paths = getattr(dlg, "_import_paths", [])
         if import_paths:

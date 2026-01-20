@@ -196,3 +196,81 @@ class EntityRepository(BaseRepository):
                 data["attributes"] = self._deserialize_json(data["attributes"])
             entities.append(Entity.from_dict(data))
         return entities
+
+    def find_named_entities(self, name: str) -> List[Entity]:
+        """Find entities matching the given name exactly (case-insensitive).
+
+        This is an optimized lookup for deduplication, matching the exact name
+        ignoring case. It does NOT use wildcards.
+
+        Args:
+            name: The name to search for.
+
+        Returns:
+            List of Entity objects with matching names.
+        """
+        sql = """
+            SELECT * FROM entities 
+            WHERE lower(name) = lower(?) 
+            ORDER BY name ASC
+        """
+
+        if not self._connection:
+            raise RuntimeError("Database connection not initialized")
+
+        cursor = self._connection.execute(sql, (name,))
+        entities = []
+        for row in cursor.fetchall():
+            data = dict(row)
+            if data.get("attributes"):
+                data["attributes"] = self._deserialize_json(data["attributes"])
+            entities.append(Entity.from_dict(data))
+        return entities
+
+    def find_by_external_id(
+        self, source_name: str, external_id: str
+    ) -> Optional[Entity]:
+        """Find an entity by its external ID and source name.
+
+        Uses a robust LIKE query to pre-filter, then validates in Python.
+        This avoids dependency on specific SQLite JSON version features which seem flaky.
+
+        Args:
+            source_name: The name of the import source (e.g. "obsidian").
+            external_id: The ID from the external source.
+
+        Returns:
+            Matching Entity or None.
+        """
+        if not self._connection:
+            raise RuntimeError("Database connection not initialized")
+
+        # Robust Fallback: filtering with LIKE, then validating in Python.
+        # This works on all SQLite versions and is "good enough" for import dedupe performance
+        # assuming external_ids aren't extremely common substrings of other data.
+        # We search for the external_id string within the attributes column.
+
+        sql = "SELECT * FROM entities WHERE attributes LIKE ?"
+        pattern = f"%{external_id}%"
+
+        cursor = self._connection.execute(sql, (pattern,))
+        rows = cursor.fetchall()
+
+        for row in rows:
+            data = dict(row)
+            if data.get("attributes"):
+                try:
+                    attrs = self._deserialize_json(data["attributes"])
+                    # Check sources list
+                    sources = attrs.get("_import_sources", [])
+                    for source in sources:
+                        if source.get("source_name") == source_name and str(
+                            source.get("external_id")
+                        ) == str(external_id):
+                            # Match found!
+                            data["attributes"] = attrs
+                            return Entity.from_dict(data)
+                except Exception:
+                    continue
+
+        return None

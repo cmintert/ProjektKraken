@@ -1,9 +1,10 @@
 """Unit tests for ImportService."""
 
 from unittest.mock import MagicMock
-from src.services.import_service import ImportService
+
 from src.core.entities import Entity
 from src.core.events import Event
+from src.services.import_service import ImportService
 
 
 def test_parse_only_valid_batch():

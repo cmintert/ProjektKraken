@@ -9,6 +9,29 @@ ProjektKraken supports importing **Entities**, **Events**, and their **Relations
 
 ## Data Structure
 
+## Deduplication & Matching
+
+The system attempts to match incoming data to existing records to prevent duplicates. It follows this order of operations:
+
+1.  **External ID**: If `external_id` (e.g., `"obsidian-123"`) is provided, it looks for an existing entity tagged with that ID from the same **Source Name**.
+2.  **UUID**: If `id` (ProjektKraken UUID) is provided, it looks for an exact ID match.
+3.  **Name**: If neither ID matches, it searches for an existing entity with the exact same name (case-insensitive normalized).
+
+**Ambiguity**: If multiple entities share the same name (and no ID is provided), the importer flags the item as `AMBIGUOUS` and skips it to avoid incorrect merging.
+
+## Import Configuration
+
+When importing via the GUI, you can configure:
+
+*   **Source Name**: A tag identifying where the data came from (e.g., `"obsidian"`, `"world_anvil"`). Defaults to `"manual_import"`. This scopes the `external_id` lookup.
+*   **Import Mode**:
+    *   **Update** (Default): Merges new data into the existing record. New values overwrite old ones; missing/null values in the input are ignored.
+    *   **Overwrite**: Replaces the existing record's core fields (description, type, attributes) entirely with the new data.
+    *   **Skip**: Ignores the incoming item if a match is found.
+*   **Dry Run**: Simulates the import and reports what would happen (Create, Update, Skip, Ambiguous) without modifying the database.
+
+## Data Structure
+
 The import file should be a JSON object containing one or more of the following keys: `entities`, `events`, `relations`.
 
 ### 1. Entities
@@ -20,6 +43,7 @@ Entities represent characters, locations, factions, objects, etc.
   "entities": [
     {
       "name": "King Alaric",
+      "external_id": "wiki-alaric-01", 
       "type": "character",
       "description": "The first king of the North.",
       "attributes": {
@@ -38,7 +62,8 @@ Entities represent characters, locations, factions, objects, etc.
 ```
 
 **Fields:**
-*   `name` (Required): Unique name for identification within the batch.
+*   `name` (Required): Unique name for identification (fallback).
+*   `external_id` (Optional): ID from the source system (Primary Match Key).
 *   `type` (Optional): Category e.g., "character", "location". Default: "generic".
 *   `description` (Optional): Textual description.
 *   `attributes` (Optional): Dictionary of custom data.
@@ -54,6 +79,7 @@ Events represent points or durations in time.
   "events": [
     {
       "name": "The Coronation",
+      "external_id": "evt-001",
       "lore_date": "Year 500",
       "lore_duration": 0.0,
       "type": "ceremony",
@@ -71,6 +97,7 @@ Events represent points or durations in time.
 
 **Fields:**
 *   `name` (Required): Event title.
+*   `external_id` (Optional): ID from source system.
 *   `lore_date` (Required): Float ID or Date String.
     *   **Float**: Raw timestamp (e.g., `1050.5`).
     *   **String**: "Natural" date string (e.g., `"Year 500"`, `"15th of Harvest, Year 300"`). These are parsed using the active calendar configuration.
@@ -114,6 +141,7 @@ You can use the following system prompt to instruct an LLM (like ChatGPT or Clau
 >   "entities": [
 >     {
 >       "name": "string (required)",
+>       "external_id": "string (optional unique ID)",
 >       "type": "string (e.g., character, location)",
 >       "description": "string",
 >       "attributes": { "_tags": ["tag1"], "key": "val" },
@@ -125,6 +153,7 @@ You can use the following system prompt to instruct an LLM (like ChatGPT or Clau
 >   "events": [
 >     {
 >       "name": "string (required)",
+>       "external_id": "string (optional unique ID)",
 >       "lore_date": "float OR string (e.g., 'Year 100', '15th of Month 1, Year 500 14:30')",
 >       "lore_duration": float (optional, 1.0 = 1 day),
 >       "type": "string",

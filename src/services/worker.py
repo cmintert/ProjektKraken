@@ -111,7 +111,7 @@ class DatabaseWorker(QObject):
             logger.info("DatabaseWorker initialized successfully.")
             self.initialized.emit(True)
             self.operation_finished.emit("Database Connected.")
-        except Exception as e:
+        except Exception:
             logger.critical(f"DatabaseWorker init failed: {traceback.format_exc()}")
             self.error_occurred.emit("Failed to connect to database.")
             self.initialized.emit(False)
@@ -126,7 +126,7 @@ class DatabaseWorker(QObject):
             if self.db_service:
                 self.db_service.close()
                 logger.info("Database connection closed in worker cleanup.")
-        except Exception as e:
+        except Exception:
             logger.error(f"Error during worker cleanup: {traceback.format_exc()}")
 
     @Slot()
@@ -141,7 +141,7 @@ class DatabaseWorker(QObject):
             events = self.db_service.get_all_events()
             self.events_loaded.emit(events)
             self.operation_finished.emit("Events Loaded.")
-        except Exception as e:
+        except Exception:
             logger.error(f"Failed to load events: {traceback.format_exc()}")
             self.error_occurred.emit("Failed to load events.")
 
@@ -157,7 +157,7 @@ class DatabaseWorker(QObject):
             entities = self.db_service.get_all_entities()
             self.entities_loaded.emit(entities)
             self.operation_finished.emit("Entities Loaded.")
-        except Exception as e:
+        except Exception:
             logger.error(f"Failed to load entities: {traceback.format_exc()}")
             self.error_occurred.emit("Failed to load entities.")
 
@@ -173,7 +173,7 @@ class DatabaseWorker(QObject):
             maps = self.db_service.get_all_maps()
             self.maps_loaded.emit(maps)
             self.operation_finished.emit("Maps Loaded.")
-        except Exception as e:
+        except Exception:
             logger.error(f"Failed to load maps: {traceback.format_exc()}")
             self.error_occurred.emit("Failed to load maps.")
 
@@ -188,7 +188,7 @@ class DatabaseWorker(QObject):
             markers = self.db_service.get_markers_for_map(map_id)
             self.markers_loaded.emit(map_id, markers)
             self.operation_finished.emit("Markers Loaded.")
-        except Exception as e:
+        except Exception:
             logger.error(f"Failed to load markers: {traceback.format_exc()}")
             self.error_occurred.emit(f"Failed to load markers for map {map_id}.")
 
@@ -204,7 +204,7 @@ class DatabaseWorker(QObject):
             trajectories = self.db_service.get_trajectories_by_map(map_id)
             self.trajectories_loaded.emit(trajectories)
             # self.operation_finished.emit("Trajectories Loaded.")
-        except Exception as e:
+        except Exception:
             logger.error(f"Failed to load trajectories: {traceback.format_exc()}")
             self.error_occurred.emit(f"Failed to load trajectories for map {map_id}.")
 
@@ -231,7 +231,7 @@ class DatabaseWorker(QObject):
             self.db_service.add_keyframe(map_id, marker_id, kf)
             self.load_trajectories(map_id)
             self.operation_finished.emit("Keyframe added.")
-        except Exception as e:
+        except Exception:
             logger.error(f"Failed to add keyframe: {traceback.format_exc()}")
             self.error_occurred.emit("Failed to add keyframe.")
 
@@ -256,7 +256,7 @@ class DatabaseWorker(QObject):
             self.operation_finished.emit(
                 f"Keyframe time updated: {old_t:.1f} → {new_t:.1f}"
             )
-        except Exception as e:
+        except Exception:
             logger.error(f"Failed to update keyframe time: {traceback.format_exc()}")
             self.error_occurred.emit("Failed to update keyframe timestamp.")
 
@@ -279,7 +279,7 @@ class DatabaseWorker(QObject):
         except ValueError as e:
             logger.warning(f"Keyframe delete failed: {e}")
             self.error_occurred.emit(str(e))
-        except Exception as e:
+        except Exception:
             logger.error(f"Failed to delete keyframe: {traceback.format_exc()}")
             self.error_occurred.emit("Failed to delete keyframe.")
 
@@ -304,7 +304,7 @@ class DatabaseWorker(QObject):
 
                 self.event_details_loaded.emit(event, rels, incoming)
             self.operation_finished.emit("Event Details Loaded.")
-        except Exception as e:
+        except Exception:
             logger.error(f"Failed to load event details: {traceback.format_exc()}")
             self.error_occurred.emit(f"Failed to load event {event_id}")
 
@@ -328,7 +328,7 @@ class DatabaseWorker(QObject):
 
                 self.entity_details_loaded.emit(entity, rels, incoming)
             self.operation_finished.emit("Entity Details Loaded.")
-        except Exception as e:
+        except Exception:
             logger.error(f"Failed to load entity details: {traceback.format_exc()}")
             self.error_occurred.emit(f"Failed to load entity {entity_id}")
 
@@ -344,7 +344,7 @@ class DatabaseWorker(QObject):
             attachments = self.attachment_service.get_attachments(owner_type, owner_id)
             self.attachments_loaded.emit(owner_type, owner_id, attachments)
             # self.operation_finished.emit("Attachments Loaded.")
-        except Exception as e:
+        except Exception:
             logger.error(f"Failed to load attachments: {traceback.format_exc()}")
             self.error_occurred.emit(f"Failed to load attachments for {owner_id}")
 
@@ -476,7 +476,7 @@ class DatabaseWorker(QObject):
             self.command_finished.emit(result_obj)
             self.operation_finished.emit(f"Finished {command_name}.")
 
-        except Exception as e:
+        except Exception:
             logger.error(f"Command {command_name} failed: {traceback.format_exc()}")
             self.error_occurred.emit(f"Command {command_name} failed.")
             # Emit failure result
@@ -502,7 +502,7 @@ class DatabaseWorker(QObject):
             self.current_time_loaded.emit(
                 current_time if current_time is not None else 0.0
             )
-        except Exception as e:
+        except Exception:
             logger.error(f"Failed to load current_time: {traceback.format_exc()}")
             # Emit default value on error
             self.current_time_loaded.emit(0.0)
@@ -520,7 +520,7 @@ class DatabaseWorker(QObject):
         try:
             self.db_service.set_current_time(time)
             logger.debug(f"Saved current_time: {time}")
-        except Exception as e:
+        except Exception:
             logger.error(f"Failed to save current_time: {traceback.format_exc()}")
             self.error_occurred.emit("Failed to save current time.")
 
@@ -559,7 +559,7 @@ class DatabaseWorker(QObject):
             self.grouping_dialog_data_loaded.emit(tags_data, current_config)
             self.operation_finished.emit("Grouping data loaded.")
 
-        except Exception as e:
+        except Exception:
             logger.error(
                 f"Failed to load grouping dialog data: {traceback.format_exc()}"
             )
@@ -608,7 +608,7 @@ class DatabaseWorker(QObject):
 
             self.operation_finished.emit(f"Indexed {object_type} {object_id}.")
 
-        except Exception as e:
+        except Exception:
             logger.error(f"Failed to index {object_type}: {traceback.format_exc()}")
             self.error_occurred.emit(f"Failed to index {object_type} {object_id}.")
 
@@ -653,7 +653,7 @@ class DatabaseWorker(QObject):
             count = len(events) + len(entities)
             self.operation_finished.emit(f"Filtered {count} items.")
 
-        except Exception as e:
+        except Exception:
             logger.error(f"Failed to apply filter: {traceback.format_exc()}")
             self.error_occurred.emit("Failed to apply filter.")
 
@@ -672,7 +672,7 @@ class DatabaseWorker(QObject):
             state = self.temporal_manager.get_entity_state_at(entity_id, time)
             self.entity_state_resolved.emit(entity_id, state)
             # self.operation_finished.emit("State Resolved.")
-        except Exception as e:
+        except Exception:
             logger.error(
                 f"Failed to resolve state for {entity_id}: {traceback.format_exc()}"
             )
@@ -711,7 +711,7 @@ class DatabaseWorker(QObject):
             self.operation_finished.emit(
                 f"Graph Data Loaded ({len(nodes)} nodes, {len(edges)} edges)."
             )
-        except Exception as e:
+        except Exception:
             logger.error(f"Failed to load graph data: {traceback.format_exc()}")
             self.error_occurred.emit("Failed to load graph data.")
 
@@ -734,19 +734,20 @@ class DatabaseWorker(QObject):
 
             self.completer_data_loaded.emit(tags, rel_types, attr_keys, entity_types)
             # self.operation_finished.emit("Completer Data Loaded.")
-        except Exception as e:
+        except Exception:
             logger.error(f"Failed to load completer data: {traceback.format_exc()}")
             # self.error_occurred.emit("Failed to load completer data.")
 
-    @Slot(str)
-    def run_import(self, parsed_json: str) -> None:
+    @Slot(str, str)
+    def run_import(self, parsed_json: str, options_json: str) -> None:
         """Runs import batch using worker's db_service.
 
         This ensures all DB operations happen on the worker thread with its
         single connection, avoiding WAL isolation issues.
 
         Args:
-            parsed_json: JSON string of pre-parsed data from MainWindow
+            parsed_json: JSON string of pre-parsed data from MainWindow.
+            options_json: JSON string of import options (mode, source_name, dry_run).
         """
         if not self.db_service:
             from src.services.import_service import ImportResult
@@ -759,11 +760,12 @@ class DatabaseWorker(QObject):
             self.operation_started.emit("Importing data...")
             from src.services.import_service import ImportService
 
-            # Deserialize JSON string to dict
+            # Deserialize JSON strings
             parsed_data = json.loads(parsed_json)
+            options = json.loads(options_json) if options_json else {}
 
             import_service = ImportService(self.db_service)
-            result = import_service.import_batch(parsed_data)
+            result = import_service.import_batch(parsed_data, options)
 
             self.import_finished.emit(result)
 

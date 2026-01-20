@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Optional
 
-from PySide6.QtCore import Slot, Qt, QMetaObject, Q_ARG
+from PySide6.QtCore import Q_ARG, QMetaObject, Qt, Slot
 
 from src.app.coordinators.base_coordinator import BaseCoordinator
 

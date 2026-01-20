@@ -3,9 +3,9 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from PySide6.QtCore import Slot, QSettings
+from PySide6.QtCore import QSettings, Slot
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -38,7 +38,7 @@ class BackupCoordinator(BaseCoordinator):
         super().__init__(main_window)
 
     @property
-    def backup_service(self):
+    def backup_service(self) -> Any:
         """Access backup service from main window."""
         return self.main_window.backup_service
 

@@ -3,12 +3,17 @@
 Displays a preview of Entities, Events, and Relations to be imported from a JSON file.
 """
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
     QDialog,
     QDialogButtonBox,
+    QGroupBox,
+    QHBoxLayout,
     QLabel,
+    QLineEdit,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -20,7 +25,9 @@ from src.gui.utils.style_helper import StyleHelper
 class ImportPreviewDialog(QDialog):
     """Dialog to preview and confirm import data."""
 
-    def __init__(self, parent=None, parsed_data: Dict[str, List[Any]] = None) -> None:
+    def __init__(
+        self, parent: Optional[Any] = None, parsed_data: Dict[str, List[Any]] = None
+    ) -> None:
         """Initialize the dialog.
 
         Args:
@@ -55,6 +62,40 @@ class ImportPreviewDialog(QDialog):
         self.stats_lbl = QLabel("")
         layout.addWidget(self.stats_lbl)
 
+        # Configuration Box
+        config_group = QGroupBox("Configuration")
+        config_layout = QVBoxLayout(config_group)
+
+        # Row 1: Source and Mode
+        row1 = QHBoxLayout()
+
+        # Source Name
+        row1.addWidget(QLabel("Source Name:"))
+        self.source_edit = QLineEdit("manual_import")
+        self.source_edit.setPlaceholderText("e.g. obsidian, world_anvil")
+        row1.addWidget(self.source_edit)
+
+        # Import Mode
+        row1.addWidget(QLabel("Mode:"))
+        self.mode_combo = QComboBox()
+        self.mode_combo.addItems(["Update", "Overwrite", "Skip"])
+        self.mode_combo.setToolTip(
+            "Update: Merge new data into existing.\n"
+            "Overwrite: Replace existing records completely.\n"
+            "Skip: Ignore if record exists."
+        )
+        row1.addWidget(self.mode_combo)
+
+        config_layout.addLayout(row1)
+
+        # Row 2: Options
+        self.dry_run_check = QCheckBox("Dry Run (Simulate only)")
+        self.dry_run_check.setChecked(False)  # Default to real import? Or safe?
+        # Let's verify defaults. Usually real run is expected after "Preview".
+        config_layout.addWidget(self.dry_run_check)
+
+        layout.addWidget(config_group)
+
         # Button Box
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
@@ -80,7 +121,7 @@ class ImportPreviewDialog(QDialog):
             for ent in entities:
                 name = ent.get("name", "<Missing Name>")
                 type_ = ent.get("type", "generic")
-                item = QTreeWidgetItem(root, [type_, name, "Ready"])
+                _ = QTreeWidgetItem(root, [type_, name, "Ready"])
                 # item.setIcon(0, StyleHelper.get_icon("cube"))  # Icon helper missing
 
         # Events
@@ -91,9 +132,7 @@ class ImportPreviewDialog(QDialog):
             for evt in events:
                 name = evt.get("name", "<Missing Name>")
                 date = evt.get("lore_date", "?")
-                item = QTreeWidgetItem(
-                    root, ["Event", f"{name} (Date: {date})", "Ready"]
-                )
+                _ = QTreeWidgetItem(root, ["Event", f"{name} (Date: {date})", "Ready"])
                 # item.setIcon(0, StyleHelper.get_icon("calendar"))  # Icon helper missing
 
         # Relations
@@ -130,5 +169,14 @@ class ImportPreviewDialog(QDialog):
 
         # Update stats
         self.stats_lbl.setText(
-            f"Total: {len(entities)} Entities, {len(events)} Events, {total_rels} Relations"
+            f"Total: {len(entities)} Entities, {len(events)} Events, "
+            f"{total_rels} Relations"
         )
+
+    def get_options(self) -> Dict[str, Any]:
+        """Returns the configured import options."""
+        return {
+            "source_name": self.source_edit.text().strip() or "manual_import",
+            "mode": self.mode_combo.currentText().lower(),
+            "dry_run": self.dry_run_check.isChecked(),
+        }

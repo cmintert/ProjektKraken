@@ -1708,11 +1708,15 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
                 import json
 
                 parsed_json = json.dumps(parsed_data)
+                options = dialog.get_options()
+                options_json = json.dumps(options)
+
                 QMetaObject.invokeMethod(
                     self.worker,
                     "run_import",
                     Qt.ConnectionType.QueuedConnection,
                     Q_ARG(str, parsed_json),
+                    Q_ARG(str, options_json),
                 )
                 self.status_bar.showMessage("Importing...", 0)
 
@@ -1721,7 +1725,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             QMessageBox.critical(self, "Import Error", f"An error occurred: {e}")
 
     @Slot(object)
-    def _on_import_finished(self, result) -> None:
+    def _on_import_finished(self, result: object) -> None:
         """Handles the completion of an import operation.
 
         Args:

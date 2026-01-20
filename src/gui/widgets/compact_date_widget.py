@@ -154,8 +154,8 @@ class CompactDateWidget(QWidget):
         self.txt_date.setToolTip("Enter date text (e.g. '15 Jan 3019')")
         # Use a style similar to preview label but editable
         self.txt_date.setStyleSheet(
-            f"""
-            QLineEdit {{
+            """
+            QLineEdit {
                 border: 1px solid #333333;
                 border-radius: 4px;
                 padding: 2px;
@@ -163,10 +163,10 @@ class CompactDateWidget(QWidget):
                 color: #e0e0e0;
                 font-family: 'Consolas', monospace;
                 font-size: 11px;
-            }}
-            QLineEdit:focus {{
+            }
+            QLineEdit:focus {
                 border: 1px solid #5a5a5a;
-            }}
+            }
         """
         )
         self.txt_date.setSizePolicy(

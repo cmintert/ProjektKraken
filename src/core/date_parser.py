@@ -1,14 +1,14 @@
 import re
-from typing import Optional, Dict, List, Any
+from typing import Optional
 
 from src.core.calendar import CalendarConfig, CalendarConverter, CalendarDate
-from src.core.parsed_date import ParsedDate, DatePrecision
+from src.core.parsed_date import DatePrecision, ParsedDate
 
 
 class DateParser:
     """A unified parser for custom calendar dates using CalendarConfig."""
 
-    def __init__(self, calendar_config: CalendarConfig):
+    def __init__(self, calendar_config: CalendarConfig) -> None:
         """Initialize the date parser with calendar configuration.
 
         Args:
@@ -24,7 +24,6 @@ class DateParser:
     def _generate_month_formats(self) -> None:
         """Generate standard and abbreviated month name formats."""
         self.month_lookup = {}
-        used_abbrevs = set()
 
         for idx, month in enumerate(self.calendar_config.months, 1):
             name = month.name
@@ -258,7 +257,7 @@ class DateParser:
                         continue
         return None
 
-    def _parse_exact_date(self, match) -> ParsedDate:
+    def _parse_exact_date(self, match: re.Match) -> ParsedDate:
         """Parse exact dates."""
         groups = [g.strip() for g in match.groups() if g is not None]
         groupdict = match.groupdict()
@@ -333,7 +332,7 @@ class DateParser:
 
         return True
 
-    def _parse_time(self, match) -> ParsedDate:
+    def _parse_time(self, match: re.Match) -> ParsedDate:
         groupdict = match.groupdict()
         hour = int(groupdict["hour"])
         minute = int(groupdict["minute"])
@@ -356,7 +355,7 @@ class DateParser:
             second=second,
         )
 
-    def _parse_month_year(self, match) -> ParsedDate:
+    def _parse_month_year(self, match: re.Match) -> ParsedDate:
         groups = [g for g in match.groups() if g is not None]
         year = int(next(g for g in reversed(groups) if re.match(r"^-?\d{1,4}$", g)))
         month_name = next(g for g in groups if g.lower() in self.month_lookup)
@@ -366,21 +365,21 @@ class DateParser:
             precision=DatePrecision.MONTH,
         )
 
-    def _parse_year_only(self, match) -> ParsedDate:
+    def _parse_year_only(self, match: re.Match) -> ParsedDate:
         year = int(
             next(g for g in match.groups() if g and (g.isdigit() or g.startswith("-")))
         )
         return ParsedDate(year=year, precision=DatePrecision.YEAR)
 
     # Placeholders for others to ensure no crash, but simplified logic
-    def _parse_season_date(self, match) -> ParsedDate:
+    def _parse_season_date(self, match: re.Match) -> ParsedDate:
         return ParsedDate(year=1, precision=DatePrecision.SEASON)  # Todo
 
-    def _parse_relative_date(self, match) -> ParsedDate:
+    def _parse_relative_date(self, match: re.Match) -> ParsedDate:
         return ParsedDate(year=1, precision=DatePrecision.RELATIVE)  # Todo
 
-    def _parse_fuzzy_date(self, match) -> ParsedDate:
+    def _parse_fuzzy_date(self, match: re.Match) -> ParsedDate:
         return ParsedDate(year=1, precision=DatePrecision.FUZZY)  # Todo
 
-    def _parse_date_range(self, match) -> ParsedDate:
+    def _parse_date_range(self, match: re.Match) -> ParsedDate:
         return ParsedDate(year=1, precision=DatePrecision.RANGE)  # Todo
