@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-20
-### Fixed
-- fix: Commit remaining lint fixes and updates
+### Documentation
+- docs: Update CHANGELOG for Import features and lint fixes
 
 
 *This changelog was automatically generated.*
