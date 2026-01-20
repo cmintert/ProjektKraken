@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-20
-### Documentation
-- docs: Update CHANGELOG for Import features and lint fixes
+### Internal
+- chore: add database debugging and maintenance utilities
 
 
 *This changelog was automatically generated.*
