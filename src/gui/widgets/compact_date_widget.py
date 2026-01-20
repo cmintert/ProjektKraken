@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QFrame,
     QGridLayout,
     QHBoxLayout,
-    QLabel,
+    QLineEdit,
     QPushButton,
     QSpinBox,
     QVBoxLayout,
@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.calendar import CalendarConverter, CalendarDate
+from src.core.date_parser import DateParser
 from src.gui.utils.style_helper import StyleHelper
 
 logger = logging.getLogger(__name__)
@@ -42,6 +43,7 @@ class CompactDateWidget(QWidget):
     - Hour/Minute inputs for time
     - Calendar popup for visual date selection
     - Live preview of formatted date
+    - Direct text input parsing
 
     Signals:
         value_changed: Emitted when the date value changes.
@@ -62,6 +64,7 @@ class CompactDateWidget(QWidget):
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         self._converter = None
+        self._parser: Optional[DateParser] = None
         self._updating = False
 
         self._setup_ui()
@@ -145,13 +148,31 @@ class CompactDateWidget(QWidget):
         )
         time_row.addWidget(self.spin_minute, stretch=1)
 
-        # Preview label - takes remaining space
-        self.lbl_preview = QLabel()
-        self.lbl_preview.setStyleSheet(StyleHelper.get_preview_label_style())
-        self.lbl_preview.setSizePolicy(
+        # Text Input (replaces Preview label) - takes remaining space
+        self.txt_date = QLineEdit()
+        self.txt_date.setPlaceholderText("Type date...")
+        self.txt_date.setToolTip("Enter date text (e.g. '15 Jan 3019')")
+        # Use a style similar to preview label but editable
+        self.txt_date.setStyleSheet(
+            f"""
+            QLineEdit {{
+                border: 1px solid #333333;
+                border-radius: 4px;
+                padding: 2px;
+                background-color: #1e1e1e;
+                color: #e0e0e0;
+                font-family: 'Consolas', monospace;
+                font-size: 11px;
+            }}
+            QLineEdit:focus {{
+                border: 1px solid #5a5a5a;
+            }}
+        """
+        )
+        self.txt_date.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
-        time_row.addWidget(self.lbl_preview, stretch=4)  # Wider for text
+        time_row.addWidget(self.txt_date, stretch=4)
 
         main_layout.addLayout(time_row)
 
@@ -167,6 +188,7 @@ class CompactDateWidget(QWidget):
         self.spin_hour.valueChanged.connect(self._on_input_changed)
         self.spin_minute.valueChanged.connect(self._on_input_changed)
         self.btn_calendar.clicked.connect(self._open_calendar_popup)
+        self.txt_date.editingFinished.connect(self._on_text_edited)
 
     def set_calendar_converter(self, converter: CalendarConverter) -> None:
         """Sets the calendar converter for date calculations.
@@ -175,6 +197,9 @@ class CompactDateWidget(QWidget):
             converter: CalendarConverter instance.
         """
         self._converter = converter
+        if self._converter and self._converter._config:
+            self._parser = DateParser(self._converter._config)
+
         self._populate_months()
         self._populate_days()
         self._update_preview()
@@ -246,19 +271,44 @@ class CompactDateWidget(QWidget):
         value = self.get_value()
         self.value_changed.emit(value)
 
+    @Slot()
+    def _on_text_edited(self) -> None:
+        """Handles manual text input."""
+        if self._updating or not self._parser:
+            return
+
+        text = self.txt_date.text().strip()
+        if not text:
+            return
+
+        try:
+            parsed = self._parser.parse_date(text)
+            timestamp = self._parser.calculate_timestamp(parsed)
+            # This will trigger set_value which formats text back to canonical
+            self.set_value(timestamp)
+            self.value_changed.emit(timestamp)
+        except ValueError:
+            # Maybe show red border or tooltip?
+            # For now just don't update value, keep user text dirty
+            pass
+
     def _update_preview(self) -> None:
-        """Updates the preview label."""
+        """Updates the preview text field."""
         if not self._converter:
-            self.lbl_preview.setText("")
+            if not self.txt_date.hasFocus():
+                self.txt_date.setText("")
             return
 
         try:
             value = self.get_value()
             formatted = self._converter.format_date(value)
-            self.lbl_preview.setText(formatted)
+            # Only update text if not focused to avoid fighting user
+            if not self.txt_date.hasFocus():
+                self.txt_date.setText(formatted)
         except Exception as e:
             logger.warning(f"Date formatting failed: {e}")
-            self.lbl_preview.setText("")
+            if not self.txt_date.hasFocus():
+                self.txt_date.setText("")
 
     def get_value(self) -> float:
         """Gets the current date as a float value.

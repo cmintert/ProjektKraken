@@ -1,1 +1,0 @@
-"""Date parser module package."""

@@ -8,10 +8,12 @@ import json
 import logging
 import uuid
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
+from src.core.calendar import CalendarConfig
 from src.core.entities import Entity
 from src.core.events import Event
+from src.core.date_parser import DateParser
 from src.services.db_service import DatabaseService
 
 logger = logging.getLogger(__name__)
@@ -39,6 +41,54 @@ class ImportService:
             db_service: The database service for persistence.
         """
         self._db = db_service
+        self._date_parser: Optional[DateParser] = None
+
+    def _get_parser(self) -> Optional[DateParser]:
+        """Lazy load parser with active calendar config."""
+        if self._date_parser:
+            return self._date_parser
+
+        config = self._db.get_active_calendar_config()
+        if not config:
+            logger.info(
+                "No active calendar found in DB. Falling back to default Gregorian."
+            )
+            config = CalendarConfig.create_default()
+
+        if config:
+            self._date_parser = DateParser(config)
+            return self._date_parser
+        return None
+
+    def _parse_lore_date(
+        self, value: Any, result: Optional[ImportResult] = None
+    ) -> float:
+        """Parse lore date from diverse inputs (float, string, etc)."""
+        if isinstance(value, (int, float)):
+            return float(value)
+
+        if isinstance(value, str):
+            parser = self._get_parser()
+            if parser:
+                try:
+                    parsed = parser.parse_date(value)
+                    return parser.calculate_timestamp(parsed)
+                except ValueError as e:
+                    msg = (
+                        f"Failed to parse date string '{value}': {e}. Defaulting to 0.0"
+                    )
+                    logger.warning(msg)
+                    if result:
+                        result.warnings.append(msg)
+                    return 0.0
+            else:
+                msg = f"No active calendar to parse date string '{value}'. Defaulting to 0.0"
+                logger.warning(msg)
+                if result:
+                    result.warnings.append(msg)
+                return 0.0
+
+        return 0.0
 
     @staticmethod
     def parse_only(json_data: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
@@ -96,40 +146,100 @@ class ImportService:
 
         try:
             with self._db.transaction() as _:
-                # 1. Import Entities
+                # ------------------------------------------------------------------
+                # PASS 1: Creation (Ignore Relations)
+                # ------------------------------------------------------------------
+                # 1. Import Entities (Core)
                 for entity_data in data.get("entities", []):
                     try:
                         entity_id = self._import_single_entity_internal(
-                            entity_data, result
+                            entity_data, result, skip_relations=True
                         )
                         if entity_id:
                             result.created_entities.append(entity_id)
                     except Exception as e:
                         result.errors.append(
-                            f"Failed to import entity '{entity_data.get('name')}': {e}"
+                            f"Failed to create entity '{entity_data.get('name')}': {e}"
                         )
+                        # Fail fast on core creation errors? Or continue?
+                        # Plan says "strict; fail batch if core items cannot be created"
+                        # But for now we gather errors and set success=False at end if critical?
+                        # Actually exception bubble up stops everything. Let's catch and continue?
+                        # If an entity fails to create, relations to/from it will fail later.
 
-                # 2. Import Events
+                # 2. Import Events (Core)
                 for event_data in data.get("events", []):
                     try:
                         event_id = self._import_single_event_internal(
-                            event_data, result
+                            event_data, result, skip_relations=True
                         )
                         if event_id:
                             result.created_events.append(event_id)
                     except Exception as e:
                         result.errors.append(
-                            f"Failed to import event '{event_data.get('name')}': {e}"
+                            f"Failed to create event '{event_data.get('name')}': {e}"
                         )
 
-                # 3. Import Root Relations (if any)
+                if result.errors:
+                    # If core creation failed, abort before linking to avoid cascades
+                    result.success = False
+                    return result
+
+                # ------------------------------------------------------------------
+                # PASS 2: Linking (Process Nested Relations)
+                # ------------------------------------------------------------------
+                # 1. Entity Relations
+                for entity_data in data.get("entities", []):
+                    if "relations" in entity_data:
+                        entity_id = entity_data.get("id")  # Should exist from Pass 1
+                        if not entity_id:
+                            continue  # Should not happen
+
+                        for rel_data in entity_data["relations"]:
+                            rel_data["source_id"] = entity_id
+                            try:
+                                rel_id = self._import_relation_internal(
+                                    rel_data, result
+                                )
+                                if rel_id:
+                                    result.created_relations.append(rel_id)
+                            except Exception as e:
+                                msg = f"Failed to link entity '{entity_data.get('name')}': {e}"
+                                result.warnings.append(msg)
+                                logger.warning(msg)
+
+                # 2. Event Relations
+                for event_data in data.get("events", []):
+                    if "relations" in event_data:
+                        event_id = event_data.get("id")
+                        if not event_id:
+                            continue
+
+                        for rel_data in event_data["relations"]:
+                            rel_data["source_id"] = event_id
+                            try:
+                                rel_id = self._import_relation_internal(
+                                    rel_data, result
+                                )
+                                if rel_id:
+                                    result.created_relations.append(rel_id)
+                            except Exception as e:
+                                msg = f"Failed to link event '{event_data.get('name')}': {e}"
+                                result.warnings.append(msg)
+                                logger.warning(msg)
+
+                # ------------------------------------------------------------------
+                # PASS 3: Top-Level Relations
+                # ------------------------------------------------------------------
                 for rel_data in data.get("relations", []):
                     try:
                         rel_id = self._import_relation_internal(rel_data, result)
                         if rel_id:
                             result.created_relations.append(rel_id)
                     except Exception as e:
-                        result.errors.append(f"Failed to import relation: {e}")
+                        msg = f"Failed to import root relation: {e}"
+                        result.warnings.append(msg)
+                        logger.warning(msg)
 
         except Exception as e:
             result.success = False
@@ -139,13 +249,14 @@ class ImportService:
         return result
 
     def _import_single_entity_internal(
-        self, data: Dict[str, Any], result: ImportResult
+        self, data: Dict[str, Any], result: ImportResult, skip_relations: bool = False
     ) -> Optional[str]:
         """Internal helper to import a single entity and its nested relations.
 
         Args:
             data: Entity data dict.
             result: Result object to append warnings/relations to.
+            skip_relations: If True, only creates the entity, skipping relations.
 
         Returns:
             ID of created entity or None.
@@ -155,7 +266,10 @@ class ImportService:
             raise ValueError("Entity missing 'name'")
 
         # Handle ID: use provided or generate new
-        entity_id = data.get("id", str(uuid.uuid4()))
+        # IMPORTANT: Write generated ID back to data for Pass 2
+        if "id" not in data:
+            data["id"] = str(uuid.uuid4())
+        entity_id = data["id"]
 
         # Check if ID exists -> Upsert logic (here we proceed to overwrite/update)
         # Note: Input sanitation for strings
@@ -171,7 +285,7 @@ class ImportService:
         self._db.insert_entity(entity)
 
         # Handle Nested Relations
-        if "relations" in data:
+        if not skip_relations and "relations" in data:
             for rel_data in data["relations"]:
                 # Inject source_id as validation expects parsing from external dict
                 rel_data["source_id"] = entity_id
@@ -183,13 +297,14 @@ class ImportService:
         return entity_id
 
     def _import_single_event_internal(
-        self, data: Dict[str, Any], result: ImportResult
+        self, data: Dict[str, Any], result: ImportResult, skip_relations: bool = False
     ) -> Optional[str]:
         """Internal helper to import a single event and its nested relations.
 
         Args:
             data: Event data dict.
             result: Result object to append warnings/relations to.
+            skip_relations: If True, only creates the event, skipping relations.
 
         Returns:
             ID of created event or None.
@@ -198,13 +313,15 @@ class ImportService:
         if not name:
             raise ValueError("Event missing 'name'")
 
-        event_id = data.get("id", str(uuid.uuid4()))
+        if "id" not in data:
+            data["id"] = str(uuid.uuid4())
+        event_id = data["id"]
 
         event = Event(
             id=event_id,
             name=str(name).strip(),
             type=str(data.get("type", "generic")).strip(),
-            lore_date=float(data.get("lore_date", 0.0)),
+            lore_date=self._parse_lore_date(data.get("lore_date"), result),
             lore_duration=float(data.get("lore_duration", 0.0)),
             description=str(data.get("description", "")).strip(),
             attributes=data.get("attributes", {}),
@@ -214,7 +331,7 @@ class ImportService:
         self._db.insert_event(event)
 
         # Handle Nested Relations
-        if "relations" in data:
+        if not skip_relations and "relations" in data:
             for rel_data in data["relations"]:
                 rel_data["source_id"] = event_id
                 rel_id = self._import_relation_internal(rel_data, result)

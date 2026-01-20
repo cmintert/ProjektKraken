@@ -790,6 +790,16 @@ class DatabaseService:
             self.connect()
         return self._calendar_repo.get_all()
 
+    def get_active_calendar_config(self) -> Optional[CalendarConfig]:
+        """Retrieves the currently active calendar configuration.
+
+        Returns:
+            Optional[CalendarConfig]: The active config if found, else None.
+        """
+        if not self._connection:
+            self.connect()
+        return self._calendar_repo.get_active()
+
     def delete_calendar_config(self, config_id: str) -> None:
         """Deletes a calendar config by its ID.
 
@@ -803,25 +813,6 @@ class DatabaseService:
             self.connect()
         self._calendar_repo.delete(config_id)
         logger.debug(f"Deleted calendar config: {config_id}")
-
-    def get_active_calendar_config(self) -> Optional[CalendarConfig]:
-        """Retrieves the currently active calendar configuration.
-
-        Returns:
-            Optional[CalendarConfig]: The active config if one is set, else None.
-        """
-        sql = "SELECT config_json FROM calendar_config WHERE is_active = 1"
-        if not self._connection:
-            self.connect()
-        assert self._connection is not None
-
-        cursor = self._connection.execute(sql)
-        row = cursor.fetchone()
-
-        if row:
-            data = json.loads(row["config_json"])
-            return CalendarConfig.from_dict(data)
-        return None
 
     def set_active_calendar_config(self, config_id: str) -> None:
         """Sets a calendar config as the active one.
