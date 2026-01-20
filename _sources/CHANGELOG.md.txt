@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-20
-### Internal
-- test: Fix unit test mismatches and update changelog
+### Fixed
+- fix: Commit remaining lint fixes and updates
 
 
 *This changelog was automatically generated.*
