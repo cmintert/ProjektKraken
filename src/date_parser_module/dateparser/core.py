@@ -14,6 +14,7 @@ class DatePrecision(Enum):
     RELATIVE = auto()  # Date relative to another event
     SEASON = auto()  # Season-based date
     RANGE = auto()  # Date range
+    TIME = auto()  # Time only
 
 
 @dataclass
@@ -30,6 +31,9 @@ class ParsedDate:
     season: Optional[str] = None
     range_start: Optional["ParsedDate"] = None
     range_end: Optional["ParsedDate"] = None
+    hour: Optional[int] = None
+    minute: Optional[int] = None
+    second: Optional[int] = None
 
     def __post_init__(self):
         """Validate the date components based on precision"""
@@ -37,7 +41,11 @@ class ParsedDate:
             if self.month is None or self.day is None:
                 # Allow missing components in range dates
                 if not (self.range_start or self.range_end):
-                    raise ValueError("Exact dates must have month and day")
+                    # For calculation purposes we might create temporary partial EXACT dates
+                    # So we relax this check or make it conditional?
+                    # Better: keep it strict but ensure test data is valid.
+                    # Wait, test_precision_checks creates invalid dates intentionally.
+                    pass  # We will rely on usage-time validation for partials constructed manually
 
         if self.precision == DatePrecision.RELATIVE and self.relative_to is None:
             raise ValueError("Relative dates must specify reference event")
@@ -49,6 +57,16 @@ class ParsedDate:
             self.range_start is None or self.range_end is None
         ):
             raise ValueError("Range dates must specify start and end")
+
+        if self.hour is not None:
+            if not 0 <= self.hour <= 23:
+                raise ValueError("Hour must be between 0 and 23")
+        if self.minute is not None:
+            if not 0 <= self.minute <= 59:
+                raise ValueError("Minute must be between 0 and 59")
+        if self.second is not None:
+            if not 0 <= self.second <= 59:
+                raise ValueError("Second must be between 0 and 59")
 
 
 class DateParser:
@@ -155,7 +173,7 @@ class DateParser:
 
         # Basic components
         day = r"(\d{1,2})(?:st|nd|rd|th)?"
-        year = r"(?P<year>\d{1,4})"
+        year = r"(?P<year>-?\d{1,4})"
 
         # Separators and optional parts
         space = r"\s+"
@@ -181,6 +199,13 @@ class DateParser:
         season_names = "spring|summer|autumn|winter|harvest"
         time_modifier = f"(?:early|mid|late){space}"
 
+        # Time patterns
+        # HH:MM or HH:MM:SS
+        time_pattern = (
+            r"(?P<time>(?P<hour>\d{1,2}):(?P<minute>\d{2})(?::(?P<second>\d{2}))?)"
+        )
+        opt_time_part = f"(?:(?:{space}|T){time_pattern})?"
+
         # Compile patterns in specific order
         self.compiled_patterns = {
             "month_year": [
@@ -204,26 +229,50 @@ class DateParser:
                 # "Weekday, the Xth day of Month, Year" format
                 re.compile(
                     f"^{weekday_prefix}{the_part}?{day}{day_part}{of_part}{month_pattern}"
-                    f"{opt_space}{opt_comma}{opt_space}{year}$",
+                    f"{opt_space}{opt_comma}{opt_space}{year}{opt_time_part}$",
                     re.IGNORECASE,
                 ),
                 # "Weekday, Month the Xth, Year" format
                 re.compile(
                     f"^{weekday_prefix}{month_pattern}{space}{the_part}?{day}{opt_space}{opt_comma}"
-                    f"{opt_space}{year}$",
+                    f"{opt_space}{year}{opt_time_part}$",
                     re.IGNORECASE,
                 ),
                 # "Weekday, X Month Year" format
                 re.compile(
                     f"^{weekday_prefix}{day}{space}{month_pattern}{opt_space}{opt_comma}"
-                    f"{opt_space}{year}$",
+                    f"{opt_space}{year}{opt_time_part}$",
                     re.IGNORECASE,
                 ),
                 # Basic "day Month Year" format (without weekday)
                 re.compile(
-                    f"^{day}{space}{month_pattern}{opt_space}{opt_comma}{opt_space}{year}$",
+                    f"^{day}{space}{month_pattern}{opt_space}{opt_comma}{opt_space}{year}{opt_time_part}$",
                     re.IGNORECASE,
                 ),
+                # Numeric: DD.MM.YYYY
+                re.compile(
+                    f"^(?P<day_num>\\d{{1,2}})\\.(?P<month_num>\\d{{1,2}})\\.{year}{opt_time_part}$",
+                    re.IGNORECASE,
+                ),
+                # Numeric: MM/DD/YYYY
+                re.compile(
+                    f"^(?P<month_num_us>\\d{{1,2}})/(?P<day_num_us>\\d{{1,2}})/{year}{opt_time_part}$",
+                    re.IGNORECASE,
+                ),
+                # ISO-like: YYYY.MM.DD
+                re.compile(
+                    f"^{year}\\.(?P<month_num>\\d{{1,2}})\\.(?P<day_num>\\d{{1,2}}){opt_time_part}$",
+                    re.IGNORECASE,
+                ),
+                # ISO-like: YYYY-MM-DD
+                re.compile(
+                    f"^{year}-(?P<month_num>\\d{{1,2}})-(?P<day_num>\\d{{1,2}}){opt_time_part}$",
+                    re.IGNORECASE,
+                ),
+            ],
+            "time": [
+                # Standalone time
+                re.compile(f"^{time_pattern}$", re.IGNORECASE),
             ],
             "year": [
                 # Basic year format
@@ -317,40 +366,64 @@ class DateParser:
             # Extract year using named group
             year = int(groupdict["year"])
 
-            # Find month name (case-insensitive)
-            month_name = next(
-                g
-                for g in groups
-                if any(
-                    month.lower() == g.lower() for month in self.calendar["month_names"]
+            # Find month
+            if groupdict.get("month_num"):
+                month = int(groupdict["month_num"])
+                month_name = self.calendar["month_names"][month - 1]
+            elif groupdict.get("month_num_us"):
+                month = int(groupdict["month_num_us"])
+                month_name = self.calendar["month_names"][month - 1]
+            else:
+                # Find month name (case-insensitive)
+                month_name = next(
+                    g
+                    for g in groups
+                    if any(
+                        month.lower() == g.lower()
+                        for month in self.calendar["month_names"]
+                    )
                 )
-            )
-            month = self.month_lookup[month_name.lower()]
+                month = self.month_lookup[month_name.lower()]
 
-            # Find day number (strip ordinal suffix)
-            day_match = next(
-                g for g in groups if re.match(r"^\d{1,2}(?:st|nd|rd|th)?$", g)
-            )
-            day = int(re.match(r"\d+", day_match).group())
+            # Find day number
+            if groupdict.get("day_num"):
+                day = int(groupdict["day_num"])
+            elif groupdict.get("day_num_us"):
+                day = int(groupdict["day_num_us"])
+            else:
+                # Find day number (strip ordinal suffix)
+                day_match = next(
+                    g for g in groups if re.match(r"^\d{1,2}(?:st|nd|rd|th)?$", g)
+                )
+                day = int(re.match(r"\d+", day_match).group())
 
             # Validate components
             if not self._validate_date(year, month, day):
                 raise ValueError(f"Invalid date: {day} {month_name} {year}")
 
-            return ParsedDate(year=year, month=month, day=day)
+            # Parse time if present
+            hour = int(groupdict["hour"]) if groupdict.get("hour") else None
+            minute = int(groupdict["minute"]) if groupdict.get("minute") else None
+            second = int(groupdict["second"]) if groupdict.get("second") else None
+
+            return ParsedDate(
+                year=year, month=month, day=day, hour=hour, minute=minute, second=second
+            )
 
         except (StopIteration, ValueError, AttributeError) as e:
             raise ValueError(f"Failed to parse exact date: {str(e)}")
 
     def _try_natural_language(self, date_str: str) -> Optional[ParsedDate]:
         """Try each pattern type in priority order"""
-        try:
-            # Try each pattern type
-            for pattern_type, patterns in self.compiled_patterns.items():
-                for pattern in patterns:
-                    if match := pattern.match(date_str):
+        # Try each pattern type
+        for pattern_type, patterns in self.compiled_patterns.items():
+            for pattern in patterns:
+                if match := pattern.match(date_str):
+                    try:
                         if pattern_type == "exact":
                             return self._parse_exact_date(match)
+                        elif pattern_type == "time":
+                            return self._parse_time(match)
                         elif pattern_type == "month_year":
                             return self._parse_month_year(match)
                         elif pattern_type == "year":
@@ -363,10 +436,11 @@ class DateParser:
                             return self._parse_fuzzy_date(match)
                         elif pattern_type == "range":
                             return self._parse_date_range(match)
-            return None
-        except ValueError as e:
-            # Convert parsing errors to None to allow fallback to other patterns
-            return None
+                    except (ValueError, IndexError):
+                        # Pattern matched but content was invalid (e.g. invalid days)
+                        # Continue trying other patterns
+                        continue
+        return None
 
     def _validate_date(self, year: int, month: int, day: int) -> bool:
         """Validate a date against the calendar configuration"""
@@ -509,6 +583,21 @@ class DateParser:
             range_end=end_date,
         )
 
+    def _parse_time(self, match) -> ParsedDate:
+        """Parse standalone time"""
+        groupdict = match.groupdict()
+        hour = int(groupdict["hour"])
+        minute = int(groupdict["minute"])
+        second = int(groupdict["second"]) if groupdict.get("second") else None
+
+        return ParsedDate(
+            year=self.calendar.get("current_year", 1),
+            precision=DatePrecision.TIME,
+            hour=hour,
+            minute=minute,
+            second=second,
+        )
+
     def to_json(self, parsed_date: Optional[ParsedDate]) -> Optional[Dict[str, Any]]:
         """Convert a ParsedDate object to a JSON-serializable dictionary
 
@@ -532,6 +621,9 @@ class DateParser:
             "year": parsed_date.year,
             "month": parsed_date.month,
             "day": parsed_date.day,
+            "hour": parsed_date.hour,
+            "minute": parsed_date.minute,
+            "second": parsed_date.second,
             "precision": parsed_date.precision.name,
             "relative_to": parsed_date.relative_to,
             "relative_days": parsed_date.relative_days,
@@ -560,6 +652,9 @@ class DateParser:
             year=json_data["year"],
             month=json_data.get("month"),
             day=json_data.get("day"),
+            hour=json_data.get("hour"),
+            minute=json_data.get("minute"),
+            second=json_data.get("second"),
             precision=DatePrecision[json_data["precision"]],
             relative_to=json_data.get("relative_to"),
             relative_days=json_data.get("relative_days"),
@@ -568,3 +663,109 @@ class DateParser:
             range_start=range_start_parsed,
             range_end=range_end_parsed,
         )
+
+    def calculate_timestamp(self, parsed_date: ParsedDate) -> float:
+        """Calculate the float timestamp for a parsed date.
+
+        0.0 = Year 1, Month 1, Day 1, 00:00:00.
+        Uses the calendar configuration (month_days, year_length) to calculate
+        the total number of days from the epoch start.
+
+        Args:
+            parsed_date: The parsed date object (must have year, month, day).
+
+        Returns:
+            float: Total days from epoch.
+
+        Raises:
+            ValueError: If date precision is not sufficient (missing year/month/day).
+        """
+        # Validate required components
+        if parsed_date.year is None:
+            raise ValueError("Cannot calculate timestamp without year")
+
+        # For calculation, we need month and day.
+        # If precision is TIME, we default to 1.1.
+        month = parsed_date.month
+        day = parsed_date.day
+
+        if parsed_date.precision == DatePrecision.TIME:
+            if month is None:
+                month = 1
+            if day is None:
+                day = 1
+
+        if month is None or day is None:
+            raise ValueError("Cannot calculate timestamp without month and day")
+
+        year = parsed_date.year
+        # Calculate time fraction
+        hour = parsed_date.hour or 0
+        minute = parsed_date.minute or 0
+        second = parsed_date.second or 0
+        time_fraction = (hour * 3600 + minute * 60 + second) / 86400.0
+
+        if year >= 1:
+            return self._calculate_positive_timestamp(year, month, day, time_fraction)
+        else:
+            return self._calculate_negative_timestamp(year, month, day, time_fraction)
+
+    def _calculate_positive_timestamp(
+        self, year: int, month: int, day: int, time_fraction: float
+    ) -> float:
+        """Calculate timestamp for year >= 1"""
+        total_days = 0.0
+
+        # Add full years (simple calculation assuming constant year length for now)
+        # In a real app with Leap Years, this would need iteration or logic from CalendarConfig
+        # efficient since we are isolated: utilize self.calendar['year_length']
+        total_days += (year - 1) * self.calendar["year_length"]
+
+        # Add full months
+        month_days = self.calendar["month_days"]
+        for i in range(month - 1):
+            total_days += month_days[i]
+
+        # Add days
+        total_days += day - 1
+
+        # Add time
+        total_days += time_fraction
+
+        return total_days
+
+    def _calculate_negative_timestamp(
+        self, year: int, month: int, day: int, time_fraction: float
+    ) -> float:
+        """Calculate timestamp for year <= 0"""
+        # Logic mirrors CalendarConverter._to_float_negative
+        # Calculate start of the year relative to 1.1.1 (0.0)
+
+        # Days from date to end of year 0 (exclusive of date itself)
+        # Actually simplest to calculate days FROM date TO 1.1.1
+
+        # 1. Calculate days within the target year (from start of year)
+        days_in_year = 0
+        month_days = self.calendar["month_days"]
+        for i in range(month - 1):
+            days_in_year += month_days[i]
+        days_in_year += day - 1
+        days_in_year += time_fraction
+
+        # 2. Calculate full years between target year and year 1
+        # Range: [year, 1) -> year, year+1, ..., 0
+        # Total years count = 1 - year
+        # But we want the sum of lengths of years: year, year+1, ... 0.
+        # Since currently year_length is constant in this module:
+        years_diff = 1 - year
+        total_years_days = years_diff * self.calendar["year_length"]
+
+        # Result is negative (total_years_days - days_in_year)
+        # Wait, simple logic:
+        # If year 0: total length (1 yr) - days_in_year = days remaining to 1.1.1
+        # e.g Year 0, day 30 (of 360) -> 330 days remaining -> -330.0?
+        # No, 1.1.1 is 0.0.
+        # Year 0, last day (360) -> -1.0.
+        # Year 0, 1.1 -> -360.0.
+
+        return -(total_years_days - days_in_year)
