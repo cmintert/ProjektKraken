@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-20
-### Added
-- feat: Integrate DateParser into core, implement a two-pass import strategy, and enhance import system with calendar fallback, documentation, and tests.
+### Internal
+- test: Fix unit test mismatches and update changelog
 
 
 *This changelog was automatically generated.*
