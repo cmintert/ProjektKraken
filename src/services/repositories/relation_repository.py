@@ -133,6 +133,36 @@ class RelationRepository(BaseRepository):
             relations.append(data)
         return relations
 
+    def find_existing(
+        self, source_id: str, target_id: str, rel_type: str
+    ) -> Dict[str, Any] | None:
+        """Find an existing relation by source, target, and type.
+
+        Args:
+            source_id: ID of the source entity/event.
+            target_id: ID of the target entity/event.
+            rel_type: Type of the relation.
+
+        Returns:
+            Relation dictionary if found, None otherwise.
+        """
+        sql = """
+            SELECT * FROM relations
+            WHERE source_id = ? AND target_id = ? AND rel_type = ?
+            LIMIT 1
+        """
+        if not self._connection:
+            raise RuntimeError("Database connection not initialized")
+
+        cursor = self._connection.execute(sql, (source_id, target_id, rel_type))
+        row = cursor.fetchone()
+        if row:
+            data = dict(row)
+            if data.get("attributes"):
+                data["attributes"] = self._deserialize_json(data["attributes"])
+            return data
+        return None
+
     def delete(self, relation_id: str) -> None:
         """Delete a relation permanently.
 

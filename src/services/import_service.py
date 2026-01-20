@@ -229,10 +229,10 @@ class ImportService:
                         for rel_data in entity_data["relations"]:
                             rel_data["source_id"] = entity_id
                             try:
-                                rel_id = self._import_relation_internal(
+                                rel_id, was_created = self._import_relation_internal(
                                     rel_data, result, options
                                 )
-                                if rel_id:
+                                if rel_id and was_created:
                                     result.created_relations.append(rel_id)
                             except Exception as e:
                                 msg = (
@@ -252,10 +252,10 @@ class ImportService:
                         for rel_data in event_data["relations"]:
                             rel_data["source_id"] = event_id
                             try:
-                                rel_id = self._import_relation_internal(
+                                rel_id, was_created = self._import_relation_internal(
                                     rel_data, result
                                 )
-                                if rel_id:
+                                if rel_id and was_created:
                                     result.created_relations.append(rel_id)
                             except Exception as e:
                                 msg = (
@@ -270,8 +270,10 @@ class ImportService:
                 # ------------------------------------------------------------------
                 for rel_data in data.get("relations", []):
                     try:
-                        rel_id = self._import_relation_internal(rel_data, result)
-                        if rel_id:
+                        rel_id, was_created = self._import_relation_internal(
+                            rel_data, result
+                        )
+                        if rel_id and was_created:
                             result.created_relations.append(rel_id)
                     except Exception as e:
                         msg = f"Failed to import root relation: {e}"
@@ -459,8 +461,10 @@ class ImportService:
             # But for completeness:
             for rel_data in data["relations"]:
                 rel_data["source_id"] = final_id
-                self._import_relation_internal(rel_data, result, options)
+                _, _ = self._import_relation_internal(rel_data, result, options)
 
+        # Update data with ID for Pass 2
+        data["id"] = final_id
         return final_id
 
     def _update_import_metadata(self, entity: Entity, entry: Dict[str, Any]) -> None:
@@ -707,13 +711,18 @@ class ImportService:
         if not skip_relations and "relations" in data:
             for rel_data in data["relations"]:
                 rel_data["source_id"] = final_id
-                self._import_relation_internal(rel_data, result, options)
+                _, _ = self._import_relation_internal(rel_data, result, options)
 
+        # Update data with ID for Pass 2
+        data["id"] = final_id
         return final_id
 
     def _import_relation_internal(
-        self, data: Dict[str, Any], result: ImportResult
-    ) -> Optional[str]:
+        self,
+        data: Dict[str, Any],
+        result: ImportResult,
+        options: Optional[Dict[str, Any]] = None,
+    ) -> tuple[Optional[str], bool]:
         """Internal helper to import a relation, resolving names to IDs.
 
         Args:
@@ -721,7 +730,7 @@ class ImportService:
             result: Result object.
 
         Returns:
-            ID of created relation or None.
+            Tuple of (relation_id, was_created). was_created is True if new.
         """
         source_id = data.get("source_id")
         target_id = data.get("target_id")
@@ -737,12 +746,32 @@ class ImportService:
             msg = f"Skipping relation: Unresolved source '{data.get('source_name')}' or target '{data.get('target_name')}'"
             result.warnings.append(msg)
             logger.warning(msg)
-            return None
+            return None, False
 
         rel_type = data.get("rel_type", "related")
         attributes = data.get("attributes", {})
 
-        return self._db.insert_relation(source_id, target_id, rel_type, attributes)
+        # Check for existing relation
+        existing = self._db._relation_repo.find_existing(source_id, target_id, rel_type)
+
+        if existing:
+            # Relation already exists - optionally update attributes if they differ
+            if attributes and attributes != existing.get("attributes", {}):
+                self._db._relation_repo.update(existing["id"], rel_type, attributes)
+                logger.info(
+                    f"Updated existing relation {existing['id']}: "
+                    f"{source_id} -> {target_id} ({rel_type})"
+                )
+            else:
+                logger.debug(
+                    f"Skipping duplicate relation: "
+                    f"{source_id} -> {target_id} ({rel_type})"
+                )
+            return existing["id"], False
+
+        # Create new relation
+        rel_id = self._db.insert_relation(source_id, target_id, rel_type, attributes)
+        return rel_id, True
 
     def _resolve_name_to_id(self, name: str, result: ImportResult) -> Optional[str]:
         """Resolves a name to an ID by querying Entities and Events.

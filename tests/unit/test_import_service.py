@@ -85,6 +85,7 @@ def test_import_relation_name_resolution():
     # Mock get_entities to return our target
     mock_db.get_entities.return_value = [existing_entity]
     mock_db.get_events.return_value = []
+    mock_db._relation_repo.find_existing.return_value = None  # No existing relation
 
     # Import data with relation pointing to TargetEntity
     data = {
@@ -132,3 +133,42 @@ def test_import_relation_missing_target():
     assert "Ghost" in result.warnings[0]
 
     mock_db.insert_relation.assert_not_called()
+
+
+def test_import_prevents_duplicate_relations():
+    """Test that importing the same relations multiple times doesn't create duplicates."""
+    from src.services.db_service import DatabaseService
+
+    db = DatabaseService(":memory:")
+    db.connect()
+    import_service = ImportService(db)
+
+    data = {
+        "entities": [
+            {"name": "Entity A", "type": "character"},
+            {"name": "Entity B", "type": "location"},
+        ],
+        "relations": [
+            {
+                "source_name": "Entity A",
+                "target_name": "Entity B",
+                "rel_type": "located_in",
+            }
+        ],
+    }
+
+    # First import
+    result1 = import_service.import_batch(data)
+    assert result1.success
+    assert len(result1.created_relations) == 1
+
+    # Second import - should not create duplicate
+    result2 = import_service.import_batch(data)
+    assert result2.success
+    assert len(result2.created_relations) == 0  # No new relations created
+
+    # Verify only one relation exists in DB
+    all_relations = db._relation_repo.get_all()
+    assert len(all_relations) == 1
+
+    db.close()
