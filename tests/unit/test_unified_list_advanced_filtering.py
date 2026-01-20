@@ -24,7 +24,7 @@ class TestUnifiedListAdvancedFiltering:
         list_widget.set_data([e1, e2], [])
 
         # 1. Test Match All
-        config = {"include": ["A", "B"], "match_all": True}
+        config = {"include": ["A", "B"], "include_mode": "all"}
         list_widget.set_advanced_filter(config)
 
         # Should only show e1
