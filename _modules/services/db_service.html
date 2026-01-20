@@ -1147,6 +1147,19 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calendar_repo</span><span class="o">.</span><span class="n">get_all</span><span class="p">()</span></div>
 
 
+<div class="viewcode-block" id="DatabaseService.get_active_calendar_config">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_active_calendar_config">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_active_calendar_config</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">CalendarConfig</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the currently active calendar configuration.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Optional[CalendarConfig]: The active config if found, else None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calendar_repo</span><span class="o">.</span><span class="n">get_active</span><span class="p">()</span></div>
+
+
 <div class="viewcode-block" id="DatabaseService.delete_calendar_config">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.delete_calendar_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">delete_calendar_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -1162,28 +1175,6 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_calendar_repo</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">config_id</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Deleted calendar config: </span><span class="si">{</span><span class="n">config_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="DatabaseService.get_active_calendar_config">
-<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_active_calendar_config">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_active_calendar_config</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">CalendarConfig</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the currently active calendar configuration.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            Optional[CalendarConfig]: The active config if one is set, else None.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;SELECT config_json FROM calendar_config WHERE is_active = 1&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-
-        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
-        <span class="n">row</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
-
-        <span class="k">if</span> <span class="n">row</span><span class="p">:</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;config_json&quot;</span><span class="p">])</span>
-            <span class="k">return</span> <span class="n">CalendarConfig</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-        <span class="k">return</span> <span class="kc">None</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.set_active_calendar_config">

@@ -54,7 +54,7 @@ Events represent points or durations in time.
   "events": [
     {
       "name": "The Coronation",
-      "lore_date": 1050.5,
+      "lore_date": "Year 500",
       "lore_duration": 0.0,
       "type": "ceremony",
       "description": "Alaric is crowned king.",
@@ -71,7 +71,9 @@ Events represent points or durations in time.
 
 **Fields:**
 *   `name` (Required): Event title.
-*   `lore_date` (Required): Float representing the time (1.0 = 1 day).
+*   `lore_date` (Required): Float ID or Date String.
+    *   **Float**: Raw timestamp (e.g., `1050.5`).
+    *   **String**: "Natural" date string (e.g., `"Year 500"`, `"15th of Harvest, Year 300"`). These are parsed using the active calendar configuration.
 *   `lore_duration` (Optional): Duration in days. Default: 0.0.
 *   `type` (Optional): e.g., "scene", "battle". Default: "generic".
 *   `description` (Optional): Event details.
@@ -123,8 +125,8 @@ You can use the following system prompt to instruct an LLM (like ChatGPT or Clau
 >   "events": [
 >     {
 >       "name": "string (required)",
->       "lore_date": float (required, 1.0 = 1 day),
->       "lore_duration": float (optional),
+>       "lore_date": "float OR string (e.g., 'Year 100', '15th of Month 1, Year 500 14:30')",
+>       "lore_duration": float (optional, 1.0 = 1 day),
 >       "type": "string",
 >       "attributes": { ... },
 >       "relations": [
@@ -136,6 +138,6 @@ You can use the following system prompt to instruct an LLM (like ChatGPT or Clau
 > ```
 > **Rules:**
 > 1. Use `target_name` for relations. It must match the `name` of an existing or extracted item EXACTLY.
-> 2. `lore_date` is a float number.
+> 2. `lore_date` can be a raw number (float) OR a natural date string (e.g., "Year 500", "1st of Hammer, Year 1000 12:30 PM").
 > 3. Nest relations inside their source item.
 > 4. Output ONLY valid JSON.

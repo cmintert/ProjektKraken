@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-01-19
-### Documentation
-- docs: Update changelog with JSON import system and architecture refactor
+## [Development] - 2026-01-20
+### Added
+- feat: Refactor ImportService and enhance DateParser
 
 
 *This changelog was automatically generated.*

@@ -335,7 +335,7 @@
 <span class="w">  </span><span class="nt">&quot;events&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
 <span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The Coronation&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;lore_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1050.5</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;lore_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Year 500&quot;</span><span class="p">,</span>
 <span class="w">      </span><span class="nt">&quot;lore_duration&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span>
 <span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ceremony&quot;</span><span class="p">,</span>
 <span class="w">      </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Alaric is crowned king.&quot;</span><span class="p">,</span>
@@ -353,7 +353,12 @@
 <p><strong>Fields:</strong></p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">name</span></code> (Required): Event title.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">lore_date</span></code> (Required): Float representing the time (1.0 = 1 day).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lore_date</span></code> (Required): Float ID or Date String.</p>
+<ul>
+<li><p><strong>Float</strong>: Raw timestamp (e.g., <code class="docutils literal notranslate"><span class="pre">1050.5</span></code>).</p></li>
+<li><p><strong>String</strong>: “Natural” date string (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;Year</span> <span class="pre">500&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;15th</span> <span class="pre">of</span> <span class="pre">Harvest,</span> <span class="pre">Year</span> <span class="pre">300&quot;</span></code>). These are parsed using the active calendar configuration.</p></li>
+</ul>
+</li>
 <li><p><code class="docutils literal notranslate"><span class="pre">lore_duration</span></code> (Optional): Duration in days. Default: 0.0.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">type</span></code> (Optional): e.g., “scene”, “battle”. Default: “generic”.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">description</span></code> (Optional): Event details.</p></li>
@@ -407,8 +412,8 @@ You are a data extraction assistant. Extract entities, events, and their relatio
 <span class="w">  </span><span class="nt">&quot;events&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
 <span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string (required)&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;lore_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">fl</span><span class="err">oa</span><span class="kc">t</span><span class="w"> </span><span class="err">(required</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="err">day)</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;lore_duration&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">fl</span><span class="err">oa</span><span class="kc">t</span><span class="w"> </span><span class="err">(op</span><span class="kc">t</span><span class="err">io</span><span class="kc">nal</span><span class="err">)</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;lore_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;float OR string (e.g., &#39;Year 100&#39;, &#39;15th of Month 1, Year 500 14:30&#39;)&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;lore_duration&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">fl</span><span class="err">oa</span><span class="kc">t</span><span class="w"> </span><span class="err">(op</span><span class="kc">t</span><span class="err">io</span><span class="kc">nal</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="err">day)</span><span class="p">,</span>
 <span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span>
 <span class="w">      </span><span class="nt">&quot;attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="err">...</span><span class="w"> </span><span class="p">},</span>
 <span class="w">      </span><span class="nt">&quot;relations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
@@ -422,7 +427,7 @@ You are a data extraction assistant. Extract entities, events, and their relatio
 <p><strong>Rules:</strong></p>
 <ol class="arabic simple">
 <li><p>Use <code class="docutils literal notranslate"><span class="pre">target_name</span></code> for relations. It must match the <code class="docutils literal notranslate"><span class="pre">name</span></code> of an existing or extracted item EXACTLY.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">lore_date</span></code> is a float number.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lore_date</span></code> can be a raw number (float) OR a natural date string (e.g., “Year 500”, “1st of Hammer, Year 1000 12:30 PM”).</p></li>
 <li><p>Nest relations inside their source item.</p></li>
 <li><p>Output ONLY valid JSON.</p></li>
 </ol>
