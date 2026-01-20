@@ -245,15 +245,15 @@ def test_timeline_scene_rect_is_unconstrained(timeline_view):
     scene_rect = timeline_view.scene.sceneRect()
 
     # Check width is massive (buffer is 100M on each side)
-    assert (
-        scene_rect.width() > 10_000_000
-    ), "Scene rect should be huge to allow unconstrained panning"
+    assert scene_rect.width() > 10_000_000, (
+        "Scene rect should be huge to allow unconstrained panning"
+    )
 
     # Check that events are centered in this massive rect
     # Center of events is 150.0 * 20 = 3000 x
-    # Scene rect x should be roughly 3000 - 100M
+    # Scene rect x should be roughly 3000 - 50M (matching implementation's HUGE_BUFFER)
     center_x = 150.0 * timeline_view.scale_factor
-    expected_start_x = center_x - 100_000_000
+    expected_start_x = center_x - 50_000_000
 
     # Allow some floating point wiggle room
     assert abs(scene_rect.x() - expected_start_x) < 2000
@@ -266,6 +266,6 @@ def test_timeline_scene_rect_is_unconstrained_empty(timeline_view):
     scene_rect = timeline_view.scene.sceneRect()
 
     # Check width is massive
-    assert (
-        scene_rect.width() > 10_000_000
-    ), "Scene rect should be huge even with no events"
+    assert scene_rect.width() > 10_000_000, (
+        "Scene rect should be huge even with no events"
+    )

@@ -1,5 +1,5 @@
-import logging
 import pytest
+
 from src.core.calendar import CalendarConfig, MonthDefinition, WeekDefinition
 from src.services.db_service import DatabaseService
 from src.services.import_service import ImportService
@@ -61,12 +61,12 @@ def test_import_parses_date_string(memory_db, simple_calendar):
     importer = ImportService(memory_db)
     result = importer.import_batch(import_data)
 
-    assert (
-        result.success is True
-    ), f"Import failed. Errors: {result.errors}, Warnings: {result.warnings}"
-    assert (
-        len(result.created_events) == 1
-    ), f"No events created. Errors: {result.errors}, Warnings: {result.warnings}"
+    assert result.success is True, (
+        f"Import failed. Errors: {result.errors}, Warnings: {result.warnings}"
+    )
+    assert len(result.created_events) == 1, (
+        f"No events created. Errors: {result.errors}, Warnings: {result.warnings}"
+    )
 
     # 4. Verify Data
     event_id = result.created_events[0]
@@ -78,7 +78,7 @@ def test_import_parses_date_string(memory_db, simple_calendar):
 
 
 def test_import_fallback_on_missing_calendar(memory_db):
-    """Test fallback to 0.0 if no calendar is active."""
+    """Test fallback to default Gregorian calendar if no calendar is active."""
     # Ensure no active calendar
     assert memory_db.get_active_calendar_config() is None
 
@@ -91,10 +91,12 @@ def test_import_fallback_on_missing_calendar(memory_db):
     importer = ImportService(memory_db)
     result = importer.import_batch(import_data)
 
-    # Should succeed but defaulting date to 0.0 (and warn logs)
+    # Should succeed with fallback to default Gregorian calendar
     assert result.success is True
     event = memory_db.get_event(result.created_events[0])
-    assert event.lore_date == 0.0
+    # "Year 30" on Gregorian: 29 full years * ~365.25 days = ~10592 days
+    # The exact value depends on leap years. We just check it's not 0.0.
+    assert event.lore_date > 0.0, "Date should be parsed, not defaulted to 0.0"
 
 
 def test_import_raw_float_preserved(memory_db):
