@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-01-19
-**Commit:** `2233616`
+**Last Updated:** 2026-01-20
+**Commit:** `6377e76`
 ---
 
 # Changelog
@@ -10,6 +10,27 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Added
+- *(2026-01-20)* **Core**: Integrated fully functional `DateParser` into `src.core` (migrated from standalone module).
+  - Supports natural language dates (e.g., "1st of January"), ISO formats, and relative terms.
+  - Implemented `calculate_timestamp` for precise float conversions using the active `CalendarConfig`.
+  - Added support for 12-hour AM/PM time parsing (e.g., "12:30 PM") and natural language backtracking.
+- *(2026-01-20)* **Import**: Implemented automatic fallback to default Gregorian calendar if no active calendar config exists in DB.
+
+### Changed
+- *(2026-01-20)* **Cleanup**: Removed legacy `src/date_parser_module` in favor of integrated `src.core.date_parser`.
+
+### Refactor
+- *(2026-01-20)* **Import**: Implemented Two-Pass Import Strategy (Creation -> Linking) to resolve cyclic dependencies and forward references in JSON imports.
+
+### Documentation
+- *(2026-01-20)* **Import**: Updated `docs/imports.md` with explicit instructions for LLMs to include time in date strings.
+
+### Testing
+- *(2026-01-20)* **Import**: Added `test_import_forward_refs.py` and `test_import_feedback.py` covering cyclic deps and parsing warnings.
+
+## [0.8.3]
 
 ### Added
 - *(2026-01-19)* **Import**: Implemented comprehensive JSON import system with GUI and CLI support.
