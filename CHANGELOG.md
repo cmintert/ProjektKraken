@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-01-20
-**Commit:** `6377e76`
+**Commit:** `9caef20`
 ---
 
 # Changelog
@@ -17,11 +17,18 @@ All notable changes to this project will be documented in this file.
   - Implemented `calculate_timestamp` for precise float conversions using the active `CalendarConfig`.
   - Added support for 12-hour AM/PM time parsing (e.g., "12:30 PM") and natural language backtracking.
 - *(2026-01-20)* **Import**: Implemented automatic fallback to default Gregorian calendar if no active calendar config exists in DB.
+- *(2026-01-20)* **Import**: Added Import Configuration UI with Source Name, Import Mode (Update, Overwrite, Skip), and Dry Run options.
+- *(2026-01-20)* **Import**: Implemented robust deduplication logic using `external_id` and `source_name` metadata to prevent ambiguity.
+
+### Fixed
+- *(2026-01-20)* **Import**: Resolved "Ambiguous Entity" errors by ensuring import logic checks source metadata before name matching.
 
 ### Changed
+- *(2026-01-20)* **Cleanup**: Removed temporary debug scripts (`debug_duplicates.py`, `fix_duplicates.py`).
 - *(2026-01-20)* **Cleanup**: Removed legacy `src/date_parser_module` in favor of integrated `src.core.date_parser`.
 
 ### Refactor
+- *(2026-01-20)* **Linting**: Fixed 31+ Ruff linting errors (type hints, unused variables) across 10 files.
 - *(2026-01-20)* **Import**: Implemented Two-Pass Import Strategy (Creation -> Linking) to resolve cyclic dependencies and forward references in JSON imports.
 
 ### Documentation
