@@ -240,7 +240,8 @@ class UnifiedListWidget(QWidget):
         """Sets the advanced filter configuration (tags) and re-renders the list.
 
         Args:
-            config: Filter configuration dict with 'include', 'exclude', 'match_all' keys.
+            config: Filter configuration dict with 'include', 'include_mode', 'exclude',
+                    'exclude_mode' keys.
         """
         self._advanced_filter_config = config or {}
         has_filter = bool(config.get("include") or config.get("exclude"))
@@ -396,24 +397,35 @@ class UnifiedListWidget(QWidget):
             return True
 
         include_tags = self._advanced_filter_config.get("include", [])
+        include_mode = self._advanced_filter_config.get("include_mode", "any")
         exclude_tags = self._advanced_filter_config.get("exclude", [])
-        match_all = self._advanced_filter_config.get("match_all", False)
+        exclude_mode = self._advanced_filter_config.get("exclude_mode", "any")
 
         if not include_tags and not exclude_tags:
             return True
 
         item_tags = set(getattr(obj, "tags", []))
 
-        # Exclude check first
-        if exclude_tags and any(tag in item_tags for tag in exclude_tags):
-            return False
+        # Exclude check
+        if exclude_tags:
+            if exclude_mode == "all":
+                # Exclude if ALL excluded tags are present
+                if all(tag in item_tags for tag in exclude_tags):
+                    return False
+            else:
+                # Default "any": Exclude if ANY excluded tag is present
+                if any(tag in item_tags for tag in exclude_tags):
+                    return False
 
         # Include check
         if include_tags:
-            if match_all and not all(tag in item_tags for tag in include_tags):
-                return False
-            if not match_all and not any(tag in item_tags for tag in include_tags):
-                return False
+            if include_mode == "all":
+                if not all(tag in item_tags for tag in include_tags):
+                    return False
+            else:
+                # Default "any"
+                if not any(tag in item_tags for tag in include_tags):
+                    return False
 
         return True
 
@@ -516,7 +528,8 @@ class UnifiedListWidget(QWidget):
             # Signal should trigger _render_list synchronously
             find_and_select()
         else:
-            # If we didn't switch filters (or even if we did and it's still not there due to another reason),
+            # If we didn't switch filters (or even if we did and it's still not
+            # there due to another reason),
             # validation failed or item is truly gone/filtered by search.
             # We MUST clear selection to prevent "stale" selection from persisting.
             self.list_widget.clearSelection()
