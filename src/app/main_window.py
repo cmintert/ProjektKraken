@@ -1743,7 +1743,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             if result.warnings:
                 msg += "\n\nWarnings:\n" + "\n".join(result.warnings[:5])
                 if len(result.warnings) > 5:
-                    msg += f"\n...and {len(result.warnings)-5} more."
+                    msg += f"\n...and {len(result.warnings) - 5} more."
 
             QMessageBox.information(self, "Import Complete", msg)
         else:

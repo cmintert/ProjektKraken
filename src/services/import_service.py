@@ -190,8 +190,7 @@ class ImportService:
                             result.created_entities.append(entity_id)
                     except Exception as e:
                         msg = (
-                            f"Failed to create entity '{entity_data.get('name')}': "
-                            f"{e}"
+                            f"Failed to create entity '{entity_data.get('name')}': {e}"
                         )
                         result.errors.append(msg)
 

@@ -56,9 +56,9 @@ def test_snapshot_isolation_and_refresh(db_path):
     count = cursor.fetchone()[0]
 
     # If snapshot isolation is working as expected (and causing the bug), count should be 0
-    assert (
-        count == 0
-    ), "Reader should not see data committed after its transaction started"
+    assert count == 0, (
+        "Reader should not see data committed after its transaction started"
+    )
 
     # 6. Apply Fix: Ensure Fresh View
     # This should commit/rollback the current read transaction

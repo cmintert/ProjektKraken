@@ -48,7 +48,7 @@ class DateParser:
             [m.name for m in self.calendar_config.months], key=len, reverse=True
         )
         month_names_escaped = [re.escape(name) for name in month_names]
-        month_pattern = f'({"|".join(month_names_escaped)})'
+        month_pattern = f"({'|'.join(month_names_escaped)})"
 
         # Basic components
         day = r"(\d{1,2})(?:st|nd|rd|th)?"
