@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-01-20
-**Commit:** `9caef20`
+**Last Updated:** 2026-01-21
+**Commit:** `12330a6`
 ---
 
 # Changelog
@@ -12,6 +12,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- *(2026-01-21)* **UI**: Implemented multi-selection with checkboxes in `UnifiedListWidget`.
+  - Enabled ExtendedSelection mode for Ctrl+Click and Shift+Click support.
+  - Checkboxes sync bidirectionally with selection state.
+  - Added `items_selected` signal emitting list of `(type, id)` tuples.
+  - Confirmation dialog now adapts for bulk deletion (e.g., "Delete 5 items?").
+- *(2026-01-21)* **UI**: Added compact date formatting (dd.mm.yyyy - hh:mm) and sorting options to `UnifiedListWidget`.
+  - Added `set_calendar_converter()` method for project-aware date display.
+  - Entities sort to end when using "Lore Date" sorting (since they have no date).
 - *(2026-01-20)* **Core**: Integrated fully functional `DateParser` into `src.core` (migrated from standalone module).
   - Supports natural language dates (e.g., "1st of January"), ISO formats, and relative terms.
   - Implemented `calculate_timestamp` for precise float conversions using the active `CalendarConfig`.
@@ -21,6 +29,8 @@ All notable changes to this project will be documented in this file.
 - *(2026-01-20)* **Import**: Implemented robust deduplication logic using `external_id` and `source_name` metadata to prevent ambiguity.
 
 ### Fixed
+- *(2026-01-21)* **UI**: Fixed stale/ghost selections persisting in `UnifiedListWidget` when items are filtered out or list is repopulated.
+- *(2026-01-20)* **Import**: Prevented duplicate relations from being created on JSON re-import by checking for existing relations before creation.
 - *(2026-01-20)* **Import**: Resolved "Ambiguous Entity" errors by ensuring import logic checks source metadata before name matching.
 
 ### Changed
@@ -35,6 +45,7 @@ All notable changes to this project will be documented in this file.
 - *(2026-01-20)* **Import**: Updated `docs/imports.md` with explicit instructions for LLMs to include time in date strings.
 
 ### Testing
+- *(2026-01-21)* **UI**: Added `test_unified_list_features.py` with 14 tests covering multi-selection, sorting, and date formatting.
 - *(2026-01-20)* **Import**: Added `test_import_forward_refs.py` and `test_import_feedback.py` covering cyclic deps and parsing warnings.
 
 ## [0.8.3]
