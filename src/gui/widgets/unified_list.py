@@ -6,7 +6,7 @@ color-coded differentiation.
 
 import json
 import logging
-from typing import List, Union
+from typing import List, Optional, Union
 
 from PySide6.QtCore import QMimeData, QSize, Qt, Signal, Slot
 from PySide6.QtGui import QBrush, QColor, QDrag
@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.calendar import CalendarConverter
 from src.core.entities import Entity
 from src.core.events import Event
 from src.gui.utils.style_helper import StyleHelper
@@ -86,6 +87,7 @@ class UnifiedListWidget(QWidget):
 
     # Signals
     item_selected = Signal(str, str)  # type ("event"|"entity"), id
+    items_selected = Signal(list)  # list of (type, id) tuples for multi-selection
     refresh_requested = Signal()
     delete_requested = Signal(str, str)  # type, id
     create_event_requested = Signal()
@@ -165,11 +167,26 @@ class UnifiedListWidget(QWidget):
         self.btn_clear_filters.clicked.connect(self._request_clear_filters)
         filter_row.addWidget(self.btn_clear_filters)
 
+        # Sort dropdown
+        self.sort_combo = QComboBox()
+        self.sort_combo.addItems(["Name", "Created", "Lore Date"])
+        self.sort_combo.currentTextChanged.connect(self._on_sort_changed)
+        filter_row.addWidget(self.sort_combo)
+
+        # Sort direction toggle
+        self.btn_sort_dir = QPushButton("↑")
+        self.btn_sort_dir.setFixedWidth(30)
+        self.btn_sort_dir.setToolTip("Toggle sort direction")
+        self.btn_sort_dir.clicked.connect(self._toggle_sort_direction)
+        filter_row.addWidget(self.btn_sort_dir)
+
         main_layout.addLayout(filter_row)
 
         # List (with drag support)
         self.list_widget = DraggableListWidget()
+        self.list_widget.setSelectionMode(QListWidget.SelectionMode.ExtendedSelection)
         self.list_widget.itemSelectionChanged.connect(self._on_selection_changed)
+        self.list_widget.itemChanged.connect(self._on_item_checkbox_changed)
         main_layout.addWidget(self.list_widget)
 
         # Empty State
@@ -184,6 +201,8 @@ class UnifiedListWidget(QWidget):
         self._entities: List[Entity] = []
         self._search_term = ""  # Track current search term
         self._advanced_filter_config: dict = {}  # Advanced filter settings (tags)
+        self._sort_ascending = True  # Sort direction
+        self._calendar_converter: Optional[CalendarConverter] = None
 
         # Filter State
         # self._active_types: set = set()  # Removed: Backend handled
@@ -211,6 +230,45 @@ class UnifiedListWidget(QWidget):
         self._entities = entities
 
         self._render_list()
+
+    def set_calendar_converter(self, converter: Optional[CalendarConverter]) -> None:
+        """Sets the calendar converter for formatting lore dates.
+
+        Args:
+            converter: CalendarConverter instance or None.
+        """
+        self._calendar_converter = converter
+        self._render_list()
+
+    def _format_compact_date(self, lore_date: float) -> str:
+        """Formats a lore date as dd.mm.yyyy - hh:mm.
+
+        Args:
+            lore_date: The float lore date value.
+
+        Returns:
+            str: Formatted date string in dd.mm.yyyy - hh:mm format.
+        """
+        if not self._calendar_converter:
+            return str(lore_date)
+
+        cal_date = self._calendar_converter.from_float(lore_date)
+
+        # Format as dd.mm.yyyy
+        day_str = str(cal_date.day).zfill(2)
+        month_str = str(cal_date.month).zfill(2)
+        year_str = str(cal_date.year)
+        date_part = f"{day_str}.{month_str}.{year_str}"
+
+        # Format time from time_fraction (0.0 = midnight, 0.5 = noon)
+        if cal_date.time_fraction > 0:
+            total_minutes = int(cal_date.time_fraction * 24 * 60)
+            hours = total_minutes // 60
+            minutes = total_minutes % 60
+            time_part = f"{str(hours).zfill(2)}:{str(minutes).zfill(2)}"
+            return f"{date_part} - {time_part}"
+
+        return date_part
 
     @Slot()
     @Slot()
@@ -308,34 +366,64 @@ class UnifiedListWidget(QWidget):
 
         has_items = False
 
-        if show_entities and self._entities:
-            # Header item? No, user said differentiated by color.
-            for entity in self._entities:
-                # Apply all filters (search, type, tag)
-                if not self._passes_filters(entity):
-                    continue
-                label = f"{entity.name} ({entity.type})"
-                item = QListWidgetItem(label)
-                item.setData(Qt.ItemDataRole.UserRole, entity.id)
-                item.setData(Qt.ItemDataRole.UserRole + 1, "entity")
-                item.setData(Qt.ItemDataRole.UserRole + 2, entity.name)  # For drag
-                item.setForeground(QBrush(self.color_entity))
-                self.list_widget.addItem(item)
-                has_items = True
+        # Collect all items that pass filters
+        filtered_items = []
 
-        if show_events and self._events:
+        if show_entities:
+            for entity in self._entities:
+                if self._passes_filters(entity):
+                    filtered_items.append(("entity", entity))
+
+        if show_events:
             for event in self._events:
-                # Apply all filters (search, type, tag)
-                if not self._passes_filters(event):
-                    continue
-                label = f"[{event.lore_date}] {event.name}"
-                item = QListWidgetItem(label)
-                item.setData(Qt.ItemDataRole.UserRole, event.id)
-                item.setData(Qt.ItemDataRole.UserRole + 1, "event")
-                item.setData(Qt.ItemDataRole.UserRole + 2, event.name)  # For drag
-                item.setForeground(QBrush(self.color_event))
-                self.list_widget.addItem(item)
-                has_items = True
+                if self._passes_filters(event):
+                    filtered_items.append(("event", event))
+
+        # Sort items based on current sort settings
+        sort_field = self.sort_combo.currentText()
+        reverse = not self._sort_ascending
+
+        def get_sort_key(
+            item_tuple: tuple[str, Union[Event, Entity]],
+        ) -> Union[str, float]:
+            item_type, obj = item_tuple
+            if sort_field == "Name":
+                return obj.name.lower()
+            elif sort_field == "Created":
+                return getattr(obj, "created_at", 0) or 0
+            elif sort_field == "Lore Date":
+                if item_type == "event":
+                    return getattr(obj, "lore_date", float("inf")) or float("inf")
+                else:
+                    # Entities go to end when sorting by lore date
+                    return float("inf") if not reverse else float("-inf")
+            return obj.name.lower()
+
+        filtered_items.sort(key=get_sort_key, reverse=reverse)
+
+        # Render sorted items
+        for item_type, obj in filtered_items:
+            if item_type == "entity":
+                label = f"{obj.name} ({obj.type})"
+                color = self.color_entity
+            else:
+                # Format lore date in compact dd.mm.yyyy - hh:mm format
+                if self._calendar_converter and obj.lore_date is not None:
+                    date_str = self._format_compact_date(obj.lore_date)
+                else:
+                    date_str = str(obj.lore_date)
+                label = f"[{date_str}] {obj.name}"
+                color = self.color_event
+
+            item = QListWidgetItem(label)
+            item.setData(Qt.ItemDataRole.UserRole, obj.id)
+            item.setData(Qt.ItemDataRole.UserRole + 1, item_type)
+            item.setData(Qt.ItemDataRole.UserRole + 2, obj.name)
+            item.setForeground(QBrush(color))
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            item.setCheckState(Qt.CheckState.Unchecked)
+            self.list_widget.addItem(item)
+            has_items = True
 
         if has_items:
             self.list_widget.show()
@@ -458,30 +546,115 @@ class UnifiedListWidget(QWidget):
         """
         self._render_list()
 
+    @Slot(str)
+    def _on_sort_changed(self, text: str) -> None:
+        """Handles sort combo box changes.
+
+        Args:
+            text (str): The selected sort field.
+        """
+        self._render_list()
+
     @Slot()
+    def _toggle_sort_direction(self) -> None:
+        """Toggles between ascending and descending sort order."""
+        self._sort_ascending = not self._sort_ascending
+        self.btn_sort_dir.setText("↑" if self._sort_ascending else "↓")
+        self._render_list()
+
+    @Slot(QListWidgetItem)
+    def _on_item_checkbox_changed(self, item: QListWidgetItem) -> None:
+        """Sync selection when checkbox is clicked.
+
+        Args:
+            item: The item whose checkbox changed.
+        """
+        # Block signals to prevent recursion
+        self.list_widget.blockSignals(True)
+        is_checked = item.checkState() == Qt.CheckState.Checked
+        item.setSelected(is_checked)
+        self.list_widget.blockSignals(False)
+
+        # Trigger selection update manually
+        self._on_selection_changed()
+
     @Slot()
     def _on_selection_changed(self) -> None:
         """Handles item selection changes in the list."""
-        items = self.list_widget.selectedItems()
-        if items:
-            item = items[0]
-            item_id = item.data(Qt.ItemDataRole.UserRole)
-            item_type = item.data(Qt.ItemDataRole.UserRole + 1)
+        selected_items = self.list_widget.selectedItems()
+
+        # Sync checkboxes with selection state
+        self.list_widget.blockSignals(True)
+        for index in range(self.list_widget.count()):
+            item = self.list_widget.item(index)
+            is_selected = item.isSelected()
+            item.setCheckState(
+                Qt.CheckState.Checked if is_selected else Qt.CheckState.Unchecked
+            )
+        self.list_widget.blockSignals(False)
+
+        if selected_items:
+            # Collect all selected items for multi-selection signal
+            selected_data = []
+            for item in selected_items:
+                item_id = item.data(Qt.ItemDataRole.UserRole)
+                item_type = item.data(Qt.ItemDataRole.UserRole + 1)
+                if item_id and item_type:
+                    selected_data.append((item_type, item_id))
+
+            # Emit multi-selection signal
+            self.items_selected.emit(selected_data)
+
+            # Backward compatibility: emit single selection for first item
+            first_item = selected_items[0]
+            item_id = first_item.data(Qt.ItemDataRole.UserRole)
+            item_type = first_item.data(Qt.ItemDataRole.UserRole + 1)
             self.item_selected.emit(item_type, item_id)
+
             self.btn_delete.setEnabled(True)
         else:
             self.btn_delete.setEnabled(False)
 
     @Slot()
-    @Slot()
     def _on_delete_clicked(self) -> None:
-        """Handles delete button clicks."""
-        items = self.list_widget.selectedItems()
-        if items:
-            item = items[0]
+        """Handles delete button clicks for single or multiple items."""
+        from PySide6.QtWidgets import QMessageBox
+
+        selected_items = self.list_widget.selectedItems()
+        if not selected_items:
+            return
+
+        # Collect all selected items
+        items_to_delete = []
+        for item in selected_items:
             item_id = item.data(Qt.ItemDataRole.UserRole)
             item_type = item.data(Qt.ItemDataRole.UserRole + 1)
-            self.delete_requested.emit(item_type, item_id)
+            item_name = item.text().split(" (")[0].split("] ")[-1]  # Extract name
+            if item_id and item_type:
+                items_to_delete.append((item_type, item_id, item_name))
+
+        if not items_to_delete:
+            return
+
+        # Confirmation dialog
+        count = len(items_to_delete)
+        if count == 1:
+            msg = f"Delete '{items_to_delete[0][2]}'?\n\nThis action cannot be undone."
+        else:
+            msg = f"Delete {count} items?\n\nThis action cannot be undone."
+
+        reply = QMessageBox.warning(
+            self,
+            "Confirm Delete",
+            msg,
+            QMessageBox.StandardButton.Cancel | QMessageBox.StandardButton.Yes,
+            QMessageBox.StandardButton.Cancel,
+        )
+
+        if reply == QMessageBox.StandardButton.Yes:
+            # Emit delete signal for each item
+            for item_type, item_id, _ in items_to_delete:
+                self.delete_requested.emit(item_type, item_id)
 
     def select_item(self, item_type: str, item_id: str) -> None:
         """Programmatically selects an item in the list. Auto-switches filter if item

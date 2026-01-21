@@ -1,7 +1,4 @@
-import pytest
-from PySide6.QtCore import Qt
 from src.gui.dialogs.filter_dialog import FilterDialog
-from src.gui.widgets.filter_widget import FilterWidget
 
 
 class TestFilterDialogPopulation:

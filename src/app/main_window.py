@@ -722,6 +722,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             self.event_editor.set_calendar_converter(converter)
             self.timeline.set_calendar_converter(converter)
             self.map_widget.set_calendar_converter(converter)
+            self.unified_list.set_calendar_converter(converter)
 
             # Set calendar converter for timeline display in entity editor
             from src.gui.widgets.timeline_display_widget import TimelineDisplayWidget
