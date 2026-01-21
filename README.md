@@ -2,7 +2,7 @@
 project: ProjektKraken
 document: Main Project README
 last_updated: 2026-01-19
-commit: 0.8.2
+commit: 0.9.0
 ---
 
 # Projekt Kraken
@@ -252,7 +252,7 @@ src/
 
 ## Version
 
-**v0.8.2 (Beta)**
+**v0.9.0 (Beta)**
 
 ## License
 

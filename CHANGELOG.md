@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-01-21
-**Commit:** `12330a6`
+**Commit:** `0.9.0`
 ---
 
 # Changelog
@@ -10,6 +10,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [0.9.0]
 
 ### Added
 - *(2026-01-21)* **UI**: Implemented multi-selection with checkboxes in `UnifiedListWidget`.
