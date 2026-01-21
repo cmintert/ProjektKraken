@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-21
 ### Internal
-- Update changelog
+- Bump version to 0.9.0
 
 
 *This changelog was automatically generated.*
