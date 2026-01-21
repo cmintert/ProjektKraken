@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-01-20
-### Internal
-- chore: add database debugging and maintenance utilities
+## [Development] - 2026-01-21
+### Added
+- feat: Add multi-selection, sorting, and date formatting to UnifiedList
 
 
 *This changelog was automatically generated.*
