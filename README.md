@@ -1,7 +1,7 @@
 ---
 project: ProjektKraken
 document: Main Project README
-last_updated: 2026-01-19
+last_updated: 2026-01-21
 commit: 0.9.0
 ---
 
@@ -9,9 +9,9 @@ commit: 0.9.0
 
 **Projekt Kraken** is a desktop worldbuilding environment designed for the "Architect" persona. It treats history as the primary axis of the world, offering a timeline-first approach to lore creation.
 
-## Portable-Only Architecture (v0.6.0+)
+## Portable-Only Architecture
 
-Starting with version 0.6.0, ProjektKraken uses a **portable-only architecture** where all worlds are stored next to the executable in a `worlds/` directory. Each world is completely self-contained.
+ProjektKraken uses a **portable-only architecture** where all worlds are stored next to the executable in a `worlds/` directory. Each world is completely self-contained.
 
 ### World Structure
 
@@ -65,6 +65,7 @@ Backups and AI search indexes are also stored in the user data directory.
 - **Timeline-First Design**: Events are first-class citizens with precise chronological data (cosmic to sub-day resolution)
 - **Temporal Relations**: Advanced timeline logic with staging system and dynamic date overrides
 - **Custom Calendar System**: Define worlds with custom months, weeks, and time tracking
+- **Natural Language Dates**: Intuitive date entry (e.g., "1st of Summer", "2 weeks later") with parser integration
 - **Wiki-Style Linking**: `[[Entity Name]]` syntax with auto-completion and navigation
 - **Relation Mapping**: Track relationships between events and entities with typed connections
 - **Automated Backups**: Continuous auto-save with manual backup/restore functionality
@@ -87,6 +88,8 @@ Backups and AI search indexes are also stored in the user data directory.
 - **Hybrid Data Model**: Strict SQL schema for relationships + flexible JSON attributes
 - **Dockable Workspace**: Configurable panels with state persistence and layout management
 - **Theme Support**: Dark mode and custom themes via `ThemeManager`
+- **Fast Inject**: Rapid entity/event creation with template support and variable resolution
+- **Advanced Import**: Two-pass JSON import strategy with deduplication and cycle resolution
 
 ## Installation
 
@@ -165,6 +168,9 @@ python -m src.cli.wiki scan --database "worlds/My Campaign/My Campaign.kraken" -
 # Semantic Search
 python -m src.cli.index rebuild --database "worlds/My Campaign/My Campaign.kraken"
 python -m src.cli.index query --database "worlds/My Campaign/My Campaign.kraken" --text "find the wizard"
+
+# Data Import
+python -m src.app.main import --file "data/backup.json" --mode update
 ```
 
 See **[CLI Documentation](src/cli/README.md)** for complete reference.
@@ -220,6 +226,8 @@ pytest --cov=src --cov-report=term-missing
 - **[Backup Strategy](docs/BACKUP_STRATEGY.md)** - Backup and restore guide
 - **[Temporal Relations](docs/TEMPORAL_RELATIONS.md)** - Timeline logic and staging system
 - **[Semantic Search](docs/SEMANTIC_SEARCH.md)** - AI search and embeddings setup
+- **[Fast Inject Guide](docs/FAST_INJECT.md)** - Fast Inject system architecture and usage
+- **[Import Strategy](docs/imports.md)** - JSON import system and two-pass resolution
 - **[Security Guidelines](docs/SECURITY.md)** - Security best practices
 - **[Wiki Linking](docs/WIKI_LINKING.md)** - Wiki syntax and navigation
 - **[Design Notes](Design.md)** - Architecture and design decisions
