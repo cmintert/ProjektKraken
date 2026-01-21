@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-21
-### Added
-- feat: Add multi-selection, sorting, and date formatting to UnifiedList
+### Internal
+- Update changelog
 
 
 *This changelog was automatically generated.*
