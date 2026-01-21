@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-21
-### Internal
-- Bump version to 0.9.0
+### Added
+- feat: Add Natural Language Dates, Fast Inject, and Advanced Import features, CLI examples, and documentation links to the README.md
 
 
 *This changelog was automatically generated.*
