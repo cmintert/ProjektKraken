@@ -33,6 +33,8 @@ from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
 from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
 from src.gui.widgets.tag_editor import TagEditorWidget
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
+from src.gui.widgets.summary_widget import SummaryWidget
+from src.core.summary_data import SummaryData
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +60,7 @@ class EventEditorWidget(QWidget):
         str
     )  # Signals that main window should open inject dialog
     create_template_requested = Signal(dict)  # Signals to create a new template
+    summary_generation_requested = Signal(object)  # event object
 
     # ... (omitted)
 
@@ -161,6 +164,37 @@ class EventEditorWidget(QWidget):
         self.form_layout.addRow("Description:", self.desc_edit)
 
         details_layout.addLayout(self.form_layout)
+
+        details_layout.addLayout(self.form_layout)
+
+        # Add Summary Widget (Collapsible)
+        self.summary_group = QGroupBox("Summary")
+        self.summary_group.setCheckable(True)
+        self.summary_group.setChecked(False)
+        summary_layout = QVBoxLayout(self.summary_group)
+        StyleHelper.apply_compact_spacing(summary_layout)
+
+        self.summary_widget = SummaryWidget()
+        self.summary_widget.generate_requested.connect(
+            self._on_summary_generate_requested
+        )
+        summary_layout.addWidget(self.summary_widget)
+
+        def _toggle_summary_section(checked: bool) -> None:
+            self.summary_widget.setVisible(checked)
+            if not checked:
+                self.summary_group.setMinimumHeight(20)
+                self.summary_group.setMaximumHeight(20)
+                summary_layout.setContentsMargins(0, 0, 0, 0)
+                summary_layout.setSpacing(0)
+            else:
+                self.summary_group.setMinimumHeight(0)
+                self.summary_group.setMaximumHeight(16777215)
+                StyleHelper.apply_compact_spacing(summary_layout)
+
+        self.summary_group.toggled.connect(_toggle_summary_section)
+        _toggle_summary_section(False)
+        details_layout.addWidget(self.summary_group)
 
         # Add LLM Generation Widget below description in a collapsible group
         from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
@@ -270,6 +304,11 @@ class EventEditorWidget(QWidget):
 
         # Start disabled until specific event loaded
         self.setEnabled(False)
+        self.summary_service = None
+
+    def set_summary_service(self, service) -> None:
+        """Sets the summary service."""
+        self.summary_service = service
 
     def _setup_relations_tab(self) -> None:
         """Configures the Relations tab with categorized sections."""
@@ -535,8 +574,30 @@ class EventEditorWidget(QWidget):
                 self.desc_edit.set_wiki_text(event.description)
 
             # Load Attributes (filter out _tags for display)
-            display_attrs = {k: v for k, v in event.attributes.items() if k != "_tags"}
+            # Store hidden attributes to preserve them on save
+            self._hidden_attributes = {
+                k: v for k, v in event.attributes.items() if k.startswith("_")
+            }
+
+            display_attrs = {
+                k: v for k, v in event.attributes.items() if not k.startswith("_")
+            }
+            self.attribute_editor.blockSignals(True)
             self.attribute_editor.load_attributes(display_attrs)
+            self.attribute_editor.blockSignals(False)
+
+            # Load Summary
+            if self.summary_service:
+                summary_data = event.attributes.get("_summary_data")
+                if summary_data:
+                    try:
+                        data = SummaryData.from_dict(summary_data)
+                        self.summary_widget.set_summary(data)
+                    except Exception:
+                        pass
+
+                is_stale = self.summary_service.is_stale(event)
+                self.summary_widget.set_stale(is_stale)
 
             # Load Tags
             self.tag_editor.load_tags(event.tags)
@@ -635,6 +696,19 @@ class EventEditorWidget(QWidget):
             # Merge tags into attributes
             base_attrs = self.attribute_editor.get_attributes()
             base_attrs["_tags"] = self.tag_editor.get_tags()
+
+            # Inject pending summary/hidden attributes
+            if hasattr(self, "_pending_summary_data") and self._pending_summary_data:
+                base_attrs["_summary_data"] = self._pending_summary_data
+                # Also need others?
+                if hasattr(self, "_hidden_attributes"):
+                    for k, v in self._hidden_attributes.items():
+                        if k not in base_attrs and k != "_summary_data":
+                            base_attrs[k] = v
+            elif hasattr(self, "_hidden_attributes"):
+                for k, v in self._hidden_attributes.items():
+                    if k not in base_attrs:
+                        base_attrs[k] = v
 
             event_data = {
                 "id": self._current_event_id,
@@ -817,6 +891,42 @@ class EventEditorWidget(QWidget):
                 self.update_relation_requested.emit(
                     rel_data["id"], target_id, rel_type, attributes
                 )
+
+    @Slot()
+    def _on_summary_generate_requested(self) -> None:
+        """Handles summary generation request."""
+        if not self._current_event_id:
+            return
+
+        # Construct temporary event from form
+        temp_event = Event(
+            name=self.name_edit.text(),
+            lore_date=self.date_edit.get_value(),
+            lore_duration=self.duration_widget.get_value(),
+            type=self.type_edit.currentText(),
+            description=self.desc_edit.get_wiki_text(),
+            id=self._current_event_id,
+            attributes=self.attribute_editor.get_attributes(),
+        )
+
+        # Disable button
+        self.summary_widget.generate_btn.setEnabled(False)
+        self.summary_widget.generate_btn.setText("Generating...")
+
+        self.summary_generation_requested.emit(temp_event)
+
+    @Slot(object)
+    def on_summary_generated(self, summary_data: SummaryData) -> None:
+        """Callback when summary is generated."""
+        self.summary_widget.generate_btn.setEnabled(True)
+        self.summary_widget.generate_btn.setText("Regenerate")
+
+        try:
+            self.summary_widget.set_summary(summary_data)
+            self._pending_summary_data = summary_data.to_dict()
+            self.set_dirty(True)
+        except Exception as e:
+            logger.error(f"Error applying summary: {e}")
 
     @Slot()
     def _on_edit_selected_relation(self) -> None:

@@ -76,14 +76,17 @@ class _DockEventFilter(QObject):
             bool: Always False (don't consume events).
         """
         if event.type() == QEvent.Type.Resize:
-            s = event.size()
-            self._logger.debug(
-                f"Dock widget '{self._name}' resized -> {s.width()}x{s.height()}"
-            )
+            # s = event.size()
+            # self._logger.debug(
+            #     f"Dock widget '{self._name}' resized -> {s.width()}x{s.height()}"
+            # )
+            pass
         elif event.type() == QEvent.Type.Show:
-            self._logger.debug(f"Dock widget '{self._name}' showEvent")
+            # self._logger.debug(f"Dock widget '{self._name}' showEvent")
+            pass
         elif event.type() == QEvent.Type.Hide:
-            self._logger.debug(f"Dock widget '{self._name}' hideEvent")
+            # self._logger.debug(f"Dock widget '{self._name}' hideEvent")
+            pass
         return False
 
 
@@ -119,16 +122,17 @@ class UIManager:
         logger.info(f"Attaching diagnostics to dock '{name}'")
 
         # Log visibility changes with size info
-        dock.visibilityChanged.connect(
-            lambda vis, n=name, d=dock: logger.info(
-                f"Dock '{n}' visibilityChanged={vis} "
-                f"size={d.size().width()}x{d.size().height()}"
-            )
-        )
+        # Log visibility changes with size info
+        # dock.visibilityChanged.connect(
+        #     lambda vis, n=name, d=dock: logger.debug(
+        #         f"Dock '{n}' visibilityChanged={vis} "
+        #         f"size={d.size().width()}x{d.size().height()}"
+        #     )
+        # )
 
         # Log top-level (floating) changes
         dock.topLevelChanged.connect(
-            lambda top, n=name: logger.info(f"Dock '{n}' topLevelChanged={top}")
+            lambda top, n=name: logger.debug(f"Dock '{n}' topLevelChanged={top}")
         )
 
         # Install event filter on the contained widget

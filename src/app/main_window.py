@@ -319,6 +319,14 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             self.fast_inject_coordinator.request_create_template
         )
 
+        # Connect Summary Generation Signals
+        self.entity_editor.summary_generation_requested.connect(
+            self.worker_manager.generate_summary
+        )
+        self.event_editor.summary_generation_requested.connect(
+            self.worker_manager.generate_summary
+        )
+
         # Connect Coordinator Signals
         self.fast_inject_coordinator.command_requested.connect(
             lambda cmd: self.command_requested.emit(cmd)
@@ -795,8 +803,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         if settings.value("longform_auto_refresh", True, type=bool):
             logger.debug("Auto-refreshing longform editor")
             self.longform_manager.load_longform_sequence()
-
-    # Removed: _restore_last_selection logic moved to NavigationCoordinator
 
     def on_command_finished_reload_longform(self) -> None:
         """Handler to reload longform sequence after command completion."""
@@ -1750,3 +1756,51 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         else:
             err_msg = "\n".join(result.errors[:10])
             QMessageBox.critical(self, "Import Failed", f"Errors occurred:\n{err_msg}")
+
+    @Slot(str, object)
+    def _on_summary_generated_result(self, item_id: str, summary_data: object) -> None:
+        """Handles asynchronous summary generation result.
+
+        Args:
+            item_id: The ID of the item the summary is for.
+            summary_data: The generated SummaryData object.
+        """
+        # Determine target editor logic
+        # Simple check: Does EntityEditor currently hold this ID?
+        if self.entity_editor._current_entity_id == item_id:
+            self.entity_editor.on_summary_generated(summary_data)
+            return
+
+        # Does EventEditor hold it?
+        if self.event_editor._current_event_id == item_id:
+            self.event_editor.on_summary_generated(summary_data)
+            return
+
+        # Warn if neither (user navigated away?)
+        self.show_error_message(
+            f"Summary generated for {item_id}, but item is no longer active in editor."
+        )
+
+    @Slot(str, object)
+    def _on_summary_generated_result(self, item_id: str, summary_data: object) -> None:
+        """Handles asynchronous summary generation result.
+
+        Args:
+            item_id: The ID of the item the summary is for.
+            summary_data: The generated SummaryData object.
+        """
+        # Determine target editor logic
+        # Simple check: Does EntityEditor currently hold this ID?
+        if self.entity_editor._current_entity_id == item_id:
+            self.entity_editor.on_summary_generated(summary_data)
+            return
+
+        # Does EventEditor hold it?
+        if self.event_editor._current_event_id == item_id:
+            self.event_editor.on_summary_generated(summary_data)
+            return
+
+        # Warn if neither (user navigated away?)
+        self.show_error_message(
+            f"Summary generated for {item_id}, but item is no longer active in editor."
+        )

@@ -31,6 +31,8 @@ from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
 from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
 from src.gui.widgets.tag_editor import TagEditorWidget
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
+from src.gui.widgets.summary_widget import SummaryWidget
+from src.core.summary_data import SummaryData
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +58,7 @@ class EntityEditorWidget(QWidget):
     dirty_changed = Signal(bool)
     return_to_present_requested = Signal()  # Request to exit past/future view
     inject_ui_requested = Signal(str)  # entity_id
+    summary_generation_requested = Signal(object)  # entity object
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the EntityEditorWidget.
@@ -154,6 +157,37 @@ class EntityEditorWidget(QWidget):
         _toggle_timeline_section(False)  # Start collapsed
 
         details_layout.addWidget(self.timeline_group)
+
+        details_layout.addWidget(self.timeline_group)
+
+        # Add Summary Widget (Collapsible)
+        self.summary_group = QGroupBox("Summary")
+        self.summary_group.setCheckable(True)
+        self.summary_group.setChecked(False)
+        summary_layout = QVBoxLayout(self.summary_group)
+        StyleHelper.apply_compact_spacing(summary_layout)
+
+        self.summary_widget = SummaryWidget()
+        self.summary_widget.generate_requested.connect(
+            self._on_summary_generate_requested
+        )
+        summary_layout.addWidget(self.summary_widget)
+
+        def _toggle_summary_section(checked: bool) -> None:
+            self.summary_widget.setVisible(checked)
+            if not checked:
+                self.summary_group.setMinimumHeight(20)
+                self.summary_group.setMaximumHeight(20)
+                summary_layout.setContentsMargins(0, 0, 0, 0)
+                summary_layout.setSpacing(0)
+            else:
+                self.summary_group.setMinimumHeight(0)
+                self.summary_group.setMaximumHeight(16777215)
+                StyleHelper.apply_compact_spacing(summary_layout)
+
+        self.summary_group.toggled.connect(_toggle_summary_section)
+        _toggle_summary_section(False)
+        details_layout.addWidget(self.summary_group)
 
         # Add LLM Generation Widget below description in a collapsible group
         from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
@@ -275,6 +309,11 @@ class EntityEditorWidget(QWidget):
 
         # Start disabled
         self.setEnabled(False)
+        self.summary_service = None
+
+    def set_summary_service(self, service) -> None:
+        """Sets the summary service for generation and staleness checks."""
+        self.summary_service = service
 
     def _connect_dirty_signals(self) -> None:
         """Connects signals that should trigger dirty state."""
@@ -407,7 +446,15 @@ class EntityEditorWidget(QWidget):
                 self.desc_edit.set_wiki_text(entity.description)
 
             # Load Attributes (filter out _tags for display)
-            display_attrs = {k: v for k, v in entity.attributes.items() if k != "_tags"}
+            # Store hidden attributes to preserve them on save
+            self._hidden_attributes = {
+                k: v for k, v in entity.attributes.items() if k.startswith("_")
+            }
+            # Also ensure _summary_data is in there
+
+            display_attrs = {
+                k: v for k, v in entity.attributes.items() if not k.startswith("_")
+            }
             self.attribute_editor.blockSignals(True)
             try:
                 self.attribute_editor.load_attributes(display_attrs)
@@ -423,6 +470,23 @@ class EntityEditorWidget(QWidget):
 
             # Load Gallery
             self.gallery.set_owner("entity", entity.id)
+
+            # Load Summary
+            if self.summary_service:
+                summary_data = entity.attributes.get("_summary_data")
+                if summary_data:
+                    try:
+                        data = SummaryData.from_dict(summary_data)
+                        self.summary_widget.set_summary(data)
+                        # Open if summary exists ? Or keep user preference?
+                        # Let's keep existing state or open if user preference set (later)
+                    except Exception:
+                        pass
+
+                is_stale = self.summary_service.is_stale(entity)
+                self.summary_widget.set_stale(is_stale)
+
+                # Auto-generate if configured (TODO check config)
 
             # Reset Read-Only mode (in case we were in temporal view)
             self.exit_read_only_mode()
@@ -512,6 +576,22 @@ class EntityEditorWidget(QWidget):
             # Merge tags into attributes
             base_attrs = self.attribute_editor.get_attributes()
             base_attrs["_tags"] = self.tag_editor.get_tags()
+
+            # Inject pending summary if exists
+            if hasattr(self, "_pending_summary_data") and self._pending_summary_data:
+                base_attrs["_summary_data"] = self._pending_summary_data
+            # Else? If we loaded an entity, it had _summary_data.
+            # If we didn't touch it, AttributeEditor didn't have it (filtered).
+            # So we lose it on save?!
+            # FIX: We must store the originally loaded hidden attributes and merge them back.
+            # This is a general issue with the editor if it filters attrs.
+            # Assuming AttributeEditor might hold onto them?
+            # Let's check AttributeEditor.
+            # If not, we need to cache hidden attrs on load.
+            elif hasattr(self, "_hidden_attributes"):
+                for k, v in self._hidden_attributes.items():
+                    if k not in base_attrs:  # don't overwrite if somehow exposed
+                        base_attrs[k] = v
 
             entity_data = {
                 "id": self._current_entity_id,
@@ -796,6 +876,9 @@ class EntityEditorWidget(QWidget):
         if playhead_time is not None:
             self.timeline_display.set_playhead_time(playhead_time)
 
+        # We need to update _on_save to include _pending_summary_data if present
+        # OR we rely on loading the entity fresh? No, overwrite is full replace.
+
         # Enter Read-Only Mode
         self.set_read_only_mode(True, reason="Viewing Past/Future State")
 
@@ -886,3 +969,42 @@ class EntityEditorWidget(QWidget):
     def exit_read_only_mode(self) -> None:
         """Restores normal editing mode."""
         self.set_read_only_mode(False)
+
+    @Slot()
+    def _on_summary_generate_requested(self) -> None:
+        """Handles summary generation request."""
+        print(
+            f"[DEBUG] _on_summary_generate_requested called. ID: {self._current_entity_id}"
+        )
+        if not self._current_entity_id:
+            print("[DEBUG] Aborting: No current entity ID")
+            return
+
+        # Construct temporary entity from form
+        temp_entity = Entity(
+            name=self.name_edit.text(),
+            type=self.type_edit.currentText(),
+            description=self.desc_edit.get_wiki_text(),
+            id=self._current_entity_id,
+            attributes=self.attribute_editor.get_attributes(),
+        )
+        print(f"[DEBUG] Emitting summary_generation_requested for {temp_entity.name}")
+
+        # Disable button
+        self.summary_widget.generate_btn.setEnabled(False)
+        self.summary_widget.generate_btn.setText("Generating...")
+
+        self.summary_generation_requested.emit(temp_entity)
+
+    @Slot(object)
+    def on_summary_generated(self, summary_data: SummaryData) -> None:
+        """Callback when summary is generated."""
+        self.summary_widget.generate_btn.setEnabled(True)
+        self.summary_widget.generate_btn.setText("Regenerate")
+
+        try:
+            self.summary_widget.set_summary(summary_data)
+            self._pending_summary_data = summary_data.to_dict()
+            self.set_dirty(True)
+        except Exception as e:
+            logger.error(f"Error applying summary: {e}")

@@ -15,7 +15,10 @@ from src.commands.base_command import BaseCommand, CommandResult
 from src.services import longform_builder
 from src.services.asset_store import AssetStore
 from src.services.attachment_service import AttachmentService
+
 from src.services.db_service import DatabaseService
+from src.services.summary_service import SummaryService
+from src.core.summary_data import SummaryData
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +64,7 @@ class DatabaseWorker(QObject):
 
     # Import signals
     import_finished = Signal(object)  # ImportResult
+    summary_generated = Signal(str, object)  # item_id, SummaryData
 
     def __init__(self, db_path: str) -> None:
         """Initializes the worker.
@@ -102,6 +106,11 @@ class DatabaseWorker(QObject):
             # Attach to db_service for Command access (Dependency Injection via Context)
             # Attach to db_service for Command access (Dependency Injection via Context)
             self.db_service.attachment_service = self.attachment_service
+
+            # Initialize SummaryService
+            self.summary_service = SummaryService(self.db_service)
+
+            # Initialize TemporalManager
 
             # Initialize TemporalManager
             from src.core.temporal_manager import TemporalManager
@@ -783,3 +792,35 @@ class DatabaseWorker(QObject):
 
             result = ImportResult(success=False, errors=[str(e)])
             self.import_finished.emit(result)
+
+    @Slot(object)
+    def generate_summary(self, item) -> None:
+        """Generates a summary for the given item using LLM.
+
+        Args:
+            item: Entity or Event object.
+        """
+        if not self.summary_service:
+            return
+
+        try:
+            self.operation_started.emit(f"Generating summary for {item.name}...")
+            # Note: generate_summary logic might perform DB writes if configured?
+            # SummaryService.generate_summary calls llm_provider.generate (blocking io)
+            # and then *could* save to DB, but typically just returns updated object/summary data.
+            # My implementation returns SummaryData, but DOES NOT save to DB automatically unless
+            # I explicitly call update?
+            # Actually SummaryService.generate_summary logic:
+            # 1. build context
+            # 2. call llm
+            # 3. create SummaryData
+            # 4. updates item.attributes["_summary_data"]
+            # 5. insert_summary_embedding (DB call)
+            # So yes, it does DB access. Thread safe? Yes, separate thread, own db_service.
+
+            summary = self.summary_service.generate_summary(item)
+            self.summary_generated.emit(item.id, summary)
+            self.operation_finished.emit("Summary generated.")
+        except Exception as e:
+            logger.error(f"Summary generation failed: {e}\n{traceback.format_exc()}")
+            self.error_occurred.emit(f"Summary generation failed: {str(e)}")

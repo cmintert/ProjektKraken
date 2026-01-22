@@ -14,6 +14,7 @@ from PySide6.QtCore import (
     QThread,
     QTimer,
     Slot,
+    Signal,
 )
 from PySide6.QtWidgets import QApplication
 
@@ -46,6 +47,8 @@ class WorkerManager(QObject):
     - Status message management (operation started/finished/error)
     - Database initialization handling
     """
+
+    summary_requested = Signal(object)
 
     def __init__(self, main_window: "MainWindow") -> None:
         """Initialize the WorkerManager.
@@ -170,9 +173,18 @@ class WorkerManager(QObject):
         self.window.worker.completer_data_loaded.connect(
             self.window.on_completer_data_loaded
         )
+        self.window.worker.completer_data_loaded.connect(
+            self.window.on_completer_data_loaded
+        )
         self.window.worker.import_finished.connect(self.window._on_import_finished)
+        self.window.worker.summary_generated.connect(
+            self.window._on_summary_generated_result
+        )
         # Connect filtering request
         self.window.filter_requested.connect(self.window.worker.apply_filter)
+
+        # Connect summary request
+        self.summary_requested.connect(self.window.worker.generate_summary)
 
         # Connect MainWindow signal for sending commands to worker thread
         self.window.command_requested.connect(self.window.worker.run_command)
@@ -297,3 +309,9 @@ class WorkerManager(QObject):
             )
         else:
             self.window.status_bar.showMessage(STATUS_DB_INIT_FAIL)
+
+    @Slot(object)
+    def generate_summary(self, item) -> None:
+        """Request summary generation from worker."""
+        # Use signal instead of invokeMethod for reliability
+        self.summary_requested.emit(item)

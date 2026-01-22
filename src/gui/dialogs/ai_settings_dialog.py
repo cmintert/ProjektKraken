@@ -7,7 +7,7 @@ exclusion.
 import logging
 from typing import Optional
 
-from PySide6.QtCore import Signal, Slot
+from PySide6.QtCore import QTimer, Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -81,13 +81,30 @@ class AISettingsDialog(QDialog):
 
         main_layout.addLayout(btn_box)
 
+        # Save status label (autosave feedback)
+        self.save_status_label = QLabel("")
+        self.save_status_label.setStyleSheet(
+            "color: #27ae60; font-size: 11px; font-style: italic;"
+        )
+        self.save_status_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+        main_layout.addWidget(self.save_status_label)
+
+        # Autohide timer for save status
+        self._status_hide_timer = QTimer(self)
+        self._status_hide_timer.setSingleShot(True)
+        self._status_hide_timer.timeout.connect(
+            lambda: self.save_status_label.setText("")
+        )
+
         # Load settings
         self.load_settings()
 
     @Slot()
     def _on_ok_clicked(self) -> None:
         """Handle OK button click."""
+        self._show_save_status("Saving...")
         self.save_settings()
+        self._show_save_status("Saved")
         self.accept()
 
     def _create_embeddings_tab(self) -> None:
@@ -146,6 +163,7 @@ class AISettingsDialog(QDialog):
         self.provider_combo = QComboBox()
         self.provider_combo.addItems(["LM Studio", "Sentence Transformers"])
         self.provider_combo.currentIndexChanged.connect(self._on_provider_changed)
+        self.provider_combo.currentIndexChanged.connect(self.save_settings)
         provider_layout.addWidget(self.provider_combo, stretch=1)
         llm_layout.addLayout(provider_layout)
 
@@ -159,15 +177,18 @@ class AISettingsDialog(QDialog):
 
         self.lm_url_input = QLineEdit()
         self.lm_url_input.setPlaceholderText("http://localhost:8080/v1/embeddings")
+        self.lm_url_input.editingFinished.connect(self.save_settings)
         lm_studio_form.addRow("API URL:", self.lm_url_input)
 
         self.lm_model_input = QLineEdit()
         self.lm_model_input.setPlaceholderText("e.g. nomic-embed-text-v1.5")
+        self.lm_model_input.editingFinished.connect(self.save_settings)
         lm_studio_form.addRow("Embedding Model:", self.lm_model_input)
 
         self.lm_api_key_input = QLineEdit()
         self.lm_api_key_input.setPlaceholderText("Optional")
         self.lm_api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.lm_api_key_input.editingFinished.connect(self.save_settings)
         lm_studio_form.addRow("API Key:", self.lm_api_key_input)
 
         # Test connection button
@@ -182,6 +203,7 @@ class AISettingsDialog(QDialog):
         self.lm_timeout_input.setRange(5, 300)
         self.lm_timeout_input.setValue(30)
         self.lm_timeout_input.setSuffix(" seconds")
+        self.lm_timeout_input.valueChanged.connect(self.save_settings)
         lm_studio_form.addRow("Timeout:", self.lm_timeout_input)
 
         self.provider_stack.addWidget(lm_studio_page)
@@ -246,6 +268,7 @@ class AISettingsDialog(QDialog):
         self.gen_provider_combo.currentIndexChanged.connect(
             self._on_gen_provider_changed
         )
+        self.gen_provider_combo.currentIndexChanged.connect(self.save_settings)
         provider_layout.addWidget(self.gen_provider_combo, stretch=1)
         gen_layout.addLayout(provider_layout)
 
@@ -259,6 +282,7 @@ class AISettingsDialog(QDialog):
 
         self.lm_gen_enabled = QCheckBox("Enable for this world")
         self.lm_gen_enabled.setChecked(True)
+        self.lm_gen_enabled.toggled.connect(self.save_settings)
         lm_gen_form.addRow("Enabled:", self.lm_gen_enabled)
 
         self.lm_gen_use_chat_api = QCheckBox("Use Chat API (recommended)")
@@ -268,12 +292,14 @@ class AISettingsDialog(QDialog):
             "Recommended for modern models like GPT, DeepSeek, Mistral. "
             "Uncheck only for legacy completion-only models."
         )
+        self.lm_gen_use_chat_api.toggled.connect(self.save_settings)
         lm_gen_form.addRow("Chat Mode:", self.lm_gen_use_chat_api)
 
         self.lm_gen_url_input = QLineEdit()
         self.lm_gen_url_input.setPlaceholderText(
             "http://localhost:8080/v1/chat/completions"
         )
+        self.lm_gen_url_input.editingFinished.connect(self.save_settings)
         lm_gen_form.addRow("API URL:", self.lm_gen_url_input)
 
         # Test connection button
@@ -286,6 +312,7 @@ class AISettingsDialog(QDialog):
 
         self.lm_gen_model_input = QLineEdit()
         self.lm_gen_model_input.setPlaceholderText("e.g. mistral-7b-instruct")
+        self.lm_gen_model_input.editingFinished.connect(self.save_settings)
         lm_gen_form.addRow("Model:", self.lm_gen_model_input)
 
         self.gen_provider_stack.addWidget(lm_gen_page)
@@ -296,15 +323,18 @@ class AISettingsDialog(QDialog):
         StyleHelper.apply_standard_list_spacing(openai_gen_form)
 
         self.openai_gen_enabled = QCheckBox("Enable for this world")
+        self.openai_gen_enabled.toggled.connect(self.save_settings)
         openai_gen_form.addRow("Enabled:", self.openai_gen_enabled)
 
         self.openai_api_key_input = QLineEdit()
         self.openai_api_key_input.setPlaceholderText("sk-...")
         self.openai_api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.openai_api_key_input.editingFinished.connect(self.save_settings)
         openai_gen_form.addRow("API Key:", self.openai_api_key_input)
 
         self.openai_model_input = QLineEdit()
         self.openai_model_input.setPlaceholderText("gpt-3.5-turbo")
+        self.openai_model_input.editingFinished.connect(self.save_settings)
         openai_gen_form.addRow("Model:", self.openai_model_input)
 
         self.gen_provider_stack.addWidget(openai_gen_page)
@@ -315,6 +345,7 @@ class AISettingsDialog(QDialog):
         StyleHelper.apply_standard_list_spacing(google_gen_form)
 
         self.google_gen_enabled = QCheckBox("Enable for this world")
+        self.google_gen_enabled.toggled.connect(self.save_settings)
         google_gen_form.addRow("Enabled:", self.google_gen_enabled)
 
         self.google_project_input = QLineEdit()
@@ -327,10 +358,12 @@ class AISettingsDialog(QDialog):
 
         self.google_model_input = QLineEdit()
         self.google_model_input.setPlaceholderText("text-bison@001")
+        self.google_model_input.editingFinished.connect(self.save_settings)
         google_gen_form.addRow("Model:", self.google_model_input)
 
         self.google_creds_input = QLineEdit()
         self.google_creds_input.setPlaceholderText("/path/to/credentials.json")
+        self.google_creds_input.editingFinished.connect(self.save_settings)
         google_gen_form.addRow("Credentials Path:", self.google_creds_input)
 
         self.gen_provider_stack.addWidget(google_gen_page)
@@ -341,6 +374,7 @@ class AISettingsDialog(QDialog):
         StyleHelper.apply_standard_list_spacing(anthropic_gen_form)
 
         self.anthropic_gen_enabled = QCheckBox("Enable for this world")
+        self.anthropic_gen_enabled.toggled.connect(self.save_settings)
         anthropic_gen_form.addRow("Enabled:", self.anthropic_gen_enabled)
 
         self.anthropic_api_key_input = QLineEdit()
@@ -350,6 +384,7 @@ class AISettingsDialog(QDialog):
 
         self.anthropic_model_input = QLineEdit()
         self.anthropic_model_input.setPlaceholderText("claude-3-haiku-20240307")
+        self.anthropic_model_input.editingFinished.connect(self.save_settings)
         anthropic_gen_form.addRow("Model:", self.anthropic_model_input)
 
         self.gen_provider_stack.addWidget(anthropic_gen_page)
@@ -372,12 +407,14 @@ class AISettingsDialog(QDialog):
         self.enable_audit_log.setToolTip(
             "Log all generation requests and responses for auditing"
         )
+        self.enable_audit_log.toggled.connect(self.save_settings)
         options_layout.addRow("Audit Log:", self.enable_audit_log)
 
         self.max_tokens_input = QSpinBox()
         self.max_tokens_input.setRange(100, 4096)
         self.max_tokens_input.setValue(512)
         self.max_tokens_input.setToolTip("Maximum tokens to generate per request")
+        self.max_tokens_input.valueChanged.connect(self.save_settings)
         options_layout.addRow("Max Tokens:", self.max_tokens_input)
 
         self.temperature_input = QSpinBox()
@@ -385,6 +422,7 @@ class AISettingsDialog(QDialog):
         self.temperature_input.setValue(70)
         self.temperature_input.setSuffix("%")
         self.temperature_input.setToolTip("Temperature (0-200%, where 100% = 1.0)")
+        self.temperature_input.valueChanged.connect(self.save_settings)
         options_layout.addRow("Temperature:", self.temperature_input)
 
         # System Prompt
@@ -410,6 +448,7 @@ class AISettingsDialog(QDialog):
             "Remove <think>, <thinking>, <reasoning> and similar tags from output.\n"
             "Recommended for models like DeepSeek R1 that expose chain-of-thought."
         )
+        self.filter_reasoning_cb.toggled.connect(self.save_settings)
         options_layout.addRow("Output:", self.filter_reasoning_cb)
 
         # Restore default button
@@ -420,6 +459,29 @@ class AISettingsDialog(QDialog):
         )
         restore_btn.clicked.connect(self._on_restore_default_prompt)
         options_layout.addRow("", restore_btn)
+
+        # Summary Prompt
+        summary_prompt_label = QLabel("Summary Prompt:")
+        options_layout.addRow(summary_prompt_label, QWidget())  # Spacer
+
+        self.summary_prompt_edit = QPlainTextEdit()
+        self.summary_prompt_edit.setStyleSheet(StyleHelper.get_input_field_style())
+        self.summary_prompt_edit.setPlaceholderText(
+            "Enter the prompt used to summarize Entities and Events..."
+        )
+        self.summary_prompt_edit.setMaximumHeight(100)
+        self.summary_prompt_edit.setToolTip(
+            "This prompt instructs the LLM how to summarize worldbuilding items. "
+            "Use {type}, {name}, {description}, {lore_date} as placeholders."
+        )
+        options_layout.addRow("", self.summary_prompt_edit)
+
+        # Restore default summary prompt button
+        restore_summary_btn = QPushButton("Restore Default")
+        restore_summary_btn.setMaximumWidth(120)
+        restore_summary_btn.setToolTip("Restore the default summary prompt")
+        restore_summary_btn.clicked.connect(self._on_restore_default_summary_prompt)
+        options_layout.addRow("", restore_summary_btn)
 
         main_layout.addWidget(options_group)
 
@@ -512,6 +574,20 @@ class AISettingsDialog(QDialog):
         )
         self.system_prompt_edit.setPlainText(default_prompt)
 
+    @Slot()
+    def _on_restore_default_summary_prompt(self) -> None:
+        """Restore the default summary prompt."""
+        default_summary_prompt = (
+            "Summarize the following worldbuilding item neutrally, "
+            "preserving all facts and the original tone. "
+            "Crucially, PRESERVE any [[Wiki Links]] exactly as they appear.\n\n"
+            "Item Data:\n"
+            "Type: {type}\n"
+            "Name: {name}\n"
+            "Description: {description}"
+        )
+        self.summary_prompt_edit.setPlainText(default_summary_prompt)
+
     def _test_connection(self, provider_id: str, mode: str) -> None:
         """Test connection to the specified provider.
 
@@ -564,8 +640,12 @@ class AISettingsDialog(QDialog):
             )
 
     @Slot()
+    @Slot()
     def save_settings(self) -> None:
         """Save settings to QSettings."""
+        logger.debug("save_settings called - triggering autosave")
+        self._show_save_status("Saving...")
+
         from PySide6.QtCore import QSettings
 
         from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
@@ -644,11 +724,27 @@ class AISettingsDialog(QDialog):
         settings.setValue(
             "ai_gen_filter_reasoning", self.filter_reasoning_cb.isChecked()
         )
+        settings.setValue(
+            "ai_gen_summary_prompt", self.summary_prompt_edit.toPlainText()
+        )
 
         logger.info(
             f"AI Settings saved. Embedding provider: {provider}, "
             f"Excluded attrs: {self.excluded_attrs_input.text()}"
         )
+        self._show_save_status("Saved")
+
+    def _show_save_status(self, message: str) -> None:
+        """Show save status message with autohide.
+
+        Args:
+            message: Status message to display (e.g., "Saving...", "Saved").
+        """
+        self.save_status_label.setText(message)
+
+        # Auto-hide after 3 seconds if message is "Saved"
+        if message == "Saved":
+            self._status_hide_timer.start(3000)
 
     def load_settings(self) -> None:
         """Load settings from QSettings."""
@@ -751,6 +847,20 @@ class AISettingsDialog(QDialog):
         )
         self.system_prompt_edit.setPlainText(
             settings.value("ai_gen_system_prompt", default_prompt)
+        )
+
+        # Summary prompt with default fallback
+        default_summary_prompt = (
+            "Summarize the following worldbuilding item neutrally, "
+            "preserving all facts and the original tone. "
+            "Crucially, PRESERVE any [[Wiki Links]] exactly as they appear.\n\n"
+            "Item Data:\n"
+            "Type: {type}\n"
+            "Name: {name}\n"
+            "Description: {description}"
+        )
+        self.summary_prompt_edit.setPlainText(
+            settings.value("ai_gen_summary_prompt", default_summary_prompt)
         )
 
     def update_status(self, model: str, counts: str, last_updated: str) -> None:
