@@ -376,7 +376,10 @@ class LLMGenerationWidget(QWidget):
         template_layout = QHBoxLayout()
         template_layout.addWidget(QLabel("Template:"))
         self.template_combo = QComboBox()
-        self.template_combo.setToolTip("Select prompt template for generation")
+        self.template_combo.setToolTip(
+            "Select prompt template. NOTE: Selecting a template overrides the\n"
+            "global System Prompt configured in AI Settings."
+        )
         self._populate_template_combo()
         self.template_combo.currentIndexChanged.connect(self._save_settings)
         template_layout.addWidget(self.template_combo)

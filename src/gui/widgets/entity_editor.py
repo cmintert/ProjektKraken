@@ -100,6 +100,7 @@ class EntityEditorWidget(QWidget):
         self.btn_inject.setText("Fast Inject \u25bc")  # Down arrow
         self.btn_inject.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.btn_inject.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
+        self.btn_inject.setStyleSheet(StyleHelper.get_tool_button_style())
 
         self.inject_menu = QMenu(self.btn_inject)
         self.btn_inject.setMenu(self.inject_menu)

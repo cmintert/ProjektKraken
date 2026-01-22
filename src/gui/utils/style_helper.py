@@ -149,6 +149,26 @@ class StyleHelper:
         )
 
     @staticmethod
+    def get_tool_button_style() -> str:
+        """Returns QSS for tool/secondary action buttons.
+
+        Tool buttons use surface background and border, good for toolbars.
+
+        Returns:
+            str: QSS stylesheet string for tool buttons.
+        """
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
+        return (
+            f"QToolButton {{ background-color: {theme['surface']}; "
+            f"color: {theme['text_main']}; border: 1px solid {theme['border']}; "
+            f"border-radius: 4px; padding: 4px; }}"
+            f"QToolButton:hover {{ background-color: {theme['border']}; }}"
+            f"QToolButton:pressed {{ background-color: {theme['app_bg']}; }}"
+        )
+
+    @staticmethod
     def get_destructive_button_style() -> str:
         """Returns QSS for destructive action buttons.
 

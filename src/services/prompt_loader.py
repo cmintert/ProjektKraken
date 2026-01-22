@@ -347,6 +347,106 @@ class PromptLoader:
 
         return metadata
 
+    def save_template(
+        self, template_id: str, content: str, metadata: Dict[str, Any]
+    ) -> str:
+        """Save a prompt template to the filesystem.
+
+        Creates or updates a template file. If version is not in metadata,
+        auto-increments from the latest version or defaults to "1.0".
+
+        Args:
+            template_id: Unique identifier for the template.
+            content: The prompt content.
+            metadata: Metadata dictionary. Must include 'name'.
+
+        Returns:
+            str: The filename of the saved template.
+        """
+        if not self.templates_dir.exists():
+            self.templates_dir.mkdir(parents=True, exist_ok=True)
+
+        # Determine version
+        version = metadata.get("version")
+        if not version:
+            try:
+                latest = self.get_latest_version(template_id)
+                # Simple increment: 1.0 -> 1.1
+                major, minor = map(int, latest.split("."))
+                version = f"{major}.{minor + 1}"
+            except FileNotFoundError:
+                version = "1.0"
+            metadata["version"] = version
+
+        # Ensure template_id is in metadata
+        metadata["template_id"] = template_id
+
+        # Serialize
+        file_content = "---\n"
+        file_content += self._serialize_metadata(metadata)
+        file_content += "---\n\n"
+        file_content += content.strip() + "\n"
+
+        # Filename
+        filename = f"{template_id}_v{version}.txt"
+        file_path = self.templates_dir / filename
+
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(file_content)
+
+        logger.info(f"Saved template to {file_path}")
+        return filename
+
+    def delete_template(self, template_id: str) -> List[str]:
+        """Delete all versions of a template.
+
+        Args:
+            template_id: The ID of the template family to delete.
+
+        Returns:
+            List[str]: List of deleted filenames.
+        """
+        if not self.templates_dir.exists():
+            return []
+
+        deleted = []
+        pattern = re.compile(rf"^{re.escape(template_id)}_v[\d.]+\.txt$")
+
+        for file_path in self.templates_dir.glob("*.txt"):
+            if pattern.match(file_path.name):
+                try:
+                    file_path.unlink()
+                    deleted.append(file_path.name)
+                    logger.info(f"Deleted template file: {file_path}")
+                except OSError as e:
+                    logger.error(f"Failed to delete {file_path}: {e}")
+
+        return deleted
+
+    def _serialize_metadata(self, metadata: Dict[str, Any]) -> str:
+        """Serialize metadata dictionary to simple YAML-like string."""
+        lines = []
+        # Priority order for fields
+        order = ["template_id", "version", "name", "description"]
+
+        # Write ordered fields first
+        for key in order:
+            if key in metadata:
+                val = metadata[key]
+                lines.append(f"{key}: {val}")
+
+        # Write remaining fields
+        for key, val in metadata.items():
+            if key not in order:
+                if isinstance(val, list):
+                    # Simple list serialization: [item1, item2]
+                    serialized_list = "[" + ", ".join(str(x) for x in val) + "]"
+                    lines.append(f"{key}: {serialized_list}")
+                else:
+                    lines.append(f"{key}: {val}")
+
+        return "\n".join(lines) + "\n"
+
     def load_few_shot(self, filename: str = "few_shot_description.txt") -> str:
         """Load few-shot examples from the templates directory.
 

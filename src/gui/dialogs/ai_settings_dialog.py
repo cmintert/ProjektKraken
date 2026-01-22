@@ -18,16 +18,21 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMessageBox,
-    QPlainTextEdit,
     QPushButton,
     QSpinBox,
     QStackedWidget,
     QTabWidget,
     QVBoxLayout,
     QWidget,
+    QListWidget,
+    QListWidgetItem,
+    QAbstractItemView,
+    QSplitter,
 )
 
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.prompt_editor import PromptEditorWidget
+from src.services.prompt_loader import PromptLoader
 
 logger = logging.getLogger(__name__)
 
@@ -52,18 +57,73 @@ class AISettingsDialog(QDialog):
         #     Qt.WidgetAttribute.WA_DeleteOnClose, True
         # )  # Removed to prevent RuntimeError on re-open
 
+        self._initializing = True
         logger.info("Initializing AI Settings Dialog")
 
         # Main layout
         main_layout = QVBoxLayout(self)
 
-        # Tab widget for organizing settings
-        self.tabs = QTabWidget()
-        main_layout.addWidget(self.tabs)
+        # Main layout (Horizontal split)
+        content_layout = QHBoxLayout()
+        main_layout.addLayout(content_layout)
 
-        # Create tabs
-        self._create_embeddings_tab()
-        self._create_generation_tab()
+        # Sidebar (Left)
+        self.sidebar_list = QListWidget()
+        self.sidebar_list.setFixedWidth(200)
+        self.sidebar_list.setSpacing(4)
+        self.sidebar_list.setSelectionMode(
+            QAbstractItemView.SelectionMode.SingleSelection
+        )
+        self.sidebar_list.setStyleSheet(
+            """
+            QListWidget {
+                background-color: #2b2b2b;
+                border: 1px solid #3d3d3d;
+                border-radius: 4px;
+                padding: 4px;
+                outline: none;
+            }
+            QListWidget::item {
+                padding: 12px;
+                border-radius: 4px;
+                color: #b0b0b0;
+                font-size: 13px;
+            }
+            QListWidget::item:selected {
+                background-color: #3d3d3d;
+                color: #ffffff;
+                font-weight: bold;
+                border-left: 3px solid #3498db;
+            }
+            QListWidget::item:hover {
+                background-color: #323232;
+            }
+        """
+        )
+
+        # Add sidebar items
+        self.sidebar_list.addItem(QListWidgetItem("Generative AI"))
+        self.sidebar_list.addItem(QListWidgetItem("Knowledge Base"))
+        self.sidebar_list.addItem(QListWidgetItem("Prompts & Persona"))
+        self.sidebar_list.addItem(QListWidgetItem("Templates"))
+
+        content_layout.addWidget(self.sidebar_list)
+
+        # Pages (Right)
+        self.pages_stack = QStackedWidget()
+        content_layout.addWidget(self.pages_stack)
+
+        # Connect sidebar navigation
+        self.sidebar_list.currentRowChanged.connect(self.pages_stack.setCurrentIndex)
+
+        # Create Pages
+        self.pages_stack.addWidget(self._create_generative_ai_page())
+        self.pages_stack.addWidget(self._create_knowledge_base_page())
+        self.pages_stack.addWidget(self._create_prompts_page())
+        self.pages_stack.addWidget(self._create_templates_page())
+
+        # Select first item
+        self.sidebar_list.setCurrentRow(0)
 
         # Button box
         btn_box = QHBoxLayout()
@@ -98,6 +158,7 @@ class AISettingsDialog(QDialog):
 
         # Load settings
         self.load_settings()
+        self._initializing = False
 
     @Slot()
     def _on_ok_clicked(self) -> None:
@@ -107,160 +168,20 @@ class AISettingsDialog(QDialog):
         self._show_save_status("Saved")
         self.accept()
 
-    def _create_embeddings_tab(self) -> None:
-        """Create the embeddings/search configuration tab."""
-        embeddings_widget = QWidget()
-        main_layout = QVBoxLayout(embeddings_widget)
+    def _create_generative_ai_page(self) -> QWidget:
+        """Create the Generative AI (Text Generation) page."""
+        page = QWidget()
+        main_layout = QVBoxLayout(page)
         StyleHelper.apply_standard_list_spacing(main_layout)
 
-        # === Index Status Section ===
-        index_group = QGroupBox("Index Status")
-        index_layout = QVBoxLayout(index_group)
-        StyleHelper.apply_standard_list_spacing(index_layout)
-
-        # Status display
-        status_grid = QVBoxLayout()
-
-        self.lbl_model = QLabel("Model: --")
-        status_grid.addWidget(self.lbl_model)
-
-        self.lbl_indexed_count = QLabel("Indexed: --")
-        status_grid.addWidget(self.lbl_indexed_count)
-
-        self.lbl_last_indexed = QLabel("Last Updated: --")
-        status_grid.addWidget(self.lbl_last_indexed)
-
-        index_layout.addLayout(status_grid)
-
-        # Rebuild controls
-        rebuild_layout = QHBoxLayout()
-
-        self.rebuild_combo = QComboBox()
-        self.rebuild_combo.addItems(["All", "Entities", "Events"])
-        rebuild_layout.addWidget(self.rebuild_combo, stretch=1)
-
-        self.btn_rebuild = QPushButton("Rebuild Index")
-        self.btn_rebuild.clicked.connect(self._on_rebuild_clicked)
-        rebuild_layout.addWidget(self.btn_rebuild, stretch=1)
-
-        index_layout.addLayout(rebuild_layout)
-
-        # Refresh button
-        self.btn_refresh_status = QPushButton("Refresh Status")
-        self.btn_refresh_status.clicked.connect(self.index_status_requested.emit)
-        index_layout.addWidget(self.btn_refresh_status)
-
-        main_layout.addWidget(index_group)
-
-        # === Embedding Configuration Section ===
-        llm_group = QGroupBox("Embedding Configuration")
-        llm_layout = QVBoxLayout(llm_group)
-        StyleHelper.apply_standard_list_spacing(llm_layout)
-
-        # Provider selection
-        provider_layout = QHBoxLayout()
-        provider_layout.addWidget(QLabel("Provider:"))
-        self.provider_combo = QComboBox()
-        self.provider_combo.addItems(["LM Studio", "Sentence Transformers"])
-        self.provider_combo.currentIndexChanged.connect(self._on_provider_changed)
-        self.provider_combo.currentIndexChanged.connect(self.save_settings)
-        provider_layout.addWidget(self.provider_combo, stretch=1)
-        llm_layout.addLayout(provider_layout)
-
-        # Stacked widget for provider-specific settings
-        self.provider_stack = QStackedWidget()
-
-        # LM Studio settings page
-        lm_studio_page = QGroupBox()
-        lm_studio_form = QFormLayout(lm_studio_page)
-        StyleHelper.apply_standard_list_spacing(lm_studio_form)
-
-        self.lm_url_input = QLineEdit()
-        self.lm_url_input.setPlaceholderText("http://localhost:8080/v1/embeddings")
-        self.lm_url_input.editingFinished.connect(self.save_settings)
-        lm_studio_form.addRow("API URL:", self.lm_url_input)
-
-        self.lm_model_input = QLineEdit()
-        self.lm_model_input.setPlaceholderText("e.g. nomic-embed-text-v1.5")
-        self.lm_model_input.editingFinished.connect(self.save_settings)
-        lm_studio_form.addRow("Embedding Model:", self.lm_model_input)
-
-        self.lm_api_key_input = QLineEdit()
-        self.lm_api_key_input.setPlaceholderText("Optional")
-        self.lm_api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.lm_api_key_input.editingFinished.connect(self.save_settings)
-        lm_studio_form.addRow("API Key:", self.lm_api_key_input)
-
-        # Test connection button
-        self.btn_test_lm_embed = QPushButton("Test Connection")
-        self.btn_test_lm_embed.setFixedWidth(120)
-        self.btn_test_lm_embed.clicked.connect(
-            lambda: self._test_connection("lmstudio", "embed")
-        )
-        lm_studio_form.addRow("", self.btn_test_lm_embed)
-
-        self.lm_timeout_input = QSpinBox()
-        self.lm_timeout_input.setRange(5, 300)
-        self.lm_timeout_input.setValue(30)
-        self.lm_timeout_input.setSuffix(" seconds")
-        self.lm_timeout_input.valueChanged.connect(self.save_settings)
-        lm_studio_form.addRow("Timeout:", self.lm_timeout_input)
-
-        self.provider_stack.addWidget(lm_studio_page)
-
-        # Sentence Transformers settings page
-        st_page = QGroupBox()
-        st_form = QFormLayout(st_page)
-        StyleHelper.apply_standard_list_spacing(st_form)
-
-        self.st_model_input = QLineEdit()
-        self.st_model_input.setPlaceholderText("all-MiniLM-L6-v2")
-        st_form.addRow("Model:", self.st_model_input)
-
-        self.provider_stack.addWidget(st_page)
-
-        llm_layout.addWidget(self.provider_stack)
-
-        # Save LLM settings button
-        save_llm_btn = QPushButton("Save LLM Settings")
-        save_llm_btn.clicked.connect(self.save_settings)
-        llm_layout.addWidget(save_llm_btn)
-
-        main_layout.addWidget(llm_group)
-
-        # === Settings Section ===
-        settings_group = QGroupBox("Settings")
-        settings_layout = QVBoxLayout(settings_group)
-        StyleHelper.apply_standard_list_spacing(settings_layout)
-
-        settings_layout.addWidget(QLabel("Excluded Attributes (comma-separated):"))
-        self.excluded_attrs_input = QLineEdit()
-        self.excluded_attrs_input.setPlaceholderText("e.g. secret_notes, internal_id")
-        self.excluded_attrs_input.setToolTip(
-            "Attributes starting with '_' are automatically excluded."
-        )
-        self.excluded_attrs_input.editingFinished.connect(self.save_settings)
-        settings_layout.addWidget(self.excluded_attrs_input)
-
-        main_layout.addWidget(settings_group)
-
-        # Add to tabs
-        self.tabs.addTab(embeddings_widget, "Embeddings & Search")
-
-    def _create_generation_tab(self) -> None:
-        """Create the text generation configuration tab."""
-        generation_widget = QWidget()
-        main_layout = QVBoxLayout(generation_widget)
-        StyleHelper.apply_standard_list_spacing(main_layout)
-
-        # === Generation Providers Section ===
+        # === Text Generation Providers Section ===
         gen_group = QGroupBox("Text Generation Providers")
         gen_layout = QVBoxLayout(gen_group)
         StyleHelper.apply_standard_list_spacing(gen_layout)
 
-        # Provider selection
-        provider_layout = QHBoxLayout()
-        provider_layout.addWidget(QLabel("Provider:"))
+        # Gen Provider selection
+        gen_provider_layout = QHBoxLayout()
+        gen_provider_layout.addWidget(QLabel("Provider:"))
         self.gen_provider_combo = QComboBox()
         self.gen_provider_combo.addItems(
             ["LM Studio", "OpenAI", "Google Vertex AI", "Anthropic Claude"]
@@ -269,136 +190,153 @@ class AISettingsDialog(QDialog):
             self._on_gen_provider_changed
         )
         self.gen_provider_combo.currentIndexChanged.connect(self.save_settings)
-        provider_layout.addWidget(self.gen_provider_combo, stretch=1)
-        gen_layout.addLayout(provider_layout)
+        gen_provider_layout.addWidget(self.gen_provider_combo, stretch=1)
+        gen_layout.addLayout(gen_provider_layout)
 
         # Stacked widget for provider-specific settings
         self.gen_provider_stack = QStackedWidget()
 
-        # LM Studio generation settings
+        # [LM Studio Gen Page]
         lm_gen_page = QGroupBox()
         lm_gen_form = QFormLayout(lm_gen_page)
         StyleHelper.apply_standard_list_spacing(lm_gen_form)
-
         self.lm_gen_enabled = QCheckBox("Enable for this world")
         self.lm_gen_enabled.setChecked(True)
         self.lm_gen_enabled.toggled.connect(self.save_settings)
         lm_gen_form.addRow("Enabled:", self.lm_gen_enabled)
-
         self.lm_gen_use_chat_api = QCheckBox("Use Chat API (recommended)")
         self.lm_gen_use_chat_api.setChecked(True)
         self.lm_gen_use_chat_api.setToolTip(
-            "Use /v1/chat/completions with messages format. "
-            "Recommended for modern models like GPT, DeepSeek, Mistral. "
-            "Uncheck only for legacy completion-only models."
+            "Use /v1/chat/completions with messages format. Recommended for modern models."
         )
         self.lm_gen_use_chat_api.toggled.connect(self.save_settings)
         lm_gen_form.addRow("Chat Mode:", self.lm_gen_use_chat_api)
-
         self.lm_gen_url_input = QLineEdit()
         self.lm_gen_url_input.setPlaceholderText(
             "http://localhost:8080/v1/chat/completions"
         )
         self.lm_gen_url_input.editingFinished.connect(self.save_settings)
         lm_gen_form.addRow("API URL:", self.lm_gen_url_input)
-
-        # Test connection button
         self.btn_test_lm_gen = QPushButton("Test Connection")
         self.btn_test_lm_gen.setFixedWidth(120)
         self.btn_test_lm_gen.clicked.connect(
             lambda: self._test_connection("lmstudio", "generate")
         )
         lm_gen_form.addRow("", self.btn_test_lm_gen)
-
         self.lm_gen_model_input = QLineEdit()
         self.lm_gen_model_input.setPlaceholderText("e.g. mistral-7b-instruct")
         self.lm_gen_model_input.editingFinished.connect(self.save_settings)
         lm_gen_form.addRow("Model:", self.lm_gen_model_input)
-
         self.gen_provider_stack.addWidget(lm_gen_page)
 
-        # OpenAI generation settings
+        # [OpenAI Gen Page]
         openai_gen_page = QGroupBox()
         openai_gen_form = QFormLayout(openai_gen_page)
         StyleHelper.apply_standard_list_spacing(openai_gen_form)
-
         self.openai_gen_enabled = QCheckBox("Enable for this world")
         self.openai_gen_enabled.toggled.connect(self.save_settings)
         openai_gen_form.addRow("Enabled:", self.openai_gen_enabled)
-
         self.openai_api_key_input = QLineEdit()
         self.openai_api_key_input.setPlaceholderText("sk-...")
         self.openai_api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.openai_api_key_input.editingFinished.connect(self.save_settings)
         openai_gen_form.addRow("API Key:", self.openai_api_key_input)
-
         self.openai_model_input = QLineEdit()
         self.openai_model_input.setPlaceholderText("gpt-3.5-turbo")
         self.openai_model_input.editingFinished.connect(self.save_settings)
         openai_gen_form.addRow("Model:", self.openai_model_input)
-
         self.gen_provider_stack.addWidget(openai_gen_page)
 
-        # Google Vertex AI settings
+        # [Google Gen Page]
         google_gen_page = QGroupBox()
         google_gen_form = QFormLayout(google_gen_page)
         StyleHelper.apply_standard_list_spacing(google_gen_form)
-
         self.google_gen_enabled = QCheckBox("Enable for this world")
         self.google_gen_enabled.toggled.connect(self.save_settings)
         google_gen_form.addRow("Enabled:", self.google_gen_enabled)
-
         self.google_project_input = QLineEdit()
         self.google_project_input.setPlaceholderText("your-project-id")
         google_gen_form.addRow("Project ID:", self.google_project_input)
-
         self.google_location_input = QLineEdit()
         self.google_location_input.setPlaceholderText("us-central1")
         google_gen_form.addRow("Location:", self.google_location_input)
-
         self.google_model_input = QLineEdit()
         self.google_model_input.setPlaceholderText("text-bison@001")
         self.google_model_input.editingFinished.connect(self.save_settings)
         google_gen_form.addRow("Model:", self.google_model_input)
-
         self.google_creds_input = QLineEdit()
         self.google_creds_input.setPlaceholderText("/path/to/credentials.json")
         self.google_creds_input.editingFinished.connect(self.save_settings)
         google_gen_form.addRow("Credentials Path:", self.google_creds_input)
-
         self.gen_provider_stack.addWidget(google_gen_page)
 
-        # Anthropic Claude settings
+        # [Anthropic Gen Page]
         anthropic_gen_page = QGroupBox()
         anthropic_gen_form = QFormLayout(anthropic_gen_page)
         StyleHelper.apply_standard_list_spacing(anthropic_gen_form)
-
         self.anthropic_gen_enabled = QCheckBox("Enable for this world")
         self.anthropic_gen_enabled.toggled.connect(self.save_settings)
         anthropic_gen_form.addRow("Enabled:", self.anthropic_gen_enabled)
-
         self.anthropic_api_key_input = QLineEdit()
         self.anthropic_api_key_input.setPlaceholderText("sk-ant-...")
         self.anthropic_api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
         anthropic_gen_form.addRow("API Key:", self.anthropic_api_key_input)
-
         self.anthropic_model_input = QLineEdit()
         self.anthropic_model_input.setPlaceholderText("claude-3-haiku-20240307")
         self.anthropic_model_input.editingFinished.connect(self.save_settings)
         anthropic_gen_form.addRow("Model:", self.anthropic_model_input)
-
         self.gen_provider_stack.addWidget(anthropic_gen_page)
 
         gen_layout.addWidget(self.gen_provider_stack)
-
-        # Save generation settings button
-        save_gen_btn = QPushButton("Save Generation Settings")
-        save_gen_btn.clicked.connect(self.save_settings)
-        gen_layout.addWidget(save_gen_btn)
-
         main_layout.addWidget(gen_group)
 
-        # === Generation Options ===
+        # === Generation Parameters (Moved from old options tab) ===
+        params_group = QGroupBox("Parameters")
+        params_layout = QFormLayout(params_group)
+        StyleHelper.apply_standard_list_spacing(params_layout)
+
+        self.max_tokens_input = QSpinBox()
+        self.max_tokens_input.setRange(100, 4096)
+        self.max_tokens_input.setValue(512)
+        self.max_tokens_input.setToolTip("Maximum tokens to generate per request")
+        self.max_tokens_input.valueChanged.connect(self.save_settings)
+        params_layout.addRow("Max Tokens:", self.max_tokens_input)
+
+        self.temperature_input = QSpinBox()
+        self.temperature_input.setRange(0, 200)
+        self.temperature_input.setValue(70)
+        self.temperature_input.setSuffix("%")
+        self.temperature_input.setToolTip("Temperature (0-200%, where 100% = 1.0)")
+        self.temperature_input.valueChanged.connect(self.save_settings)
+        params_layout.addRow("Temperature:", self.temperature_input)
+
+        self.enable_audit_log = QCheckBox("Enable audit logging")
+        self.enable_audit_log.setToolTip(
+            "Log all generation requests and responses for auditing"
+        )
+        self.enable_audit_log.toggled.connect(self.save_settings)
+        params_layout.addRow("Audit Log:", self.enable_audit_log)
+
+        main_layout.addWidget(params_group)
+
+        # Clear settings button (Local to Generative AI?)
+        # Let's keep it global-ish but on the relevant pages or just here
+        clear_btn = QPushButton("Clear All AI Settings")
+        clear_btn.setStyleSheet("QPushButton { color: #e74c3c; }")
+        clear_btn.clicked.connect(self._on_clear_generation_settings)
+        clear_btn.setToolTip("Clear all stored API keys and settings")
+        main_layout.addWidget(clear_btn)
+
+        main_layout.addStretch()
+
+        return page
+
+    def _create_options_tab(self) -> None:
+        """Create the Generation Options tab (Prompts, etc)."""
+        options_widget = QWidget()
+        main_layout = QVBoxLayout(options_widget)
+        StyleHelper.apply_standard_list_spacing(main_layout)
+
         options_group = QGroupBox("Generation Options")
         options_layout = QFormLayout(options_group)
         StyleHelper.apply_standard_list_spacing(options_layout)
@@ -428,74 +366,476 @@ class AISettingsDialog(QDialog):
         # System Prompt
         system_prompt_label = QLabel("System Prompt:")
         options_layout.addRow(system_prompt_label, QWidget())  # Spacer
-
-        self.system_prompt_edit = QPlainTextEdit()
-        self.system_prompt_edit.setStyleSheet(StyleHelper.get_input_field_style())
+        self.system_prompt_edit = PromptEditorWidget()
         self.system_prompt_edit.setPlaceholderText(
             "Enter the system prompt that defines the LLM's role and behavior..."
         )
-        self.system_prompt_edit.setMaximumHeight(120)
+        self.system_prompt_edit.setMaximumHeight(150)
         self.system_prompt_edit.setToolTip(
-            "The system prompt defines how the LLM should behave and respond. "
-            "This will be prepended to all generation requests."
+            "The system prompt defines how the LLM should behave and respond."
         )
+        # Default prompt
+        default_prompt = (
+            "You are an expert fantasy world-builder assisting a user in creating a "
+            "rich and immersive setting. Your tone is descriptive, evocative, and "
+            "consistent with high-fantasy literature.\n\n"
+            "IMPORTANT: Time in this world is represented as floating-point numbers "
+            "where 1.0 = 1 day. The decimal portion represents time within the day "
+            "(e.g., 0.5 = noon). When referencing dates or durations, understand "
+            "that event dates and durations use this numeric format."
+        )
+        self.system_prompt_edit.set_default_text(default_prompt)
         options_layout.addRow("", self.system_prompt_edit)
 
         # Filter reasoning tags checkbox
         self.filter_reasoning_cb = QCheckBox("Filter reasoning tags (recommended)")
         self.filter_reasoning_cb.setChecked(True)
         self.filter_reasoning_cb.setToolTip(
-            "Remove <think>, <thinking>, <reasoning> and similar tags from output.\n"
-            "Recommended for models like DeepSeek R1 that expose chain-of-thought."
+            "Remove <think>, <thinking>, <reasoning> and similar tags from output."
         )
         self.filter_reasoning_cb.toggled.connect(self.save_settings)
         options_layout.addRow("Output:", self.filter_reasoning_cb)
 
-        # Restore default button
-        restore_btn = QPushButton("Restore Default")
-        restore_btn.setMaximumWidth(120)
-        restore_btn.setToolTip(
-            "Restore the default fantasy world-builder system prompt"
-        )
-        restore_btn.clicked.connect(self._on_restore_default_prompt)
-        options_layout.addRow("", restore_btn)
-
         # Summary Prompt
         summary_prompt_label = QLabel("Summary Prompt:")
         options_layout.addRow(summary_prompt_label, QWidget())  # Spacer
-
-        self.summary_prompt_edit = QPlainTextEdit()
-        self.summary_prompt_edit.setStyleSheet(StyleHelper.get_input_field_style())
+        self.summary_prompt_edit = PromptEditorWidget()
         self.summary_prompt_edit.setPlaceholderText(
             "Enter the prompt used to summarize Entities and Events..."
         )
-        self.summary_prompt_edit.setMaximumHeight(100)
-        self.summary_prompt_edit.setToolTip(
-            "This prompt instructs the LLM how to summarize worldbuilding items. "
-            "Use {type}, {name}, {description}, {lore_date} as placeholders."
+
+    def _create_knowledge_base_page(self) -> QWidget:
+        """Create the Knowledge Base (Embeddings & Index) page."""
+        page = QWidget()
+        main_layout = QVBoxLayout(page)
+        StyleHelper.apply_standard_list_spacing(main_layout)
+
+        # === Embedding Configuration Section ===
+        llm_group = QGroupBox("Embedding Configuration")
+        llm_layout = QVBoxLayout(llm_group)
+        StyleHelper.apply_standard_list_spacing(llm_layout)
+
+        # Provider selection
+        provider_layout = QHBoxLayout()
+        provider_layout.addWidget(QLabel("Provider:"))
+        self.provider_combo = QComboBox()
+        self.provider_combo.addItems(["LM Studio", "Sentence Transformers"])
+        self.provider_combo.currentIndexChanged.connect(self._on_provider_changed)
+        self.provider_combo.currentIndexChanged.connect(self.save_settings)
+        provider_layout.addWidget(self.provider_combo, stretch=1)
+        llm_layout.addLayout(provider_layout)
+
+        # Stacked widget for provider-specific settings
+        self.provider_stack = QStackedWidget()
+
+        # LM Studio settings page
+        lm_studio_page = QGroupBox()
+        lm_studio_form = QFormLayout(lm_studio_page)
+        StyleHelper.apply_standard_list_spacing(lm_studio_form)
+        self.lm_url_input = QLineEdit()
+        self.lm_url_input.setPlaceholderText("http://localhost:8080/v1/embeddings")
+        self.lm_url_input.editingFinished.connect(self.save_settings)
+        lm_studio_form.addRow("API URL:", self.lm_url_input)
+        self.lm_model_input = QLineEdit()
+        self.lm_model_input.setPlaceholderText("e.g. nomic-embed-text-v1.5")
+        self.lm_model_input.editingFinished.connect(self.save_settings)
+        lm_studio_form.addRow("Embedding Model:", self.lm_model_input)
+        self.lm_api_key_input = QLineEdit()
+        self.lm_api_key_input.setPlaceholderText("Optional")
+        self.lm_api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.lm_api_key_input.editingFinished.connect(self.save_settings)
+        lm_studio_form.addRow("API Key:", self.lm_api_key_input)
+        self.btn_test_lm_embed = QPushButton("Test Connection")
+        self.btn_test_lm_embed.setFixedWidth(120)
+        self.btn_test_lm_embed.clicked.connect(
+            lambda: self._test_connection("lmstudio", "embed")
         )
-        options_layout.addRow("", self.summary_prompt_edit)
+        lm_studio_form.addRow("", self.btn_test_lm_embed)
+        self.lm_timeout_input = QSpinBox()
+        self.lm_timeout_input.setRange(5, 300)
+        self.lm_timeout_input.setValue(30)
+        self.lm_timeout_input.setSuffix(" seconds")
+        self.lm_timeout_input.valueChanged.connect(self.save_settings)
+        lm_studio_form.addRow("Timeout:", self.lm_timeout_input)
+        self.provider_stack.addWidget(lm_studio_page)
 
-        # Restore default summary prompt button
-        restore_summary_btn = QPushButton("Restore Default")
-        restore_summary_btn.setMaximumWidth(120)
-        restore_summary_btn.setToolTip("Restore the default summary prompt")
-        restore_summary_btn.clicked.connect(self._on_restore_default_summary_prompt)
-        options_layout.addRow("", restore_summary_btn)
+        # Sentence Transformers settings page
+        st_page = QGroupBox()
+        st_form = QFormLayout(st_page)
+        StyleHelper.apply_standard_list_spacing(st_form)
+        self.st_model_input = QLineEdit()
+        self.st_model_input.setPlaceholderText("all-MiniLM-L6-v2")
+        st_form.addRow("Model:", self.st_model_input)
+        self.provider_stack.addWidget(st_page)
 
-        main_layout.addWidget(options_group)
+        llm_layout.addWidget(self.provider_stack)
+        main_layout.addWidget(llm_group)
 
-        # Clear all settings button
-        clear_btn = QPushButton("Clear All Generation Settings")
-        clear_btn.setStyleSheet("QPushButton { color: #e74c3c; }")
-        clear_btn.clicked.connect(self._on_clear_generation_settings)
-        clear_btn.setToolTip("Clear all stored API keys and generation settings")
-        main_layout.addWidget(clear_btn)
+        # === Index Status Section ===
+        index_group = QGroupBox("Index Management")
+        index_layout = QVBoxLayout(index_group)
+        StyleHelper.apply_standard_list_spacing(index_layout)
+
+        # Status display
+        status_grid = QVBoxLayout()
+        self.lbl_model = QLabel("Model: --")
+        status_grid.addWidget(self.lbl_model)
+        self.lbl_indexed_count = QLabel("Indexed: --")
+        status_grid.addWidget(self.lbl_indexed_count)
+        self.lbl_last_indexed = QLabel("Last Updated: --")
+        status_grid.addWidget(self.lbl_last_indexed)
+        index_layout.addLayout(status_grid)
+
+        # Rebuild controls
+        rebuild_layout = QHBoxLayout()
+        self.rebuild_combo = QComboBox()
+        self.rebuild_combo.addItems(["All", "Entities", "Events"])
+        rebuild_layout.addWidget(self.rebuild_combo, stretch=1)
+        self.btn_rebuild = QPushButton("Rebuild Index")
+        self.btn_rebuild.clicked.connect(self._on_rebuild_clicked)
+        rebuild_layout.addWidget(self.btn_rebuild, stretch=1)
+        index_layout.addLayout(rebuild_layout)
+        self.btn_refresh_status = QPushButton("Refresh Status")
+        self.btn_refresh_status.clicked.connect(self.index_status_requested.emit)
+        index_layout.addWidget(self.btn_refresh_status)
+        main_layout.addWidget(index_group)
+
+        # === Search Settings Section ===
+        settings_group = QGroupBox("Search Rules")
+        settings_layout = QVBoxLayout(settings_group)
+        StyleHelper.apply_standard_list_spacing(settings_layout)
+
+        settings_layout.addWidget(QLabel("Excluded Attributes (comma-separated):"))
+        self.excluded_attrs_input = QLineEdit()
+        self.excluded_attrs_input.setPlaceholderText("e.g. secret_notes, internal_id")
+        self.excluded_attrs_input.setToolTip(
+            "Attributes starting with '_' are automatically excluded."
+        )
+        self.excluded_attrs_input.editingFinished.connect(self.save_settings)
+        settings_layout.addWidget(self.excluded_attrs_input)
+        main_layout.addWidget(settings_group)
 
         main_layout.addStretch()
 
-        # Add to tabs
-        self.tabs.addTab(generation_widget, "Text Generation")
+        return page
+
+    def _create_prompts_page(self) -> QWidget:
+        """Create the Prompts & Persona page."""
+        page = QWidget()
+        main_layout = QVBoxLayout(page)
+        StyleHelper.apply_standard_list_spacing(main_layout)
+
+        # System Prompt
+        system_group = QGroupBox("System Prompt (Persona)")
+        system_layout = QVBoxLayout(system_group)
+        StyleHelper.apply_compact_spacing(system_layout)
+
+        self.system_prompt_edit = PromptEditorWidget()
+        self.system_prompt_edit.setPlaceholderText(
+            "Enter the system prompt that defines the LLM's role and behavior..."
+        )
+        self.system_prompt_edit.setMinimumHeight(120)  # Taller for reading
+        self.system_prompt_edit.setToolTip(
+            "The system prompt defines how the LLM should behave and respond.\n\n"
+            "NOTE: If a specific Template is selected in the Generation Widget,\n"
+            "it will OVERRIDE this setting."
+        )
+        # Default prompt
+        default_prompt = (
+            "You are an expert fantasy world-builder assisting a user in creating a "
+            "rich and immersive setting. Your tone is descriptive, evocative, and "
+            "consistent with high-fantasy literature.\n\n"
+            "IMPORTANT: Time in this world is represented as floating-point numbers "
+            "where 1.0 = 1 day. The decimal portion represents time within the day "
+            "(e.g., 0.5 = noon). When referencing dates or durations, understand "
+            "that event dates and durations use this numeric format."
+        )
+        self.system_prompt_edit.set_default_text(default_prompt)
+        system_layout.addWidget(self.system_prompt_edit)
+        main_layout.addWidget(system_group)
+
+        # Summary Prompt
+        summary_group = QGroupBox("Summary Prompt")
+        summary_layout = QVBoxLayout(summary_group)
+        StyleHelper.apply_compact_spacing(summary_layout)
+
+        self.summary_prompt_edit = PromptEditorWidget()
+        self.summary_prompt_edit.setPlaceholderText(
+            "Enter the prompt used to summarize Entities and Events..."
+        )
+        self.summary_prompt_edit.setMinimumHeight(120)
+        self.summary_prompt_edit.setToolTip(
+            "This prompt instructs the LLM how to summarize worldbuilding items."
+        )
+        self.summary_prompt_edit.set_variables(
+            ["{type}", "{name}", "{description}", "{lore_date}"]
+        )
+        default_summary_prompt = (
+            "Summarize the following worldbuilding item neutrally, "
+            "preserving all facts and the original tone. "
+            "Crucially, PRESERVE any [[Wiki Links]] exactly as they appear.\n\n"
+            "Item Data:\n"
+            "Type: {type}\n"
+            "Name: {name}\n"
+            "Description: {description}"
+        )
+        self.summary_prompt_edit.set_default_text(default_summary_prompt)
+        summary_layout.addWidget(self.summary_prompt_edit)
+        main_layout.addWidget(summary_group)
+
+        # Output Filters
+        filters_group = QGroupBox("Output Control")
+        filters_layout = QVBoxLayout(filters_group)
+        StyleHelper.apply_compact_spacing(filters_layout)
+
+        # Filter reasoning tags checkbox
+        self.filter_reasoning_cb = QCheckBox(
+            "Filter reasoning tags (<think>, <reasoning>)"
+        )
+        self.filter_reasoning_cb.setChecked(True)
+        self.filter_reasoning_cb.setToolTip(
+            "Remove <think>, <thinking>, <reasoning> and similar tags from output."
+        )
+        self.filter_reasoning_cb.toggled.connect(self.save_settings)
+        filters_layout.addWidget(self.filter_reasoning_cb)
+        main_layout.addWidget(filters_group)  # BUG FIX: was missing!
+
+        main_layout.addStretch()
+        return page
+
+    def _create_templates_page(self) -> QWidget:
+        """Create the Templates management page."""
+        page = QWidget()
+        main_layout = QVBoxLayout(page)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Splitter for Master-Detail view
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+        splitter.setHandleWidth(1)
+        splitter.setStyleSheet("QSplitter::handle { background-color: #3d3d3d; }")
+
+        # === Left: Template List ===
+        left_widget = QWidget()
+        left_layout = QVBoxLayout(left_widget)
+        left_layout.setContentsMargins(0, 0, 8, 0)
+
+        lbl_list = QLabel("Templates")
+        lbl_list.setStyleSheet("font-weight: bold; color: #b0b0b0;")
+        left_layout.addWidget(lbl_list)
+
+        self.template_list = QListWidget()
+        self.template_list.setStyleSheet(
+            """
+            QListWidget {
+                background-color: #1e1e1e;
+                border: 1px solid #3d3d3d;
+                border-radius: 4px;
+            }
+            QListWidget::item {
+                padding: 8px;
+                color: #cccccc;
+            }
+            QListWidget::item:selected {
+                background-color: #3498db;
+                color: #ffffff;
+            }
+        """
+        )
+        self.template_list.currentRowChanged.connect(self._on_template_selected)
+        left_layout.addWidget(self.template_list)
+
+        # Actions below list
+        list_actions = QHBoxLayout()
+        self.btn_new_template = QPushButton("New")
+        self.btn_new_template.clicked.connect(self._on_new_template)
+        list_actions.addWidget(self.btn_new_template)
+        self.btn_refresh_templates = QPushButton("Refresh")
+        self.btn_refresh_templates.clicked.connect(self._refresh_templates_list)
+        list_actions.addWidget(self.btn_refresh_templates)
+        left_layout.addLayout(list_actions)
+
+        splitter.addWidget(left_widget)
+
+        # === Right: Editor ===
+        right_widget = QWidget()
+        right_layout = QVBoxLayout(right_widget)
+        right_layout.setContentsMargins(8, 0, 0, 0)
+        StyleHelper.apply_standard_list_spacing(right_layout)
+
+        # Metadata form
+        meta_group = QGroupBox("Template Metadata")
+        meta_form = QFormLayout(meta_group)
+        StyleHelper.apply_compact_spacing(meta_form)
+
+        self.template_id_edit = QLineEdit()
+        self.template_id_edit.setPlaceholderText("e.g. fantasy_prompt")
+        meta_form.addRow("ID:", self.template_id_edit)
+
+        self.template_name_edit = QLineEdit()
+        self.template_name_edit.setPlaceholderText("e.g. Fantasy World Builder")
+        meta_form.addRow("Name:", self.template_name_edit)
+
+        right_layout.addWidget(meta_group)
+
+        # Content editor
+        content_group = QGroupBox("Prompt Content")
+        content_layout = QVBoxLayout(content_group)
+        content_layout.setContentsMargins(4, 8, 4, 4)
+
+        self.template_content_edit = PromptEditorWidget()
+        self.template_content_edit.setPlaceholderText("Enter template content here...")
+        content_layout.addWidget(self.template_content_edit)
+        right_layout.addWidget(content_group, stretch=1)
+
+        # Editor actions
+        editor_actions = QHBoxLayout()
+        self.btn_delete_template = QPushButton("Delete")
+        self.btn_delete_template.setStyleSheet(
+            "background-color: #AF4448; color: white;"
+        )
+        self.btn_delete_template.clicked.connect(self._on_delete_template)
+        editor_actions.addWidget(self.btn_delete_template)
+
+        editor_actions.addStretch()
+
+        self.btn_save_template = QPushButton("Save Template")
+        self.btn_save_template.setStyleSheet(
+            "background-color: #3498db; color: white; font-weight: bold;"
+        )
+        self.btn_save_template.clicked.connect(self._on_save_template)
+        editor_actions.addWidget(self.btn_save_template)
+
+        right_layout.addLayout(editor_actions)
+
+        splitter.addWidget(right_widget)
+
+        # Set splitter sizes (30% / 70%)
+        splitter.setSizes([200, 500])
+
+        main_layout.addWidget(splitter)
+
+        # Initial refresh
+        self._refresh_templates_list()
+
+        return page
+
+    @Slot()
+    def _refresh_templates_list(self):
+        """Reload templates from disk."""
+        self.template_list.clear()
+        try:
+            loader = PromptLoader()
+            templates = loader.list_templates()
+            # Sort by name
+            templates.sort(key=lambda x: x.get("name", "").lower())
+
+            for t in templates:
+                item = QListWidgetItem(f"{t['name']} (v{t['version']})")
+                item.setData(Qt.ItemDataRole.UserRole, t["template_id"])
+                item.setToolTip(f"ID: {t['template_id']}\n{t.get('description', '')}")
+                self.template_list.addItem(item)
+
+        except Exception as e:
+            logger.error(f"Failed to load templates: {e}")
+            self._show_save_status(f"Error loading templates: {e}")
+
+    @Slot(int)
+    def _on_template_selected(self, row: int):
+        """Load selected template into editor."""
+        if row < 0:
+            return
+
+        item = self.template_list.item(row)
+        template_id = item.data(Qt.ItemDataRole.UserRole)
+
+        try:
+            loader = PromptLoader()
+            # Load latest version
+            template = loader.load_template(template_id)
+
+            self.template_id_edit.setText(template.template_id)
+            self.template_id_edit.setReadOnly(True)  # Lock ID for existing templates
+            self.template_name_edit.setText(template.name)
+            self.template_content_edit.setPlainText(template.content)
+
+            # Enable buttons
+            self.btn_delete_template.setEnabled(True)
+            self.btn_save_template.setEnabled(True)
+
+        except Exception as e:
+            logger.error(f"Failed to load template details: {e}")
+            self._show_save_status("Error loading template")
+
+    @Slot()
+    def _on_new_template(self):
+        """Prepare editor for new template."""
+        self.template_list.clearSelection()
+        self.template_id_edit.clear()
+        self.template_id_edit.setReadOnly(False)
+        self.template_name_edit.clear()
+        self.template_content_edit.clear()
+        self.template_id_edit.setFocus()
+        self.btn_delete_template.setEnabled(False)
+
+    @Slot()
+    def _on_save_template(self):
+        """Save the current template."""
+        tid = self.template_id_edit.text().strip()
+        name = self.template_name_edit.text().strip()
+        content = self.template_content_edit.toPlainText()
+
+        if not tid or not name:
+            self._show_save_status("Error: ID and Name required")
+            return
+
+        try:
+            loader = PromptLoader()
+            metadata = {"name": name}
+            loader.save_template(tid, content, metadata)
+
+            self._show_save_status("Template saved")
+            self._refresh_templates_list()
+
+            # Find and reselet
+            for i in range(self.template_list.count()):
+                if self.template_list.item(i).data(Qt.ItemDataRole.UserRole) == tid:
+                    self.template_list.setCurrentRow(i)
+                    break
+
+        except Exception as e:
+            logger.error(f"Failed to save template: {e}")
+            self._show_save_status(f"Error: {e}")
+
+    @Slot()
+    def _on_delete_template(self):
+        """Delete the selected template."""
+        row = self.template_list.currentRow()
+        if row < 0:
+            return
+
+        tid = self.template_id_edit.text()
+
+        reply = QMessageBox.question(
+            self,
+            "Confirm Delete",
+            f"Are you sure you want to delete template '{tid}'?\nThis will delete ALL versions.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+
+        if reply == QMessageBox.StandardButton.Yes:
+            try:
+                loader = PromptLoader()
+                loader.delete_template(tid)
+                self._show_save_status("Template deleted")
+                self._new_template()  # Clear editor
+                self._refresh_templates_list()
+            except Exception as e:
+                logger.error(f"Failed to delete template: {e}")
+                self._show_save_status(f"Error: {e}")
+
+    def _new_template(self):
+        self._on_new_template()
 
     @Slot(int)
     def _on_provider_changed(self, index: int) -> None:
@@ -560,34 +900,6 @@ class AISettingsDialog(QDialog):
         logger.info(f"Rebuild index requested for type: {obj_type}")
         self.rebuild_index_requested.emit(obj_type)
 
-    @Slot()
-    def _on_restore_default_prompt(self) -> None:
-        """Restore the default system prompt."""
-        default_prompt = (
-            "You are an expert fantasy world-builder assisting a user in creating a "
-            "rich and immersive setting. Your tone is descriptive, evocative, and "
-            "consistent with high-fantasy literature.\n\n"
-            "IMPORTANT: Time in this world is represented as floating-point numbers "
-            "where 1.0 = 1 day. The decimal portion represents time within the day "
-            "(e.g., 0.5 = noon). When referencing dates or durations, understand "
-            "that event dates and durations use this numeric format."
-        )
-        self.system_prompt_edit.setPlainText(default_prompt)
-
-    @Slot()
-    def _on_restore_default_summary_prompt(self) -> None:
-        """Restore the default summary prompt."""
-        default_summary_prompt = (
-            "Summarize the following worldbuilding item neutrally, "
-            "preserving all facts and the original tone. "
-            "Crucially, PRESERVE any [[Wiki Links]] exactly as they appear.\n\n"
-            "Item Data:\n"
-            "Type: {type}\n"
-            "Name: {name}\n"
-            "Description: {description}"
-        )
-        self.summary_prompt_edit.setPlainText(default_summary_prompt)
-
     def _test_connection(self, provider_id: str, mode: str) -> None:
         """Test connection to the specified provider.
 
@@ -640,9 +952,19 @@ class AISettingsDialog(QDialog):
             )
 
     @Slot()
-    @Slot()
     def save_settings(self) -> None:
         """Save settings to QSettings."""
+        if getattr(self, "_initializing", False):
+            return
+
+        # Check validity (guard against destruction races)
+        try:
+            if not self.isVisible() and not self.parent():
+                # Just a heuristic; if we can't access a widget, we stop
+                _ = self.filter_reasoning_cb.isChecked()
+        except RuntimeError:
+            return  # Already deleted
+
         logger.debug("save_settings called - triggering autosave")
         self._show_save_status("Saving...")
 
