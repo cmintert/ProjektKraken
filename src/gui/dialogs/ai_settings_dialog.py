@@ -7,8 +7,9 @@ exclusion.
 import logging
 from typing import Optional
 
-from PySide6.QtCore import QTimer, Qt, Signal, Slot
+from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QCheckBox,
     QComboBox,
     QDialog,
@@ -17,16 +18,15 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QListWidget,
+    QListWidgetItem,
     QMessageBox,
     QPushButton,
     QSpinBox,
+    QSplitter,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
-    QListWidget,
-    QListWidgetItem,
-    QAbstractItemView,
-    QSplitter,
 )
 
 from src.gui.utils.style_helper import StyleHelper
@@ -331,79 +331,6 @@ class AISettingsDialog(QDialog):
 
         return page
 
-    def _create_options_tab(self) -> None:
-        """Create the Generation Options tab (Prompts, etc)."""
-        options_widget = QWidget()
-        main_layout = QVBoxLayout(options_widget)
-        StyleHelper.apply_standard_list_spacing(main_layout)
-
-        options_group = QGroupBox("Generation Options")
-        options_layout = QFormLayout(options_group)
-        StyleHelper.apply_standard_list_spacing(options_layout)
-
-        self.enable_audit_log = QCheckBox("Enable audit logging")
-        self.enable_audit_log.setToolTip(
-            "Log all generation requests and responses for auditing"
-        )
-        self.enable_audit_log.toggled.connect(self.save_settings)
-        options_layout.addRow("Audit Log:", self.enable_audit_log)
-
-        self.max_tokens_input = QSpinBox()
-        self.max_tokens_input.setRange(100, 4096)
-        self.max_tokens_input.setValue(512)
-        self.max_tokens_input.setToolTip("Maximum tokens to generate per request")
-        self.max_tokens_input.valueChanged.connect(self.save_settings)
-        options_layout.addRow("Max Tokens:", self.max_tokens_input)
-
-        self.temperature_input = QSpinBox()
-        self.temperature_input.setRange(0, 200)
-        self.temperature_input.setValue(70)
-        self.temperature_input.setSuffix("%")
-        self.temperature_input.setToolTip("Temperature (0-200%, where 100% = 1.0)")
-        self.temperature_input.valueChanged.connect(self.save_settings)
-        options_layout.addRow("Temperature:", self.temperature_input)
-
-        # System Prompt
-        system_prompt_label = QLabel("System Prompt:")
-        options_layout.addRow(system_prompt_label, QWidget())  # Spacer
-        self.system_prompt_edit = PromptEditorWidget()
-        self.system_prompt_edit.setPlaceholderText(
-            "Enter the system prompt that defines the LLM's role and behavior..."
-        )
-        self.system_prompt_edit.setMaximumHeight(150)
-        self.system_prompt_edit.setToolTip(
-            "The system prompt defines how the LLM should behave and respond."
-        )
-        # Default prompt
-        default_prompt = (
-            "You are an expert fantasy world-builder assisting a user in creating a "
-            "rich and immersive setting. Your tone is descriptive, evocative, and "
-            "consistent with high-fantasy literature.\n\n"
-            "IMPORTANT: Time in this world is represented as floating-point numbers "
-            "where 1.0 = 1 day. The decimal portion represents time within the day "
-            "(e.g., 0.5 = noon). When referencing dates or durations, understand "
-            "that event dates and durations use this numeric format."
-        )
-        self.system_prompt_edit.set_default_text(default_prompt)
-        options_layout.addRow("", self.system_prompt_edit)
-
-        # Filter reasoning tags checkbox
-        self.filter_reasoning_cb = QCheckBox("Filter reasoning tags (recommended)")
-        self.filter_reasoning_cb.setChecked(True)
-        self.filter_reasoning_cb.setToolTip(
-            "Remove <think>, <thinking>, <reasoning> and similar tags from output."
-        )
-        self.filter_reasoning_cb.toggled.connect(self.save_settings)
-        options_layout.addRow("Output:", self.filter_reasoning_cb)
-
-        # Summary Prompt
-        summary_prompt_label = QLabel("Summary Prompt:")
-        options_layout.addRow(summary_prompt_label, QWidget())  # Spacer
-        self.summary_prompt_edit = PromptEditorWidget()
-        self.summary_prompt_edit.setPlaceholderText(
-            "Enter the prompt used to summarize Entities and Events..."
-        )
-
     def _create_knowledge_base_page(self) -> QWidget:
         """Create the Knowledge Base (Embeddings & Index) page."""
         page = QWidget()
@@ -581,10 +508,17 @@ class AISettingsDialog(QDialog):
             ["{type}", "{name}", "{description}", "{lore_date}"]
         )
         default_summary_prompt = (
-            "Summarize the following worldbuilding item neutrally, "
-            "preserving all facts and the original tone. "
-            "Crucially, PRESERVE any [[Wiki Links]] exactly as they appear.\n\n"
-            "Item Data:\n"
+            "Summarize the following content in a clear, structured, and concise way. "
+            "Focus on the essential ideas, remove filler, and present the information "
+            "as a summary.\n\n"
+            "Requirements:\n"
+            "- Start with a short, high-level overview (2–3 sentences)\n"
+            "- Follow with bullet points capturing key details, decisions, "
+            "and insights\n"
+            "- Preserve factual accuracy without adding new information\n"
+            "- Use neutral, professional language\n"
+            "- Avoid repetition and avoid quoting large sections verbatim\n\n"
+            "Content Data:\n"
             "Type: {type}\n"
             "Name: {name}\n"
             "Description: {description}"
@@ -740,7 +674,7 @@ class AISettingsDialog(QDialog):
         return page
 
     @Slot()
-    def _refresh_templates_list(self):
+    def _refresh_templates_list(self) -> None:
         """Reload templates from disk."""
         self.template_list.clear()
         try:
@@ -760,7 +694,7 @@ class AISettingsDialog(QDialog):
             self._show_save_status(f"Error loading templates: {e}")
 
     @Slot(int)
-    def _on_template_selected(self, row: int):
+    def _on_template_selected(self, row: int) -> None:
         """Load selected template into editor."""
         if row < 0:
             return
@@ -787,7 +721,7 @@ class AISettingsDialog(QDialog):
             self._show_save_status("Error loading template")
 
     @Slot()
-    def _on_new_template(self):
+    def _on_new_template(self) -> None:
         """Prepare editor for new template."""
         self.template_list.clearSelection()
         self.template_id_edit.clear()
@@ -798,7 +732,7 @@ class AISettingsDialog(QDialog):
         self.btn_delete_template.setEnabled(False)
 
     @Slot()
-    def _on_save_template(self):
+    def _on_save_template(self) -> None:
         """Save the current template."""
         tid = self.template_id_edit.text().strip()
         name = self.template_name_edit.text().strip()
@@ -827,7 +761,7 @@ class AISettingsDialog(QDialog):
             self._show_save_status(f"Error: {e}")
 
     @Slot()
-    def _on_delete_template(self):
+    def _on_delete_template(self) -> None:
         """Delete the selected template."""
         row = self.template_list.currentRow()
         if row < 0:
@@ -855,7 +789,7 @@ class AISettingsDialog(QDialog):
                 logger.error(f"Failed to delete template: {e}")
                 self._show_save_status(f"Error: {e}")
 
-    def _new_template(self):
+    def _new_template(self) -> None:
         self._on_new_template()
 
     @Slot(int)
