@@ -510,35 +510,29 @@ class LLMGenerationWidget(QWidget):
     def _populate_template_combo(self) -> None:
         """Populate template combo box with available templates."""
         try:
+            self.template_combo.clear()
+
+            # Add option for no template (Basic Assistant)
+            self.template_combo.addItem("Basic Assistant (Default)", None)
+
             loader = PromptLoader()
             templates = loader.list_templates()
 
-            # Filter to only description templates
-            description_templates = [
-                t for t in templates if t["template_id"].startswith("description_")
-            ]
-
-            # Sort by template_id for consistent ordering
-            description_templates.sort(key=lambda t: t["template_id"])
-
-            self.template_combo.clear()
+            # Sort by name for consistent ordering
+            templates.sort(key=lambda t: t.get("name", "").lower())
 
             # Store template info as user data for easy retrieval
-            for template in description_templates:
+            for template in templates:
                 display_name = f"{template['name']}"
                 template_id = template["template_id"]
                 # Store template_id as item data
                 self.template_combo.addItem(display_name, template_id)
 
-            # If no description templates found, add a fallback
-            if self.template_combo.count() == 0:
-                self.template_combo.addItem("Default (Fallback)", "description_default")
-                logger.warning("No description templates found, using fallback")
-
         except Exception as e:
             logger.error(f"Failed to populate template combo: {e}")
-            # Add fallback option
-            self.template_combo.addItem("Default (Error)", "description_default")
+            # Ensure at least the default exists
+            if self.template_combo.count() == 0:
+                self.template_combo.addItem("Basic Assistant (Default)", None)
 
     def _load_settings(self) -> None:
         """Load provider settings from QSettings."""
