@@ -101,11 +101,19 @@ class PromptEditorWidget(QWidget):
         self.editor.clear()
 
     def set_variables(self, variables: List[str]) -> None:
-        """Set the list of available variables."""
+        """Set the list of available variables.
+
+        Hides the combo box if no variables are provided.
+        """
         self.var_combo.clear()
+        if not variables:
+            self.var_combo.hide()
+            return
+
         self.var_combo.addItem("Insert Variable...", None)  # Header
         for var in variables:
             self.var_combo.addItem(var, var)
+        self.var_combo.show()
 
     def set_default_text(self, text: str) -> None:
         self._default_text = text

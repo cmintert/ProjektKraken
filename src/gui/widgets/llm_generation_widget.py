@@ -670,15 +670,13 @@ class LLMGenerationWidget(QWidget):
             context_lines.append(f"Description: {context['existing_description']}")
 
         # Fallback for any other keys
-        for k, v in context.items():
-            if k not in [
-                "name",
-                "type",
-                "lore_date",
-                "existing_description",
-                "description",
-            ]:
-                context_lines.append(f"{k.replace('_', ' ').title()}: {v}")
+        # Add any additional context fields
+        context_lines.extend(
+            f"{k.replace('_', ' ').title()}: {v}"
+            for k, v in context.items()
+            if k
+            not in ["name", "type", "lore_date", "existing_description", "description"]
+        )
 
         context_str = "\n".join(context_lines)
 
@@ -1038,15 +1036,13 @@ class LLMGenerationWidget(QWidget):
         if "existing_description" in context:
             context_lines.append(f"Description: {context['existing_description']}")
 
-        for k, v in context.items():
-            if k not in [
-                "name",
-                "type",
-                "lore_date",
-                "existing_description",
-                "description",
-            ]:
-                context_lines.append(f"{k.replace('_', ' ').title()}: {v}")
+        # Add any additional context fields
+        context_lines.extend(
+            f"{k.replace('_', ' ').title()}: {v}"
+            for k, v in context.items()
+            if k
+            not in ["name", "type", "lore_date", "existing_description", "description"]
+        )
 
         context_str = "\n".join(context_lines)
 
@@ -1084,7 +1080,10 @@ class LLMGenerationWidget(QWidget):
                 prompt["user"] = prompt["user"].replace("{{RAG_CONTEXT}}", "")
 
         # Format for display in preview (show keys clearly)
-        display_text = f"--- SYSTEM ---\n{prompt.get('system', '')}\n\n--- USER ---\n{prompt.get('user', '')}"
+        display_text = (
+            f"--- SYSTEM ---\n{prompt.get('system', '')}\n\n"
+            f"--- USER ---\n{prompt.get('user', '')}"
+        )
 
         info = QLabel(
             "This is the prompt structure that will be sent to the LLM.\n"
@@ -1099,7 +1098,7 @@ class LLMGenerationWidget(QWidget):
         text_edit.setPlainText(display_text)
         text_edit.setReadOnly(True)
         text_edit.setStyleSheet(
-            StyleHelper.get_input_field_style() + "font-family: Consolas, monospace;"
+            f"{StyleHelper.get_input_field_style()}font-family: Consolas, monospace;"
         )
         layout.addWidget(text_edit)
 

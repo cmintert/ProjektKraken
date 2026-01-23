@@ -21,7 +21,6 @@ from PySide6.QtWidgets import (
     QPushButton,
     QSpinBox,
     QStackedWidget,
-    QTabWidget,
     QVBoxLayout,
     QWidget,
     QListWidget,
@@ -207,7 +206,8 @@ class AISettingsDialog(QDialog):
         self.lm_gen_use_chat_api = QCheckBox("Use Chat API (recommended)")
         self.lm_gen_use_chat_api.setChecked(True)
         self.lm_gen_use_chat_api.setToolTip(
-            "Use /v1/chat/completions with messages format. Recommended for modern models."
+            "Use /v1/chat/completions with messages format. "
+            "Recommended for modern models."
         )
         self.lm_gen_use_chat_api.toggled.connect(self.save_settings)
         lm_gen_form.addRow("Chat Mode:", self.lm_gen_use_chat_api)
@@ -526,7 +526,7 @@ class AISettingsDialog(QDialog):
         StyleHelper.apply_standard_list_spacing(main_layout)
 
         # System Prompt
-        system_group = QGroupBox("System Prompt (Persona)")
+        system_group = QGroupBox("Basic Assistant Prompt")
         system_layout = QVBoxLayout(system_group)
         StyleHelper.apply_compact_spacing(system_layout)
 
@@ -551,6 +551,16 @@ class AISettingsDialog(QDialog):
             "that event dates and durations use this numeric format."
         )
         self.system_prompt_edit.set_default_text(default_prompt)
+        self.system_prompt_edit.set_variables(
+            [
+                "{type}",
+                "{name}",
+                "{description}",
+                "{lore_date}",
+                "{attributes}",
+                "{relations}",
+            ]
+        )
         system_layout.addWidget(self.system_prompt_edit)
         main_layout.addWidget(system_group)
 
@@ -684,6 +694,16 @@ class AISettingsDialog(QDialog):
 
         self.template_content_edit = PromptEditorWidget()
         self.template_content_edit.setPlaceholderText("Enter template content here...")
+        self.template_content_edit.set_variables(
+            [
+                "{type}",
+                "{name}",
+                "{description}",
+                "{lore_date}",
+                "{attributes}",
+                "{relations}",
+            ]
+        )
         content_layout.addWidget(self.template_content_edit)
         right_layout.addWidget(content_group, stretch=1)
 
@@ -818,7 +838,8 @@ class AISettingsDialog(QDialog):
         reply = QMessageBox.question(
             self,
             "Confirm Delete",
-            f"Are you sure you want to delete template '{tid}'?\nThis will delete ALL versions.",
+            f"Are you sure you want to delete template '{tid}'?\n"
+            "This will delete ALL versions.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )
