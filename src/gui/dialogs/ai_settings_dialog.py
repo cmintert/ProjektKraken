@@ -104,7 +104,7 @@ class AISettingsDialog(QDialog):
         self.sidebar_list.addItem(QListWidgetItem("Generative AI"))
         self.sidebar_list.addItem(QListWidgetItem("Knowledge Base"))
         self.sidebar_list.addItem(QListWidgetItem("Prompts & Persona"))
-        self.sidebar_list.addItem(QListWidgetItem("Templates"))
+        self.sidebar_list.addItem(QListWidgetItem("Task Templates"))
 
         content_layout.addWidget(self.sidebar_list)
 
@@ -453,18 +453,18 @@ class AISettingsDialog(QDialog):
         StyleHelper.apply_standard_list_spacing(main_layout)
 
         # System Prompt
-        system_group = QGroupBox("Basic Assistant Prompt")
+        system_group = QGroupBox("Persona")
         system_layout = QVBoxLayout(system_group)
         StyleHelper.apply_compact_spacing(system_layout)
 
         self.system_prompt_edit = PromptEditorWidget()
         self.system_prompt_edit.setPlaceholderText(
-            "Enter the system prompt that defines the LLM's role and behavior..."
+            "Enter the persona that defines the LLM's role and behavior..."
         )
         self.system_prompt_edit.setMinimumHeight(120)  # Taller for reading
         self.system_prompt_edit.setToolTip(
-            "The system prompt defines how the LLM should behave and respond.\n\n"
-            "NOTE: If a specific Template is selected in the Generation Widget,\n"
+            "The persona defines how the LLM should behave and respond.\n\n"
+            "NOTE: If a specific Task Template is selected in the Generation Widget,\n"
             "it will OVERRIDE this setting."
         )
         # Default prompt
@@ -548,7 +548,7 @@ class AISettingsDialog(QDialog):
         return page
 
     def _create_templates_page(self) -> QWidget:
-        """Create the Templates management page."""
+        """Create the Task Templates management page."""
         page = QWidget()
         main_layout = QVBoxLayout(page)
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -563,7 +563,7 @@ class AISettingsDialog(QDialog):
         left_layout = QVBoxLayout(left_widget)
         left_layout.setContentsMargins(0, 0, 8, 0)
 
-        lbl_list = QLabel("Templates")
+        lbl_list = QLabel("Task Templates")
         lbl_list.setStyleSheet("font-weight: bold; color: #b0b0b0;")
         left_layout.addWidget(lbl_list)
 

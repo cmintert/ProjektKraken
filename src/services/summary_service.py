@@ -210,10 +210,11 @@ class SummaryService:
             "Summarize the following worldbuilding item neutrally, "
             "preserving all facts and the original tone. "
             "Crucially, PRESERVE any [[Wiki Links]] exactly as they appear.\n\n"
-            "Item Data:\n"
+            "--- DATA: ENTITY/EVENT DETAILS ---\n"
             "Type: {type}\n"
             "Name: {name}\n"
-            "Description: {description}"
+            "Description: {description}\n"
+            "--- END DATA ---"
         )
 
         template = settings.value("ai_gen_summary_prompt", default_template)

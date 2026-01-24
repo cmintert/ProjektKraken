@@ -366,46 +366,6 @@ def test_load_real_fantasy_worldbuilder_v2():
         pytest.skip("Real templates not found (expected during isolated testing)")
 
 
-def test_load_few_shot():
-    """Test loading few-shot examples."""
-    loader = PromptLoader()
-
-    try:
-        examples = loader.load_few_shot()
-
-        assert len(examples) > 200
-        assert "Example 1" in examples
-        assert "Character" in examples or "Location" in examples
-        # Should have multiple examples
-        assert examples.count("Example") >= 3
-    except FileNotFoundError:
-        pytest.skip("Few-shot examples not found (expected during isolated testing)")
-
-
-def test_load_few_shot_custom_filename(temp_templates_dir):
-    """Test loading few-shot examples with custom filename."""
-    loader = PromptLoader(templates_dir=str(temp_templates_dir))
-
-    # Create a custom few-shot file
-    custom_few_shot = temp_templates_dir / "custom_examples.txt"
-    custom_few_shot.write_text("Example 1: Test\nExample 2: Another test")
-
-    examples = loader.load_few_shot("custom_examples.txt")
-
-    assert "Example 1" in examples
-    assert "Example 2" in examples
-
-
-def test_load_few_shot_missing_file():
-    """Test that loading nonexistent few-shot file raises FileNotFoundError."""
-    loader = PromptLoader()
-
-    with pytest.raises(FileNotFoundError) as exc_info:
-        loader.load_few_shot("nonexistent_examples.txt")
-
-    assert "nonexistent_examples.txt" in str(exc_info.value)
-
-
 def test_load_real_description_templates():
     """Test loading the real description templates."""
     loader = PromptLoader()

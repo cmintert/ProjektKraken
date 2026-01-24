@@ -241,19 +241,33 @@ class GenerationWorker(QThread):
             # For dict prompts, inject RAG into user message
             user_msg = self.prompt.get("user", "")
             if "{{RAG_CONTEXT}}" in user_msg:
-                self.prompt["user"] = user_msg.replace("{{RAG_CONTEXT}}", rag_context)
+                # Format RAG block with delimiters
+                if rag_context:
+                    rag_block = f"--- DATA: RAG CONTEXT ---\n{rag_context}"
+                    self.prompt["user"] = user_msg.replace("{{RAG_CONTEXT}}", rag_block)
+                else:
+                    # Remove placeholder if no context
+                    self.prompt["user"] = user_msg.replace(
+                        "{{RAG_CONTEXT}}", ""
+                    ).strip()
             elif rag_context:
                 logger.info(
                     "RAG Context found but no placeholder. Prepending to user msg."
                 )
-                self.prompt["user"] = rag_context + user_msg
+                rag_block = f"--- DATA: RAG CONTEXT ---\n{rag_context}\n"
+                self.prompt["user"] = rag_block + user_msg
         else:
             # For string prompts (backward compatibility)
             if "{{RAG_CONTEXT}}" in self.prompt:
-                self.prompt = self.prompt.replace("{{RAG_CONTEXT}}", rag_context)
+                if rag_context:
+                    rag_block = f"--- DATA: RAG CONTEXT ---\n{rag_context}"
+                    self.prompt = self.prompt.replace("{{RAG_CONTEXT}}", rag_block)
+                else:
+                    self.prompt = self.prompt.replace("{{RAG_CONTEXT}}", "")
             elif rag_context:
                 logger.info("RAG Context found but no placeholder. Prepending.")
-                self.prompt = rag_context + self.prompt
+                rag_block = f"--- DATA: RAG CONTEXT ---\n{rag_context}\n"
+                self.prompt = rag_block + self.prompt
 
         if rag_context:
             logger.debug(f"Applied RAG context: {len(rag_context)} chars")
@@ -374,14 +388,14 @@ class LLMGenerationWidget(QWidget):
 
         # Template selection row
         template_layout = QHBoxLayout()
-        template_layout.addWidget(QLabel("Template:"))
+        template_layout.addWidget(QLabel("Task Template:"))
         self.template_combo = QComboBox()
         self.template_combo.setToolTip(
-            "Select prompt template. NOTE: Selecting a template overrides the\n"
-            "global System Prompt configured in AI Settings."
+            "Select task template. NOTE: Selecting a template overrides the\n"
+            "global Persona configured in AI Settings."
         )
         self._populate_template_combo()
-        self.template_combo.currentIndexChanged.connect(self._save_settings)
+        self.template_combo.currentIndexChanged.connect(self._on_template_combo_changed)
         template_layout.addWidget(self.template_combo)
         template_layout.addStretch()
         main_layout.addLayout(template_layout)
@@ -512,8 +526,8 @@ class LLMGenerationWidget(QWidget):
         try:
             self.template_combo.clear()
 
-            # Add option for no template (Basic Assistant)
-            self.template_combo.addItem("Basic Assistant (Default)", None)
+            # Add option for no template (Free Text)
+            self.template_combo.addItem("Free Text / Custom", None)
 
             loader = PromptLoader()
             templates = loader.list_templates()
@@ -532,7 +546,36 @@ class LLMGenerationWidget(QWidget):
             logger.error(f"Failed to populate template combo: {e}")
             # Ensure at least the default exists
             if self.template_combo.count() == 0:
-                self.template_combo.addItem("Basic Assistant (Default)", None)
+                self.template_combo.addItem("Free Text / Custom", None)
+
+    @Slot()
+    def _on_template_combo_changed(self) -> None:
+        """Handle template selection change.
+
+        Populates the custom prompt text edit with the selected template's content.
+        This represents the 'Task' part of the Trinity.
+        """
+        template_id = self.template_combo.currentData()
+        if not template_id:
+            # Clears the prompt if "Free Text" is selected?
+            # Or maybe we leave it as is?
+            # User experience: if I type something, then accidentally switch, I lose it?
+            # Let's decide to NOT clear automatically to be safe,
+            # unless the user explicitly wants to.
+            # BUT: If I select a template, I expect text.
+            return
+
+        try:
+            loader = PromptLoader()
+            template = loader.load_template(template_id)
+            if template and template.content:
+                self.custom_prompt_edit.setPlainText(template.content)
+                # We do NOT save the template ID to settings as "system prompt override" anymore.
+                # Use standard saving for valid settings if needed, but template selection
+                # is now an ACTION, not a persisted SETTING for system prompt.
+        except Exception as e:
+            logger.error(f"Failed to load template content: {e}")
+            self.status_label.setText(f"Error loading template: {e}")
 
     def _load_settings(self) -> None:
         """Load provider settings from QSettings."""
@@ -605,14 +648,8 @@ class LLMGenerationWidget(QWidget):
             settings.setValue("ai_gen_rag_limit", limit_val)
 
             # Save template selection
-            current_template_id = self.template_combo.currentData()
-            logger.debug(f"Saving template_id: {current_template_id}")
-            if current_template_id:
-                settings.setValue("ai_gen_template_id", current_template_id)
-                settings.sync()  # Ensure settings are written immediately
-                logger.debug(f"Template ID saved: {current_template_id}")
-            else:
-                logger.warning("Template ID is empty, not saving")
+            # NOTE: We no longer persist 'ai_gen_template_id' as a System Prompt override.
+            # Template selection is ephemeral or just fills the text box.
 
         except Exception as e:
             logger.error(f"Failed to save generation settings: {e}", exc_info=True)
@@ -719,96 +756,31 @@ class LLMGenerationWidget(QWidget):
             self.status_label.setText(f"Error: {str(e)}")
 
     def _get_system_prompt(self) -> str:
-        """Get the system prompt from settings or selected template.
+        """Get the persona (system prompt) from settings.
 
-        Loads the system prompt using the following priority:
-        1. Template selected in the UI dropdown (ai_gen_template_id)
-        2. Custom prompt from QSettings (ai_gen_system_prompt)
-           - backward compatibility
-        3. Template-based prompt from PromptLoader
-           (ai_gen_system_prompt_template_id/version)
-        4. DEFAULT_SYSTEM_PROMPT as fallback
-
-        The prompt can be customized via:
-        Settings → AI Settings → Text Generation tab → System Prompt field
+        Loads the global persona associated with the current world settings.
+        Unlike previous versions, this is NOT overridden by the Task Template.
 
         Returns:
-            str: The configured system prompt, or default if not set.
+            str: The configured persona, or default if not set.
         """
         try:
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 
-            # First priority: Use template selected in UI
-            template_id = self.template_combo.currentData()
-            if template_id:
-                try:
-                    loader = PromptLoader()
-                    template = loader.load_template(template_id)
-                    logger.info(
-                        f"Loaded system prompt from UI template: "
-                        f"{template.template_id} v{template.version} "
-                        f"({template.name})"
-                    )
-                    return template.content
-                except Exception as e:
-                    logger.warning(
-                        f"Failed to load UI template {template_id}: {e}. "
-                        f"Trying fallback..."
-                    )
-
-            # Second priority: Check for custom prompt (backward compatibility)
+            # Load from settings (was "Basic Assistant Prompt", now "Persona")
             custom_prompt = settings.value("ai_gen_system_prompt", None)
+
             if custom_prompt:
-                logger.debug("Using custom system prompt from QSettings")
+                logger.debug("Using configured Persona from QSettings")
                 return custom_prompt
 
-            # Third priority: Try to load from old template settings
-            old_template_id = settings.value("ai_gen_system_prompt_template_id", None)
-            old_template_version = settings.value("ai_gen_system_prompt_version", None)
-
-            if old_template_id:
-                try:
-                    loader = PromptLoader()
-                    template = loader.load_template(
-                        old_template_id, version=old_template_version
-                    )
-                    logger.info(
-                        f"Loaded system prompt from old template settings: "
-                        f"{template.template_id} v{template.version} "
-                        f"({template.name})"
-                    )
-                    return template.content
-                except Exception as e:
-                    logger.warning(
-                        f"Failed to load template {old_template_id} "
-                        f"v{old_template_version}: {e}. Falling back to default."
-                    )
-
-            # Final fallback to hardcoded default
+            # Fallback to hardcoded default
             logger.debug("Using DEFAULT_SYSTEM_PROMPT")
             return DEFAULT_SYSTEM_PROMPT
 
         except Exception as e:
             logger.warning(f"Failed to load system prompt: {e}")
             return DEFAULT_SYSTEM_PROMPT
-
-    def _get_few_shot_examples(self) -> str:
-        """Load few-shot examples for inclusion in prompts.
-
-        Returns:
-            str: Few-shot examples content, or empty string if not available.
-        """
-        try:
-            loader = PromptLoader()
-            few_shot = loader.load_few_shot()
-            logger.debug(f"Loaded few-shot examples: {len(few_shot)} characters")
-            return few_shot
-        except FileNotFoundError:
-            logger.warning("Few-shot examples file not found, skipping")
-            return ""
-        except Exception as e:
-            logger.error(f"Failed to load few-shot examples: {e}")
-            return ""
 
     def _get_generation_context(self) -> Optional[dict]:
         """Get context from provider or parent editor for prompt construction.
@@ -860,8 +832,7 @@ class LLMGenerationWidget(QWidget):
         return context if found_editor else None
 
     def _construct_prompt(self, context_str: str, user_prompt: str) -> dict:
-        """Construct the final prompt with system prompt, few-shot examples, and
-        context.
+        """Construct the final prompt with persona and delimited context.
 
         Args:
             context_str: Formatted context string with entity/event details.
@@ -870,23 +841,46 @@ class LLMGenerationWidget(QWidget):
         Returns:
             dict: Structured prompt with 'system' and 'user' keys for chat API.
         """
+        # 1. Persona (System Role)
         system_persona = self._get_system_prompt()
-        few_shot_examples = self._get_few_shot_examples()
 
-        # Build system prompt with few-shot examples
-        system_parts = [system_persona]
-        if few_shot_examples:
-            system_parts.append("\n\n## Examples\n\n" + few_shot_examples)
+        # 2. Data Injection (User Role) with Explicit Delimiters
+        # RAG Context (if any)
+        rag_content = ""
+        rag_placeholder = ""
+        if self.rag_cb.isChecked():
+            # RAG search happens inside GenerationWorker._apply_rag_to_prompt
+            # We insert a placeholder here that the worker will replace with the full block
+            rag_placeholder = "{{RAG_CONTEXT}}"
 
-        # Insert placeholder for RAG in user message
-        rag_placeholder = "{{RAG_CONTEXT}}" if self.rag_cb.isChecked() else ""
+        # Build User Message
+        user_message_parts = []
 
-        # Build user message with context and task
-        user_message = (
-            f"{rag_placeholder}Context:\n{context_str}\n\nTask: {user_prompt}"
-        )
+        # -- TASK --
+        # Trinity Order: Persona -> Task -> Content
+        # We prefix with "Task:" to be clear, or just use the raw prompt.
+        # Given the clear separation, "Task:" prefix is good for structure.
+        user_message_parts.append(f"Task: {user_prompt}\n")
 
-        return {"system": "".join(system_parts), "user": user_message}
+        # -- DATA: ENTITY/EVENT DETAILS --
+        user_message_parts.append("--- DATA: ENTITY/EVENT DETAILS ---")
+        user_message_parts.append(context_str)
+
+        # -- DATA: RAG CONTEXT --
+        # Worker will replace this with:
+        # --- DATA: RAG CONTEXT ---
+        # [Content]
+        # or remove it if empty.
+        # We pre-format the placeholder to look like a placeholder for the block
+        user_message_parts.append(rag_placeholder)
+
+        user_message_parts.append("--- END DATA ---")
+
+        # Assemble
+        # Filter out empty parts (like placeholder if unchecked)
+        final_user_message = "\n".join(filter(None, user_message_parts))
+
+        return {"system": system_persona, "user": final_user_message}
 
     def _start_generation(
         self, prompt: dict, temperature: float, db_path: Optional[str] = None

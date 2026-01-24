@@ -127,8 +127,18 @@ def test_settings_usage(mock_get_settings, widget):
     assert widget._get_provider_id() == "lmstudio"
 
 
-def test_template_combo_populated(widget):
+@patch("src.gui.widgets.llm_generation_widget.PromptLoader")
+def test_template_combo_populated(MockLoader, widget):
     """Test that template dropdown is populated with description templates."""
+    # Setup mock
+    mock_instance = MockLoader.return_value
+    mock_instance.list_templates.return_value = [
+        {"template_id": "description_test", "version": "1.0", "name": "Test Template"}
+    ]
+
+    # Re-populate (since widget init ran before mock)
+    widget._populate_template_combo()
+
     # Check that template combo exists
     assert widget.template_combo is not None
 
@@ -136,55 +146,54 @@ def test_template_combo_populated(widget):
     assert widget.template_combo.count() > 0
 
     # Check that items have data (template_id)
+    # 0 is usually header ("Select...") or first item if we logic changes
+    # Let's check finding our mocked item
+    found = False
     for i in range(widget.template_combo.count()):
-        item_data = widget.template_combo.itemData(i)
-        assert item_data is not None
-        assert isinstance(item_data, str)
+        if widget.template_combo.itemData(i) == "description_test":
+            found = True
+            break
+    assert found
 
 
-def test_template_selection_saved(widget, clean_settings):
-    """Test that template selection triggers save."""
-    # This test verifies that changing template selection calls _save_settings
-    # The actual QSettings saving is tested elsewhere and may use real QSettings
+@patch("src.gui.widgets.llm_generation_widget.PromptLoader")
+def test_template_selection_populates_textbox(MockLoader, widget, clean_settings):
+    """Test that template selection populates the prompt text box."""
+    # Setup mock with a known content
+    mock_instance = MockLoader.return_value
+    from collections import namedtuple
 
-    # Find a valid template in the combo
-    if widget.template_combo.count() > 0:
-        # Get initial template
-        initial_template = widget.template_combo.currentData()
+    Template = namedtuple("Template", ["content"])
+    mock_instance.load_template.return_value = Template(content="Template Content")
 
-        # Change to a different template if possible
-        if widget.template_combo.count() > 1:
-            new_index = 1 if widget.template_combo.currentIndex() != 1 else 0
-            widget.template_combo.setCurrentIndex(new_index)
-            new_template = widget.template_combo.currentData()
+    # Needs to be populated first
+    mock_instance.list_templates.return_value = [
+        {"template_id": "test_id", "version": "1.0", "name": "Test Template"}
+    ]
+    widget._populate_template_combo()
 
-            # Verify it changed
-            assert new_template != initial_template
-            assert new_template is not None
+    # Select the template (index 1, as index 0 is "Free Text")
+    if widget.template_combo.count() > 1:
+        widget.template_combo.setCurrentIndex(1)
+
+        # Verify text box updated
+        assert widget.custom_prompt_edit.toPlainText() == "Template Content"
 
 
-def test_template_selection_loaded(qtbot, clean_settings):
-    """Test that widget initializes with a default template."""
+@patch("src.gui.widgets.llm_generation_widget.PromptLoader")
+def test_initial_selection_is_free_text(MockLoader, qtbot, clean_settings):
+    """Test that widget initializes with Free Text selected by default."""
+    # Ensure no templates interfere
+    mock_instance = MockLoader.return_value
+    mock_instance.list_templates.return_value = []
+
     # Create new widget
     widget = LLMGenerationWidget()
     qtbot.addWidget(widget)
 
-    # Check that a template is selected by default
-    assert widget.template_combo.count() > 0
-    current_id = widget.template_combo.currentData()
-    assert current_id is not None
-    assert isinstance(current_id, str)
-    # Should be one of the description templates
-    assert current_id.startswith("description_")
+    # Check that ONLY "Free Text" exists (index 0)
+    assert widget.template_combo.count() == 1
+    assert widget.template_combo.itemData(0) is None
 
-
-def test_get_few_shot_examples(widget):
-    """Test that few-shot examples can be loaded."""
-    examples = widget._get_few_shot_examples()
-
-    # Should return a string (empty if file not found, but should not crash)
-    assert isinstance(examples, str)
-
-    # If examples exist, should have content
-    if examples:
-        assert len(examples) > 0
+    # And it should be selected
+    assert widget.template_combo.currentIndex() == 0

@@ -75,9 +75,12 @@ def test_custom_prompt_structure(qtbot, widget, monkeypatch):
     else:
         prompt_text = prompt
 
-    assert "My custom instruction" in prompt_text
+    assert "Task: My custom instruction" in prompt_text
+    # New Trinity Delimiters
+    assert "--- DATA: ENTITY/EVENT DETAILS ---" in prompt_text
+    # RAG context is a placeholder at this stage (before worker)
     assert "{{RAG_CONTEXT}}" in prompt_text
-    # Relax specific system prompt wording check as it depends on template
+    assert "--- END DATA ---" in prompt_text
 
 
 def test_preview_fetches_rag(qtbot, widget, monkeypatch):
@@ -180,7 +183,10 @@ def test_preview_fetches_rag(qtbot, widget, monkeypatch):
 
     assert len(rag_called) == 1
     assert rag_called[0][1] == "test.db"
+    # Ensure RAG placeholder is present in the query
     assert "{{RAG_CONTEXT}}" in rag_called[0][0]
+    # Ensure delimiter is present
+    assert "--- DATA: ENTITY/EVENT DETAILS ---" in rag_called[0][0]
 
 
 def test_default_system_prompt_fallback(qtbot, widget, monkeypatch):
@@ -204,8 +210,8 @@ def test_default_system_prompt_fallback(qtbot, widget, monkeypatch):
         "src.gui.widgets.llm_generation_widget.PromptLoader", MockLoader
     )
 
+    # It should strictly look at settings, so if missing, it falls back to default.
     result = widget._get_system_prompt()
-    # It might load from template, so check for "world-builder" or similar generic terms
     assert (
         "world-builder" in result.lower()
         or "fantasy" in result.lower()
@@ -213,23 +219,5 @@ def test_default_system_prompt_fallback(qtbot, widget, monkeypatch):
     )
 
 
-def test_template_loading_fallback_on_error(qtbot, widget, monkeypatch):
-    """Test that template loading falls back to DEFAULT on error."""
-
-    class MockLoader:
-        def load_template(self, tid, version=None):
-            raise FileNotFoundError()
-
-    monkeypatch.setattr(
-        "src.gui.widgets.llm_generation_widget.PromptLoader", MockLoader
-    )
-
-    from PySide6.QtCore import QSettings
-
-    settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-    settings.setValue("ai_gen_system_prompt_template_id", "nonexistent")
-    settings.setValue("ai_gen_system_prompt_version", "1.0")
-
-    result = widget._get_system_prompt()
-    # Should be default prompt
-    assert "assistant" in result.lower() or "fantasy" in result.lower()
+# test_template_loading_fallback_on_error is removed because
+# the widget no longer attempts to load system prompts from templates.
