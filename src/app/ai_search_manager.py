@@ -83,21 +83,51 @@ class AISearchManager(QObject):
 
             self.window.ai_search_panel.set_searching(True)
 
-            # Import search service
-            from src.services.search_service import create_search_service
+            # Use RAGService for hybrid search (Name + Semantic)
+            from src.services.rag_service import RAGService
 
-            # Create search service with GUI thread connection
-            assert self.window.gui_db_service._connection is not None
-            search_service = create_search_service(
-                self.window.gui_db_service._connection
-            )
+            # We need the db_path from somewhere.
+            # gui_db_service has a path attribute? Or we use connection?
+            # RAGService takes db_path string currently.
+            # The gui_db_service abstracts the connection.
+            # Let's see if we can get the path.
+            # Standard pattern: self.window.db_path usually exists or we get it from UIManager?
+            # MainWindow has self.db_path (passed to LongformEditorWidget in main_window.py).
+            # Let's assume self.window.db_path exists.
 
-            # Perform query
-            results = search_service.query(
-                text=query,
-                object_type=object_type_filter if object_type_filter else None,
-                top_k=top_k,
-            )
+            db_path = getattr(self.window, "db_path", None)
+            if not db_path:
+                # Fallback to direct service creation if no path (but RAGService needs path for isolation)
+                # Actually, RAGService creates its own connection for thread safety.
+                # If we can't get path, we can't use RAGService easily without refactor.
+                # Let's check MainWindow init... yes it has db_path logic usually (or active_world).
+                # Wait, MainWindow.__init__ doesn't show self.db_path assignment explicitly in the snippet I saw earlier (lines 100-300).
+                # But LongformEditorWidget received self.db_path (line 215). So it must exist.
+                pass
+
+            if db_path:
+                rag_service = RAGService(db_path)
+                results = rag_service.search(
+                    query=query,
+                    top_k=top_k,
+                    object_type=object_type_filter if object_type_filter else None,
+                )
+            else:
+                # Fallback to old method if no db_path (unlikely)
+                logger.warning(
+                    "No db_path found for RAGService, falling back to direct connection"
+                )
+                from src.services.search_service import create_search_service
+
+                assert self.window.gui_db_service._connection is not None
+                search_service = create_search_service(
+                    self.window.gui_db_service._connection
+                )
+                results = search_service.query(
+                    text=query,
+                    object_type=object_type_filter if object_type_filter else None,
+                    top_k=top_k,
+                )
 
             # Display results
             self.window.ai_search_panel.set_results(results)

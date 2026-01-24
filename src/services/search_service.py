@@ -850,8 +850,95 @@ class SearchService:
                 }
             )
 
-        logger.info(f"Query returned {len(results)} results (requested top {top_k})")
         return results
+
+    def search_by_name(
+        self, text: str, object_type: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        # We need to find names.
+        # Strategy: Fetch all names and check if they exist in text?
+        # Or checking if text contains known names.
+        # Given prompt length is small (Task), and DB might be large,
+        # scanning text against all names is decent if we cache names?
+        # For now, let's do a SQL LIKE query for words in the text?
+        # Actually, best accuracy is: Get all names (cacheable in future) -> Check in text.
+        # But for SQL-only:
+        # We want entities whose name is IN the text.
+        # NOT "text contains name".
+        # If I have entity "Jonah", and text is "Who is Jonah?", match.
+
+        # Fetch all names and IDs.
+        # Optimize: Only fetch items.
+
+        targets = []
+        if object_type in (None, "entity"):
+            targets.append(("entity", "entities"))
+        if object_type in (None, "event"):
+            targets.append(("event", "events"))
+
+        found_items = []
+
+        for type_label, table_name in targets:
+            # We fetch all names. Warning: Scaling issue if 10k entities.
+            # But local app 10k is fine for this loop usually.
+            cursor = self.conn.execute(
+                f"SELECT id, name, type, attributes FROM {table_name}"
+            )
+            rows = cursor.fetchall()
+
+            for row in rows:
+                obj_id, name, obj_type, attrs = row
+                # Simple case-insensitive inclusion
+                # Use word boundary to avoid "Jon" matching "Jonathan" if strict?
+                # Let's try simple inclusion first, maybe improved later.
+                if name.lower() in text.lower():
+                    # Retrieve the embedding snippet if we want full context?
+                    # Or construct partial result.
+                    # RAGService expects 'text_content' for formatting attributes.
+                    # We can fetch the text_snippet from embeddings table for this item.
+
+                    # Fetch stored embedding data for the text snippet
+                    emb_row = self.conn.execute(
+                        "SELECT text_snippet, metadata FROM embeddings WHERE object_id = ? LIMIT 1",
+                        (obj_id,),
+                    ).fetchone()
+
+                    text_content = ""
+                    meta = {}
+                    if emb_row:
+                        text_content = emb_row[0]
+                        if emb_row[1]:
+                            meta = json.loads(emb_row[1])
+                    else:
+                        # Fallback if not indexed: Construct text_content from attributes
+                        try:
+                            attr_dict = json.loads(attrs) if attrs else {}
+                        except json.JSONDecodeError:
+                            attr_dict = {}
+
+                        # Construct a basic snippet similar to indexer
+                        lines = [f"Name: {name}", f"Type: {obj_type}"]
+                        # Add some key attributes
+                        for k, v in attr_dict.items():
+                            if isinstance(v, (str, int, float, bool)):
+                                lines.append(f"{k}: {v}")
+                        text_content = "\n".join(lines)
+                        meta = attr_dict  # Use attributes as metadata fallback
+
+                    found_items.append(
+                        {
+                            "id": "lexical_" + obj_id,  # Dummy embedding ID
+                            "object_type": type_label,
+                            "object_id": obj_id,
+                            "score": 1.0,  # Max score for direct match
+                            "name": name,
+                            "type": obj_type,
+                            "metadata": meta,
+                            "text_content": text_content,
+                        }
+                    )
+
+        return found_items
 
     def delete_index_for_object(
         self, object_type: str, object_id: str, model: Optional[str] = None

@@ -106,6 +106,51 @@ def test_generation_flow_custom_prompt(
     assert widget.generate_btn.isEnabled()
 
 
+@patch("src.gui.widgets.llm_generation_widget.RAGService")
+def test_rag_service_called(mock_rag_cls, widget, qtbot):
+    """Test that RAG service is instantiated and called when enabled."""
+    # Setup mock
+    mock_service = MagicMock()
+    mock_rag_cls.return_value = mock_service
+    mock_service.get_context.return_value = "Retrieved Context"
+
+    # Configure widget with RAG enabled
+    widget.rag_cb.setChecked(True)
+    widget.db_path = "dummy.db"
+    widget.custom_prompt_edit.setPlainText("Test Prompt")
+
+    # We need to test the worker's execution path.
+    # Since worker is threaded, we can verify _apply_rag_to_prompt behavior
+    # if we access the worker or simulate the run.
+    # Alternatively, we can patch the worker class in the widget
+    # but RAG is instantiated inside the worker.
+    # Easier: Instantiate the worker directly and call _apply_rag_to_prompt
+
+    from src.gui.widgets.llm_generation_widget import GenerationWorker
+
+    # Create worker provided with a prompt
+    worker = GenerationWorker(
+        provider=MagicMock(),
+        prompt="Test Prompt",
+        max_tokens=100,
+        temperature=0.7,
+        db_path="dummy.db",
+        rag_limit=3,
+    )
+
+    # Run the private method synchronously
+    worker._apply_rag_to_prompt()
+
+    # Verify RAG Service usage
+    mock_rag_cls.assert_called_with("dummy.db")
+    mock_service.get_context.assert_called_with("Test Prompt", top_k=3)
+
+    # Verify prompt modification
+    # "Test Prompt" -> "--- DATA: RAG CONTEXT ---\nRetrieved Context\nTest Prompt"
+    assert "--- DATA: RAG CONTEXT ---" in worker.prompt
+    assert "Retrieved Context" in worker.prompt
+
+
 def test_empty_custom_prompt_error(widget):
     """Test error when custom prompt is enabled but empty."""
     # Mock context retrieval to pass the first check

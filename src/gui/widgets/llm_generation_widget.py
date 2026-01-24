@@ -32,7 +32,9 @@ from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 from src.gui.utils.style_helper import StyleHelper
 from src.services.llm_provider import create_provider
 from src.services.prompt_loader import PromptLoader
-from src.services.search_service import create_search_service
+
+# from src.services.search_service import create_search_service # No longer needed directly
+from src.services.rag_service import RAGService
 
 logger = logging.getLogger(__name__)
 
@@ -88,93 +90,7 @@ class ContextProvider(Protocol):
         ...
 
 
-def perform_rag_search(prompt: str, db_path: Optional[str], top_k: int = 3) -> str:
-    """Perform RAG search using search service.
-
-    Args:
-        prompt: The prompt text to query with.
-        db_path: Path to the database.
-        top_k: Number of context items to retrieve.
-
-    Returns:
-        str: Formatted context string or empty string.
-    """
-    if not db_path:
-        logger.debug("RAG skipped: No db_path provided.")
-        return ""
-
-    try:
-        logger.debug(f"Starting RAG search in {db_path} for prompt: {prompt[:50]}...")
-
-        # Create strictly local read connection
-        conn = sqlite3.connect(
-            db_path,
-            check_same_thread=False,  # Can be called from any thread
-        )
-        conn.row_factory = sqlite3.Row
-
-        # Create search service - reuses the provider config logic
-        # Use 'lmstudio' or configured provider - ideally we use the same as current
-        # but search service factory can handle defaults
-        search_service = create_search_service(conn)
-
-        # Query
-        # Extract main topic from prompt? Or just use full prompt
-        # For now, use first 100 chars or full prompt
-        query_text = prompt[:200]
-        results = search_service.query(query_text, top_k=top_k)
-
-        conn.close()
-
-        if not results:
-            logger.debug("RAG search returned no results.")
-            return ""
-
-        logger.info(f"RAG search found {len(results)} relevant items.")
-
-        # Format results - exclude tags and attributes, only include core info
-        # This keeps prompts focused on narrative descriptions rather than
-        # technical metadata, reducing token usage and improving relevance.
-        context_parts = ["### World Knowledge (RAG Data):"]
-        for r in results:
-            name = r.get("name", "Unknown")
-            rtype = r.get("type", "Unknown")
-
-            # Extract description from the indexed text
-            # Format: "Name: X\nType: Y\nTags: ...\nDescription: ..."
-            # We parse to extract ONLY the description for cleaner context
-            full_text = r.get("text_content", "")
-
-            # Parse to extract only description
-            description = ""
-            if full_text:
-                lines = full_text.split("\n\n")
-                for line in lines:
-                    if line.startswith("Description: "):
-                        description = line.replace("Description: ", "", 1).strip()
-                        break
-
-            # Fallback to metadata if no description found
-            if not description:
-                description = r.get("metadata", {}).get("description", "")
-
-            # Skip if still no meaningful content
-            if not description or len(description) < 20:
-                continue
-
-            # Truncate long descriptions
-            truncated_description = description[:2000]
-            if len(description) > 2000:
-                truncated_description += "..."
-
-            # Format: Name (Type): Description only
-            context_parts.append(f"**{name}** ({rtype}):\\n{truncated_description}")
-
-        return "\n\n".join(context_parts) + "\n\n"
-
-    except Exception as e:
-        logger.error(f"RAG search failed: {e}", exc_info=True)
-        return ""
+# perform_rag_search removed; logic moved to src.services.rag_service.RAGService
 
 
 class GenerationWorker(QThread):
@@ -225,49 +141,78 @@ class GenerationWorker(QThread):
         Returns:
             Formatted context string or empty string.
         """
-        return perform_rag_search(query_text, self.db_path, self.rag_limit)
+        # This method is now effectively deprecated by the new _apply_rag_to_prompt
+        # but kept for context of the original diff.
+        # The new _apply_rag_to_prompt directly uses RAGService.
+        return ""
 
     def _apply_rag_to_prompt(self) -> None:
-        """Apply RAG context to the prompt (modifies self.prompt in place)."""
-        # Determine query text for RAG
-        if isinstance(self.prompt, dict):
-            query_text = self.prompt.get("user", "")[:200]
-        else:
-            query_text = str(self.prompt)[:200]
+        """Inject RAG context into the prompt."""
+        # Check if RAG is useful/enabled
+        if not self.db_path:
+            return
 
-        rag_context = self._perform_rag_search(query_text)
+        rag_context = ""
+        user_msg = ""
+        is_dict = isinstance(self.prompt, dict)
 
-        if isinstance(self.prompt, dict):
-            # For dict prompts, inject RAG into user message
+        # Extract user message for context key
+        if is_dict:
             user_msg = self.prompt.get("user", "")
-            if "{{RAG_CONTEXT}}" in user_msg:
-                # Format RAG block with delimiters
-                if rag_context:
-                    rag_block = f"--- DATA: RAG CONTEXT ---\n{rag_context}"
-                    self.prompt["user"] = user_msg.replace("{{RAG_CONTEXT}}", rag_block)
-                else:
-                    # Remove placeholder if no context
-                    self.prompt["user"] = user_msg.replace(
-                        "{{RAG_CONTEXT}}", ""
-                    ).strip()
-            elif rag_context:
-                logger.info(
-                    "RAG Context found but no placeholder. Prepending to user msg."
-                )
-                rag_block = f"--- DATA: RAG CONTEXT ---\n{rag_context}\n"
-                self.prompt["user"] = rag_block + user_msg
         else:
-            # For string prompts (backward compatibility)
-            if "{{RAG_CONTEXT}}" in self.prompt:
+            user_msg = str(self.prompt)
+
+        # Only perform RAG if placeholder exists OR forced (though we usually rely on placeholder)
+        # RAGService handles query cleaning, so we pass the raw user input (or truncated)
+        should_run = "{{RAG_CONTEXT}}" in user_msg or (self.rag_limit > 0)
+
+        if should_run:
+            try:
+                # Use modular RAGService
+                rag_service = RAGService(self.db_path)
+                logger.info(
+                    f"RAG: Searching context for query: '{user_msg[:50]}...' (Limit: {self.rag_limit})"
+                )
+
+                # Pass full user message; service cleans it.
+                rag_context = rag_service.get_context(user_msg, top_k=self.rag_limit)
+
                 if rag_context:
-                    rag_block = f"--- DATA: RAG CONTEXT ---\n{rag_context}"
-                    self.prompt = self.prompt.replace("{{RAG_CONTEXT}}", rag_block)
+                    logger.info(
+                        f"RAG: Found context ({len(rag_context)} chars). Snippet: {rag_context[:100].replace(chr(10), ' ')}..."
+                    )
                 else:
-                    self.prompt = self.prompt.replace("{{RAG_CONTEXT}}", "")
+                    logger.info("RAG: No context found or returned empty.")
+
+            except Exception as e:
+                logger.error(f"RAG Service failure: {e}", exc_info=True)
+                rag_context = ""
+
+        # Inject logic
+        if is_dict:
+            if "{{RAG_CONTEXT}}" in self.prompt["user"]:
+                replacement = (
+                    f"--- DATA: RAG CONTEXT ---\n{rag_context}" if rag_context else ""
+                )
+                self.prompt["user"] = self.prompt["user"].replace(
+                    "{{RAG_CONTEXT}}", replacement
+                )
             elif rag_context:
-                logger.info("RAG Context found but no placeholder. Prepending.")
-                rag_block = f"--- DATA: RAG CONTEXT ---\n{rag_context}\n"
-                self.prompt = rag_block + self.prompt
+                # Prepend if no placeholder but content found
+                self.prompt["user"] = (
+                    f"--- DATA: RAG CONTEXT ---\n{rag_context}\n" + self.prompt["user"]
+                )
+        else:
+            # String prompt
+            if "{{RAG_CONTEXT}}" in self.prompt:
+                replacement = (
+                    f"--- DATA: RAG CONTEXT ---\n{rag_context}" if rag_context else ""
+                )
+                self.prompt = self.prompt.replace("{{RAG_CONTEXT}}", replacement)
+            elif rag_context:
+                self.prompt = (
+                    f"--- DATA: RAG CONTEXT ---\n{rag_context}\n" + self.prompt
+                )
 
         if rag_context:
             logger.debug(f"Applied RAG context: {len(rag_context)} chars")
@@ -284,6 +229,8 @@ class GenerationWorker(QThread):
                 logger.debug(
                     f"Final prompt (dict): system={sys_len} chars, user={usr_len} chars"
                 )
+                logger.debug(f"System Prompt: {self.prompt.get('system', '')[:100]}...")
+                logger.debug(f"User Prompt: {self.prompt.get('user', '')[:200]}...")
 
             # Check if provider supports streaming
             meta = self.provider.metadata()
@@ -900,12 +847,15 @@ class LLMGenerationWidget(QWidget):
             self.max_tokens_spin.value(),
             temperature,
             db_path,
-            (
-                int(self.rag_limit_input.text())
-                if self.rag_limit_input.text().isdigit()
-                else 3
-            ),
+            self._get_rag_limit(),
         )
+
+    def _get_rag_limit(self) -> int:
+        """Safely retrieve RAG limit from input."""
+        try:
+            return int(self.rag_limit_input.text())
+        except (ValueError, AttributeError):
+            return 3  # Default fallback
 
         # Connect signals
         # self._worker.chunk_received.connect(self._on_chunk_received)  # Removed
@@ -1050,9 +1000,41 @@ class LLMGenerationWidget(QWidget):
         # Determine DB path for RAG if enabled
         db_path = None
         if self.rag_cb.isChecked():
-            window = self.window()
-            if hasattr(window, "db_path"):
-                db_path = window.db_path
+            # Robust lookup: Traverse up to find db_path or gui_db_service
+            curr = self
+            while curr:
+                # Direct db_path attribute
+                if hasattr(curr, "db_path") and curr.db_path:
+                    db_path = curr.db_path
+                    break
+                # Via gui_db_service (MainWindow usually has this)
+                if hasattr(curr, "gui_db_service") and hasattr(
+                    curr.gui_db_service, "db_path"
+                ):
+                    db_path = curr.gui_db_service.db_path
+                    break
+
+                # If we hit a window that is not the main one (e.g. floating dock), keep going?
+                # QWidget.parent() returns None for top-level windows unless set.
+                # However, self.window() returns the window.
+                # If we are at top level and haven't found it, we might check self.window() explicitly
+                # if the loop didn't cover it (parent() from child eventually hits window? Yes).
+
+                # Special jump for QDockWidget if floating?
+                # If floating, parent() might be None, but it is effectively parented to main in logic?
+                # No, floating dock matches window().
+
+                parent = curr.parent()
+                if not parent:
+                    # If we reached top and didn't find it, consider checking QApplication.topLevelWidgets
+                    # as last resort? Or just rely on what we found.
+                    # Try accessing .window() just in case we started mid-hierarchy and parent() traversal failure
+                    w = curr.window()
+                    if w and w != curr:
+                        curr = w
+                        continue
+                    break
+                curr = parent
 
         # Perform RAG search for preview
         rag_context = ""
@@ -1060,12 +1042,30 @@ class LLMGenerationWidget(QWidget):
         user_msg = prompt.get("user", "")
         if db_path and "{{RAG_CONTEXT}}" in user_msg:
             # Show loading status (simple blocking for now as requested)
-            rag_context = perform_rag_search(user_msg, db_path)
+            try:
+                rag_limit = self._get_rag_limit()
+                if rag_limit > 0:
+                    rag_service = RAGService(db_path)
+                    logger.info(
+                        f"Preview RAG: Searching context for query len: {len(user_msg)}"
+                    )
+                    rag_context = rag_service.get_context(user_msg, top_k=rag_limit)
+                    if rag_context:
+                        logger.info(
+                            f"Preview RAG: Found context ({len(rag_context)} chars)."
+                        )
+                    else:
+                        logger.info("Preview RAG: No context found.")
+            except Exception as e:
+                logger.error(f"RAG Preview failed: {e}")
+
             # Update the user message in the prompt dict
-            prompt["user"] = user_msg.replace("{{RAG_CONTEXT}}", rag_context)
-            if not rag_context:
-                # Remove placeholder clean if no context found
-                prompt["user"] = prompt["user"].replace("{{RAG_CONTEXT}}", "")
+            replacement = (
+                f"--- DATA: RAG CONTEXT ---\n{rag_context}"
+                if rag_context
+                else "--- DATA: RAG CONTEXT ---\n(No results found for query)"
+            )
+            prompt["user"] = user_msg.replace("{{RAG_CONTEXT}}", replacement)
 
         # Format for display in preview (show keys clearly)
         display_text = (
