@@ -15,6 +15,7 @@ from PySide6.QtGui import (
     QTextBlock,
     QTextCursor,
     QTextFragment,
+    QAction,
 )
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -102,6 +103,54 @@ class WikiTextEdit(QTextEdit):
         )
         self.btn_toggle_view.clicked.connect(self.toggle_view_mode)
         self.btn_toggle_view.show()
+
+        # Setup Shortcuts using QActions
+        self._setup_actions()
+
+    def _setup_actions(self) -> None:
+        """Setup formatting actions with shortcuts."""
+        from src.gui.utils.shortcut_manager import ShortcutManager
+
+        context = Qt.ShortcutContext.WidgetWithChildrenShortcut
+
+        # Bold
+        self.action_bold = QAction(self)
+        self.action_bold.setShortcut(ShortcutManager.FORMAT_BOLD.key_sequence)
+        self.action_bold.setShortcutContext(context)
+        self.action_bold.triggered.connect(self._toggle_bold)
+        self.addAction(self.action_bold)
+
+        # Italic
+        self.action_italic = QAction(self)
+        self.action_italic.setShortcut(ShortcutManager.FORMAT_ITALIC.key_sequence)
+        self.action_italic.setShortcutContext(context)
+        self.action_italic.triggered.connect(self._toggle_italic)
+        self.addAction(self.action_italic)
+
+        # Headings
+        self.action_h1 = QAction(self)
+        self.action_h1.setShortcut(ShortcutManager.FORMAT_H1.key_sequence)
+        self.action_h1.setShortcutContext(context)
+        self.action_h1.triggered.connect(lambda: self._set_heading(1))
+        self.addAction(self.action_h1)
+
+        self.action_h2 = QAction(self)
+        self.action_h2.setShortcut(ShortcutManager.FORMAT_H2.key_sequence)
+        self.action_h2.setShortcutContext(context)
+        self.action_h2.triggered.connect(lambda: self._set_heading(2))
+        self.addAction(self.action_h2)
+
+        self.action_h3 = QAction(self)
+        self.action_h3.setShortcut(ShortcutManager.FORMAT_H3.key_sequence)
+        self.action_h3.setShortcutContext(context)
+        self.action_h3.triggered.connect(lambda: self._set_heading(3))
+        self.addAction(self.action_h3)
+
+        self.action_body = QAction(self)
+        self.action_body.setShortcut(ShortcutManager.FORMAT_BODY.key_sequence)
+        self.action_body.setShortcutContext(context)
+        self.action_body.triggered.connect(lambda: self._set_heading(0))
+        self.addAction(self.action_body)
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         """Handle resize to reposition the floating button."""
@@ -666,29 +715,6 @@ class WikiTextEdit(QTextEdit):
 
         """
         # Check for formatting shortcuts first
-        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
-            if event.key() == Qt.Key.Key_B:
-                self._toggle_bold()
-                return
-            elif event.key() == Qt.Key.Key_I:
-                self._toggle_italic()
-                return
-            elif event.key() == Qt.Key.Key_1:
-                self._set_heading(1)
-                return
-            elif event.key() == Qt.Key.Key_2:
-                self._set_heading(2)
-                return
-            elif event.key() == Qt.Key.Key_3:
-                self._set_heading(3)
-                return
-            elif event.key() == Qt.Key.Key_0:
-                self._set_heading(0)  # Remove heading
-                return
-            elif event.key() == Qt.Key.Key_4:
-                self._set_heading(0)  # Revert to body text
-                return
-
         if self._completer and (popup := self._completer.popup()) and popup.isVisible():
             if event.key() in (
                 Qt.Key.Key_Enter,

@@ -326,6 +326,11 @@ class ConnectionManager:
             failed_count += 1
 
         if not self._connect_signal_safe(
+            ul, "create_map_requested", self.window.create_map, "UnifiedList"
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
             ul,
             "delete_requested",
             self.window._on_item_delete_requested,
