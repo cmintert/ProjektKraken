@@ -16,6 +16,7 @@ load_dotenv()
 # CRITICAL: Set OpenGL context sharing BEFORE any other Qt imports.
 # This is required for QWebEngineView + QQuickWidget compatibility.
 from PySide6.QtCore import Qt  # noqa: E402
+from PySide6.QtGui import QIcon  # noqa: E402
 from PySide6.QtQuick import QQuickWindow, QSGRendererInterface  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
@@ -70,6 +71,17 @@ def main() -> None:
         app = QApplication(sys.argv)
         app.setOrganizationName(WINDOW_SETTINGS_KEY)
         app.setApplicationName(WINDOW_SETTINGS_APP)
+
+        # Set App Icon
+        icon_path = get_resource_path(
+            os.path.join(
+                "default_assets", "icons", "app_icons", "Projekt_Kraken_Icon_32x32.png"
+            )
+        )
+        if os.path.exists(icon_path):
+            app.setWindowIcon(QIcon(icon_path))
+        else:
+            logger.warning(f"App icon not found at: {icon_path}")
 
         # 2. Apply Theme
         tm = ThemeManager()
