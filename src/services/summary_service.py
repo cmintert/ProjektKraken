@@ -1,3 +1,9 @@
+"""Summary Service Module.
+
+Manages AI-generated natural language summaries for Entities and Events.
+Handles LLM provider integration and summary persistence.
+"""
+
 import hashlib
 import logging
 import time

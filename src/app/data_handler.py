@@ -242,7 +242,7 @@ class DataHandler(QObject):
         """Emits signal for map widget to be updated with trajectories."""
         self.trajectories_ready.emit(trajectories)
 
-    @Slot(object)
+    @Slot(CommandResult)
     def on_command_finished(self, result: CommandResult) -> None:
         """Handles completion of async commands, emitting signals for necessary UI
         refreshes.

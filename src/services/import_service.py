@@ -22,6 +22,16 @@ logger = logging.getLogger(__name__)
 
 
 class ImportAction(Enum):
+    """Enumeration of possible import actions for conflict resolution.
+
+    Attributes:
+        CREATE: Create a new item (no conflict).
+        UPDATE: Update an existing item with new data.
+        OVERWRITE: Replace an existing item entirely.
+        SKIP: Skip importing this item.
+        AMBIGUOUS: Multiple matches found, user decision needed.
+    """
+
     CREATE = "create"
     UPDATE = "update"
     OVERWRITE = "overwrite"
@@ -43,6 +53,7 @@ class ImportResult:
     actions: List[Dict[str, Any]] = None
 
     def __post_init__(self) -> None:
+        """Initializes default empty list for actions if None."""
         if self.actions is None:
             self.actions = []
 

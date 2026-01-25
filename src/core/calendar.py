@@ -55,6 +55,11 @@ class LeapYearRule:
         return True
 
     def to_dict(self) -> Dict[str, Any]:
+        """Converts to dictionary for JSON serialization.
+
+        Returns:
+            Dict[str, Any]: Dictionary containing all leap year rule fields.
+        """
         return {
             "interval": self.interval,
             "skip_interval": self.skip_interval,
@@ -65,6 +70,14 @@ class LeapYearRule:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "LeapYearRule":
+        """Creates LeapYearRule from a dictionary.
+
+        Args:
+            data: Dictionary containing leap year rule fields.
+
+        Returns:
+            LeapYearRule: New instance with the provided configuration.
+        """
         return cls(
             interval=data["interval"],
             skip_interval=data.get("skip_interval", 0),

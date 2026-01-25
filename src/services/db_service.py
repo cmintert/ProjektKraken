@@ -103,6 +103,38 @@ class DatabaseService:
             self._connection = None
             logger.debug("Database connection closed.")
 
+    def is_connected(self) -> bool:
+        """Checks if the database connection is established.
+
+        Returns:
+            bool: True if connected, False otherwise.
+        """
+        return self._connection is not None
+
+    def get_connection(self) -> Optional[sqlite3.Connection]:
+        """Gets the database connection, establishing it if necessary.
+
+        Returns:
+            Optional[sqlite3.Connection]: The active connection, or None if
+                                          connection failed.
+        """
+        if not self._connection:
+            self.connect()
+        return self._connection
+
+    def get_attachment_repo(self) -> AttachmentRepository:
+        """Gets the attachment repository.
+
+        Returns:
+            AttachmentRepository: The attachment repository instance.
+
+        Raises:
+            RuntimeError: If the repository is not initialized (connection not established).
+        """
+        if not self._attachment_repo:
+            raise RuntimeError("Attachment repository not initialized")
+        return self._attachment_repo
+
     @contextmanager
     def transaction(self) -> Iterator[sqlite3.Connection]:
         """Safe context manager for transactions."""

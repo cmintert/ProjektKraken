@@ -12,9 +12,13 @@ from typing import List, Optional, Set
 from PySide6.QtCore import QObject, Signal, Slot
 
 from src.commands.base_command import BaseCommand, CommandResult
+from src.core.calendar import CalendarConfig
+from src.core.entities import Entity
+from src.core.events import Event
 from src.services import longform_builder
 from src.services.asset_store import AssetStore
 from src.services.attachment_service import AttachmentService
+from src.services.import_service import ImportResult
 
 from src.services.db_service import DatabaseService
 from src.services.summary_service import SummaryService
@@ -37,17 +41,17 @@ class DatabaseWorker(QObject):
     markers_loaded = Signal(str, list)  # map_id, List[Marker]
     trajectories_loaded = Signal(list)  # List[Tuple[str, str, List[Keyframe]]]
     longform_sequence_loaded = Signal(list)  # List[dict]
-    calendar_config_loaded = Signal(object)  # CalendarConfig or None
+    calendar_config_loaded = Signal(object)  # CalendarConfig | None (use object for union types)
     current_time_loaded = Signal(float)  # Current time in lore_date units
-    grouping_dialog_data_loaded = Signal(list, object)  # tags_data, current_config
+    grouping_dialog_data_loaded = Signal(list, object)  # tags_data, GroupingConfig | None (use object for union types)
     graph_data_loaded = Signal(list, list)  # nodes, edges
     graph_metadata_loaded = Signal(list, list)  # tags, rel_types
     completer_data_loaded = Signal(
         list, list, list, list
     )  # tags, rel_types, attr_keys, entity_types
 
-    event_details_loaded = Signal(object, list, list)  # Event, relations, incoming
-    entity_details_loaded = Signal(object, list, list)  # Entity, relations, incoming
+    event_details_loaded = Signal(Event, list, list)  # Event, relations, incoming
+    entity_details_loaded = Signal(Entity, list, list)  # Entity, relations, incoming
     attachments_loaded = Signal(
         str, str, list
     )  # owner_type, owner_id, List[ImageAttachment]
@@ -55,7 +59,7 @@ class DatabaseWorker(QObject):
     filter_results_ready = Signal(list, list)  # List[Event], List[Entity]
     entity_state_resolved = Signal(str, dict)  # entity_id, resolved_attributes
 
-    command_finished = Signal(object)  # CommandResult object
+    command_finished = Signal(CommandResult)
     error_occurred = Signal(str)
 
     # Status signals for UI feedback
@@ -63,8 +67,8 @@ class DatabaseWorker(QObject):
     operation_finished = Signal(str)
 
     # Import signals
-    import_finished = Signal(object)  # ImportResult
-    summary_generated = Signal(str, object)  # item_id, SummaryData
+    import_finished = Signal(ImportResult)
+    summary_generated = Signal(str, SummaryData)
 
     def __init__(self, db_path: str) -> None:
         """Initializes the worker.
@@ -93,24 +97,17 @@ class DatabaseWorker(QObject):
             self.asset_store = AssetStore(str(project_root))
 
             # Initialize AttachmentService
-            # We access the repo directly from db_service (it was initialized in
-            # connect())
-            if not self.db_service._attachment_repo:
-                # Should have been initialized by connect()
-                raise RuntimeError("Attachment repository not initialized")
-
+            # Get the repo from db_service (it was initialized in connect())
+            attachment_repo = self.db_service.get_attachment_repo()
             self.attachment_service = AttachmentService(
-                self.db_service._attachment_repo, self.asset_store
+                attachment_repo, self.asset_store
             )
 
-            # Attach to db_service for Command access (Dependency Injection via Context)
             # Attach to db_service for Command access (Dependency Injection via Context)
             self.db_service.attachment_service = self.attachment_service
 
             # Initialize SummaryService
             self.summary_service = SummaryService(self.db_service)
-
-            # Initialize TemporalManager
 
             # Initialize TemporalManager
             from src.core.temporal_manager import TemporalManager
@@ -395,13 +392,14 @@ class DatabaseWorker(QObject):
                 except Exception as e:
                     logger.error(f"Error applying filter in worker: {e}")
 
-            if not self.db_service._connection:
-                self.db_service.connect()
+            # Ensure connection and get fresh data
+            connection = self.db_service.get_connection()
+            if not connection:
+                raise RuntimeError("Failed to establish database connection")
             self.db_service.ensure_fresh_view()
-            assert self.db_service._connection is not None
 
             sequence = longform_builder.build_longform_sequence(
-                self.db_service._connection, doc_id=doc_id, allowed_ids=allowed_ids
+                connection, doc_id=doc_id, allowed_ids=allowed_ids
             )
             self.longform_sequence_loaded.emit(sequence)
             self.operation_finished.emit(f"Loaded {len(sequence)} longform items")
@@ -601,11 +599,11 @@ class DatabaseWorker(QObject):
             # Import search service
             from src.services.search_service import create_search_service
 
-            # Create search service (uses settings/defaults)
-            if not self.db_service._connection:
-                self.db_service.connect()
-            assert self.db_service._connection is not None
-            search_service = create_search_service(self.db_service._connection)
+            # Create search service with database connection
+            connection = self.db_service.get_connection()
+            if not connection:
+                raise RuntimeError("Failed to establish database connection")
+            search_service = create_search_service(connection)
 
             # Index the object
             if object_type == "entity":
@@ -793,7 +791,7 @@ class DatabaseWorker(QObject):
             result = ImportResult(success=False, errors=[str(e)])
             self.import_finished.emit(result)
 
-    @Slot(object)
+    @Slot(object)  # Union[Entity, Event] - use object for union types
     def generate_summary(self, item) -> None:
         """Generates a summary for the given item using LLM.
 
