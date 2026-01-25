@@ -314,6 +314,7 @@
 <span class="sd">            rel_type (str): The type of relationship (e.g. &quot;caused&quot;).</span>
 <span class="sd">            attributes (Dict[str, Any]): Optional metadata for the relationship.</span>
 <span class="sd">            bidirectional (bool): If True, also creates target-&gt;source relation.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">source_id</span> <span class="o">=</span> <span class="n">source_id</span>
@@ -332,6 +333,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            bool: True if successful.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
@@ -386,6 +388,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            rel_id (str): The ID of the relationship to remove.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rel_id</span> <span class="o">=</span> <span class="n">rel_id</span>
@@ -399,6 +402,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            bool: True if successful, False if error.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Backup logic would go here</span>
         <span class="k">try</span><span class="p">:</span>
@@ -440,6 +444,7 @@
 <span class="sd">            target_id (str): The new target ID.</span>
 <span class="sd">            rel_type (str): The new relationship type.</span>
 <span class="sd">            attributes (Dict[str, Any]): The new attributes.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rel_id</span> <span class="o">=</span> <span class="n">rel_id</span>
@@ -457,6 +462,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            bool: True if successful.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Snapshot</span>
         <span class="n">current</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">get_relation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rel_id</span><span class="p">)</span>

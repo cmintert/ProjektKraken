@@ -305,6 +305,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            event_data (dict, optional): Dictionary containing event data.</span>
 <span class="sd">                                         If None, default values are used.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">event_data</span><span class="p">:</span>
@@ -329,6 +330,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            CommandResult: Result object indicating success or failure.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Executing CreateEvent: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -366,6 +368,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service (DatabaseService): The database service to operate on.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span><span class="p">:</span>
             <span class="k">return</span>
@@ -394,6 +397,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            event_id (str): The ID of the event to update.</span>
 <span class="sd">            update_data (dict): Dictionary of fields to update.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">event_id</span> <span class="o">=</span> <span class="n">event_id</span>
@@ -412,6 +416,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            CommandResult: Result object containing success status and messages.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># 1. Snapshot current state from DB</span>
         <span class="n">current</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">get_event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">event_id</span><span class="p">)</span>
@@ -513,6 +518,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            event_id (str): The ID of the event to delete.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">event_id</span> <span class="o">=</span> <span class="n">event_id</span>
@@ -529,6 +535,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            CommandResult: Result object indicating success or fail (e.g. not found).</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Backup before delete</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_backup_event</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">get_event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">event_id</span><span class="p">)</span>
@@ -564,6 +571,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service (DatabaseService): The database service to operate on.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backup_event</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Undoing DeleteEvent: Restoring </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_backup_event</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>

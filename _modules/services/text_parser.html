@@ -299,6 +299,7 @@
 <span class="sd">        span: Tuple of (start_offset, end_offset) in the source text.</span>
 <span class="sd">        target_id: The UUID if this is an ID-based link, None otherwise.</span>
 <span class="sd">        is_id_based: True if this link uses the id:UUID format.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">raw_text</span><span class="p">:</span> <span class="nb">str</span>
@@ -348,6 +349,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[LinkCandidate]: Ordered list of parsed links with metadata.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">[]</span>
@@ -402,6 +404,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            str: Formatted link like &quot;[[id:UUID|DisplayName]]&quot;</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;[[id:</span><span class="si">{</span><span class="n">target_id</span><span class="si">}</span><span class="s2">|</span><span class="si">{</span><span class="n">display_name</span><span class="si">}</span><span class="s2">]]&quot;</span></div>
 
@@ -418,6 +421,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            str: Formatted link like &quot;[[Name]]&quot; or &quot;[[Name|Label]]&quot;</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">display_label</span><span class="p">:</span>
             <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;[[</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">|</span><span class="si">{</span><span class="n">display_label</span><span class="si">}</span><span class="s2">]]&quot;</span>

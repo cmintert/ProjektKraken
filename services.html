@@ -300,12 +300,11 @@ maintaining schema management and connection handling.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">':memory:'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.__init__" title="Link to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>db_path</strong> – Path to the .kraken database file.
-Defaults to :memory: for testing.</p>
-</dd>
-</dl>
+<dd><p>Args:
+db_path: Path to the .kraken database file.</p>
+<blockquote>
+<div><p>Defaults to :memory: for testing.</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -682,6 +681,23 @@ case-insensitive.</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_attachment_repo">
+<span class="sig-name descname"><span class="pre">get_attachment_repo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">AttachmentRepository</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_attachment_repo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_attachment_repo" title="Link to this definition">¶</a></dt>
+<dd><p>Gets the attachment repository.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The attachment repository instance.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>AttachmentRepository</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>RuntimeError</strong> – If the repository is not initialized (connection not established).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.get_calendar_config">
 <span class="sig-name descname"><span class="pre">get_calendar_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">CalendarConfig</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_calendar_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_calendar_config" title="Link to this definition">¶</a></dt>
 <dd><p>Retrieves a single calendar config by its ID.</p>
@@ -694,6 +710,24 @@ case-insensitive.</p></li>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Optional[<a class="reference internal" href="core.html#core.calendar.CalendarConfig" title="core.calendar.CalendarConfig">CalendarConfig</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_connection">
+<span class="sig-name descname"><span class="pre">get_connection</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Connection</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_connection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_connection" title="Link to this definition">¶</a></dt>
+<dd><p>Gets the database connection, establishing it if necessary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>The active connection, or None if</dt><dd><p>connection failed.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Optional[sqlite3.Connection]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1383,6 +1417,20 @@ the existing row’s id is retained.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>UUID of the inserted trajectory record.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.is_connected">
+<span class="sig-name descname"><span class="pre">is_connected</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.is_connected"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.is_connected" title="Link to this definition">¶</a></dt>
+<dd><p>Checks if the database connection is established.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if connected, False otherwise.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2566,7 +2614,9 @@ background workers.</p>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_all_events"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_all_events()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_all_maps"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_all_maps()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_all_tags"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_all_tags()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_attachment_repo"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_attachment_repo()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_calendar_config()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_connection"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_connection()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_current_time"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_current_time()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_db_file_path"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_db_file_path()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_entities"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_entities()</span></code></a></li>
@@ -2606,6 +2656,7 @@ background workers.</p>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.insert_marker"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_marker()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.insert_relation"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_relation()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.insert_trajectory"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_trajectory()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.is_connected"><code class="docutils literal notranslate"><span class="pre">DatabaseService.is_connected()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.register_backup_service"><code class="docutils literal notranslate"><span class="pre">DatabaseService.register_backup_service()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.remove_tag_from_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.remove_tag_from_entity()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.remove_tag_from_event"><code class="docutils literal notranslate"><span class="pre">DatabaseService.remove_tag_from_event()</span></code></a></li>

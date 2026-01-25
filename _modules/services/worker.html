@@ -286,13 +286,15 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">QObject</span><span class="p">,</span> <span class="n">Signal</span><span class="p">,</span> <span class="n">Slot</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.commands.base_command</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseCommand</span><span class="p">,</span> <span class="n">CommandResult</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.entities</span><span class="w"> </span><span class="kn">import</span> <span class="n">Entity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">Event</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.summary_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">SummaryData</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.services</span><span class="w"> </span><span class="kn">import</span> <span class="n">longform_builder</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.asset_store</span><span class="w"> </span><span class="kn">import</span> <span class="n">AssetStore</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.attachment_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">AttachmentService</span>
-
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.db_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatabaseService</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.services.import_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">ImportResult</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.summary_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">SummaryService</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.summary_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">SummaryData</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -313,17 +315,17 @@
     <span class="n">markers_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>  <span class="c1"># map_id, List[Marker]</span>
     <span class="n">trajectories_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>  <span class="c1"># List[Tuple[str, str, List[Keyframe]]]</span>
     <span class="n">longform_sequence_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>  <span class="c1"># List[dict]</span>
-    <span class="n">calendar_config_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>  <span class="c1"># CalendarConfig or None</span>
+    <span class="n">calendar_config_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>  <span class="c1"># CalendarConfig | None (use object for union types)</span>
     <span class="n">current_time_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>  <span class="c1"># Current time in lore_date units</span>
-    <span class="n">grouping_dialog_data_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>  <span class="c1"># tags_data, current_config</span>
+    <span class="n">grouping_dialog_data_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>  <span class="c1"># tags_data, GroupingConfig | None (use object for union types)</span>
     <span class="n">graph_data_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>  <span class="c1"># nodes, edges</span>
     <span class="n">graph_metadata_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>  <span class="c1"># tags, rel_types</span>
     <span class="n">completer_data_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span>
         <span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">list</span>
     <span class="p">)</span>  <span class="c1"># tags, rel_types, attr_keys, entity_types</span>
 
-    <span class="n">event_details_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>  <span class="c1"># Event, relations, incoming</span>
-    <span class="n">entity_details_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>  <span class="c1"># Entity, relations, incoming</span>
+    <span class="n">event_details_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>  <span class="c1"># Event, relations, incoming</span>
+    <span class="n">entity_details_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="n">Entity</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>  <span class="c1"># Entity, relations, incoming</span>
     <span class="n">attachments_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span>
         <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">list</span>
     <span class="p">)</span>  <span class="c1"># owner_type, owner_id, List[ImageAttachment]</span>
@@ -331,7 +333,7 @@
     <span class="n">filter_results_ready</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>  <span class="c1"># List[Event], List[Entity]</span>
     <span class="n">entity_state_resolved</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>  <span class="c1"># entity_id, resolved_attributes</span>
 
-    <span class="n">command_finished</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>  <span class="c1"># CommandResult object</span>
+    <span class="n">command_finished</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="n">CommandResult</span><span class="p">)</span>
     <span class="n">error_occurred</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
 
     <span class="c1"># Status signals for UI feedback</span>
@@ -339,8 +341,8 @@
     <span class="n">operation_finished</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
 
     <span class="c1"># Import signals</span>
-    <span class="n">import_finished</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>  <span class="c1"># ImportResult</span>
-    <span class="n">summary_generated</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>  <span class="c1"># item_id, SummaryData</span>
+    <span class="n">import_finished</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="n">ImportResult</span><span class="p">)</span>
+    <span class="n">summary_generated</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">SummaryData</span><span class="p">)</span>
 
 <div class="viewcode-block" id="DatabaseWorker.__init__">
 <a class="viewcode-back" href="../../services.html#services.worker.DatabaseWorker.__init__">[docs]</a>
@@ -349,6 +351,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_path: Path to the database file.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">db_path</span> <span class="o">=</span> <span class="n">db_path</span>
@@ -374,24 +377,17 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">asset_store</span> <span class="o">=</span> <span class="n">AssetStore</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">project_root</span><span class="p">))</span>
 
             <span class="c1"># Initialize AttachmentService</span>
-            <span class="c1"># We access the repo directly from db_service (it was initialized in</span>
-            <span class="c1"># connect())</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">_attachment_repo</span><span class="p">:</span>
-                <span class="c1"># Should have been initialized by connect()</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Attachment repository not initialized&quot;</span><span class="p">)</span>
-
+            <span class="c1"># Get the repo from db_service (it was initialized in connect())</span>
+            <span class="n">attachment_repo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">get_attachment_repo</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">attachment_service</span> <span class="o">=</span> <span class="n">AttachmentService</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">_attachment_repo</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">asset_store</span>
+                <span class="n">attachment_repo</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">asset_store</span>
             <span class="p">)</span>
 
-            <span class="c1"># Attach to db_service for Command access (Dependency Injection via Context)</span>
             <span class="c1"># Attach to db_service for Command access (Dependency Injection via Context)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">attachment_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attachment_service</span>
 
             <span class="c1"># Initialize SummaryService</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">summary_service</span> <span class="o">=</span> <span class="n">SummaryService</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">)</span>
-
-            <span class="c1"># Initialize TemporalManager</span>
 
             <span class="c1"># Initialize TemporalManager</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.temporal_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">TemporalManager</span>
@@ -401,8 +397,18 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;DatabaseWorker initialized successfully.&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">initialized</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">operation_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s2">&quot;Database Connected.&quot;</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DatabaseWorker init failed: </span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DatabaseWorker database error: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Database error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initialized</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">IOError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DatabaseWorker I/O error: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to access database file: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initialized</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;DatabaseWorker init failed (</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s2">&quot;Failed to connect to database.&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">initialized</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span></div>
 
@@ -419,8 +425,12 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Database connection closed in worker cleanup.&quot;</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error during worker cleanup: </span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+        <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Database error during cleanup (</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Error during worker cleanup (</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DatabaseWorker.load_events">
@@ -531,6 +541,7 @@
 <span class="sd">            t: Time timestamp.</span>
 <span class="sd">            x: Normalized X.</span>
 <span class="sd">            y: Normalized Y.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">:</span>
             <span class="k">return</span>
@@ -560,6 +571,7 @@
 <span class="sd">            marker_id: The marker ID.</span>
 <span class="sd">            old_t: Original timestamp.</span>
 <span class="sd">            new_t: New timestamp.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">:</span>
             <span class="k">return</span>
@@ -585,6 +597,7 @@
 <span class="sd">            map_id: The map ID (for reloading).</span>
 <span class="sd">            marker_id: The marker ID (object_id).</span>
 <span class="sd">            t: The timestamp of the keyframe to delete.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">:</span>
             <span class="k">return</span>
@@ -686,6 +699,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            doc_id (str): Document ID to load.</span>
 <span class="sd">            filter_json (str): Optional JSON serialization of filter configuration.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">:</span>
             <span class="k">return</span>
@@ -715,13 +729,14 @@
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                     <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error applying filter in worker: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+            <span class="c1"># Ensure connection and get fresh data</span>
+            <span class="n">connection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">get_connection</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">connection</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Failed to establish database connection&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">ensure_fresh_view</span><span class="p">()</span>
-            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
             <span class="n">sequence</span> <span class="o">=</span> <span class="n">longform_builder</span><span class="o">.</span><span class="n">build_longform_sequence</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span><span class="p">,</span> <span class="n">doc_id</span><span class="o">=</span><span class="n">doc_id</span><span class="p">,</span> <span class="n">allowed_ids</span><span class="o">=</span><span class="n">allowed_ids</span>
+                <span class="n">connection</span><span class="p">,</span> <span class="n">doc_id</span><span class="o">=</span><span class="n">doc_id</span><span class="p">,</span> <span class="n">allowed_ids</span><span class="o">=</span><span class="n">allowed_ids</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">longform_sequence_loaded</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">operation_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loaded </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span><span class="si">}</span><span class="s2"> longform items&quot;</span><span class="p">)</span>
@@ -756,8 +771,7 @@
         <span class="nb">object</span><span class="p">,</span> <span class="nb">object</span>
     <span class="p">)</span>  <span class="c1"># Command, Optional[args] - simplified mainly for command objects</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">run_command</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">:</span> <span class="n">BaseCommand</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Executes a command object.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Executes a command object.</span>
 <span class="sd">        IMPORTANT: The command must NOT already have the db_service injected.</span>
 <span class="sd">        We inject the worker&#39;s thread-local service here.</span>
 
@@ -771,6 +785,7 @@
 <span class="sd">                                  (though usually captured in result).</span>
 <span class="sd">            operation_started (str): Status update.</span>
 <span class="sd">            operation_finished (str): Status update.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">:</span>
             <span class="n">cmd_name</span> <span class="o">=</span> <span class="n">command</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
@@ -854,6 +869,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            time (float): The current time in lore_date units.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">:</span>
             <span class="k">return</span>
@@ -929,6 +945,7 @@
 <span class="sd">            provider: Optional embedding provider name.</span>
 <span class="sd">            model: Optional model name override.</span>
 <span class="sd">            excluded_attributes: Optional list of attribute keys to exclude.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">:</span>
             <span class="k">return</span>
@@ -939,11 +956,11 @@
             <span class="c1"># Import search service</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.search_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_search_service</span>
 
-            <span class="c1"># Create search service (uses settings/defaults)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-            <span class="n">search_service</span> <span class="o">=</span> <span class="n">create_search_service</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span><span class="p">)</span>
+            <span class="c1"># Create search service with database connection</span>
+            <span class="n">connection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">get_connection</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">connection</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Failed to establish database connection&quot;</span><span class="p">)</span>
+            <span class="n">search_service</span> <span class="o">=</span> <span class="n">create_search_service</span><span class="p">(</span><span class="n">connection</span><span class="p">)</span>
 
             <span class="c1"># Index the object</span>
             <span class="k">if</span> <span class="n">object_type</span> <span class="o">==</span> <span class="s2">&quot;entity&quot;</span><span class="p">:</span>
@@ -969,6 +986,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            filter_config: Dictionary containing &#39;include&#39;, &#39;include_mode&#39;,</span>
 <span class="sd">                           &#39;exclude&#39;, &#39;exclude_mode&#39;, etc.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">:</span>
             <span class="k">return</span>
@@ -1044,6 +1062,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            tags: List of tags to include.</span>
 <span class="sd">            rel_types: List of relation types to include.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">:</span>
             <span class="k">return</span>
@@ -1110,6 +1129,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            parsed_json: JSON string of pre-parsed data from MainWindow.</span>
 <span class="sd">            options_json: JSON string of import options (mode, source_name, dry_run).</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">:</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.import_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">ImportResult</span>
@@ -1149,12 +1169,13 @@
 
 <div class="viewcode-block" id="DatabaseWorker.generate_summary">
 <a class="viewcode-back" href="../../services.html#services.worker.DatabaseWorker.generate_summary">[docs]</a>
-    <span class="nd">@Slot</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>
+    <span class="nd">@Slot</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>  <span class="c1"># Union[Entity, Event] - use object for union types</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">generate_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates a summary for the given item using LLM.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            item: Entity or Event object.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_service</span><span class="p">:</span>
             <span class="k">return</span>

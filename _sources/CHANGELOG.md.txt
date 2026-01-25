@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-25
-### Fixed
-- Fix duplicate entity context in RAG prompt via thread-safe filtering
+### Internal
+- Merge pull request #65 from cmintert/copilot/review-code-for-production-readiness
 
 
 *This changelog was automatically generated.*

@@ -297,6 +297,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            entity_data (dict, optional): Dictionary containing entity data.</span>
 <span class="sd">                                          If None, default values are used.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">entity_data</span><span class="p">:</span>
@@ -315,6 +316,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            CommandResult: Result object indicating success or failure.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">db_service</span><span class="o">.</span><span class="n">insert_entity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_entity</span><span class="p">)</span>
@@ -352,6 +354,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service (DatabaseService): The database service to operate on.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span><span class="p">:</span>
             <span class="n">db_service</span><span class="o">.</span><span class="n">delete_entity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_entity</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
@@ -377,6 +380,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            entity_id (str): The ID of the entity to update.</span>
 <span class="sd">            update_data (dict): Dictionary of fields to update.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">entity_id</span> <span class="o">=</span> <span class="n">entity_id</span>
@@ -395,6 +399,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            CommandResult: Result object containing success status and messages.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Fetch current state before update</span>
@@ -466,6 +471,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service (DatabaseService): The database service to operate on.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_previous_entity</span><span class="p">:</span>
             <span class="n">db_service</span><span class="o">.</span><span class="n">insert_entity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_previous_entity</span><span class="p">)</span>
@@ -487,6 +493,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            entity_id (str): The ID of the entity to delete.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_entity_id</span> <span class="o">=</span> <span class="n">entity_id</span>
@@ -503,6 +510,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            CommandResult: Result object indicating success or fail (e.g. not found).</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Fetch before delete for undo</span>
@@ -539,6 +547,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service (DatabaseService): The database service to operate on.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_backup_entity</span><span class="p">:</span>
             <span class="n">db_service</span><span class="o">.</span><span class="n">insert_entity</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_backup_entity</span><span class="p">)</span>

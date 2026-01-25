@@ -322,10 +322,10 @@
 <div class="viewcode-block" id="DatabaseService.__init__">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;:memory:&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Args:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Args:</span>
 <span class="sd">            db_path: Path to the .kraken database file.</span>
 <span class="sd">                     Defaults to :memory: for testing.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">db_path</span> <span class="o">=</span> <span class="n">db_path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">sqlite3</span><span class="o">.</span><span class="n">Connection</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
@@ -386,6 +386,50 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Database connection closed.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.is_connected">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.is_connected">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_connected</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Checks if the database connection is established.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if connected, False otherwise.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.get_connection">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_connection">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_connection</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">sqlite3</span><span class="o">.</span><span class="n">Connection</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets the database connection, establishing it if necessary.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Optional[sqlite3.Connection]: The active connection, or None if</span>
+<span class="sd">                                          connection failed.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.get_attachment_repo">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_attachment_repo">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_attachment_repo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AttachmentRepository</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets the attachment repository.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            AttachmentRepository: The attachment repository instance.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            RuntimeError: If the repository is not initialized (connection not established).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attachment_repo</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Attachment repository not initialized&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attachment_repo</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.transaction">
@@ -718,6 +762,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            sqlite3.Error: If the database operation fails.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -734,6 +779,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Optional[Event]: The Event object if found, else None.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -747,6 +793,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Event]: A list of all Event objects in the database.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_events</span><span class="p">()</span></div>
 
@@ -761,6 +808,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Event]: List of matching Event objects.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -779,6 +827,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            sqlite3.Error: If the database operation fails.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -799,6 +848,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            sqlite3.Error: If the database operation fails.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -815,6 +865,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Optional[Entity]: The Entity object if found, else None.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -828,6 +879,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Entity]: A list of all Entity objects.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_entities</span><span class="p">()</span></div>
 
@@ -842,6 +894,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Entity]: List of matching Entity objects.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -860,6 +913,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            sqlite3.Error: If the database operation fails.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -892,6 +946,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            sqlite3.Error: If DB fails.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
@@ -922,6 +977,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Dict[str, Any]]: List of relation dictionaries.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -940,6 +996,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Dict[str, Any]]: List of relation dictionaries.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -956,6 +1013,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Optional[Dict[str, Any]]: The relation dict or None.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">relations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_relation_repo</span><span class="o">.</span><span class="n">get_all</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">rel</span> <span class="ow">in</span> <span class="n">relations</span><span class="p">:</span>
@@ -971,6 +1029,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            rel_id (str): The unique identifier of the relation.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -996,6 +1055,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            sqlite3.Error: If DB fails.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">attributes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">attributes</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1029,6 +1089,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Optional[str]: The name if found, else None.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -1068,6 +1129,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            sqlite3.Error: If the database operation fails.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -1090,6 +1152,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            sqlite3.Error: If the database operation fails.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -1111,6 +1174,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            sqlite3.Error: If the database operation fails.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -1128,6 +1192,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Optional[CalendarConfig]: The config if found, else None.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -1141,6 +1206,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[CalendarConfig]: A list of all calendar configs.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -1154,6 +1220,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Optional[CalendarConfig]: The active config if found, else None.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -1170,6 +1237,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            sqlite3.Error: If the database operation fails.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -1189,6 +1257,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            sqlite3.Error: If the database operation fails.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -1207,6 +1276,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Optional[float]: The current time in lore_date units, or None if not set.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;SELECT value FROM system_meta WHERE key = &#39;current_time&#39;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
@@ -1235,6 +1305,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            sqlite3.Error: If the database operation fails.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">            INSERT INTO system_meta (key, value)</span>
@@ -1260,6 +1331,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            sqlite3.Error: If the database operation fails.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -1276,6 +1348,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Optional[Map]: The Map object if found, else None.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -1289,6 +1362,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Map]: List of all Map objects.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -1305,6 +1379,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            sqlite3.Error: If the database operation fails.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -1332,6 +1407,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            sqlite3.Error: If the database operation fails.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Note: Repository insert_marker doesn&#39;t return ID, so we need special handling</span>
         <span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
@@ -1376,6 +1452,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Optional[Marker]: The Marker object if found, else None.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -1392,6 +1469,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Marker]: List of all Marker objects on the map.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -1409,6 +1487,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Marker]: List of all Marker objects for the object.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;SELECT * FROM markers WHERE object_id = ? AND object_type = ?&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
@@ -1444,6 +1523,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Optional[Marker]: The Marker object if found, else None.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">            SELECT * FROM markers</span>
@@ -1474,6 +1554,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            sqlite3.Error: If the database operation fails.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;DELETE FROM markers WHERE id = ?&quot;</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
@@ -1491,6 +1572,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Dict[str, Any]]: List of tag dictionaries with id, name, created_at.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -1511,6 +1593,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Dict[str, Any]]: List of distinct tag dictionaries.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -1535,6 +1618,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Dict[str, Any]]: List of distinct tag dictionaries.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -1566,6 +1650,7 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: If tag_name is empty or whitespace-only.</span>
 <span class="sd">            sqlite3.Error: If the database operation fails.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
@@ -1610,6 +1695,7 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: If tag_name is empty.</span>
 <span class="sd">            sqlite3.Error: If the database operation fails.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 
@@ -1644,6 +1730,7 @@
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: If tag_name is empty.</span>
 <span class="sd">            sqlite3.Error: If the database operation fails.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 
@@ -1679,6 +1766,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            sqlite3.Error: If the database operation fails.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Get tag ID</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
@@ -1712,6 +1800,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            sqlite3.Error: If the database operation fails.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Get tag ID</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
@@ -1744,6 +1833,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Dict[str, Any]]: List of tag dictionaries.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -1773,6 +1863,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Dict[str, Any]]: List of tag dictionaries.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -1802,6 +1893,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            sqlite3.Error: If the database operation fails.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Get tag ID</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
@@ -1834,6 +1926,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Event]: List of Event objects with the specified tag.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -1871,6 +1964,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Entity]: List of Entity objects with the specified tag.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -1924,6 +2018,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: If mode is not DUPLICATE or FIRST_MATCH.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;DUPLICATE&quot;</span><span class="p">,</span> <span class="s2">&quot;FIRST_MATCH&quot;</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid mode: </span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2">. Must be DUPLICATE or FIRST_MATCH&quot;</span><span class="p">)</span>
@@ -2033,6 +2128,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List of dicts with tag_name, count, earliest_date, latest_date.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -2094,6 +2190,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List of dicts with tag_name, color, count, earliest_date, latest_date.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">metadata</span> <span class="o">=</span> <span class="p">[]</span>
 
@@ -2163,6 +2260,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Event]: Events with the specified tag, sorted by lore_date.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -2210,6 +2308,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: If color format is invalid.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Get or create tag</span>
         <span class="n">tag_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_tag</span><span class="p">(</span><span class="n">tag_name</span><span class="p">)</span>
@@ -2254,6 +2353,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            str: Hex color string (e.g., &quot;#FF0000&quot;).</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -2285,6 +2385,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            str: Hex color string (e.g., &quot;#FF0000&quot;).</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
 
@@ -2314,6 +2415,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Optional[Dict[str, Any]]: Tag dictionary with id, name, color, created_at</span>
 <span class="sd">                                      or None if not found.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -2383,6 +2485,7 @@
 <span class="sd">            ...     exclude=[&#39;archived&#39;]</span>
 <span class="sd">            ... )</span>
 <span class="sd">            [(&#39;entity&#39;, &#39;uuid-1&#39;), (&#39;event&#39;, &#39;uuid-4&#39;)]</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -2419,6 +2522,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Tuple containing (List[Event], List[Entity]).</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -2480,6 +2584,7 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: If mode is invalid.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;DUPLICATE&quot;</span><span class="p">,</span> <span class="s2">&quot;FIRST_MATCH&quot;</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid mode: </span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2">. Must be DUPLICATE or FIRST_MATCH&quot;</span><span class="p">)</span>
@@ -2509,6 +2614,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Optional[Dict[str, Any]]: Config dict with tag_order and mode,</span>
 <span class="sd">                                      or None if not set.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -2557,6 +2663,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            UUID of the inserted trajectory record.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -2575,6 +2682,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List of (marker_id, trajectory_id, List[Keyframe]) tuples.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -2593,6 +2701,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List of (trajectory_id, List[Keyframe]) tuples.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -2611,6 +2720,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The ID of the updated/created trajectory.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -2632,6 +2742,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The ID of the updated trajectory.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -2652,6 +2763,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The ID of the updated trajectory, or None if trajectory was deleted.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
@@ -2665,6 +2777,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            backup_service: The BackupService instance to register.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_backup_service</span> <span class="o">=</span> <span class="n">backup_service</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Backup service registered with DatabaseService&quot;</span><span class="p">)</span></div>
@@ -2677,6 +2790,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            str: Path to the database file.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_path</span></div>
 
@@ -2689,6 +2803,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            bool: True if successful, False otherwise.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Cannot vacuum: no database connection&quot;</span><span class="p">)</span>
