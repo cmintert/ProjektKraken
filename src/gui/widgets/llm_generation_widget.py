@@ -7,7 +7,6 @@ streaming output and appending to existing text.
 import asyncio
 import logging
 import re
-import sqlite3
 from typing import Any, Optional, Protocol, runtime_checkable
 
 from PySide6.QtCore import QSettings, Qt, QThread, Signal, Slot
@@ -666,6 +665,9 @@ class LLMGenerationWidget(QWidget):
 
         # Determine DB path for RAG if enabled
         db_path = None
+
+        # Determine DB path and run context logic if needed
+        # Logic moved to GenerationWorker/_on_preview_clicked
         if self.rag_cb.isChecked():
             # Attempt to get db_path from main window via parent chain
             # Parent is EntityEditor -> SplitterTabInspector -> ... -> MainWindow?
@@ -793,7 +795,6 @@ class LLMGenerationWidget(QWidget):
 
         # 2. Data Injection (User Role) with Explicit Delimiters
         # RAG Context (if any)
-        rag_content = ""
         rag_placeholder = ""
         if self.rag_cb.isChecked():
             # RAG search happens inside GenerationWorker._apply_rag_to_prompt

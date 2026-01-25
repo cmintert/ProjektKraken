@@ -7,11 +7,11 @@ Handles retrieval augmented generation logic, including:
 """
 
 import logging
-import sqlite3
 import re
-from typing import List, Dict, Any, Optional
+import sqlite3
+from typing import Any, Dict, List, Optional
 
-from src.services.search_service import create_search_service, SearchService
+from src.services.search_service import create_search_service
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class RAGService:
     """Service for retrieving and formatting world knowledge for LLM context."""
 
-    def __init__(self, db_path: str):
+    def __init__(self, db_path: str) -> None:
         """Initialize RAG Service.
 
         Args:
@@ -177,7 +177,7 @@ class RAGService:
             match_type = r.get("_match_type", "Semantic")
 
             # Metadata/Attributes
-            metadata = r.get("metadata", {})
+            # r.get("metadata", {})  # Unused
             # We want to show attributes if available
             # The search_service.query returns 'metadata' dict, but attributes might be buried or on disk?
             # Current `query` implementation retrieves 'metadata' column which is json dumped.
