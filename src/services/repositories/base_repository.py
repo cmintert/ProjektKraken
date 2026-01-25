@@ -21,6 +21,7 @@ class BaseRepository:
 
     Attributes:
         _connection: The SQLite database connection (managed by DatabaseService).
+
     """
 
     def __init__(self, connection: Optional[sqlite3.Connection] = None) -> None:
@@ -28,6 +29,7 @@ class BaseRepository:
 
         Args:
             connection: Optional SQLite connection. If None, must be set later.
+
         """
         self._connection = connection
 
@@ -36,6 +38,7 @@ class BaseRepository:
 
         Args:
             connection: The SQLite database connection.
+
         """
         self._connection = connection
 
@@ -48,6 +51,7 @@ class BaseRepository:
 
         Raises:
             sqlite3.Error: If the transaction fails.
+
         """
         if not self._connection:
             raise RuntimeError("Database connection not initialized")
@@ -69,6 +73,7 @@ class BaseRepository:
 
         Returns:
             JSON string representation.
+
         """
         return json.dumps(data)
 
@@ -81,6 +86,7 @@ class BaseRepository:
 
         Returns:
             Dictionary representation, or empty dict if parsing fails.
+
         """
         if not json_str:
             return {}

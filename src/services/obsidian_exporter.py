@@ -44,6 +44,7 @@ class ObsidianExporter:
 
         Args:
             db_service: Database service for fetching entities, events, relations.
+
         """
         self._db = db_service
 
@@ -60,6 +61,7 @@ class ObsidianExporter:
 
         Returns:
             ExportResult with statistics and any errors encountered.
+
         """
         errors: List[str] = []
         files_created = 0
@@ -140,6 +142,7 @@ class ObsidianExporter:
 
         Returns:
             Unique filename like "Name.md" or "Name (2).md".
+
         """
         sanitized = self._sanitize_filename(name)
         base_name = sanitized[: self.MAX_FILENAME_LENGTH]
@@ -161,6 +164,7 @@ class ObsidianExporter:
 
         Returns:
             Sanitized filename safe for all filesystems.
+
         """
         sanitized = self.INVALID_FILENAME_CHARS.sub("", name)
         sanitized = sanitized.strip(". ")  # Remove leading/trailing dots and spaces
@@ -177,6 +181,7 @@ class ObsidianExporter:
 
         Returns:
             List of dicts with 'name' and 'rel_type' for each related item.
+
         """
         relations = []
         try:
@@ -205,6 +210,7 @@ class ObsidianExporter:
 
         Returns:
             Complete markdown string with frontmatter and content.
+
         """
         lines = []
 
@@ -252,6 +258,7 @@ class ObsidianExporter:
 
         Returns:
             Complete markdown string with frontmatter and content.
+
         """
         lines = []
 

@@ -61,6 +61,7 @@ def filter_reasoning_tags(text: str) -> str:
 
     Returns:
         str: Text with reasoning tags and their content removed, stripped.
+
     """
     filtered = _REASONING_TAG_PATTERN.sub("", text)
     return filtered.strip()
@@ -123,6 +124,7 @@ class GenerationWorker(QThread):
             temperature: Temperature parameter (0.0-2.0).
             db_path: Optional path to database for RAG context.
             rag_limit: Number of RAG items to retrieve.
+
         """
         super().__init__()
         self.provider = provider
@@ -142,6 +144,7 @@ class GenerationWorker(QThread):
 
         Returns:
             Formatted context string or empty string.
+
         """
         # This method is now effectively deprecated by the new _apply_rag_to_prompt
         # but kept for context of the original diff.
@@ -318,6 +321,7 @@ class LLMGenerationWidget(QWidget):
         Args:
             parent: Parent widget.
             context_provider: Optional provider for generation context.
+
         """
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
@@ -717,6 +721,7 @@ class LLMGenerationWidget(QWidget):
 
         Returns:
             str: The configured persona, or default if not set.
+
         """
         try:
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
@@ -741,6 +746,7 @@ class LLMGenerationWidget(QWidget):
 
         Returns:
             dict: Context with name, type, description, etc.
+
         """
         # 1. Try explicit provider
         if self._context_provider:
@@ -794,6 +800,7 @@ class LLMGenerationWidget(QWidget):
 
         Returns:
             dict: Structured prompt with 'system' and 'user' keys for chat API.
+
         """
         # 1. Persona (System Role)
         system_persona = self._get_system_prompt()
@@ -1125,6 +1132,7 @@ class LLMGenerationWidget(QWidget):
 
         Returns:
             str: Substituted prompt.
+
         """
         # Normalize keys for substitution
         subst_context = {

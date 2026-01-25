@@ -3,9 +3,8 @@
 Defines data structure for storing AI-generated summaries with metadata.
 """
 
-from dataclasses import dataclass, asdict
-from typing import Optional, Any, Dict
-import time
+from dataclasses import asdict, dataclass
+from typing import Any, Dict
 
 
 @dataclass
@@ -23,6 +22,7 @@ class SummaryData:
 
         Returns:
             Dict[str, Any]: Dictionary representation of the summary data.
+
         """
         return asdict(self)
 
@@ -35,5 +35,6 @@ class SummaryData:
 
         Returns:
             SummaryData: New instance populated with the provided data.
+
         """
         return cls(**data)

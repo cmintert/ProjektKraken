@@ -1,5 +1,4 @@
-"""
-WorkerManager - Handles database worker thread management for MainWindow.
+"""WorkerManager - Handles database worker thread management for MainWindow.
 
 This module contains all worker thread initialization and status management
 functionality extracted from MainWindow to reduce its size and improve maintainability.
@@ -13,8 +12,8 @@ from PySide6.QtCore import (
     Qt,
     QThread,
     QTimer,
-    Slot,
     Signal,
+    Slot,
 )
 from PySide6.QtWidgets import QApplication
 
@@ -55,6 +54,7 @@ class WorkerManager(QObject):
 
         Args:
             main_window: Reference to the MainWindow instance.
+
         """
         super().__init__()
         self.window = main_window
@@ -216,6 +216,7 @@ class WorkerManager(QObject):
 
         Args:
             message: The message to display.
+
         """
         self.window.status_bar.showMessage(message)
         # Busy cursor
@@ -226,6 +227,7 @@ class WorkerManager(QObject):
 
         Args:
             message: The final completion message.
+
         """
         self.window.status_bar.showMessage(message, 3000)
         QApplication.restoreOverrideCursor()
@@ -236,6 +238,7 @@ class WorkerManager(QObject):
 
         Args:
             message: The error description.
+
         """
         self.window.status_bar.showMessage(f"{STATUS_ERROR_PREFIX}{message}", 5000)
         QApplication.restoreOverrideCursor()
@@ -247,6 +250,7 @@ class WorkerManager(QObject):
 
         Args:
             success: True if connection succeeded, False otherwise.
+
         """
         if success:
             # Initialize GUI database connection for timeline data provider

@@ -38,6 +38,7 @@ class GraphDataService:
             Tuple of (nodes, edges) where:
             - nodes: List of dicts with id, name, type, object_type keys
             - edges: List of dicts with source_id, target_id, rel_type keys
+
         """
         # Collect all relations by iterating over all entities and events
         all_relations = self._collect_all_relations(db_service)
@@ -95,6 +96,7 @@ class GraphDataService:
 
         Returns:
             List of unique tag strings, sorted alphabetically.
+
         """
         tags: set[str] = set()
 
@@ -118,6 +120,7 @@ class GraphDataService:
 
         Returns:
             List of unique rel_type strings, sorted alphabetically.
+
         """
         all_relations = self._collect_all_relations(db_service)
         return sorted({r.get("rel_type", "") for r in all_relations})
@@ -130,6 +133,7 @@ class GraphDataService:
 
         Returns:
             List of unique entity type strings, sorted alphabetically.
+
         """
         types = {getattr(e, "type", "entity") for e in db_service.get_all_entities()}
         return sorted(types)
@@ -142,6 +146,7 @@ class GraphDataService:
 
         Returns:
             List of unique attribute key strings, sorted alphabetically.
+
         """
         keys: set[str] = set()
 
@@ -169,6 +174,7 @@ class GraphDataService:
 
         Returns:
             List of relation dictionaries.
+
         """
         seen_ids: set[str] = set()
         relations: list[dict[str, Any]] = []
@@ -202,6 +208,7 @@ class GraphDataService:
 
         Returns:
             List of node dicts.
+
         """
         nodes = []
 
@@ -232,6 +239,7 @@ class GraphDataService:
 
         Returns:
             List of node dicts.
+
         """
         nodes = []
 
@@ -255,6 +263,7 @@ class GraphDataService:
 
         Returns:
             A dictionary with id, name, type, object_type, and tags keys.
+
         """
         return {
             "id": entity.id,
@@ -272,6 +281,7 @@ class GraphDataService:
 
         Returns:
             A dictionary with id, name, type, object_type, and tags keys.
+
         """
         return {
             "id": event.id,
@@ -290,6 +300,7 @@ class GraphDataService:
 
         Returns:
             True if the entity has at least one of the specified tags, or if no filter.
+
         """
         if not include_tags:  # None or empty list = no filter
             return True
@@ -305,6 +316,7 @@ class GraphDataService:
 
         Returns:
             True if the event has at least one of the specified tags, or if no filter.
+
         """
         if not include_tags:  # None or empty list = no filter
             return True

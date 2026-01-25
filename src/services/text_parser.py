@@ -23,6 +23,7 @@ class LinkCandidate:
         span: Tuple of (start_offset, end_offset) in the source text.
         target_id: The UUID if this is an ID-based link, None otherwise.
         is_id_based: True if this link uses the id:UUID format.
+
     """
 
     raw_text: str
@@ -67,6 +68,7 @@ class WikiLinkParser:
 
         Returns:
             List[LinkCandidate]: Ordered list of parsed links with metadata.
+
         """
         if not text:
             return []
@@ -118,6 +120,7 @@ class WikiLinkParser:
 
         Returns:
             str: Formatted link like "[[id:UUID|DisplayName]]"
+
         """
         return f"[[id:{target_id}|{display_name}]]"
 
@@ -131,6 +134,7 @@ class WikiLinkParser:
 
         Returns:
             str: Formatted link like "[[Name]]" or "[[Name|Label]]"
+
         """
         if display_label:
             return f"[[{name}|{display_label}]]"

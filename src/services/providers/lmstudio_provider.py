@@ -53,6 +53,7 @@ class LMStudioProvider(Provider):
 
         Raises:
             ValueError: If model is not specified.
+
         """
         self.model = model
         if not self.model:
@@ -107,6 +108,7 @@ class LMStudioProvider(Provider):
 
         Raises:
             Exception: If all retries fail.
+
         """
         last_exception = None
         for attempt in range(self.max_retries):
@@ -141,6 +143,7 @@ class LMStudioProvider(Provider):
 
         Raises:
             Exception: If API request fails or response is invalid.
+
         """
         if not texts:
             return np.array([])
@@ -203,6 +206,7 @@ class LMStudioProvider(Provider):
 
         Returns:
             List of message dicts with 'role' and 'content' keys.
+
         """
         messages = []
 
@@ -248,6 +252,7 @@ class LMStudioProvider(Provider):
 
         Raises:
             Exception: If generation fails.
+
         """
 
         def _generate_impl() -> Dict[str, Any]:
@@ -362,6 +367,7 @@ class LMStudioProvider(Provider):
 
         Raises:
             Exception: If streaming fails.
+
         """
         if self.use_chat_api:
             # Chat completions format with messages
@@ -460,6 +466,7 @@ class LMStudioProvider(Provider):
 
         Returns:
             Dict containing status, latency_ms, and message.
+
         """
         start_time = 0.0
         try:
@@ -556,6 +563,7 @@ class LMStudioProvider(Provider):
 
         Returns:
             Dict containing provider information and capabilities.
+
         """
         return {
             "provider_id": "lmstudio",

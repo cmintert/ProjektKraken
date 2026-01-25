@@ -24,6 +24,7 @@ class CircuitBreaker:
         Args:
             failure_threshold: Number of failures before opening circuit.
             timeout: Seconds to wait before attempting to close circuit.
+
         """
         self.failure_threshold = failure_threshold
         self.timeout = timeout
@@ -44,6 +45,7 @@ class CircuitBreaker:
 
         Raises:
             Exception: If circuit is open or function fails.
+
         """
         if self.state == "open":
             if time.time() - self.last_failure_time >= self.timeout:
@@ -81,6 +83,7 @@ class CircuitBreaker:
 
         Returns:
             dict: State information including status, failures, and time since last failure.
+
         """
         return {
             "state": self.state,

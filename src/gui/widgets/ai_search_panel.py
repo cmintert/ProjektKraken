@@ -48,6 +48,7 @@ class SearchResultItem(QWidget):
             score: Similarity score (0-1).
             obj_subtype: Entity/Event type (character, location, etc.).
             parent: Parent widget.
+
         """
         super().__init__(parent)
         self.object_type = object_type
@@ -109,6 +110,7 @@ class AISearchPanelWidget(QWidget):
 
         Args:
             parent: Parent widget.
+
         """
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
@@ -230,6 +232,7 @@ class AISearchPanelWidget(QWidget):
                 - object_id: str
                 - score: float
                 - type: str (entity/event subtype)
+
         """
         self.results_list.clear()
 
@@ -268,6 +271,7 @@ class AISearchPanelWidget(QWidget):
 
         Args:
             message: Status message to display.
+
         """
         self.status_label.setText(message)
 
@@ -276,6 +280,7 @@ class AISearchPanelWidget(QWidget):
 
         Args:
             searching: True if search is in progress.
+
         """
         self.btn_search.setEnabled(not searching)
         self.search_input.setEnabled(not searching)

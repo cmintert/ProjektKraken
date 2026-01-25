@@ -27,9 +27,10 @@ class CalendarRepository(BaseRepository):
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         sql = """
-            INSERT INTO calendar_config 
+            INSERT INTO calendar_config
                 (id, name, config_json, is_active, created_at, modified_at)
             VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
@@ -59,6 +60,7 @@ class CalendarRepository(BaseRepository):
 
         Returns:
             The CalendarConfig object if found, else None.
+
         """
         sql = "SELECT * FROM calendar_config WHERE id = ?"
 
@@ -78,6 +80,7 @@ class CalendarRepository(BaseRepository):
 
         Returns:
             List of all CalendarConfig objects.
+
         """
         sql = "SELECT * FROM calendar_config ORDER BY name ASC"
 
@@ -96,6 +99,7 @@ class CalendarRepository(BaseRepository):
 
         Returns:
             The active CalendarConfig object if found, else None.
+
         """
         sql = "SELECT * FROM calendar_config WHERE is_active = 1 LIMIT 1"
 
@@ -118,6 +122,7 @@ class CalendarRepository(BaseRepository):
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         with self.transaction() as conn:
             # Deactivate all configurations
@@ -136,6 +141,7 @@ class CalendarRepository(BaseRepository):
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         with self.transaction() as conn:
             conn.execute("DELETE FROM calendar_config WHERE id = ?", (config_id,))

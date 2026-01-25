@@ -49,6 +49,7 @@ class GoogleProvider(Provider):
         Raises:
             ValueError: If project_id is not provided.
             ImportError: If google-cloud-aiplatform is not installed.
+
         """
         try:
             from google.auth import default  # type: ignore
@@ -108,6 +109,7 @@ class GoogleProvider(Provider):
 
         Returns:
             str: OAuth2 access token.
+
         """
         from google.auth.transport.requests import Request  # type: ignore
 
@@ -159,6 +161,7 @@ class GoogleProvider(Provider):
 
         Raises:
             Exception: If API request fails or response is invalid.
+
         """
         if not texts:
             return np.array([])
@@ -237,6 +240,7 @@ class GoogleProvider(Provider):
 
         Raises:
             Exception: If generation fails.
+
         """
 
         def _generate_impl() -> Dict[str, Any]:
@@ -330,6 +334,7 @@ class GoogleProvider(Provider):
 
         Raises:
             Exception: If streaming fails.
+
         """
         logger.warning("Vertex AI streaming not fully supported, using fallback")
 
@@ -346,6 +351,7 @@ class GoogleProvider(Provider):
 
         Returns:
             Dict containing status, latency_ms, and message.
+
         """
         try:
             start_time = time.time()
@@ -394,6 +400,7 @@ class GoogleProvider(Provider):
 
         Returns:
             Dict containing provider information and capabilities.
+
         """
         return {
             "provider_id": "google",

@@ -34,6 +34,7 @@ class TemporalResolver:
 
         Returns:
             Dict[str, Any]: The merged dictionary of attributes.
+
         """
         # 1. Start with base state
         current_state = entity.attributes.copy() if include_base_state else {}

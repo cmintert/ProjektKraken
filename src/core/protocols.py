@@ -187,6 +187,7 @@ class TimelineDataProvider(Protocol):
                 - count: int (number of events)
                 - earliest_date: float
                 - latest_date: float
+
         """
         ...
 
@@ -201,5 +202,6 @@ class TimelineDataProvider(Protocol):
 
         Returns:
             List of Event objects with the specified tag.
+
         """
         ...

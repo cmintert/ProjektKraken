@@ -42,6 +42,7 @@ class TimelineWidget(QWidget):
 
         Args:
             parent (QWidget, optional): The parent widget. Defaults to None.
+
         """
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
@@ -115,6 +116,7 @@ class TimelineWidget(QWidget):
 
         Args:
             provider: Object implementing the data provider interface.
+
         """
         self.view.set_data_provider(provider)
 
@@ -154,6 +156,7 @@ class TimelineWidget(QWidget):
 
         Args:
             time: Time in lore_date units.
+
         """
         self.view.set_playhead_time(time)
 
@@ -162,6 +165,7 @@ class TimelineWidget(QWidget):
 
         Returns:
             float: Current time in lore_date units.
+
         """
         return self.view.get_playhead_time()
 
@@ -170,6 +174,7 @@ class TimelineWidget(QWidget):
 
         Args:
             time: Time in lore_date units.
+
         """
         self.view.set_current_time(time)
 
@@ -178,6 +183,7 @@ class TimelineWidget(QWidget):
 
         Returns:
             float: Current time in lore_date units.
+
         """
         return self.view.get_current_time()
 
@@ -200,6 +206,7 @@ class TimelineWidget(QWidget):
 
         Args:
             converter: CalendarConverter instance or None.
+
         """
         EventItem.set_calendar_converter(converter)
         # Also configure the ruler for calendar-aware date divisions

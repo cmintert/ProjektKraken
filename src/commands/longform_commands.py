@@ -41,6 +41,7 @@ class MoveLongformEntryCommand(BaseCommand):
             old_meta: Previous longform metadata.
             new_meta: New longform metadata.
             doc_id: Document ID.
+
         """
         super().__init__()
         self.table = table
@@ -57,6 +58,7 @@ class MoveLongformEntryCommand(BaseCommand):
 
         Returns:
             CommandResult: Result object indicating success or failure.
+
         """
         try:
             if not db_service._connection:
@@ -93,6 +95,7 @@ class MoveLongformEntryCommand(BaseCommand):
 
         Args:
             db_service: The database service to operate on.
+
         """
         if not self._is_executed:
             return
@@ -135,6 +138,7 @@ class PromoteLongformEntryCommand(BaseCommand):
             row_id: ID of the row to promote.
             old_meta: Previous longform metadata for undo.
             doc_id: Document ID.
+
         """
         super().__init__()
         self.table = table
@@ -150,6 +154,7 @@ class PromoteLongformEntryCommand(BaseCommand):
 
         Returns:
             CommandResult: Result object indicating success or failure.
+
         """
         try:
             if not db_service._connection:
@@ -182,6 +187,7 @@ class PromoteLongformEntryCommand(BaseCommand):
 
         Args:
             db_service: The database service to operate on.
+
         """
         if not self._is_executed:
             return
@@ -224,6 +230,7 @@ class DemoteLongformEntryCommand(BaseCommand):
             row_id: ID of the row to demote.
             old_meta: Previous longform metadata for undo.
             doc_id: Document ID.
+
         """
         super().__init__()
         self.table = table
@@ -239,6 +246,7 @@ class DemoteLongformEntryCommand(BaseCommand):
 
         Returns:
             CommandResult: Result object indicating success or failure.
+
         """
         try:
             if not db_service._connection:
@@ -271,6 +279,7 @@ class DemoteLongformEntryCommand(BaseCommand):
 
         Args:
             db_service: The database service to operate on.
+
         """
         if not self._is_executed:
             return
@@ -313,6 +322,7 @@ class RemoveLongformEntryCommand(BaseCommand):
             row_id: ID of the row to remove from longform.
             old_meta: Previous longform metadata for undo.
             doc_id: Document ID.
+
         """
         super().__init__()
         self.table = table
@@ -328,6 +338,7 @@ class RemoveLongformEntryCommand(BaseCommand):
 
         Returns:
             CommandResult: Result object indicating success or failure.
+
         """
         try:
             if not db_service._connection:
@@ -360,6 +371,7 @@ class RemoveLongformEntryCommand(BaseCommand):
 
         Args:
             db_service: The database service to operate on.
+
         """
         if not self._is_executed:
             return

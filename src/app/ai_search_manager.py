@@ -1,5 +1,4 @@
-"""
-AISearchManager - Handles AI search and semantic indexing for MainWindow.
+"""AISearchManager - Handles AI search and semantic indexing for MainWindow.
 
 This module contains all AI search and semantic indexing functionality extracted
 from MainWindow to reduce its size and improve maintainability.
@@ -36,6 +35,7 @@ class AISearchManager(QObject):
 
         Args:
             main_window: Reference to the MainWindow instance.
+
         """
         super().__init__()
         self.window = main_window
@@ -75,6 +75,7 @@ class AISearchManager(QObject):
             query: Search query text.
             object_type_filter: Filter by 'entity' or 'event', or empty for all.
             top_k: Number of results to return.
+
         """
         try:
             if not hasattr(self.window, "gui_db_service"):
@@ -149,6 +150,7 @@ class AISearchManager(QObject):
 
         Args:
             object_type: Type to rebuild ('all', 'entity', 'event').
+
         """
         try:
             if not hasattr(self.window, "gui_db_service"):
@@ -202,6 +204,7 @@ class AISearchManager(QObject):
         Args:
             object_type: 'entity' or 'event'.
             object_id: Object UUID.
+
         """
         # Select the item in the unified list via the dock widget
         if (

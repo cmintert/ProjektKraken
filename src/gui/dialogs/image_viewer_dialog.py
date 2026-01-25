@@ -40,6 +40,7 @@ class ImageViewerDialog(QDialog):
             parent: Parent widget.
             attachments: List of ImageAttachment objects to display.
             current_index: Index of the image to display first.
+
         """
         super().__init__(parent)
         self.setWindowTitle("Image Viewer")

@@ -27,6 +27,7 @@ class EntityRepository(BaseRepository):
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         sql = """
             INSERT INTO entities (id, type, name, description,
@@ -61,6 +62,7 @@ class EntityRepository(BaseRepository):
 
         Returns:
             The Entity object if found, else None.
+
         """
         sql = "SELECT * FROM entities WHERE id = ?"
 
@@ -82,6 +84,7 @@ class EntityRepository(BaseRepository):
 
         Returns:
             List of all Entity objects in the database.
+
         """
         sql = "SELECT * FROM entities ORDER BY name ASC"
 
@@ -105,6 +108,7 @@ class EntityRepository(BaseRepository):
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         with self.transaction() as conn:
             conn.execute("DELETE FROM entities WHERE id = ?", (entity_id,))
@@ -117,6 +121,7 @@ class EntityRepository(BaseRepository):
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         sql = """
             INSERT INTO entities (id, type, name, description,
@@ -154,6 +159,7 @@ class EntityRepository(BaseRepository):
 
         Returns:
             List of Entity objects of the specified type.
+
         """
         sql = "SELECT * FROM entities WHERE type = ? ORDER BY name ASC"
 
@@ -177,10 +183,11 @@ class EntityRepository(BaseRepository):
 
         Returns:
             List of Entity objects matching the search term.
+
         """
         sql = """
-            SELECT * FROM entities 
-            WHERE name LIKE ? 
+            SELECT * FROM entities
+            WHERE name LIKE ?
             ORDER BY name ASC
         """
 
@@ -208,10 +215,11 @@ class EntityRepository(BaseRepository):
 
         Returns:
             List of Entity objects with matching names.
+
         """
         sql = """
-            SELECT * FROM entities 
-            WHERE lower(name) = lower(?) 
+            SELECT * FROM entities
+            WHERE lower(name) = lower(?)
             ORDER BY name ASC
         """
 
@@ -241,6 +249,7 @@ class EntityRepository(BaseRepository):
 
         Returns:
             Matching Entity or None.
+
         """
         if not self._connection:
             raise RuntimeError("Database connection not initialized")

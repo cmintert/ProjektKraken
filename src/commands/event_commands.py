@@ -27,6 +27,7 @@ class CreateEventCommand(BaseCommand):
         Args:
             event_data (dict, optional): Dictionary containing event data.
                                          If None, default values are used.
+
         """
         super().__init__()
         if event_data:
@@ -48,6 +49,7 @@ class CreateEventCommand(BaseCommand):
 
         Returns:
             CommandResult: Result object indicating success or failure.
+
         """
         try:
             logger.info(f"Executing CreateEvent: {self.event.name}")
@@ -82,6 +84,7 @@ class CreateEventCommand(BaseCommand):
 
         Args:
             db_service (DatabaseService): The database service to operate on.
+
         """
         if not self._is_executed:
             return
@@ -104,6 +107,7 @@ class UpdateEventCommand(BaseCommand):
         Args:
             event_id (str): The ID of the event to update.
             update_data (dict): Dictionary of fields to update.
+
         """
         super().__init__()
         self.event_id = event_id
@@ -119,6 +123,7 @@ class UpdateEventCommand(BaseCommand):
 
         Returns:
             CommandResult: Result object containing success status and messages.
+
         """
         # 1. Snapshot current state from DB
         current = db_service.get_event(self.event_id)
@@ -211,6 +216,7 @@ class DeleteEventCommand(BaseCommand):
 
         Args:
             event_id (str): The ID of the event to delete.
+
         """
         super().__init__()
         self.event_id = event_id
@@ -224,6 +230,7 @@ class DeleteEventCommand(BaseCommand):
 
         Returns:
             CommandResult: Result object indicating success or fail (e.g. not found).
+
         """
         # Backup before delete
         self._backup_event = db_service.get_event(self.event_id)
@@ -256,6 +263,7 @@ class DeleteEventCommand(BaseCommand):
 
         Args:
             db_service (DatabaseService): The database service to operate on.
+
         """
         if self._is_executed and self._backup_event:
             logger.info(f"Undoing DeleteEvent: Restoring {self._backup_event.name}")

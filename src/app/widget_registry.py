@@ -40,6 +40,7 @@ class WidgetRegistry:
         Args:
             name: Unique identifier for the widget.
             widget: The QWidget instance to register.
+
         """
         if name in self._widgets:
             logger.warning(f"Widget '{name}' already registered, replacing")
@@ -67,6 +68,7 @@ class WidgetRegistry:
 
         Returns:
             The widget instance if valid, None otherwise.
+
         """
         widget = self._widgets.get(name)
         if widget is None:
@@ -85,6 +87,7 @@ class WidgetRegistry:
 
         Args:
             name: The widget identifier.
+
         """
         if name in self._widget_states:
             self._widget_states[name] = WidgetState.INITIALIZED
@@ -100,6 +103,7 @@ class WidgetRegistry:
 
         Returns:
             True if widget is initialized, False otherwise.
+
         """
         state = self._widget_states.get(name)
         return state == WidgetState.INITIALIZED
@@ -112,6 +116,7 @@ class WidgetRegistry:
 
         Returns:
             The widget state, or None if not found.
+
         """
         return self._widget_states.get(name)
 
@@ -120,6 +125,7 @@ class WidgetRegistry:
 
         Args:
             name: The widget identifier.
+
         """
         if name in self._widget_states:
             self._widget_states[name] = WidgetState.DESTROYED
@@ -146,6 +152,7 @@ class WidgetRegistry:
 
         Returns:
             List of widget names.
+
         """
         return list(self._widgets.keys())
 
@@ -154,5 +161,6 @@ class WidgetRegistry:
 
         Returns:
             Number of widgets in registry.
+
         """
         return len(self._widgets)

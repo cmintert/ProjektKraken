@@ -51,6 +51,7 @@ class DraggableListWidget(QListWidget):
 
         Args:
             supportedActions: The drag actions supported.
+
         """
         item = self.currentItem()
         if not item:
@@ -100,6 +101,7 @@ class UnifiedListWidget(QWidget):
 
         Args:
             parent (QWidget, optional): The parent widget. Defaults to None.
+
         """
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
@@ -225,6 +227,7 @@ class UnifiedListWidget(QWidget):
         Args:
             events (List[Event]): List of events to display.
             entities (List[Entity]): List of entities to display.
+
         """
         self._events = events
         self._entities = entities
@@ -236,6 +239,7 @@ class UnifiedListWidget(QWidget):
 
         Args:
             converter: CalendarConverter instance or None.
+
         """
         self._calendar_converter = converter
         self._render_list()
@@ -248,6 +252,7 @@ class UnifiedListWidget(QWidget):
 
         Returns:
             str: Formatted date string in dd.mm.yyyy - hh:mm format.
+
         """
         if not self._calendar_converter:
             return str(lore_date)
@@ -281,6 +286,7 @@ class UnifiedListWidget(QWidget):
 
         Args:
             active: True if a filter is currently applied.
+
         """
         if active:
             # Use theme-aware styling or a distinct color
@@ -300,6 +306,7 @@ class UnifiedListWidget(QWidget):
         Args:
             config: Filter configuration dict with 'include', 'include_mode', 'exclude',
                     'exclude_mode' keys.
+
         """
         self._advanced_filter_config = config or {}
         has_filter = bool(config.get("include") or config.get("exclude"))
@@ -311,6 +318,7 @@ class UnifiedListWidget(QWidget):
 
         Returns:
             dict: The current filter configuration.
+
         """
         return self._advanced_filter_config
 
@@ -454,6 +462,7 @@ class UnifiedListWidget(QWidget):
 
         Args:
             text (str): The search text.
+
         """
         self._search_term = text.lower().strip()
         self._render_list()
@@ -467,6 +476,7 @@ class UnifiedListWidget(QWidget):
 
         Returns:
             bool: True if matches search (or no search active).
+
         """
         from src.core.search_utils import SearchUtils
 
@@ -480,6 +490,7 @@ class UnifiedListWidget(QWidget):
 
         Returns:
             bool: True if passes all advanced filters.
+
         """
         if not self._advanced_filter_config:
             return True
@@ -525,6 +536,7 @@ class UnifiedListWidget(QWidget):
 
         Returns:
             bool: True if passes all filters.
+
         """
         # Check advanced tag filters
         if not self._passes_advanced_filters(obj):
@@ -543,6 +555,7 @@ class UnifiedListWidget(QWidget):
 
         Args:
             text (str): The selected filter text.
+
         """
         self._render_list()
 
@@ -552,6 +565,7 @@ class UnifiedListWidget(QWidget):
 
         Args:
             text (str): The selected sort field.
+
         """
         self._render_list()
 
@@ -568,6 +582,7 @@ class UnifiedListWidget(QWidget):
 
         Args:
             item: The item whose checkbox changed.
+
         """
         # Block signals to prevent recursion
         self.list_widget.blockSignals(True)
@@ -663,6 +678,7 @@ class UnifiedListWidget(QWidget):
         Args:
             item_type (str): "event" or "entity".
             item_id (str): The ID of the item to select.
+
         """
 
         def find_and_select() -> bool:
@@ -712,6 +728,7 @@ class UnifiedListWidget(QWidget):
 
         Returns:
             QSize: Minimum size for usable project explorer.
+
         """
         return QSize(250, 200)  # Width for list items, height for toolbar + items
 
@@ -720,5 +737,6 @@ class UnifiedListWidget(QWidget):
 
         Returns:
             QSize: Comfortable working size for browsing items.
+
         """
         return QSize(350, 500)  # Comfortable browsing size

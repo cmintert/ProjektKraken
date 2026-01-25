@@ -52,6 +52,7 @@ def setup_logging(debug_mode: bool = False, log_to_console: bool = True) -> None
     Args:
         debug_mode (bool): If True, sets level to DEBUG. Defaults to False (INFO).
         log_to_console (bool): If True, adds a StreamHandler. Defaults to True.
+
     """
     # 1. Create Log Directory
     try:
@@ -115,6 +116,7 @@ def get_logger(name: str) -> logging.Logger:
 
     Returns:
         logging.Logger: The logger instance.
+
     """
     return logging.getLogger(name)
 

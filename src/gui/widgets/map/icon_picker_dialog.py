@@ -54,6 +54,7 @@ class IconPickerDialog(QDialog):
 
         Args:
             parent: Parent widget.
+
         """
         super().__init__(parent)
         self.setWindowTitle("Select Marker Icon")
@@ -114,6 +115,7 @@ class IconPickerDialog(QDialog):
 
         Args:
             icon_name: The selected icon filename.
+
         """
         self.selected_icon = icon_name
         self.accept()

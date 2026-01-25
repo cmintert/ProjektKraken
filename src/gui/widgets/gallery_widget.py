@@ -50,6 +50,7 @@ class GalleryWidget(QWidget):
 
         Args:
             main_window: Reference to MainWindow for command emission.
+
         """
         super().__init__()
         self.main_window = main_window
@@ -244,11 +245,11 @@ class GalleryWidget(QWidget):
 
     @Slot(QListWidgetItem)
     def on_item_double_clicked(self, item: QListWidgetItem) -> None:
-        """
-        Handle double-click on gallery item - open image viewer.
+        """Handle double-click on gallery item - open image viewer.
 
         Args:
             item: The clicked QListWidgetItem.
+
         """
         att_id = item.data(Qt.ItemDataRole.UserRole)
         # Find index in self.attachments
@@ -269,6 +270,7 @@ class GalleryWidget(QWidget):
 
         Args:
             pos: The position where the menu was requested.
+
         """
         item = self.list_widget.itemAt(pos)
         if not item:
@@ -308,6 +310,7 @@ class GalleryWidget(QWidget):
 
         Args:
             item: The QListWidgetItem representing the attachment.
+
         """
         att_id = item.data(Qt.ItemDataRole.UserRole)
         # Find current caption
@@ -325,6 +328,7 @@ class GalleryWidget(QWidget):
 
         Args:
             item: The QListWidgetItem representing the attachment.
+
         """
         att_id = item.data(Qt.ItemDataRole.UserRole)
         confirm = QMessageBox.question(
@@ -379,6 +383,7 @@ class GalleryWidget(QWidget):
 
         Returns:
             QSize: Minimum size for usable gallery.
+
         """
         from PySide6.QtCore import QSize
 
@@ -389,6 +394,7 @@ class GalleryWidget(QWidget):
 
         Returns:
             QSize: Comfortable working size.
+
         """
         from PySide6.QtCore import QSize
 

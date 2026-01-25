@@ -28,6 +28,7 @@ class WebServerThread(QThread):
         Args:
             config: Server configuration (host, port, db_path).
             parent: Optional parent QObject for Qt parent-child relationship.
+
         """
         super().__init__(parent)
         self.config = config
@@ -89,6 +90,7 @@ class WebServiceManager(QObject):
 
         Args:
             parent: Optional parent QObject for Qt parent-child relationship.
+
         """
         super().__init__(parent)
         self._thread: Optional[WebServerThread] = None
@@ -100,6 +102,7 @@ class WebServiceManager(QObject):
 
         Returns:
             True if server thread is active and running, False otherwise.
+
         """
         return self._thread is not None and self._thread.isRunning()
 
@@ -170,6 +173,7 @@ class WebServiceManager(QObject):
 
         Args:
             msg: The error message from the server thread.
+
         """
         self.error_occurred.emit(msg)
         self.stop_server()

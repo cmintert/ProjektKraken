@@ -60,6 +60,7 @@ class _DockEventFilter(QObject):
         Args:
             dock_name: Name of the dock widget being monitored.
             logger: Logger instance for output.
+
         """
         super().__init__()
         self._name = dock_name
@@ -74,6 +75,7 @@ class _DockEventFilter(QObject):
 
         Returns:
             bool: Always False (don't consume events).
+
         """
         if event.type() == QEvent.Type.Resize:
             # s = event.size()
@@ -102,6 +104,7 @@ class UIManager:
 
         Args:
             main_window: A MainWindow instance implementing MainWindowProtocol.
+
         """
         self.main_window = main_window
         self.docks = {}
@@ -114,6 +117,7 @@ class UIManager:
 
         Args:
             dock: The dock widget to monitor.
+
         """
         from src.core.logging_config import get_logger
 
@@ -155,6 +159,7 @@ class UIManager:
                 - 'longform_editor': LongformEditorWidget
                 - 'map_widget': MapWidget
                 - 'ai_search_panel': AISearchPanelWidget (optional)
+
         """
         from src.core.logging_config import get_logger
 
@@ -356,6 +361,7 @@ class UIManager:
 
         Returns:
             Configured QDockWidget with size constraints, or None if creation fails.
+
         """
         from PySide6.QtWidgets import QSizePolicy
 
@@ -574,6 +580,7 @@ class UIManager:
 
         Args:
             name: The name of the layout.
+
         """
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         layouts = settings.value(SETTINGS_LAYOUTS_KEY, {})
@@ -596,6 +603,7 @@ class UIManager:
 
         Args:
             name: The name of the layout to restore.
+
         """
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         layouts = settings.value(SETTINGS_LAYOUTS_KEY, {})
@@ -616,6 +624,7 @@ class UIManager:
 
         Args:
             name: The name of the layout to delete.
+
         """
         reply = QMessageBox.question(
             self.main_window,
@@ -637,6 +646,7 @@ class UIManager:
 
         Returns:
             List[str]: Sorted list of layout names.
+
         """
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         layouts = settings.value(SETTINGS_LAYOUTS_KEY, {})
@@ -808,6 +818,7 @@ class UIManager:
 
         Args:
             current_config: CalendarConfig or None.
+
         """
         if not self._calendar_dialog_pending:
             return
@@ -827,6 +838,7 @@ class UIManager:
 
             Args:
                 config: The calendar configuration to save.
+
             """
             # Save the config
             if current_config and current_config.id == config.id:

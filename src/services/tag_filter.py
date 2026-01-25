@@ -39,6 +39,7 @@ class FilterClause(ABC):
 
         Returns:
             Set[Tuple[str, str]]: Set of matching (object_type, object_id) tuples.
+
         """
         pass
 
@@ -59,6 +60,7 @@ class TagClause(FilterClause):
         exclude: List of tag names to exclude.
         exclude_mode: 'any' or 'all' - whether to exclude if object has any or all tags.
         case_sensitive: If True, use exact case matching. If False (default), case-insensitive.
+
     """
 
     include: Optional[List[str]] = None
@@ -78,6 +80,7 @@ class TagClause(FilterClause):
 
         Returns:
             Set[Tuple[str, str]]: Set of matching (object_type, object_id) tuples.
+
         """
         # Step 1: Apply include filter
         if self.include and len(self.include) > 0:
@@ -104,6 +107,7 @@ class TagClause(FilterClause):
 
         Returns:
             Set[Tuple[str, str]]: Set of all (object_type, object_id) tuples.
+
         """
         results = set()
 
@@ -130,6 +134,7 @@ class TagClause(FilterClause):
 
         Returns:
             Set[Tuple[str, str]]: Set of included (object_type, object_id) tuples.
+
         """
         if not self.include:
             return set()
@@ -161,6 +166,7 @@ class TagClause(FilterClause):
 
         Returns:
             Set[Tuple[str, str]]: Set of excluded (object_type, object_id) tuples.
+
         """
         if not self.exclude:
             return set()
@@ -198,6 +204,7 @@ class TagClause(FilterClause):
 
         Returns:
             Set[str]: Set of entity IDs matching the criteria.
+
         """
         if not tag_names:
             return set()
@@ -221,6 +228,7 @@ class TagClause(FilterClause):
 
         Returns:
             Set[str]: Set of entity IDs.
+
         """
         if case_sensitive:
             placeholders = ",".join(["?"] * len(tag_names))
@@ -255,6 +263,7 @@ class TagClause(FilterClause):
 
         Returns:
             Set[str]: Set of entity IDs.
+
         """
         if case_sensitive:
             placeholders = ",".join(["?"] * len(tag_names))
@@ -300,6 +309,7 @@ class TagClause(FilterClause):
 
         Returns:
             Set[str]: Set of event IDs matching the criteria.
+
         """
         if not tag_names:
             return set()
@@ -323,6 +333,7 @@ class TagClause(FilterClause):
 
         Returns:
             Set[str]: Set of event IDs.
+
         """
         if case_sensitive:
             placeholders = ",".join(["?"] * len(tag_names))
@@ -357,6 +368,7 @@ class TagClause(FilterClause):
 
         Returns:
             Set[str]: Set of event IDs.
+
         """
         if case_sensitive:
             placeholders = ",".join(["?"] * len(tag_names))
@@ -429,6 +441,7 @@ def filter_object_ids(
         # Get all objects with 'important' but not 'archived'
         >>> filter_object_ids(conn, include=['important'], exclude=['archived'])
         [('entity', 'uuid-1'), ('event', 'uuid-4')]
+
     """
     # Validate object_type
     if object_type is not None and object_type not in ("entity", "event"):
@@ -477,6 +490,7 @@ def _get_connection(
 
     Raises:
         ValueError: If DatabaseService is not connected.
+
     """
     if isinstance(conn_or_db_service, sqlite3.Connection):
         return conn_or_db_service

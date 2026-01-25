@@ -49,6 +49,7 @@ class GenerationReviewDialog(QDialog):
         Args:
             generated_text: The LLM-generated text to review.
             parent: Parent widget.
+
         """
         super().__init__(parent)
         self.setWindowTitle("Review Generated Content")
@@ -67,6 +68,7 @@ class GenerationReviewDialog(QDialog):
 
         Args:
             generated_text: Initial text to display in editor.
+
         """
         main_layout = QVBoxLayout(self)
         StyleHelper.apply_standard_list_spacing(main_layout)
@@ -139,6 +141,7 @@ class GenerationReviewDialog(QDialog):
 
         Returns:
             str: The text in the editor (possibly edited by user).
+
         """
         return self.text_edit.toPlainText()
 
@@ -147,6 +150,7 @@ class GenerationReviewDialog(QDialog):
 
         Returns:
             dict: Result with 'action', 'text', and 'rating' keys.
+
         """
         return {
             "action": self.action,

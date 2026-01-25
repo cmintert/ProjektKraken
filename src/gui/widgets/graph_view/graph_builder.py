@@ -57,6 +57,7 @@ class GraphBuilder:
 
         Returns:
             Tuple of (js_content, css_content, utils_content) strings.
+
         """
         if cls._vis_js_content is None or cls._vis_css_content is None:
             try:
@@ -114,6 +115,7 @@ class GraphBuilder:
 
         Returns:
             HTML string for embedding in QWebEngineView.
+
         """
         try:
             theme = theme_config or self.DEFAULT_THEME
@@ -153,6 +155,7 @@ class GraphBuilder:
 
         Returns:
             Configured PyVis Network.
+
         """
         net = Network(
             height=height,
@@ -258,6 +261,7 @@ class GraphBuilder:
 
         Returns:
             HTML string.
+
         """
         # PyVis requires writing to a file, so we use a temp file
         with tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False) as f:
@@ -378,11 +382,11 @@ class GraphBuilder:
             // Wait for network to be initialized (PyVis usually inits at bottom).
             // Safer to set timeout or check if network is defined.
             // PyVis 0.3.2+ typically matches 'network' variable name.
-            
+
             var checkNetwork = setInterval(function() {
                 if (typeof network !== 'undefined') {
                     clearInterval(checkNetwork);
-                    
+
                     // Interaction: Click
                     network.on("click", function (params) {
                         if (params.nodes.length > 0) {
@@ -390,7 +394,7 @@ class GraphBuilder:
                             // We need to look up object_type.
                             // PyVis 'nodes' is a vis.DataSet or DataView.
                             var nodeData = nodes.get(nodeId);
-                            
+
                             if (nodeData && window.bridge) {
                                 // Default to 'entity' if missing, but should be there
                                 var objType = nodeData.object_type || "entity";
@@ -402,7 +406,7 @@ class GraphBuilder:
                     // Interaction: Restore Focus
                     // Use 'stabilized' event which fires when physics stops
                     var focusId = %FOCUS_ID%;
-                    
+
                     function restoreFocus() {
                         if (focusId !== null) {
                             // Check if node exists in dataset
@@ -424,7 +428,7 @@ class GraphBuilder:
                             }
                         }
                     }
-                    
+
                     // Try stabilized event first, with timeout fallback
                     var focusRestored = false;
                     network.once("stabilized", function() {
@@ -433,7 +437,7 @@ class GraphBuilder:
                             restoreFocus();
                         }
                     });
-                    
+
                     // Fallback: if stabilized doesn't fire within 2s, force focus
                     setTimeout(function() {
                         if (!focusRestored) {
@@ -464,6 +468,7 @@ class GraphBuilder:
 
         Returns:
             HTML string with empty state message.
+
         """
         theme = theme_config or self.DEFAULT_THEME
         bg_color = theme.get("background_color", "#1e1e1e")

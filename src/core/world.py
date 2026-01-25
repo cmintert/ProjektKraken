@@ -38,6 +38,7 @@ class WorldManifest:
 
         Returns:
             dict: Dictionary representation of the manifest.
+
         """
         return {
             "id": self.id,
@@ -58,6 +59,7 @@ class WorldManifest:
 
         Returns:
             WorldManifest: Manifest instance.
+
         """
         return cls(
             id=data.get("id", str(uuid.uuid4())),
@@ -143,6 +145,7 @@ class World:
 
         Returns:
             World instance if valid, None otherwise.
+
         """
         manifest_path = world_path / "world.json"
 
@@ -182,6 +185,7 @@ class World:
 
         Raises:
             ValueError: If world with same name already exists.
+
         """
         import time
 
@@ -220,6 +224,7 @@ class WorldManager:
 
         Args:
             worlds_dir: Path to the worlds/ directory.
+
         """
         self.worlds_dir = worlds_dir
         self.worlds_dir.mkdir(parents=True, exist_ok=True)
@@ -229,6 +234,7 @@ class WorldManager:
 
         Returns:
             List of World instances found in the directory.
+
         """
         worlds = []
 
@@ -256,6 +262,7 @@ class WorldManager:
 
         Returns:
             World instance if found, None otherwise.
+
         """
         worlds = self.discover_worlds()
         for world in worlds:
@@ -275,6 +282,7 @@ class WorldManager:
 
         Raises:
             ValueError: If world with same name exists.
+
         """
         return World.create(self.worlds_dir, name, description)
 
@@ -286,6 +294,7 @@ class WorldManager:
 
         Raises:
             OSError: If deletion fails.
+
         """
         import shutil
 

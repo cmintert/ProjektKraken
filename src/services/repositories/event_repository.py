@@ -27,6 +27,7 @@ class EventRepository(BaseRepository):
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         sql = """
             INSERT INTO events (id, type, name, lore_date, lore_duration,
@@ -65,6 +66,7 @@ class EventRepository(BaseRepository):
 
         Returns:
             The Event object if found, else None.
+
         """
         sql = "SELECT * FROM events WHERE id = ?"
 
@@ -86,6 +88,7 @@ class EventRepository(BaseRepository):
 
         Returns:
             List of all Event objects in the database.
+
         """
         sql = "SELECT * FROM events ORDER BY lore_date ASC"
 
@@ -109,6 +112,7 @@ class EventRepository(BaseRepository):
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         with self.transaction() as conn:
             conn.execute("DELETE FROM events WHERE id = ?", (event_id,))
@@ -121,6 +125,7 @@ class EventRepository(BaseRepository):
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         sql = """
             INSERT INTO events (id, type, name, lore_date, lore_duration,
@@ -163,6 +168,7 @@ class EventRepository(BaseRepository):
 
         Returns:
             List of Event objects within the date range.
+
         """
         sql = """
             SELECT * FROM events
@@ -190,6 +196,7 @@ class EventRepository(BaseRepository):
 
         Returns:
             List of Event objects of the specified type.
+
         """
         sql = "SELECT * FROM events WHERE type = ? ORDER BY lore_date ASC"
 

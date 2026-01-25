@@ -26,6 +26,7 @@ class EmptyStateWidget(QLabel):
         Args:
             message: The message to display in the empty state.
             parent: The parent widget, if any.
+
         """
         super().__init__(message, parent)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -37,5 +38,6 @@ class EmptyStateWidget(QLabel):
 
         Args:
             message: The new message to display.
+
         """
         self.setText(message)

@@ -40,6 +40,7 @@ class Relation:
         confidence: Certainty level (float, 0.0-1.0)
         source: Citation or reference (str)
         notes: Additional context (str)
+
     """
 
     source_id: str
@@ -56,6 +57,7 @@ class Relation:
 
         Returns:
             Dict[str, Any]: A dictionary containing all the relation's data.
+
         """
         return {
             "id": self.id,
@@ -75,6 +77,7 @@ class Relation:
 
         Returns:
             Relation: A new Relation instance.
+
         """
         d = data.copy()
         # Handle explicit None from database (overrides default_factory)
@@ -88,6 +91,7 @@ class Relation:
 
         Returns:
             float: Weight value (default 1.0 if not set).
+
         """
         return self.attributes.get("weight", 1.0)
 
@@ -97,6 +101,7 @@ class Relation:
 
         Args:
             value: Weight value (typically 0.0-1.0 but not enforced).
+
         """
         self.attributes["weight"] = value
 
@@ -106,6 +111,7 @@ class Relation:
 
         Returns:
             float: Confidence value (default 1.0 if not set).
+
         """
         return self.attributes.get("confidence", 1.0)
 
@@ -115,5 +121,6 @@ class Relation:
 
         Args:
             value: Confidence value (0.0 = uncertain, 1.0 = certain).
+
         """
         self.attributes["confidence"] = value

@@ -30,6 +30,7 @@ class ImportAction(Enum):
         OVERWRITE: Replace an existing item entirely.
         SKIP: Skip importing this item.
         AMBIGUOUS: Multiple matches found, user decision needed.
+
     """
 
     CREATE = "create"
@@ -66,6 +67,7 @@ class ImportService:
 
         Args:
             db_service: The database service for persistence.
+
         """
         self._db = db_service
         self._date_parser: Optional[DateParser] = None
@@ -132,6 +134,7 @@ class ImportService:
 
         Raises:
             ValueError: If JSON is invalid or schema is violated.
+
         """
         if isinstance(json_data, str):
             try:
@@ -176,6 +179,7 @@ class ImportService:
 
         Returns:
             ImportResult object.
+
         """
         options = options or {}
         # mode = options.get("mode", "update") # defaults within conflict resolver
@@ -315,6 +319,7 @@ class ImportService:
 
         Returns:
             ID of created entity or None.
+
         """
         options = options or {}
         mode = options.get("mode", "update").lower()
@@ -568,6 +573,7 @@ class ImportService:
 
         Returns:
             ID of created event or None.
+
         """
         options = options or {}
         mode = options.get("mode", "update").lower()
@@ -742,6 +748,7 @@ class ImportService:
 
         Returns:
             Tuple of (relation_id, was_created). was_created is True if new.
+
         """
         source_id = data.get("source_id")
         target_id = data.get("target_id")
@@ -793,6 +800,7 @@ class ImportService:
 
         Returns:
             Resolved ID or None.
+
         """
         # Search DB for Entities
         entities = (

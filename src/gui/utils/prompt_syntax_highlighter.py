@@ -1,9 +1,10 @@
 import re
+
 from PySide6.QtGui import (
-    QSyntaxHighlighter,
-    QTextCharFormat,
     QColor,
     QFont,
+    QSyntaxHighlighter,
+    QTextCharFormat,
     QTextDocument,
 )
 

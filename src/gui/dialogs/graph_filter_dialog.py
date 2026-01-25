@@ -37,6 +37,7 @@ class GraphFilterDialog(QDialog):
             available_tags: List of available tags.
             available_rel_types: List of available relation types.
             current_config: Current configuration dictionary with keys 'tags' and 'rel_types'.
+
         """
         super().__init__(parent)
         self.setWindowTitle("Graph Advanced Filter")
@@ -96,6 +97,7 @@ class GraphFilterDialog(QDialog):
                 "tags": Dict (filter config),
                 "rel_types": Dict (filter config)
             }
+
         """
         return {
             "tags": self.tag_filter_widget.get_config(),

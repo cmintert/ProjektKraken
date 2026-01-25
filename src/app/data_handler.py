@@ -107,6 +107,7 @@ class DataHandler(QObject):
 
         Args:
             events: List of Event objects.
+
         """
         self._cached_events = events
         self.events_ready.emit(events)
@@ -124,6 +125,7 @@ class DataHandler(QObject):
 
         Args:
             entities: List of Entity objects.
+
         """
         self._cached_entities = entities
         self.entities_ready.emit(entities)
@@ -171,6 +173,7 @@ class DataHandler(QObject):
             event: The event object.
             relations: Outgoing relations.
             incoming: Incoming relations.
+
         """
         # Dock raising is now handled by the Controller (MainWindow) via user actions,
         # not automatically on data load. This prevents focus stealing during
@@ -187,6 +190,7 @@ class DataHandler(QObject):
             entity: The entity object.
             relations: Outgoing relations.
             incoming: Incoming relations.
+
         """
         # Dock raising is now handled by the Controller (MainWindow) via user actions.
         self.entity_details_ready.emit(entity, relations, incoming)
@@ -197,6 +201,7 @@ class DataHandler(QObject):
 
         Args:
             sequence: List of longform items.
+
         """
         self.longform_sequence_ready.emit(sequence)
         self.status_message.emit(f"Loaded {len(sequence)} longform items.")
@@ -207,6 +212,7 @@ class DataHandler(QObject):
 
         Args:
             maps: List of Map objects.
+
         """
         self.maps_ready.emit(maps)
         self.status_message.emit(f"Loaded {len(maps)} maps.")
@@ -218,6 +224,7 @@ class DataHandler(QObject):
         Args:
             map_id: The map ID.
             markers: List of Marker objects.
+
         """
         # Process markers to add labels from cached data
         processed_markers = []
@@ -277,6 +284,7 @@ class DataHandler(QObject):
 
         Args:
             result: CommandResult object containing execution status.
+
         """
         logger.info(
             f"[DataHandler] on_command_finished: {result.command_name} "
@@ -357,6 +365,7 @@ class DataHandler(QObject):
         Args:
             nodes: List of node dictionaries.
             edges: List of edge dictionaries.
+
         """
         self.graph_data_ready.emit(nodes, edges)
         self.status_message.emit(f"Loaded {len(nodes)} nodes and {len(edges)} edges.")
@@ -368,5 +377,6 @@ class DataHandler(QObject):
         Args:
             tags: List of tag strings.
             rel_types: List of relation type strings.
+
         """
         self.graph_metadata_ready.emit(tags, rel_types)

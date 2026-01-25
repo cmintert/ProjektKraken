@@ -37,6 +37,7 @@ class EntityListWidget(QWidget):
 
         Args:
             parent (QWidget, optional): The parent widget. Defaults to None.
+
         """
         super().__init__(parent)
         if parent:
@@ -123,6 +124,7 @@ class EntityListWidget(QWidget):
 
         Returns:
             QSize: Minimum size for usable entity list.
+
         """
         from PySide6.QtCore import QSize
 
@@ -133,6 +135,7 @@ class EntityListWidget(QWidget):
 
         Returns:
             QSize: Comfortable working size.
+
         """
         from PySide6.QtCore import QSize
 

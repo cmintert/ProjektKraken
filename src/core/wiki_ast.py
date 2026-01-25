@@ -34,6 +34,7 @@ class SourceSpan:
     Attributes:
         start: Starting character index (inclusive).
         end: Ending character index (exclusive).
+
     """
 
     start: int
@@ -59,6 +60,7 @@ class WikiNode:
         attributes: Additional attributes (e.g., heading level, link target).
         md_span: Position in Markdown source.
         html_span: Position in generated HTML.
+
     """
 
     node_type: NodeType
@@ -97,6 +99,7 @@ class WikiASTParser:
 
         Returns:
             WikiNode: The root node of the AST.
+
         """
         root = WikiNode(
             node_type=NodeType.ROOT,
@@ -286,6 +289,7 @@ class WikiASTSerializer:
 
         Returns:
             Tuple of (markdown_string, updated_root_with_spans).
+
         """
         result: List[str] = []
         pos = 0
@@ -372,6 +376,7 @@ class WikiASTSerializer:
 
         Returns:
             Tuple of (html_string, updated_root_with_spans).
+
         """
         result: List[str] = []
         pos = 0
@@ -473,6 +478,7 @@ class WikiASTSerializer:
 
         Returns:
             Tuple of (plaintext_string, updated_root_with_spans).
+
         """
         result: List[str] = []
         pos = 0
@@ -543,6 +549,7 @@ class CursorMapper:
 
         Args:
             ast: The root node with source mappings.
+
         """
         self.ast = ast
         self._leaf_nodes: List[WikiNode] = []
@@ -563,6 +570,7 @@ class CursorMapper:
 
         Returns:
             Corresponding position in HTML.
+
         """
         for node in self._leaf_nodes:
             if node.md_span and node.md_span.contains(md_pos):
@@ -599,6 +607,7 @@ class CursorMapper:
 
         Returns:
             Corresponding position in Markdown.
+
         """
         for node in self._leaf_nodes:
             if node.html_span and node.html_span.contains(html_pos):

@@ -46,6 +46,7 @@ class AnthropicProvider(Provider):
 
         Raises:
             ValueError: If api_key is not provided.
+
         """
         if not api_key:
             raise ValueError("Anthropic API key is required")
@@ -104,6 +105,7 @@ class AnthropicProvider(Provider):
 
         Raises:
             NotImplementedError: Anthropic does not provide embeddings.
+
         """
         raise NotImplementedError(
             "Anthropic does not provide an embeddings API. "
@@ -132,6 +134,7 @@ class AnthropicProvider(Provider):
 
         Raises:
             Exception: If generation fails.
+
         """
 
         def _generate_impl() -> str:
@@ -224,6 +227,7 @@ class AnthropicProvider(Provider):
 
         Raises:
             Exception: If streaming fails.
+
         """
         payload = {
             "model": self.model,
@@ -295,6 +299,7 @@ class AnthropicProvider(Provider):
 
         Returns:
             Dict containing status, latency_ms, and message.
+
         """
         try:
             start_time = time.time()
@@ -348,6 +353,7 @@ class AnthropicProvider(Provider):
 
         Returns:
             Dict containing provider information and capabilities.
+
         """
         return {
             "provider_id": "anthropic",

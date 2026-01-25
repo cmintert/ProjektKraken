@@ -28,6 +28,7 @@ class SummaryService:
 
         Args:
             db_service: Database service instance for persisting summaries.
+
         """
         self.db_service = db_service
         # We delay provider creation until needed or create it here.
@@ -46,6 +47,7 @@ class SummaryService:
 
         Raises:
             ValueError: If no AI provider is enabled in settings.
+
         """
         if not self._llm_provider:
             from PySide6.QtCore import QSettings
@@ -86,6 +88,7 @@ class SummaryService:
 
         Returns:
             str: SHA-256 hex digest of the item's content.
+
         """
         content = f"{item.name}|{item.type}|{item.description}"
         # We can add more fields later (e.g. key attributes)
@@ -102,6 +105,7 @@ class SummaryService:
 
         Returns:
             bool: True if summary is missing or content has changed.
+
         """
         summary_data = item.attributes.get("_summary_data")
         if not summary_data:
@@ -122,6 +126,7 @@ class SummaryService:
 
         Returns:
             Optional[SummaryData]: Cached summary if valid, None if stale or missing.
+
         """
         if self.is_stale(item):
             return None
@@ -144,6 +149,7 @@ class SummaryService:
 
         Raises:
             RuntimeError: If AI provider times out, connection fails, or generation fails.
+
         """
         try:
             provider = self._get_provider()
@@ -204,6 +210,7 @@ class SummaryService:
 
         Returns:
             str: Formatted prompt string ready for LLM.
+
         """
         from PySide6.QtCore import QSettings
 

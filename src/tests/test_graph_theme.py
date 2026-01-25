@@ -15,7 +15,6 @@ def graph_widget(qapp: Any) -> GraphWidget:
 
 def test_theme_change_triggers_update(graph_widget: GraphWidget) -> None:
     """Test that changing the theme updates the graph configuration."""
-
     # Mock builder to check calls
     graph_widget._builder = MagicMock()
     graph_widget._builder.build_empty_html.return_value = "<html>Empty</html>"

@@ -52,6 +52,7 @@ class FastInjectDialog(QDialog):
             target_name: Name of the target entity/event (for display).
             parent: Parent widget.
             manager: FastInjectManager instance (for saving changes).
+
         """
         super().__init__(parent)
         self.templates = templates

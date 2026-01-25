@@ -39,6 +39,7 @@ class Event:
         Returns:
             Dict[str, Any]: A dictionary containing all the event's data,
                             strictly typed keys.
+
         """
         return {
             "id": self.id,
@@ -61,6 +62,7 @@ class Event:
 
         Returns:
             Event: A new Event instance populated with the data.
+
         """
         # Create a shallow copy to avoid modifying input
         d = data.copy()
@@ -76,6 +78,7 @@ class Event:
 
         Returns:
             list[str]: List of tag strings.
+
         """
         return self.attributes.get("_tags", [])
 
@@ -85,5 +88,6 @@ class Event:
 
         Args:
             value (list[str]): List of tag strings.
+
         """
         self.attributes["_tags"] = value

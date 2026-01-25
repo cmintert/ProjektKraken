@@ -24,6 +24,7 @@ class Map:
         attributes: Flexible JSON attributes for custom data.
         created_at: Unix timestamp of creation.
         modified_at: Unix timestamp of last modification.
+
     """
 
     name: str
@@ -39,6 +40,7 @@ class Map:
 
         Returns:
             Dict[str, Any]: Dictionary representation of the map.
+
         """
         return {
             "id": self.id,
@@ -59,6 +61,7 @@ class Map:
 
         Returns:
             Map: A new Map instance.
+
         """
         return cls(
             id=data.get("id", str(uuid.uuid4())),

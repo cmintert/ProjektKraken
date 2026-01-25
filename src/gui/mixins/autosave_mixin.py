@@ -32,6 +32,7 @@ class AutoSaveManager(QObject):
         Args:
             target: The object to auto-save (must satisfy AutoSaveSource protocol)
             delay_ms: Debounce delay in milliseconds. Defaults to constant.
+
         """
         super().__init__(parent=target if isinstance(target, QObject) else None)
         self._target = target

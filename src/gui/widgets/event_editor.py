@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.events import Event
+from src.core.summary_data import SummaryData
 from src.gui.mixins.autosave_mixin import AutoSaveManager
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.compact_date_widget import CompactDateWidget
@@ -31,10 +32,9 @@ from src.gui.widgets.compact_duration_widget import CompactDurationWidget
 from src.gui.widgets.relation_item_widget import RelationItemWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
 from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
+from src.gui.widgets.summary_widget import SummaryWidget
 from src.gui.widgets.tag_editor import TagEditorWidget
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
-from src.gui.widgets.summary_widget import SummaryWidget
-from src.core.summary_data import SummaryData
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +74,7 @@ class EventEditorWidget(QWidget):
 
         Args:
             parent: The parent widget, if any.
+
         """
         QWidget.__init__(self, parent)
         self.autosave_manager = AutoSaveManager(self)
@@ -415,6 +416,7 @@ class EventEditorWidget(QWidget):
 
         Args:
             dirty (bool): True if changes are unsaved, False otherwise.
+
         """
         if self._current_event_id is None and dirty:
             logger.debug(f"[EventEditor] set_dirty({dirty}) ignored - no event loaded")
@@ -476,6 +478,7 @@ class EventEditorWidget(QWidget):
 
         Args:
             converter: CalendarConverter instance or None.
+
         """
         self._calendar_converter = converter
         self.date_edit.set_calendar_converter(converter)
@@ -495,6 +498,7 @@ class EventEditorWidget(QWidget):
         Args:
             items: List of (id, name, type) tuples for entities/events.
             names: Legacy list of names (for backward compatibility).
+
         """
         self.desc_edit.set_completer(items=items, names=names)
 
@@ -529,6 +533,7 @@ class EventEditorWidget(QWidget):
             event (Event): The event to edit.
             relations (list): List of outgoing relation dicts.
             incoming_relations (list): List of incoming relation dicts.
+
         """
         self._current_event_id = event.id
         self._current_created_at = event.created_at  # Preserve validation data
@@ -956,6 +961,7 @@ class EventEditorWidget(QWidget):
 
         Returns:
             dict: Context dictionary with 'name', 'type', 'lore_date', etc.
+
         """
         context = {
             "name": self.name_edit.text(),
@@ -1007,6 +1013,7 @@ class EventEditorWidget(QWidget):
 
         Args:
             text: Generated text from LLM.
+
         """
         if not text:
             return
@@ -1031,6 +1038,7 @@ class EventEditorWidget(QWidget):
 
         Returns:
             QSize: Minimum size for usable event editor.
+
         """
         return QSize(300, 200)  # Width for form labels, height for controls
 
@@ -1039,6 +1047,7 @@ class EventEditorWidget(QWidget):
 
         Returns:
             QSize: Comfortable working size for editing events.
+
         """
         return QSize(400, 600)  # Ideal size for editing
 

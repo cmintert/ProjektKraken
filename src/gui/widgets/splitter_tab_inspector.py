@@ -23,7 +23,8 @@ logger = get_logger(__name__)
 
 class DraggableTabBar(QTabBar):
     """A QTabBar that supports drag-and-drop for rearranging tabs across different
-    QTabWidgets within the same splitter."""
+    QTabWidgets within the same splitter.
+    """
 
     tab_dragged = Signal(int)  # Emitted when a tab drag starts
 
@@ -113,6 +114,7 @@ class DraggableTabBar(QTabBar):
 
         Args:
             tab_widget: The tab widget to check and potentially remove.
+
         """
         logger.debug(
             f"DraggableTabBar._cleanup_empty_pane: checking tab_widget="
@@ -234,6 +236,7 @@ class DraggableTabWidget(QTabWidget):
         Args:
             tab_widget: The tab widget to check and potentially remove.
             splitter: The parent splitter containing the tab widget.
+
         """
         logger.debug(
             f"_cleanup_empty_pane: checking tab_widget="
@@ -307,6 +310,7 @@ class SplitterTabInspector(QWidget):
         Args:
             widget (QWidget): The widget to add.
             title (str): The tab title.
+
         """
         self.main_tabs.addTab(widget, title)
 
@@ -319,6 +323,7 @@ class SplitterTabInspector(QWidget):
 
         Returns:
             QSize: Minimum size for usable tab inspector.
+
         """
         from PySide6.QtCore import QSize
 
@@ -329,6 +334,7 @@ class SplitterTabInspector(QWidget):
 
         Returns:
             QSize: Comfortable working size for inspector tabs.
+
         """
         from PySide6.QtCore import QSize
 

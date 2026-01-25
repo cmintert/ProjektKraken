@@ -90,6 +90,7 @@ class MarkerItem(QGraphicsObject):
             color: Optional color hex string.
             description: Optional description for tooltip. Falls back to label if empty.
             lore_date: Optional lore timestamp for temporal filtering.
+
         """
         super().__init__()
 
@@ -159,6 +160,7 @@ class MarkerItem(QGraphicsObject):
 
         Args:
             icon_name: Filename of the icon (e.g., 'castle.svg').
+
         """
         if not icon_name:
             icon_name = self.DEFAULT_ICON
@@ -180,6 +182,7 @@ class MarkerItem(QGraphicsObject):
 
         Args:
             icon_name: Filename of the new icon.
+
         """
         self._load_icon(icon_name)
         self.update()
@@ -189,6 +192,7 @@ class MarkerItem(QGraphicsObject):
 
         Returns:
             Optional[str]: The icon filename or None if using fallback.
+
         """
         return self._icon_name
 
@@ -197,6 +201,7 @@ class MarkerItem(QGraphicsObject):
 
         Args:
             color: The hex color string (e.g., '#FF5733').
+
         """
         self._custom_color = color
         self._color = QColor(color)
@@ -207,6 +212,7 @@ class MarkerItem(QGraphicsObject):
 
         Returns:
             Optional[str]: The hex color string or None.
+
         """
         return self._custom_color
 
@@ -216,6 +222,7 @@ class MarkerItem(QGraphicsObject):
         Args:
             is_future: If True, marker is in the future (dull/faded).
             is_past: If True, marker is in the past (reserved for "visited" styling).
+
         """
         if self.is_future == is_future and self.is_past == is_past:
             return
@@ -236,7 +243,8 @@ class MarkerItem(QGraphicsObject):
 
     def _get_effective_color(self) -> QColor:
         """Returns the color modified by current state (e.g., deseaturated if
-        future)."""
+        future).
+        """
         color = QColor(self._color)
 
         if self.is_future:
@@ -255,6 +263,7 @@ class MarkerItem(QGraphicsObject):
 
         Returns:
             QRectF: The bounding rect centered on (0, 0).
+
         """
         half = self.MARKER_SIZE / 2
         return QRectF(-half, -half, self.MARKER_SIZE, self.MARKER_SIZE)
@@ -271,6 +280,7 @@ class MarkerItem(QGraphicsObject):
             painter: The QPainter to use.
             option: Style options.
             widget: The widget being painted on.
+
         """
         painter.setRenderHint(QPainter.Antialiasing)
         rect = self.boundingRect()
@@ -402,5 +412,6 @@ class MarkerItem(QGraphicsObject):
 
         Returns:
             The processed value.
+
         """
         return super().itemChange(change, value)

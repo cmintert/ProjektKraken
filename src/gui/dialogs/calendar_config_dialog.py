@@ -65,6 +65,7 @@ class CalendarConfigDialog(QDialog):
         Args:
             parent: Parent widget.
             config: Optional existing config to edit. If None, creates new.
+
         """
         super().__init__(parent)
         self.setWindowTitle("Calendar Configuration")
@@ -324,6 +325,7 @@ class CalendarConfigDialog(QDialog):
 
         Returns:
             CalendarConfig: The configuration from current form values.
+
         """
         # Build months
         months = []
@@ -451,5 +453,6 @@ class CalendarConfigDialog(QDialog):
 
         Returns:
             CalendarConfig: The configuration from the dialog.
+
         """
         return self._config

@@ -21,6 +21,7 @@ class SearchUtils:
 
         Returns:
             bool: True if the object matches the search term (or term is empty).
+
         """
         if not search_term:
             return True

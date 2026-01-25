@@ -28,6 +28,7 @@ class Marker:
         attributes: Flexible JSON attributes for custom data.
         created_at: Unix timestamp of creation.
         modified_at: Unix timestamp of last modification.
+
     """
 
     map_id: str
@@ -46,6 +47,7 @@ class Marker:
 
         Returns:
             Dict[str, Any]: Dictionary representation of the marker.
+
         """
         return {
             "id": self.id,
@@ -69,6 +71,7 @@ class Marker:
 
         Returns:
             Marker: A new Marker instance.
+
         """
         return cls(
             id=data.get("id", str(uuid.uuid4())),

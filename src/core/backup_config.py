@@ -23,6 +23,7 @@ class BackupConfig:
         external_backup_path: Optional external location for additional copies.
         verify_after_backup: Whether to verify backup integrity after creation.
         vacuum_before_backup: Whether to run VACUUM before creating backup.
+
     """
 
     enabled: bool = True
@@ -41,6 +42,7 @@ class BackupConfig:
 
         Returns:
             dict: Dictionary representation of the configuration.
+
         """
         return {
             "enabled": self.enabled,
@@ -66,6 +68,7 @@ class BackupConfig:
 
         Returns:
             BackupConfig: A new BackupConfig instance.
+
         """
         backup_dir = Path(data["backup_dir"]) if data.get("backup_dir") else None
         external_backup_path = (

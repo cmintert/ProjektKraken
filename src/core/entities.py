@@ -34,6 +34,7 @@ class Entity:
 
         Returns:
             Dict[str, Any]: A dictionary containing all the entity's data.
+
         """
         return {
             "id": self.id,
@@ -54,6 +55,7 @@ class Entity:
 
         Returns:
             Entity: A new Entity instance.
+
         """
         d = data.copy()
         return cls(**d)
@@ -66,6 +68,7 @@ class Entity:
 
         Returns:
             list[str]: List of tag strings.
+
         """
         return self.attributes.get("_tags", [])
 
@@ -75,5 +78,6 @@ class Entity:
 
         Args:
             value (list[str]): List of tag strings.
+
         """
         self.attributes["_tags"] = value

@@ -26,6 +26,7 @@ class CommandCoordinator(QObject):
 
     Attributes:
         command_requested: Signal emitted when a command needs execution.
+
     """
 
     # Signal to send commands to worker thread
@@ -36,6 +37,7 @@ class CommandCoordinator(QObject):
 
         Args:
             main_window: Reference to the MainWindow instance.
+
         """
         super().__init__()
         self.window = main_window
@@ -46,6 +48,7 @@ class CommandCoordinator(QObject):
 
         Args:
             command: The command object to execute.
+
         """
         logger.debug(f"Executing command: {command.__class__.__name__}")
         self.command_requested.emit(command)
@@ -56,6 +59,7 @@ class CommandCoordinator(QObject):
 
         Args:
             result: CommandResult object containing execution status.
+
         """
         if result.success:
             logger.info(f"Command succeeded: {result.message}")
@@ -70,6 +74,7 @@ class CommandCoordinator(QObject):
 
         Args:
             result: CommandResult object.
+
         """
         # Determine what needs refreshing based on command type
         # This could be enhanced to be more specific per command
@@ -81,6 +86,7 @@ class CommandCoordinator(QObject):
 
         Args:
             message: Error message to display.
+
         """
         from PySide6.QtWidgets import QMessageBox
 

@@ -27,6 +27,7 @@ class GeometryUtils:
 
         Returns:
             QRect: The adjusted geometry, guaranteed to be visible.
+
         """
         # If no screens available (headless?), return as is
         screens = QGuiApplication.screens()
@@ -100,6 +101,7 @@ class GeometryUtils:
 
         Returns:
             bool: True if safe, False if potentially off-screen.
+
         """
         screens = QGuiApplication.screens()
         total_intersection_area = 0

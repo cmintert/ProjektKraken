@@ -29,6 +29,7 @@ class MapRepository(BaseRepository):
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         sql = """
             INSERT INTO maps (id, name, image_path, description,
@@ -63,6 +64,7 @@ class MapRepository(BaseRepository):
 
         Returns:
             The Map object if found, else None.
+
         """
         sql = "SELECT * FROM maps WHERE id = ?"
 
@@ -84,6 +86,7 @@ class MapRepository(BaseRepository):
 
         Returns:
             List of all Map objects in the database.
+
         """
         sql = "SELECT * FROM maps ORDER BY name ASC"
 
@@ -107,6 +110,7 @@ class MapRepository(BaseRepository):
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         with self.transaction() as conn:
             conn.execute("DELETE FROM maps WHERE id = ?", (map_id,))
@@ -120,6 +124,7 @@ class MapRepository(BaseRepository):
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         sql = """
             INSERT INTO markers (id, map_id, object_id, object_type, x, y,
@@ -157,6 +162,7 @@ class MapRepository(BaseRepository):
 
         Returns:
             List of Marker objects for the specified map.
+
         """
         sql = "SELECT * FROM markers WHERE map_id = ?"
 
@@ -180,6 +186,7 @@ class MapRepository(BaseRepository):
 
         Returns:
             The Marker object if found, else None.
+
         """
         sql = "SELECT * FROM markers WHERE id = ?"
 
@@ -204,6 +211,7 @@ class MapRepository(BaseRepository):
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         with self.transaction() as conn:
             conn.execute("DELETE FROM markers WHERE id = ?", (marker_id,))

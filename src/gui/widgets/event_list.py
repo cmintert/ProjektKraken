@@ -36,6 +36,7 @@ class EventListWidget(QWidget):
 
         Args:
             parent: The parent widget, if any.
+
         """
         super().__init__(parent)
         if parent:
@@ -74,6 +75,7 @@ class EventListWidget(QWidget):
 
         Args:
             events (List[Event]): A list of Event objects to display.
+
         """
         self.list_widget.clear()
 
@@ -122,6 +124,7 @@ class EventListWidget(QWidget):
 
         Returns:
             QSize: Minimum size for usable event list.
+
         """
         from PySide6.QtCore import QSize
 
@@ -132,6 +135,7 @@ class EventListWidget(QWidget):
 
         Returns:
             QSize: Comfortable working size.
+
         """
         from PySide6.QtCore import QSize
 

@@ -26,6 +26,7 @@ class TimelineScene(QGraphicsScene):
 
         Args:
             parent (QObject, optional): The parent object. Defaults to None.
+
         """
         super().__init__(parent)
         self.tm = ThemeManager()
@@ -45,6 +46,7 @@ class PlayheadItem(QGraphicsLineItem):
 
         Args:
             parent: Parent graphics item.
+
         """
         super().__init__(0, -100000, 0, 100000, parent)
 
@@ -80,6 +82,7 @@ class PlayheadItem(QGraphicsLineItem):
 
         Args:
             zoom: Current view zoom level (pixels per time unit * base scale).
+
         """
         if zoom <= 0:
             return
@@ -115,6 +118,7 @@ class PlayheadItem(QGraphicsLineItem):
 
         Returns:
             The constrained value.
+
         """
         if change == QGraphicsItem.ItemPositionChange:
             # Constrain to horizontal movement only
@@ -136,6 +140,7 @@ class PlayheadItem(QGraphicsLineItem):
         Args:
             time: The time position in lore_date units.
             scale_factor: Pixels per day conversion factor.
+
         """
         if time is None:
             self.hide()
@@ -154,6 +159,7 @@ class PlayheadItem(QGraphicsLineItem):
 
         Returns:
             The current time in lore_date units.
+
         """
         return self.x() / scale_factor
 
@@ -169,6 +175,7 @@ class CurrentTimeLineItem(QGraphicsLineItem):
 
         Args:
             parent: Parent graphics item.
+
         """
         super().__init__(0, -100000, 0, 100000, parent)
 
@@ -194,6 +201,7 @@ class CurrentTimeLineItem(QGraphicsLineItem):
         Args:
             time: The time position in lore_date units.
             scale_factor: Pixels per day conversion factor.
+
         """
         self._time = time
         x = time * scale_factor
@@ -207,5 +215,6 @@ class CurrentTimeLineItem(QGraphicsLineItem):
 
         Returns:
             The current time in lore_date units.
+
         """
         return self.x() / scale_factor

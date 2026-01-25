@@ -51,6 +51,7 @@ def _stable_dump(val: Any) -> str:
 
     Returns:
         str: A stable string representation of the value.
+
     """
     if isinstance(val, dict):
         return json.dumps(val, ensure_ascii=False, sort_keys=True)
@@ -77,6 +78,7 @@ def build_text_for_entity(
 
     Returns:
         str: A multi-line text representation of the entity.
+
     """
     if excluded_attributes is None:
         excluded_attributes = []
@@ -120,6 +122,7 @@ def build_text_for_event(
 
     Returns:
         str: A multi-line text representation of the event.
+
     """
     if excluded_attributes is None:
         excluded_attributes = []
@@ -156,6 +159,7 @@ def text_sha256(text: str) -> str:
 
     Returns:
         str: Hexadecimal hash digest.
+
     """
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
@@ -173,6 +177,7 @@ def normalize_vector(v: np.ndarray) -> np.ndarray:
 
     Returns:
         np.ndarray: Unit-normalized vector as float32.
+
     """
     v = v.astype(np.float32)
     norm = np.linalg.norm(v)
@@ -189,6 +194,7 @@ def serialize_vector(v: np.ndarray) -> bytes:
 
     Returns:
         bytes: Serialized float32 vector.
+
     """
     v32 = v.astype(np.float32)
     return v32.tobytes()
@@ -203,6 +209,7 @@ def deserialize_vector(blob: bytes, dim: int) -> np.ndarray:
 
     Returns:
         np.ndarray: Float32 vector.
+
     """
     return np.frombuffer(blob, dtype=np.float32, count=dim)
 
@@ -218,6 +225,7 @@ def dot_scores(q_vec: np.ndarray, V: np.ndarray) -> np.ndarray:
 
     Returns:
         np.ndarray: Array of similarity scores.
+
     """
     return V.dot(q_vec)
 
@@ -233,6 +241,7 @@ def top_k_streaming(
 
     Returns:
         List of (score, item) tuples sorted by descending score.
+
     """
     heap = []
     counter = 0  # Add counter to ensure unique comparison for ties
@@ -269,6 +278,7 @@ class EmbeddingProvider(ABC):
 
         Returns:
             np.ndarray: 2D array of shape (len(texts), dimension).
+
         """
         pass
 
@@ -278,6 +288,7 @@ class EmbeddingProvider(ABC):
 
         Returns:
             int: Embedding dimension.
+
         """
         pass
 
@@ -287,6 +298,7 @@ class EmbeddingProvider(ABC):
 
         Returns:
             str: Model name.
+
         """
         pass
 
@@ -312,6 +324,7 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
             model: Model name (default from env or required).
             api_key: Optional API key.
             timeout: Request timeout in seconds.
+
         """
         import requests
 
@@ -349,6 +362,7 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
 
         Raises:
             Exception: If API request fails or response is invalid.
+
         """
         if not texts:
             return np.array([])
@@ -406,6 +420,7 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
 
         Returns:
             int: Embedding dimension.
+
         """
         if self._dimension is None:
             # Make a test call to determine dimension
@@ -418,6 +433,7 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
 
         Returns:
             str: Model identifier with 'lmstudio:' prefix.
+
         """
         return f"lmstudio:{self.model}"
 
@@ -433,6 +449,7 @@ class SentenceTransformersProvider(EmbeddingProvider):
 
         Args:
             model: Model name (default from env or 'all-MiniLM-L6-v2').
+
         """
         try:
             from sentence_transformers import SentenceTransformer  # type: ignore
@@ -460,6 +477,7 @@ class SentenceTransformersProvider(EmbeddingProvider):
 
         Returns:
             np.ndarray: 2D array of embeddings.
+
         """
         if not texts:
             return np.array([])
@@ -472,6 +490,7 @@ class SentenceTransformersProvider(EmbeddingProvider):
 
         Returns:
             int: Embedding dimension.
+
         """
         return self._dimension
 
@@ -480,6 +499,7 @@ class SentenceTransformersProvider(EmbeddingProvider):
 
         Returns:
             str: Model identifier with 'st:' prefix.
+
         """
         return f"st:{self.model_name}"
 
@@ -504,6 +524,7 @@ class SearchService:
         Args:
             db_connection: SQLite database connection.
             provider: Embedding provider instance.
+
         """
         self.conn = db_connection
         self.provider = provider
@@ -524,6 +545,7 @@ class SearchService:
 
         Returns:
             List of tag dicts with 'name' key.
+
         """
         if object_type == "entity":
             table = "entity_tags"
@@ -553,6 +575,7 @@ class SearchService:
 
         Raises:
             ValueError: If entity not found.
+
         """
         # Fetch entity
         cursor = self.conn.execute("SELECT * FROM entities WHERE id = ?", (entity_id,))
@@ -641,6 +664,7 @@ class SearchService:
 
         Raises:
             ValueError: If event not found.
+
         """
         # Fetch event
         cursor = self.conn.execute("SELECT * FROM events WHERE id = ?", (event_id,))
@@ -734,6 +758,7 @@ class SearchService:
 
         Returns:
             Dict with counts of indexed objects per type.
+
         """
         if object_types is None:
             object_types = ["entity", "event"]
@@ -782,6 +807,7 @@ class SearchService:
         Returns:
             List of result dicts with keys: id, object_type, object_id, score,
             name, type, metadata.
+
         """
         # Use current model if not specified
         query_model = model or self.model
@@ -949,6 +975,7 @@ class SearchService:
             object_type: 'entity' or 'event'.
             object_id: Object UUID.
             model: Optional model filter (deletes for all models if None).
+
         """
         if model:
             self.conn.execute(
@@ -980,6 +1007,7 @@ def get_llm_settings_from_qsettings() -> Dict[str, Any]:
 
     Returns:
         Dict with keys: provider, lm_url, lm_model, lm_api_key, lm_timeout, st_model
+
     """
     try:
         from PySide6.QtCore import QSettings
@@ -1034,6 +1062,7 @@ def create_provider(
 
     Raises:
         ValueError: If provider is unknown or configuration is invalid.
+
     """
     # Load settings from QSettings
     qsettings = get_llm_settings_from_qsettings()
@@ -1082,6 +1111,7 @@ def create_search_service(
 
     Returns:
         SearchService: Configured service instance.
+
     """
     provider = create_provider(provider_name, model)
     return SearchService(db_connection, provider)

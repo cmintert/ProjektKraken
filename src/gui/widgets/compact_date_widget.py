@@ -56,6 +56,7 @@ class CompactDateWidget(QWidget):
 
         Args:
             parent: Parent widget.
+
         """
         super().__init__(parent)
         # Set size policy to prevent vertical squashing
@@ -195,6 +196,7 @@ class CompactDateWidget(QWidget):
 
         Args:
             converter: CalendarConverter instance.
+
         """
         self._converter = converter
         if self._converter and self._converter._config:
@@ -315,6 +317,7 @@ class CompactDateWidget(QWidget):
 
         Returns:
             float: Absolute day value.
+
         """
         if not self._converter:
             # Fallback: simple calculation
@@ -351,6 +354,7 @@ class CompactDateWidget(QWidget):
 
         Args:
             days_float: Absolute day value.
+
         """
         if self._updating:
             return
@@ -419,6 +423,7 @@ class CompactDateWidget(QWidget):
 
         Returns:
             QSize: Minimum size for the date widget (two rows of controls).
+
         """
         from PySide6.QtCore import QSize
 
@@ -429,6 +434,7 @@ class CompactDateWidget(QWidget):
 
         Returns:
             QSize: Preferred size for comfortable date input.
+
         """
         from PySide6.QtCore import QSize
 
@@ -457,6 +463,7 @@ class CalendarPopup(QDialog):
             year: Initial year.
             month: Initial month (1-indexed).
             day: Initial day (1-indexed).
+
         """
         super().__init__(parent)
         self.setWindowTitle("Select Date")

@@ -11,6 +11,7 @@ class ServerConfig:
         host: Host address to bind to (default: 0.0.0.0 for all interfaces).
         port: Port number to listen on (default: 8000).
         db_path: Path to the database file to serve data from.
+
     """
 
     host: str = "0.0.0.0"

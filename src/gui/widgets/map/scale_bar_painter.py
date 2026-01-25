@@ -31,6 +31,7 @@ class ScaleBarPainter:
             painter: The viewport painter.
             viewport_rect: Visible area of the view.
             meters_per_pixel: Current scale resolution.
+
         """
         if meters_per_pixel <= 0:
             return

@@ -12,17 +12,15 @@ from typing import List, Optional, Set
 from PySide6.QtCore import QObject, Signal, Slot
 
 from src.commands.base_command import BaseCommand, CommandResult
-from src.core.calendar import CalendarConfig
 from src.core.entities import Entity
 from src.core.events import Event
+from src.core.summary_data import SummaryData
 from src.services import longform_builder
 from src.services.asset_store import AssetStore
 from src.services.attachment_service import AttachmentService
-from src.services.import_service import ImportResult
-
 from src.services.db_service import DatabaseService
+from src.services.import_service import ImportResult
 from src.services.summary_service import SummaryService
-from src.core.summary_data import SummaryData
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +73,7 @@ class DatabaseWorker(QObject):
 
         Args:
             db_path: Path to the database file.
+
         """
         super().__init__()
         self.db_path = db_path
@@ -240,6 +239,7 @@ class DatabaseWorker(QObject):
             t: Time timestamp.
             x: Normalized X.
             y: Normalized Y.
+
         """
         if not self.db_service:
             return
@@ -266,6 +266,7 @@ class DatabaseWorker(QObject):
             marker_id: The marker ID.
             old_t: Original timestamp.
             new_t: New timestamp.
+
         """
         if not self.db_service:
             return
@@ -288,6 +289,7 @@ class DatabaseWorker(QObject):
             map_id: The map ID (for reloading).
             marker_id: The marker ID (object_id).
             t: The timestamp of the keyframe to delete.
+
         """
         if not self.db_service:
             return
@@ -377,6 +379,7 @@ class DatabaseWorker(QObject):
         Args:
             doc_id (str): Document ID to load.
             filter_json (str): Optional JSON serialization of filter configuration.
+
         """
         if not self.db_service:
             return
@@ -442,8 +445,7 @@ class DatabaseWorker(QObject):
         object, object
     )  # Command, Optional[args] - simplified mainly for command objects
     def run_command(self, command: BaseCommand) -> None:
-        """
-        Executes a command object.
+        """Executes a command object.
         IMPORTANT: The command must NOT already have the db_service injected.
         We inject the worker's thread-local service here.
 
@@ -457,6 +459,7 @@ class DatabaseWorker(QObject):
                                   (though usually captured in result).
             operation_started (str): Status update.
             operation_finished (str): Status update.
+
         """
         if not self.db_service:
             cmd_name = command.__class__.__name__
@@ -534,6 +537,7 @@ class DatabaseWorker(QObject):
 
         Args:
             time (float): The current time in lore_date units.
+
         """
         if not self.db_service:
             return
@@ -603,6 +607,7 @@ class DatabaseWorker(QObject):
             provider: Optional embedding provider name.
             model: Optional model name override.
             excluded_attributes: Optional list of attribute keys to exclude.
+
         """
         if not self.db_service:
             return
@@ -640,6 +645,7 @@ class DatabaseWorker(QObject):
         Args:
             filter_config: Dictionary containing 'include', 'include_mode',
                            'exclude', 'exclude_mode', etc.
+
         """
         if not self.db_service:
             return
@@ -709,6 +715,7 @@ class DatabaseWorker(QObject):
         Args:
             tags: List of tags to include.
             rel_types: List of relation types to include.
+
         """
         if not self.db_service:
             return
@@ -769,6 +776,7 @@ class DatabaseWorker(QObject):
         Args:
             parsed_json: JSON string of pre-parsed data from MainWindow.
             options_json: JSON string of import options (mode, source_name, dry_run).
+
         """
         if not self.db_service:
             from src.services.import_service import ImportResult
@@ -811,6 +819,7 @@ class DatabaseWorker(QObject):
 
         Args:
             item: Entity or Event object.
+
         """
         if not self.summary_service:
             return

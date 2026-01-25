@@ -36,6 +36,7 @@ class TimeCoordinator(BaseCoordinator):
 
         Args:
             time (float): The new current time in lore_date units.
+
         """
         QMetaObject.invokeMethod(
             self.main_window.worker,

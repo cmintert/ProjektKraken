@@ -60,6 +60,7 @@ class EventItem(QGraphicsItem):
 
         Returns:
             int: Height in pixels.
+
         """
         if event.lore_duration > 0:
             return cls.DURATION_EVENT_HEIGHT
@@ -77,6 +78,7 @@ class EventItem(QGraphicsItem):
             event (Event): The event to represent.
             scale_factor (float, optional): Scale factor for positioning.
                 Defaults to 10.0.
+
         """
         super().__init__()
         self.event = event
@@ -117,6 +119,7 @@ class EventItem(QGraphicsItem):
 
         Args:
             event (Event): The updated event object.
+
         """
         self.prepareGeometryChange()
         self.event = event
@@ -148,6 +151,7 @@ class EventItem(QGraphicsItem):
 
         Returns:
             QPainterPath: The clickable region path.
+
         """
         path = QPainterPath()
 
@@ -176,6 +180,7 @@ class EventItem(QGraphicsItem):
 
         Args:
             event: The mouse event.
+
         """
         super().mousePressEvent(event)
         # Mark that user initiated a drag - used by itemChange to know
@@ -194,6 +199,7 @@ class EventItem(QGraphicsItem):
 
         Returns:
             The constrained value.
+
         """
         if change == QGraphicsItem.ItemPositionChange:
             new_pos = value
@@ -217,6 +223,7 @@ class EventItem(QGraphicsItem):
 
         Args:
             event: The mouse event.
+
         """
         super().mouseReleaseEvent(event)
 

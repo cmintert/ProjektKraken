@@ -44,6 +44,7 @@ class GraphWebView(QWidget):
 
         Args:
             parent: Parent widget.
+
         """
         super().__init__(parent)
         self._bridge = GraphBridge()
@@ -76,6 +77,7 @@ class GraphWebView(QWidget):
 
         Args:
             html: HTML string to display.
+
         """
         self._web_view.setHtml(html)
 
@@ -84,6 +86,7 @@ class GraphWebView(QWidget):
 
         Args:
             color: Hex color string (e.g. "#1e1e1e").
+
         """
         self._web_view.setStyleSheet(f"background-color: {color};")
         self._web_view.page().setBackgroundColor(QColor(color))

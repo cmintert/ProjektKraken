@@ -33,6 +33,7 @@ class Provider(ABC):
 
         Raises:
             Exception: If embedding generation fails.
+
         """
         pass
 
@@ -63,6 +64,7 @@ class Provider(ABC):
 
         Raises:
             Exception: If generation fails.
+
         """
         pass
 
@@ -91,6 +93,7 @@ class Provider(ABC):
 
         Raises:
             Exception: If streaming fails.
+
         """
         pass
 
@@ -107,6 +110,7 @@ class Provider(ABC):
 
         Raises:
             Exception: If health check fails.
+
         """
         pass
 
@@ -125,6 +129,7 @@ class Provider(ABC):
                 - embedding_model: Embedding model name (if applicable)
                 - generation_model: Generation model name (if applicable)
                 - max_tokens: Maximum token limit for generation
+
         """
         pass
 
@@ -136,6 +141,7 @@ class Provider(ABC):
 
         Raises:
             NotImplementedError: If provider doesn't support embeddings.
+
         """
         meta = self.metadata()
         if not meta.get("supports_embeddings", False):
@@ -149,6 +155,7 @@ class Provider(ABC):
 
         Returns:
             str: Model identifier (prioritizes generation model over embedding).
+
         """
         meta = self.metadata()
         return meta.get("generation_model") or meta.get("embedding_model", "unknown")
@@ -165,6 +172,7 @@ def get_provider_settings_from_qsettings(
 
     Returns:
         Dict with provider-specific settings.
+
     """
     try:
         from PySide6.QtCore import QSettings
@@ -288,6 +296,7 @@ def create_provider(
     Raises:
         ValueError: If provider_id is unknown or configuration is invalid.
         ImportError: If required dependencies are not installed.
+
     """
     # Load settings from QSettings
     settings = get_provider_settings_from_qsettings(provider_id, world_id)

@@ -33,6 +33,7 @@ class TimelineLanePacker:
 
         Args:
             scale_factor: The current timeline scale factor (pixels per day).
+
         """
         self.scale_factor = scale_factor
         self.font = None
@@ -56,6 +57,7 @@ class TimelineLanePacker:
             Tuple of:
                 - Dict mapping event ID to lane index
                 - List of lane heights (max height of events in each lane)
+
         """
         self._ensure_font_metrics()
 
@@ -95,6 +97,7 @@ class TimelineLanePacker:
 
         Returns:
             float: Visual duration in lore date units.
+
         """
         if self.fm is None:
             self._ensure_font_metrics()
@@ -139,6 +142,7 @@ class TimelineLanePacker:
 
         Returns:
             int: The lane index (0-based).
+
         """
         # Try to find an existing lane that's available
         for i, lane_end in enumerate(lanes_end_times):
@@ -158,5 +162,6 @@ class TimelineLanePacker:
 
         Args:
             scale_factor: New scale factor (pixels per day).
+
         """
         self.scale_factor = scale_factor

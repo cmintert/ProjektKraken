@@ -13,6 +13,7 @@ class DateParser:
 
         Args:
             calendar_config: The application's calendar configuration.
+
         """
         self.calendar_config = calendar_config
         self.converter = CalendarConverter(calendar_config)

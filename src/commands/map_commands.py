@@ -35,6 +35,7 @@ class CreateMapCommand(BaseCommand):
         Args:
             map_data (dict, optional): Dictionary containing map data.
                                        If None, default values are used.
+
         """
         super().__init__()
         if map_data:
@@ -50,6 +51,7 @@ class CreateMapCommand(BaseCommand):
 
         Returns:
             CommandResult: Result object indicating success or failure.
+
         """
         try:
             db_service.insert_map(self._map)
@@ -74,6 +76,7 @@ class CreateMapCommand(BaseCommand):
 
         Args:
             db_service (DatabaseService): The database service to operate on.
+
         """
         if self._is_executed:
             db_service.delete_map(self._map.id)
@@ -93,6 +96,7 @@ class UpdateMapCommand(BaseCommand):
         Args:
             map_id (str): The ID of the map to update.
             update_data (dict): Dictionary of fields to update.
+
         """
         super().__init__()
         self.map_id = map_id
@@ -108,6 +112,7 @@ class UpdateMapCommand(BaseCommand):
 
         Returns:
             CommandResult: Result object containing success status and messages.
+
         """
         try:
             # Fetch current state before update
@@ -151,6 +156,7 @@ class UpdateMapCommand(BaseCommand):
 
         Args:
             db_service (DatabaseService): The database service to operate on.
+
         """
         if self._is_executed and self._previous_map:
             db_service.insert_map(self._previous_map)
@@ -166,6 +172,7 @@ class DeleteMapCommand(BaseCommand):
 
         Args:
             map_id (str): The ID of the map to delete.
+
         """
         super().__init__()
         self.map_id = map_id
@@ -180,6 +187,7 @@ class DeleteMapCommand(BaseCommand):
 
         Returns:
             CommandResult: Result object containing success status and messages.
+
         """
         try:
             # Store map and markers for undo
@@ -214,6 +222,7 @@ class DeleteMapCommand(BaseCommand):
 
         Args:
             db_service (DatabaseService): The database service to operate on.
+
         """
         if self._is_executed and self._deleted_map:
             db_service.insert_map(self._deleted_map)
@@ -237,6 +246,7 @@ class CreateMarkerCommand(BaseCommand):
         Args:
             marker_data (dict): Dictionary containing marker data.
                                Must include: map_id, object_id, object_type, x, y.
+
         """
         super().__init__()
         self._marker = Marker(**marker_data)
@@ -254,6 +264,7 @@ class CreateMarkerCommand(BaseCommand):
 
         Returns:
             CommandResult: Result object indicating success or failure.
+
         """
         try:
             # Insert may return different ID if upsert occurred
@@ -282,6 +293,7 @@ class CreateMarkerCommand(BaseCommand):
 
         Args:
             db_service (DatabaseService): The database service to operate on.
+
         """
         if self._is_executed and self._actual_marker_id:
             db_service.delete_marker(self._actual_marker_id)
@@ -298,6 +310,7 @@ class UpdateMarkerCommand(BaseCommand):
         Args:
             marker_id (str): The ID of the marker to update.
             update_data (dict): Dictionary of fields to update (e.g., x, y, label).
+
         """
         super().__init__()
         self.marker_id = marker_id
@@ -313,6 +326,7 @@ class UpdateMarkerCommand(BaseCommand):
 
         Returns:
             CommandResult: Result object containing success status and messages.
+
         """
         try:
             # Fetch current state before update
@@ -356,6 +370,7 @@ class UpdateMarkerCommand(BaseCommand):
 
         Args:
             db_service (DatabaseService): The database service to operate on.
+
         """
         if self._is_executed and self._previous_marker:
             db_service.insert_marker(self._previous_marker)
@@ -371,6 +386,7 @@ class DeleteMarkerCommand(BaseCommand):
 
         Args:
             marker_id (str): The ID of the marker to delete.
+
         """
         super().__init__()
         self.marker_id = marker_id
@@ -384,6 +400,7 @@ class DeleteMarkerCommand(BaseCommand):
 
         Returns:
             CommandResult: Result object containing success status and messages.
+
         """
         try:
             # Store marker for undo
@@ -416,6 +433,7 @@ class DeleteMarkerCommand(BaseCommand):
 
         Args:
             db_service (DatabaseService): The database service to operate on.
+
         """
         if self._is_executed and self._deleted_marker:
             db_service.insert_marker(self._deleted_marker)
@@ -435,6 +453,7 @@ class UpdateMarkerIconCommand(BaseCommand):
         Args:
             marker_id (str): The ID of the marker to update.
             icon (str): The new icon filename (e.g., 'castle.svg').
+
         """
         super().__init__()
         self.marker_id = marker_id
@@ -450,6 +469,7 @@ class UpdateMarkerIconCommand(BaseCommand):
 
         Returns:
             CommandResult: Result object containing success status and messages.
+
         """
         try:
             # Fetch current marker
@@ -493,6 +513,7 @@ class UpdateMarkerIconCommand(BaseCommand):
 
         Args:
             db_service (DatabaseService): The database service to operate on.
+
         """
         if self._is_executed and self._marker:
             # Restore previous icon
@@ -522,6 +543,7 @@ class UpdateMarkerColorCommand(BaseCommand):
         Args:
             marker_id (str): The ID of the marker to update.
             color (str): The new color hex code (e.g., '#FF5733').
+
         """
         super().__init__()
         self.marker_id = marker_id
@@ -537,6 +559,7 @@ class UpdateMarkerColorCommand(BaseCommand):
 
         Returns:
             CommandResult: Result object containing success status and messages.
+
         """
         try:
             # Fetch current marker
@@ -580,6 +603,7 @@ class UpdateMarkerColorCommand(BaseCommand):
 
         Args:
             db_service (DatabaseService): The database service to operate on.
+
         """
         if self._is_executed and self._marker:
             # Restore previous color
@@ -607,6 +631,7 @@ class DeleteKeyframeCommand(BaseCommand):
             map_id: The ID of the map.
             marker_id: The object ID of the marker (entity/event ID).
             t: The timestamp of the keyframe to delete.
+
         """
         super().__init__()
         self.map_id = map_id
@@ -622,6 +647,7 @@ class DeleteKeyframeCommand(BaseCommand):
 
         Returns:
             CommandResult: Result object containing success status and messages.
+
         """
         try:
             # Store keyframe for undo (get it before deletion)
@@ -674,6 +700,7 @@ class DeleteKeyframeCommand(BaseCommand):
 
         Args:
             db_service: The database service to operate on.
+
         """
         if self._is_executed and self._deleted_keyframe:
             from src.core.trajectory import Keyframe

@@ -1,5 +1,4 @@
-"""
-MapHandler - Handles map and marker operations for MainWindow.
+"""MapHandler - Handles map and marker operations for MainWindow.
 
 This module contains all map and marker-related functionality extracted from
 MainWindow to reduce its size and improve maintainability.
@@ -46,6 +45,7 @@ class MapHandler(QObject):
 
         Args:
             main_window: Reference to the MainWindow instance.
+
         """
         super().__init__()
         self.window = main_window
@@ -65,6 +65,7 @@ class MapHandler(QObject):
 
         Args:
             map_id: ID of the selected map.
+
         """
         # Find map object
         maps = self.window.map_widget._maps_data
@@ -101,6 +102,7 @@ class MapHandler(QObject):
 
         Args:
             map_id: The ID of the map to reload markers for.
+
         """
         logger.info(f"Reloading markers for map: {map_id}")
         QMetaObject.invokeMethod(
@@ -186,6 +188,7 @@ class MapHandler(QObject):
         Args:
             x: Normalized X coordinate [0.0, 1.0].
             y: Normalized Y coordinate [0.0, 1.0].
+
         """
         map_id = self.window.map_widget.map_selector.currentData()
         if not map_id:
@@ -251,6 +254,7 @@ class MapHandler(QObject):
             item_name: Display name of the item.
             x: Normalized X coordinate [0.0, 1.0].
             y: Normalized Y coordinate [0.0, 1.0].
+
         """
         map_id = self.window.map_widget.get_selected_map_id()
         if not map_id:
@@ -275,6 +279,7 @@ class MapHandler(QObject):
 
         Args:
             marker_id: The object_id from the UI (not the actual marker.id).
+
         """
         # Translate object_id to actual marker ID
         actual_marker_id = self._marker_object_to_id.get(marker_id)
@@ -304,6 +309,7 @@ class MapHandler(QObject):
         Args:
             marker_id: The ID of the item.
             object_type: 'event' or 'entity'.
+
         """
         logger.info(
             f"on_marker_clicked called: marker_id={marker_id}, "
@@ -319,6 +325,7 @@ class MapHandler(QObject):
         Args:
             marker_id: ID of the marker (actually object_id from view).
             icon: New icon filename.
+
         """
         # Translate object_id to actual marker ID
         actual_marker_id = self._marker_object_to_id.get(marker_id)
@@ -335,6 +342,7 @@ class MapHandler(QObject):
         Args:
             marker_id: ID of the marker (actually object_id from view).
             color: New color hex code.
+
         """
         # Translate object_id to actual marker ID
         actual_marker_id = self._marker_object_to_id.get(marker_id)
@@ -352,6 +360,7 @@ class MapHandler(QObject):
             marker_id: ID of the marker (actually object_id from view).
             x: New normalized X coordinate.
             y: New normalized Y coordinate.
+
         """
         # Translate object_id to actual marker ID
         actual_marker_id = self._marker_object_to_id.get(marker_id)
@@ -369,6 +378,7 @@ class MapHandler(QObject):
 
         Args:
             maps: List of Map objects.
+
         """
         self.window.map_widget.set_maps(maps)
 
@@ -385,6 +395,7 @@ class MapHandler(QObject):
         Args:
             map_id: The map ID these markers belong to.
             processed_markers: List of dicts with marker data.
+
         """
         # Verify we are still looking at this map
         current_map_id = self.window.map_widget.map_selector.currentData()
@@ -417,5 +428,6 @@ class MapHandler(QObject):
 
         Args:
             trajectories: List of (marker_id, trajectory_id, keyframes) tuples.
+
         """
         self.window.map_widget.set_trajectories(trajectories)

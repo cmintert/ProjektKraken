@@ -35,6 +35,7 @@ class AttributeEditorWidget(QWidget):
 
         Args:
             parent (QWidget, optional): The parent widget. Defaults to None.
+
         """
         super().__init__(parent)
         main_layout = QVBoxLayout(self)
@@ -114,6 +115,7 @@ class AttributeEditorWidget(QWidget):
         Args:
             key (str, optional): The attribute key. Defaults to "".
             value (Any, optional): The attribute value. Defaults to None.
+
         """
         row = self.table.rowCount()
         self.table.insertRow(row)
@@ -147,6 +149,7 @@ class AttributeEditorWidget(QWidget):
 
         Args:
             keys: List of existing attribute keys.
+
         """
         self._suggestion_keys = keys
 
@@ -187,6 +190,7 @@ class AttributeEditorWidget(QWidget):
 
         Args:
             item (QTableWidgetItem): The changed item.
+
         """
         if not self._block_signals:
             self.attributes_changed.emit()
@@ -197,6 +201,7 @@ class AttributeEditorWidget(QWidget):
 
         Args:
             row (int): The row number of the changed type.
+
         """
         if not self._block_signals:
             self.attributes_changed.emit()
@@ -210,6 +215,7 @@ class AttributeEditorWidget(QWidget):
 
         Returns:
             Any: The parsed value in the appropriate type.
+
         """
         if val_type == "Number":
             try:

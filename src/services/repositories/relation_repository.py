@@ -39,6 +39,7 @@ class RelationRepository(BaseRepository):
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         sql = """
             INSERT INTO relations (id, source_id, target_id, rel_type,
@@ -63,6 +64,7 @@ class RelationRepository(BaseRepository):
 
         Returns:
             List of relation dictionaries.
+
         """
         sql = "SELECT * FROM relations"
 
@@ -86,6 +88,7 @@ class RelationRepository(BaseRepository):
 
         Returns:
             List of relation dictionaries.
+
         """
         sql = "SELECT * FROM relations WHERE source_id = ?"
 
@@ -111,6 +114,7 @@ class RelationRepository(BaseRepository):
 
         Returns:
             List of relation dictionaries.
+
         """
         # Join with events table to get source event date and name efficiently
         # We rename e.lore_date to source_event_date to avoid collision/ambiguity
@@ -145,6 +149,7 @@ class RelationRepository(BaseRepository):
 
         Returns:
             Relation dictionary if found, None otherwise.
+
         """
         sql = """
             SELECT * FROM relations
@@ -171,6 +176,7 @@ class RelationRepository(BaseRepository):
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         with self.transaction() as conn:
             conn.execute("DELETE FROM relations WHERE id = ?", (relation_id,))
@@ -187,9 +193,10 @@ class RelationRepository(BaseRepository):
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         sql = """
-            UPDATE relations 
+            UPDATE relations
             SET rel_type = ?, attributes = ?
             WHERE id = ?
         """
