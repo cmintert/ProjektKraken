@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-25
-### Internal
-- Merge branch 'refs/heads/master' into HEAD
+### Added
+- feat: Set Application Icon
 
 
 *This changelog was automatically generated.*
