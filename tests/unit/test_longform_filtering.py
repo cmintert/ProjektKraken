@@ -98,7 +98,8 @@ def test_worker_load_longform_sequence_pass_through_filter():
     worker.db_service = MagicMock()
 
     # Mock db_service methods
-    worker.db_service._connection = MagicMock()
+    mock_connection = MagicMock()
+    worker.db_service.get_connection.return_value = mock_connection
     # filter_ids_by_tags returns List[tuple[str, str]] not a set
     worker.db_service.filter_ids_by_tags.return_value = [
         ("event", "id1"),
@@ -123,5 +124,5 @@ def test_worker_load_longform_sequence_pass_through_filter():
 
         # Verify builder called with allowed_ids (as a set of just IDs)
         mock_build.assert_called_with(
-            worker.db_service._connection, doc_id="default", allowed_ids={"id1", "id2"}
+            mock_connection, doc_id="default", allowed_ids={"id1", "id2"}
         )

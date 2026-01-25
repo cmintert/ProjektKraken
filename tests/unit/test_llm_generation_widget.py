@@ -143,7 +143,7 @@ def test_rag_service_called(mock_rag_cls, widget, qtbot):
 
     # Verify RAG Service usage
     mock_rag_cls.assert_called_with("dummy.db")
-    mock_service.get_context.assert_called_with("Test Prompt", top_k=3)
+    mock_service.get_context.assert_called_with("Test Prompt", top_k=3, exclude_names=[])
 
     # Verify prompt modification
     # "Test Prompt" -> "--- DATA: RAG CONTEXT ---\nRetrieved Context\nTest Prompt"
