@@ -156,6 +156,11 @@ class EventEditorWidget(QWidget):
             ["generic", "cosmic", "historical", "personal", "session", "combat"]
         )
         self.type_edit.setEditable(True)
+        from PySide6.QtWidgets import QSizePolicy
+
+        self.type_edit.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
 
         self.desc_edit = WikiTextEdit()
         self.desc_edit.link_clicked.connect(self.link_clicked.emit)

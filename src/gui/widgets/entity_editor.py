@@ -138,6 +138,11 @@ class EntityEditorWidget(QWidget):
 
         self.name_edit = QLineEdit()
         self.type_edit = QComboBox()
+        from PySide6.QtWidgets import QSizePolicy
+
+        self.type_edit.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
         self.type_edit.addItems(["Character", "Location", "Faction", "Item", "Concept"])
         self.type_edit.setEditable(True)
         self.desc_edit = WikiTextEdit()
