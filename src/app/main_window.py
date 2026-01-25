@@ -184,9 +184,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
             tm = ThemeManager()
             tm.theme_changed.connect(self._update_window_style)
-
-            # Apply initial style
-            self._update_window_style(tm.get_theme())
         except Exception as e:
             logger.warning(f"Failed to connect theme signal: {e}")
 
@@ -386,6 +383,14 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         QMetaObject.invokeMethod(
             self.worker, "initialize_db", Qt.ConnectionType.QueuedConnection
         )
+
+        # Apply initial Windows Title Bar Style (deferred until window is ready)
+        try:
+            from src.core.theme_manager import ThemeManager
+
+            self._update_window_style(ThemeManager().get_theme())
+        except Exception as e:
+            logger.warning(f"Failed to apply initial title bar style: {e}")
 
         # Restore Window State
         self._restore_window_state()
