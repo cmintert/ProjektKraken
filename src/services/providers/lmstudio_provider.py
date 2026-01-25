@@ -207,11 +207,18 @@ class LMStudioProvider(Provider):
         messages = []
 
         if isinstance(prompt, dict):
-            # Structured prompt with system/user separation
-            if "system" in prompt and prompt["system"]:
-                messages.append({"role": "system", "content": prompt["system"]})
-            if "user" in prompt:
-                messages.append({"role": "user", "content": prompt["user"]})
+            # Structured prompt
+            system_msg = prompt.get("system", "")
+            user_msg = prompt.get("user", "")
+
+            # Combine system prompt with user prompt to avoid "system" role issues
+            # in LM Studio with strict templates (e.g. Mistral 0.3)
+            # which might error with "Only user and assistant roles are supported!"
+            if system_msg:
+                combined_content = f"{system_msg}\n\n{user_msg}"
+                messages.append({"role": "user", "content": combined_content})
+            elif user_msg:
+                messages.append({"role": "user", "content": user_msg})
         else:
             # Legacy string prompt - treat as user message
             messages.append({"role": "user", "content": str(prompt)})
