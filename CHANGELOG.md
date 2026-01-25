@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-01-21
-**Commit:** `0.9.0`
+**Last Updated:** 2026-01-25
+**Commit:** `2fa3cce`
 ---
 
 # Changelog
@@ -10,6 +10,26 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Added
+- *(2026-01-24)* **AI**: Implemented `RAGService` with Hybrid Search (Lexical + Semantic) for robust context retrieval.
+- *(2026-01-24)* **AI**: Overhauled `LLMGenerationWidget` with RAG context preview and detailed logging.
+- *(2026-01-24)* **AI**: Refactored prompt generation to 'Trinity' architecture (Persona-Task-Data).
+  - Enforced strict separation and standardized ordering (System Persona + User Task + Data).
+  - Renamed 'Templates' to 'Task Templates' and 'Basic Assistant Prompt' to 'Persona'.
+  - Added 'Free Text / Custom' and 'Basic Assistant' options for flexible prompt construction.
+
+### Changed
+- *(2026-01-23)* **AI**: Standardized template selection logic; all templates are now globally visible across widgets.
+
+### Refactor
+- *(2026-01-25)* **Refactor**: Optimized `AISearchManager` and `LLMGenerationWidget` code quality.
+  - Applied Sourcery suggestions (walrus operator, optimized if-expressions).
+  - Cleaned up unused imports and variables (`rag_content`, `sqlite3`).
+- *(2026-01-25)* **Refactor**: Fixed 88-char line length violations and updated docstrings in `AISearchManager`.
+
+### Testing
+- *(2026-01-24)* **Testing**: Added verification tests for RAG preview and LLM generation architectures.
 
 ## [0.9.0]
 
