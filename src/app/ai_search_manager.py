@@ -91,18 +91,23 @@ class AISearchManager(QObject):
             # RAGService takes db_path string currently.
             # The gui_db_service abstracts the connection.
             # Let's see if we can get the path.
-            # Standard pattern: self.window.db_path usually exists or we get it from UIManager?
-            # MainWindow has self.db_path (passed to LongformEditorWidget in main_window.py).
+            # Standard pattern: self.window.db_path usually exists or we get it
+            # from UIManager?
+            # MainWindow has self.db_path (passed to LongformEditorWidget in
+            # main_window.py).
             # Let's assume self.window.db_path exists.
 
-            db_path = getattr(self.window, "db_path", None)
-            if not db_path:
-                # Fallback to direct service creation if no path (but RAGService needs path for isolation)
+            if not (db_path := getattr(self.window, "db_path", None)):
+                # Fallback to direct service creation if no path (but RAGService
+                # needs path for isolation)
                 # Actually, RAGService creates its own connection for thread safety.
                 # If we can't get path, we can't use RAGService easily without refactor.
-                # Let's check MainWindow init... yes it has db_path logic usually (or active_world).
-                # Wait, MainWindow.__init__ doesn't show self.db_path assignment explicitly in the snippet I saw earlier (lines 100-300).
-                # But LongformEditorWidget received self.db_path (line 215). So it must exist.
+                # Let's check MainWindow init... yes it has db_path logic usually
+                # (or active_world).
+                # Wait, MainWindow.__init__ doesn't show self.db_path assignment
+                # explicitly in the snippet I saw earlier (lines 100-300).
+                # But LongformEditorWidget received self.db_path (line 215).
+                # So it must exist.
                 pass
 
             if db_path:
@@ -110,7 +115,7 @@ class AISearchManager(QObject):
                 results = rag_service.search(
                     query=query,
                     top_k=top_k,
-                    object_type=object_type_filter if object_type_filter else None,
+                    object_type=object_type_filter or None,
                 )
             else:
                 # Fallback to old method if no db_path (unlikely)
@@ -125,7 +130,7 @@ class AISearchManager(QObject):
                 )
                 results = search_service.query(
                     text=query,
-                    object_type=object_type_filter if object_type_filter else None,
+                    object_type=object_type_filter or None,
                     top_k=top_k,
                 )
 
@@ -162,10 +167,7 @@ class AISearchManager(QObject):
             )
 
             # Determine object types to rebuild
-            if object_type == "all":
-                types = ["entity", "event"]
-            else:
-                types = [object_type]
+            types = ["entity", "event"] if object_type == "all" else [object_type]
 
             # Get excluded attributes from QSettings
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
@@ -235,9 +237,7 @@ class AISearchManager(QObject):
             cursor = self.window.gui_db_service._connection.execute(
                 "SELECT MAX(created_at) FROM embeddings"
             )
-            last_time = cursor.fetchone()[0]
-
-            if last_time:
+            if last_time := cursor.fetchone()[0]:
                 dt = datetime.datetime.fromtimestamp(last_time)
                 last_indexed = dt.strftime("%Y-%m-%d %H:%M:%S")
             else:
