@@ -107,16 +107,20 @@ def test_preview_fetches_rag(qtbot, widget, monkeypatch):
     # Also set actual parent for Qt correctness if needed, but mock covers logic
     widget.setParent(win)
 
-    # Mock perform_rag_search
+    # Mock RAGService
     mock_rag_return = "### World Knowledge (RAG Data):\n**Test** (Item):\nContent..."
     rag_called = []
 
-    def mock_search(prompt, db_path):
-        rag_called.append((prompt, db_path))
-        return mock_rag_return
+    class MockRAGService:
+        def __init__(self, db_path):
+            rag_called.append((db_path, "init"))
+
+        def get_context(self, query, top_k=3, exclude_names=None):
+            rag_called.append((query, "get_context"))
+            return mock_rag_return
 
     monkeypatch.setattr(
-        "src.gui.widgets.llm_generation_widget.perform_rag_search", mock_search
+        "src.gui.widgets.llm_generation_widget.RAGService", MockRAGService
     )
 
     # Mock UI dialogs to be headless
@@ -181,12 +185,22 @@ def test_preview_fetches_rag(qtbot, widget, monkeypatch):
     widget.custom_prompt_edit.setPlainText("Test Prompt")
     widget._on_preview_clicked()
 
-    assert len(rag_called) == 1
-    assert rag_called[0][1] == "test.db"
+    # Check that we had an init call and a get_context call or similar
+    # We expect init with db_path, then get_context with query
+
+    # Filter for get_context call
+    context_calls = [c for c in rag_called if c[1] == "get_context"]
+    assert len(context_calls) == 1
+
+    # Check db_path from init call
+    init_calls = [c for c in rag_called if c[1] == "init"]
+    assert len(init_calls) == 1
+    assert init_calls[0][0] == "test.db"
+
     # Ensure RAG placeholder is present in the query
-    assert "{{RAG_CONTEXT}}" in rag_called[0][0]
+    assert "{{RAG_CONTEXT}}" in context_calls[0][0]
     # Ensure delimiter is present
-    assert "--- DATA: ENTITY/EVENT DETAILS ---" in rag_called[0][0]
+    assert "--- DATA: ENTITY/EVENT DETAILS ---" in context_calls[0][0]
 
 
 def test_default_system_prompt_fallback(qtbot, widget, monkeypatch):

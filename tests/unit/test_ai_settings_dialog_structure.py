@@ -27,7 +27,7 @@ def test_sidebar_structure(dialog):
     assert dialog.sidebar_list.item(0).text() == "Generative AI"
     assert dialog.sidebar_list.item(1).text() == "Knowledge Base"
     assert dialog.sidebar_list.item(2).text() == "Prompts & Persona"
-    assert dialog.sidebar_list.item(3).text() == "Templates"
+    assert dialog.sidebar_list.item(3).text() == "Task Templates"
 
     # We should have 4 pages in the stack
     assert dialog.pages_stack.count() == 4

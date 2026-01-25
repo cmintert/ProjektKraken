@@ -61,7 +61,7 @@ def test_templates_sidebar_item_exists(dialog):
     """Test that 'Templates' item exists in sidebar."""
     # Should be 4th item (index 3)
     assert dialog.sidebar_list.count() == 4
-    assert dialog.sidebar_list.item(3).text() == "Templates"
+    assert dialog.sidebar_list.item(3).text() == "Task Templates"
 
 
 def test_templates_page_structure(dialog):
