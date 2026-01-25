@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-25
-### Changed
-- Refactor LLM layout and implement scrollable inspectors
+### Fixed
+- Fix Type field width and style scroll areas
 
 
 *This changelog was automatically generated.*
