@@ -93,6 +93,7 @@ class UnifiedListWidget(QWidget):
     delete_requested = Signal(str, str)  # type, id
     create_event_requested = Signal()
     create_entity_requested = Signal()
+    create_map_requested = Signal()
     show_filter_dialog_requested = Signal()  # Request to open filter dialog
     clear_filter_requested = Signal()  # Request to clear filters
 
@@ -118,15 +119,48 @@ class UnifiedListWidget(QWidget):
         top_bar = QHBoxLayout()
 
         # New Button with Menu
+        # New Button with Menu
+        from src.gui.utils.shortcut_manager import ShortcutManager
+
         self.btn_new = QPushButton("New...")
         self.new_menu = QMenu(self)
-        self.new_menu.addAction(
-            "Create Event", lambda: self.create_event_requested.emit()
+
+        # Create Event Action
+        self.action_create_event = self.new_menu.addAction("Create Event")
+        self.action_create_event.setShortcut(ShortcutManager.CREATE_EVENT.key_sequence)
+        self.action_create_event.setShortcutContext(Qt.ShortcutContext.WindowShortcut)
+        self.action_create_event.triggered.connect(self._create_event_trigger)
+        self.addAction(
+            self.action_create_event
+        )  # IMPORTANT: Add to widget so it works in window
+
+        # Create Entity Action
+        self.action_create_entity = self.new_menu.addAction("Create Entity")
+        self.action_create_entity.setShortcut(
+            ShortcutManager.CREATE_ENTITY.key_sequence
         )
-        self.new_menu.addAction(
-            "Create Entity", lambda: self.create_entity_requested.emit()
-        )
+        self.action_create_entity.setShortcutContext(Qt.ShortcutContext.WindowShortcut)
+        self.action_create_entity.triggered.connect(self._create_entity_trigger)
+        self.addAction(self.action_create_entity)
+
+        # Create Map Action
+        self.action_create_map = self.new_menu.addAction("Create Map")
+        self.action_create_map.setShortcut(ShortcutManager.CREATE_MAP.key_sequence)
+        self.action_create_map.setShortcutContext(Qt.ShortcutContext.WindowShortcut)
+        self.action_create_map.triggered.connect(self._create_map_trigger)
+        self.addAction(self.action_create_map)
+
         self.btn_new.setMenu(self.new_menu)
+
+        # Set Tooltip
+        tooltip_text = (
+            f"Create New Item\n"
+            f"• {ShortcutManager.CREATE_EVENT.tooltip}\n"
+            f"• {ShortcutManager.CREATE_ENTITY.tooltip}\n"
+            f"• {ShortcutManager.CREATE_MAP.tooltip}"
+        )
+        self.btn_new.setToolTip(tooltip_text)
+
         top_bar.addWidget(self.btn_new)
 
         self.btn_refresh = QPushButton("Refresh")
@@ -740,3 +774,30 @@ class UnifiedListWidget(QWidget):
 
         """
         return QSize(350, 500)  # Comfortable browsing size
+
+    def _should_trigger_shortcut(self) -> bool:
+        """Checks if a shortcut should overlap with text input.
+
+        Returns:
+            bool: True if safe to trigger, False if a text widget is focused.
+        """
+        from PySide6.QtWidgets import QApplication, QTextEdit, QPlainTextEdit, QLineEdit
+
+        focus_widget = QApplication.focusWidget()
+        if focus_widget and isinstance(
+            focus_widget, (QTextEdit, QPlainTextEdit, QLineEdit)
+        ):
+            return False
+        return True
+
+    def _create_event_trigger(self) -> None:
+        if self._should_trigger_shortcut():
+            self.create_event_requested.emit()
+
+    def _create_entity_trigger(self) -> None:
+        if self._should_trigger_shortcut():
+            self.create_entity_requested.emit()
+
+    def _create_map_trigger(self) -> None:
+        if self._should_trigger_shortcut():
+            self.create_map_requested.emit()

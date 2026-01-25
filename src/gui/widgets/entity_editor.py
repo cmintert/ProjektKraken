@@ -98,7 +98,7 @@ class EntityEditorWidget(QWidget):
         from PySide6.QtWidgets import QToolButton
 
         self.btn_inject = QToolButton()
-        self.btn_inject.setText("Fast Inject \u25bc")  # Down arrow
+        self.btn_inject.setText("Fast Inject")  # Down arrow
         self.btn_inject.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.btn_inject.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
         self.btn_inject.setStyleSheet(StyleHelper.get_tool_button_style())

@@ -288,18 +288,14 @@ class LongformOutlineWidget(QTreeWidget):
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Handle keyboard shortcuts for promote/demote operations."""
-        # Check for Ctrl+[ (promote)
-        if (
-            event.key() == Qt.Key.Key_BracketLeft
-            and event.modifiers() == Qt.KeyboardModifier.ControlModifier
-        ):
+        from src.gui.utils.shortcut_manager import ShortcutManager
+
+        # Check for OUTLINE_PROMOTE
+        if ShortcutManager.check_event(event, ShortcutManager.OUTLINE_PROMOTE):
             self._promote_selected()
             event.accept()
-        # Check for Ctrl+] (demote)
-        elif (
-            event.key() == Qt.Key.Key_BracketRight
-            and event.modifiers() == Qt.KeyboardModifier.ControlModifier
-        ):
+        # Check for OUTLINE_DEMOTE
+        elif ShortcutManager.check_event(event, ShortcutManager.OUTLINE_DEMOTE):
             self._demote_selected()
             event.accept()
         else:
