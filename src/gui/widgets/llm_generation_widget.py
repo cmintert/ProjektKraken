@@ -29,6 +29,7 @@ from PySide6.QtWidgets import (
 
 from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.prompt_editor import PromptEditorWidget
 from src.services.llm_provider import create_provider
 from src.services.prompt_loader import PromptLoader
 
@@ -410,15 +411,16 @@ class LLMGenerationWidget(QWidget):
         main_layout.addWidget(lbl_instruction)
 
         # Custom prompt input
-        self.custom_prompt_edit = QPlainTextEdit()
-        self.custom_prompt_edit.setStyleSheet(StyleHelper.get_input_field_style())
+        self.custom_prompt_edit = PromptEditorWidget()
         self.custom_prompt_edit.setPlaceholderText(
             "Enter your custom prompt here...\n\n"
-            "Example: 'Write a mysterious backstory for this character' or "
-            "'Describe this location in vivid detail'"
+            "Example: 'Write a mysterious backstory for {name}' or "
+            "'Describe this {type} in vivid detail'"
         )
-        self.custom_prompt_edit.setMaximumHeight(80)
-        self.custom_prompt_edit.setVisible(True)  # Always visible
+        self.custom_prompt_edit.set_variables(
+            ["{name}", "{type}", "{description}", "{lore_date}"]
+        )
+        self.custom_prompt_edit.setMaximumHeight(120)  # Slightly taller for toolbar
         main_layout.addWidget(self.custom_prompt_edit)
 
         # Separator line before buttons
@@ -563,9 +565,7 @@ class LLMGenerationWidget(QWidget):
 
             # Load template selection
             self.template_combo.blockSignals(True)
-            saved_template_id = settings.value(
-                "ai_gen_template_id", "description_default"
-            )
+            saved_template_id = settings.value("ai_gen_template_id", None)
             # Find the template in the combo box by its data (template_id)
             for i in range(self.template_combo.count()):
                 if self.template_combo.itemData(i) == saved_template_id:
@@ -646,7 +646,6 @@ class LLMGenerationWidget(QWidget):
         if "existing_description" in context:
             context_lines.append(f"Description: {context['existing_description']}")
 
-        # Fallback for any other keys
         # Add any additional context fields
         context_lines.extend(
             f"{k.replace('_', ' ').title()}: {v}"
@@ -654,8 +653,10 @@ class LLMGenerationWidget(QWidget):
             if k
             not in ["name", "type", "lore_date", "existing_description", "description"]
         )
-
         context_str = "\n".join(context_lines)
+
+        # Substitute variables in user prompt
+        user_prompt = self._get_substituted_prompt(user_prompt, context)
 
         prompt = self._construct_prompt(context_str, user_prompt)
         self.status_label.setText("Generating with context...")
@@ -851,20 +852,19 @@ class LLMGenerationWidget(QWidget):
             self._get_rag_limit(),
         )
 
+        # Connect signals
+        self._worker.generation_complete.connect(self._on_generation_complete)
+        self._worker.generation_error.connect(self._on_generation_error)
+
+        # Start worker
+        self._worker.start()
+
     def _get_rag_limit(self) -> int:
         """Safely retrieve RAG limit from input."""
         try:
             return int(self.rag_limit_input.text())
         except (ValueError, AttributeError):
             return 3  # Default fallback
-
-        # Connect signals
-        # self._worker.chunk_received.connect(self._on_chunk_received)  # Removed
-        self._worker.generation_complete.connect(self._on_generation_complete)
-        self._worker.generation_error.connect(self._on_generation_error)
-
-        # Start worker
-        self._worker.start()
 
     # def _on_chunk_received(self, chunk: str):
     #     """Handle streaming chunk."""
@@ -985,6 +985,9 @@ class LLMGenerationWidget(QWidget):
 
         context_str = "\n".join(context_lines)
 
+        # Substitute variables in user prompt
+        user_prompt = self._get_substituted_prompt(user_prompt, context)
+
         # Construct prompt using helper method
         prompt = self._construct_prompt(context_str, user_prompt)
 
@@ -1101,3 +1104,27 @@ class LLMGenerationWidget(QWidget):
         layout.addLayout(btn_layout)
 
         dlg.exec()
+
+    def _get_substituted_prompt(self, user_prompt: str, context: dict) -> str:
+        """Substitute variables like {name} in the user prompt.
+
+        Args:
+            user_prompt: Raw user instruction.
+            context: Context dictionary from editor.
+
+        Returns:
+            str: Substituted prompt.
+        """
+        # Normalize keys for substitution
+        subst_context = {
+            "name": context.get("name", ""),
+            "type": context.get("type", ""),
+            "description": context.get("existing_description", ""),
+            "lore_date": context.get("lore_date", ""),
+        }
+
+        result = user_prompt
+        for key, val in subst_context.items():
+            result = result.replace(f"{{{key}}}", str(val))
+
+        return result
