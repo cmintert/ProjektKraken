@@ -280,8 +280,79 @@
         <article role="main" id="furo-main-content">
           <section id="development-guide">
 <h1>Development Guide<a class="headerlink" href="#development-guide" title="Link to this heading">¶</a></h1>
+<p>This guide covers setting up a development environment for ProjektKraken and understanding the development workflow.</p>
 <section id="environment-setup">
 <h2>Environment Setup<a class="headerlink" href="#environment-setup" title="Link to this heading">¶</a></h2>
+<section id="prerequisites">
+<h3>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Python 3.11+</strong> (required)</p></li>
+<li><p><strong>Git</strong> (for version control)</p></li>
+<li><p><strong>Virtual environment</strong> (recommended)</p></li>
+</ul>
+</section>
+<section id="platform-specific-setup">
+<h3>Platform-Specific Setup<a class="headerlink" href="#platform-specific-setup" title="Link to this heading">¶</a></h3>
+<section id="windows">
+<h4>Windows<a class="headerlink" href="#windows" title="Link to this heading">¶</a></h4>
+<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="c"># Create virtual environment</span>
+<span class="n">python</span> <span class="n">-m</span> <span class="n">venv</span> <span class="p">.</span><span class="n">venv</span>
+
+<span class="c"># Activate virtual environment</span>
+<span class="p">.\.</span><span class="n">venv</span><span class="p">\</span><span class="n">Scripts</span><span class="p">\</span><span class="n">activate</span>
+
+<span class="c"># Install dependencies</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="n">-r</span> <span class="n">requirements</span><span class="p">.</span><span class="n">txt</span>
+
+<span class="c"># Install pre-commit hooks</span>
+<span class="n">pre-commit</span> <span class="n">install</span>
+</pre></div>
+</div>
+</section>
+<section id="linux-macos">
+<h4>Linux / macOS<a class="headerlink" href="#linux-macos" title="Link to this heading">¶</a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create virtual environment</span>
+python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+
+<span class="c1"># Activate virtual environment</span>
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+
+<span class="c1"># Install dependencies</span>
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+
+<span class="c1"># Install pre-commit hooks</span>
+pre-commit<span class="w"> </span>install
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Link to this heading">¶</a></h2>
+<p>All project dependencies are managed in <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code>:</p>
+<p><strong>Core Dependencies:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">PySide6</span></code> - Qt 6 GUI framework</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fastapi</span></code> - Web framework for embedded server</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">uvicorn</span></code> - ASGI server for FastAPI</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pytest</span></code> - Testing framework</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pytest-qt</span></code> - Qt testing support</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pytest-cov</span></code> - Code coverage</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ruff</span></code> - Linter and formatter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pyvis</span></code> - Graph visualization</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">networkx</span></code> - Graph algorithms</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">python-dotenv</span></code> - Environment configuration</p></li>
+</ul>
+<p><strong>Optional Dependencies:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">openai</span></code> - OpenAI API client</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">anthropic</span></code> - Anthropic API client</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">google-cloud-aiplatform</span></code> - Google Vertex AI client</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sentence-transformers</span></code> - Local embeddings</p></li>
+</ul>
+</section>
+<section id="id1">
+<h2>Environment Setup<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
 <p>This project uses a local virtual environment (<code class="docutils literal notranslate"><span class="pre">.venv</span></code>) on Windows.</p>
 </section>
 <section id="pre-commit-hooks">
@@ -308,17 +379,326 @@ On Windows, executing the module via <code class="docutils literal notranslate">
 <p>The hooks run automatically on <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">commit</span></code>. To run them manually:</p>
 <ol class="arabic">
 <li><p>Activate the virtual environment:</p>
-<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="p">.</span> <span class="p">.\.</span><span class="n">venv</span><span class="p">\</span><span class="n">Scripts</span><span class="p">\</span><span class="n">activate</span><span class="p">.</span><span class="n">ps1</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Linux/macOS</span>
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+
+<span class="c1"># Windows PowerShell</span>
+.<span class="se">\.</span>venv<span class="se">\S</span>cripts<span class="se">\a</span>ctivate.ps1
 </pre></div>
 </div>
 </li>
 <li><p>Run the hooks:</p>
-<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="n">pre-commit</span> <span class="n">run</span> <span class="p">-</span><span class="n">-all-files</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files
 </pre></div>
 </div>
 </li>
 </ol>
 </section>
+</section>
+<section id="development-workflow">
+<h2>Development Workflow<a class="headerlink" href="#development-workflow" title="Link to this heading">¶</a></h2>
+<section id="running-the-application">
+<h3>Running the Application<a class="headerlink" href="#running-the-application" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Activate virtual environment</span>
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate<span class="w">  </span><span class="c1"># Linux/macOS</span>
+.<span class="se">\.</span>venv<span class="se">\S</span>cripts<span class="se">\a</span>ctivate<span class="w">   </span><span class="c1"># Windows</span>
+
+<span class="c1"># Run the GUI application</span>
+python<span class="w"> </span>launcher.py
+
+<span class="c1"># Or run directly</span>
+python<span class="w"> </span>-m<span class="w"> </span>src.app.main
+</pre></div>
+</div>
+</section>
+<section id="running-tests">
+<h3>Running Tests<a class="headerlink" href="#running-tests" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run all tests</span>
+pytest
+
+<span class="c1"># Run with coverage</span>
+pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>term-missing
+
+<span class="c1"># Run specific test file</span>
+pytest<span class="w"> </span>tests/unit/test_events.py
+
+<span class="c1"># Run integration tests only</span>
+pytest<span class="w"> </span>tests/integration/
+
+<span class="c1"># Run with verbose output</span>
+pytest<span class="w"> </span>-v
+</pre></div>
+</div>
+<p>See <strong><a class="reference internal" href="TESTING.html"><span class="std std-doc">TESTING.md</span></a></strong> for detailed testing guide.</p>
+</section>
+<section id="code-quality-checks">
+<h3>Code Quality Checks<a class="headerlink" href="#code-quality-checks" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Format code with ruff</span>
+ruff<span class="w"> </span>format<span class="w"> </span>src/<span class="w"> </span>tests/
+
+<span class="c1"># Lint code with ruff</span>
+ruff<span class="w"> </span>check<span class="w"> </span>src/<span class="w"> </span>tests/
+
+<span class="c1"># Fix auto-fixable issues</span>
+ruff<span class="w"> </span>check<span class="w"> </span>--fix<span class="w"> </span>src/<span class="w"> </span>tests/
+
+<span class="c1"># Type checking (if mypy configured)</span>
+mypy<span class="w"> </span>src/
+</pre></div>
+</div>
+</section>
+<section id="building-documentation">
+<h3>Building Documentation<a class="headerlink" href="#building-documentation" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Generate Sphinx documentation</span>
+<span class="nb">cd</span><span class="w"> </span>docs
+sphinx-build<span class="w"> </span>-b<span class="w"> </span>html<span class="w"> </span>.<span class="w"> </span>_build
+
+<span class="c1"># Open in browser</span>
+open<span class="w"> </span>_build/index.html<span class="w">  </span><span class="c1"># macOS</span>
+xdg-open<span class="w"> </span>_build/index.html<span class="w">  </span><span class="c1"># Linux</span>
+start<span class="w"> </span>_build/index.html<span class="w">  </span><span class="c1"># Windows</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="project-structure">
+<h2>Project Structure<a class="headerlink" href="#project-structure" title="Link to this heading">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>ProjektKraken/
+├── src/
+│   ├── app/           # Application entry point and MainWindow
+│   ├── core/          # Business logic and data models
+│   ├── services/      # Data access and background workers
+│   ├── commands/      # Command pattern implementations
+│   ├── gui/           # PySide6 widgets and UI components
+│   ├── cli/           # Command-line tools
+│   ├── webserver/     # Embedded FastAPI server
+│   └── resources/     # UI resources (icons, themes, etc.)
+├── tests/
+│   ├── unit/          # Fast unit tests
+│   └── integration/   # Integration tests
+├── docs/              # Documentation
+├── scripts/           # Utility scripts
+└── themes.json        # UI theme definitions
+</pre></div>
+</div>
+<section id="layer-architecture">
+<h3>Layer Architecture<a class="headerlink" href="#layer-architecture" title="Link to this heading">¶</a></h3>
+<p>ProjektKraken follows a strict <strong>Service-Oriented Architecture (SOA)</strong>:</p>
+<ol class="arabic simple">
+<li><p><strong>Core Layer</strong> (<code class="docutils literal notranslate"><span class="pre">src/core/</span></code>) - Data models and business logic</p>
+<ul class="simple">
+<li><p>No dependencies on GUI or services</p></li>
+<li><p>Pure Python dataclasses and utilities</p></li>
+</ul>
+</li>
+<li><p><strong>Services Layer</strong> (<code class="docutils literal notranslate"><span class="pre">src/services/</span></code>) - Data access and operations</p>
+<ul class="simple">
+<li><p>Database operations</p></li>
+<li><p>Background workers</p></li>
+<li><p>External API integrations</p></li>
+</ul>
+</li>
+<li><p><strong>Commands Layer</strong> (<code class="docutils literal notranslate"><span class="pre">src/commands/</span></code>) - Command pattern for undo/redo</p>
+<ul class="simple">
+<li><p>All user actions as command objects</p></li>
+<li><p>Shared between GUI and CLI</p></li>
+</ul>
+</li>
+<li><p><strong>GUI Layer</strong> (<code class="docutils literal notranslate"><span class="pre">src/gui/</span></code>) - User interface</p>
+<ul class="simple">
+<li><p>“Dumb UI” - no business logic</p></li>
+<li><p>Signals/slots for communication</p></li>
+</ul>
+</li>
+<li><p><strong>App Layer</strong> (<code class="docutils literal notranslate"><span class="pre">src/app/</span></code>) - Application orchestration</p>
+<ul class="simple">
+<li><p>MainWindow coordinates components</p></li>
+<li><p>Signal/slot wiring</p></li>
+</ul>
+</li>
+<li><p><strong>CLI Layer</strong> (<code class="docutils literal notranslate"><span class="pre">src/cli/</span></code>) - Headless tools</p>
+<ul class="simple">
+<li><p>Reuses commands from Commands layer</p></li>
+<li><p>100% feature parity with GUI</p></li>
+</ul>
+</li>
+</ol>
+<p>See <strong><a class="reference internal" href="#../Design.md"><span class="xref myst">Design.md</span></a></strong> for complete architecture specification.</p>
+</section>
+</section>
+<section id="development-best-practices">
+<h2>Development Best Practices<a class="headerlink" href="#development-best-practices" title="Link to this heading">¶</a></h2>
+<section id="code-style">
+<h3>Code Style<a class="headerlink" href="#code-style" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Line Length:</strong> 88 characters (Black/Ruff default)</p></li>
+<li><p><strong>Imports:</strong> Group by stdlib, third-party, local (no wildcards)</p></li>
+<li><p><strong>Type Hints:</strong> Required for all functions</p></li>
+<li><p><strong>Docstrings:</strong> Google Style, required for all public APIs</p></li>
+<li><p><strong>No print():</strong> Use <code class="docutils literal notranslate"><span class="pre">logging</span></code> module instead</p></li>
+</ul>
+</section>
+<section id="adding-new-features">
+<h3>Adding New Features<a class="headerlink" href="#adding-new-features" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Define data model</strong> in <code class="docutils literal notranslate"><span class="pre">src/core/</span></code></p></li>
+<li><p><strong>Add service method</strong> in <code class="docutils literal notranslate"><span class="pre">src/services/</span></code></p></li>
+<li><p><strong>Create command class</strong> in <code class="docutils literal notranslate"><span class="pre">src/commands/</span></code></p></li>
+<li><p><strong>Add GUI widget</strong> in <code class="docutils literal notranslate"><span class="pre">src/gui/</span></code> (if applicable)</p></li>
+<li><p><strong>Add CLI tool</strong> in <code class="docutils literal notranslate"><span class="pre">src/cli/</span></code> (for feature parity)</p></li>
+<li><p><strong>Write tests</strong> in <code class="docutils literal notranslate"><span class="pre">tests/</span></code></p></li>
+<li><p><strong>Update documentation</strong> in <code class="docutils literal notranslate"><span class="pre">docs/</span></code></p></li>
+</ol>
+</section>
+<section id="common-tasks">
+<h3>Common Tasks<a class="headerlink" href="#common-tasks" title="Link to this heading">¶</a></h3>
+<section id="adding-a-new-entity-type">
+<h4>Adding a New Entity Type<a class="headerlink" href="#adding-a-new-entity-type" title="Link to this heading">¶</a></h4>
+<ol class="arabic simple">
+<li><p>Update <code class="docutils literal notranslate"><span class="pre">src/core/entities.py</span></code> if needed</p></li>
+<li><p>Add service methods in <code class="docutils literal notranslate"><span class="pre">src/services/db_service.py</span></code></p></li>
+<li><p>Create command in <code class="docutils literal notranslate"><span class="pre">src/commands/</span></code></p></li>
+<li><p>Add GUI editor in <code class="docutils literal notranslate"><span class="pre">src/gui/</span></code></p></li>
+<li><p>Add CLI tool in <code class="docutils literal notranslate"><span class="pre">src/cli/entity.py</span></code></p></li>
+<li><p>Write tests</p></li>
+</ol>
+</section>
+<section id="adding-a-new-cli-command">
+<h4>Adding a New CLI Command<a class="headerlink" href="#adding-a-new-cli-command" title="Link to this heading">¶</a></h4>
+<ol class="arabic simple">
+<li><p>Create module in <code class="docutils literal notranslate"><span class="pre">src/cli/&lt;name&gt;.py</span></code></p></li>
+<li><p>Reuse command classes from <code class="docutils literal notranslate"><span class="pre">src/commands/</span></code></p></li>
+<li><p>Add argparse configuration</p></li>
+<li><p>Update <code class="docutils literal notranslate"><span class="pre">src/cli/README.md</span></code></p></li>
+<li><p>Write integration test</p></li>
+</ol>
+</section>
+<section id="adding-a-new-service">
+<h4>Adding a New Service<a class="headerlink" href="#adding-a-new-service" title="Link to this heading">¶</a></h4>
+<ol class="arabic simple">
+<li><p>Create service class in <code class="docutils literal notranslate"><span class="pre">src/services/&lt;name&gt;_service.py</span></code></p></li>
+<li><p>Add to <code class="docutils literal notranslate"><span class="pre">MainWindow</span></code> initialization if needed</p></li>
+<li><p>Use Qt threading patterns for background operations</p></li>
+<li><p>Document in appropriate docs file</p></li>
+<li><p>Write unit tests</p></li>
+</ol>
+</section>
+</section>
+</section>
+<section id="environment-variables">
+<h2>Environment Variables<a class="headerlink" href="#environment-variables" title="Link to this heading">¶</a></h2>
+<p>ProjektKraken supports configuration via environment variables:</p>
+<p><strong>LLM Configuration:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Embedding provider</span>
+<span class="nv">EMBED_PROVIDER</span><span class="o">=</span>lmstudio<span class="w">  </span><span class="c1"># or sentence-transformers</span>
+
+<span class="c1"># LM Studio</span>
+<span class="nv">LMSTUDIO_EMBED_URL</span><span class="o">=</span>http://localhost:8080/v1/embeddings
+<span class="nv">LMSTUDIO_MODEL</span><span class="o">=</span>nomic-ai/nomic-embed-text-v1.5-GGUF
+<span class="nv">LMSTUDIO_API_KEY</span><span class="o">=</span>optional-key
+
+<span class="c1"># OpenAI</span>
+<span class="nv">OPENAI_API_KEY</span><span class="o">=</span>sk-...
+<span class="nv">OPENAI_MODEL</span><span class="o">=</span>gpt-4
+
+<span class="c1"># Anthropic</span>
+<span class="nv">ANTHROPIC_API_KEY</span><span class="o">=</span>sk-ant-...
+<span class="nv">ANTHROPIC_MODEL</span><span class="o">=</span>claude-3-opus-20240229
+
+<span class="c1"># Google Vertex AI</span>
+<span class="nv">GOOGLE_PROJECT_ID</span><span class="o">=</span>my-project
+<span class="nv">GOOGLE_LOCATION</span><span class="o">=</span>us-central1
+<span class="nv">GOOGLE_MODEL</span><span class="o">=</span>gemini-pro
+</pre></div>
+</div>
+<p><strong>Webserver Configuration:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">WEBSERVER_HOST</span><span class="o">=</span><span class="m">127</span>.0.0.1
+<span class="nv">WEBSERVER_PORT</span><span class="o">=</span><span class="m">8000</span>
+</pre></div>
+</div>
+<p>Create a <code class="docutils literal notranslate"><span class="pre">.env</span></code> file in the project root for local configuration (not committed to git).</p>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">¶</a></h2>
+<section id="virtual-environment-issues">
+<h3>Virtual Environment Issues<a class="headerlink" href="#virtual-environment-issues" title="Link to this heading">¶</a></h3>
+<p><strong>Problem:</strong> Command not found after activating venv</p>
+<p><strong>Solution:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Recreate virtual environment</span>
+rm<span class="w"> </span>-rf<span class="w"> </span>.venv
+python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</pre></div>
+</div>
+</section>
+<section id="import-errors">
+<h3>Import Errors<a class="headerlink" href="#import-errors" title="Link to this heading">¶</a></h3>
+<p><strong>Problem:</strong> <code class="docutils literal notranslate"><span class="pre">ModuleNotFoundError</span></code> when running tests or app</p>
+<p><strong>Solution:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Ensure you&#39;re in project root</span>
+<span class="nb">cd</span><span class="w"> </span>/path/to/ProjektKraken
+
+<span class="c1"># Ensure virtual environment is activated</span>
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+
+<span class="c1"># Reinstall dependencies</span>
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</pre></div>
+</div>
+</section>
+<section id="qt-platform-plugin-errors">
+<h3>Qt Platform Plugin Errors<a class="headerlink" href="#qt-platform-plugin-errors" title="Link to this heading">¶</a></h3>
+<p><strong>Problem:</strong> <code class="docutils literal notranslate"><span class="pre">qt.qpa.plugin:</span> <span class="pre">Could</span> <span class="pre">not</span> <span class="pre">load</span> <span class="pre">the</span> <span class="pre">Qt</span> <span class="pre">platform</span> <span class="pre">plugin</span></code></p>
+<p><strong>Solution (Linux):</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Install required system libraries</span>
+sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>libegl1<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>libxkbcommon-x11-0<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>libxcb-icccm4<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>libxcb-image0<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>libxcb-keysyms1
+
+<span class="c1"># For headless testing</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">QT_QPA_PLATFORM</span><span class="o">=</span>offscreen
+</pre></div>
+</div>
+</section>
+<section id="pre-commit-hook-failures">
+<h3>Pre-commit Hook Failures<a class="headerlink" href="#pre-commit-hook-failures" title="Link to this heading">¶</a></h3>
+<p><strong>Problem:</strong> Ruff or pytest fails during commit</p>
+<p><strong>Solution:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Fix formatting</span>
+ruff<span class="w"> </span>format<span class="w"> </span>src/<span class="w"> </span>tests/
+
+<span class="c1"># Fix linting issues</span>
+ruff<span class="w"> </span>check<span class="w"> </span>--fix<span class="w"> </span>src/<span class="w"> </span>tests/
+
+<span class="c1"># Run tests to identify failures</span>
+pytest
+</pre></div>
+</div>
+</section>
+</section>
+<section id="related-documentation">
+<h2>Related Documentation<a class="headerlink" href="#related-documentation" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong><a class="reference internal" href="TESTING.html"><span class="std std-doc">TESTING.md</span></a></strong> - Testing guide</p></li>
+<li><p><strong><a class="reference internal" href="#../Design.md"><span class="xref myst">Design.md</span></a></strong> - Architecture specification</p></li>
+<li><p><strong><a class="reference internal" href="DATABASE.html"><span class="std std-doc">DATABASE.md</span></a></strong> - Database architecture</p></li>
+<li><p><strong><a class="reference internal" href="QT_THREADING_SAFETY.html"><span class="std std-doc">QT_THREADING_SAFETY.md</span></a></strong> - Threading patterns</p></li>
+<li><p><strong><a class="reference internal" href="CLI.html"><span class="std std-doc">CLI.md</span></a></strong> - CLI tools overview</p></li>
+<li><p><strong><a class="reference internal" href="SECURITY.html"><span class="std std-doc">SECURITY.md</span></a></strong> - Security best practices</p></li>
+</ul>
+</section>
+<section id="getting-help">
+<h2>Getting Help<a class="headerlink" href="#getting-help" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Documentation:</strong> Check <code class="docutils literal notranslate"><span class="pre">docs/INDEX.md</span></code> for complete documentation index</p></li>
+<li><p><strong>Code Examples:</strong> Browse existing code for patterns</p></li>
+<li><p><strong>Tests:</strong> Check test files for usage examples</p></li>
+<li><p><strong>Architecture:</strong> Review <code class="docutils literal notranslate"><span class="pre">Design.md</span></code> for system design</p></li>
+</ul>
 </section>
 </section>
 
@@ -378,12 +758,54 @@ On Windows, executing the module via <code class="docutils literal notranslate">
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Development Guide</a><ul>
-<li><a class="reference internal" href="#environment-setup">Environment Setup</a></li>
+<li><a class="reference internal" href="#environment-setup">Environment Setup</a><ul>
+<li><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li><a class="reference internal" href="#platform-specific-setup">Platform-Specific Setup</a><ul>
+<li><a class="reference internal" href="#windows">Windows</a></li>
+<li><a class="reference internal" href="#linux-macos">Linux / macOS</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#dependencies">Dependencies</a></li>
+<li><a class="reference internal" href="#id1">Environment Setup</a></li>
 <li><a class="reference internal" href="#pre-commit-hooks">Pre-commit Hooks</a><ul>
 <li><a class="reference internal" href="#configuration-rules">Configuration Rules</a></li>
 <li><a class="reference internal" href="#running-hooks">Running Hooks</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#development-workflow">Development Workflow</a><ul>
+<li><a class="reference internal" href="#running-the-application">Running the Application</a></li>
+<li><a class="reference internal" href="#running-tests">Running Tests</a></li>
+<li><a class="reference internal" href="#code-quality-checks">Code Quality Checks</a></li>
+<li><a class="reference internal" href="#building-documentation">Building Documentation</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#project-structure">Project Structure</a><ul>
+<li><a class="reference internal" href="#layer-architecture">Layer Architecture</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#development-best-practices">Development Best Practices</a><ul>
+<li><a class="reference internal" href="#code-style">Code Style</a></li>
+<li><a class="reference internal" href="#adding-new-features">Adding New Features</a></li>
+<li><a class="reference internal" href="#common-tasks">Common Tasks</a><ul>
+<li><a class="reference internal" href="#adding-a-new-entity-type">Adding a New Entity Type</a></li>
+<li><a class="reference internal" href="#adding-a-new-cli-command">Adding a New CLI Command</a></li>
+<li><a class="reference internal" href="#adding-a-new-service">Adding a New Service</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#environment-variables">Environment Variables</a></li>
+<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
+<li><a class="reference internal" href="#virtual-environment-issues">Virtual Environment Issues</a></li>
+<li><a class="reference internal" href="#import-errors">Import Errors</a></li>
+<li><a class="reference internal" href="#qt-platform-plugin-errors">Qt Platform Plugin Errors</a></li>
+<li><a class="reference internal" href="#pre-commit-hook-failures">Pre-commit Hook Failures</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#related-documentation">Related Documentation</a></li>
+<li><a class="reference internal" href="#getting-help">Getting Help</a></li>
 </ul>
 </li>
 </ul>

@@ -285,7 +285,9 @@
 <h2>Quick Start<a class="headerlink" href="#quick-start" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><strong><span class="xref myst">README.md</span></strong> - Project overview, installation, and basic usage</p></li>
+<li><p><strong><a class="reference internal" href="USER_WORKFLOWS.html"><span class="std std-doc">USER_WORKFLOWS.md</span></a></strong> - Step-by-step workflows for common worldbuilding tasks</p></li>
 <li><p><strong><a class="reference internal" href="DEVELOPMENT.html"><span class="std std-doc">DEVELOPMENT.md</span></a></strong> - Development environment setup</p></li>
+<li><p><strong><a class="reference internal" href="CLI.html"><span class="std std-doc">CLI.md</span></a></strong> - Command-line tools overview and quick reference</p></li>
 </ul>
 </section>
 <section id="architecture-design">
@@ -314,6 +316,21 @@
 </ul>
 </li>
 <li><p><strong><a class="reference internal" href="SCHEMA_REFERENCE.html"><span class="std std-doc">SCHEMA_REFERENCE.md</span></a></strong> - Auto-generated database schema reference with ER diagrams</p></li>
+<li><p><strong><a class="reference internal" href="QT_THREADING_SAFETY.html"><span class="std std-doc">QT_THREADING_SAFETY.md</span></a></strong> - Qt threading patterns and safety guidelines</p></li>
+</ul>
+</section>
+<section id="security-production-readiness">
+<h2>Security &amp; Production Readiness<a class="headerlink" href="#security-production-readiness" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong><a class="reference internal" href="PRODUCTION_READINESS.html"><span class="std std-doc">PRODUCTION_READINESS.md</span></a></strong> - Comprehensive production readiness assessment</p>
+<ul>
+<li><p>Code quality metrics and reviews</p></li>
+<li><p>Architecture and threading safety</p></li>
+<li><p>Security scan results</p></li>
+<li><p>Performance assessment</p></li>
+<li><p>Risk assessment and recommendations</p></li>
+</ul>
+</li>
 </ul>
 </section>
 <section id="security">
@@ -387,8 +404,39 @@
 <li><p>Security and privacy</p></li>
 </ul>
 </li>
+<li><p><strong><a class="reference internal" href="WEBSERVER.html"><span class="std std-doc">WEBSERVER.md</span></a></strong> - Embedded FastAPI webserver:</p>
+<ul>
+<li><p>REST API endpoints (V1: read-only)</p></li>
+<li><p>Longform document serving</p></li>
+<li><p>Threading model and integration</p></li>
+<li><p>Security considerations</p></li>
+<li><p>Usage examples</p></li>
+</ul>
+</li>
 </ul>
 </section>
+</section>
+<section id="cli-tools">
+<h2>CLI Tools<a class="headerlink" href="#cli-tools" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong><a class="reference internal" href="CLI.html"><span class="std std-doc">CLI.md</span></a></strong> - Command-line interface overview:</p>
+<ul>
+<li><p>16 CLI modules for headless operation</p></li>
+<li><p>100% feature parity with GUI</p></li>
+<li><p>Automation and scripting examples</p></li>
+<li><p>CI/CD integration</p></li>
+</ul>
+</li>
+<li><p><strong><span class="xref myst">src/cli/README.md</span></strong> - Complete CLI command reference:</p>
+<ul>
+<li><p>Detailed command syntax for all modules</p></li>
+<li><p>Event, entity, relation management</p></li>
+<li><p>Semantic search indexing</p></li>
+<li><p>Map, calendar, timeline tools</p></li>
+<li><p>Export and backup commands</p></li>
+</ul>
+</li>
+</ul>
 </section>
 <section id="migration-guides">
 <h2>Migration Guides<a class="headerlink" href="#migration-guides" title="Link to this heading">¶</a></h2>
@@ -403,11 +451,30 @@
 </li>
 </ul>
 </section>
+<section id="specialized-documentation">
+<h2>Specialized Documentation<a class="headerlink" href="#specialized-documentation" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong><a class="reference internal" href="BACKUP_STRATEGY.html"><span class="std std-doc">BACKUP_STRATEGY.md</span></a></strong> - Backup system documentation</p></li>
+<li><p><strong><a class="reference internal" href="RELEASE_POLICY.html"><span class="std std-doc">RELEASE_POLICY.md</span></a></strong> - Release process and versioning</p></li>
+<li><p><strong><a class="reference internal" href="PYVIS_INTEGRATION_GUIDE.html"><span class="std std-doc">PYVIS_INTEGRATION_GUIDE.md</span></a></strong> - Graph visualization integration</p></li>
+<li><p><strong><a class="reference internal" href="TEMPORAL_MAPS_CONCEPT.html"><span class="std std-doc">TEMPORAL_MAPS_CONCEPT.md</span></a></strong> - Temporal maps and 4D visualization</p></li>
+<li><p><strong><a class="reference internal" href="RELATION_ATTRIBUTES_UI_PLAN.html"><span class="std std-doc">RELATION_ATTRIBUTES_UI_PLAN.md</span></a></strong> - Relation attributes UI design</p></li>
+</ul>
+</section>
+<section id="llm-ai-documentation">
+<h2>LLM &amp; AI Documentation<a class="headerlink" href="#llm-ai-documentation" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong><a class="reference internal" href="LLM_REVIEW.html"><span class="std std-doc">LLM_REVIEW.md</span></a></strong> - Detailed LLM integration review (516 lines)</p></li>
+<li><p><strong><a class="reference internal" href="LLM_REVIEW_SUMMARY.html"><span class="std std-doc">LLM_REVIEW_SUMMARY.md</span></a></strong> - Quick reference for LLM assessment</p></li>
+<li><p><strong><a class="reference internal" href="COVERAGE_IMPROVEMENT_SUMMARY.html"><span class="std std-doc">COVERAGE_IMPROVEMENT_SUMMARY.md</span></a></strong> - Testing coverage metrics</p></li>
+</ul>
+</section>
 <section id="project-information">
 <h2>Project Information<a class="headerlink" href="#project-information" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><strong><span class="xref myst">CHANGELOG.md</span></strong> - Version history and notable changes</p></li>
 <li><p><strong><a class="reference internal" href="LICENSE.html"><span class="std std-doc">LICENSE.md</span></a></strong> - GNU Affero General Public License v3.0 (AGPLv3)</p></li>
+<li><p><strong><a class="reference internal" href="PRODUCTION_READINESS.html"><span class="std std-doc">PRODUCTION_READINESS.md</span></a></strong> - Production readiness status</p></li>
 </ul>
 </section>
 <section id="api-documentation-sphinx">
@@ -451,39 +518,78 @@ sphinx-build<span class="w"> </span>-b<span class="w"> </span>html<span class="w
 <section id="file-organization">
 <h2>File Organization<a class="headerlink" href="#file-organization" title="Link to this heading">¶</a></h2>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>ProjektKraken/
-├── README.md                     # Main project overview
-├── Design.md                     # Architecture specification
-├── CHANGELOG.md                  # Version history
+├── README.md                          # Main project overview
+├── Design.md                          # Architecture specification
+├── CHANGELOG.md                       # Version history
 └── docs/
-    ├── INDEX.md                      # This file
-    ├── DATABASE.md                   # Database architecture
-    ├── DEVELOPMENT.md                # Development setup
-    ├── SECURITY.md                   # Security practices
-    ├── WIKI_LINKING.md              # Wiki linking feature
-    ├── MAP_USAGE_EXAMPLES.md        # Map system feature
-    ├── LONGFORM.md                  # Longform document feature
-    ├── SEMANTIC_SEARCH.md           # Semantic search feature
-    ├── LLM_INTEGRATION.md           # LLM integration feature
-    ├── TAG_MIGRATION_GUIDE.md       # Tag migration guide
-    ├── SCHEMA_REFERENCE.md          # Auto-generated schema
-    ├── LICENSE.md                   # License text
-    ├── index.rst                    # Sphinx index
-    ├── conf.py                      # Sphinx configuration
-    ├── generate_schema_docs.py      # Schema doc generator
-    ├── archive/                     # Historical reports
-    │   ├── README.md                # Archive index
-    │   ├── CODE_ANALYSIS_REPORT.md
+    ├── INDEX.md                       # This file
+    │
+    ├── User Documentation
+    │   └── USER_WORKFLOWS.md          # Step-by-step workflows for users
+    │
+    ├── Core Documentation
+    │   ├── DATABASE.md                # Database architecture
+    │   ├── DEVELOPMENT.md             # Development setup
+    │   ├── TESTING.md                 # Testing guide
+    │   ├── SECURITY.md                # Security practices
+    │   ├── QT_THREADING_SAFETY.md     # Threading patterns
+    │   ├── PRODUCTION_READINESS.md    # Production readiness assessment
+    │   └── SCHEMA_REFERENCE.md        # Auto-generated schema
+    │
+    ├── Feature Documentation
+    │   ├── WIKI_LINKING.md            # Wiki linking feature
+    │   ├── MAP_USAGE_EXAMPLES.md      # Map system feature
+    │   ├── LONGFORM.md                # Longform document feature
+    │   ├── SEMANTIC_SEARCH.md         # Semantic search feature
+    │   ├── LLM_INTEGRATION.md         # LLM integration feature
+    │   ├── WEBSERVER.md               # Embedded API server
+    │   └── CLI.md                     # CLI tools overview
+    │
+    ├── Specialized Guides
+    │   ├── TAG_MIGRATION_GUIDE.md     # Tag migration guide
+    │   ├── BACKUP_STRATEGY.md         # Backup system
+    │   ├── RELEASE_POLICY.md          # Release process
+    │   ├── PYVIS_INTEGRATION_GUIDE.md # Graph visualization
+    │   ├── TEMPORAL_MAPS_CONCEPT.md   # 4D maps concept
+    │   └── RELATION_ATTRIBUTES_UI_PLAN.md  # UI planning
+    │
+    ├── LLM &amp; AI Documentation
+    │   ├── LLM_REVIEW.md              # Detailed LLM review
+    │   ├── LLM_REVIEW_SUMMARY.md      # LLM review summary
+    │   └── COVERAGE_IMPROVEMENT_SUMMARY.md
+    │
+    ├── Sphinx Documentation
+    │   ├── index.rst                  # Sphinx index
+    │   ├── conf.py                    # Sphinx configuration
+    │   ├── generate_schema_docs.py    # Schema doc generator
+    │   ├── modules.rst                # Module index
+    │   ├── app.rst, cli.rst, etc.     # Auto-generated API docs
+    │
+    ├── archive/                       # Historical reports
+    │   ├── README.md                  # Archive index
+    │   ├── CODE_ANALYSIS_REPORT.md    # (Dec 2024)
     │   ├── CODE_IMPROVEMENTS_SUMMARY.md
     │   ├── PRODUCTION_READINESS_REPORT.md
     │   ├── REFACTORING_SUMMARY.md
-    │   └── ARCHITECTURE_DIAGRAMS.md
-    └── *.rst                        # Sphinx API documentation files
+    │   ├── ARCHITECTURE_DIAGRAMS.md
+    │   ├── CODE_REVIEW_SUMMARY.md     # (Jan 2026, superseded)
+    │   ├── CODE_REVIEW_EXTENDED.md    # (Jan 2026, superseded)
+    │   ├── CODE_REVIEW_REPORT.md      # (Jan 2026, superseded)
+    │   └── REVIEW_SUMMARY.md          # (Jan 2026, superseded)
+    │
+    └── LICENSE.md                     # License text
 </pre></div>
 </div>
 </section>
 <section id="archive">
 <h2>Archive<a class="headerlink" href="#archive" title="Link to this heading">¶</a></h2>
-<p>Historical code analysis and review reports are preserved in <strong><a class="reference internal" href="#archive/"><span class="xref myst">docs/archive/</span></a></strong> for reference. These documents were created during major refactoring efforts but are no longer actively maintained.</p>
+<p>Historical code analysis and review reports are preserved in <strong><a class="reference internal" href="#archive/"><span class="xref myst">docs/archive/</span></a></strong> for reference. These documents were created during development and refactoring efforts but are no longer actively maintained.</p>
+<p><strong>Superseded Documents:</strong></p>
+<ul class="simple">
+<li><p>Code review reports from January 2026 have been consolidated into <strong><a class="reference internal" href="PRODUCTION_READINESS.html"><span class="std std-doc">PRODUCTION_READINESS.md</span></a></strong></p></li>
+<li><p>Historical architecture reports from December 2024 - January 2025</p></li>
+</ul>
+<p>See <strong><a class="reference internal" href="archive/README.html"><span class="std std-doc">docs/archive/README.md</span></a></strong> for complete archive index.</p>
 </section>
 <section id="contributing-to-documentation">
 <h2>Contributing to Documentation<a class="headerlink" href="#contributing-to-documentation" title="Link to this heading">¶</a></h2>
@@ -501,11 +607,13 @@ sphinx-build<span class="w"> </span>-b<span class="w"> </span>html<span class="w
 <section id="version-information">
 <h2>Version Information<a class="headerlink" href="#version-information" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><strong>Current Version:</strong> 0.4.0 (Alpha)</p></li>
+<li><p><strong>Current Version:</strong> 0.8.0 (Beta)</p></li>
 <li><p><strong>Python:</strong> 3.11+</p></li>
 <li><p><strong>Database:</strong> SQLite 3.35+</p></li>
 <li><p><strong>GUI Framework:</strong> PySide6 (Qt 6)</p></li>
+<li><p><strong>Web Framework:</strong> FastAPI (embedded webserver)</p></li>
 <li><p><strong>Documentation Generator:</strong> Sphinx with Google Style docstrings</p></li>
+<li><p><strong>Production Status:</strong> ✅ Production Ready (see <a class="reference internal" href="PRODUCTION_READINESS.html"><span class="std std-doc">PRODUCTION_READINESS.md</span></a>)</p></li>
 </ul>
 </section>
 <section id="support">
@@ -560,13 +668,17 @@ sphinx-build<span class="w"> </span>-b<span class="w"> </span>html<span class="w
 <li><a class="reference internal" href="#">Documentation Index</a><ul>
 <li><a class="reference internal" href="#quick-start">Quick Start</a></li>
 <li><a class="reference internal" href="#architecture-design">Architecture &amp; Design</a></li>
+<li><a class="reference internal" href="#security-production-readiness">Security &amp; Production Readiness</a></li>
 <li><a class="reference internal" href="#security">Security</a></li>
 <li><a class="reference internal" href="#features-documentation">Features Documentation</a><ul>
 <li><a class="reference internal" href="#core-features">Core Features</a></li>
 <li><a class="reference internal" href="#advanced-features">Advanced Features</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#cli-tools">CLI Tools</a></li>
 <li><a class="reference internal" href="#migration-guides">Migration Guides</a></li>
+<li><a class="reference internal" href="#specialized-documentation">Specialized Documentation</a></li>
+<li><a class="reference internal" href="#llm-ai-documentation">LLM &amp; AI Documentation</a></li>
 <li><a class="reference internal" href="#project-information">Project Information</a></li>
 <li><a class="reference internal" href="#api-documentation-sphinx">API Documentation (Sphinx)</a><ul>
 <li><a class="reference internal" href="#building-api-documentation">Building API Documentation</a></li>

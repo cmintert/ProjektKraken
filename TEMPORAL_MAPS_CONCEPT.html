@@ -280,9 +280,28 @@
         <article role="main" id="furo-main-content">
           <section id="projektkraken-temporal-map-markers">
 <h1>ProjektKraken: Temporal Map Markers<a class="headerlink" href="#projektkraken-temporal-map-markers" title="Link to this heading">¶</a></h1>
-<section id="architectural-specification-and-implementation-strategy">
-<h2>Architectural Specification and Implementation Strategy<a class="headerlink" href="#architectural-specification-and-implementation-strategy" title="Link to this heading">¶</a></h2>
+<section id="architectural-specification-and-implementation-guide">
+<h2>Architectural Specification and Implementation Guide<a class="headerlink" href="#architectural-specification-and-implementation-guide" title="Link to this heading">¶</a></h2>
+<p><strong>Status:</strong> ✅ <strong>Implemented</strong> (Core features functional as of v0.8.0)<br />
+<strong>Document Type:</strong> Technical specification with implementation notes<br />
+<strong>Last Updated:</strong> 2026-01-25</p>
 </section>
+<hr class="docutils" />
+<section id="implementation-status">
+<h2>Implementation Status<a class="headerlink" href="#implementation-status" title="Link to this heading">¶</a></h2>
+<p>This document describes the temporal maps system which is <strong>fully implemented</strong> in ProjektKraken:</p>
+<p>✅ <strong>Implemented Features:</strong></p>
+<ul class="simple">
+<li><p>Trajectory interpolation with keyframes</p></li>
+<li><p>OGC MF-JSON (Moving Features JSON) storage format</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TrajectoryRepository</span></code> for persistence</p></li>
+<li><p>Temporal marker system with time-based coordinates</p></li>
+<li><p>Binary search optimization for keyframe lookup</p></li>
+<li><p>Map widget integration with temporal scrubbing</p></li>
+</ul>
+<p><strong>Note:</strong> This document contains both the original architectural vision and implementation details. Some aspirational features (like real-time “clock mode” UI enhancements) are noted as future improvements.</p>
+</section>
+<hr class="docutils" />
 <section id="executive-summary-the-fourth-dimension-in-digital-cartography">
 <h2>1. Executive Summary: The Fourth Dimension in Digital Cartography<a class="headerlink" href="#executive-summary-the-fourth-dimension-in-digital-cartography" title="Link to this heading">¶</a></h2>
 <p>The visualization of geospatial data has traditionally been bound by the constraints of static representation—a snapshot of a world frozen in a single moment. However, the narrative requirements of ProjektKraken, specifically in the domains of storytelling, world-building, and historical simulation, demand a fundamental paradigm shift. The “Temporal Map Markers” initiative represents the critical evolution from static 2D maps to dynamic 4D visualizations. This report provides an exhaustive technical analysis and implementation roadmap for this feature, aiming to transform the map from a passive reference image into a living, breathing non-linear editor (NLE) for spatial history.</p>
@@ -1187,7 +1206,8 @@ $$P(t) = Interpolation(Keyframes_{transient})$$</p></li>
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">ProjektKraken: Temporal Map Markers</a><ul>
-<li><a class="reference internal" href="#architectural-specification-and-implementation-strategy">Architectural Specification and Implementation Strategy</a></li>
+<li><a class="reference internal" href="#architectural-specification-and-implementation-guide">Architectural Specification and Implementation Guide</a></li>
+<li><a class="reference internal" href="#implementation-status">Implementation Status</a></li>
 <li><a class="reference internal" href="#executive-summary-the-fourth-dimension-in-digital-cartography">1. Executive Summary: The Fourth Dimension in Digital Cartography</a></li>
 <li><a class="reference internal" href="#theoretical-framework-and-core-vision">2. Theoretical Framework and Core Vision</a><ul>
 <li><a class="reference internal" href="#the-limitations-of-static-cartography">2.1 The Limitations of Static Cartography</a></li>
