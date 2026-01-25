@@ -23,6 +23,8 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QToolButton,
     QWidget,
+    QFrame,
+    QVBoxLayout,
 )
 
 from src.core.theme_manager import ThemeManager
@@ -31,7 +33,7 @@ from src.core.wiki_ast import CursorMapper, WikiASTParser, WikiASTSerializer
 logger = logging.getLogger(__name__)
 
 
-class WikiTextEdit(QTextEdit):
+class WikiTextEditView(QTextEdit):
     """Text Editor with WikiLink support.
 
     - Highlights [[Links]]
@@ -64,14 +66,17 @@ class WikiTextEdit(QTextEdit):
         tm = ThemeManager()
         tm.theme_changed.connect(self._on_theme_changed)
 
-        # Ensure native frame doesn't interfere with CSS border-radius
+        # Remove frame from view as it's handled by wrapper
         self.setFrameShape(QTextEdit.NoFrame)
 
-        # Force viewport transparency via Palette to ensure CSS border-radius shows
+        # Force viewport transparency via Palette
         p = self.viewport().palette()
         p.setColor(self.viewport().backgroundRole(), Qt.GlobalColor.transparent)
         self.viewport().setPalette(p)
 
+        from src.gui.utils.style_helper import StyleHelper
+
+        self.setStyleSheet(StyleHelper.get_transparent_input_style())
         self._apply_theme_stylesheet()
         self._apply_widget_style()
 
@@ -382,14 +387,18 @@ class WikiTextEdit(QTextEdit):
         surface = theme.get("surface", "#323232")
         border = theme.get("border", "#454545")
 
+        from src.gui.utils.style_helper import StyleHelper
+
+        transparent_style = StyleHelper.get_transparent_input_style()
+
         widget_qss = f"""
-            QTextEdit, WikiTextEdit {{
-                background-color: {surface};
-                border: 1px solid {border};
-                border-radius: 6px;
-                padding: 4px;
+            QTextEdit {{
+                {transparent_style}
+                selection-background-color: {primary};
+                selection-color: {theme['surface']};
             }}
             QTextEdit > QWidget {{
+                border: none;
                 background-color: transparent;
             }}
             QScrollBar:vertical {{
@@ -1163,3 +1172,97 @@ class WikiTextEdit(QTextEdit):
                 self._apply_theme_stylesheet()
         finally:
             self.blockSignals(was_blocked)
+
+
+class WikiTextEdit(QFrame):
+    """Wrapper Frame for WikiTextEditView to ensure correct border styling.
+
+    Composes WikiTextEditView inside a styled QFrame.
+    """
+
+    link_clicked = Signal(str)
+    link_added = Signal(str, str)
+
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self.setObjectName("WikiTextEditWrapper")  # For debugging/styling
+
+        # Layout
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(1, 1, 1, 1)  # Slight padding for the border
+        layout.setSpacing(0)
+
+        # Editor View
+        self.editor = WikiTextEditView(self)
+        layout.addWidget(self.editor)
+
+        # Forward signals
+        self.editor.link_clicked.connect(self.link_clicked.emit)
+        self.editor.link_added.connect(self.link_added.emit)
+
+        # Expose textChanged signal directly from editor
+        self.textChanged = self.editor.textChanged
+
+        # Apply Style
+        self._apply_style()
+
+        # Connect to theme changes
+        from src.core.theme_manager import ThemeManager
+
+        ThemeManager().theme_changed.connect(self._on_theme_changed)
+
+    def _apply_style(self) -> None:
+        from src.gui.utils.style_helper import StyleHelper
+
+        self.setStyleSheet(
+            f"""
+            QFrame#WikiTextEditWrapper {{
+                {StyleHelper.get_input_field_style()}
+            }}
+        """
+        )
+
+    def _on_theme_changed(self, theme: dict) -> None:
+        self._apply_style()
+
+    # --- Proxy Methods ---
+
+    def set_wiki_text(self, text: str) -> None:
+        self.editor.set_wiki_text(text)
+
+    def get_wiki_text(self) -> str:
+        return self.editor.get_wiki_text()
+
+    def setText(self, text: str) -> None:
+        self.editor.setText(text)
+
+    def toPlainText(self) -> str:
+        return self.editor.toPlainText()
+
+    def setReadOnly(self, ro: bool) -> None:
+        self.editor.setReadOnly(ro)
+
+    def setPlaceholderText(self, text: str) -> None:
+        self.editor.setPlaceholderText(text)
+
+    def document(self):
+        return self.editor.document()
+
+    def textCursor(self):
+        return self.editor.textCursor()
+
+    def setTextCursor(self, cursor):
+        self.editor.setTextCursor(cursor)
+
+    def set_completer(self, items_or_names=None, *, items=None, names=None):
+        self.editor.set_completer(items_or_names, items=items, names=names)
+
+    def set_link_resolver(self, resolver):
+        self.editor.set_link_resolver(resolver)
+
+    def toggle_view_mode(self):
+        self.editor.toggle_view_mode()
+
+    def __getattr__(self, name):
+        """Delegate unknown attributes to the inner editor view."""
+        return getattr(self.editor, name)

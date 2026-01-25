@@ -32,7 +32,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.gui.widgets.wiki_text_edit import WikiTextEdit
+from src.gui.widgets.wiki_text_edit import WikiTextEdit, WikiTextEditView
 from src.services.web_service_manager import WebServiceManager
 
 logger = logging.getLogger(__name__)
@@ -326,7 +326,7 @@ class LongformOutlineWidget(QTreeWidget):
             self.item_demoted.emit(table, row_id, old_meta.copy())
 
 
-class LongformContentWidget(WikiTextEdit):
+class LongformContentWidget(WikiTextEditView):
     """Read-only text view for displaying the continuous longform document.
 
     Shows the assembled document with headings and content from all items. inherits from

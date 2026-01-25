@@ -214,6 +214,41 @@ class StyleHelper:
         )
 
     @staticmethod
+    def get_input_field_style() -> str:
+        """Returns QSS for standard input fields.
+
+        Provides consistent background, border, and rounded corners for inputs.
+
+        Returns:
+            str: QSS stylesheet string.
+
+        """
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
+        return (
+            f"background-color: {theme['surface']}; "
+            f"color: {theme['text_main']}; "
+            f"border: 1px solid {theme['border']}; "
+            f"border-radius: 4px; padding: 1px;"
+        )
+
+    @staticmethod
+    def get_transparent_input_style() -> str:
+        """Returns QSS for transparent inner input widget.
+
+        Used when the input is wrapped in a styled frame.
+        """
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
+        return (
+            f"background-color: transparent; "
+            f"color: {theme['text_main']}; "
+            f"border: none;"
+        )
+
+    @staticmethod
     def get_dialog_button_style(selected: bool) -> str:
         """Returns QSS for dialog day buttons.
 
@@ -391,24 +426,3 @@ class StyleHelper:
 
         """
         layout.setContentsMargins(0, 0, 0, 0)
-
-    @staticmethod
-    def get_input_field_style() -> str:
-        """Returns QSS for input fields (QLineEdit, QTextEdit).
-
-        Provides consistent rounded corners and border styling.
-
-        Returns:
-            str: QSS stylesheet string for input fields.
-
-        """
-        from src.core.theme_manager import ThemeManager
-
-        theme = ThemeManager().get_theme()
-        return (
-            f"border: 1px solid {theme['border']}; "
-            f"border-radius: 6px; "  # High rounded corners as requested
-            f"background-color: {theme['surface']}; "
-            f"color: {theme['text_main']}; "
-            f"padding: 4px;"
-        )
