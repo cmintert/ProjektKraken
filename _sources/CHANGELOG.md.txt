@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-25
-### Added
-- feat: Add Global Create Map Shortcut and Smart Shortcut Blocking
+### Internal
+- Merge branch 'refs/heads/master' into HEAD
 
 
 *This changelog was automatically generated.*
