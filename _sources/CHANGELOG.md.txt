@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-25
-### Internal
-- Merge pull request #66 from cmintert/copilot/update-and-consolidate-docs
+### Added
+- feat: Add Global Create Map Shortcut and Smart Shortcut Blocking
 
 
 *This changelog was automatically generated.*
