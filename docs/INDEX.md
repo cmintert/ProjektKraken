@@ -11,6 +11,7 @@ This document provides an organized overview of all ProjektKraken documentation.
 ## Quick Start
 
 - **[README.md](../README.md)** - Project overview, installation, and basic usage
+- **[USER_WORKFLOWS.md](USER_WORKFLOWS.md)** - Step-by-step workflows for common worldbuilding tasks
 - **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development environment setup
 - **[CLI.md](CLI.md)** - Command-line tools overview and quick reference
 
@@ -190,6 +191,9 @@ ProjektKraken/
 ├── CHANGELOG.md                       # Version history
 └── docs/
     ├── INDEX.md                       # This file
+    │
+    ├── User Documentation
+    │   └── USER_WORKFLOWS.md          # Step-by-step workflows for users
     │
     ├── Core Documentation
     │   ├── DATABASE.md                # Database architecture
