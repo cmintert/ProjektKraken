@@ -42,6 +42,7 @@ class TrajectoryRepository(BaseRepository):
 
         Returns:
             The ID of the inserted trajectory record.
+
         """
         if not trajectory:
             raise ValueError("Cannot insert empty trajectory")
@@ -80,6 +81,7 @@ class TrajectoryRepository(BaseRepository):
 
         Returns:
             List of tuples (trajectory_id, List[Keyframe]).
+
         """
         if not self._connection:
             raise RuntimeError("Database connection not initialized")
@@ -115,6 +117,7 @@ class TrajectoryRepository(BaseRepository):
         Returns:
             List of tuples (object_id, trajectory_id, List[Keyframe]).
             Note: Returns object_id as 'marker_id' for UI compatibility.
+
         """
         if not self._connection:
             raise RuntimeError("Database connection not initialized")
@@ -155,6 +158,7 @@ class TrajectoryRepository(BaseRepository):
 
         Returns:
             The ID of the trajectory updated or created.
+
         """
         if not self._connection:
             raise RuntimeError("Database connection not initialized")
@@ -209,6 +213,7 @@ class TrajectoryRepository(BaseRepository):
 
         Raises:
             ValueError: If marker or keyframe not found.
+
         """
         if not self._connection:
             raise RuntimeError("Database connection not initialized")
@@ -267,6 +272,7 @@ class TrajectoryRepository(BaseRepository):
 
         Raises:
             ValueError: If marker or keyframe not found.
+
         """
         if not self._connection:
             raise RuntimeError("Database connection not initialized")
@@ -340,6 +346,7 @@ class TrajectoryRepository(BaseRepository):
 
         Returns:
             List of Keyframe objects.
+
         """
         # New MF-JSON format: {'type': 'MovingPoint', 'coordinates': [...], 'datetimes': [...]}
         if isinstance(data, dict) and data.get("type") == "MovingPoint":

@@ -35,6 +35,7 @@ class ProcessWikiLinksCommand(BaseCommand):
             source_id: The ID of the source entity or event.
             text_content: The text content to parse for WikiLinks.
             field: The field name where the text is stored (default: "description").
+
         """
         super().__init__()
         self.source_id = source_id
@@ -54,6 +55,7 @@ class ProcessWikiLinksCommand(BaseCommand):
 
         Returns:
             CommandResult: Result of the operation.
+
         """
         try:
             logger.info(f"Processing WikiLinks for source {self.source_id}")
@@ -236,6 +238,7 @@ class ProcessWikiLinksCommand(BaseCommand):
 
         Returns:
             str: A snippet of text with context around the link.
+
         """
         # Calculate how much context to grab on each side
         link_len = end - start

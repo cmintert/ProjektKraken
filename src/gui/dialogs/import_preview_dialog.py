@@ -33,6 +33,7 @@ class ImportPreviewDialog(QDialog):
         Args:
             parent: Parent widget.
             parsed_data: Dictionary with 'entities', 'events', 'relations' lists.
+
         """
         super().__init__(parent)
         self.parsed_data = parsed_data or {}

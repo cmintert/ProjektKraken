@@ -29,6 +29,7 @@ class AssetStore:
         Args:
             project_root: Root directory of the world containing assets folder.
                          In portable mode, this is the world directory itself.
+
         """
         self.project_root = Path(project_root)
         self.assets_dir = self.project_root / "assets"
@@ -62,8 +63,7 @@ class AssetStore:
     def import_image(
         self, owner_type: str, owner_id: str, source_path: str
     ) -> Tuple[str, Optional[str], Tuple[int, int]]:
-        """
-        Imports an image file:
+        """Imports an image file:
         1. Generates a unique ID (the attachment ID).
         2. Converts/optimizes the image (e.g. to WebP or keeping original if efficient).
         3. Generates a thumbnail.
@@ -71,6 +71,7 @@ class AssetStore:
 
         Returns:
             (image_rel_path, thumb_rel_path, (width, height))
+
         """
         image_id = str(uuid.uuid4())
         source = Path(source_path)

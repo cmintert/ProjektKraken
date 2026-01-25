@@ -19,6 +19,7 @@ class BaseCoordinator(QObject):
 
         Args:
             main_window: The main window instance.
+
         """
         super().__init__(parent=main_window)
         self.main_window = main_window

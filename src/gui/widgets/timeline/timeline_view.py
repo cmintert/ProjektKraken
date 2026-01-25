@@ -77,6 +77,7 @@ class TimelineView(QGraphicsView):
 
         Args:
             parent (QWidget, optional): The parent widget. Defaults to None.
+
         """
         super().__init__(parent)
         self.scene = TimelineScene(self)
@@ -178,6 +179,7 @@ class TimelineView(QGraphicsView):
 
         Returns:
             QSize: A small minimum size (200x100) to allow shrinking.
+
         """
         from PySide6.QtCore import QSize
 
@@ -203,8 +205,8 @@ class TimelineView(QGraphicsView):
         Args:
             event_id: The ID of the event that was moved.
             new_lore_date: The new lore_date value.
-        """
 
+        """
         self.event_date_changed.emit(event_id, new_lore_date)
 
     def _update_corner_widget(self, theme: dict) -> None:
@@ -212,6 +214,7 @@ class TimelineView(QGraphicsView):
 
         Args:
             theme: The theme dictionary.
+
         """
         scrollbar_bg = theme.get("scrollbar_bg", theme.get("app_bg", "#2B2B2B"))
         corner = QWidget()
@@ -444,6 +447,7 @@ class TimelineView(QGraphicsView):
 
         Args:
             converter (CalendarConverter): Converter instance or None.
+
         """
         self._ruler.set_calendar_converter(converter)
         self.viewport().update()
@@ -735,7 +739,6 @@ class TimelineView(QGraphicsView):
 
     def _repack_grouped_events(self) -> None:
         """Repack events using swimlane layout (Band -> Events -> Band)."""
-
         # Sort events by date first for proper packing
         self.events.sort(key=lambda e: e.lore_date)
 
@@ -977,6 +980,7 @@ class TimelineView(QGraphicsView):
 
         Args:
             event: QWheelEvent containing wheel delta and position.
+
         """
         zoom_in = 1.25
         zoom_out = 1 / zoom_in
@@ -1020,6 +1024,7 @@ class TimelineView(QGraphicsView):
 
         Args:
             event_data: dictionary containing transient event state.
+
         """
         event_id = event_data.get("id")
         if not event_id:
@@ -1114,6 +1119,7 @@ class TimelineView(QGraphicsView):
 
         Args:
             zoom_level: The zoom level to apply.
+
         """
         self.setTransform(QTransform().scale(zoom_level, 1.0))
         self._current_zoom = zoom_level
@@ -1165,6 +1171,7 @@ class TimelineView(QGraphicsView):
 
         Returns:
             bool: True if playing, False otherwise.
+
         """
         return self._playback_timer.isActive()
 
@@ -1173,6 +1180,7 @@ class TimelineView(QGraphicsView):
 
         Args:
             time: The time in lore_date units.
+
         """
         self._playhead.set_time(time, self.scale_factor)
         self.playhead_time_changed.emit(time)
@@ -1182,6 +1190,7 @@ class TimelineView(QGraphicsView):
 
         Returns:
             float: The current time in lore_date units.
+
         """
         return self._playhead.get_time(self.scale_factor)
 
@@ -1207,6 +1216,7 @@ class TimelineView(QGraphicsView):
 
         Args:
             time: The time in lore_date units.
+
         """
         self._current_time_line.set_time(time, self.scale_factor)
         self._current_time_line.show()  # Make visible when explicitly set
@@ -1217,6 +1227,7 @@ class TimelineView(QGraphicsView):
 
         Returns:
             float: The current time in lore_date units.
+
         """
         return self._current_time_line.get_time(self.scale_factor)
 
@@ -1233,6 +1244,7 @@ class TimelineView(QGraphicsView):
 
         Args:
             provider: Object implementing the data provider interface
+
         """
         self._data_provider = provider
 
@@ -1266,6 +1278,7 @@ class TimelineView(QGraphicsView):
         Args:
             tag_order: List of tag names to group by
             mode: Grouping mode ("DUPLICATE" or "FIRST_MATCH")
+
         """
         if self._band_manager is None:
             logger.warning("Cannot set grouping: band manager not initialized")
@@ -1317,6 +1330,7 @@ class TimelineView(QGraphicsView):
 
         Returns:
             tuple: (start_date, end_date) or None
+
         """
         try:
             viewport_rect = self.viewport().rect()
@@ -1336,8 +1350,8 @@ class TimelineView(QGraphicsView):
 
         Args:
             tag_name: The tag name that was expanded
-        """
 
+        """
         # Repack events to update positions and show events in this group
         self.repack_events()
 
@@ -1346,8 +1360,8 @@ class TimelineView(QGraphicsView):
 
         Args:
             tag_name: The tag name that was collapsed
-        """
 
+        """
         # Repack events to update positions and hide events in this group
         self.repack_events()
 
@@ -1401,6 +1415,7 @@ class TimelineView(QGraphicsView):
 
         Args:
             tag_name: The tag name to change color for
+
         """
 
         # TODO: Show color picker dialog and update tag color
@@ -1413,6 +1428,7 @@ class TimelineView(QGraphicsView):
 
         Args:
             tag_name: The tag name to rename
+
         """
 
         # TODO: Show rename dialog
@@ -1424,6 +1440,7 @@ class TimelineView(QGraphicsView):
 
         Args:
             tag_name: The tag name to remove
+
         """
 
         # TODO: Update grouping configuration to exclude this tag

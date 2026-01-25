@@ -25,6 +25,7 @@ class ConnectionManager:
 
         Args:
             main_window: Reference to the MainWindow instance.
+
         """
         self.window = main_window
         self._connection_stats = {"attempted": 0, "succeeded": 0, "failed": 0}
@@ -47,6 +48,7 @@ class ConnectionManager:
 
         Returns:
             bool: True if connection successful, False otherwise.
+
         """
         self._connection_stats["attempted"] += 1
 
@@ -98,6 +100,7 @@ class ConnectionManager:
         Returns:
             dict: Connection statistics with keys 'total_attempted', 'total_succeeded',
                   'total_failed'.
+
         """
         # Reset stats
         self._connection_stats = {"attempted": 0, "succeeded": 0, "failed": 0}
@@ -129,6 +132,7 @@ class ConnectionManager:
 
         Returns:
             int: Number of failed connections.
+
         """
         dh = self.window.data_handler
         failed_count = 0
@@ -301,6 +305,7 @@ class ConnectionManager:
 
         Returns:
             int: Number of failed connections.
+
         """
         ul = self.window.unified_list
         failed_count = 0
@@ -363,6 +368,7 @@ class ConnectionManager:
 
         Returns:
             int: Number of failed connections.
+
         """
         failed_count = 0
 
@@ -469,6 +475,7 @@ class ConnectionManager:
 
         Returns:
             int: Number of failed connections.
+
         """
         timeline = self.window.timeline
         failed_count = 0
@@ -539,6 +546,7 @@ class ConnectionManager:
 
         Returns:
             int: Number of failed connections.
+
         """
         longform = self.window.longform_editor
         failed_count = 0
@@ -634,6 +642,7 @@ class ConnectionManager:
 
         Returns:
             int: Number of failed connections.
+
         """
         map_widget = self.window.map_widget
         timeline = self.window.timeline
@@ -771,6 +780,7 @@ class ConnectionManager:
 
         Returns:
             int: Number of failed connections.
+
         """
         panel = self.window.ai_search_panel
         failed_count = 0
@@ -803,6 +813,7 @@ class ConnectionManager:
 
         Returns:
             int: Number of failed connections.
+
         """
         graph = self.window.graph_widget
         failed_count = 0

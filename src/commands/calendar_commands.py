@@ -31,6 +31,7 @@ class CreateCalendarConfigCommand(BaseCommand):
 
         Args:
             config: The calendar configuration to create.
+
         """
         super().__init__()
         self._config = config
@@ -43,6 +44,7 @@ class CreateCalendarConfigCommand(BaseCommand):
 
         Returns:
             CommandResult: Success result with config ID in data.
+
         """
         try:
             db_service.insert_calendar_config(self._config)
@@ -67,6 +69,7 @@ class CreateCalendarConfigCommand(BaseCommand):
 
         Args:
             db_service: The database service to use.
+
         """
         if self._is_executed:
             db_service.delete_calendar_config(self._config.id)
@@ -85,6 +88,7 @@ class UpdateCalendarConfigCommand(BaseCommand):
 
         Args:
             config: The updated calendar configuration.
+
         """
         super().__init__()
         self._config = config
@@ -98,6 +102,7 @@ class UpdateCalendarConfigCommand(BaseCommand):
 
         Returns:
             CommandResult: Success result with config ID in data.
+
         """
         try:
             # Store original for undo
@@ -125,6 +130,7 @@ class UpdateCalendarConfigCommand(BaseCommand):
 
         Args:
             db_service: The database service to use.
+
         """
         if self._is_executed and self._original_config:
             db_service.insert_calendar_config(self._original_config)
@@ -143,6 +149,7 @@ class DeleteCalendarConfigCommand(BaseCommand):
 
         Args:
             config_id: The ID of the calendar configuration to delete.
+
         """
         super().__init__()
         self._config_id = config_id
@@ -156,6 +163,7 @@ class DeleteCalendarConfigCommand(BaseCommand):
 
         Returns:
             CommandResult: Success result with config ID in data.
+
         """
         try:
             # Store for undo
@@ -183,6 +191,7 @@ class DeleteCalendarConfigCommand(BaseCommand):
 
         Args:
             db_service: The database service to use.
+
         """
         if self._is_executed and self._deleted_config:
             db_service.insert_calendar_config(self._deleted_config)
@@ -201,6 +210,7 @@ class SetActiveCalendarCommand(BaseCommand):
 
         Args:
             config_id: The ID of the calendar to set as active.
+
         """
         super().__init__()
         self._config_id = config_id
@@ -214,6 +224,7 @@ class SetActiveCalendarCommand(BaseCommand):
 
         Returns:
             CommandResult: Success result with config ID in data.
+
         """
         try:
             # Store previous active for undo
@@ -242,6 +253,7 @@ class SetActiveCalendarCommand(BaseCommand):
 
         Args:
             db_service: The database service to use.
+
         """
         if self._is_executed and self._previous_active_id:
             db_service.set_active_calendar_config(self._previous_active_id)

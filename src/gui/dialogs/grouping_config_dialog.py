@@ -51,6 +51,7 @@ class ColorSwatch(QFrame):
             color: Hex color code (e.g., "#ff0000").
             size: Size of the swatch in pixels (default: 16).
             parent: Parent widget.
+
         """
         super().__init__(parent)
         self.setFixedSize(size, size)
@@ -96,6 +97,7 @@ class TagListItem(QWidget):
             tag_color: Hex color string for the tag.
             event_count: Number of events with this tag.
             parent: Parent widget.
+
         """
         super().__init__(parent)
         self.tag_name = tag_name
@@ -167,6 +169,7 @@ class GroupingConfigDialog(QDialog):
             current_config: Current grouping config dict or None.
             command_coordinator: CommandCoordinator for executing commands.
             parent: Parent widget.
+
         """
         super().__init__(parent)
         self.tags_data = tags_data
@@ -313,6 +316,7 @@ class GroupingConfigDialog(QDialog):
 
         Args:
             tag_order: List of tag names in desired order.
+
         """
         # Move checked items to top in order
         for i, tag_name in enumerate(tag_order):
@@ -406,6 +410,7 @@ class GroupingConfigDialog(QDialog):
         Args:
             tag_name: The name of the tag.
             color: New hex color string.
+
         """
         logger.debug(f"Tag color changed: {tag_name} -> {color}")
 

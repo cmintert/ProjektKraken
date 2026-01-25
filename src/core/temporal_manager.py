@@ -18,9 +18,9 @@ class TemporalManager(QObject):
     """Manages temporal state resolution, catching, and invalidation."""
 
     def __init__(self, db_service: Any) -> None:
-        """
-        Args:
+        """Args:
             db_service: Reference to DatabaseService to fetch entities/relations.
+
         """
         super().__init__()
         self._db = db_service
@@ -78,6 +78,7 @@ class TemporalManager(QObject):
 
         Args:
             event_id: ID of the event that changed.
+
         """
         # Query all relations where this event is the source
         try:
@@ -103,6 +104,7 @@ class TemporalManager(QObject):
 
         Args:
             entity_id: ID of the entity to invalidate.
+
         """
         # Remove all keys where entity_id matches
         keys_to_remove = [k for k in self._cache.keys() if k[0] == entity_id]
@@ -114,8 +116,7 @@ class TemporalManager(QObject):
         )
 
     def clear_all_cache(self) -> None:
-        """
-        Nuclear option: Clears ALL cached states.
+        """Nuclear option: Clears ALL cached states.
 
         Useful for global changes that might affect many entities
         (e.g., changing calendar system, bulk date adjustments).

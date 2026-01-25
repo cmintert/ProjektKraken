@@ -33,6 +33,7 @@ class LoreDurationWidget(QWidget):
 
         Args:
             parent: Optional parent widget.
+
         """
         super().__init__(parent)
         # Set size policy to prevent vertical squashing
@@ -88,6 +89,7 @@ class LoreDurationWidget(QWidget):
 
         Returns:
             QSpinBox: Configured spinbox widget.
+
         """
         spin = QSpinBox()
         spin.setRange(0, 999999)
@@ -101,6 +103,7 @@ class LoreDurationWidget(QWidget):
 
         Args:
             converter: CalendarConverter instance for date/time calculations.
+
         """
         self._converter = converter
         self._on_input_changed()
@@ -410,6 +413,7 @@ class LoreDurationWidget(QWidget):
 
         Returns:
             QSize: Minimum size for the lore duration widget.
+
         """
         from PySide6.QtCore import QSize
 
@@ -420,6 +424,7 @@ class LoreDurationWidget(QWidget):
 
         Returns:
             QSize: Preferred size for comfortable duration input.
+
         """
         from PySide6.QtCore import QSize
 

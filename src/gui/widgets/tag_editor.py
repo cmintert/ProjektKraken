@@ -35,6 +35,7 @@ class TagEditorWidget(QWidget):
 
         Args:
             parent (QWidget, optional): The parent widget. Defaults to None.
+
         """
         super().__init__(parent)
         main_layout = QVBoxLayout(self)
@@ -74,6 +75,7 @@ class TagEditorWidget(QWidget):
 
         Args:
             tags (list): List of tag strings.
+
         """
         self.tag_list.clear()
         for tag in tags:
@@ -86,6 +88,7 @@ class TagEditorWidget(QWidget):
 
         Returns:
             list: List of tag strings.
+
         """
         tags = []
         for i in range(self.tag_list.count()):
@@ -98,6 +101,7 @@ class TagEditorWidget(QWidget):
 
         Args:
             tags: List of existing tags for completion.
+
         """
         completer = QCompleter(tags, self)
         completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)

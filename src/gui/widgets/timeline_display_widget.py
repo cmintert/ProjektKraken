@@ -29,6 +29,7 @@ class TimelineDisplayWidget(QWidget):
 
         Args:
             parent: Parent widget, if any.
+
         """
         super().__init__(parent)
 
@@ -54,6 +55,7 @@ class TimelineDisplayWidget(QWidget):
         Args:
             relations: List of relation dicts with source_event_name,
                       source_event_date, and attributes (including payload).
+
         """
         self._relations = relations
         self._refresh_display()
@@ -63,6 +65,7 @@ class TimelineDisplayWidget(QWidget):
 
         Args:
             time: The playhead time in lore_date units.
+
         """
         self._playhead_time = time
         self._refresh_display()
@@ -72,6 +75,7 @@ class TimelineDisplayWidget(QWidget):
 
         Args:
             time: The current time in lore_date units, or None to hide.
+
         """
         self._current_time = time
         self._refresh_display()
@@ -81,6 +85,7 @@ class TimelineDisplayWidget(QWidget):
 
         Returns:
             HTML content currently displayed.
+
         """
         return self._text_display.toHtml()
 
@@ -106,42 +111,42 @@ class TimelineDisplayWidget(QWidget):
         html_parts.append(
             """
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-            .timeline-entry { 
-                padding: 8px 10px; 
+            .timeline-entry {
+                padding: 8px 10px;
                 margin: 6px 2px;
                 border-radius: 3px;
                 border: 1px solid #555;
             }
-            .timeline-entry.active { 
+            .timeline-entry.active {
                 border-color: #4CAF50;
                 border-width: 2px;
             }
-            .timeline-entry.future { 
+            .timeline-entry.future {
                 opacity: 0.5;
                 border-color: #444;
             }
             .event-header { margin-bottom: 4px; }
-            .event-date { 
-                color: #888; 
+            .event-date {
+                color: #888;
                 font-size: 11px;
                 font-weight: 500;
             }
-            .event-name { 
-                color: #E0E0E0; 
+            .event-name {
+                color: #E0E0E0;
                 font-weight: 600;
                 font-size: 13px;
             }
-            .event-type { 
-                color: #666; 
+            .event-type {
+                color: #666;
                 font-size: 10px;
                 font-style: italic;
             }
-            .payload-list { 
+            .payload-list {
                 margin: 4px 0 0 16px;
                 padding: 0;
             }
-            .payload-item { 
-                color: #888; 
+            .payload-item {
+                color: #888;
                 font-size: 11px;
                 line-height: 1.4;
             }
@@ -280,6 +285,7 @@ class TimelineDisplayWidget(QWidget):
 
         Returns:
             Date as float.
+
         """
         # Prefer source_event_date (from Event JOIN)
         if "source_event_date" in rel and rel["source_event_date"] is not None:

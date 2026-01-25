@@ -1,18 +1,18 @@
 from datetime import datetime
+
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QApplication,
+    QFrame,
     QHBoxLayout,
     QLabel,
-    QFrame,
-    QApplication,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtCore import Signal
 
-from src.gui.widgets.wiki_text_edit import WikiTextEdit
 from src.core.summary_data import SummaryData
-from src.gui.widgets.standard_buttons import StandardButton, PrimaryButton
-from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
+from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
 
 class SummaryWidget(QWidget):

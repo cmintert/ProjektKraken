@@ -26,6 +26,7 @@ class CommandResult:
                                  (field -> error content).
         command_name (str): The name of the command that generated
                             this result.
+
     """
 
     success: bool
@@ -54,6 +55,7 @@ class BaseCommand(ABC):
 
         Returns:
             Union[bool, CommandResult]: Result object or success boolean.
+
         """
         pass
 
@@ -63,6 +65,7 @@ class BaseCommand(ABC):
 
         Args:
             db_service (DatabaseService): The database service to operate on.
+
         """
         pass
 
@@ -72,5 +75,6 @@ class BaseCommand(ABC):
 
         Returns:
             bool: True if the command has been executed, False otherwise.
+
         """
         return self._is_executed

@@ -1,5 +1,4 @@
-"""
-WorkerManager - Handles database worker thread management for MainWindow.
+"""WorkerManager - Handles database worker thread management for MainWindow.
 
 This module contains all worker thread initialization and status management
 functionality extracted from MainWindow to reduce its size and improve maintainability.
@@ -13,8 +12,8 @@ from PySide6.QtCore import (
     Qt,
     QThread,
     QTimer,
-    Slot,
     Signal,
+    Slot,
 )
 from PySide6.QtWidgets import QApplication
 
@@ -55,6 +54,7 @@ class WorkerManager(QObject):
 
         Args:
             main_window: Reference to the MainWindow instance.
+
         """
         super().__init__()
         self.window = main_window
@@ -119,66 +119,81 @@ class WorkerManager(QObject):
         self.window.worker = DatabaseWorker(db_path)
         self.window.worker.moveToThread(self.window.worker_thread)
 
-        # Connect Worker Signals
-        self.window.worker.initialized.connect(self.on_db_initialized)
+        # Connect Worker Signals (explicit QueuedConnection for cross-thread safety)
+        # All connections use QueuedConnection because worker is on a different thread
+        connection_type = Qt.ConnectionType.QueuedConnection
+
+        self.window.worker.initialized.connect(
+            self.on_db_initialized, connection_type
+        )
         self.window.worker.events_loaded.connect(
-            self.window.data_handler.on_events_loaded
+            self.window.data_handler.on_events_loaded, connection_type
         )
         self.window.worker.entities_loaded.connect(
-            self.window.data_handler.on_entities_loaded
+            self.window.data_handler.on_entities_loaded, connection_type
         )
         self.window.worker.event_details_loaded.connect(
-            self.window.data_handler.on_event_details_loaded
+            self.window.data_handler.on_event_details_loaded, connection_type
         )
         self.window.worker.entity_details_loaded.connect(
-            self.window.data_handler.on_entity_details_loaded
+            self.window.data_handler.on_entity_details_loaded, connection_type
         )
         self.window.worker.command_finished.connect(
-            self.window.data_handler.on_command_finished
+            self.window.data_handler.on_command_finished, connection_type
         )
-        self.window.worker.operation_started.connect(self.update_status_message)
-        self.window.worker.operation_finished.connect(self.clear_status_message)
-        self.window.worker.error_occurred.connect(self.show_error_message)
+        self.window.worker.operation_started.connect(
+            self.update_status_message, connection_type
+        )
+        self.window.worker.operation_finished.connect(
+            self.clear_status_message, connection_type
+        )
+        self.window.worker.error_occurred.connect(
+            self.show_error_message, connection_type
+        )
         self.window.worker.longform_sequence_loaded.connect(
-            self.window.data_handler.on_longform_sequence_loaded
+            self.window.data_handler.on_longform_sequence_loaded, connection_type
         )
         self.window.worker.calendar_config_loaded.connect(
-            self.window.on_calendar_config_loaded
+            self.window.on_calendar_config_loaded, connection_type
         )
         self.window.worker.current_time_loaded.connect(
-            self.window.on_current_time_loaded
+            self.window.on_current_time_loaded, connection_type
         )
         self.window.worker.grouping_dialog_data_loaded.connect(
-            self.window.on_grouping_dialog_data_loaded
+            self.window.on_grouping_dialog_data_loaded, connection_type
         )
-        self.window.worker.maps_loaded.connect(self.window.data_handler.on_maps_loaded)
+        self.window.worker.maps_loaded.connect(
+            self.window.data_handler.on_maps_loaded, connection_type
+        )
         self.window.worker.markers_loaded.connect(
-            self.window.data_handler.on_markers_loaded
+            self.window.data_handler.on_markers_loaded, connection_type
         )
         self.window.worker.trajectories_loaded.connect(
-            self.window.data_handler.on_trajectories_loaded
+            self.window.data_handler.on_trajectories_loaded, connection_type
         )
         self.window.worker.filter_results_ready.connect(
-            self.window._on_filter_results_ready
+            self.window._on_filter_results_ready, connection_type
         )
         self.window.worker.entity_state_resolved.connect(
-            self.window.data_handler.on_entity_state_resolved
+            self.window.data_handler.on_entity_state_resolved, connection_type
         )
         self.window.worker.graph_data_loaded.connect(
-            self.window.data_handler.on_graph_data_loaded
+            self.window.data_handler.on_graph_data_loaded, connection_type
         )
         self.window.worker.graph_metadata_loaded.connect(
-            self.window.data_handler.on_graph_metadata_loaded
+            self.window.data_handler.on_graph_metadata_loaded, connection_type
         )
         self.window.worker.completer_data_loaded.connect(
-            self.window.on_completer_data_loaded
+            self.window.on_completer_data_loaded, connection_type
         )
         self.window.worker.completer_data_loaded.connect(
-            self.window.on_completer_data_loaded
+            self.window.on_completer_data_loaded, connection_type
         )
-        self.window.worker.import_finished.connect(self.window._on_import_finished)
+        self.window.worker.import_finished.connect(
+            self.window._on_import_finished, connection_type
+        )
         self.window.worker.summary_generated.connect(
-            self.window._on_summary_generated_result
+            self.window._on_summary_generated_result, connection_type
         )
         # Connect filtering request
         self.window.filter_requested.connect(self.window.worker.apply_filter)
@@ -201,6 +216,7 @@ class WorkerManager(QObject):
 
         Args:
             message: The message to display.
+
         """
         self.window.status_bar.showMessage(message)
         # Busy cursor
@@ -211,6 +227,7 @@ class WorkerManager(QObject):
 
         Args:
             message: The final completion message.
+
         """
         self.window.status_bar.showMessage(message, 3000)
         QApplication.restoreOverrideCursor()
@@ -221,6 +238,7 @@ class WorkerManager(QObject):
 
         Args:
             message: The error description.
+
         """
         self.window.status_bar.showMessage(f"{STATUS_ERROR_PREFIX}{message}", 5000)
         QApplication.restoreOverrideCursor()
@@ -232,6 +250,7 @@ class WorkerManager(QObject):
 
         Args:
             success: True if connection succeeded, False otherwise.
+
         """
         if success:
             # Initialize GUI database connection for timeline data provider

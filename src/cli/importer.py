@@ -30,6 +30,7 @@ def run_import_cli(args: List[str]) -> int:
 
     Returns:
         Exit code (0 for success, 1 for failure).
+
     """
     parser = argparse.ArgumentParser(description="Import JSON data into ProjektKraken.")
     parser.add_argument(

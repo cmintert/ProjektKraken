@@ -21,6 +21,7 @@ def normalize_name(name: Optional[str]) -> str:
 
     Returns:
         The normalized name string.
+
     """
     if not name:
         return ""

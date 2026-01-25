@@ -46,6 +46,7 @@ class WikiTextEdit(QTextEdit):
 
         Args:
             parent (QWidget, optional): The parent widget. Defaults to None.
+
         """
         super().__init__(parent)
         self._hovered_link = None
@@ -204,6 +205,7 @@ class WikiTextEdit(QTextEdit):
         Args:
             link_resolver: LinkResolver instance for ID resolution and
                 broken link detection.
+
         """
         self._link_resolver = link_resolver
         # Highlight Logic could be added here later
@@ -230,6 +232,7 @@ class WikiTextEdit(QTextEdit):
             items_or_names: Legacy positional parameter (list of names).
             items: List of (id, name, type) tuples for entities/events.
             names: Legacy list of names (for backward compatibility).
+
         """
         # Handle legacy positional argument
         if items_or_names and isinstance(items_or_names, list):
@@ -277,6 +280,7 @@ class WikiTextEdit(QTextEdit):
 
         Returns:
             str: CSS stylesheet as a string.
+
         """
         tm = ThemeManager()
         theme = tm.get_theme()
@@ -582,7 +586,8 @@ class WikiTextEdit(QTextEdit):
         self, fragment: QTextFragment, is_heading: bool = False
     ) -> str:
         """Process a text fragment to recover inline formatting (Bold, Italic,
-        Links)."""
+        Links).
+        """
         text = fragment.text()
         fmt = fragment.charFormat()
 
@@ -658,6 +663,7 @@ class WikiTextEdit(QTextEdit):
 
         Args:
             event: QKeyEvent from PySide6.
+
         """
         # Check for formatting shortcuts first
         if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
@@ -752,6 +758,7 @@ class WikiTextEdit(QTextEdit):
 
         In Source mode: Adds/replaces/removes # prefix
         In Rich mode: Applies font size from ThemeManager
+
         """
         if self._view_mode == "source":
             self._set_markdown_heading(level)
@@ -763,6 +770,7 @@ class WikiTextEdit(QTextEdit):
 
         Args:
             level: Heading level (1-3) or 0 to remove.
+
         """
         cursor = self.textCursor()
 
@@ -788,6 +796,7 @@ class WikiTextEdit(QTextEdit):
 
         Args:
             level: Heading level (1-3) or 0 for paragraph.
+
         """
         from PySide6.QtGui import QFont, QTextCharFormat
 
@@ -868,6 +877,7 @@ class WikiTextEdit(QTextEdit):
 
         Args:
             marker: The Markdown marker (e.g., "**" for bold, "*" for italic)
+
         """
         cursor = self.textCursor()
         selected_text = cursor.selectedText()
@@ -899,6 +909,7 @@ class WikiTextEdit(QTextEdit):
 
         Args:
             format_type: "bold" or "italic"
+
         """
         from PySide6.QtGui import QFont, QTextCharFormat
 
@@ -1010,6 +1021,7 @@ class WikiTextEdit(QTextEdit):
 
         Returns:
             bool: True if valid, False if broken/non-existent.
+
         """
         # Handle id: prefix
         check_target = target[3:] if target.startswith("id:") else target
@@ -1070,6 +1082,7 @@ class WikiTextEdit(QTextEdit):
 
         Args:
             event: QMouseEvent from PySide6.
+
         """
         if event.modifiers() & Qt.KeyboardModifier.ControlModifier and self.anchorAt(
             event.position().toPoint()
@@ -1084,6 +1097,7 @@ class WikiTextEdit(QTextEdit):
 
         Args:
             event: QMouseEvent from PySide6.
+
         """
         if (
             event.button() == Qt.MouseButton.LeftButton
@@ -1107,6 +1121,7 @@ class WikiTextEdit(QTextEdit):
         Args:
             theme_data: Dictionary containing theme settings (unused,
                         as we fetch fresh from ThemeManager).
+
         """
         # Update widget styling (scrollbars, borders)
         self._apply_widget_style()

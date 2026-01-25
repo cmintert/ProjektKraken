@@ -73,6 +73,7 @@ class GroupBandItem(QGraphicsObject):
             latest_date: Latest event date in the group
             is_collapsed: Whether the band starts collapsed
             parent: Parent graphics item
+
         """
         super().__init__(parent)
 
@@ -148,6 +149,7 @@ class GroupBandItem(QGraphicsObject):
             painter: The QPainter to use for drawing
             option: Style options (unused)
             widget: The widget being painted on (unused)
+
         """
         painter.setRenderHint(QPainter.Antialiasing)
 
@@ -260,6 +262,7 @@ class GroupBandItem(QGraphicsObject):
 
         Args:
             collapsed: True to collapse, False to expand
+
         """
         if self.is_collapsed != collapsed:
             self.is_collapsed = collapsed
@@ -271,6 +274,7 @@ class GroupBandItem(QGraphicsObject):
 
         Args:
             color: Hex color string (e.g., "#FF0000")
+
         """
         self._color = QColor(color)
         self.update()
@@ -284,6 +288,7 @@ class GroupBandItem(QGraphicsObject):
             count: Number of events in this group
             earliest_date: Earliest event date in the group
             latest_date: Latest event date in the group
+
         """
         self.count = count
         self.earliest_date = earliest_date if earliest_date is not None else 0.0
@@ -296,6 +301,7 @@ class GroupBandItem(QGraphicsObject):
 
         Args:
             event_dates: List of lore_dates for events in this group
+
         """
         self.event_dates = event_dates
         self.update()
@@ -305,6 +311,7 @@ class GroupBandItem(QGraphicsObject):
 
         Returns:
             Height in pixels
+
         """
         return (
             self.BAND_HEIGHT_COLLAPSED

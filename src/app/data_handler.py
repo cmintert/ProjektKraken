@@ -23,6 +23,19 @@ class DataHandler(QObject):
     rather than directly manipulating UI components. The MainWindow is
     responsible for connecting to these signals and updating its own widgets.
 
+    Thread Safety:
+        This class runs in the main (GUI) thread. All slot methods are connected
+        to worker signals via QueuedConnection, which ensures that slot execution
+        happens in the main thread even though signals are emitted from the worker
+        thread. The cached data (_cached_events, _cached_entities) is safely
+        accessed because:
+        1. Slots run in the main thread (via QueuedConnection)
+        2. All data access happens within these slots
+        3. No concurrent access occurs between threads
+
+        IMPORTANT: This class must remain in the main thread. If ever moved to
+        another thread, thread safety guarantees would be violated.
+
     Handles:
     - Processing loaded data (events, entities, maps, longform)
     - Emitting signals for UI updates
@@ -67,6 +80,21 @@ class DataHandler(QObject):
         Note: No longer requires MainWindow reference - uses signals instead.
         """
         super().__init__()
+
+        # Thread safety assertion: DataHandler must run in the main GUI thread
+        from PySide6.QtCore import QThread
+        from PySide6.QtWidgets import QApplication
+
+        app = QApplication.instance()
+        if app is not None:
+            main_thread = app.thread()
+            current_thread = QThread.currentThread()
+            if current_thread != main_thread:
+                raise RuntimeError(
+                    f"DataHandler must be created in the main thread. "
+                    f"Current thread: {current_thread}, Main thread: {main_thread}"
+                )
+
         self._cached_events: List[Event] = []
         self._cached_entities: List[Entity] = []
         self._pending_select_type: Optional[str] = None
@@ -79,6 +107,7 @@ class DataHandler(QObject):
 
         Args:
             events: List of Event objects.
+
         """
         self._cached_events = events
         self.events_ready.emit(events)
@@ -96,6 +125,7 @@ class DataHandler(QObject):
 
         Args:
             entities: List of Entity objects.
+
         """
         self._cached_entities = entities
         self.entities_ready.emit(entities)
@@ -143,6 +173,7 @@ class DataHandler(QObject):
             event: The event object.
             relations: Outgoing relations.
             incoming: Incoming relations.
+
         """
         # Dock raising is now handled by the Controller (MainWindow) via user actions,
         # not automatically on data load. This prevents focus stealing during
@@ -159,6 +190,7 @@ class DataHandler(QObject):
             entity: The entity object.
             relations: Outgoing relations.
             incoming: Incoming relations.
+
         """
         # Dock raising is now handled by the Controller (MainWindow) via user actions.
         self.entity_details_ready.emit(entity, relations, incoming)
@@ -169,6 +201,7 @@ class DataHandler(QObject):
 
         Args:
             sequence: List of longform items.
+
         """
         self.longform_sequence_ready.emit(sequence)
         self.status_message.emit(f"Loaded {len(sequence)} longform items.")
@@ -179,6 +212,7 @@ class DataHandler(QObject):
 
         Args:
             maps: List of Map objects.
+
         """
         self.maps_ready.emit(maps)
         self.status_message.emit(f"Loaded {len(maps)} maps.")
@@ -190,6 +224,7 @@ class DataHandler(QObject):
         Args:
             map_id: The map ID.
             markers: List of Marker objects.
+
         """
         # Process markers to add labels from cached data
         processed_markers = []
@@ -242,13 +277,14 @@ class DataHandler(QObject):
         """Emits signal for map widget to be updated with trajectories."""
         self.trajectories_ready.emit(trajectories)
 
-    @Slot(object)
+    @Slot(CommandResult)
     def on_command_finished(self, result: CommandResult) -> None:
         """Handles completion of async commands, emitting signals for necessary UI
         refreshes.
 
         Args:
             result: CommandResult object containing execution status.
+
         """
         logger.info(
             f"[DataHandler] on_command_finished: {result.command_name} "
@@ -329,6 +365,7 @@ class DataHandler(QObject):
         Args:
             nodes: List of node dictionaries.
             edges: List of edge dictionaries.
+
         """
         self.graph_data_ready.emit(nodes, edges)
         self.status_message.emit(f"Loaded {len(nodes)} nodes and {len(edges)} edges.")
@@ -340,5 +377,6 @@ class DataHandler(QObject):
         Args:
             tags: List of tag strings.
             rel_types: List of relation type strings.
+
         """
         self.graph_metadata_ready.emit(tags, rel_types)

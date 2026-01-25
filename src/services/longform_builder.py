@@ -44,6 +44,7 @@ def _validate_table_name(table: str) -> None:
 
     Raises:
         ValueError: If table name is not in the whitelist.
+
     """
     if table not in VALID_TABLES:
         raise ValueError(f"Invalid table name: {table}. Must be one of {VALID_TABLES}")
@@ -57,6 +58,7 @@ def _safe_json_loads(json_str: str) -> dict:
 
     Returns:
         dict: Parsed JSON or empty dict if parsing fails.
+
     """
     if not json_str:
         return {}
@@ -79,6 +81,7 @@ def _get_longform_meta(
 
     Returns:
         Optional[dict]: Longform metadata dict or None if not present.
+
     """
     lf_data = attributes.get("_longform")
     if not isinstance(lf_data, dict):
@@ -98,6 +101,7 @@ def _set_longform_meta(
 
     Returns:
         dict: Updated attributes dictionary.
+
     """
     if "_longform" not in attributes or not isinstance(attributes["_longform"], dict):
         attributes["_longform"] = {}
@@ -119,6 +123,7 @@ def read_all_longform_items(
     Returns:
         List[Dict]: List of items with keys: table, id, name, content,
                     attributes (dict), meta (dict).
+
     """
     items = []
 
@@ -179,6 +184,7 @@ def ensure_all_items_indexed(conn: Connection, doc_id: str = DOC_ID_DEFAULT) -> 
     Args:
         conn: SQLite connection.
         doc_id: Document ID.
+
     """
     # 1. Identify existing items and find max position
     existing_ids = set()
@@ -259,6 +265,7 @@ def build_longform_sequence(
     Returns:
         List[Dict]: Ordered list of items with heading_level computed.
                     Each item includes: table, id, name, content, meta, heading_level.
+
     """
     # 0. Sync check: ensure everything is in the doc
     # Skip this if we are filtering, as we don't want to auto-add items
@@ -337,6 +344,7 @@ def insert_or_update_longform_meta(
 
     Raises:
         ValueError: If table is invalid or row not found.
+
     """
     _validate_table_name(table)
 
@@ -395,6 +403,7 @@ def place_between_siblings_and_set_parent(
         next_sibling: Tuple of (table, id) for next sibling, or None.
         parent_id: Parent ID to set.
         doc_id: Document ID.
+
     """
     _validate_table_name(target_table)
 
@@ -480,6 +489,7 @@ def reindex_document_positions(conn: Connection, doc_id: str = DOC_ID_DEFAULT) -
     Args:
         conn: SQLite connection.
         doc_id: Document ID.
+
     """
     sequence = build_longform_sequence(conn, doc_id)
 
@@ -508,6 +518,7 @@ def promote_item(
         table: Table name.
         row_id: Row ID to promote.
         doc_id: Document ID.
+
     """
     _validate_table_name(table)
 
@@ -574,6 +585,7 @@ def demote_item(
         table: Table name.
         row_id: Row ID to demote.
         doc_id: Document ID.
+
     """
     _validate_table_name(table)
 
@@ -636,6 +648,7 @@ def remove_from_longform(
         table: Table name.
         row_id: Row ID.
         doc_id: Document ID.
+
     """
     _validate_table_name(table)
 
@@ -673,6 +686,7 @@ def export_longform_to_markdown(conn: Connection, doc_id: str = DOC_ID_DEFAULT) 
 
     Returns:
         str: Markdown-formatted document.
+
     """
     sequence = build_longform_sequence(conn, doc_id)
 

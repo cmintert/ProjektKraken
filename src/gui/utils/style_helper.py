@@ -25,6 +25,7 @@ class StyleHelper:
 
         Returns:
             str: QSS stylesheet string for empty state labels.
+
         """
         from src.core.theme_manager import ThemeManager
 
@@ -40,6 +41,7 @@ class StyleHelper:
 
         Returns:
             str: QSS stylesheet string for preview labels.
+
         """
         from src.core.theme_manager import ThemeManager
 
@@ -55,6 +57,7 @@ class StyleHelper:
 
         Returns:
             str: QSS stylesheet string for error labels.
+
         """
         from src.core.theme_manager import ThemeManager
 
@@ -69,6 +72,7 @@ class StyleHelper:
 
         Returns:
             str: QSS stylesheet string for section headers.
+
         """
         return "font-weight: bold;"
 
@@ -81,6 +85,7 @@ class StyleHelper:
 
         Returns:
             str: QSS stylesheet string for frames.
+
         """
         from src.core.theme_manager import ThemeManager
 
@@ -99,6 +104,7 @@ class StyleHelper:
 
         Returns:
             str: QSS stylesheet string for lore frames.
+
         """
         from src.core.theme_manager import ThemeManager
 
@@ -118,6 +124,7 @@ class StyleHelper:
 
         Returns:
             str: QSS stylesheet string for map viewports.
+
         """
         from src.core.theme_manager import ThemeManager
 
@@ -135,6 +142,7 @@ class StyleHelper:
 
         Returns:
             str: QSS stylesheet string for primary buttons.
+
         """
         from src.core.theme_manager import ThemeManager
 
@@ -156,6 +164,7 @@ class StyleHelper:
 
         Returns:
             str: QSS stylesheet string for tool buttons.
+
         """
         from src.core.theme_manager import ThemeManager
 
@@ -176,6 +185,7 @@ class StyleHelper:
 
         Returns:
             str: QSS stylesheet string for destructive buttons.
+
         """
         from src.core.theme_manager import ThemeManager
 
@@ -199,6 +209,7 @@ class StyleHelper:
 
         Returns:
             str: QSS stylesheet string for dialog buttons.
+
         """
         from src.core.theme_manager import ThemeManager
 
@@ -231,6 +242,7 @@ class StyleHelper:
 
         Returns:
             str: QSS stylesheet string for dialog base.
+
         """
         from src.core.theme_manager import ThemeManager
 
@@ -248,6 +260,7 @@ class StyleHelper:
 
         Returns:
             str: QSS stylesheet string for scrollbars.
+
         """
         from src.core.theme_manager import ThemeManager
 
@@ -283,6 +296,7 @@ class StyleHelper:
 
         Returns:
             str: QSS stylesheet string for wiki links.
+
         """
         from src.core.theme_manager import ThemeManager
 
@@ -301,6 +315,7 @@ class StyleHelper:
 
         Returns:
             str: QSS stylesheet string for timeline headers.
+
         """
         from src.core.theme_manager import ThemeManager
 
@@ -319,6 +334,7 @@ class StyleHelper:
 
         Args:
             layout: The QLayout to configure.
+
         """
         layout.setSpacing(8)
         layout.setContentsMargins(16, 16, 16, 16)
@@ -331,6 +347,7 @@ class StyleHelper:
 
         Args:
             layout: The QLayout to configure.
+
         """
         layout.setSpacing(4)
         layout.setContentsMargins(8, 8, 8, 8)
@@ -343,6 +360,7 @@ class StyleHelper:
 
         Args:
             layout: The QLayout to configure.
+
         """
         layout.setSpacing(8)
         layout.setContentsMargins(12, 12, 12, 12)
@@ -355,6 +373,7 @@ class StyleHelper:
 
         Args:
             layout: The QLayout to configure.
+
         """
         layout.setContentsMargins(0, 0, 0, 0)
 
@@ -366,6 +385,7 @@ class StyleHelper:
 
         Returns:
             str: QSS stylesheet string for input fields.
+
         """
         from src.core.theme_manager import ThemeManager
 

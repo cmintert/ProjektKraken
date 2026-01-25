@@ -39,6 +39,7 @@ class FilterWidget(QWidget):
             current_config: Current configuration dictionary.
             title_include: Label for include section.
             title_exclude: Label for exclude section.
+
         """
         super().__init__(parent)
         self.items = sorted(available_items or [])
@@ -152,6 +153,7 @@ class FilterWidget(QWidget):
                 "exclude_mode": "any" | "all",
                 "case_sensitive": bool
             }
+
         """
         include_items = self._get_checked_items(self.list_include)
         exclude_items = self._get_checked_items(self.list_exclude)

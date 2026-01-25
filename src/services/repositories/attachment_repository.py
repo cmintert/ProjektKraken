@@ -88,7 +88,8 @@ class AttachmentRepository(BaseRepository):
         self, owner_type: str, owner_id: str, ordered_ids: List[str]
     ) -> None:
         """Updates the order_index for a list of attachment IDs belonging to an
-        owner."""
+        owner.
+        """
         sql = """
             UPDATE image_attachments
             SET order_index = ?

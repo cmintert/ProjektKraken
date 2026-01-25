@@ -36,6 +36,7 @@ class AddRelationCommand(BaseCommand):
             rel_type (str): The type of relationship (e.g. "caused").
             attributes (Dict[str, Any]): Optional metadata for the relationship.
             bidirectional (bool): If True, also creates target->source relation.
+
         """
         super().__init__()
         self.source_id = source_id
@@ -51,6 +52,7 @@ class AddRelationCommand(BaseCommand):
 
         Returns:
             bool: True if successful.
+
         """
         try:
             logger.info(
@@ -96,6 +98,7 @@ class RemoveRelationCommand(BaseCommand):
 
         Args:
             rel_id (str): The ID of the relationship to remove.
+
         """
         super().__init__()
         self.rel_id = rel_id
@@ -106,6 +109,7 @@ class RemoveRelationCommand(BaseCommand):
 
         Returns:
             bool: True if successful, False if error.
+
         """
         # Backup logic would go here
         try:
@@ -138,6 +142,7 @@ class UpdateRelationCommand(BaseCommand):
             target_id (str): The new target ID.
             rel_type (str): The new relationship type.
             attributes (Dict[str, Any]): The new attributes.
+
         """
         super().__init__()
         self.rel_id = rel_id
@@ -152,6 +157,7 @@ class UpdateRelationCommand(BaseCommand):
 
         Returns:
             bool: True if successful.
+
         """
         # Snapshot
         current = db_service.get_relation(self.rel_id)

@@ -55,6 +55,7 @@ class GroupBandManager(QObject):
             get_events_for_group_callback: Callable that takes (tag_name, date_range)
                 and returns list of Event objects
             parent: Parent QObject
+
         """
         super().__init__(parent)
 
@@ -77,6 +78,7 @@ class GroupBandManager(QObject):
         Args:
             tag_order: List of tag names to create bands for
             date_range: Optional (start_date, end_date) for filtering
+
         """
         logger.info(f"Setting grouping config with {len(tag_order)} tags")
 
@@ -143,6 +145,7 @@ class GroupBandManager(QObject):
 
         Args:
             date_range: Optional (start_date, end_date) for filtering
+
         """
         if not self._tag_order:
             return
@@ -221,6 +224,7 @@ class GroupBandManager(QObject):
         Args:
             tag_name: The tag name for the band
             screen_pos: Screen position for the menu
+
         """
         logger.debug(f"Context menu requested for: {tag_name}")
 
@@ -247,6 +251,7 @@ class GroupBandManager(QObject):
 
         Returns:
             Set of collapsed tag names
+
         """
         return self._collapsed_tags.copy()
 
@@ -255,6 +260,7 @@ class GroupBandManager(QObject):
 
         Args:
             collapsed_tags: Set of tag names to collapse
+
         """
         self._collapsed_tags = collapsed_tags.copy()
 
@@ -271,6 +277,7 @@ class GroupBandManager(QObject):
 
         Returns:
             Total height in pixels
+
         """
         total = 0
         for tag_name in self._tag_order:
@@ -289,5 +296,6 @@ class GroupBandManager(QObject):
 
         Returns:
             List of tag names in order
+
         """
         return self._tag_order.copy()

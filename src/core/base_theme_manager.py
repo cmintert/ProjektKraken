@@ -36,6 +36,7 @@ class BaseThemeManager:
 
         Returns:
             BaseThemeManager: The singleton instance.
+
         """
         if not cls._instance:
             cls._instance = super().__new__(cls)
@@ -46,6 +47,7 @@ class BaseThemeManager:
 
         Args:
             theme_file: Path to the themes JSON file.
+
         """
         if hasattr(self, "_initialized"):
             return
@@ -122,6 +124,7 @@ class BaseThemeManager:
 
         Args:
             path: Path to the stylesheet file.
+
         """
         try:
             with open(path, "r") as f:
@@ -134,6 +137,7 @@ class BaseThemeManager:
 
         Returns:
             List of theme names.
+
         """
         return list(self.themes.keys())
 
@@ -142,6 +146,7 @@ class BaseThemeManager:
 
         Returns:
             Dictionary containing theme colors and settings.
+
         """
         return self.themes.get(
             self.current_theme_name, self.themes.get("dark_mode", {})
@@ -152,6 +157,7 @@ class BaseThemeManager:
 
         Args:
             theme_name: The key of the theme to switch to.
+
         """
         if theme_name not in self.themes:
             logger.warning(f"Theme '{theme_name}' not found.")
@@ -170,6 +176,7 @@ class BaseThemeManager:
 
         Args:
             callback: Function to call with theme data when theme changes.
+
         """
         self._theme_changed_callbacks.append(callback)
 
@@ -178,6 +185,7 @@ class BaseThemeManager:
 
         Args:
             theme_data: The new theme data dictionary.
+
         """
         for callback in self._theme_changed_callbacks:
             try:
@@ -193,6 +201,7 @@ class BaseThemeManager:
 
         Returns:
             Formatted stylesheet string.
+
         """
         if template:
             self._qss_template = template

@@ -42,6 +42,7 @@ class EmbeddingService:
 
         Raises:
             ValueError: If provider doesn't support embeddings.
+
         """
         self.conn = db_connection
         self.provider = provider
@@ -80,6 +81,7 @@ class EmbeddingService:
 
         Returns:
             Path: Path to index file for the model.
+
         """
         model_name = model or self.model
         # Sanitize model name for filename
@@ -100,6 +102,7 @@ class EmbeddingService:
 
         Returns:
             bool: True if valid, False otherwise.
+
         """
         if embedding.shape[0] != self.dimension:
             logger.warning(
@@ -124,6 +127,7 @@ class EmbeddingService:
 
         Raises:
             ValueError: If dimension mismatch detected.
+
         """
         query_model = model or self.model
 
@@ -176,6 +180,7 @@ class EmbeddingService:
 
         Returns:
             int: Count of embeddings.
+
         """
         query_model = model or self.model
 
@@ -209,6 +214,7 @@ class EmbeddingService:
 
         Returns:
             int: Number of embeddings deleted.
+
         """
         query_model = model or self.model
 
@@ -243,6 +249,7 @@ class EmbeddingService:
 
         Raises:
             Exception: If embedding generation fails or validation fails.
+
         """
         if not texts:
             return np.array([])
@@ -302,6 +309,7 @@ class EmbeddingService:
 
         Returns:
             Dict containing index metadata, or None if not found.
+
         """
         index_path = self.get_index_path(model)
 
@@ -338,6 +346,7 @@ def create_embedding_service(
 
     Raises:
         ValueError: If provider doesn't support embeddings.
+
     """
     provider = create_provider(provider_id, world_id, **provider_kwargs)
     return EmbeddingService(db_connection, provider, world_id=world_id)

@@ -35,6 +35,7 @@ def rebuild_index(args: argparse.Namespace) -> int:
 
     Returns:
         int: Exit code (0 for success, 1 for failure).
+
     """
     db_service = None
     try:
@@ -93,6 +94,7 @@ def delete_object(args: argparse.Namespace) -> int:
 
     Returns:
         int: Exit code.
+
     """
     db_service = None
     try:
@@ -134,6 +136,7 @@ def index_object(args: argparse.Namespace) -> int:
 
     Returns:
         int: Exit code (0 for success, 1 for failure).
+
     """
     db_service = None
     try:
@@ -187,6 +190,7 @@ def query_index(args: argparse.Namespace) -> int:
 
     Returns:
         int: Exit code (0 for success, 1 for failure).
+
     """
     db_service = None
     try:

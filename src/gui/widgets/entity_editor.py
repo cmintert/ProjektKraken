@@ -24,15 +24,15 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.entities import Entity
+from src.core.summary_data import SummaryData
 from src.gui.mixins.autosave_mixin import AutoSaveManager
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.relation_item_widget import RelationItemWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
 from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
+from src.gui.widgets.summary_widget import SummaryWidget
 from src.gui.widgets.tag_editor import TagEditorWidget
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
-from src.gui.widgets.summary_widget import SummaryWidget
-from src.core.summary_data import SummaryData
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +65,7 @@ class EntityEditorWidget(QWidget):
 
         Args:
             parent (QWidget, optional): The parent widget. Defaults to None.
+
         """
         super().__init__(parent)
         self.autosave_manager = AutoSaveManager(self)
@@ -377,6 +378,7 @@ class EntityEditorWidget(QWidget):
         Args:
             items: List of (id, name, type) tuples for entities/events.
             names: Legacy list of names (for backward compatibility).
+
         """
         self.desc_edit.set_completer(items=items, names=names)
 
@@ -673,6 +675,7 @@ class EntityEditorWidget(QWidget):
 
         Args:
             pos (QPoint): The position where the menu should appear.
+
         """
         item = self.rel_list.itemAt(pos)
         if not item:
@@ -691,6 +694,7 @@ class EntityEditorWidget(QWidget):
 
         Args:
             item (QListWidgetItem): The relation item to remove.
+
         """
         rel_data = item.data(Qt.ItemDataRole.UserRole)
         target_id = rel_data.get("target_id", "?")
@@ -711,6 +715,7 @@ class EntityEditorWidget(QWidget):
 
         Args:
             item (QListWidgetItem): The relation item to edit.
+
         """
         rel_data = item.data(Qt.ItemDataRole.UserRole)
 
@@ -757,6 +762,7 @@ class EntityEditorWidget(QWidget):
 
         Returns:
             dict: Context dictionary with 'name', 'type', etc.
+
         """
         context = {
             "name": self.name_edit.text(),
@@ -773,6 +779,7 @@ class EntityEditorWidget(QWidget):
 
         Args:
             text: Generated text from LLM.
+
         """
         if not text:
             return
@@ -797,6 +804,7 @@ class EntityEditorWidget(QWidget):
 
         Returns:
             QSize: Minimum size for usable entity editor.
+
         """
         from PySide6.QtCore import QSize
 
@@ -807,6 +815,7 @@ class EntityEditorWidget(QWidget):
 
         Returns:
             QSize: Comfortable working size for editing entities.
+
         """
         from PySide6.QtCore import QSize
 
@@ -865,6 +874,7 @@ class EntityEditorWidget(QWidget):
             entity_id: ID of the entity being displayed.
             attributes: Resolved temporal attributes.
             playhead_time: Current playhead time for timeline highlighting.
+
         """
         if entity_id != self._current_entity_id:
             return

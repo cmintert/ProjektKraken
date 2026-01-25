@@ -19,6 +19,7 @@ class CreateEntityCommand(BaseCommand):
         Args:
             entity_data (dict, optional): Dictionary containing entity data.
                                           If None, default values are used.
+
         """
         super().__init__()
         if entity_data:
@@ -34,6 +35,7 @@ class CreateEntityCommand(BaseCommand):
 
         Returns:
             CommandResult: Result object indicating success or failure.
+
         """
         try:
             db_service.insert_entity(self._entity)
@@ -68,6 +70,7 @@ class CreateEntityCommand(BaseCommand):
 
         Args:
             db_service (DatabaseService): The database service to operate on.
+
         """
         if self._is_executed:
             db_service.delete_entity(self._entity.id)
@@ -87,6 +90,7 @@ class UpdateEntityCommand(BaseCommand):
         Args:
             entity_id (str): The ID of the entity to update.
             update_data (dict): Dictionary of fields to update.
+
         """
         super().__init__()
         self.entity_id = entity_id
@@ -102,6 +106,7 @@ class UpdateEntityCommand(BaseCommand):
 
         Returns:
             CommandResult: Result object containing success status and messages.
+
         """
         try:
             # Fetch current state before update
@@ -170,6 +175,7 @@ class UpdateEntityCommand(BaseCommand):
 
         Args:
             db_service (DatabaseService): The database service to operate on.
+
         """
         if self._is_executed and self._previous_entity:
             db_service.insert_entity(self._previous_entity)
@@ -185,6 +191,7 @@ class DeleteEntityCommand(BaseCommand):
 
         Args:
             entity_id (str): The ID of the entity to delete.
+
         """
         super().__init__()
         self._entity_id = entity_id
@@ -198,6 +205,7 @@ class DeleteEntityCommand(BaseCommand):
 
         Returns:
             CommandResult: Result object indicating success or fail (e.g. not found).
+
         """
         try:
             # Fetch before delete for undo
@@ -231,6 +239,7 @@ class DeleteEntityCommand(BaseCommand):
 
         Args:
             db_service (DatabaseService): The database service to operate on.
+
         """
         if self._is_executed and self._backup_entity:
             db_service.insert_entity(self._backup_entity)

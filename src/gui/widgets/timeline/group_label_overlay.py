@@ -31,6 +31,7 @@ class GroupLabelOverlay(QWidget):
 
         Args:
             parent: Parent widget (should be the TimelineView)
+
         """
         super().__init__(parent)
 
@@ -61,6 +62,7 @@ class GroupLabelOverlay(QWidget):
                 - 'y_pos': float (Y position in view coordinates)
                 - 'color': str (hex color)
                 - 'is_collapsed': bool
+
         """
         self._labels = labels
         self.setVisible(len(labels) > 0)

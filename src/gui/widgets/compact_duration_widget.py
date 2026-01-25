@@ -43,6 +43,7 @@ class CompactDurationWidget(QWidget):
 
         Args:
             parent: Parent widget.
+
         """
         super().__init__(parent)
         # Set size policy to prevent vertical squashing
@@ -158,6 +159,7 @@ class CompactDurationWidget(QWidget):
 
         Args:
             converter: CalendarConverter instance.
+
         """
         self._converter = converter
         self._update_preview()
@@ -170,6 +172,7 @@ class CompactDurationWidget(QWidget):
 
         Args:
             start_date_float: Start date as absolute day float.
+
         """
         self._start_date_float = start_date_float
 
@@ -214,6 +217,7 @@ class CompactDurationWidget(QWidget):
 
         Returns:
             float: Duration in days.
+
         """
         years = self.spin_years.value()
         months = self.spin_months.value()
@@ -270,6 +274,7 @@ class CompactDurationWidget(QWidget):
 
         Args:
             days_float: Duration in days.
+
         """
         if self._updating:
             return
@@ -363,6 +368,7 @@ class CompactDurationWidget(QWidget):
 
         Returns:
             QSize: Minimum size for the duration widget (two rows of controls).
+
         """
         from PySide6.QtCore import QSize
 
@@ -373,6 +379,7 @@ class CompactDurationWidget(QWidget):
 
         Returns:
             QSize: Preferred size for comfortable duration input.
+
         """
         from PySide6.QtCore import QSize
 

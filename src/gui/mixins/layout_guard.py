@@ -30,6 +30,7 @@ class LayoutGuardMixin:
 
         Returns:
             bool: True if restored and validated, False otherwise.
+
         """
         if not geometry_data:
             return False
@@ -107,7 +108,8 @@ class LayoutGuardMixin:
 
     def _force_expand_dock(self, dock: QDockWidget) -> None:
         """Forces a dock to expand by setting a temporary minimum size constraint that
-        overrides the QSplitter's collapsed state, then resets it."""
+        overrides the QSplitter's collapsed state, then resets it.
+        """
         original_min_w = dock.minimumWidth()
         original_min_h = dock.minimumHeight()
 
@@ -131,12 +133,12 @@ class LayoutGuardMixin:
         QTimer.singleShot(100, reset_constraints)
 
     def guard_check_crash_flag(self) -> bool:
-        """
-        Checks if the application crashed on the last run.
+        """Checks if the application crashed on the last run.
         Expected usage: Call at start of __init__.
 
         Returns:
             bool: True if crash detected (Unclean exit).
+
         """
         settings = QSettings()
         # "app_running" flag: Set to true on start, false on clean exit.

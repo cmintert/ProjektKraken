@@ -26,6 +26,7 @@ class SetTimelineGroupingCommand(BaseCommand):
         Args:
             tag_order: List of tag names defining groups and their order.
             mode: Grouping mode - "DUPLICATE" (default) or "FIRST_MATCH".
+
         """
         super().__init__()
         self.tag_order = tag_order
@@ -40,6 +41,7 @@ class SetTimelineGroupingCommand(BaseCommand):
 
         Returns:
             CommandResult: Result object indicating success or failure.
+
         """
         try:
             # Validate mode
@@ -82,6 +84,7 @@ class SetTimelineGroupingCommand(BaseCommand):
 
         Args:
             db_service: The database service to operate on.
+
         """
         if not self._is_executed:
             return
@@ -117,6 +120,7 @@ class ClearTimelineGroupingCommand(BaseCommand):
 
         Returns:
             CommandResult: Result object indicating success or failure.
+
         """
         try:
             # Save previous configuration for undo
@@ -146,6 +150,7 @@ class ClearTimelineGroupingCommand(BaseCommand):
 
         Args:
             db_service: The database service to operate on.
+
         """
         if not self._is_executed:
             return
@@ -171,6 +176,7 @@ class UpdateTagColorCommand(BaseCommand):
         Args:
             tag_name: The name of the tag to update.
             color: Hex color string (e.g., "#FF0000").
+
         """
         super().__init__()
         self.tag_name = tag_name
@@ -185,6 +191,7 @@ class UpdateTagColorCommand(BaseCommand):
 
         Returns:
             CommandResult: Result object indicating success or failure.
+
         """
         try:
             # Get or create tag and save previous color
@@ -229,6 +236,7 @@ class UpdateTagColorCommand(BaseCommand):
 
         Args:
             db_service: The database service to operate on.
+
         """
         if not self._is_executed:
             return

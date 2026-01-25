@@ -24,6 +24,7 @@ class PromptTemplate:
         name: Human-readable name of the template.
         content: The actual prompt text content.
         metadata: Dictionary containing all metadata fields.
+
     """
 
     template_id: str
@@ -37,6 +38,7 @@ class PromptTemplate:
 
         Returns:
             str: A string in the form "PromptTemplate({template_id} v{version}: {name})".
+
         """
         return f"PromptTemplate({self.template_id} v{self.version}: {self.name})"
 
@@ -58,8 +60,10 @@ class PromptLoader:
         templates directory relative to the package root (default_assets/templates/system_prompts).
         Logs the chosen directory and emits a warning if the directory does not exist.
 
-        Parameters:
+        Parameters
+        ----------
             templates_dir (Optional[str]): Path to a custom templates directory.
+
         """
         if templates_dir:
             self.templates_dir = Path(templates_dir)
@@ -96,6 +100,7 @@ class PromptLoader:
         Raises:
             FileNotFoundError: If template file doesn't exist.
             ValueError: If template format is invalid.
+
         """
         # Determine version to load
         if version is None:
@@ -148,6 +153,7 @@ class PromptLoader:
                 - description (str): Template description if present, otherwise empty string.
                 - file_path (str): Filesystem path to the template file.
                 - metadata (dict): Parsed metadata dictionary from the template file.
+
         """
         if not self.templates_dir.exists():
             logger.warning(
@@ -193,14 +199,18 @@ class PromptLoader:
         """Determine the highest available version for a given template ID by scanning
         template files named "{template_id}_v{version}.txt".
 
-        Parameters:
+        Parameters
+        ----------
             template_id (str): Template identifier used in filenames (e.g., "welcome_email" for files like "welcome_email_v1.0.txt").
 
-        Returns:
+        Returns
+        -------
             latest_version (str): The highest version string found (e.g., "2.0").
 
-        Raises:
+        Raises
+        ------
             FileNotFoundError: If the templates directory does not exist or no templates are found for the given ID.
+
         """
         if not self.templates_dir.exists():
             raise FileNotFoundError(
@@ -236,11 +246,14 @@ class PromptLoader:
         contains non-empty prompt content after the closing '---', and includes the
         required metadata fields: 'version', 'template_id', and 'name'.
 
-        Parameters:
+        Parameters
+        ----------
             file_path: Path to the template file to validate.
 
-        Returns:
+        Returns
+        -------
             (is_valid, error_message): is_valid is True when the file meets format and metadata requirements, False otherwise. error_message is None when valid; otherwise contains a short description of the problem.
+
         """
         path = Path(file_path)
 
@@ -293,6 +306,7 @@ class PromptLoader:
 
         Raises:
             ValueError: If file format is invalid.
+
         """
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
@@ -316,11 +330,14 @@ class PromptLoader:
 
         Supports simple `key: value` pairs and list values written as `[item1, item2]`. Blank lines and lines starting with `#` are ignored; lines without a colon are skipped.
 
-        Parameters:
+        Parameters
+        ----------
             yaml_text (str): Metadata text to parse.
 
-        Returns:
+        Returns
+        -------
             Dict[str, Any]: A mapping of metadata keys to values. Values are strings or lists of strings for bracketed lists.
+
         """
         metadata = {}
 
@@ -362,6 +379,7 @@ class PromptLoader:
 
         Returns:
             str: The filename of the saved template.
+
         """
         if not self.templates_dir.exists():
             self.templates_dir.mkdir(parents=True, exist_ok=True)
@@ -405,6 +423,7 @@ class PromptLoader:
 
         Returns:
             List[str]: List of deleted filenames.
+
         """
         if not self.templates_dir.exists():
             return []

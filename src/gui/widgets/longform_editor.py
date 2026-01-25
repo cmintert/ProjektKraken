@@ -214,6 +214,7 @@ class LongformOutlineWidget(QTreeWidget):
 
         Args:
             sequence: Ordered list of items from build_longform_sequence.
+
         """
         # Preserve current selection
         selected_item_id = None
@@ -346,6 +347,7 @@ class LongformContentWidget(WikiTextEdit):
 
         Args:
             sequence: Ordered list of items from build_longform_sequence.
+
         """
         lines = []
 
@@ -377,6 +379,7 @@ class LongformContentWidget(WikiTextEdit):
 
         Args:
             item_index: Index of the item in the sequence.
+
         """
         self.scrollToAnchor(f"item-{item_index}")
 
@@ -515,6 +518,7 @@ class LongformEditorWidget(QWidget):
 
         Args:
             sequence: Ordered list from build_longform_sequence.
+
         """
         self._sequence = sequence
         self.outline.load_sequence(sequence)
@@ -531,6 +535,7 @@ class LongformEditorWidget(QWidget):
         Args:
             table: Table name.
             row_id: Row ID.
+
         """
         # Find index in sequence
         for idx, item in enumerate(self._sequence):
@@ -546,6 +551,7 @@ class LongformEditorWidget(QWidget):
 
         Returns:
             Tuple of (table, id) or None.
+
         """
         items = self.outline.selectedItems()
         if items:
@@ -561,6 +567,7 @@ class LongformEditorWidget(QWidget):
 
         Returns:
             QSize: Minimum size for usable longform editor.
+
         """
         return QSize(400, 300)  # Width for split view, height for toolbar + content
 
@@ -569,6 +576,7 @@ class LongformEditorWidget(QWidget):
 
         Returns:
             QSize: Comfortable working size for editing longform documents.
+
         """
         return QSize(600, 700)  # Comfortable size for split view
 

@@ -47,6 +47,7 @@ def get_available_icons() -> List[str]:
 
     Returns:
         List[str]: List of .svg filenames in the markers folder.
+
     """
     if not os.path.exists(MARKER_ICONS_PATH):
         return []
@@ -89,6 +90,7 @@ class MapWidget(QWidget):
 
         Args:
             parent: Parent widget.
+
         """
         super().__init__(parent)
 
@@ -257,6 +259,7 @@ class MapWidget(QWidget):
 
         Args:
             trajectories: List of (marker_id, trajectory_id, keyframes) tuples.
+
         """
         self._active_trajectories.clear()
         count = 0
@@ -294,7 +297,8 @@ class MapWidget(QWidget):
     @Slot()
     def _on_add_keyframe(self) -> None:
         """Captures the current position of the selected marker and saves it as a
-        keyframe."""
+        keyframe.
+        """
         selected_items = self.view.scene.selectedItems()
         if not selected_items:
             logger.warning("Cannot add keyframe: No marker selected.")
@@ -334,6 +338,7 @@ class MapWidget(QWidget):
 
         Args:
             force_all: If True, even markers in transient state are snapped back.
+
         """
         for marker_id, x, y in self._iter_trajectory_positions():
             if not force_all and marker_id in self._transient_marker_ids:
@@ -350,6 +355,7 @@ class MapWidget(QWidget):
 
         Args:
             time: Current playhead time in lore_date units.
+
         """
         # Round to 4 decimal places to prevent float precision drift
         # during rapid playhead scrubbing
@@ -387,6 +393,7 @@ class MapWidget(QWidget):
 
         Args:
             time: Current time in lore_date units.
+
         """
         self._current_time = time
         self._update_time_display()
@@ -412,6 +419,7 @@ class MapWidget(QWidget):
 
         Args:
             maps: List of Map objects.
+
         """
         self.map_selector.blockSignals(True)
         self.map_selector.clear()
@@ -444,6 +452,7 @@ class MapWidget(QWidget):
 
         Returns:
             Optional[str]: The map ID, or None if no map is selected.
+
         """
         index = self.map_selector.currentIndex()
         return self.map_selector.itemData(index) if index >= 0 else None
@@ -458,6 +467,7 @@ class MapWidget(QWidget):
             marker_id: ID of the moved marker.
             x: New normalized X coordinate.
             y: New normalized Y coordinate.
+
         """
         # If marker has a trajectory, we enter "Transient State" instead of persisting
         if marker_id in self._active_trajectories:
@@ -488,6 +498,7 @@ class MapWidget(QWidget):
             x: Normalized X [0-1]
             y: Normalized Y [0-1]
             in_bounds: True if cursor is over the map image.
+
         """
         # Time suffix (always shown)
         time_str = f"T: {self._playhead_time:.1f} | Now: {self._current_time:.1f}"
@@ -537,6 +548,7 @@ class MapWidget(QWidget):
 
         Returns:
             bool: True if successful, False otherwise.
+
         """
         return self.view.load_map(image_path)
 
@@ -563,6 +575,7 @@ class MapWidget(QWidget):
             icon: Optional icon filename.
             color: Optional color hex string.
             description: Optional description for tooltip.
+
         """
         self.view.add_marker(
             marker_id, object_type, label, x, y, icon, color, description, lore_date
@@ -575,6 +588,7 @@ class MapWidget(QWidget):
             marker_id: Unique identifier for the marker.
             x: Normalized X coordinate.
             y: Normalized Y coordinate.
+
         """
         self.view.update_marker_position(marker_id, x, y)
 
@@ -583,6 +597,7 @@ class MapWidget(QWidget):
 
         Args:
             marker_id: ID of the marker to remove.
+
         """
         self.view.remove_marker(marker_id)
 
@@ -826,6 +841,7 @@ class MapWidget(QWidget):
         Args:
             marker_id: The ID of the marker (object_id).
             t: The timestamp of the keyframe to delete.
+
         """
         map_id = self.map_selector.currentData()
         if not map_id:

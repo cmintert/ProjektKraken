@@ -12,13 +12,15 @@ from typing import List, Optional, Set
 from PySide6.QtCore import QObject, Signal, Slot
 
 from src.commands.base_command import BaseCommand, CommandResult
+from src.core.entities import Entity
+from src.core.events import Event
+from src.core.summary_data import SummaryData
 from src.services import longform_builder
 from src.services.asset_store import AssetStore
 from src.services.attachment_service import AttachmentService
-
 from src.services.db_service import DatabaseService
+from src.services.import_service import ImportResult
 from src.services.summary_service import SummaryService
-from src.core.summary_data import SummaryData
 
 logger = logging.getLogger(__name__)
 
@@ -37,17 +39,17 @@ class DatabaseWorker(QObject):
     markers_loaded = Signal(str, list)  # map_id, List[Marker]
     trajectories_loaded = Signal(list)  # List[Tuple[str, str, List[Keyframe]]]
     longform_sequence_loaded = Signal(list)  # List[dict]
-    calendar_config_loaded = Signal(object)  # CalendarConfig or None
+    calendar_config_loaded = Signal(object)  # CalendarConfig | None (use object for union types)
     current_time_loaded = Signal(float)  # Current time in lore_date units
-    grouping_dialog_data_loaded = Signal(list, object)  # tags_data, current_config
+    grouping_dialog_data_loaded = Signal(list, object)  # tags_data, GroupingConfig | None (use object for union types)
     graph_data_loaded = Signal(list, list)  # nodes, edges
     graph_metadata_loaded = Signal(list, list)  # tags, rel_types
     completer_data_loaded = Signal(
         list, list, list, list
     )  # tags, rel_types, attr_keys, entity_types
 
-    event_details_loaded = Signal(object, list, list)  # Event, relations, incoming
-    entity_details_loaded = Signal(object, list, list)  # Entity, relations, incoming
+    event_details_loaded = Signal(Event, list, list)  # Event, relations, incoming
+    entity_details_loaded = Signal(Entity, list, list)  # Entity, relations, incoming
     attachments_loaded = Signal(
         str, str, list
     )  # owner_type, owner_id, List[ImageAttachment]
@@ -55,7 +57,7 @@ class DatabaseWorker(QObject):
     filter_results_ready = Signal(list, list)  # List[Event], List[Entity]
     entity_state_resolved = Signal(str, dict)  # entity_id, resolved_attributes
 
-    command_finished = Signal(object)  # CommandResult object
+    command_finished = Signal(CommandResult)
     error_occurred = Signal(str)
 
     # Status signals for UI feedback
@@ -63,14 +65,15 @@ class DatabaseWorker(QObject):
     operation_finished = Signal(str)
 
     # Import signals
-    import_finished = Signal(object)  # ImportResult
-    summary_generated = Signal(str, object)  # item_id, SummaryData
+    import_finished = Signal(ImportResult)
+    summary_generated = Signal(str, SummaryData)
 
     def __init__(self, db_path: str) -> None:
         """Initializes the worker.
 
         Args:
             db_path: Path to the database file.
+
         """
         super().__init__()
         self.db_path = db_path
@@ -93,24 +96,17 @@ class DatabaseWorker(QObject):
             self.asset_store = AssetStore(str(project_root))
 
             # Initialize AttachmentService
-            # We access the repo directly from db_service (it was initialized in
-            # connect())
-            if not self.db_service._attachment_repo:
-                # Should have been initialized by connect()
-                raise RuntimeError("Attachment repository not initialized")
-
+            # Get the repo from db_service (it was initialized in connect())
+            attachment_repo = self.db_service.get_attachment_repo()
             self.attachment_service = AttachmentService(
-                self.db_service._attachment_repo, self.asset_store
+                attachment_repo, self.asset_store
             )
 
-            # Attach to db_service for Command access (Dependency Injection via Context)
             # Attach to db_service for Command access (Dependency Injection via Context)
             self.db_service.attachment_service = self.attachment_service
 
             # Initialize SummaryService
             self.summary_service = SummaryService(self.db_service)
-
-            # Initialize TemporalManager
 
             # Initialize TemporalManager
             from src.core.temporal_manager import TemporalManager
@@ -120,8 +116,18 @@ class DatabaseWorker(QObject):
             logger.info("DatabaseWorker initialized successfully.")
             self.initialized.emit(True)
             self.operation_finished.emit("Database Connected.")
-        except Exception:
-            logger.critical(f"DatabaseWorker init failed: {traceback.format_exc()}")
+        except sqlite3.Error as e:
+            logger.critical(f"DatabaseWorker database error: {type(e).__name__}: {e}")
+            self.error_occurred.emit(f"Database error: {e}")
+            self.initialized.emit(False)
+        except (OSError, IOError) as e:
+            logger.critical(f"DatabaseWorker I/O error: {type(e).__name__}: {e}")
+            self.error_occurred.emit(f"Failed to access database file: {e}")
+            self.initialized.emit(False)
+        except Exception as e:
+            logger.critical(
+                f"DatabaseWorker init failed ({type(e).__name__}): {e}\n{traceback.format_exc()}"
+            )
             self.error_occurred.emit("Failed to connect to database.")
             self.initialized.emit(False)
 
@@ -135,8 +141,12 @@ class DatabaseWorker(QObject):
             if self.db_service:
                 self.db_service.close()
                 logger.info("Database connection closed in worker cleanup.")
-        except Exception:
-            logger.error(f"Error during worker cleanup: {traceback.format_exc()}")
+        except sqlite3.Error as e:
+            logger.error(f"Database error during cleanup ({type(e).__name__}): {e}")
+        except Exception as e:
+            logger.error(
+                f"Error during worker cleanup ({type(e).__name__}): {e}\n{traceback.format_exc()}"
+            )
 
     @Slot()
     def load_events(self) -> None:
@@ -229,6 +239,7 @@ class DatabaseWorker(QObject):
             t: Time timestamp.
             x: Normalized X.
             y: Normalized Y.
+
         """
         if not self.db_service:
             return
@@ -255,6 +266,7 @@ class DatabaseWorker(QObject):
             marker_id: The marker ID.
             old_t: Original timestamp.
             new_t: New timestamp.
+
         """
         if not self.db_service:
             return
@@ -277,6 +289,7 @@ class DatabaseWorker(QObject):
             map_id: The map ID (for reloading).
             marker_id: The marker ID (object_id).
             t: The timestamp of the keyframe to delete.
+
         """
         if not self.db_service:
             return
@@ -366,6 +379,7 @@ class DatabaseWorker(QObject):
         Args:
             doc_id (str): Document ID to load.
             filter_json (str): Optional JSON serialization of filter configuration.
+
         """
         if not self.db_service:
             return
@@ -395,13 +409,14 @@ class DatabaseWorker(QObject):
                 except Exception as e:
                     logger.error(f"Error applying filter in worker: {e}")
 
-            if not self.db_service._connection:
-                self.db_service.connect()
+            # Ensure connection and get fresh data
+            connection = self.db_service.get_connection()
+            if not connection:
+                raise RuntimeError("Failed to establish database connection")
             self.db_service.ensure_fresh_view()
-            assert self.db_service._connection is not None
 
             sequence = longform_builder.build_longform_sequence(
-                self.db_service._connection, doc_id=doc_id, allowed_ids=allowed_ids
+                connection, doc_id=doc_id, allowed_ids=allowed_ids
             )
             self.longform_sequence_loaded.emit(sequence)
             self.operation_finished.emit(f"Loaded {len(sequence)} longform items")
@@ -430,8 +445,7 @@ class DatabaseWorker(QObject):
         object, object
     )  # Command, Optional[args] - simplified mainly for command objects
     def run_command(self, command: BaseCommand) -> None:
-        """
-        Executes a command object.
+        """Executes a command object.
         IMPORTANT: The command must NOT already have the db_service injected.
         We inject the worker's thread-local service here.
 
@@ -445,6 +459,7 @@ class DatabaseWorker(QObject):
                                   (though usually captured in result).
             operation_started (str): Status update.
             operation_finished (str): Status update.
+
         """
         if not self.db_service:
             cmd_name = command.__class__.__name__
@@ -522,6 +537,7 @@ class DatabaseWorker(QObject):
 
         Args:
             time (float): The current time in lore_date units.
+
         """
         if not self.db_service:
             return
@@ -591,6 +607,7 @@ class DatabaseWorker(QObject):
             provider: Optional embedding provider name.
             model: Optional model name override.
             excluded_attributes: Optional list of attribute keys to exclude.
+
         """
         if not self.db_service:
             return
@@ -601,11 +618,11 @@ class DatabaseWorker(QObject):
             # Import search service
             from src.services.search_service import create_search_service
 
-            # Create search service (uses settings/defaults)
-            if not self.db_service._connection:
-                self.db_service.connect()
-            assert self.db_service._connection is not None
-            search_service = create_search_service(self.db_service._connection)
+            # Create search service with database connection
+            connection = self.db_service.get_connection()
+            if not connection:
+                raise RuntimeError("Failed to establish database connection")
+            search_service = create_search_service(connection)
 
             # Index the object
             if object_type == "entity":
@@ -628,6 +645,7 @@ class DatabaseWorker(QObject):
         Args:
             filter_config: Dictionary containing 'include', 'include_mode',
                            'exclude', 'exclude_mode', etc.
+
         """
         if not self.db_service:
             return
@@ -697,6 +715,7 @@ class DatabaseWorker(QObject):
         Args:
             tags: List of tags to include.
             rel_types: List of relation types to include.
+
         """
         if not self.db_service:
             return
@@ -757,6 +776,7 @@ class DatabaseWorker(QObject):
         Args:
             parsed_json: JSON string of pre-parsed data from MainWindow.
             options_json: JSON string of import options (mode, source_name, dry_run).
+
         """
         if not self.db_service:
             from src.services.import_service import ImportResult
@@ -793,12 +813,13 @@ class DatabaseWorker(QObject):
             result = ImportResult(success=False, errors=[str(e)])
             self.import_finished.emit(result)
 
-    @Slot(object)
+    @Slot(object)  # Union[Entity, Event] - use object for union types
     def generate_summary(self, item) -> None:
         """Generates a summary for the given item using LLM.
 
         Args:
             item: Entity or Event object.
+
         """
         if not self.summary_service:
             return

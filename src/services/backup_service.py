@@ -49,6 +49,7 @@ class BackupMetadata:
         size: Size of the backup file in bytes.
         checksum: SHA256 checksum of the backup file.
         description: Optional user description for manual backups.
+
     """
 
     backup_path: Path
@@ -63,6 +64,7 @@ class BackupMetadata:
 
         Returns:
             dict: Dictionary representation of the metadata.
+
         """
         return {
             "backup_path": str(self.backup_path),
@@ -82,6 +84,7 @@ class BackupMetadata:
 
         Returns:
             BackupMetadata: A new BackupMetadata instance.
+
         """
         return cls(
             backup_path=Path(data["backup_path"]),
@@ -116,6 +119,7 @@ if HAS_QT:
                 db_path: Path to the database file.
                 backup_path: Path where backup will be saved or restored from.
                 operation: Operation type ('backup' or 'restore').
+
             """
             super().__init__()
             self.db_path = db_path
@@ -210,6 +214,7 @@ class BackupService:
 
         Args:
             config: Backup configuration (uses defaults if not provided).
+
         """
         self.config = config or BackupConfig()
         self._auto_backup_timer: Optional[QTimer] = None
@@ -250,6 +255,7 @@ class BackupService:
 
         Args:
             db_path: Path to the database file.
+
         """
         self._current_db_path = Path(db_path) if db_path != ":memory:" else None
         logger.debug(f"Database path set to: {self._current_db_path}")
@@ -261,6 +267,7 @@ class BackupService:
 
         Args:
             config: New backup configuration to apply.
+
         """
         old_enabled = self.config.enabled
         old_interval = self.config.auto_save_interval_minutes
@@ -296,6 +303,7 @@ class BackupService:
 
         Returns:
             BackupMetadata: Metadata for the created backup, or None on failure.
+
         """
         if db_path is None:
             db_path = self._current_db_path
@@ -368,6 +376,7 @@ class BackupService:
 
         Returns:
             bool: True if restore was successful, False otherwise.
+
         """
         if target_path is None:
             target_path = self._current_db_path
@@ -426,6 +435,7 @@ class BackupService:
 
         Returns:
             List[BackupMetadata]: List of backup metadata, sorted by timestamp.
+
         """
         backups = self._load_all_metadata()
 
@@ -445,6 +455,7 @@ class BackupService:
 
         Returns:
             bool: True if backup is valid, False otherwise.
+
         """
         return self._verify_backup_file(backup_path)
 
@@ -461,6 +472,7 @@ class BackupService:
 
         Args:
             interval_minutes: Backup interval (uses config default if not specified).
+
         """
         if not HAS_QT:
             logger.warning("Qt not available, auto-backup timer not started")
@@ -508,6 +520,7 @@ class BackupService:
 
         Returns:
             Path: Path where backup should be saved.
+
         """
         # Get backup directory
         if self.config.backup_dir:
@@ -556,6 +569,7 @@ class BackupService:
 
         Returns:
             bool: True if valid, False otherwise.
+
         """
         try:
             conn = sqlite3.connect(str(backup_path))
@@ -597,6 +611,7 @@ class BackupService:
 
         Returns:
             str: Hexadecimal checksum string.
+
         """
         sha256_hash = hashlib.sha256()
         with open(file_path, "rb") as f:
@@ -609,6 +624,7 @@ class BackupService:
 
         Args:
             metadata: Backup metadata to save.
+
         """
         metadata_file = metadata.backup_path.parent / ".backup_index.json"
 
@@ -631,6 +647,7 @@ class BackupService:
 
         Returns:
             List[BackupMetadata]: List of all backup metadata.
+
         """
         backups = []
 
@@ -664,6 +681,7 @@ class BackupService:
 
         Args:
             backup_type: Type of backup to clean up.
+
         """
         # Get retention count for this type
         if backup_type == BackupType.AUTO_SAVE:
@@ -699,6 +717,7 @@ class BackupService:
         Args:
             backup_path: Path to the backup file.
             backup_type: Type of backup.
+
         """
         if not self.config.external_backup_path:
             return

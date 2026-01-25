@@ -23,6 +23,7 @@ class MapCoordinateSystem:
 
         Args:
             rect: The bounding rectangle of the map image in scene coordinates.
+
         """
         self._scene_rect = rect
 
@@ -35,6 +36,7 @@ class MapCoordinateSystem:
 
         Returns:
             QPointF: Point in scene coordinates.
+
         """
         if self._scene_rect.isEmpty():
             return QPointF(0.0, 0.0)
@@ -51,6 +53,7 @@ class MapCoordinateSystem:
 
         Returns:
             Tuple[float, float]: (x, y) normalized coordinates.
+
         """
         if (
             self._scene_rect.isEmpty()
@@ -76,5 +79,6 @@ class MapCoordinateSystem:
 
         Returns:
             Tuple[float, float]: Clamped (x, y).
+
         """
         return max(0.0, min(1.0, x)), max(0.0, min(1.0, y))

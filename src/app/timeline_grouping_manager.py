@@ -1,5 +1,4 @@
-"""
-TimelineGroupingManager - Handles timeline grouping operations for MainWindow.
+"""TimelineGroupingManager - Handles timeline grouping operations for MainWindow.
 
 This module contains all timeline grouping-related functionality extracted from
 MainWindow to reduce its size and improve maintainability.
@@ -39,6 +38,7 @@ class TimelineGroupingManager(QObject):
 
         Args:
             main_window: Reference to the MainWindow instance.
+
         """
         super().__init__()
         self.window = main_window
@@ -58,6 +58,7 @@ class TimelineGroupingManager(QObject):
 
         Args:
             config: Dictionary with 'tag_order' and 'mode', or None.
+
         """
         if config:
             tag_order = config.get("tag_order", [])
@@ -89,6 +90,7 @@ class TimelineGroupingManager(QObject):
         Args:
             tags_data: List of dicts with 'name', 'color', 'count' for each tag.
             current_config: Current grouping config dict or None.
+
         """
         from src.gui.dialogs.grouping_config_dialog import GroupingConfigDialog
 
@@ -114,6 +116,7 @@ class TimelineGroupingManager(QObject):
         Args:
             tag_order: List of tag names in order.
             mode: Grouping mode (DUPLICATE or FIRST_MATCH).
+
         """
         # Update timeline view
         self.window.timeline.set_grouping_config(tag_order, mode)
@@ -133,6 +136,7 @@ class TimelineGroupingManager(QObject):
 
         Args:
             tag_name: The name of the tag to change color for.
+
         """
         color = QColorDialog.getColor()
         if color.isValid():
@@ -146,6 +150,7 @@ class TimelineGroupingManager(QObject):
 
         Args:
             tag_name: The name of the tag to remove.
+
         """
         # Get current config from GUI thread's db_service (thread-safe)
         current_config = self.window.gui_db_service.get_timeline_grouping_config()

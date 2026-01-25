@@ -19,6 +19,7 @@ def validate_database_path(db_path: str, allow_create: bool = False) -> bool:
 
     Returns:
         True if valid, False otherwise.
+
     """
     path = Path(db_path)
 

@@ -39,6 +39,7 @@ class InjectTemplateCommand(BaseCommand):
                      state diffs here.
             overwrite: Whether to overwrite existing attributes.
             variables: Variable replacement map.
+
         """
         super().__init__()
         self.target = target
@@ -66,6 +67,7 @@ class InjectTemplateCommand(BaseCommand):
 
         Returns:
             CommandResult: Success or failure.
+
         """
         try:
             # 1. Snapshot State for Undo
@@ -117,6 +119,7 @@ class InjectTemplateCommand(BaseCommand):
 
         Args:
             db_service: Database service.
+
         """
         if not self._is_executed:
             return

@@ -62,6 +62,7 @@ class BackupSettingsDialog(QDialog):
 
         Args:
             parent: Parent widget.
+
         """
         super().__init__(parent)
         self.setWindowTitle("Backup Settings")

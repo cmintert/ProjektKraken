@@ -13,9 +13,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.gui.utils.style_helper import StyleHelper
-
 from src.gui.utils.prompt_syntax_highlighter import PromptSyntaxHighlighter
+from src.gui.utils.style_helper import StyleHelper
 
 
 class PromptEditorWidget(QWidget):

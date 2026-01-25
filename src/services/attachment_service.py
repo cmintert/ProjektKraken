@@ -28,6 +28,7 @@ class AttachmentService:
         Args:
             repository: Repository for database operations.
             asset_store: Store for filesystem operations.
+
         """
         self._repo = repository
         self._store = asset_store
@@ -44,6 +45,7 @@ class AttachmentService:
 
         Returns:
             List of created ImageAttachment objects.
+
         """
         created_attachments = []
 
@@ -104,6 +106,7 @@ class AttachmentService:
         Returns:
             (success, trash_info)
             trash_info contains paths needed for restoration.
+
         """
         attachment = self._repo.get(attachment_id)
         if not attachment:

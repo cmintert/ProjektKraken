@@ -44,10 +44,10 @@ class DatabaseService:
     """
 
     def __init__(self, db_path: str = ":memory:") -> None:
-        """
-        Args:
+        """Args:
             db_path: Path to the .kraken database file.
                      Defaults to :memory: for testing.
+
         """
         self.db_path = db_path
         self._connection: Optional[sqlite3.Connection] = None
@@ -102,6 +102,41 @@ class DatabaseService:
             self._connection.close()
             self._connection = None
             logger.debug("Database connection closed.")
+
+    def is_connected(self) -> bool:
+        """Checks if the database connection is established.
+
+        Returns:
+            bool: True if connected, False otherwise.
+
+        """
+        return self._connection is not None
+
+    def get_connection(self) -> Optional[sqlite3.Connection]:
+        """Gets the database connection, establishing it if necessary.
+
+        Returns:
+            Optional[sqlite3.Connection]: The active connection, or None if
+                                          connection failed.
+
+        """
+        if not self._connection:
+            self.connect()
+        return self._connection
+
+    def get_attachment_repo(self) -> AttachmentRepository:
+        """Gets the attachment repository.
+
+        Returns:
+            AttachmentRepository: The attachment repository instance.
+
+        Raises:
+            RuntimeError: If the repository is not initialized (connection not established).
+
+        """
+        if not self._attachment_repo:
+            raise RuntimeError("Attachment repository not initialized")
+        return self._attachment_repo
 
     @contextmanager
     def transaction(self) -> Iterator[sqlite3.Connection]:
@@ -425,6 +460,7 @@ class DatabaseService:
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         if not self._connection:
             self.connect()
@@ -438,6 +474,7 @@ class DatabaseService:
 
         Returns:
             Optional[Event]: The Event object if found, else None.
+
         """
         if not self._connection:
             self.connect()
@@ -448,6 +485,7 @@ class DatabaseService:
 
         Returns:
             List[Event]: A list of all Event objects in the database.
+
         """
         return self.get_events()
 
@@ -459,6 +497,7 @@ class DatabaseService:
 
         Returns:
             List[Event]: List of matching Event objects.
+
         """
         if not self._connection:
             self.connect()
@@ -474,6 +513,7 @@ class DatabaseService:
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         if not self._connection:
             self.connect()
@@ -491,6 +531,7 @@ class DatabaseService:
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         if not self._connection:
             self.connect()
@@ -504,6 +545,7 @@ class DatabaseService:
 
         Returns:
             Optional[Entity]: The Entity object if found, else None.
+
         """
         if not self._connection:
             self.connect()
@@ -514,6 +556,7 @@ class DatabaseService:
 
         Returns:
             List[Entity]: A list of all Entity objects.
+
         """
         return self.get_entities()
 
@@ -525,6 +568,7 @@ class DatabaseService:
 
         Returns:
             List[Entity]: List of matching Entity objects.
+
         """
         if not self._connection:
             self.connect()
@@ -540,6 +584,7 @@ class DatabaseService:
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         if not self._connection:
             self.connect()
@@ -569,6 +614,7 @@ class DatabaseService:
 
         Raises:
             sqlite3.Error: If DB fails.
+
         """
         import time
         import uuid
@@ -596,6 +642,7 @@ class DatabaseService:
 
         Returns:
             List[Dict[str, Any]]: List of relation dictionaries.
+
         """
         if not self._connection:
             self.connect()
@@ -611,6 +658,7 @@ class DatabaseService:
 
         Returns:
             List[Dict[str, Any]]: List of relation dictionaries.
+
         """
         if not self._connection:
             self.connect()
@@ -624,6 +672,7 @@ class DatabaseService:
 
         Returns:
             Optional[Dict[str, Any]]: The relation dict or None.
+
         """
         relations = self._relation_repo.get_all()
         for rel in relations:
@@ -636,6 +685,7 @@ class DatabaseService:
 
         Args:
             rel_id (str): The unique identifier of the relation.
+
         """
         if not self._connection:
             self.connect()
@@ -658,6 +708,7 @@ class DatabaseService:
 
         Raises:
             sqlite3.Error: If DB fails.
+
         """
         if attributes is None:
             attributes = {}
@@ -688,6 +739,7 @@ class DatabaseService:
 
         Returns:
             Optional[str]: The name if found, else None.
+
         """
         if not self._connection:
             self.connect()
@@ -724,6 +776,7 @@ class DatabaseService:
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         if not self._connection:
             self.connect()
@@ -743,6 +796,7 @@ class DatabaseService:
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         if not self._connection:
             self.connect()
@@ -761,6 +815,7 @@ class DatabaseService:
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         if not self._connection:
             self.connect()
@@ -775,6 +830,7 @@ class DatabaseService:
 
         Returns:
             Optional[CalendarConfig]: The config if found, else None.
+
         """
         if not self._connection:
             self.connect()
@@ -785,6 +841,7 @@ class DatabaseService:
 
         Returns:
             List[CalendarConfig]: A list of all calendar configs.
+
         """
         if not self._connection:
             self.connect()
@@ -795,6 +852,7 @@ class DatabaseService:
 
         Returns:
             Optional[CalendarConfig]: The active config if found, else None.
+
         """
         if not self._connection:
             self.connect()
@@ -808,6 +866,7 @@ class DatabaseService:
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         if not self._connection:
             self.connect()
@@ -824,6 +883,7 @@ class DatabaseService:
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         if not self._connection:
             self.connect()
@@ -839,6 +899,7 @@ class DatabaseService:
 
         Returns:
             Optional[float]: The current time in lore_date units, or None if not set.
+
         """
         sql = "SELECT value FROM system_meta WHERE key = 'current_time'"
         if not self._connection:
@@ -864,6 +925,7 @@ class DatabaseService:
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         sql = """
             INSERT INTO system_meta (key, value)
@@ -886,6 +948,7 @@ class DatabaseService:
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         if not self._connection:
             self.connect()
@@ -899,6 +962,7 @@ class DatabaseService:
 
         Returns:
             Optional[Map]: The Map object if found, else None.
+
         """
         if not self._connection:
             self.connect()
@@ -909,6 +973,7 @@ class DatabaseService:
 
         Returns:
             List[Map]: List of all Map objects.
+
         """
         if not self._connection:
             self.connect()
@@ -922,6 +987,7 @@ class DatabaseService:
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         if not self._connection:
             self.connect()
@@ -946,6 +1012,7 @@ class DatabaseService:
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         # Note: Repository insert_marker doesn't return ID, so we need special handling
         sql = """
@@ -987,6 +1054,7 @@ class DatabaseService:
 
         Returns:
             Optional[Marker]: The Marker object if found, else None.
+
         """
         if not self._connection:
             self.connect()
@@ -1000,6 +1068,7 @@ class DatabaseService:
 
         Returns:
             List[Marker]: List of all Marker objects on the map.
+
         """
         if not self._connection:
             self.connect()
@@ -1014,6 +1083,7 @@ class DatabaseService:
 
         Returns:
             List[Marker]: List of all Marker objects for the object.
+
         """
         sql = "SELECT * FROM markers WHERE object_id = ? AND object_type = ?"
         if not self._connection:
@@ -1046,6 +1116,7 @@ class DatabaseService:
 
         Returns:
             Optional[Marker]: The Marker object if found, else None.
+
         """
         sql = """
             SELECT * FROM markers
@@ -1073,6 +1144,7 @@ class DatabaseService:
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         sql = "DELETE FROM markers WHERE id = ?"
         with self.transaction() as conn:
@@ -1087,6 +1159,7 @@ class DatabaseService:
 
         Returns:
             List[Dict[str, Any]]: List of tag dictionaries with id, name, created_at.
+
         """
         if not self._connection:
             self.connect()
@@ -1104,6 +1177,7 @@ class DatabaseService:
 
         Returns:
             List[Dict[str, Any]]: List of distinct tag dictionaries.
+
         """
         if not self._connection:
             self.connect()
@@ -1125,6 +1199,7 @@ class DatabaseService:
 
         Returns:
             List[Dict[str, Any]]: List of distinct tag dictionaries.
+
         """
         if not self._connection:
             self.connect()
@@ -1153,6 +1228,7 @@ class DatabaseService:
         Raises:
             ValueError: If tag_name is empty or whitespace-only.
             sqlite3.Error: If the database operation fails.
+
         """
         import time
         import uuid
@@ -1194,6 +1270,7 @@ class DatabaseService:
         Raises:
             ValueError: If tag_name is empty.
             sqlite3.Error: If the database operation fails.
+
         """
         import time
 
@@ -1225,6 +1302,7 @@ class DatabaseService:
         Raises:
             ValueError: If tag_name is empty.
             sqlite3.Error: If the database operation fails.
+
         """
         import time
 
@@ -1257,6 +1335,7 @@ class DatabaseService:
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         # Get tag ID
         if not self._connection:
@@ -1287,6 +1366,7 @@ class DatabaseService:
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         # Get tag ID
         if not self._connection:
@@ -1316,6 +1396,7 @@ class DatabaseService:
 
         Returns:
             List[Dict[str, Any]]: List of tag dictionaries.
+
         """
         if not self._connection:
             self.connect()
@@ -1342,6 +1423,7 @@ class DatabaseService:
 
         Returns:
             List[Dict[str, Any]]: List of tag dictionaries.
+
         """
         if not self._connection:
             self.connect()
@@ -1368,6 +1450,7 @@ class DatabaseService:
 
         Raises:
             sqlite3.Error: If the database operation fails.
+
         """
         # Get tag ID
         if not self._connection:
@@ -1397,6 +1480,7 @@ class DatabaseService:
 
         Returns:
             List[Event]: List of Event objects with the specified tag.
+
         """
         if not self._connection:
             self.connect()
@@ -1431,6 +1515,7 @@ class DatabaseService:
 
         Returns:
             List[Entity]: List of Entity objects with the specified tag.
+
         """
         if not self._connection:
             self.connect()
@@ -1481,6 +1566,7 @@ class DatabaseService:
 
         Raises:
             ValueError: If mode is not DUPLICATE or FIRST_MATCH.
+
         """
         if mode not in ("DUPLICATE", "FIRST_MATCH"):
             raise ValueError(f"Invalid mode: {mode}. Must be DUPLICATE or FIRST_MATCH")
@@ -1587,6 +1673,7 @@ class DatabaseService:
 
         Returns:
             List of dicts with tag_name, count, earliest_date, latest_date.
+
         """
         if not self._connection:
             self.connect()
@@ -1645,6 +1732,7 @@ class DatabaseService:
 
         Returns:
             List of dicts with tag_name, color, count, earliest_date, latest_date.
+
         """
         metadata = []
 
@@ -1711,6 +1799,7 @@ class DatabaseService:
 
         Returns:
             List[Event]: Events with the specified tag, sorted by lore_date.
+
         """
         if not self._connection:
             self.connect()
@@ -1755,6 +1844,7 @@ class DatabaseService:
 
         Raises:
             ValueError: If color format is invalid.
+
         """
         # Get or create tag
         tag_id = self.create_tag(tag_name)
@@ -1796,6 +1886,7 @@ class DatabaseService:
 
         Returns:
             str: Hex color string (e.g., "#FF0000").
+
         """
         if not self._connection:
             self.connect()
@@ -1826,6 +1917,7 @@ class DatabaseService:
 
         Returns:
             str: Hex color string (e.g., "#FF0000").
+
         """
         import hashlib
 
@@ -1853,6 +1945,7 @@ class DatabaseService:
         Returns:
             Optional[Dict[str, Any]]: Tag dictionary with id, name, color, created_at
                                       or None if not found.
+
         """
         if not self._connection:
             self.connect()
@@ -1919,6 +2012,7 @@ class DatabaseService:
             ...     exclude=['archived']
             ... )
             [('entity', 'uuid-1'), ('event', 'uuid-4')]
+
         """
         if not self._connection:
             self.connect()
@@ -1952,6 +2046,7 @@ class DatabaseService:
 
         Returns:
             Tuple containing (List[Event], List[Entity]).
+
         """
         if not self._connection:
             self.connect()
@@ -2010,6 +2105,7 @@ class DatabaseService:
 
         Raises:
             ValueError: If mode is invalid.
+
         """
         if mode not in ("DUPLICATE", "FIRST_MATCH"):
             raise ValueError(f"Invalid mode: {mode}. Must be DUPLICATE or FIRST_MATCH")
@@ -2036,6 +2132,7 @@ class DatabaseService:
         Returns:
             Optional[Dict[str, Any]]: Config dict with tag_order and mode,
                                       or None if not set.
+
         """
         if not self._connection:
             self.connect()
@@ -2078,6 +2175,7 @@ class DatabaseService:
 
         Returns:
             UUID of the inserted trajectory record.
+
         """
         if not self._connection:
             self.connect()
@@ -2093,6 +2191,7 @@ class DatabaseService:
 
         Returns:
             List of (marker_id, trajectory_id, List[Keyframe]) tuples.
+
         """
         if not self._connection:
             self.connect()
@@ -2108,6 +2207,7 @@ class DatabaseService:
 
         Returns:
             List of (trajectory_id, List[Keyframe]) tuples.
+
         """
         if not self._connection:
             self.connect()
@@ -2123,6 +2223,7 @@ class DatabaseService:
 
         Returns:
             The ID of the updated/created trajectory.
+
         """
         if not self._connection:
             self.connect()
@@ -2141,6 +2242,7 @@ class DatabaseService:
 
         Returns:
             The ID of the updated trajectory.
+
         """
         if not self._connection:
             self.connect()
@@ -2158,6 +2260,7 @@ class DatabaseService:
 
         Returns:
             The ID of the updated trajectory, or None if trajectory was deleted.
+
         """
         if not self._connection:
             self.connect()
@@ -2168,6 +2271,7 @@ class DatabaseService:
 
         Args:
             backup_service: The BackupService instance to register.
+
         """
         self._backup_service = backup_service
         logger.debug("Backup service registered with DatabaseService")
@@ -2177,6 +2281,7 @@ class DatabaseService:
 
         Returns:
             str: Path to the database file.
+
         """
         return self.db_path
 
@@ -2186,6 +2291,7 @@ class DatabaseService:
 
         Returns:
             bool: True if successful, False otherwise.
+
         """
         if not self._connection:
             logger.error("Cannot vacuum: no database connection")

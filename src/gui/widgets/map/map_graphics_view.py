@@ -96,8 +96,7 @@ KEYFRAME_LABEL_MAX_SIZE_PT = 10
 
 
 class KeyframeGizmo(QGraphicsItemGroup):
-    """
-    Hover gizmo for keyframe actions: Clock Mode and Delete.
+    """Hover gizmo for keyframe actions: Clock Mode and Delete.
     Shows clickable icons for temporal editing (clock) and deletion (red X).
     """
 
@@ -146,13 +145,11 @@ class KeyframeGizmo(QGraphicsItemGroup):
 
     def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """Keep gizmo visible while hovering over it."""
-
         super().hoverEnterEvent(event)
         self.keyframe_item._gizmo_hovered = True
 
     def hoverLeaveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """Remove gizmo when mouse leaves."""
-
         super().hoverLeaveEvent(event)
         self.keyframe_item._gizmo_hovered = False
         if not self.keyframe_item.isUnderMouse():
@@ -295,7 +292,6 @@ class KeyframeItem(QGraphicsObject):
 
     def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """Show gizmo when hovering over keyframe."""
-
         super().hoverEnterEvent(event)
         if not self.gizmo and not self.is_pinned:
             self.gizmo = KeyframeGizmo(self)
@@ -344,7 +340,6 @@ class KeyframeItem(QGraphicsObject):
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Clear any existing selection before starting drag."""
-
         if self.scene():
             self.scene().clearSelection()
         # Hide gizmo immediately when starting drag
@@ -399,6 +394,7 @@ class MapGraphicsView(QGraphicsView):
 
         Args:
             parent: Parent widget.
+
         """
         super().__init__(parent)
 
@@ -481,6 +477,7 @@ class MapGraphicsView(QGraphicsView):
 
         Returns:
             QSize: A small minimum size (200x150) to allow shrinking.
+
         """
         from PySide6.QtCore import QSize
 
@@ -502,6 +499,7 @@ class MapGraphicsView(QGraphicsView):
 
         Returns:
             bool: True if successful, False otherwise.
+
         """
         try:
             pixmap = QPixmap(image_path)
@@ -561,7 +559,6 @@ class MapGraphicsView(QGraphicsView):
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Reset drag mode on release."""
-
         super().mouseReleaseEvent(event)
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
 
@@ -607,6 +604,7 @@ class MapGraphicsView(QGraphicsView):
             icon: Optional icon filename (e.g., 'castle.svg').
             description: Optional description for tooltip.
             lore_date: Optional lore timestamp for temporal filtering.
+
         """
         if not self.pixmap_item:
             logger.warning("Cannot add marker: no map loaded")
@@ -794,6 +792,7 @@ class MapGraphicsView(QGraphicsView):
 
         Args:
             width_meters: Width of the map image in meters.
+
         """
         if width_meters <= 0:
             logger.warning(f"Invalid map width: {width_meters}. Ignoring.")
@@ -845,6 +844,7 @@ class MapGraphicsView(QGraphicsView):
 
         Args:
             marker_item: The marker to change the icon for.
+
         """
         dialog = IconPickerDialog(self)
         if dialog.exec() == QDialog.DialogCode.Accepted and (
@@ -858,6 +858,7 @@ class MapGraphicsView(QGraphicsView):
 
         Args:
             marker_item: The marker to change the color for.
+
         """
         initial_color = marker_item.get_color() or "#FFFFFF"
         color = QColorDialog.getColor(
@@ -945,6 +946,7 @@ class MapGraphicsView(QGraphicsView):
         Args:
             marker_id: The ID of the marker owning this trajectory.
             keyframes: List of Keyframe objects.
+
         """
         self.clear_trajectory()
         if not keyframes or len(keyframes) < 2:

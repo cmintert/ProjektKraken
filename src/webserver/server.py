@@ -63,6 +63,7 @@ def create_app(config: ServerConfig) -> FastAPI:
 
         Returns:
             JSON object with "tags": list[str].
+
         """
         db = get_db_service()
         try:
@@ -86,6 +87,7 @@ def create_app(config: ServerConfig) -> FastAPI:
         Args:
             doc_id: Document ID.
             filter_json: Optional JSON string configuring filters.
+
         """
         db = get_db_service()
         try:
@@ -133,6 +135,7 @@ def create_app(config: ServerConfig) -> FastAPI:
 
                 Returns:
                     Text with links resolved/stripped for display.
+
                 """
                 # Basic [[Link]] -> [Link](Link) or similar logic
                 # For the web view, we might want [[Link]] to jump to anchors or
@@ -218,6 +221,7 @@ def create_app(config: ServerConfig) -> FastAPI:
 
         Returns:
             HTML response with the longform viewer interface.
+
         """
         return templates.TemplateResponse("index.html", {"request": request})
 
@@ -227,6 +231,7 @@ def create_app(config: ServerConfig) -> FastAPI:
 
         Returns:
             Dictionary with status indicator.
+
         """
         return {"status": "ok"}
 

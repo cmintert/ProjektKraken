@@ -37,6 +37,7 @@ class GraphWidget(QWidget):
         graph.set_available_tags(["protagonist", "villain"])
         graph.set_available_relation_types(["involved", "caused"])
         graph.display_graph(nodes, edges)
+
     """
 
     # Public signals
@@ -49,6 +50,7 @@ class GraphWidget(QWidget):
 
         Args:
             parent: Parent widget.
+
         """
         super().__init__(parent)
 
@@ -122,6 +124,7 @@ class GraphWidget(QWidget):
 
         Args:
             theme_data: Dictionary containing the new theme colors.
+
         """
         self._current_theme_config = self._get_current_theme_config()
 
@@ -138,6 +141,7 @@ class GraphWidget(QWidget):
         Returns:
             dict[str, str]: A dictionary of color codes for graph elements
             (background, text, nodes, edges).
+
         """
         theme = self._theme_manager.get_theme()
 
@@ -177,6 +181,7 @@ class GraphWidget(QWidget):
 
         Args:
             text: The new search text.
+
         """
         self._search_term = text.strip()
         self._refresh_display_locally()
@@ -213,6 +218,7 @@ class GraphWidget(QWidget):
 
         Args:
             focus_node_id: Optional ID of a node to focus on after refresh.
+
         """
         if not self._all_nodes and not self._all_edges:
             self._web_view.load_html(
@@ -286,6 +292,7 @@ class GraphWidget(QWidget):
 
         Returns:
             bool: True if the node passes the filter, False otherwise.
+
         """
         include = config.get("include", [])
         exclude = config.get("exclude", [])
@@ -330,6 +337,7 @@ class GraphWidget(QWidget):
 
         Returns:
             bool: True if the edge passes the filter, False otherwise.
+
         """
         include = config.get("include", [])
         exclude = config.get("exclude", [])
@@ -354,6 +362,7 @@ class GraphWidget(QWidget):
 
         Args:
             tags: A list of tag strings.
+
         """
         self._available_tags = tags
         self._filter_bar.set_available_tags(tags)
@@ -363,6 +372,7 @@ class GraphWidget(QWidget):
 
         Args:
             rel_types: A list of relation type strings.
+
         """
         self._available_rel_types = rel_types
         self._filter_bar.set_available_relation_types(rel_types)
@@ -373,6 +383,7 @@ class GraphWidget(QWidget):
         Returns:
             dict[str, list[str]]: The current filter configuration, containing
             'tags' and 'rel_types' includes for database queries.
+
         """
         # Extract includes for DB query
         tags = self._advanced_filter_config.get("tags", {}).get("include", [])
@@ -397,6 +408,7 @@ class GraphWidget(QWidget):
             nodes: List of node data dictionaries.
             edges: List of edge data dictionaries.
             focus_node_id: Optional ID of a node to focus on.
+
         """
         self._all_nodes = nodes
         self._all_edges = edges

@@ -39,6 +39,7 @@ class GraphFilterBar(QWidget):
 
         Args:
             parent: Parent widget.
+
         """
         super().__init__(parent)
         self._setup_ui()
@@ -99,6 +100,7 @@ class GraphFilterBar(QWidget):
 
         Args:
             tags: List of tag names.
+
         """
         current = self._tag_combo.currentData()
         self._tag_combo.blockSignals(True)
@@ -120,6 +122,7 @@ class GraphFilterBar(QWidget):
 
         Args:
             rel_types: List of relation type names.
+
         """
         current = self._rel_type_combo.currentData()
         self._rel_type_combo.blockSignals(True)
@@ -141,6 +144,7 @@ class GraphFilterBar(QWidget):
 
         Returns:
             List of selected tag names, or empty list for "All".
+
         """
         data = self._tag_combo.currentData()
         return [data] if data else []
@@ -150,6 +154,7 @@ class GraphFilterBar(QWidget):
 
         Returns:
             List of selected rel_type names, or empty list for "All".
+
         """
         data = self._rel_type_combo.currentData()
         return [data] if data else []

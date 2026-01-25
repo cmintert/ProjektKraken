@@ -73,6 +73,7 @@ class FastInjectManager:
 
         Args:
             world_path: Root directory of the world.
+
         """
         self.world_path = world_path
         self.templates_dir = world_path / "fastinject"
@@ -87,6 +88,7 @@ class FastInjectManager:
 
         Returns:
             List of loaded templates.
+
         """
         self.ensure_directory()
         self._templates = []
@@ -112,6 +114,7 @@ class FastInjectManager:
 
         Returns:
             Path to the saved file.
+
         """
         self.ensure_directory()
 
@@ -148,6 +151,7 @@ class FastInjectManager:
             FileNotFoundError: If source file doesn't exist.
             json.JSONDecodeError: If file is not valid JSON.
             ValueError: If file is not a valid template.
+
         """
         import shutil
 
@@ -208,6 +212,7 @@ class FastInjectManager:
 
         Returns:
             New FastInjectTemplate object (not saved to disk yet).
+
         """
         tags = target.tags.copy() if include_tags else []
 
@@ -251,6 +256,7 @@ class FastInjectManager:
 
         Returns:
             List of unique variable names found.
+
         """
         vars_found = set()
         # Match {{VAR}} or {{VAR:Opt1|Opt2}}
@@ -291,8 +297,7 @@ class FastInjectManager:
         overwrite: bool = False,
         variables: Dict[str, str] = None,
     ) -> None:
-        """
-        Apply tags and attributes to a target object.
+        """Apply tags and attributes to a target object.
         NOTE: This modifies the object in memory. Database save must be called
         separately.
 
@@ -301,6 +306,7 @@ class FastInjectManager:
             template: The template to apply.
             overwrite: If True, existing attribute keys are overwritten.
             variables: Dict of variable names to replacement values.
+
         """
         logger.info(
             f"Applying template '{template.name}' to target '{target.name if hasattr(target, 'name') else 'Unknown'}'"

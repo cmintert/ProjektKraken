@@ -47,6 +47,7 @@ class AISettingsDialog(QDialog):
 
         Args:
             parent: Parent widget.
+
         """
         super().__init__(parent)
         self.setWindowTitle("AI Settings")
@@ -861,6 +862,7 @@ class AISettingsDialog(QDialog):
         Args:
             provider_id: Provider ID (e.g. 'lmstudio')
             mode: 'embed' or 'generate' to determine which URL to test
+
         """
         try:
             from src.services.llm_provider import create_provider
@@ -1016,6 +1018,7 @@ class AISettingsDialog(QDialog):
 
         Args:
             message: Status message to display (e.g., "Saving...", "Saved").
+
         """
         self.save_status_label.setText(message)
 

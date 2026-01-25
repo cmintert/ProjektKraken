@@ -58,6 +58,7 @@ class RelationEditDialog(QDialog):
             source_event_date: Optional lore_date of the source event.
             source_event_name: Optional name of the source event.
             known_types: Optional list of known relation types for suggestions.
+
         """
         super().__init__(parent)
         self.setWindowTitle("Edit Relation")
@@ -448,6 +449,7 @@ class RelationEditDialog(QDialog):
 
         Returns:
             tuple: (target_id, rel_type, is_bidirectional, attributes)
+
         """
         text = self.target_edit.text().strip()
 

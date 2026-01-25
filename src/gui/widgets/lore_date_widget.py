@@ -41,6 +41,7 @@ class LoreDateWidget(QWidget):
 
         Args:
             parent: The parent widget, if any.
+
         """
         super().__init__(parent)
         # Set size policy to prevent vertical squashing
@@ -123,6 +124,7 @@ class LoreDateWidget(QWidget):
 
         Args:
             enabled: Whether structured mode should be enabled.
+
         """
         self._year_spin.setEnabled(enabled)
         self._month_combo.setEnabled(enabled)
@@ -142,6 +144,7 @@ class LoreDateWidget(QWidget):
 
         Args:
             converter: CalendarConverter instance or None.
+
         """
         self._converter = converter
 
@@ -219,6 +222,7 @@ class LoreDateWidget(QWidget):
 
         Args:
             index: New month index.
+
         """
         if self._updating:
             return
@@ -241,6 +245,7 @@ class LoreDateWidget(QWidget):
 
         Args:
             value: New float value.
+
         """
         if self._updating:
             return
@@ -254,6 +259,7 @@ class LoreDateWidget(QWidget):
 
         Args:
             checked: Whether raw mode is enabled.
+
         """
         if checked:
             # Switching to raw mode - compute value from structured fields
@@ -287,6 +293,7 @@ class LoreDateWidget(QWidget):
 
         Returns:
             float: The computed float value from Year/Month/Day fields.
+
         """
         if not self._converter:
             return 0.0
@@ -351,6 +358,7 @@ class LoreDateWidget(QWidget):
 
         Args:
             float_value: The absolute day float value.
+
         """
         if self._raw_toggle.isChecked():
             self._raw_spin.setValue(float_value)
@@ -364,6 +372,7 @@ class LoreDateWidget(QWidget):
 
         Args:
             float_value: The absolute day float value.
+
         """
         if not self._converter:
             self._raw_spin.setValue(float_value)
@@ -412,6 +421,7 @@ class LoreDateWidget(QWidget):
 
         Returns:
             float: The absolute day float value.
+
         """
         if self._raw_toggle.isChecked() or not self._converter:
             return self._raw_spin.value()
@@ -453,6 +463,7 @@ class LoreDateWidget(QWidget):
 
         Returns:
             QSize: Minimum size for the lore date widget.
+
         """
         from PySide6.QtCore import QSize
 
@@ -463,6 +474,7 @@ class LoreDateWidget(QWidget):
 
         Returns:
             QSize: Preferred size for comfortable date input.
+
         """
         from PySide6.QtCore import QSize
 

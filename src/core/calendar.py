@@ -33,6 +33,7 @@ class LeapYearRule:
         reset_interval: Re-add every N years (e.g., 400). 0 = no reset.
         month_index: Index of month to modify (0-based).
         extra_days: Number of days to add (usually 1).
+
     """
 
     interval: int
@@ -55,6 +56,12 @@ class LeapYearRule:
         return True
 
     def to_dict(self) -> Dict[str, Any]:
+        """Converts to dictionary for JSON serialization.
+
+        Returns:
+            Dict[str, Any]: Dictionary containing all leap year rule fields.
+
+        """
         return {
             "interval": self.interval,
             "skip_interval": self.skip_interval,
@@ -65,6 +72,15 @@ class LeapYearRule:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "LeapYearRule":
+        """Creates LeapYearRule from a dictionary.
+
+        Args:
+            data: Dictionary containing leap year rule fields.
+
+        Returns:
+            LeapYearRule: New instance with the provided configuration.
+
+        """
         return cls(
             interval=data["interval"],
             skip_interval=data.get("skip_interval", 0),
@@ -82,6 +98,7 @@ class MonthDefinition:
         name: Full month name (e.g., "Hammer", "January").
         abbreviation: Short form (e.g., "Ham", "Jan").
         days: Number of days in this month (must be > 0).
+
     """
 
     name: str
@@ -93,6 +110,7 @@ class MonthDefinition:
 
         Returns:
             Dict[str, Any]: Dictionary representation.
+
         """
         return {
             "name": self.name,
@@ -109,6 +127,7 @@ class MonthDefinition:
 
         Returns:
             MonthDefinition: New instance.
+
         """
         return cls(
             name=data["name"],
@@ -124,6 +143,7 @@ class WeekDefinition:
     Attributes:
         day_names: Full names for each day of the week.
         day_abbreviations: Short forms for each day.
+
     """
 
     day_names: List[str]
@@ -134,6 +154,7 @@ class WeekDefinition:
 
         Returns:
             Dict[str, Any]: Dictionary representation.
+
         """
         return {
             "day_names": self.day_names,
@@ -149,6 +170,7 @@ class WeekDefinition:
 
         Returns:
             WeekDefinition: New instance.
+
         """
         return cls(
             day_names=data["day_names"],
@@ -166,6 +188,7 @@ class YearVariant:
     Attributes:
         year: The year number this variant applies to.
         months: Custom month structure for this year.
+
     """
 
     year: int
@@ -176,6 +199,7 @@ class YearVariant:
 
         Returns:
             Dict[str, Any]: Dictionary representation.
+
         """
         return {
             "year": self.year,
@@ -191,6 +215,7 @@ class YearVariant:
 
         Returns:
             YearVariant: New instance.
+
         """
         return cls(
             year=data["year"],
@@ -214,6 +239,7 @@ class CalendarConfig:
         epoch_name: Era designation (e.g., "DR", "AD").
         created_at: Real-world creation timestamp.
         modified_at: Real-world modification timestamp.
+
     """
 
     id: str
@@ -233,6 +259,7 @@ class CalendarConfig:
         Returns:
             List[str]: List of validation error messages.
                        Empty list if valid.
+
         """
         errors: List[str] = []
 
@@ -283,6 +310,7 @@ class CalendarConfig:
         Returns:
             List[MonthDefinition]: Months for that year (may differ
                                    if a YearVariant exists or LeapYearRules apply).
+
         """
         # 1. Check for manual override (YearVariant)
         for variant in self.year_variants:
@@ -311,6 +339,7 @@ class CalendarConfig:
 
         Returns:
             int: Total days in that year.
+
         """
         months = self.get_months_for_year(year)
         return sum(m.days for m in months)
@@ -320,6 +349,7 @@ class CalendarConfig:
 
         Returns:
             Dict[str, Any]: Dictionary representation.
+
         """
         return {
             "id": self.id,
@@ -339,6 +369,7 @@ class CalendarConfig:
 
         Returns:
             str: JSON representation.
+
         """
         return json.dumps(self.to_dict())
 
@@ -351,6 +382,7 @@ class CalendarConfig:
 
         Returns:
             CalendarConfig: New instance.
+
         """
         return cls(
             id=data["id"],
@@ -378,6 +410,7 @@ class CalendarConfig:
 
         Returns:
             CalendarConfig: New instance.
+
         """
         return cls.from_dict(json.loads(json_str))
 
@@ -387,6 +420,7 @@ class CalendarConfig:
 
         Returns:
             CalendarConfig: A Gregorian calendar.
+
         """
         # Standard Gregorian Months
         month_data = [
@@ -456,6 +490,7 @@ class CalendarDate:
         time_fraction: Fractional part of day (0.0-1.0, 0.5 = noon).
         month_name: Optional resolved month name.
         day_of_week_name: Optional resolved day of week name.
+
     """
 
     year: int
@@ -470,6 +505,7 @@ class CalendarDate:
 
         Returns:
             str: Formatted date string.
+
         """
         month_str = self.month_name or f"Month {self.month}"
         return f"Year {self.year}, {month_str}, Day {self.day}"
@@ -493,6 +529,7 @@ class CalendarConverter:
 
         Args:
             config: The calendar configuration to use.
+
         """
         self._config = config
         # Cache for year start positions (year -> absolute_day)
@@ -510,6 +547,7 @@ class CalendarConverter:
         Note:
             Year 1, Month 1, Day 1 = 0.0
             Negative years produce negative floats.
+
         """
         if date.year >= 1:
             return self._to_float_positive(date)
@@ -524,6 +562,7 @@ class CalendarConverter:
 
         Returns:
             float: Absolute day value.
+
         """
         total_days = 0.0
 
@@ -573,6 +612,7 @@ class CalendarConverter:
 
         Returns:
             float: Negative absolute day value.
+
         """
         # For year 0: we need to count backwards from 0.0
         # Year 0, Month 12, Day 30 = -1.0 (day before Epoch)
@@ -606,6 +646,7 @@ class CalendarConverter:
         Note:
             0.0 = Year 1, Month 1, Day 1
             Negative values produce pre-Epoch dates.
+
         """
         if absolute_day >= 0:
             return self._from_float_positive(absolute_day)
@@ -620,6 +661,7 @@ class CalendarConverter:
 
         Returns:
             CalendarDate: Structured date.
+
         """
         remaining = absolute_day
         year = 1
@@ -691,6 +733,7 @@ class CalendarConverter:
 
         Returns:
             CalendarDate: Structured date with year <= 0.
+
         """
         # absolute_day is negative
         # -1.0 = last day of Year 0
@@ -748,6 +791,7 @@ class CalendarConverter:
 
         Returns:
             str: Formatted date string.
+
         """
         date = self.from_float(absolute_day)
 

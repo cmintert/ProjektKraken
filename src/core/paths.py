@@ -19,6 +19,7 @@ def get_resource_path(relative_path: str) -> str:
 
     Returns:
         str: The absolute path to the resource.
+
     """
     # PyInstaller creates a temp folder and stores path in _MEIPASS
     base_path = getattr(sys, "_MEIPASS", os.path.abspath("."))
@@ -37,6 +38,7 @@ def get_user_data_path(filename: str = "") -> str:
 
     Returns:
         str: Absolute path to the user data directory or file.
+
     """
     app_name = "ProjektKraken"
 
@@ -73,6 +75,7 @@ def _resolve_ms_store_path(virtualized_path: Path) -> Path:
 
     Returns:
         Path: The actual filesystem path (either sandboxed or original).
+
     """
     # Create a temporary marker file to find the real location
     marker_name = ".path_marker_temp"
@@ -120,6 +123,7 @@ def get_backup_directory() -> Path:
 
     Returns:
         Path: Path to the backups directory in user data folder.
+
     """
     backup_dir = Path(get_user_data_path()) / "backups"
     backup_dir.mkdir(parents=True, exist_ok=True)
@@ -134,6 +138,7 @@ def get_executable_dir() -> Path:
 
     Returns:
         Path: Directory containing the executable.
+
     """
     if getattr(sys, "frozen", False):
         # Running as PyInstaller bundle
@@ -153,6 +158,7 @@ def get_worlds_dir() -> Path:
 
     Returns:
         Path: Path to the worlds/ directory.
+
     """
     executable_dir = get_executable_dir()
     worlds_dir = executable_dir / "worlds"
@@ -170,6 +176,7 @@ def ensure_worlds_directory() -> Path:
 
     Raises:
         OSError: If the directory cannot be created or is not writable.
+
     """
     worlds_dir = get_worlds_dir()
 

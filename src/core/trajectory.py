@@ -16,6 +16,7 @@ class Keyframe:
         t: Time in lore_date units.
         x: Normalized X coordinate [0.0, 1.0].
         y: Normalized Y coordinate [0.0, 1.0].
+
     """
 
     t: float
@@ -48,6 +49,7 @@ def interpolate_position(
         >>> keyframes = [Keyframe(0, 0.0, 0.0), Keyframe(100, 1.0, 1.0)]
         >>> interpolate_position(keyframes, 50)
         (0.5, 0.5)
+
     """
     if not keyframes or len(keyframes) < 2:
         return None
@@ -109,6 +111,7 @@ def keyframes_to_mfjson(keyframes: list[Keyframe]) -> dict:
         >>> keyframes_to_mfjson(kfs)  # doctest: +NORMALIZE_WHITESPACE
         {'type': 'MovingPoint', 'coordinates': [[0.1, 0.2], [0.9, 0.8]],
          'datetimes': [0, 100]}
+
     """
     if not keyframes:
         raise ValueError("Cannot serialize an empty keyframes list.")
@@ -137,6 +140,7 @@ def mfjson_to_keyframes(data: dict) -> list[Keyframe]:
         ...           'datetimes': [0]}
         >>> mfjson_to_keyframes(mfjson)
         [Keyframe(t=0, x=0.1, y=0.2)]
+
     """
     if "datetimes" not in data:
         raise ValueError("MF-JSON data is missing 'datetimes' key.")

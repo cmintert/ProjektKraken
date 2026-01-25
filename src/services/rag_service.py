@@ -24,6 +24,7 @@ class RAGService:
 
         Args:
             db_path: Path to the SQLite database.
+
         """
         self.db_path = db_path
 
@@ -39,6 +40,7 @@ class RAGService:
 
         Returns:
             List of result dicts with keys: id, name, type, score, text_content, etc.
+
         """
         if not self.db_path:
             return []
@@ -101,6 +103,7 @@ class RAGService:
 
         Returns:
             str: Formatted context block for the LLM.
+
         """
         results = self.search(prompt, top_k=top_k)
 

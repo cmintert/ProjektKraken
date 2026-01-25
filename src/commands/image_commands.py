@@ -23,6 +23,7 @@ class AddImagesCommand(BaseCommand):
             owner_type: The type of owner ("event" or "entity").
             owner_id: The UUID of the owner object.
             source_paths: List of file paths to import as attachments.
+
         """
         super().__init__()
         self.owner_type = owner_type
@@ -43,6 +44,7 @@ class AddImagesCommand(BaseCommand):
 
         Returns:
             CommandResult: Result containing success status and attachment IDs.
+
         """
         if not db_service.attachment_service:
             return CommandResult(False, "AttachmentService not available")
@@ -78,6 +80,7 @@ class AddImagesCommand(BaseCommand):
 
         Args:
             db_service: The database service instance.
+
         """
         if not db_service.attachment_service:
             return
@@ -103,6 +106,7 @@ class RemoveImageCommand(BaseCommand):
 
         Args:
             attachment_id: The UUID of the attachment to remove.
+
         """
         super().__init__()
         self.attachment_id = attachment_id
@@ -118,6 +122,7 @@ class RemoveImageCommand(BaseCommand):
 
         Returns:
             CommandResult: Result containing success status.
+
         """
         if not db_service.attachment_service:
             return CommandResult(False, "AttachmentService not available")
@@ -145,6 +150,7 @@ class RemoveImageCommand(BaseCommand):
 
         Args:
             db_service: The database service instance.
+
         """
         if self._trash_info and db_service.attachment_service:
             db_service.attachment_service.restore_image(self._trash_info)
@@ -163,6 +169,7 @@ class ReorderImagesCommand(BaseCommand):
             owner_type: The type of owner ("event" or "entity").
             owner_id: The UUID of the owner object.
             new_order_ids: List of attachment IDs in the desired order.
+
         """
         super().__init__()
         self.owner_type = owner_type
@@ -180,6 +187,7 @@ class ReorderImagesCommand(BaseCommand):
 
         Returns:
             CommandResult: Result containing success status.
+
         """
         if not db_service.attachment_service:
             return CommandResult(False, "AttachmentService not available")
@@ -210,6 +218,7 @@ class ReorderImagesCommand(BaseCommand):
 
         Args:
             db_service: The database service instance.
+
         """
         if db_service.attachment_service and self._previous_order_ids:
             db_service.attachment_service.update_order(
@@ -227,6 +236,7 @@ class UpdateImageCaptionCommand(BaseCommand):
         Args:
             attachment_id: The UUID of the attachment.
             new_caption: The new caption text (or None to clear).
+
         """
         super().__init__()
         self.attachment_id = attachment_id
@@ -243,6 +253,7 @@ class UpdateImageCaptionCommand(BaseCommand):
 
         Returns:
             CommandResult: Result containing success status.
+
         """
         if not db_service.attachment_service:
             return CommandResult(False, "AttachmentService not available")
@@ -270,6 +281,7 @@ class UpdateImageCaptionCommand(BaseCommand):
 
         Args:
             db_service: The database service instance.
+
         """
         if db_service.attachment_service:
             db_service.attachment_service.update_caption(

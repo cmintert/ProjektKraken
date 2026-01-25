@@ -22,6 +22,7 @@ class StandardButton(QPushButton):
         Args:
             text: The button text.
             parent: The parent widget, if any.
+
         """
         super().__init__(text, parent)
         self.setMinimumHeight(32)  # 8-point grid: 4 units
@@ -42,6 +43,7 @@ class IconButton(QPushButton):
             text: The button text or icon character.
             parent: The parent widget, if any.
             size: The fixed size in pixels (default 32, 8-point grid: 4 units).
+
         """
         super().__init__(text, parent)
         self.setFixedSize(QSize(size, size))
@@ -59,6 +61,7 @@ class PrimaryButton(StandardButton):
         Args:
             text: The button text.
             parent: The parent widget, if any.
+
         """
         super().__init__(text, parent)
         from src.gui.utils.style_helper import StyleHelper

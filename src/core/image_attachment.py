@@ -35,5 +35,6 @@ class ImageAttachment:
 
         Returns:
             bool: True if thumbnail path is set, False otherwise.
+
         """
         return bool(self.thumb_rel_path)

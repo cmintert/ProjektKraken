@@ -1,5 +1,4 @@
-"""
-LongformManager - Handles longform document operations for MainWindow.
+"""LongformManager - Handles longform document operations for MainWindow.
 
 This module contains all longform document-related functionality extracted from
 MainWindow to reduce its size and improve maintainability.
@@ -39,6 +38,7 @@ class LongformManager(QObject):
 
         Args:
             main_window: Reference to the MainWindow instance.
+
         """
         super().__init__()
         self.window = main_window
@@ -106,6 +106,7 @@ class LongformManager(QObject):
             table: Table name ("events" or "entities").
             row_id: ID of the item to promote.
             old_meta: Previous longform metadata for undo.
+
         """
         cmd = PromoteLongformEntryCommand(table, row_id, old_meta)
         self.window.command_requested.emit(cmd)
@@ -117,6 +118,7 @@ class LongformManager(QObject):
             table: Table name ("events" or "entities").
             row_id: ID of the item to demote.
             old_meta: Previous longform metadata for undo.
+
         """
         cmd = DemoteLongformEntryCommand(table, row_id, old_meta)
         self.window.command_requested.emit(cmd)
@@ -131,6 +133,7 @@ class LongformManager(QObject):
             row_id: ID.
             old_meta: Old metadata.
             new_meta: New metadata with position/parent/depth.
+
         """
         cmd = MoveLongformEntryCommand(table, row_id, old_meta, new_meta)
         self.window.command_requested.emit(cmd)

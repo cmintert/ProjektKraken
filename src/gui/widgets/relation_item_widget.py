@@ -41,6 +41,7 @@ class RelationItemWidget(QWidget):
             target_name: The display name of the target
             attributes: Optional dictionary of relation attributes
             parent: Parent widget
+
         """
         super().__init__(parent)
         self._target_id = target_id
@@ -120,6 +121,7 @@ class RelationItemWidget(QWidget):
 
         Returns:
             QSize: Size that accommodates the button plus margins.
+
         """
         from PySide6.QtCore import QSize
 

@@ -46,6 +46,7 @@ class OpenAIProvider(Provider):
 
         Raises:
             ValueError: If api_key is not provided.
+
         """
         if not api_key:
             raise ValueError("OpenAI API key is required")
@@ -106,6 +107,7 @@ class OpenAIProvider(Provider):
 
         Raises:
             Exception: If API request fails or response is invalid.
+
         """
         if not texts:
             return np.array([])
@@ -169,6 +171,7 @@ class OpenAIProvider(Provider):
 
         Raises:
             Exception: If generation fails.
+
         """
 
         def _generate_impl() -> Dict[str, Any]:
@@ -251,6 +254,7 @@ class OpenAIProvider(Provider):
 
         Raises:
             Exception: If streaming fails.
+
         """
         payload = {
             "model": self.model,
@@ -326,6 +330,7 @@ class OpenAIProvider(Provider):
 
         Returns:
             Dict containing status, latency_ms, and message.
+
         """
         try:
             start_time = time.time()
@@ -373,6 +378,7 @@ class OpenAIProvider(Provider):
 
         Returns:
             Dict containing provider information and capabilities.
+
         """
         return {
             "provider_id": "openai",

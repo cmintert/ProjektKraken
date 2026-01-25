@@ -50,6 +50,7 @@ class TickInfo:
         label: Display text for this tick.
         opacity: Float 0.0-1.0 for fade-in effect.
         is_major: Whether this is a major (always visible) tick.
+
     """
 
     position: float
@@ -98,6 +99,7 @@ class TimelineRuler:
 
         Args:
             converter: CalendarConverter instance or None for numeric mode.
+
         """
         self._calendar = converter
 
@@ -109,6 +111,7 @@ class TimelineRuler:
 
         Returns:
             TickLevel: Next finer level, or same if already finest.
+
         """
         if level.value < TickLevel.MINUTE.value:
             return TickLevel(level.value + 1)
@@ -122,6 +125,7 @@ class TimelineRuler:
 
         Returns:
             TickLevel: Next coarser level, or same if already coarsest.
+
         """
         if level.value > TickLevel.ERA.value:
             return TickLevel(level.value - 1)
@@ -138,6 +142,7 @@ class TimelineRuler:
 
         Returns:
             Tuple of (major_level, minor_level, minor_opacity).
+
         """
         if date_range <= 0 or viewport_width <= 0:
             return TickLevel.YEAR, TickLevel.MONTH, 0.0
@@ -192,6 +197,7 @@ class TimelineRuler:
 
         Returns:
             List of TickInfo objects for rendering.
+
         """
         date_range = end_date - start_date
         if date_range <= 0:
@@ -263,6 +269,7 @@ class TimelineRuler:
 
         Returns:
             List of TickInfo objects.
+
         """
         ticks: List[TickInfo] = []
         if step <= 0:
@@ -306,6 +313,7 @@ class TimelineRuler:
 
         Returns:
             Formatted label string.
+
         """
         if self._calendar:
             return self._format_calendar_label(position, level)
@@ -320,6 +328,7 @@ class TimelineRuler:
 
         Returns:
             Calendar-formatted label.
+
         """
         try:
             if not self._calendar:
@@ -381,6 +390,7 @@ class TimelineRuler:
 
         Returns:
             Numeric label string.
+
         """
         # Handle sub-day levels with time formatting
         if level == TickLevel.HOUR:
@@ -442,6 +452,7 @@ class TimelineRuler:
 
         Returns:
             List of ticks with some labels cleared to avoid overlap.
+
         """
         if not ticks:
             return ticks
@@ -495,6 +506,7 @@ class TimelineRuler:
 
         Returns:
             Context string (e.g., "Year 2025").
+
         """
         if self._calendar:
             try:

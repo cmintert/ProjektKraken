@@ -23,6 +23,7 @@ class LinkResolver:
 
         Args:
             db_service: Database service for looking up entities/events.
+
         """
         self.db_service = db_service
         self._cache: Dict[str, Tuple[str, str]] = {}  # id -> (name, type)
@@ -35,6 +36,7 @@ class LinkResolver:
 
         Returns:
             Optional[Tuple[str, str]]: (name, type) if found, None if broken.
+
         """
         # Check cache first
         if target_id in self._cache:
@@ -64,6 +66,7 @@ class LinkResolver:
         Args:
             target_id: If provided, invalidates only this ID.
                        If None, clears entire cache.
+
         """
         if target_id:
             self._cache.pop(target_id, None)
@@ -81,6 +84,7 @@ class LinkResolver:
 
         Returns:
             str: The current name, or fallback with warning indicator.
+
         """
         result = self.resolve(target_id)
         if result:
@@ -99,6 +103,7 @@ class LinkResolver:
 
         Returns:
             list[str]: List of broken link IDs.
+
         """
         from src.services.text_parser import WikiLinkParser
 

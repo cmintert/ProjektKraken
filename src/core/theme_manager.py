@@ -39,6 +39,7 @@ class ThemeManager(QObject, BaseThemeManager):
 
         Returns:
             ThemeManager: The singleton instance.
+
         """
         if not cls._instance:
             # Use super() for proper MRO with multiple inheritance
@@ -53,6 +54,7 @@ class ThemeManager(QObject, BaseThemeManager):
 
         Args:
             theme_file: Path to the themes JSON file.
+
         """
         if hasattr(self, "_initialized"):
             return
@@ -73,6 +75,7 @@ class ThemeManager(QObject, BaseThemeManager):
 
         Args:
             theme_data: The new theme data dictionary.
+
         """
         # Call base class method for callbacks
         super()._notify_theme_changed(theme_data)
@@ -86,6 +89,7 @@ class ThemeManager(QObject, BaseThemeManager):
         Args:
             theme_name: The key of the theme to switch to.
             app: The QApplication instance to apply the stylesheet to (optional).
+
         """
         if theme_name not in self.themes:
             logger.warning(f"Theme '{theme_name}' not found.")
@@ -121,6 +125,7 @@ class ThemeManager(QObject, BaseThemeManager):
         Args:
             app: QApplication instance.
             qss_template: Optional QSS template string.
+
         """
         if qss_template:
             self._qss_template = qss_template

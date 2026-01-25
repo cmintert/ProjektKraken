@@ -130,6 +130,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Args:
             capture_layout_on_exit: If True, saves current layout as default on exit.
+
         """
         super().__init__()
         from src.core.logging_config import get_logger
@@ -152,8 +153,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         logger.debug("Phase 3: Deferred initialization scheduled")
 
     def _init_core_services(self) -> None:
-        """
-        Phase 1: Initialize core services and infrastructure.
+        """Phase 1: Initialize core services and infrastructure.
 
         Sets up data handler, worker thread, and basic window properties.
         No widgets or UI elements created here.
@@ -198,8 +198,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         return lbl
 
     def _init_widgets_skeleton(self) -> None:
-        """
-        Phase 2: Create UI skeleton without data dependencies.
+        """Phase 2: Create UI skeleton without data dependencies.
 
         Creates all widgets, sets up layout, and creates menus.
         Does NOT connect signals or load data.
@@ -273,8 +272,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.longform_editor.set_refresh_button_visible(not auto_refresh)
 
     def _complete_initialization(self) -> None:
-        """
-        Phase 3: Complete initialization after event loop starts.
+        """Phase 3: Complete initialization after event loop starts.
 
         Initializes database, connects signals, restores state.
         Called via QTimer.singleShot after event loop is running.
@@ -354,6 +352,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Returns:
             QDockWidget: The dock widget containing the unified list.
+
         """
         return self.ui_manager.docks.get("list")
 
@@ -363,6 +362,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Returns:
             QDockWidget: The dock widget containing the event editor.
+
         """
         return self.ui_manager.docks.get("event")
 
@@ -372,6 +372,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Returns:
             QDockWidget: The dock widget containing the entity editor.
+
         """
         return self.ui_manager.docks.get("entity")
 
@@ -381,6 +382,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Returns:
             QDockWidget: The dock widget containing the timeline.
+
         """
         return self.ui_manager.docks.get("timeline")
 
@@ -390,6 +392,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Returns:
             QDockWidget: The dock widget containing the longform editor.
+
         """
         return self.ui_manager.docks.get("longform")
 
@@ -399,6 +402,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Returns:
             QDockWidget: The dock widget containing the map.
+
         """
         return self.ui_manager.docks.get("map")
 
@@ -432,8 +436,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         QTimer.singleShot(500, self._restore_optional_docks)
 
     def _restore_geometry(self) -> None:
-        """
-        Stage 1: Restore window geometry immediately.
+        """Stage 1: Restore window geometry immediately.
 
         This provides instant visual feedback to the user.
         """
@@ -465,8 +468,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             logger.debug("No saved geometry found")
 
     def _restore_critical_docks(self) -> None:
-        """
-        Stage 2: Restore critical docks and their state.
+        """Stage 2: Restore critical docks and their state.
 
         Critical docks: list, event editor, entity editor, timeline.
         These are essential for basic functionality.
@@ -506,8 +508,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
 
     def _restore_optional_docks(self) -> None:
-        """
-        Stage 3: Restore optional dock configurations.
+        """Stage 3: Restore optional dock configurations.
 
         Optional docks: longform, map, AI search, graph.
         These enhance functionality but aren't critical for startup.
@@ -531,6 +532,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Returns:
             bool: True if all critical docks are present and valid, False otherwise.
+
         """
         from src.core.logging_config import get_logger
 
@@ -606,6 +608,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         Returns:
             bool: True if safe to proceed (Saved, Discarded, or Clean).
                   False if User Cancelled.
+
         """
         if (
             not hasattr(editor, "has_unsaved_changes")
@@ -675,6 +678,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Args:
             message (str): The message to display.
+
         """
         self.worker_manager.update_status_message(message)
 
@@ -683,6 +687,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Args:
             message (str): The final completion message.
+
         """
         self.worker_manager.clear_status_message(message)
 
@@ -692,6 +697,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Args:
             message (str): The error description.
+
         """
         self.worker_manager.show_error_message(message)
 
@@ -701,6 +707,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Args:
             success (bool): True if connection succeeded, False otherwise.
+
         """
         self.worker_manager.on_db_initialized(success)
 
@@ -716,6 +723,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Args:
             config: CalendarConfig or None.
+
         """
         try:
             from src.core.calendar import CalendarConfig, CalendarConverter
@@ -763,6 +771,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Args:
             time (float): The current time in lore_date units.
+
         """
         self.timeline.set_current_time(time)
         logger.debug(f"Current time loaded: {time}")
@@ -817,6 +826,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Args:
             config: Dictionary with 'tag_order' and 'mode', or None.
+
         """
         self.grouping_manager.on_grouping_config_loaded(config)
 
@@ -899,6 +909,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Returns:
             List of dicts containing tag metadata.
+
         """
         if hasattr(self, "gui_db_service"):
             return self.gui_db_service.get_group_metadata(
@@ -919,6 +930,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Returns:
             List of Event objects with the specified tag.
+
         """
         if hasattr(self, "gui_db_service"):
             return self.gui_db_service.get_events_for_group(
@@ -971,6 +983,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         Args:
             filter_config: Optional dictionary with 'tags' and 'rel_types'.
                            If not provided, uses current widget config.
+
         """
         # Get config from widget if not provided
         if filter_config is None and self.graph_widget:
@@ -989,6 +1002,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         Args:
             nodes: List of node dictionaries.
             edges: List of edge dictionaries.
+
         """
         if self.graph_widget:
             # Pass the last selected ID to preserve focus
@@ -1002,6 +1016,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         Args:
             tags: List of available tags.
             rel_types: List of available relation types.
+
         """
         if self.graph_widget:
             self.graph_widget.set_available_tags(tags)
@@ -1014,6 +1029,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Args:
             events: List of Event objects.
+
         """
         self._cached_events = events
         from src.core.logging_config import get_logger
@@ -1032,6 +1048,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Args:
             entities: List of Entity objects.
+
         """
         self._cached_entities = entities
         self.unified_list.set_data(self._cached_events, self._cached_entities)
@@ -1054,6 +1071,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Args:
             items: List of (id, name, type) tuples for completion.
+
         """
         self.event_editor.update_suggestions(items=items)
         self.entity_editor.update_suggestions(items=items)
@@ -1068,6 +1086,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             event: The Event object.
             relations: List of outgoing relations.
             incoming: List of incoming relations.
+
         """
         self.event_editor.load_event(event, relations, incoming)
 
@@ -1081,6 +1100,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             entity: The Entity object.
             relations: List of outgoing relations.
             incoming: List of incoming relations.
+
         """
         self.entity_editor.load_entity(entity, relations, incoming)
 
@@ -1090,6 +1110,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Args:
             sequence: List of longform items.
+
         """
         self._cached_longform_sequence = sequence
         self.longform_editor.load_sequence(sequence)
@@ -1100,6 +1121,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Args:
             maps: List of Map objects.
+
         """
         self.map_handler.on_maps_ready(maps)
 
@@ -1110,6 +1132,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         Args:
             map_id: The map ID these markers belong to.
             processed_markers: List of dicts with marker data.
+
         """
         self.map_handler.on_markers_ready(map_id, processed_markers)
 
@@ -1119,6 +1142,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Args:
             dock_name: Name of the dock to raise ("event", "entity", etc).
+
         """
         if dock_name in self.ui_manager.docks:
             self.ui_manager.docks[dock_name].raise_()
@@ -1130,6 +1154,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         Args:
             item_type: Type of item ("event" or "entity").
             item_id: ID of the item to select.
+
         """
         self.unified_list.select_item(item_type, item_id)
 
@@ -1139,6 +1164,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Args:
             message: Error message from the failed command.
+
         """
         QMessageBox.warning(self, "Command Failed", message)
 
@@ -1180,6 +1206,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Args:
             event_id (str): The ID of the event to delete.
+
         """
         cmd = DeleteEventCommand(event_id)
         self.command_requested.emit(cmd)
@@ -1190,6 +1217,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         Args:
             event_data (dict): Dictionary containing event data
                 including the 'id' field.
+
         """
         event_id = event_data.get("id")
         logger.info(
@@ -1217,6 +1245,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         Args:
             event_id: The ID of the event that was dragged.
             new_lore_date: The new lore_date value.
+
         """
         logger.debug(f"Event {event_id} date changed to {new_lore_date}")
         cmd = UpdateEventCommand(event_id, {"lore_date": new_lore_date})
@@ -1251,6 +1280,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Args:
             entity_id (str): The ID of the entity to delete.
+
         """
         cmd = DeleteEntityCommand(entity_id)
         self.command_requested.emit(cmd)
@@ -1261,6 +1291,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         Args:
             entity_data (dict): Dictionary containing entity data
                 including the 'id' field.
+
         """
         entity_id = entity_data.get("id")
         logger.info(
@@ -1307,6 +1338,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             attributes (dict, optional): Attributes for the relation.
             bidirectional (bool, optional): Whether the relation is
                 bidirectional. Defaults to False.
+
         """
         cmd = AddRelationCommand(
             source_id,
@@ -1355,6 +1387,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             item_name: Display name of the item.
             x: Normalized X coordinate [0.0, 1.0].
             y: Normalized Y coordinate [0.0, 1.0].
+
         """
         self.map_handler.on_marker_dropped(item_id, item_type, item_name, x, y)
 
@@ -1363,6 +1396,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Args:
             marker_id: The object_id from the UI (not the actual marker.id).
+
         """
         self.map_handler.delete_marker(marker_id)
 
@@ -1373,6 +1407,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         Args:
             marker_id: The ID of the item.
             object_type: 'event' or 'entity'.
+
         """
         self.map_handler.on_marker_clicked(marker_id, object_type)
 
@@ -1383,6 +1418,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         Args:
             marker_id: ID of the marker (actually object_id from view)
             icon: New icon filename
+
         """
         self.map_handler.on_marker_icon_changed(marker_id, icon)
 
@@ -1393,6 +1429,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         Args:
             marker_id: ID of the marker (actually object_id from view)
             color: New color hex code
+
         """
         self.map_handler.on_marker_color_changed(marker_id, color)
 
@@ -1404,6 +1441,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             marker_id: ID of the marker (actually object_id from view)
             x: New normalized X coordinate
             y: New normalized Y coordinate
+
         """
         self.map_handler.on_marker_position_changed(marker_id, x, y)
 
@@ -1446,6 +1484,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         Args:
             tags_data: List of dicts with 'name', 'color', 'count' for each tag.
             current_config: Current grouping config dict or None.
+
         """
         self.grouping_manager.on_grouping_dialog_data_loaded(tags_data, current_config)
 
@@ -1456,6 +1495,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         Args:
             tag_order: List of tag names in order.
             mode: Grouping mode (DUPLICATE or FIRST_MATCH).
+
         """
         self.grouping_manager.on_grouping_applied(tag_order, mode)
 
@@ -1469,6 +1509,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Args:
             tag_name: The name of the tag to change color for.
+
         """
         self.grouping_manager.on_tag_color_change_requested(tag_name)
 
@@ -1478,6 +1519,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Args:
             tag_name: The name of the tag to remove.
+
         """
         self.grouping_manager.on_remove_from_grouping_requested(tag_name)
 
@@ -1557,6 +1599,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Args:
             rel_id (str): The ID of the relation to remove.
+
         """
         cmd = RemoveRelationCommand(rel_id)
         self.command_requested.emit(cmd)
@@ -1571,6 +1614,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             target_id (str): The new target entity ID.
             rel_type (str): The new relation type.
             attributes (dict, optional): The new attributes.
+
         """
         cmd = UpdateRelationCommand(rel_id, target_id, rel_type, attributes=attributes)
         self.command_requested.emit(cmd)
@@ -1584,6 +1628,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             table (str): Table name ("events" or "entities").
             row_id (str): ID of the item to promote.
             old_meta (dict): Previous longform metadata for undo.
+
         """
         self.longform_manager.promote_longform_entry(table, row_id, old_meta)
 
@@ -1594,6 +1639,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             table (str): Table name ("events" or "entities").
             row_id (str): ID of the item to demote.
             old_meta (dict): Previous longform metadata for undo.
+
         """
         self.longform_manager.demote_longform_entry(table, row_id, old_meta)
 
@@ -1607,6 +1653,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             row_id (str): ID.
             old_meta (dict): Old metadata.
             new_meta (dict): New metadata with position/parent/depth.
+
         """
         self.longform_manager.move_longform_entry(table, row_id, old_meta, new_meta)
 
@@ -1641,6 +1688,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             query: Search query text.
             object_type_filter: Filter by 'entity' or 'event', or empty for all.
             top_k: Number of results to return.
+
         """
         self.ai_search_manager.perform_semantic_search(query, object_type_filter, top_k)
 
@@ -1650,6 +1698,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Args:
             object_type: Type to rebuild ('all', 'entity', 'event').
+
         """
         self.ai_search_manager.rebuild_search_index(object_type)
 
@@ -1660,6 +1709,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         Args:
             object_type: 'entity' or 'event'.
             object_id: Object UUID.
+
         """
         self.ai_search_manager.on_search_result_selected(object_type, object_id)
 
@@ -1737,6 +1787,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Args:
             result: ImportResult from the worker thread.
+
         """
         self.status_bar.clearMessage()
 
@@ -1764,6 +1815,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         Args:
             item_id: The ID of the item the summary is for.
             summary_data: The generated SummaryData object.
+
         """
         # Determine target editor logic
         # Simple check: Does EntityEditor currently hold this ID?
@@ -1788,6 +1840,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         Args:
             item_id: The ID of the item the summary is for.
             summary_data: The generated SummaryData object.
+
         """
         # Determine target editor logic
         # Simple check: Does EntityEditor currently hold this ID?
