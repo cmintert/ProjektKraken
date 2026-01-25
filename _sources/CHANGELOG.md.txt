@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-25
-### Changed
-- Refactor WikiTextEdit to Wrapper Pattern for robust styling
+### Fixed
+- Fix test failures in AI Settings and LLM Generation
 
 
 *This changelog was automatically generated.*
