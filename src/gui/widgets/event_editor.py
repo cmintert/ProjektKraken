@@ -165,10 +165,6 @@ class EventEditorWidget(QWidget):
         self.form_layout.addRow("Type:", self.type_edit)
         self.form_layout.addRow("Description:", self.desc_edit)
 
-        details_layout.addLayout(self.form_layout)
-
-        details_layout.addLayout(self.form_layout)
-
         # Add Summary Widget (Collapsible)
         self.summary_group = QGroupBox("Summary")
         self.summary_group.setCheckable(True)
@@ -196,7 +192,7 @@ class EventEditorWidget(QWidget):
 
         self.summary_group.toggled.connect(_toggle_summary_section)
         _toggle_summary_section(False)
-        details_layout.addWidget(self.summary_group)
+        self.form_layout.addRow("", self.summary_group)
 
         # Add LLM Generation Widget below description in a collapsible group
         from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
@@ -232,7 +228,9 @@ class EventEditorWidget(QWidget):
         self.llm_group.toggled.connect(_toggle_llm_section)
         _toggle_llm_section(False)  # Start collapsed
 
-        details_layout.addWidget(self.llm_group)
+        self.form_layout.addRow("", self.llm_group)
+
+        details_layout.addLayout(self.form_layout)
 
         # Set minimum height on details tab to ensure it doesn't collapse
         self.tab_details.setMinimumHeight(400)

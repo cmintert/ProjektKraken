@@ -127,8 +127,6 @@ class EntityEditorWidget(QWidget):
         self.form_layout.addRow("Type:", self.type_edit)
         self.form_layout.addRow("Description:", self.desc_edit)
 
-        details_layout.addLayout(self.form_layout)
-
         # Add Timeline Display Widget (above LLM section)
         from src.gui.widgets.timeline_display_widget import TimelineDisplayWidget
 
@@ -158,9 +156,7 @@ class EntityEditorWidget(QWidget):
         self.timeline_group.toggled.connect(_toggle_timeline_section)
         _toggle_timeline_section(False)  # Start collapsed
 
-        details_layout.addWidget(self.timeline_group)
-
-        details_layout.addWidget(self.timeline_group)
+        self.form_layout.addRow("", self.timeline_group)
 
         # Add Summary Widget (Collapsible)
         self.summary_group = QGroupBox("Summary")
@@ -189,7 +185,7 @@ class EntityEditorWidget(QWidget):
 
         self.summary_group.toggled.connect(_toggle_summary_section)
         _toggle_summary_section(False)
-        details_layout.addWidget(self.summary_group)
+        self.form_layout.addRow("", self.summary_group)
 
         # Add LLM Generation Widget below description in a collapsible group
         from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
@@ -223,7 +219,9 @@ class EntityEditorWidget(QWidget):
         self.llm_group.toggled.connect(_toggle_llm_section)
         _toggle_llm_section(False)  # Start collapsed
 
-        details_layout.addWidget(self.llm_group)
+        self.form_layout.addRow("", self.llm_group)
+
+        details_layout.addLayout(self.form_layout)
 
         self.inspector.add_tab(self.tab_details, "Details")
 
@@ -443,8 +441,9 @@ class EntityEditorWidget(QWidget):
             if self.type_edit.currentText() != entity.type:
                 self.type_edit.setCurrentText(entity.type)
 
-            # Check against the actual current content of the editor instead of internal storage
-            # This ensures we don't reload if the text is effectively the same (resolving cursor reset)
+            # Check against the actual current content of the editor instead of internal
+            # storage. This ensures we don't reload if the text is effectively the same.
+            # (resolving cursor reset)
             if self.desc_edit.get_wiki_text() != entity.description:
                 self.desc_edit.set_wiki_text(entity.description)
 
@@ -482,7 +481,7 @@ class EntityEditorWidget(QWidget):
                         data = SummaryData.from_dict(summary_data)
                         self.summary_widget.set_summary(data)
                         # Open if summary exists ? Or keep user preference?
-                        # Let's keep existing state or open if user preference set (later)
+                        # Keep existing state or open if user preference set (later)
                     except Exception:
                         pass
 
@@ -593,7 +592,7 @@ class EntityEditorWidget(QWidget):
             # If not, we need to cache hidden attrs on load.
             elif hasattr(self, "_hidden_attributes"):
                 for k, v in self._hidden_attributes.items():
-                    if k not in base_attrs:  # don't overwrite if somehow exposed
+                    if k not in base_attrs:
                         base_attrs[k] = v
 
             entity_data = {
@@ -607,7 +606,8 @@ class EntityEditorWidget(QWidget):
 
             logger.info(
                 f"[EntityEditor] Emitting save_requested for entity '{entity_data['name']}' "
-                f"(id={entity_data['id']}, desc_len={len(entity_data['description'])})"
+                f"(id={entity_data['id']}, "
+                f"desc_len={len(entity_data['description'])})"
             )
             self.save_requested.emit(entity_data)
 
@@ -617,7 +617,8 @@ class EntityEditorWidget(QWidget):
             # This prevents race conditions where we clear dirty, but signals from
             # widgets (processing the current data) fire before the reload completes.
             logger.debug(
-                "[EntityEditor] _on_save emitted signal. Waiting for reload to clear dirty state."
+                "[EntityEditor] _on_save emitted signal. "
+                "Waiting for reload to clear dirty state."
             )
 
         except Exception as e:
@@ -985,7 +986,7 @@ class EntityEditorWidget(QWidget):
     def _on_summary_generate_requested(self) -> None:
         """Handles summary generation request."""
         print(
-            f"[DEBUG] _on_summary_generate_requested called. ID: {self._current_entity_id}"
+            f"[DEBUG] _on_summary_generate_requested ID: " f"{self._current_entity_id}"
         )
         if not self._current_entity_id:
             print("[DEBUG] Aborting: No current entity ID")
