@@ -289,7 +289,10 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.services</span><span class="w"> </span><span class="kn">import</span> <span class="n">longform_builder</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.asset_store</span><span class="w"> </span><span class="kn">import</span> <span class="n">AssetStore</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.attachment_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">AttachmentService</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.db_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatabaseService</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.services.summary_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">SummaryService</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.summary_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">SummaryData</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -337,6 +340,7 @@
 
     <span class="c1"># Import signals</span>
     <span class="n">import_finished</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>  <span class="c1"># ImportResult</span>
+    <span class="n">summary_generated</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>  <span class="c1"># item_id, SummaryData</span>
 
 <div class="viewcode-block" id="DatabaseWorker.__init__">
 <a class="viewcode-back" href="../../services.html#services.worker.DatabaseWorker.__init__">[docs]</a>
@@ -383,6 +387,11 @@
             <span class="c1"># Attach to db_service for Command access (Dependency Injection via Context)</span>
             <span class="c1"># Attach to db_service for Command access (Dependency Injection via Context)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">attachment_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attachment_service</span>
+
+            <span class="c1"># Initialize SummaryService</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">summary_service</span> <span class="o">=</span> <span class="n">SummaryService</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">)</span>
+
+            <span class="c1"># Initialize TemporalManager</span>
 
             <span class="c1"># Initialize TemporalManager</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.temporal_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">TemporalManager</span>
@@ -1136,6 +1145,41 @@
 
             <span class="n">result</span> <span class="o">=</span> <span class="n">ImportResult</span><span class="p">(</span><span class="n">success</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)])</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">import_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">result</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseWorker.generate_summary">
+<a class="viewcode-back" href="../../services.html#services.worker.DatabaseWorker.generate_summary">[docs]</a>
+    <span class="nd">@Slot</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates a summary for the given item using LLM.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item: Entity or Event object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_service</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">operation_started</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Generating summary for </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+            <span class="c1"># Note: generate_summary logic might perform DB writes if configured?</span>
+            <span class="c1"># SummaryService.generate_summary calls llm_provider.generate (blocking io)</span>
+            <span class="c1"># and then *could* save to DB, but typically just returns updated object/summary data.</span>
+            <span class="c1"># My implementation returns SummaryData, but DOES NOT save to DB automatically unless</span>
+            <span class="c1"># I explicitly call update?</span>
+            <span class="c1"># Actually SummaryService.generate_summary logic:</span>
+            <span class="c1"># 1. build context</span>
+            <span class="c1"># 2. call llm</span>
+            <span class="c1"># 3. create SummaryData</span>
+            <span class="c1"># 4. updates item.attributes[&quot;_summary_data&quot;]</span>
+            <span class="c1"># 5. insert_summary_embedding (DB call)</span>
+            <span class="c1"># So yes, it does DB access. Thread safe? Yes, separate thread, own db_service.</span>
+
+            <span class="n">summary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_service</span><span class="o">.</span><span class="n">generate_summary</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">summary_generated</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">summary</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">operation_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s2">&quot;Summary generated.&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Summary generation failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Summary generation failed: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

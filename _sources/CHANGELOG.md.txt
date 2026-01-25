@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-01-21
-### Added
-- feat: Add Natural Language Dates, Fast Inject, and Advanced Import features, CLI examples, and documentation links to the README.md
+## [Development] - 2026-01-25
+### Fixed
+- Fix duplicate entity context in RAG prompt via thread-safe filtering
 
 
 *This changelog was automatically generated.*
