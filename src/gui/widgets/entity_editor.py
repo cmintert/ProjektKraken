@@ -157,6 +157,7 @@ class EntityEditorWidget(QWidget):
         from src.gui.widgets.timeline_display_widget import TimelineDisplayWidget
 
         self.timeline_group = QGroupBox("")
+        self.timeline_group.setStyleSheet("QGroupBox { border: none; }")
         self.timeline_group.setCheckable(True)
         self.timeline_group.setChecked(False)  # Start collapsed
         timeline_layout = QVBoxLayout(self.timeline_group)
@@ -186,6 +187,7 @@ class EntityEditorWidget(QWidget):
 
         # Add Summary Widget (Collapsible)
         self.summary_group = QGroupBox("")
+        self.summary_group.setStyleSheet("QGroupBox { border: none; }")
         self.summary_group.setCheckable(True)
         self.summary_group.setChecked(False)
         summary_layout = QVBoxLayout(self.summary_group)
@@ -217,6 +219,7 @@ class EntityEditorWidget(QWidget):
         from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
 
         self.llm_group = QGroupBox("")
+        self.llm_group.setStyleSheet("QGroupBox { border: none; }")
         self.llm_group.setCheckable(True)
         self.llm_group.setChecked(False)  # Start collapsed
         llm_layout = QVBoxLayout(self.llm_group)

@@ -186,6 +186,7 @@ class EventEditorWidget(QWidget):
 
         # Add Summary Widget (Collapsible)
         self.summary_group = QGroupBox("")
+        self.summary_group.setStyleSheet("QGroupBox { border: none; }")
         self.summary_group.setCheckable(True)
         self.summary_group.setChecked(False)
         summary_layout = QVBoxLayout(self.summary_group)
@@ -217,6 +218,7 @@ class EventEditorWidget(QWidget):
         from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
 
         self.llm_group = QGroupBox("")
+        self.llm_group.setStyleSheet("QGroupBox { border: none; }")
         self.llm_group.setCheckable(True)
         self.llm_group.setChecked(False)  # Start collapsed
         llm_layout = QVBoxLayout(self.llm_group)
