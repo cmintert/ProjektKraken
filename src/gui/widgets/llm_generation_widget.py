@@ -111,6 +111,7 @@ class GenerationWorker(QThread):
         temperature: float,
         db_path: Optional[str] = None,
         rag_limit: int = 3,
+        exclude_names: Optional[list[str]] = None,
     ) -> None:
         """Initialize generation worker.
 
@@ -130,6 +131,7 @@ class GenerationWorker(QThread):
         self.temperature = temperature
         self.db_path = db_path
         self.rag_limit = rag_limit
+        self.exclude_names = exclude_names or []
         self._cancelled = False
 
     def _perform_rag_search(self, query_text: str) -> str:
@@ -175,7 +177,9 @@ class GenerationWorker(QThread):
                 )
 
                 # Pass full user message; service cleans it.
-                rag_context = rag_service.get_context(user_msg, top_k=self.rag_limit)
+                rag_context = rag_service.get_context(
+                    user_msg, top_k=self.rag_limit, exclude_names=self.exclude_names
+                )
 
                 if rag_context:
                     logger.info(
@@ -842,14 +846,21 @@ class LLMGenerationWidget(QWidget):
         # self.preview_text.clear()  # Removed
         # self.preview_text.setVisible(True)  # Removed
 
+        # Prepare exclusion list (current entity name)
+        exclude_names = []
+        current_context = self._get_generation_context()
+        if current_context and "name" in current_context:
+            exclude_names.append(current_context["name"])
+
         # Create worker
         self._worker = GenerationWorker(
             self._current_provider,
             prompt,
             self.max_tokens_spin.value(),
             temperature,
-            db_path,
-            self._get_rag_limit(),
+            db_path=db_path,
+            rag_limit=self._get_rag_limit(),
+            exclude_names=exclude_names,
         )
 
         # Connect signals

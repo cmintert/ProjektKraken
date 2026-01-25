@@ -84,7 +84,9 @@ class RAGService:
             logger.error(f"RAG search failed: {e}", exc_info=True)
             return []
 
-    def get_context(self, prompt: str, top_k: int = 3) -> str:
+    def get_context(
+        self, prompt: str, top_k: int = 3, exclude_names: Optional[List[str]] = None
+    ) -> str:
         """Retrieve and format context based on the user prompt.
 
         Performs:
@@ -95,11 +97,20 @@ class RAGService:
         Args:
             prompt: User's raw prompt/task.
             top_k: Number of semantic results to retrieve (min).
+            exclude_names: Optional list of names to exclude from results (e.g., current entity).
 
         Returns:
             str: Formatted context block for the LLM.
         """
         results = self.search(prompt, top_k=top_k)
+
+        # Filter exclusions
+        if exclude_names:
+            # Case-insensitive filtering
+            lower_excludes = {n.lower() for n in exclude_names if n}
+            results = [
+                r for r in results if r.get("name", "").lower() not in lower_excludes
+            ]
 
         if not results:
             return ""
