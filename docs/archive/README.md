@@ -1,8 +1,7 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Archive Documentation Index  
-**Last Updated:** 2026-01-01  
-**Commit:** `d9e3f83`  
+**Last Updated:** 2026-01-25  
 ---
 
 # Archive Documentation
@@ -11,7 +10,7 @@ This folder contains historical code analysis and review reports that were used 
 
 ## Contents
 
-### Code Analysis Reports (December 2024 - January 2025)
+### Code Analysis Reports (December 2024 - January 2026)
 
 These reports were generated during a comprehensive code quality assessment and refactoring effort:
 
@@ -47,13 +46,44 @@ These reports were generated during a comprehensive code quality assessment and 
    - Mermaid diagrams showing improvements
    - **Date:** [Not specified]
 
+### Code Review Reports (January 2026)
+
+These reports were consolidated into the current [PRODUCTION_READINESS.md](../PRODUCTION_READINESS.md):
+
+6. **[CODE_REVIEW_SUMMARY.md](CODE_REVIEW_SUMMARY.md)** - Initial code review (archived)
+   - Signal duplicates resolved
+   - Exception handling fixes
+   - **Date:** January 18, 2026
+   - **Status:** Superseded by PRODUCTION_READINESS.md
+
+7. **[CODE_REVIEW_EXTENDED.md](CODE_REVIEW_EXTENDED.md)** - Extended review (archived)
+   - 162 files analyzed
+   - Service layer review
+   - Bare exception handlers fixed
+   - **Date:** January 18, 2026
+   - **Status:** Superseded by PRODUCTION_READINESS.md
+
+8. **[REVIEW_SUMMARY.md](REVIEW_SUMMARY.md)** - Production readiness (archived)
+   - 8.5/10 rating
+   - Thread safety verified
+   - **Date:** January 4, 2026
+   - **Status:** Superseded by PRODUCTION_READINESS.md
+
+9. **[CODE_REVIEW_REPORT.md](CODE_REVIEW_REPORT.md)** - Comprehensive report (archived)
+   - Architecture analysis
+   - PySide6 best practices
+   - **Date:** January 18, 2026
+   - **Status:** Superseded by PRODUCTION_READINESS.md
+
 ## Why Archived?
 
 These documents were valuable during the development and refactoring phase but are now archived because:
 
 1. **Issues Fixed**: All identified issues have been resolved
 2. **Code Changed**: The codebase has evolved since these reports
-3. **Superseded**: Current documentation (DEVELOPMENT.md, Design.md) reflects the improved architecture
+3. **Superseded**: Current documentation reflects the improved architecture
+   - Code review reports consolidated into [PRODUCTION_READINESS.md](../PRODUCTION_READINESS.md)
+   - Development guides updated in [DEVELOPMENT.md](../DEVELOPMENT.md) and [Design.md](../../Design.md)
 4. **Historical Value Only**: Useful for understanding the evolution of the codebase
 
 ## Current Documentation
@@ -61,6 +91,7 @@ These documents were valuable during the development and refactoring phase but a
 For up-to-date documentation, see:
 
 - **[docs/INDEX.md](../INDEX.md)** - Main documentation index
+- **[docs/PRODUCTION_READINESS.md](../PRODUCTION_READINESS.md)** - Consolidated production readiness assessment (replaces all code review reports)
 - **[Design.md](../../Design.md)** - Current architecture specification
 - **[docs/DEVELOPMENT.md](../DEVELOPMENT.md)** - Development guide
 - **[docs/DATABASE.md](../DATABASE.md)** - Database architecture
