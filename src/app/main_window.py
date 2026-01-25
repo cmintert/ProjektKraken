@@ -144,6 +144,16 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self._init_core_services()
         logger.debug("Phase 1: Core services initialized")
 
+        # Apply Windows Title Bar Style (Dark Mode by default)
+        try:
+            from src.gui.utils.window_utils import apply_windows_title_bar_style
+
+            # We can read the current theme to decide, but for now default to Dark
+            # TODO: Hook into ThemeManager changes
+            apply_windows_title_bar_style(self, dark_mode=True)
+        except Exception as e:
+            logger.warning(f"Failed to apply title bar style: {e}")
+
         # Phase 2: UI skeleton (no data dependencies)
         self._init_widgets_skeleton()
         logger.debug("Phase 2: Widget skeleton created")
@@ -168,6 +178,18 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         # Current world reference (will be set by worker_manager)
         self.current_world = None
 
+        # Connect Theme Manager Signal
+        try:
+            from src.core.theme_manager import ThemeManager
+
+            tm = ThemeManager()
+            tm.theme_changed.connect(self._update_window_style)
+
+            # Apply initial style
+            self._update_window_style(tm.get_theme())
+        except Exception as e:
+            logger.warning(f"Failed to connect theme signal: {e}")
+
         # Initialize Data Handler (signals-based, no window reference)
         self.data_handler = DataHandler()
 
@@ -188,6 +210,33 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self._pending_select_id = None
         self._pending_select_type = None
         self._graph_reload_timer: QTimer | None = None
+
+    def _update_window_style(self, theme_data: dict) -> None:
+        """Updates the Windows title bar style based on the current theme.
+
+        Args:
+            theme_data: The dictionary containing theme colors.
+        """
+        try:
+            from src.gui.utils.window_utils import apply_windows_title_bar_style
+            from PySide6.QtGui import QColor
+
+            app_bg = theme_data.get("app_bg", "#2B2B2B")
+            text_main = theme_data.get("text_main", "#E0E0E0")
+
+            # Determine if dark mode (simple heuristic or based on theme name logic)
+            # Generally, if app_bg is dark, we want dark mode.
+            bg_color = QColor(app_bg)
+            is_dark = bg_color.lightness() < 128
+
+            apply_windows_title_bar_style(
+                self,
+                dark_mode=is_dark,
+                title_color=bg_color,
+                text_color=QColor(text_main),
+            )
+        except Exception as e:
+            logger.warning(f"Failed to update window style: {e}")
 
     def _create_status_label(self, text: str, color: str) -> QLabel:
         """Creates a styled status bar label."""
