@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-25
-### Added
-- feat: Improve Windows Title Bar Theming and Robustness
+### Fixed
+- fix: Apply initial title bar style in deferred phase
 
 
 *This changelog was automatically generated.*
