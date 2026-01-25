@@ -199,6 +199,21 @@ class StyleHelper:
         )
 
     @staticmethod
+    def get_scroll_area_style() -> str:
+        """Returns QSS for transparent scroll areas.
+
+        Ensures scroll areas blend into the background.
+
+        Returns:
+            str: QSS stylesheet string.
+
+        """
+        return (
+            "QScrollArea { background-color: transparent; border: none; }"
+            "QScrollArea > QWidget > QWidget { background-color: transparent; }"
+        )
+
+    @staticmethod
     def get_dialog_button_style(selected: bool) -> str:
         """Returns QSS for dialog day buttons.
 

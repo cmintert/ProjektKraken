@@ -101,16 +101,30 @@ class EventEditorWidget(QWidget):
 
         # --- Tab 1: Details ---
         self.tab_details = QWidget()
-        details_layout = QVBoxLayout(self.tab_details)
+
+        # Scroll Area Wrapper
+        from PySide6.QtWidgets import QScrollArea, QFrame
+
+        tab_layout = QVBoxLayout(self.tab_details)
+        tab_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        self.scroll_area.setStyleSheet(StyleHelper.get_scroll_area_style())
+
+        self.details_container = QWidget()
+        details_layout = QVBoxLayout(self.details_container)
         StyleHelper.apply_compact_spacing(details_layout)
 
-        self.form_layout = QFormLayout()
-        # Configure form layout to respect widget minimum sizes
-        self.form_layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
-        self.form_layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
+        self.scroll_area.setWidget(self.details_container)
+        tab_layout.addWidget(self.scroll_area)
 
+        self.form_layout = QFormLayout()
+        self.form_layout.setVerticalSpacing(12)
         self.form_layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
         self.form_layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
+        self.form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         # Inject Button Header
         header_layout = QHBoxLayout()
@@ -166,7 +180,7 @@ class EventEditorWidget(QWidget):
         self.form_layout.addRow("Description:", self.desc_edit)
 
         # Add Summary Widget (Collapsible)
-        self.summary_group = QGroupBox("Summary")
+        self.summary_group = QGroupBox("")
         self.summary_group.setCheckable(True)
         self.summary_group.setChecked(False)
         summary_layout = QVBoxLayout(self.summary_group)
@@ -192,12 +206,12 @@ class EventEditorWidget(QWidget):
 
         self.summary_group.toggled.connect(_toggle_summary_section)
         _toggle_summary_section(False)
-        self.form_layout.addRow("", self.summary_group)
+        self.form_layout.addRow("Summary:", self.summary_group)
 
         # Add LLM Generation Widget below description in a collapsible group
         from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
 
-        self.llm_group = QGroupBox("LLM Generation")
+        self.llm_group = QGroupBox("")
         self.llm_group.setCheckable(True)
         self.llm_group.setChecked(False)  # Start collapsed
         llm_layout = QVBoxLayout(self.llm_group)
@@ -228,7 +242,7 @@ class EventEditorWidget(QWidget):
         self.llm_group.toggled.connect(_toggle_llm_section)
         _toggle_llm_section(False)  # Start collapsed
 
-        self.form_layout.addRow("", self.llm_group)
+        self.form_layout.addRow("LLM Generation:", self.llm_group)
 
         details_layout.addLayout(self.form_layout)
 

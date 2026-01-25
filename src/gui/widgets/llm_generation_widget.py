@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QFrame,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -176,7 +177,8 @@ class GenerationWorker(QThread):
                 # Use modular RAGService
                 rag_service = RAGService(self.db_path)
                 logger.info(
-                    f"RAG: Searching context for query: '{user_msg[:50]}...' (Limit: {self.rag_limit})"
+                    f"RAG: Searching context for query: '{user_msg[:50]}...' "
+                    f"(Limit: {self.rag_limit})"
                 )
 
                 # Pass full user message; service cleans it.
@@ -186,7 +188,8 @@ class GenerationWorker(QThread):
 
                 if rag_context:
                     logger.info(
-                        f"RAG: Found context ({len(rag_context)} chars). Snippet: {rag_context[:100].replace(chr(10), ' ')}..."
+                        f"RAG: Found context ({len(rag_context)} chars). "
+                        f"Snippet: {rag_context[:100].replace(chr(10), ' ')}..."
                     )
                 else:
                     logger.info("RAG: No context found or returned empty.")
@@ -341,9 +344,13 @@ class LLMGenerationWidget(QWidget):
         top_sep.setStyleSheet("color: #444444; margin-bottom: 4px;")
         main_layout.addWidget(top_sep)
 
-        # Template selection row
-        template_layout = QHBoxLayout()
-        template_layout.addWidget(QLabel("Task Template:"))
+        # Controls grid layout (Revised to QGridLayout for alignment)
+        # Col 0: Labels, Col 1: Inputs, Col 2: Labels/Checkboxes, Col 3: Inputs
+        grid_layout = QGridLayout()
+        # grid_layout.setVerticalSpacing(8) # Optional: StyleHelper handles spacing usually?
+
+        # Row 0: Task Template
+        grid_layout.addWidget(QLabel("Task Template:"), 0, 0)
         self.template_combo = QComboBox()
         self.template_combo.setToolTip(
             "Select task template. NOTE: Selecting a template overrides the\n"
@@ -351,49 +358,58 @@ class LLMGenerationWidget(QWidget):
         )
         self._populate_template_combo()
         self.template_combo.currentIndexChanged.connect(self._on_template_combo_changed)
-        template_layout.addWidget(self.template_combo)
-        template_layout.addStretch()
-        main_layout.addLayout(template_layout)
+        grid_layout.addWidget(self.template_combo, 0, 1, 1, 3)  # Span 3 cols
 
-        # Controls row
-        controls_layout = QHBoxLayout()
+        # Row 1: Provider | Max Tokens
+        grid_layout.addWidget(QLabel("Provider:"), 1, 0)
 
-        # Provider selection
-        controls_layout.addWidget(QLabel("Provider:"))
         self.provider_combo = QComboBox()
         self.provider_combo.addItems(
             ["LM Studio", "OpenAI", "Google Vertex AI", "Anthropic"]
         )
         self.provider_combo.setToolTip("Select LLM provider for generation")
         self.provider_combo.currentIndexChanged.connect(self._save_settings)
-        controls_layout.addWidget(self.provider_combo)
+        # Removing manual size policy, Grid should handle it better
+        from PySide6.QtWidgets import QSizePolicy
 
-        # Max tokens
-        controls_layout.addWidget(QLabel("Max Tokens:"))
+        self.provider_combo.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
+        grid_layout.addWidget(self.provider_combo, 1, 1)
+
+        grid_layout.addWidget(QLabel("Max Tokens:"), 1, 2)
+
         self.max_tokens_spin = QSpinBox()
         self.max_tokens_spin.setRange(50, 4096)
         self.max_tokens_spin.setValue(512)
         self.max_tokens_spin.setToolTip("Maximum tokens to generate")
         self.max_tokens_spin.valueChanged.connect(self._save_settings)
-        controls_layout.addWidget(self.max_tokens_spin)
+        grid_layout.addWidget(self.max_tokens_spin, 1, 3)
 
-        # Temperature
-        controls_layout.addWidget(QLabel("Temp:"))
+        # Row 2: Temp | RAG
+        grid_layout.addWidget(QLabel("Temp:"), 2, 0)
+
         self.temperature_spin = QSpinBox()
         self.temperature_spin.setRange(0, 200)
         self.temperature_spin.setValue(70)
         self.temperature_spin.setSuffix("%")
         self.temperature_spin.setToolTip("Temperature (0-200%, where 100% = 1.0)")
         self.temperature_spin.valueChanged.connect(self._save_settings)
-        controls_layout.addWidget(self.temperature_spin)
+        grid_layout.addWidget(self.temperature_spin, 2, 1)
 
-        # RAG Context Checkbox
+        # RAG Checkbox in Col 2 (Label position)
         self.rag_cb = QCheckBox("Use RAG Context")
         self.rag_cb.setChecked(True)
         self.rag_cb.setToolTip("Include relevant context from database (RAG)")
-        controls_layout.addWidget(self.rag_cb)
+        grid_layout.addWidget(self.rag_cb, 2, 2)
 
-        # RAG Limit Input
+        # RAG Limit in Col 3
+        bg_rag_limit = (
+            QWidget()
+        )  # Container for hiding logic if needed, but simple visibility toggle works on widget?
+        # Actually QGridLayout doesn't automatically hide empty cells if widget hidden?
+        # But QLineEdit logic was self.rag_limit_input.setVisible.
+
         self.rag_limit_input = QLineEdit()
         self.rag_limit_input.setPlaceholderText("3")
         self.rag_limit_input.setToolTip("Number of context items to retrieve (1-20)")
@@ -401,15 +417,14 @@ class LLMGenerationWidget(QWidget):
         self.rag_limit_input.setValidator(QIntValidator(1, 20))
         self.rag_limit_input.setText("3")
 
-        # Handle toggling with check box
+        # Handle toggling
         self.rag_cb.toggled.connect(self.rag_limit_input.setVisible)
         self.rag_cb.toggled.connect(self._save_settings)
         self.rag_limit_input.editingFinished.connect(self._save_settings)
-        controls_layout.addWidget(self.rag_limit_input)
 
-        controls_layout.addStretch()
+        grid_layout.addWidget(self.rag_limit_input, 2, 3)
 
-        main_layout.addLayout(controls_layout)
+        main_layout.addLayout(grid_layout)
 
         # Header for prompt section
         lbl_instruction = QLabel("Prompt Instructions")
