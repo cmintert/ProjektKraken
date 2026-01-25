@@ -19,6 +19,14 @@ class MockLongformManager:
     def load_longform_sequence(self):
         self.load_count += 1
 
+    def on_longform_sequence_loaded(self, sequence: list) -> None:
+        """Mock handler for when longform sequence is loaded."""
+        pass
+
+    def export_as_vault(self) -> None:
+        """Mock handler for export as vault."""
+        pass
+
 
 def test_auto_refresh_logic(qtbot):
     """

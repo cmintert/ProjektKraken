@@ -167,15 +167,18 @@ class FastInjectManager:
         # Ensure target directory exists
         self.ensure_directory()
 
-        # Determine target filename (handle duplicates)
-        target_filename = source_path.name
+        # Determine target filename based on template name (handle duplicates)
+        # Sanitize filename
+        safe_name = "".join(
+            c for c in template.name if c.isalnum() or c in (" ", "_", "-")
+        ).strip()
+        target_filename = f"{safe_name}.fastinject"
         target_path = self.templates_dir / target_filename
 
         # If file exists, add a suffix
         counter = 1
         while target_path.exists():
-            stem = source_path.stem
-            target_filename = f"{stem}_{counter}.fastinject"
+            target_filename = f"{safe_name}_{counter}.fastinject"
             target_path = self.templates_dir / target_filename
             counter += 1
 
