@@ -1,8 +1,7 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Documentation Index  
-**Last Updated:** 2026-01-01  
-**Commit:** `d9e3f83`  
+**Last Updated:** 2026-01-25  
 ---
 
 # Documentation Index
@@ -13,6 +12,7 @@ This document provides an organized overview of all ProjektKraken documentation.
 
 - **[README.md](../README.md)** - Project overview, installation, and basic usage
 - **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development environment setup
+- **[CLI.md](CLI.md)** - Command-line tools overview and quick reference
 
 ## Architecture & Design
 
@@ -35,6 +35,16 @@ This document provides an organized overview of all ProjektKraken documentation.
   - Migration strategy
 
 - **[SCHEMA_REFERENCE.md](SCHEMA_REFERENCE.md)** - Auto-generated database schema reference with ER diagrams
+- **[QT_THREADING_SAFETY.md](QT_THREADING_SAFETY.md)** - Qt threading patterns and safety guidelines
+
+## Security & Production Readiness
+
+- **[PRODUCTION_READINESS.md](PRODUCTION_READINESS.md)** - Comprehensive production readiness assessment
+  - Code quality metrics and reviews
+  - Architecture and threading safety
+  - Security scan results
+  - Performance assessment
+  - Risk assessment and recommendations
 
 ## Security
 
@@ -88,6 +98,28 @@ This document provides an organized overview of all ProjektKraken documentation.
   - Streaming support
   - Security and privacy
 
+- **[WEBSERVER.md](WEBSERVER.md)** - Embedded FastAPI webserver:
+  - REST API endpoints (V1: read-only)
+  - Longform document serving
+  - Threading model and integration
+  - Security considerations
+  - Usage examples
+
+## CLI Tools
+
+- **[CLI.md](CLI.md)** - Command-line interface overview:
+  - 16 CLI modules for headless operation
+  - 100% feature parity with GUI
+  - Automation and scripting examples
+  - CI/CD integration
+
+- **[src/cli/README.md](../src/cli/README.md)** - Complete CLI command reference:
+  - Detailed command syntax for all modules
+  - Event, entity, relation management
+  - Semantic search indexing
+  - Map, calendar, timeline tools
+  - Export and backup commands
+
 ## Migration Guides
 
 - **[TAG_MIGRATION_GUIDE.md](TAG_MIGRATION_GUIDE.md)** - Tag normalization migration:
@@ -96,10 +128,25 @@ This document provides an organized overview of all ProjektKraken documentation.
   - Backward compatibility
   - Performance improvements
 
+## Specialized Documentation
+
+- **[BACKUP_STRATEGY.md](BACKUP_STRATEGY.md)** - Backup system documentation
+- **[RELEASE_POLICY.md](RELEASE_POLICY.md)** - Release process and versioning
+- **[PYVIS_INTEGRATION_GUIDE.md](PYVIS_INTEGRATION_GUIDE.md)** - Graph visualization integration
+- **[TEMPORAL_MAPS_CONCEPT.md](TEMPORAL_MAPS_CONCEPT.md)** - Temporal maps and 4D visualization
+- **[RELATION_ATTRIBUTES_UI_PLAN.md](RELATION_ATTRIBUTES_UI_PLAN.md)** - Relation attributes UI design
+
+## LLM & AI Documentation
+
+- **[LLM_REVIEW.md](LLM_REVIEW.md)** - Detailed LLM integration review (516 lines)
+- **[LLM_REVIEW_SUMMARY.md](LLM_REVIEW_SUMMARY.md)** - Quick reference for LLM assessment
+- **[COVERAGE_IMPROVEMENT_SUMMARY.md](COVERAGE_IMPROVEMENT_SUMMARY.md)** - Testing coverage metrics
+
 ## Project Information
 
 - **[CHANGELOG.md](../CHANGELOG.md)** - Version history and notable changes
 - **[LICENSE.md](LICENSE.md)** - GNU Affero General Public License v3.0 (AGPLv3)
+- **[PRODUCTION_READINESS.md](PRODUCTION_READINESS.md)** - Production readiness status
 
 ## API Documentation (Sphinx)
 
@@ -138,38 +185,74 @@ All documentation follows these standards:
 
 ```
 ProjektKraken/
-├── README.md                     # Main project overview
-├── Design.md                     # Architecture specification
-├── CHANGELOG.md                  # Version history
+├── README.md                          # Main project overview
+├── Design.md                          # Architecture specification
+├── CHANGELOG.md                       # Version history
 └── docs/
-    ├── INDEX.md                      # This file
-    ├── DATABASE.md                   # Database architecture
-    ├── DEVELOPMENT.md                # Development setup
-    ├── SECURITY.md                   # Security practices
-    ├── WIKI_LINKING.md              # Wiki linking feature
-    ├── MAP_USAGE_EXAMPLES.md        # Map system feature
-    ├── LONGFORM.md                  # Longform document feature
-    ├── SEMANTIC_SEARCH.md           # Semantic search feature
-    ├── LLM_INTEGRATION.md           # LLM integration feature
-    ├── TAG_MIGRATION_GUIDE.md       # Tag migration guide
-    ├── SCHEMA_REFERENCE.md          # Auto-generated schema
-    ├── LICENSE.md                   # License text
-    ├── index.rst                    # Sphinx index
-    ├── conf.py                      # Sphinx configuration
-    ├── generate_schema_docs.py      # Schema doc generator
-    ├── archive/                     # Historical reports
-    │   ├── README.md                # Archive index
-    │   ├── CODE_ANALYSIS_REPORT.md
+    ├── INDEX.md                       # This file
+    │
+    ├── Core Documentation
+    │   ├── DATABASE.md                # Database architecture
+    │   ├── DEVELOPMENT.md             # Development setup
+    │   ├── TESTING.md                 # Testing guide
+    │   ├── SECURITY.md                # Security practices
+    │   ├── QT_THREADING_SAFETY.md     # Threading patterns
+    │   ├── PRODUCTION_READINESS.md    # Production readiness assessment
+    │   └── SCHEMA_REFERENCE.md        # Auto-generated schema
+    │
+    ├── Feature Documentation
+    │   ├── WIKI_LINKING.md            # Wiki linking feature
+    │   ├── MAP_USAGE_EXAMPLES.md      # Map system feature
+    │   ├── LONGFORM.md                # Longform document feature
+    │   ├── SEMANTIC_SEARCH.md         # Semantic search feature
+    │   ├── LLM_INTEGRATION.md         # LLM integration feature
+    │   ├── WEBSERVER.md               # Embedded API server
+    │   └── CLI.md                     # CLI tools overview
+    │
+    ├── Specialized Guides
+    │   ├── TAG_MIGRATION_GUIDE.md     # Tag migration guide
+    │   ├── BACKUP_STRATEGY.md         # Backup system
+    │   ├── RELEASE_POLICY.md          # Release process
+    │   ├── PYVIS_INTEGRATION_GUIDE.md # Graph visualization
+    │   ├── TEMPORAL_MAPS_CONCEPT.md   # 4D maps concept
+    │   └── RELATION_ATTRIBUTES_UI_PLAN.md  # UI planning
+    │
+    ├── LLM & AI Documentation
+    │   ├── LLM_REVIEW.md              # Detailed LLM review
+    │   ├── LLM_REVIEW_SUMMARY.md      # LLM review summary
+    │   └── COVERAGE_IMPROVEMENT_SUMMARY.md
+    │
+    ├── Sphinx Documentation
+    │   ├── index.rst                  # Sphinx index
+    │   ├── conf.py                    # Sphinx configuration
+    │   ├── generate_schema_docs.py    # Schema doc generator
+    │   ├── modules.rst                # Module index
+    │   ├── app.rst, cli.rst, etc.     # Auto-generated API docs
+    │
+    ├── archive/                       # Historical reports
+    │   ├── README.md                  # Archive index
+    │   ├── CODE_ANALYSIS_REPORT.md    # (Dec 2024)
     │   ├── CODE_IMPROVEMENTS_SUMMARY.md
     │   ├── PRODUCTION_READINESS_REPORT.md
     │   ├── REFACTORING_SUMMARY.md
-    │   └── ARCHITECTURE_DIAGRAMS.md
-    └── *.rst                        # Sphinx API documentation files
+    │   ├── ARCHITECTURE_DIAGRAMS.md
+    │   ├── CODE_REVIEW_SUMMARY.md     # (Jan 2026, superseded)
+    │   ├── CODE_REVIEW_EXTENDED.md    # (Jan 2026, superseded)
+    │   ├── CODE_REVIEW_REPORT.md      # (Jan 2026, superseded)
+    │   └── REVIEW_SUMMARY.md          # (Jan 2026, superseded)
+    │
+    └── LICENSE.md                     # License text
 ```
 
 ## Archive
 
-Historical code analysis and review reports are preserved in **[docs/archive/](archive/)** for reference. These documents were created during major refactoring efforts but are no longer actively maintained.
+Historical code analysis and review reports are preserved in **[docs/archive/](archive/)** for reference. These documents were created during development and refactoring efforts but are no longer actively maintained.
+
+**Superseded Documents:**
+- Code review reports from January 2026 have been consolidated into **[PRODUCTION_READINESS.md](PRODUCTION_READINESS.md)**
+- Historical architecture reports from December 2024 - January 2025
+
+See **[docs/archive/README.md](archive/README.md)** for complete archive index.
 
 ## Contributing to Documentation
 
@@ -185,11 +268,13 @@ When updating documentation:
 
 ## Version Information
 
-- **Current Version:** 0.4.0 (Alpha)
+- **Current Version:** 0.8.0 (Beta)
 - **Python:** 3.11+
 - **Database:** SQLite 3.35+
 - **GUI Framework:** PySide6 (Qt 6)
+- **Web Framework:** FastAPI (embedded webserver)
 - **Documentation Generator:** Sphinx with Google Style docstrings
+- **Production Status:** ✅ Production Ready (see [PRODUCTION_READINESS.md](PRODUCTION_READINESS.md))
 
 ## Support
 
