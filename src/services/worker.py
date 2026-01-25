@@ -117,8 +117,18 @@ class DatabaseWorker(QObject):
             logger.info("DatabaseWorker initialized successfully.")
             self.initialized.emit(True)
             self.operation_finished.emit("Database Connected.")
-        except Exception:
-            logger.critical(f"DatabaseWorker init failed: {traceback.format_exc()}")
+        except sqlite3.Error as e:
+            logger.critical(f"DatabaseWorker database error: {type(e).__name__}: {e}")
+            self.error_occurred.emit(f"Database error: {e}")
+            self.initialized.emit(False)
+        except (OSError, IOError) as e:
+            logger.critical(f"DatabaseWorker I/O error: {type(e).__name__}: {e}")
+            self.error_occurred.emit(f"Failed to access database file: {e}")
+            self.initialized.emit(False)
+        except Exception as e:
+            logger.critical(
+                f"DatabaseWorker init failed ({type(e).__name__}): {e}\n{traceback.format_exc()}"
+            )
             self.error_occurred.emit("Failed to connect to database.")
             self.initialized.emit(False)
 
@@ -132,8 +142,12 @@ class DatabaseWorker(QObject):
             if self.db_service:
                 self.db_service.close()
                 logger.info("Database connection closed in worker cleanup.")
-        except Exception:
-            logger.error(f"Error during worker cleanup: {traceback.format_exc()}")
+        except sqlite3.Error as e:
+            logger.error(f"Database error during cleanup ({type(e).__name__}): {e}")
+        except Exception as e:
+            logger.error(
+                f"Error during worker cleanup ({type(e).__name__}): {e}\n{traceback.format_exc()}"
+            )
 
     @Slot()
     def load_events(self) -> None:

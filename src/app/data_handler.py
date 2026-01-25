@@ -23,6 +23,19 @@ class DataHandler(QObject):
     rather than directly manipulating UI components. The MainWindow is
     responsible for connecting to these signals and updating its own widgets.
 
+    Thread Safety:
+        This class runs in the main (GUI) thread. All slot methods are connected
+        to worker signals via QueuedConnection, which ensures that slot execution
+        happens in the main thread even though signals are emitted from the worker
+        thread. The cached data (_cached_events, _cached_entities) is safely
+        accessed because:
+        1. Slots run in the main thread (via QueuedConnection)
+        2. All data access happens within these slots
+        3. No concurrent access occurs between threads
+
+        IMPORTANT: This class must remain in the main thread. If ever moved to
+        another thread, thread safety guarantees would be violated.
+
     Handles:
     - Processing loaded data (events, entities, maps, longform)
     - Emitting signals for UI updates
@@ -67,6 +80,21 @@ class DataHandler(QObject):
         Note: No longer requires MainWindow reference - uses signals instead.
         """
         super().__init__()
+
+        # Thread safety assertion: DataHandler must run in the main GUI thread
+        from PySide6.QtCore import QThread
+        from PySide6.QtWidgets import QApplication
+
+        app = QApplication.instance()
+        if app is not None:
+            main_thread = app.thread()
+            current_thread = QThread.currentThread()
+            if current_thread != main_thread:
+                raise RuntimeError(
+                    f"DataHandler must be created in the main thread. "
+                    f"Current thread: {current_thread}, Main thread: {main_thread}"
+                )
+
         self._cached_events: List[Event] = []
         self._cached_entities: List[Entity] = []
         self._pending_select_type: Optional[str] = None
