@@ -252,6 +252,121 @@ def test_event_persistence(db_service):
 
 GUI tests should:
 - Use the `qtbot` fixture from pytest-qt
+- Test user interactions and UI state
+- Use in-memory database
+- Be marked with `@pytest.mark.integration`
+
+Example:
+
+```python
+import pytest
+from src.gui.widgets.entity_editor import EntityEditor
+
+@pytest.mark.integration
+def test_entity_editor_save(qtbot, db_service):
+    """Test that entity editor saves changes."""
+    editor = EntityEditor(db_service)
+    qtbot.addWidget(editor)
+    
+    # Simulate user input
+    editor.name_edit.setText("Test Entity")
+    editor.type_combo.setCurrentText("character")
+    
+    # Trigger save
+    qtbot.mouseClick(editor.save_button, Qt.LeftButton)
+    
+    # Verify database update
+    assert editor.entity_id is not None
+```
+
+## Coverage Requirements
+
+The project aims for **95%+ code coverage** for core business logic:
+
+```bash
+# Generate coverage report
+pytest --cov=src --cov-report=html
+
+# Open coverage report
+open htmlcov/index.html  # macOS
+xdg-open htmlcov/index.html  # Linux
+start htmlcov\index.html  # Windows
+```
+
+**Coverage Priorities:**
+1. **Core modules** (`src/core/`) - 100% coverage required
+2. **Commands** (`src/commands/`) - 100% coverage required
+3. **Services** (`src/services/`) - 95%+ coverage
+4. **GUI** (`src/gui/`) - 80%+ coverage (focus on logic, not UI boilerplate)
+
+## Continuous Integration
+
+Tests run automatically on:
+- Every push to main branch
+- Every pull request
+- Pre-commit hooks (optional subset)
+
+See `.github/workflows/` for CI configuration.
+
+## Test Fixtures
+
+Common fixtures are defined in `tests/conftest.py`:
+
+| Fixture | Purpose | Scope |
+|---------|---------|-------|
+| `qapp` | QApplication instance | Session |
+| `db_service` | In-memory DatabaseService | Function |
+| `sample_event` | Sample Event instance | Function |
+| `sample_entity` | Sample Entity instance | Function |
+
+## Performance Testing
+
+For performance-critical operations, use benchmarks:
+
+```python
+import pytest
+
+@pytest.mark.slow
+def test_large_dataset_performance(db_service):
+    """Test performance with 10,000 entities."""
+    import time
+    start = time.time()
+    
+    # Create 10,000 entities
+    for i in range(10000):
+        db_service.create_entity(f"Entity {i}", "character")
+    
+    elapsed = time.time() - start
+    assert elapsed < 5.0  # Should complete in under 5 seconds
+```
+
+## Best Practices
+
+1. **Isolate tests** - Each test should be independent
+2. **Use fixtures** - Avoid duplicating setup code
+3. **Clear names** - Test names should describe what they test
+4. **One assertion per test** - Keep tests focused (or use subtests)
+5. **Mock external services** - Don't hit real APIs in tests
+6. **Clean up resources** - Close files, connections, etc.
+
+## Related Documentation
+
+- **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development setup
+- **[DATABASE.md](DATABASE.md)** - Database architecture
+- **[QT_THREADING_SAFETY.md](QT_THREADING_SAFETY.md)** - Threading patterns
+- **[Design.md](../Design.md)** - Architecture specification
+
+---
+
+**Test Count:** 118+ test files  
+**Coverage Target:** 95%+ for core modules  
+**Framework:** pytest + pytest-qt  
+**CI:** Automated on push/PR
+
+### GUI Tests
+
+GUI tests should:
+- Use the `qtbot` fixture from pytest-qt
 - Use the `qapp` fixture for QApplication
 - Patch menu creation to avoid segfaults (see existing tests)
 

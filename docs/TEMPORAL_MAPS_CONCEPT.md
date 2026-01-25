@@ -1,5 +1,27 @@
 # ProjektKraken: Temporal Map Markers
-## Architectural Specification and Implementation Strategy
+## Architectural Specification and Implementation Guide
+
+**Status:** ✅ **Implemented** (Core features functional as of v0.8.0)  
+**Document Type:** Technical specification with implementation notes  
+**Last Updated:** 2026-01-25
+
+---
+
+## Implementation Status
+
+This document describes the temporal maps system which is **fully implemented** in ProjektKraken:
+
+✅ **Implemented Features:**
+- Trajectory interpolation with keyframes
+- OGC MF-JSON (Moving Features JSON) storage format
+- `TrajectoryRepository` for persistence
+- Temporal marker system with time-based coordinates
+- Binary search optimization for keyframe lookup
+- Map widget integration with temporal scrubbing
+
+**Note:** This document contains both the original architectural vision and implementation details. Some aspirational features (like real-time "clock mode" UI enhancements) are noted as future improvements.
+
+---
 
 ## 1. Executive Summary: The Fourth Dimension in Digital Cartography
 The visualization of geospatial data has traditionally been bound by the constraints of static representation—a snapshot of a world frozen in a single moment. However, the narrative requirements of ProjektKraken, specifically in the domains of storytelling, world-building, and historical simulation, demand a fundamental paradigm shift. The "Temporal Map Markers" initiative represents the critical evolution from static 2D maps to dynamic 4D visualizations. This report provides an exhaustive technical analysis and implementation roadmap for this feature, aiming to transform the map from a passive reference image into a living, breathing non-linear editor (NLE) for spatial history.
