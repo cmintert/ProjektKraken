@@ -6,10 +6,11 @@ Provides a split-view interface for editing longform documents:
 """
 
 import logging
+import os
 from typing import Any, Dict, List, Optional
 
 from PySide6.QtCore import QSize, Qt, Signal, Slot
-from PySide6.QtGui import QCloseEvent, QKeySequence, QShortcut
+from PySide6.QtGui import QCloseEvent, QKeySequence, QShortcut, QIcon
 from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
@@ -23,6 +24,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
 )
 
+from src.core.paths import get_resource_path
 from src.gui.utils.shortcut_manager import ShortcutManager
 from src.gui.utils.style_helper import StyleHelper
 
@@ -129,9 +131,22 @@ class LongformEditorWidget(QWidget):
             "color: #FF9900; margin-left: 10px; font-weight: bold;"
         )
         self.url_label.setOpenExternalLinks(True)
-        # Make it clickable manually since QLabel link handling can be
-        # tricky without HTML
         toolbar.addWidget(self.url_label)
+
+        # Spacer to push Find button to far right
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        toolbar.addWidget(spacer)
+
+        # Find Button (Discoverability - Far Right)
+        search_icon_path = get_resource_path(
+            os.path.join("default_assets", "icons", "ui_icons", "search.svg")
+        )
+        self.btn_find = QPushButton()
+        self.btn_find.setIcon(QIcon(search_icon_path))
+        self.btn_find.setToolTip(f"Find Text ({ShortcutManager.FIND.sequence})")
+        self.btn_find.clicked.connect(self._toggle_search)
+        toolbar.addWidget(self.btn_find)
 
         layout.addWidget(toolbar)
 
@@ -146,15 +161,29 @@ class LongformEditorWidget(QWidget):
         self.search_input.setPlaceholderText("Find text...")
         self.search_input.returnPressed.connect(self._perform_search_next)
 
-        btn_prev = QPushButton("Previous")
+        # Icons
+        icon_up_path = get_resource_path(
+            os.path.join("default_assets", "icons", "ui_icons", "arrow_up.svg")
+        )
+        icon_down_path = get_resource_path(
+            os.path.join("default_assets", "icons", "ui_icons", "arrow_down.svg")
+        )
+        icon_close_path = get_resource_path(
+            os.path.join("default_assets", "icons", "ui_icons", "close.svg")
+        )
+
+        btn_prev = QPushButton()
+        btn_prev.setIcon(QIcon(icon_up_path))
         btn_prev.setToolTip("Find Previous (Shift+Enter)")
         btn_prev.clicked.connect(self._perform_search_prev)
 
-        btn_next = QPushButton("Next")
+        btn_next = QPushButton()
+        btn_next.setIcon(QIcon(icon_down_path))
         btn_next.setToolTip("Find Next (Enter)")
         btn_next.clicked.connect(self._perform_search_next)
 
-        btn_close = QPushButton("Close")
+        btn_close = QPushButton()
+        btn_close.setIcon(QIcon(icon_close_path))
         btn_close.setToolTip("Close Search (Esc)")
         btn_close.clicked.connect(self._hide_search)
 
@@ -356,12 +385,8 @@ class LongformEditorWidget(QWidget):
         if not text:
             return
 
-        found = self.content.find_text(text, backward=False)
-        if not found:
-            # Wrap around or show feedback?
-            # Standard browser behavior is wrap around often, or "Not found"
-            # For this MVP, we just don't move.
-            pass
+        self.content.find_text(text, backward=False)
+        # Note: If not found, we could implement wrap-around logic here
 
     def _perform_search_prev(self) -> None:
         """Search for previous occurrence."""
@@ -369,7 +394,7 @@ class LongformEditorWidget(QWidget):
         if not text:
             return
 
-        found = self.content.find_text(text, backward=True)
+        self.content.find_text(text, backward=True)
 
     def set_refresh_button_visible(self, visible: bool) -> None:
         """Sets the visibility of the manual refresh button."""

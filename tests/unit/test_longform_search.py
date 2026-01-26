@@ -17,8 +17,8 @@ def editor_widget(qtbot):
 
     widget = LongformEditorWidget()
     qtbot.addWidget(widget)
-    widget.show()
-    qtbot.waitForWindowShown(widget)
+    with qtbot.waitExposed(widget):
+        widget.show()
     return widget
 
 
