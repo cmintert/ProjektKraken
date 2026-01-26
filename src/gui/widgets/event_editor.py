@@ -135,7 +135,10 @@ class EventEditorWidget(QWidget):
         self.btn_inject.setText("Fast Inject")  # Down arrow
         self.btn_inject.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.btn_inject.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
-        self.btn_inject.setStyleSheet(StyleHelper.get_tool_button_style())
+        self.btn_inject.setStyleSheet(
+            StyleHelper.get_tool_button_style()
+            + " QToolButton::menu-indicator { image: none; }"
+        )
 
         self.inject_menu = QMenu(self.btn_inject)
         self.btn_inject.setMenu(self.inject_menu)
