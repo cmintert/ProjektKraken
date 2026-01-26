@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-26
 ### Changed
-- Refactor Longform styling with Card layout and centralized themes
+- Refactor Longform styling to use centralized ThemeManager and StyleHelper
 
 
 *This changelog was automatically generated.*
