@@ -299,3 +299,11 @@ def test_external_link_opens_browser(content_widget):
 def test_open_links_disabled(content_widget):
     """Test that openLinks is disabled to prevent internal resolution."""
     assert content_widget.openLinks() is False
+
+
+def test_styling_applied(content_widget):
+    """Test that QSS styling including scrollbars is applied."""
+    style = content_widget.styleSheet()
+    assert "QTextBrowser" in style
+    assert "QScrollBar:vertical" in style
+    assert "QScrollBar:horizontal" in style

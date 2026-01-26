@@ -279,20 +279,20 @@ class LongformContentWidget(QTextBrowser):
         """Apply widget-level styling (background, scrollbars)."""
         tm = ThemeManager()
         theme = tm.get_theme()
+        from src.gui.utils.style_helper import StyleHelper
 
-        bg_color = theme.get("app_bg", "#1e1e1e")  # Dark default
-        # If theme has 'input_bg', maybe use that? Or transparent?
-        # QTextBrowser is usually on a dock, so app_bg or surface.
-        # Let's match editor style roughly.
+        bg_color = theme.get("app_bg", "#1e1e1e")
+        scrollbar_style = StyleHelper.get_scrollbar_style()
 
-        self.setStyleSheet(
-            f"""
+        # Combine specific browser style with global scrollbar style
+        style = f"""
             QTextBrowser {{
                 background-color: {bg_color};
                 border: none;
             }}
+            {scrollbar_style}
         """
-        )
+        self.setStyleSheet(style)
 
     @Slot(QUrl)
     def _on_anchor_clicked(self, url: QUrl) -> None:
