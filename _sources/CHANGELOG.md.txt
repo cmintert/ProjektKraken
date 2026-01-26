@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-26
-### Changed
-- Refactor Longform styling to use centralized ThemeManager and StyleHelper
+### Internal
+- Implement discoverable Text Search in Longform Editor
 
 
 *This changelog was automatically generated.*
