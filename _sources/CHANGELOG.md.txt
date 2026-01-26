@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-26
-### Fixed
-- Fix Longform content interaction and selection synchronization
+### Changed
+- Refactor Longform styling with Card layout and centralized themes
 
 
 *This changelog was automatically generated.*
