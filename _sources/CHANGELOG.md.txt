@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-26
-### Fixed
-- Fix tests: mock QMessageBox in UnifiedList, add sqlite3 import to Worker, fix WikiTextEdit interactions
+### Changed
+- Refactor Longform Editor to modular structure and optimize content display
 
 
 *This changelog was automatically generated.*
