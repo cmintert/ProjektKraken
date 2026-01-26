@@ -10,9 +10,9 @@
         "error": "#CF6679",
         "scrollbar_bg": "#2B2B2B",
         "scrollbar_handle": "#555555",
-        "font_size_h1": "16pt",
-        "font_size_h2": "14pt",
-        "font_size_h3": "12pt",
+        "font_size_h1": "14pt",
+        "font_size_h2": "12pt",
+        "font_size_h3": "11pt",
         "font_size_body": "10pt"
     },
     "light_mode": {
@@ -26,9 +26,9 @@
         "error": "#B00020",
         "scrollbar_bg": "#F0F0F0",
         "scrollbar_handle": "#C0C0C0",
-        "font_size_h1": "16pt",
-        "font_size_h2": "14pt",
-        "font_size_h3": "12pt",
+        "font_size_h1": "14pt",
+        "font_size_h2": "12pt",
+        "font_size_h3": "11pt",
         "font_size_body": "10pt"
     },
     "fantasy_mode": {
@@ -42,9 +42,9 @@
         "error": "#CF6679",
         "scrollbar_bg": "#24211C",
         "scrollbar_handle": "#5A5347",
-        "font_size_h1": "18pt",
-        "font_size_h2": "15pt",
-        "font_size_h3": "13pt",
+        "font_size_h1": "15pt",
+        "font_size_h2": "13pt",
+        "font_size_h3": "12pt",
         "font_size_body": "11pt"
     }
 }

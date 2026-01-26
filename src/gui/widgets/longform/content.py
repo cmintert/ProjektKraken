@@ -44,37 +44,42 @@ class LongformContentWidget(QTextBrowser):
             sequence: Ordered list of items from build_longform_sequence.
 
         """
-        lines = []
+        html_parts = []
 
         for idx, item in enumerate(sequence):
-            # Add anchor for navigation (HTML anchor)
-            # We use an empty span or div with id because <a name> is older HTML
-            # Markdown extension 'attr_list' might be needed for IDs on headers,
-            # but standard HTML injection works fine in Markdown.
-            lines.append(f'<a name="item-{idx}"></a>')
-
-            # Add heading
-            heading_level = item["heading_level"]
+            # Pre-process wikilinks in content and title
+            content_md = item.get("content", "").strip()
             title = item["meta"].get("title_override") or item["name"]
 
-            # Markdown Heading
-            heading = "#" * heading_level + " " + title
-            lines.append(heading)
-            lines.append("")
+            heading_level = item["heading_level"]
+            heading_html = f"<h{heading_level}>{title}</h{heading_level}>"
 
-            # Add content
-            content = item.get("content", "").strip()
-            if content:
-                lines.append(content)
-                lines.append("")
+            # Render content markdown
+            content_html = (
+                self._render_markdown_fragment(content_md) if content_md else ""
+            )
 
-            lines.append("")
-            lines.append("---")  # Horizontal rule for separation
-            lines.append("")
+            # Build Card HTML using Table for robust Qt rendering
+            # Cellpadding matches CSS padding expectations
+            table_type = item.get("table", "unknown")
+            card_html = (
+                f'<table class="card-table type-{table_type}" width="100%" '
+                f'cellpadding="20" cellspacing="0">'
+                f"<tr>"
+                f'<td class="card-cell">'
+                f'<a name="item-{idx}"></a>'
+                f"{heading_html}"
+                f"{content_html}"
+                f"</td>"
+                f"</tr>"
+                f"</table>"
+                f"<br>"
+            )
+            html_parts.append(card_html)
 
-        full_markdown = "\n".join(lines)
-        html = self._render_to_html(full_markdown)
-        self.setHtml(html)
+        body_html = "\n".join(html_parts)
+        final_html = self._wrap_html(body_html)
+        self.setHtml(final_html)
 
     def scroll_to_item(self, item_index: int) -> None:
         """Scroll to a specific item in the document.
@@ -85,18 +90,9 @@ class LongformContentWidget(QTextBrowser):
         """
         self.scrollToAnchor(f"item-{item_index}")
 
-    def _render_to_html(self, md_text: str) -> str:
-        """Convert Markdown text to HTML with WikiLinks and CSS.
-
-        Args:
-            md_text: The raw markdown text.
-
-        Returns:
-            str: Full HTML document.
-
-        """
+    def _render_markdown_fragment(self, md_text: str) -> str:
+        """Convert a fragment of Markdown to HTML (no CSS/HTML wrapping)."""
         # 1. Process WikiLinks [[Target|Label]] -> Markdown [Label](Target)
-        # Regex: [[ (group 1: target) ( | (group 2: label) )? ]]
         pattern = re.compile(r"\[\[([^]|]+)(?:\|([^]]+))?\]\]")
 
         def replace_link(match: re.Match) -> str:
@@ -108,15 +104,11 @@ class LongformContentWidget(QTextBrowser):
         md_text = pattern.sub(replace_link, md_text)
 
         # 2. Convert to HTML
-        # Extensions:
-        # - extra: tables, attrib sets, etc.
-        # - nl2br: newlines become <br>
-        html_body = markdown.markdown(md_text, extensions=["extra", "nl2br"])
+        return markdown.markdown(md_text, extensions=["extra", "nl2br"])
 
-        # 3. Add CSS
+    def _wrap_html(self, html_body: str) -> str:
+        """Wrap HTML body with CSS and standard tags."""
         css = self._get_theme_css()
-
-        # 4. Wrap
         return f"""
         <html>
         <head>
@@ -128,6 +120,14 @@ class LongformContentWidget(QTextBrowser):
         </html>
         """
 
+    def _render_to_html(self, md_text: str) -> str:
+        """Deprecated: Convert Markdown text to HTML with WikiLinks and CSS.
+
+        Kept for compatibility if needed, but load_content uses new pipeline.
+        """
+        html_fragment = self._render_markdown_fragment(md_text)
+        return self._wrap_html(html_fragment)
+
     def _get_theme_css(self) -> str:
         """Generate CSS based on current theme."""
         tm = ThemeManager()
@@ -135,7 +135,10 @@ class LongformContentWidget(QTextBrowser):
 
         text_color = theme.get("text_main", "#E0E0E0")
         link_color = theme.get("accent_secondary", "#2980b9")
-        # bg_color = theme.get("app_bg", "#2B2B2B") # Fallback
+        surface_color = theme.get("surface", "#323232")
+        border_color = theme.get("border", "#454545")
+        primary_color = theme.get("primary", "#FF9900")
+        # bg_color = theme.get("app_bg", "#2B2B2B")
 
         fs_h1 = theme.get("font_size_h1", "18pt")
         fs_h2 = theme.get("font_size_h2", "16pt")
@@ -147,34 +150,125 @@ class LongformContentWidget(QTextBrowser):
                 color: {text_color};
                 font-family: "Segoe UI", sans-serif;
                 font-size: {fs_body};
+                line-height: 1.6;
+                margin: 0;
+                padding: 20px;
+                background-color: transparent;
             }}
+
+            /* Card Style (Table-based) */
+            .card-table {{
+                margin-bottom: 20px;
+                background-color: {surface_color};
+                border-style: solid;
+                border: 1px solid {border_color};
+            }}
+            td.card-cell {{
+                background-color: {surface_color};
+                padding: 10px;
+                color: {text_color};
+            }}
+
             a {{
                 color: {link_color};
                 text-decoration: none;
+                font-weight: 600;
             }}
             h1 {{
                 font-size: {fs_h1};
-                margin-top: 10px;
-                margin-bottom: 5px;
-                color: {text_color};
+                margin-top: 0;
+                margin-bottom: 12px;
+                color: {primary_color};
+                border-bottom: 1px solid {border_color};
+                padding-bottom: 8px;
             }}
+
+            /* Event specific styling: Blue Headings */
+            .type-events h1 {{
+                color: {link_color};
+            }}
+
             h2 {{
                 font-size: {fs_h2};
-                margin-top: 8px;
-                margin-bottom: 4px;
+                margin-top: 16px;
+                margin-bottom: 10px;
                 color: {text_color};
             }}
             h3 {{
                 font-size: {fs_h3};
-                margin-top: 6px;
-                margin-bottom: 3px;
+                margin-top: 12px;
+                margin-bottom: 8px;
                 color: {text_color};
+                font-weight: 600;
             }}
-            p {{ margin-bottom: 5px; line-height: 1.4; }}
-            hr {{ border-color: #555; border-style: solid; }}
+            p {{
+                margin-bottom: 12px;
+            }}
+            hr {{
+                border-color: {border_color};
+                border-style: solid;
+                margin: 20px 0;
+            }}
+
+            /* Blockquotes */
+            blockquote {{
+                border-left: 4px solid {accent_color};
+                margin: 10px 0;
+                padding-left: 10px;
+                color: {text_color};
+                font-style: italic;
+                background-color: transparent;
+            }}
+
+            /* Code Blocks */
+            pre {{
+                background-color: rgba(0,0,0,0.2);
+                border: 1px solid {border_color};
+                border-radius: 4px;
+                padding: 10px;
+                font-family: "Consolas", monospace;
+                white-space: pre-wrap;
+            }}
+            code {{
+                font-family: "Consolas", monospace;
+                background-color: rgba(0,0,0,0.2);
+                padding: 2px 4px;
+                border-radius: 3px;
+            }}
+
+            /* Lists */
+            ul, ol {{
+                margin-bottom: 12px;
+                padding-left: 24px;
+            }}
+            li {{
+                margin-bottom: 4px;
+            }}
+
+            /* Tables */
+            table {{
+                border-collapse: collapse;
+                width: 100%;
+                margin-bottom: 16px;
+            }}
+            th {{
+                background-color: rgba(0,0,0,0.1);
+                color: {primary_color};
+                padding: 8px;
+                text-align: left;
+                border-bottom: 2px solid {border_color};
+            }}
+            td {{
+                padding: 8px;
+                border-bottom: 1px solid {border_color};
+            }}
         """.format(
             text_color=text_color,
             link_color=link_color,
+            surface_color=surface_color,
+            border_color=border_color,
+            primary_color=primary_color,
+            accent_color=link_color,  # Re-using accent secondary for blockquote border
             fs_h1=fs_h1,
             fs_h2=fs_h2,
             fs_h3=fs_h3,
