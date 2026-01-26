@@ -37,7 +37,7 @@ class DraggableTabBar(QTabBar):
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Track drag start position."""
         if event.button() == Qt.MouseButton.LeftButton:
-            self._drag_start_pos = event.pos()
+            self._drag_start_pos = event.position().toPoint()
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
@@ -45,7 +45,7 @@ class DraggableTabBar(QTabBar):
         if not (event.buttons() & Qt.MouseButton.LeftButton):
             return super().mouseMoveEvent(event)
 
-        if (event.pos() - self._drag_start_pos).manhattanLength() < 20:
+        if (event.position().toPoint() - self._drag_start_pos).manhattanLength() < 20:
             return super().mouseMoveEvent(event)
 
         idx = self.tabAt(self._drag_start_pos)
@@ -81,9 +81,14 @@ class DraggableTabBar(QTabBar):
         widget = source_tab_widget.widget(source_idx)
         title = source_tab_widget.tabText(source_idx)
 
+        target_name = (
+            source_tab_widget.objectName()
+            if hasattr(source_tab_widget, "objectName")
+            else None
+        )
         logger.debug(
-            f"DraggableTabBar.dropEvent: source_idx={source_idx}, title='{title}', "
-            f"source_tab_widget={source_tab_widget.objectName() if hasattr(source_tab_widget, 'objectName') else None}"
+            f"DraggableTabBar.dropEvent: source_idx={source_idx}, "
+            f"title='{title}', source_tab_widget={target_name}"
         )
 
         # Remove from source
@@ -91,15 +96,13 @@ class DraggableTabBar(QTabBar):
 
         # Insert into this tab widget
         target_tab_widget = self.parent()
-        drop_idx = self.tabAt(event.pos())
+        drop_idx = self.tabAt(event.position().toPoint())
         if drop_idx < 0:
             drop_idx = self.count()
         target_tab_widget.insertTab(drop_idx, widget, title)
         target_tab_widget.setCurrentIndex(drop_idx)
 
-        logger.debug(
-            "DraggableTabBar.dropEvent: moved tab, scheduling cleanup check for source pane"
-        )
+        logger.debug("DraggableTabBar.dropEvent: moved tab, scheduling cleanup")
 
         # Cleanup empty source pane - schedule on next tick
         QTimer.singleShot(0, lambda: self._cleanup_empty_pane(source_tab_widget))
@@ -176,7 +179,7 @@ class DraggableTabWidget(QTabWidget):
         If dropped on the body (not the tab bar), create a new pane.
         """
         # Let the tab bar handle it if the drop is on the tab bar
-        local_pos = event.pos()
+        local_pos = event.position().toPoint()
         tab_bar_rect = self.tabBar().rect()
         if tab_bar_rect.contains(self.tabBar().mapFrom(self, local_pos)):
             return  # Tab bar will handle
@@ -197,9 +200,14 @@ class DraggableTabWidget(QTabWidget):
         widget = source_tab_widget.widget(source_idx)
         title = source_tab_widget.tabText(source_idx)
 
+        target_name = (
+            source_tab_widget.objectName()
+            if hasattr(source_tab_widget, "objectName")
+            else None
+        )
         logger.debug(
             f"dropEvent: source_idx={source_idx}, title='{title}', "
-            f"source_tab_widget={source_tab_widget.objectName() if hasattr(source_tab_widget, 'objectName') else None}"
+            f"source_tab_widget={target_name}"
         )
 
         # Remove from source

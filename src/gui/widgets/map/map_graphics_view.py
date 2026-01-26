@@ -157,8 +157,8 @@ class KeyframeGizmo(QGraphicsItemGroup):
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Handle icon clicks - clock for Clock Mode, X for delete."""
-        # Determine which icon was clicked based on x position
-        click_x = event.pos().x()
+        # Determine which icon was clicked based on local position
+        click_x = event.position().x()
 
         if click_x < GIZMO_SIZE + 1:
             # Clock icon clicked - enter Clock Mode
@@ -549,7 +549,8 @@ class MapGraphicsView(QGraphicsView):
         If clicking a marker, disable view panning. If clicking background, enable view
         panning.
         """
-        item = self.itemAt(event.pos())
+        pos = event.position().toPoint()
+        item = self.itemAt(pos)
 
         if isinstance(item, MarkerItem):
             self.setDragMode(QGraphicsView.DragMode.NoDrag)
@@ -571,7 +572,8 @@ class MapGraphicsView(QGraphicsView):
 
         if self.pixmap_item:
             # Map view pos to scene pos
-            scene_pos = self.mapToScene(event.pos())
+            pos = event.position().toPoint()
+            scene_pos = self.mapToScene(pos)
 
             # Check if within map bounds (convert to item-local coordinates)
             item_pos = self.pixmap_item.mapFromScene(scene_pos)
@@ -774,13 +776,16 @@ class MapGraphicsView(QGraphicsView):
             return
 
         # Check if we clicked on a marker
-        item = self.itemAt(event.pos())
+        pos = event.pos()  # QContextMenuEvent uses pos() vs position() mostly
+        # but let's check if it's deprecated too.
+        # Qt6 recommends pos() for ContextMenuEvent usually.
+        item = self.itemAt(pos)
         if isinstance(item, MarkerItem):
             self._show_marker_context_menu(item, event.globalPos())
         else:
             # Clicked on map (or empty space)
             # Convert screen pos to scene pos
-            scene_pos = self.mapToScene(event.pos())
+            scene_pos = self.mapToScene(pos)
 
             # Check if within map bounds (convert to item-local coordinates)
             item_pos = self.pixmap_item.mapFromScene(scene_pos)

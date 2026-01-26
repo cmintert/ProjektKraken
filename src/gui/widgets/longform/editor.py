@@ -209,6 +209,7 @@ class LongformEditorWidget(QWidget):
         # Right: Content view
         self.content = LongformContentWidget()
         self.content.link_clicked.connect(self.link_clicked.emit)
+        self.content.item_selected.connect(self.item_selected.emit)
 
         splitter.addWidget(self.outline)
         splitter.addWidget(self.content)

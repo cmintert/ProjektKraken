@@ -5,11 +5,12 @@ Handles the rendering of the longform document content using a lightweight QText
 
 import logging
 import re
+import contextlib
 from typing import Any, Dict, List, Optional
 
 import markdown
 from PySide6.QtCore import QUrl, Signal, Slot
-from PySide6.QtGui import QDesktopServices
+from PySide6.QtGui import QDesktopServices, QTextCursor, QTextDocument
 from PySide6.QtWidgets import QTextBrowser, QWidget
 
 from src.core.theme_manager import ThemeManager
@@ -24,18 +25,59 @@ class LongformContentWidget(QTextBrowser):
     """
 
     link_clicked = Signal(str)  # Emits target (e.g., "id:123" or "Name")
+    item_selected = Signal(str, str)  # Emits table, id
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the content widget."""
         super().__init__(parent)
         self.setOpenLinks(False)  # We handle links manually
         self.anchorClicked.connect(self._on_anchor_clicked)
+        self._sequence = []
+
+        # Connect to theme changes
+        ThemeManager().theme_changed.connect(lambda _: self._apply_theme())
 
         # Apply initial theme
         self._apply_theme()
 
-        # Connect to theme changes
-        ThemeManager().theme_changed.connect(lambda _: self._apply_theme())
+    def mousePressEvent(self, event) -> None:
+        """Detect card clicks vs link clicks."""
+        pos = event.position().toPoint()
+
+        if self.anchorAt(pos):
+            # Clicked on a real link (WikiLink or Title link)
+            super().mousePressEvent(event)
+            return
+
+        # Clicked on a card background/text area that is NOT a link
+        cursor = self.cursorForPosition(pos)
+        if (table := cursor.currentTable()) and (
+            idx := self._get_item_index_from_table(table)
+        ) is not None:
+            if 0 <= idx < len(self._sequence):
+                item = self._sequence[idx]
+                self.item_selected.emit(item["table"], item["id"])
+
+        super().mousePressEvent(event)
+
+    def _get_item_index_from_table(self, table) -> Optional[int]:
+        """Maps a QTextTable to its index in self._sequence."""
+        # Check first cell, first character's anchorName
+        cell = table.cellAt(0, 0)
+        cursor = cell.firstCursorPosition()
+
+        # The space we inserted <a name="item-idx"> </a> should hold the anchor
+        # Look at the first few characters just in case of formatting shifts
+        for _ in range(5):
+            names = cursor.charFormat().anchorNames()
+            if names and (name := names[0]).startswith("item-"):
+                with contextlib.suppress(ValueError, IndexError):
+                    return int(name.split("-")[1])
+            cursor.movePosition(QTextCursor.MoveOperation.NextCharacter)
+            if cursor.atEnd():
+                break
+
+        return None
 
     def load_content(self, sequence: List[Dict[str, Any]]) -> None:
         """Load and display the longform sequence as continuous text.
@@ -44,6 +86,7 @@ class LongformContentWidget(QTextBrowser):
             sequence: Ordered list of items from build_longform_sequence.
 
         """
+        self._sequence = sequence
         html_parts = []
 
         for idx, item in enumerate(sequence):
@@ -53,6 +96,13 @@ class LongformContentWidget(QTextBrowser):
 
             heading_level = item["heading_level"]
             heading_html = f"<h{heading_level}>{title}</h{heading_level}>"
+
+            # Wrap heading in a link for selection/navigation
+            # We use id: scheme which navigation_coordinator already handles
+            heading_link = (
+                f'<a href="id:{item["id"]}" style="text-decoration: none; '
+                f'color: inherit;">{heading_html}</a>'
+            )
 
             # Render content markdown
             content_html = (
@@ -67,8 +117,8 @@ class LongformContentWidget(QTextBrowser):
                 f'cellpadding="20" cellspacing="0">'
                 f"<tr>"
                 f'<td class="card-cell">'
-                f'<a name="item-{idx}"></a>'
-                f"{heading_html}"
+                f'<a name="item-{idx}"> </a>'  # Space marker for click detection
+                f"{heading_link}"
                 f"{content_html}"
                 f"</td>"
                 f"</tr>"
@@ -304,8 +354,6 @@ class LongformContentWidget(QTextBrowser):
         Returns:
             bool: True if found, False otherwise.
         """
-        from PySide6.QtGui import QTextDocument
-
         flags = QTextDocument.FindFlag(0)
         if backward:
             flags |= QTextDocument.FindFlag.FindBackward
