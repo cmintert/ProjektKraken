@@ -280,4 +280,11 @@ def test_external_link_opens_browser(content_widget):
     with patch("PySide6.QtGui.QDesktopServices.openUrl") as mock_open:
         content_widget._on_anchor_clicked(QUrl("https://google.com"))
 
+        content_widget._on_anchor_clicked(QUrl("https://google.com"))
+
         mock_open.assert_called_with(QUrl("https://google.com"))
+
+
+def test_open_links_disabled(content_widget):
+    """Test that openLinks is disabled to prevent internal resolution."""
+    assert content_widget.openLinks() is False

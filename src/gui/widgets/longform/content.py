@@ -28,7 +28,7 @@ class LongformContentWidget(QTextBrowser):
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the content widget."""
         super().__init__(parent)
-        self.setOpenExternalLinks(False)  # We handle links manually
+        self.setOpenLinks(False)  # We handle links manually
         self.anchorClicked.connect(self._on_anchor_clicked)
 
         # Apply initial theme
