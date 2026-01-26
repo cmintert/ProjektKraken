@@ -30,6 +30,9 @@ class ShortcutManager:
 
     CREATE_MAP = KeyboardShortcut("Create Map", "Ctrl+M", "Create a new map")
 
+    # Search
+    FIND = KeyboardShortcut("Find", "Ctrl+F", "Find text in document")
+
     # Formatting Shortcuts (WikiTextEdit)
     FORMAT_BOLD = KeyboardShortcut("Bold", "Ctrl+B", "Toggle bold")
     FORMAT_ITALIC = KeyboardShortcut("Italic", "Ctrl+I", "Toggle italic")

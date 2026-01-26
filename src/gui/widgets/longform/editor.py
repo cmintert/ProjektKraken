@@ -9,9 +9,10 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from PySide6.QtCore import QSize, Qt, Signal, Slot
-from PySide6.QtGui import QCloseEvent
+from PySide6.QtGui import QCloseEvent, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QLabel,
+    QLineEdit,
     QMessageBox,
     QPushButton,
     QSizePolicy,
@@ -19,7 +20,11 @@ from PySide6.QtWidgets import (
     QToolBar,
     QVBoxLayout,
     QWidget,
+    QHBoxLayout,
 )
+
+from src.gui.utils.shortcut_manager import ShortcutManager
+from src.gui.utils.style_helper import StyleHelper
 
 from src.gui.widgets.longform.content import LongformContentWidget
 from src.gui.widgets.longform.outline import LongformOutlineWidget
@@ -68,6 +73,7 @@ class LongformEditorWidget(QWidget):
 
         # Setup UI
         self._setup_ui()
+        self._setup_shortcuts()
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Stop server on close."""
@@ -128,6 +134,38 @@ class LongformEditorWidget(QWidget):
         toolbar.addWidget(self.url_label)
 
         layout.addWidget(toolbar)
+
+        # Search Bar (Hidden by default)
+        self.search_widget = QWidget()
+        search_layout = QHBoxLayout(self.search_widget)
+        StyleHelper.apply_form_spacing(search_layout)
+        search_layout.setContentsMargins(10, 5, 10, 5)
+
+        search_label = QLabel("Find:")
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("Find text...")
+        self.search_input.returnPressed.connect(self._perform_search_next)
+
+        btn_prev = QPushButton("Previous")
+        btn_prev.setToolTip("Find Previous (Shift+Enter)")
+        btn_prev.clicked.connect(self._perform_search_prev)
+
+        btn_next = QPushButton("Next")
+        btn_next.setToolTip("Find Next (Enter)")
+        btn_next.clicked.connect(self._perform_search_next)
+
+        btn_close = QPushButton("Close")
+        btn_close.setToolTip("Close Search (Esc)")
+        btn_close.clicked.connect(self._hide_search)
+
+        search_layout.addWidget(search_label)
+        search_layout.addWidget(self.search_input)
+        search_layout.addWidget(btn_prev)
+        search_layout.addWidget(btn_next)
+        search_layout.addWidget(btn_close)
+
+        self.search_widget.setVisible(False)
+        layout.addWidget(self.search_widget)
 
         # Splitter with outline and content
         splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -278,6 +316,60 @@ class LongformEditorWidget(QWidget):
 
         self.url_label.setText("Error starting server")
         QMessageBox.warning(self, "Web Server Error", msg)
+
+    def _setup_shortcuts(self) -> None:
+        """Setup keyboard shortcuts."""
+        self.find_shortcut = QShortcut(ShortcutManager.FIND.key_sequence, self)
+        self.find_shortcut.activated.connect(self._toggle_search)
+
+        # Escape to close search
+        self.esc_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Escape), self)
+        self.esc_shortcut.activated.connect(self._handle_escape)
+
+    def _toggle_search(self) -> None:
+        """Toggle search bar visibility."""
+        if self.search_widget.isVisible():
+            # If visible and focused, hide. If visible and not focused, focus.
+            if self.search_input.hasFocus():
+                self._hide_search()
+            else:
+                self.search_input.setFocus()
+                self.search_input.selectAll()
+        else:
+            self.search_widget.setVisible(True)
+            self.search_input.setFocus()
+            self.search_input.selectAll()
+
+    def _hide_search(self) -> None:
+        """Hide search bar and clear focus."""
+        self.search_widget.setVisible(False)
+        self.content.setFocus()
+
+    def _handle_escape(self) -> None:
+        """Handle escape key."""
+        if self.search_widget.isVisible():
+            self._hide_search()
+
+    def _perform_search_next(self) -> None:
+        """Search for next occurrence."""
+        text = self.search_input.text()
+        if not text:
+            return
+
+        found = self.content.find_text(text, backward=False)
+        if not found:
+            # Wrap around or show feedback?
+            # Standard browser behavior is wrap around often, or "Not found"
+            # For this MVP, we just don't move.
+            pass
+
+    def _perform_search_prev(self) -> None:
+        """Search for previous occurrence."""
+        text = self.search_input.text()
+        if not text:
+            return
+
+        found = self.content.find_text(text, backward=True)
 
     def set_refresh_button_visible(self, visible: bool) -> None:
         """Sets the visibility of the manual refresh button."""

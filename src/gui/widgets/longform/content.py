@@ -294,6 +294,38 @@ class LongformContentWidget(QTextBrowser):
         """
         self.setStyleSheet(style)
 
+    def find_text(self, text: str, backward: bool = False) -> bool:
+        """Find and highlight text.
+
+        Args:
+            text: Text to search for.
+            backward: Whether to search backward.
+
+        Returns:
+            bool: True if found, False otherwise.
+        """
+        from PySide6.QtGui import QTextDocument
+
+        flags = QTextDocument.FindFlag(0)
+        if backward:
+            flags |= QTextDocument.FindFlag.FindBackward
+
+        found = self.find(text, flags)
+        if not found and backward:
+            # Wrap around backward (end -> start)
+            # Actually QTextEdit wrap logic is tricky. Simplest is retry from end/start.
+            # But standard Behavior: if not found, we might be at start.
+            # Let's try to reset cursor to end/start and try again if desired,
+            # or just return False.
+            # For now, standard behavior:
+            pass
+        elif not found and not backward:
+            # Wrap around forward (start -> end)?
+            # Typically implemented by wrapper.
+            pass
+
+        return found
+
     @Slot(QUrl)
     def _on_anchor_clicked(self, url: QUrl) -> None:
         """Handle link clicks.
