@@ -103,6 +103,10 @@ class NavigationCoordinator(BaseCoordinator):
         """
         logger.info(f"Navigating to target: {target}")
 
+        # Strip "id:" prefix if present
+        if target.lower().startswith("id:"):
+            target = target[3:]
+
         # Check if target is a valid UUID format
         import re
 

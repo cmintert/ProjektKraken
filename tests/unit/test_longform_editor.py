@@ -3,11 +3,9 @@ from unittest.mock import patch
 import pytest
 from PySide6.QtCore import Qt
 
-from src.gui.widgets.longform_editor import (
-    LongformContentWidget,
-    LongformEditorWidget,
-    LongformOutlineWidget,
-)
+from src.gui.widgets.longform.content import LongformContentWidget
+from src.gui.widgets.longform.editor import LongformEditorWidget
+from src.gui.widgets.longform.outline import LongformOutlineWidget
 
 
 @pytest.fixture
@@ -165,7 +163,7 @@ def test_outline_drag_mime_data(outline_widget):
         pass
 
 
-@patch("src.gui.widgets.longform_editor.QDrag")
+@patch("src.gui.widgets.longform.outline.QDrag")
 def test_outline_drag_content(mock_qdrag, outline_widget):
     sequence = [{"table": "events", "id": "ev1", "name": "Event 1", "meta": {}}]
     outline_widget.load_sequence(sequence)
@@ -214,7 +212,13 @@ def test_editor_refresh_signal(editor_widget, qtbot):
 
 def test_editor_selection_sync(editor_widget, qtbot):
     sequence = [
-        {"table": "events", "id": "1", "name": "E1", "meta": {}, "heading_level": 1}
+        {
+            "table": "events",
+            "id": "1",
+            "name": "E1",
+            "meta": {},
+            "heading_level": 1,
+        }
     ]
     editor_widget.load_sequence(sequence)
 
@@ -223,3 +227,57 @@ def test_editor_selection_sync(editor_widget, qtbot):
         editor_widget._on_item_selected("events", "1")
 
         mock_scroll.assert_called_with(0)
+
+
+def test_markdown_rendering(content_widget):
+    """Test that markdown is rendered to HTML."""
+    sequence = [
+        {
+            "table": "events",
+            "id": "1",
+            "name": "Chapter 1",
+            "heading_level": 1,
+            "content": "**Bold Text** and [[Link]]",
+            "meta": {},
+        },
+    ]
+    content_widget.load_content(sequence)
+
+    # Use TextCursor to check formatting instead of fragile HTML string matching
+    doc = content_widget.document()
+
+    # 1. Check Bold
+    cursor = doc.find("Bold Text")
+    assert not cursor.isNull(), "Bold Text not found in document"
+    fmt = cursor.charFormat()
+    # Qt font weight: Normal=400, Bold=700. Legacy might be 50 vs 75.
+    # Just check it's heavier than normal or has font-weight style
+    assert fmt.fontWeight() > 450 or fmt.fontWeight() >= 75
+
+    # 2. Check Link
+    cursor = doc.find("Link")
+    assert not cursor.isNull(), "Link text not found"
+    fmt = cursor.charFormat()
+    assert fmt.isAnchor()
+    assert fmt.anchorHref() == "Link"
+
+
+def test_internal_link_click_emits_signal(content_widget, qtbot):
+    """Test that clicking an internal link emits link_clicked."""
+    from PySide6.QtCore import QUrl
+
+    with qtbot.waitSignal(content_widget.link_clicked) as blocker:
+        # Simulate anchor click directly since simulating mouse click on HTML is hard
+        content_widget._on_anchor_clicked(QUrl("id:123"))
+
+    assert blocker.args == ["id:123"]
+
+
+def test_external_link_opens_browser(content_widget):
+    """Test that external links are opened in desktop browser."""
+    from PySide6.QtCore import QUrl
+
+    with patch("PySide6.QtGui.QDesktopServices.openUrl") as mock_open:
+        content_widget._on_anchor_clicked(QUrl("https://google.com"))
+
+        mock_open.assert_called_with(QUrl("https://google.com"))

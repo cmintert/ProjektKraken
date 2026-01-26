@@ -1,0 +1,284 @@
+"""Longform Editor Widget Module (Orchestrator).
+
+Provides a split-view interface for editing longform documents:
+- Left: Outline tree view (from outline.py)
+- Right: Continuous document view (from content.py)
+"""
+
+import logging
+from typing import Any, Dict, List, Optional
+
+from PySide6.QtCore import QSize, Qt, Signal, Slot
+from PySide6.QtGui import QCloseEvent
+from PySide6.QtWidgets import (
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QSizePolicy,
+    QSplitter,
+    QToolBar,
+    QVBoxLayout,
+    QWidget,
+)
+
+from src.gui.widgets.longform.content import LongformContentWidget
+from src.gui.widgets.longform.outline import LongformOutlineWidget
+from src.services.web_service_manager import WebServiceManager
+
+logger = logging.getLogger(__name__)
+
+
+class LongformEditorWidget(QWidget):
+    """Main longform editor widget with split view.
+
+    Left panel: Outline tree
+    Right panel: Continuous document view
+    """
+
+    # Signals
+    promote_requested = Signal(str, str, dict)  # table, id, old_meta
+    demote_requested = Signal(str, str, dict)  # table, id, old_meta
+    refresh_requested = Signal()
+    export_requested = Signal()
+    export_vault_requested = Signal()  # For Obsidian-compatible vault export
+    item_selected = Signal(str, str)  # table, id
+    item_moved = Signal(str, str, dict, dict)  # table, id, old_meta, new_meta
+    link_clicked = Signal(str)
+    show_filter_dialog_requested = Signal()
+    clear_filters_requested = Signal()
+
+    def __init__(
+        self, parent: Optional[QWidget] = None, db_path: Optional[str] = None
+    ) -> None:
+        """Initialize the longform editor."""
+        super().__init__(parent)
+        self.db_path = db_path
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+        # Set size policy to prevent dock collapse
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+        # Store current sequence
+        self._sequence = []
+
+        # Web Service Manager
+        self.web_manager = WebServiceManager(self)
+        self.web_manager.status_changed.connect(self._on_server_status_changed)
+        self.web_manager.error_occurred.connect(self._on_server_error)
+
+        # Setup UI
+        self._setup_ui()
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        """Stop server on close."""
+        self.web_manager.stop_server()
+        super().closeEvent(event)
+
+    def _setup_ui(self) -> None:
+        """Setup the user interface."""
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        # Toolbar
+        toolbar = QToolBar()
+        toolbar.setIconSize(QSize(16, 16))
+        toolbar.setStyleSheet("QToolBar { spacing: 10px; padding: 5px; }")
+
+        # Refresh Button
+        self.btn_refresh = QPushButton("Refresh")
+        self.btn_refresh.clicked.connect(self.refresh_requested.emit)
+        self.refresh_action = toolbar.addWidget(self.btn_refresh)
+
+        # Filter Button
+        btn_filter = QPushButton("Filter...")
+        btn_filter.clicked.connect(self.show_filter_dialog_requested.emit)
+        toolbar.addWidget(btn_filter)
+
+        # Clear Filters Button
+        btn_clear_filters = QPushButton("Clear Filters")
+        btn_clear_filters.clicked.connect(self.clear_filters_requested.emit)
+        toolbar.addWidget(btn_clear_filters)
+
+        # Export Button
+        btn_export = QPushButton("Export to Markdown")
+        btn_export.clicked.connect(self.export_requested.emit)
+        toolbar.addWidget(btn_export)
+
+        # Export as Vault Button (Obsidian-compatible)
+        btn_export_vault = QPushButton("Export as Vault")
+        btn_export_vault.setToolTip(
+            "Export each entity and event as separate Obsidian-compatible .md files"
+        )
+        btn_export_vault.clicked.connect(self.export_vault_requested.emit)
+        toolbar.addWidget(btn_export_vault)
+
+        # Publish Button
+        self.btn_publish = QPushButton("Publish to Web")
+        self.btn_publish.setCheckable(True)
+        self.btn_publish.clicked.connect(self._toggle_publish)
+        toolbar.addWidget(self.btn_publish)
+
+        self.url_label = QLabel("")
+        self.url_label.setStyleSheet(
+            "color: #FF9900; margin-left: 10px; font-weight: bold;"
+        )
+        self.url_label.setOpenExternalLinks(True)
+        # Make it clickable manually since QLabel link handling can be
+        # tricky without HTML
+        toolbar.addWidget(self.url_label)
+
+        layout.addWidget(toolbar)
+
+        # Splitter with outline and content
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+
+        # Left: Outline
+        self.outline = LongformOutlineWidget()
+        self.outline.item_selected.connect(self._on_item_selected)
+        self.outline.item_promoted.connect(self.promote_requested.emit)
+        self.outline.item_demoted.connect(self.demote_requested.emit)
+        self.outline.item_moved.connect(self.item_moved.emit)
+
+        # Right: Content view
+        self.content = LongformContentWidget()
+        self.content.link_clicked.connect(self.link_clicked.emit)
+
+        splitter.addWidget(self.outline)
+        splitter.addWidget(self.content)
+
+        # Set initial sizes (30% outline, 70% content)
+        splitter.setSizes([300, 700])
+
+        layout.addWidget(splitter, 1)  # Stretch factor 1
+
+        # Status bar
+        self.status_label = QLabel("No items loaded")
+        layout.addWidget(self.status_label, 0)  # Stretch factor 0
+
+    def load_sequence(self, sequence: List[Dict[str, Any]]) -> None:
+        """Load a longform sequence into the editor.
+
+        Args:
+            sequence: Ordered list from build_longform_sequence.
+
+        """
+        self._sequence = sequence
+        self.outline.load_sequence(sequence)
+        self.content.load_content(sequence)
+
+        # Update status
+        count = len(sequence)
+        self.status_label.setText(f"{count} item(s) in document")
+
+    @Slot(str, str)
+    def _on_item_selected(self, table: str, row_id: str) -> None:
+        """Handle item selection in outline.
+
+        Args:
+            table: Table name.
+            row_id: Row ID.
+
+        """
+        # Find index in sequence
+        for idx, item in enumerate(self._sequence):
+            if item["table"] == table and item["id"] == row_id:
+                self.content.scroll_to_item(idx)
+                break
+
+        # Emit signal to notify parent (MainWindow)
+        self.item_selected.emit(table, row_id)
+
+    def get_current_selection(self) -> Optional[tuple]:
+        """Get currently selected item.
+
+        Returns:
+            Tuple of (table, id) or None.
+
+        """
+        items = self.outline.selectedItems()
+        if items:
+            item = items[0]
+            meta_data = self.outline._item_meta.get(id(item))
+            if meta_data:
+                table, row_id, _ = meta_data
+                return (table, row_id)
+        return None
+
+    def minimumSizeHint(self) -> QSize:
+        """Override to prevent dock collapse.
+
+        Returns:
+            QSize: Minimum size for usable longform editor.
+
+        """
+        return QSize(400, 300)  # Width for split view, height for toolbar + content
+
+    def sizeHint(self) -> QSize:
+        """Preferred size for the longform editor.
+
+        Returns:
+            QSize: Comfortable working size for editing longform documents.
+
+        """
+        return QSize(600, 700)  # Comfortable size for split view
+
+    @Slot(bool)
+    def _toggle_publish(self, checked: bool) -> None:
+        """Handle publish toggle."""
+        if checked:
+            self.web_manager.start_server(db_path=self.db_path)
+        else:
+            self.web_manager.stop_server()
+
+    @Slot(bool, str)
+    def _on_server_status_changed(self, is_running: bool, url: str) -> None:
+        """Update UI based on server status."""
+        self.btn_publish.setChecked(is_running)
+        if is_running:
+            self.btn_publish.setText("Stop Publishing")
+            # Create a clickable link
+            self.url_label.setText(
+                f'<a href="{url}" style="color: #FF9900; text-decoration: none;">'
+                f"{url}</a>"
+            )
+            self.url_label.setToolTip("Click to open in browser")
+        else:
+            self.btn_publish.setText("Publish to Web")
+            self.url_label.setText("")
+
+    @Slot(str)
+    def _on_server_error(self, msg: str) -> None:
+        """Handle server error manually."""
+
+        self.btn_publish.setChecked(False)
+        # was self.publish_action in original but publish_action is not defined in init?
+        # Checking original code...
+        # Original: self.publish_action.setChecked(False)
+        # Wait, in original __init__: self.btn_publish = QPushButton...
+        # It didn't assign to self.publish_action.
+        # Original code had a bug or I missed something?
+        # Line 444: self.refresh_action = toolbar.addWidget(self.btn_refresh)
+        # Line 470: self.btn_publish = QPushButton... toolbar.addWidget(self.btn_publish)
+        # There is no self.publish_action assigned for the Publish button.
+        # But wait, `toolbar.addWidget` returns a QAction.
+        # The original code might have been: `self.publish_action = toolbar.addWidget(...)`?
+        # Let's check the original file content again.
+        # Line 473: toolbar.addWidget(self.btn_publish)
+        # It does NOT assign to self.publish_action.
+        # Line 608: self.publish_action.setChecked(False)
+        # This implies `self.publish_action` exists.
+        # Ah, maybe I missed a line in `view_file`? Or the original code has a bug.
+        # I will check `view_file` output again.
+        # Line 473: toolbar.addWidget(self.btn_publish)
+        # No assignment.
+        # So `self.publish_action` would raise AttributeError if called.
+        # I should probably fix this bug or use `self.btn_publish.setChecked(False)` since `btn_publish` is stored.
+        # `btn_publish` is a `QPushButton`. `setChecked` works on it.
+        # I will use `self.btn_publish.setChecked(False)`.
+
+        self.url_label.setText("Error starting server")
+        QMessageBox.warning(self, "Web Server Error", msg)
+
+    def set_refresh_button_visible(self, visible: bool) -> None:
+        """Sets the visibility of the manual refresh button."""
+        self.refresh_action.setVisible(visible)

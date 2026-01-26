@@ -93,7 +93,7 @@ from src.gui.widgets.ai_search_panel import AISearchPanelWidget
 from src.gui.widgets.entity_editor import EntityEditorWidget
 from src.gui.widgets.event_editor import EventEditorWidget
 from src.gui.widgets.graph_view import GraphWidget
-from src.gui.widgets.longform_editor import LongformEditorWidget
+from src.gui.widgets.longform import LongformEditorWidget
 from src.gui.widgets.map_widget import MapWidget
 from src.gui.widgets.timeline import TimelineWidget
 from src.gui.widgets.unified_list import UnifiedListWidget
