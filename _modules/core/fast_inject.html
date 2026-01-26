@@ -469,15 +469,18 @@
         <span class="c1"># Ensure target directory exists</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ensure_directory</span><span class="p">()</span>
 
-        <span class="c1"># Determine target filename (handle duplicates)</span>
-        <span class="n">target_filename</span> <span class="o">=</span> <span class="n">source_path</span><span class="o">.</span><span class="n">name</span>
+        <span class="c1"># Determine target filename based on template name (handle duplicates)</span>
+        <span class="c1"># Sanitize filename</span>
+        <span class="n">safe_name</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">template</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">isalnum</span><span class="p">()</span> <span class="ow">or</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">target_filename</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">safe_name</span><span class="si">}</span><span class="s2">.fastinject&quot;</span>
         <span class="n">target_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">templates_dir</span> <span class="o">/</span> <span class="n">target_filename</span>
 
         <span class="c1"># If file exists, add a suffix</span>
         <span class="n">counter</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="k">while</span> <span class="n">target_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="n">stem</span> <span class="o">=</span> <span class="n">source_path</span><span class="o">.</span><span class="n">stem</span>
-            <span class="n">target_filename</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">stem</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">counter</span><span class="si">}</span><span class="s2">.fastinject&quot;</span>
+            <span class="n">target_filename</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">safe_name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">counter</span><span class="si">}</span><span class="s2">.fastinject&quot;</span>
             <span class="n">target_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">templates_dir</span> <span class="o">/</span> <span class="n">target_filename</span>
             <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
 
