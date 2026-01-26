@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-26
-### Internal
-- Refine Fast Inject button UI in inspectors
+### Added
+- feat: implement card selection in longform editor and fix project-wide deprecation warnings
 
 
 *This changelog was automatically generated.*
