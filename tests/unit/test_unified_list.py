@@ -1,5 +1,7 @@
 import pytest
+from unittest.mock import patch
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QMessageBox
 
 from src.core.entities import Entity
 from src.core.events import Event
@@ -79,8 +81,12 @@ def test_delete_signal(unified_list, qtbot):
     unified_list.set_data(events, [])
     unified_list.list_widget.setCurrentRow(0)
 
-    with qtbot.waitSignal(unified_list.delete_requested) as blocker:
-        unified_list.btn_delete.click()
+    with patch(
+        "PySide6.QtWidgets.QMessageBox.warning",
+        return_value=QMessageBox.StandardButton.Yes,
+    ):
+        with qtbot.waitSignal(unified_list.delete_requested) as blocker:
+            unified_list.btn_delete.click()
 
     assert blocker.args == ["event", "e1"]
 

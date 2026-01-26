@@ -5,6 +5,7 @@ Handles asynchronous database operations to keep the UI responsive.
 
 import json
 import logging
+import sqlite3
 import traceback
 from pathlib import Path
 from typing import List, Optional, Set
@@ -39,9 +40,13 @@ class DatabaseWorker(QObject):
     markers_loaded = Signal(str, list)  # map_id, List[Marker]
     trajectories_loaded = Signal(list)  # List[Tuple[str, str, List[Keyframe]]]
     longform_sequence_loaded = Signal(list)  # List[dict]
-    calendar_config_loaded = Signal(object)  # CalendarConfig | None (use object for union types)
+    calendar_config_loaded = Signal(
+        object
+    )  # CalendarConfig | None (use object for union types)
     current_time_loaded = Signal(float)  # Current time in lore_date units
-    grouping_dialog_data_loaded = Signal(list, object)  # tags_data, GroupingConfig | None (use object for union types)
+    grouping_dialog_data_loaded = Signal(
+        list, object
+    )  # tags_data, GroupingConfig | None (use object for union types)
     graph_data_loaded = Signal(list, list)  # nodes, edges
     graph_metadata_loaded = Signal(list, list)  # tags, rel_types
     completer_data_loaded = Signal(
