@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-26
-### Changed
-- Refactor Longform Editor to modular structure and optimize content display
+### Fixed
+- Fix Longform content interaction and selection synchronization
 
 
 *This changelog was automatically generated.*
