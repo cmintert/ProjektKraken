@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-27
-### Added
-- Add Cyberpunk Mode and rename Imperial Mode in themes.json
+### Documentation
+- docs: Update changelog with new UI themes, longform search overhaul, theme adherence refinements, database import refactor, and various bug fixes.
 
 
 *This changelog was automatically generated.*
