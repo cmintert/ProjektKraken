@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-27
 ### Fixed
-- Fix theme adherence in date widgets and description editor
+- Fix theme adherence and refine aesthetics in date/duration widgets
 
 
 *This changelog was automatically generated.*
