@@ -25,35 +25,36 @@ def load_icon(relative_path: str, color: str = None) -> QIcon:
         )
         return QIcon()
 
-    if color:
+    # For SVGs, always try to load from data in memory.
+    # This is more reliable in bundled builds (onedir/onefile)
+    # as it bypasses Qt's internal file engine for icons.
+    if full_path.lower().endswith(".svg"):
         try:
             with open(full_path, "r", encoding="utf-8") as f:
                 svg_content = f.read()
 
-            # Replace currentColor with the hex color
-            svg_content = svg_content.replace("currentColor", color)
+            if color:
+                # Replace currentColor with the hex color
+                svg_content = svg_content.replace("currentColor", color)
 
             # Create icon from data
             pixmap = QPixmap()
-            # loadFromData returns boolean, we load into the pixmap
             success = pixmap.loadFromData(QByteArray(svg_content.encode("utf-8")))
-            if not success:
-                import logging
+            if success:
+                return QIcon(pixmap)
 
-                logging.getLogger(__name__).warning(
-                    f"Failed to load SVG from data for {relative_path}. "
-                    f"Supported formats: {QPixmap().activeFormats()}"
-                )
-                # Fallback to loading directly from file (will lose color)
-                return QIcon(full_path)
+            import logging
 
-            return QIcon(pixmap)
+            logging.getLogger(__name__).warning(
+                f"Failed to load SVG from data for {relative_path}. "
+                f"Supported formats: {QPixmap().activeFormats()}"
+            )
         except Exception as e:
             import logging
 
             logging.getLogger(__name__).error(
-                f"Error loading icon {relative_path}: {e}"
+                f"Error loading SVG data for {relative_path}: {e}"
             )
-            return QIcon(full_path)
-    else:
-        return QIcon(full_path)
+
+    # Fallback to loading directly from file
+    return QIcon(full_path)

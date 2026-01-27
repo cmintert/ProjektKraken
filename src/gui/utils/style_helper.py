@@ -455,9 +455,13 @@ class StyleHelper:
         """
         from src.core.paths import get_resource_path
         from src.core.theme_manager import ThemeManager
+        from PySide6.QtCore import QUrl
 
         theme = ThemeManager().get_theme()
         check_icon_path = get_resource_path("default_assets/icons/ui_icons/check.svg")
+        # Use file:/// schema for more robust path resolution in QSS
+        icon_url = QUrl.fromLocalFile(check_icon_path).toString()
+
         return (
             f"QCheckBox {{ color: {theme['text_main']}; spacing: 8px; }}"
             f"QCheckBox::indicator, QListWidget::indicator {{ "
@@ -470,7 +474,7 @@ class StyleHelper:
             f"QCheckBox::indicator:checked, QListWidget::indicator:checked {{ "
             f"background-color: {theme['primary']}; "
             f"border: 1px solid {theme['primary']}; "
-            f"image: url({check_icon_path}); }}"
+            f"image: url({icon_url}); }}"
         )
 
     @staticmethod

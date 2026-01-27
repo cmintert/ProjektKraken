@@ -287,11 +287,10 @@ class CompactDateWidget(QWidget):
     def _update_icon(self, theme: dict) -> None:
         """Updates the calendar icon with the current theme color."""
         icon_path = os.path.join("default_assets", "icons", "ui_icons", "calendar.svg")
-        if os.path.exists(icon_path):
-            # Use secondary accent or text main for the icon
-            color = theme.get("accent_secondary", theme.get("text_main", "#e0e0e0"))
-            self.btn_calendar.setIcon(load_icon(icon_path, color=color))
-            self.btn_calendar.setIconSize(QSize(16, 16))
+        # Use secondary accent or text main for the icon
+        color = theme.get("accent_secondary", theme.get("text_main", "#e0e0e0"))
+        self.btn_calendar.setIcon(load_icon(icon_path, color=color))
+        self.btn_calendar.setIconSize(QSize(16, 16))
 
     @Slot()
     def _on_text_edited(self) -> None:
