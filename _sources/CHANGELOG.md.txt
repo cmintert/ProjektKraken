@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-27
-### Documentation
-- docs: Update changelog with new UI themes, longform search overhaul, theme adherence refinements, database import refactor, and various bug fixes.
+### Internal
+- Bump version to 0.10.0
 
 
 *This changelog was automatically generated.*
