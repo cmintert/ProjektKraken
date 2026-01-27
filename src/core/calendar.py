@@ -318,16 +318,20 @@ class CalendarConfig:
                 return variant.months
 
         # 2. Start with base months
-        # We must copy them because we might modify days
-        import copy
-
-        months = copy.deepcopy(self.months)
+        # Optimization: Don't deepcopy everything. Only copy what changes.
+        months = list(self.months)  # Shallow copy of the list
 
         # 3. Apply algorithmic leap year rules
+        from dataclasses import replace
+
         for rule in self.leap_year_rules:
             if rule.applies_to_year(year):
                 if 0 <= rule.month_index < len(months):
-                    months[rule.month_index].days += rule.extra_days
+                    # Only clone the specific month we are modifying
+                    original_month = months[rule.month_index]
+                    months[rule.month_index] = replace(
+                        original_month, days=original_month.days + rule.extra_days
+                    )
 
         return months
 
