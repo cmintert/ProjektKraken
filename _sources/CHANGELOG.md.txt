@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-27
-### Added
-- Add 'Save as Default Layout' menu action
+### Internal
+- Optimize calendar calculations impacting performance
 
 
 *This changelog was automatically generated.*
