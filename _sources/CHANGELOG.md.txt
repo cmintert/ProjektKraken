@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-01-26
-### Added
-- feat: implement card selection in longform editor and fix project-wide deprecation warnings
+## [Development] - 2026-01-27
+### Fixed
+- Fix UI theming issues across multiple components
 
 
 *This changelog was automatically generated.*
