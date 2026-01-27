@@ -273,6 +273,10 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         world_path = get_worlds_dir() / active_world
         self.fast_inject_manager = FastInjectManager(world_path)
 
+        # Pass project root to editors for proper gallery path resolution
+        self.event_editor.set_project_root(world_path)
+        self.entity_editor.set_project_root(world_path)
+
         # Initialize Coordinators (Phase 1)
         self.fast_inject_coordinator = FastInjectCoordinator(self)
         self.navigation_coordinator = NavigationCoordinator(self)

@@ -6,7 +6,7 @@ text editing, custom attributes, tags, and relationship management.
 
 import logging
 import traceback
-from typing import Optional
+from typing import Optional, Any
 
 from PySide6.QtCore import QPoint, QSize, Qt, Signal, Slot
 from PySide6.QtWidgets import (
@@ -318,6 +318,11 @@ class EntityEditorWidget(QWidget):
     def set_summary_service(self, service) -> None:
         """Sets the summary service for generation and staleness checks."""
         self.summary_service = service
+
+    def set_project_root(self, path: Any) -> None:
+        """Sets the project root for child widgets."""
+        if hasattr(self, "gallery"):
+            self.gallery.set_project_root(path)
 
     def _connect_dirty_signals(self) -> None:
         """Connects signals that should trigger dirty state."""

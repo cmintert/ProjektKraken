@@ -33,6 +33,7 @@ class ImageViewerDialog(QDialog):
         parent: Optional[QWidget] = None,
         attachments: List[ImageAttachment] = None,
         current_index: int = 0,
+        project_root: Optional[Path] = None,
     ) -> None:
         """Initialize the image viewer dialog.
 
@@ -40,6 +41,7 @@ class ImageViewerDialog(QDialog):
             parent: Parent widget.
             attachments: List of ImageAttachment objects to display.
             current_index: Index of the image to display first.
+            project_root: Root directory for resolving relative paths.
 
         """
         super().__init__(parent)
@@ -48,6 +50,7 @@ class ImageViewerDialog(QDialog):
 
         self.attachments = attachments or []
         self.current_index = current_index
+        self.project_root = project_root
 
         self.init_ui()
         self.load_current_image()
@@ -126,7 +129,12 @@ class ImageViewerDialog(QDialog):
             self.current_index = len(self.attachments) - 1
 
         attachment = self.attachments[self.current_index]
-        full_path = Path.cwd() / attachment.image_rel_path
+
+        if self.project_root:
+            full_path = self.project_root / attachment.image_rel_path
+        else:
+            # Fallback (legacy behavior, though potentially risky in portable mode)
+            full_path = Path.cwd() / attachment.image_rel_path
 
         if full_path.exists():
             original = QPixmap(str(full_path))

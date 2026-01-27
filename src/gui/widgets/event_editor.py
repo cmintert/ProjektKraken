@@ -318,6 +318,11 @@ class EventEditorWidget(QWidget):
         """Sets the summary service."""
         self.summary_service = service
 
+    def set_project_root(self, path: Any) -> None:
+        """Sets the project root for child widgets."""
+        if hasattr(self, "gallery"):
+            self.gallery.set_project_root(path)
+
     def _setup_relations_tab(self) -> None:
         """Configures the Relations tab with categorized sections."""
         from src.gui.utils.style_helper import StyleHelper

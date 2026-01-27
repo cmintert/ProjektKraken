@@ -58,9 +58,34 @@ class GalleryWidget(QWidget):
         self.owner_id: Optional[str] = None
 
         self.attachments: List[ImageAttachment] = []
+        self.project_root: Optional[Path] = None
 
         self.init_ui()
         self.connect_signals()
+
+    def set_project_root(self, path: Path) -> None:
+        """Sets the project root for resolving relative paths.
+
+        Args:
+            path: Absolute path to the world/project directory.
+        """
+        self.project_root = path
+        logger.debug(f"GalleryWidget: Project root set to {path}")
+
+    def _resolve_path(self, rel_path: str) -> Path:
+        """Resolves a relative path against the project root or user data (fallback).
+
+        Args:
+            rel_path: Relative path (e.g., assets/images/...)
+
+        Returns:
+            Path: Resolved absolute path.
+        """
+        if self.project_root:
+            return self.project_root / rel_path
+
+        # Fallback for legacy/dev mode if root not explicitly set
+        return Path(get_user_data_path(rel_path))
 
     def init_ui(self) -> None:
         """Initialize the user interface components."""
@@ -183,7 +208,7 @@ class GalleryWidget(QWidget):
             # Load thumbnail
             # Try thumb path, else full path
             rel_path = att.thumb_rel_path if att.thumb_rel_path else att.image_rel_path
-            full_path = Path(get_user_data_path(rel_path))
+            full_path = self._resolve_path(rel_path)
 
             if full_path.exists():
                 icon = QIcon(str(full_path))
@@ -260,7 +285,9 @@ class GalleryWidget(QWidget):
             logger.debug(
                 f"GalleryWidget: Opening viewer for {att_id} at index {target_index}"
             )
-            viewer = ImageViewerDialog(self, self.attachments, target_index)
+            viewer = ImageViewerDialog(
+                self, self.attachments, target_index, project_root=self.project_root
+            )
             viewer.exec()
         except StopIteration:
             logger.error(f"GalleryWidget: Attachment {att_id} not found in data list")
