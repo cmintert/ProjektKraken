@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-01-27
-**Commit:** `97ba338`
+**Commit:** `0.10.0`
 ---
 
 # Changelog
@@ -10,6 +10,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [0.10.0]
 
 ### Added
 - *(2026-01-27)* **UI**: Added "Cyberpunk Mode" theme with high-contrast tech-noir neon palette.
