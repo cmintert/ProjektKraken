@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-27
-### Fixed
-- Fix gallery image path resolution in portable builds
+### Added
+- Add 'Save as Default Layout' menu action
 
 
 *This changelog was automatically generated.*
