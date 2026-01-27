@@ -13,7 +13,6 @@ from PySide6.QtCore import QPoint, QSize, Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
-    QGroupBox,
     QHBoxLayout,
     QLineEdit,
     QListWidget,
@@ -195,71 +194,49 @@ class EventEditorWidget(QWidget):
         self.form_layout.addRow("Description:", self.desc_edit)
 
         # Add Summary Widget (Collapsible)
-        self.summary_group = QGroupBox("")
-        self.summary_group.setStyleSheet("QGroupBox { border: none; }")
-        self.summary_group.setCheckable(True)
-        self.summary_group.setChecked(False)
-        summary_layout = QVBoxLayout(self.summary_group)
-        StyleHelper.apply_compact_spacing(summary_layout)
+        # Add Summary Widget (Collapsible)
+        from PySide6.QtWidgets import QCheckBox
+
+        self.summary_container = QWidget()
+        summary_outer_layout = QVBoxLayout(self.summary_container)
+        summary_outer_layout.setContentsMargins(0, 0, 0, 0)
+        summary_outer_layout.setSpacing(4)
+
+        self.summary_checkbox = QCheckBox("")
+        self.summary_checkbox.setStyleSheet(StyleHelper.get_checkbox_style())
+        summary_outer_layout.addWidget(self.summary_checkbox)
 
         self.summary_widget = SummaryWidget()
+        self.summary_widget.setVisible(False)
         self.summary_widget.generate_requested.connect(
             self._on_summary_generate_requested
         )
-        summary_layout.addWidget(self.summary_widget)
+        summary_outer_layout.addWidget(self.summary_widget)
 
-        def _toggle_summary_section(checked: bool) -> None:
-            self.summary_widget.setVisible(checked)
-            if not checked:
-                self.summary_group.setMinimumHeight(20)
-                self.summary_group.setMaximumHeight(20)
-                summary_layout.setContentsMargins(0, 0, 0, 0)
-                summary_layout.setSpacing(0)
-            else:
-                self.summary_group.setMinimumHeight(0)
-                self.summary_group.setMaximumHeight(16777215)
-                StyleHelper.apply_compact_spacing(summary_layout)
+        self.summary_checkbox.toggled.connect(self.summary_widget.setVisible)
 
-        self.summary_group.toggled.connect(_toggle_summary_section)
-        _toggle_summary_section(False)
-        self.form_layout.addRow("Summary:", self.summary_group)
+        self.form_layout.addRow("Summary:", self.summary_container)
 
         # Add LLM Generation Widget below description in a collapsible group
         from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
 
-        self.llm_group = QGroupBox("")
-        self.llm_group.setStyleSheet("QGroupBox { border: none; }")
-        self.llm_group.setCheckable(True)
-        self.llm_group.setChecked(False)  # Start collapsed
-        llm_layout = QVBoxLayout(self.llm_group)
-        from src.gui.utils.style_helper import StyleHelper
+        self.llm_container = QWidget()
+        llm_outer_layout = QVBoxLayout(self.llm_container)
+        llm_outer_layout.setContentsMargins(0, 0, 0, 0)
+        llm_outer_layout.setSpacing(4)
 
-        StyleHelper.apply_compact_spacing(llm_layout)
+        self.llm_checkbox = QCheckBox("")
+        self.llm_checkbox.setStyleSheet(StyleHelper.get_checkbox_style())
+        llm_outer_layout.addWidget(self.llm_checkbox)
 
         self.llm_generator = LLMGenerationWidget(self, context_provider=self)
+        self.llm_generator.setVisible(False)
         self.llm_generator.text_generated.connect(self._on_text_generated)
-        llm_layout.addWidget(self.llm_generator)
+        llm_outer_layout.addWidget(self.llm_generator)
 
-        # Connect toggled signal to properly collapse/expand
-        def _toggle_llm_section(checked: bool) -> None:
-            """Toggle visibility of LLM generation section when checkbox is clicked."""
-            self.llm_generator.setVisible(checked)
-            if not checked:
-                # Collapse to just show checkbox/title
-                self.llm_group.setMinimumHeight(20)  # Just checkbox height
-                self.llm_group.setMaximumHeight(20)  # Lock to checkbox height
-                llm_layout.setContentsMargins(0, 0, 0, 0)
-                llm_layout.setSpacing(0)
-            else:
-                # Restore normal size
-                self.llm_group.setMinimumHeight(0)  # No minimum constraint
-                self.llm_group.setMaximumHeight(16777215)  # Qt's QWIDGETSIZE_MAX
-                StyleHelper.apply_compact_spacing(llm_layout)
+        self.llm_checkbox.toggled.connect(self.llm_generator.setVisible)
 
-        self.llm_group.toggled.connect(_toggle_llm_section)
-        _toggle_llm_section(False)  # Start collapsed
-
-        self.form_layout.addRow("LLM Generation:", self.llm_group)
+        self.form_layout.addRow("LLM Generation:", self.llm_container)
 
         details_layout.addLayout(self.form_layout)
 
@@ -743,6 +720,10 @@ class EventEditorWidget(QWidget):
             StyleHelper.get_tool_button_style()
             + " QToolButton::menu-indicator { image: none; }"
         )
+
+        # Update Checkboxes
+        self.summary_checkbox.setStyleSheet(StyleHelper.get_checkbox_style())
+        self.llm_checkbox.setStyleSheet(StyleHelper.get_checkbox_style())
 
         # Update Relations Tab Buttons (Icons and Styles)
         icon_path = os.path.join("default_assets", "icons", "ui_icons", "plus.svg")

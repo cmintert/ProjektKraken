@@ -445,3 +445,28 @@ class StyleHelper:
 
         """
         layout.setContentsMargins(0, 0, 0, 0)
+
+    @staticmethod
+    def get_checkbox_style() -> str:
+        """Returns QSS for themed checkboxes.
+
+        Returns:
+            str: QSS stylesheet string for checkboxes.
+        """
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
+        return (
+            f"QCheckBox {{ color: {theme['text_main']}; spacing: 8px; }}"
+            f"QCheckBox::indicator, QListWidget::indicator {{ "
+            f"width: 16px; height: 16px; "
+            f"border: 1px solid {theme['border']}; border-radius: 3px; "
+            f"background-color: {theme['surface']}; }}"
+            f"QCheckBox::indicator:unchecked:hover, "
+            f"QListWidget::indicator:unchecked:hover {{ "
+            f"border: 1px solid {theme['primary']}; }}"
+            f"QCheckBox::indicator:checked, QListWidget::indicator:checked {{ "
+            f"background-color: {theme['primary']}; "
+            f"border: 1px solid {theme['primary']}; "
+            f"image: url(default_assets/icons/ui_icons/check.svg); }}"
+        )

@@ -220,6 +220,7 @@ class UnifiedListWidget(QWidget):
 
         # List (with drag support)
         self.list_widget = DraggableListWidget()
+        self.list_widget.setStyleSheet(StyleHelper.get_checkbox_style())
         self.list_widget.setSelectionMode(QListWidget.SelectionMode.ExtendedSelection)
         self.list_widget.itemSelectionChanged.connect(self._on_selection_changed)
         self.list_widget.itemChanged.connect(self._on_item_checkbox_changed)
@@ -262,6 +263,8 @@ class UnifiedListWidget(QWidget):
         """Handle theme change."""
         self.color_event = QColor(theme.get("accent_secondary", "#0078D4"))
         self.color_entity = QColor(theme.get("primary", "#FF9900"))
+        # Re-apply checkbox style on theme change
+        self.list_widget.setStyleSheet(StyleHelper.get_checkbox_style())
         self._render_list()
 
     def set_data(self, events: List[Event], entities: List[Entity]) -> None:
