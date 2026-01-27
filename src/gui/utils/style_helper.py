@@ -470,3 +470,27 @@ class StyleHelper:
             f"border: 1px solid {theme['primary']}; "
             f"image: url(default_assets/icons/ui_icons/check.svg); }}"
         )
+
+    @staticmethod
+    def get_event_color() -> str:
+        """Returns the theme-aware color for events.
+
+        Returns:
+            str: Hex color string.
+        """
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
+        return theme.get("event_main", theme.get("primary", "#888888"))
+
+    @staticmethod
+    def get_entity_color() -> str:
+        """Returns the theme-aware color for entities.
+
+        Returns:
+            str: Hex color string.
+        """
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
+        return theme.get("entity_main", theme.get("accent_secondary", "#4A90D9"))

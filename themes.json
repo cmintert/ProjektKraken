@@ -13,7 +13,9 @@
         "font_size_h1": "14pt",
         "font_size_h2": "12pt",
         "font_size_h3": "11pt",
-        "font_size_body": "10pt"
+        "font_size_body": "10pt",
+        "event_main": "#FF9900",
+        "entity_main": "#4DA6FF"
     },
     "light_mode": {
         "app_bg": "#F5F5F5",
@@ -29,7 +31,9 @@
         "font_size_h1": "14pt",
         "font_size_h2": "12pt",
         "font_size_h3": "11pt",
-        "font_size_body": "10pt"
+        "font_size_body": "10pt",
+        "event_main": "#E68A00",
+        "entity_main": "#005A9E"
     },
     "fantasy_mode": {
         "app_bg": "#24211C",
@@ -45,6 +49,26 @@
         "font_size_h1": "15pt",
         "font_size_h2": "13pt",
         "font_size_h3": "12pt",
-        "font_size_body": "11pt"
+        "font_size_body": "11pt",
+        "event_main": "#E3B659",
+        "entity_main": "#63B0B0"
+    },
+    "warhammer_40k": {
+        "app_bg": "#0D0D0D",
+        "surface": "#1C1C1C",
+        "border": "#3E3E3E",
+        "primary": "#E02A2A",
+        "accent_secondary": "#D4AF37",
+        "text_main": "#E0E0E0",
+        "text_dim": "#888888",
+        "error": "#FF1A1A",
+        "scrollbar_bg": "#0D0D0D",
+        "scrollbar_handle": "#444444",
+        "font_size_h1": "14pt",
+        "font_size_h2": "12pt",
+        "font_size_h3": "11pt",
+        "font_size_body": "10pt",
+        "event_main": "#E02A2A",
+        "entity_main": "#D4AF37"
     }
 }

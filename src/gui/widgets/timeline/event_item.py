@@ -22,23 +22,16 @@ from PySide6.QtWidgets import QGraphicsItem, QStyleOptionGraphicsItem, QWidget
 from src.core.calendar import CalendarConverter
 from src.core.events import Event
 
+from src.gui.utils.style_helper import StyleHelper
+
 logger = logging.getLogger(__name__)
 
 
 class EventItem(QGraphicsItem):
     """Diamond-shaped event marker with text label.
 
-    Color-coded by event type.
+    Theme-aware coloring.
     """
-
-    COLORS = {
-        "generic": QColor("#888888"),
-        "cosmic": QColor("#8E44AD"),  # Purple
-        "historical": QColor("#F39C12"),  # Orange
-        "personal": QColor("#2ECC71"),  # Green
-        "session": QColor("#3498DB"),  # Blue
-        "combat": QColor("#E74C3C"),  # Red
-    }
 
     MAX_WIDTH = 400  # Increased to fit longer calendar-formatted dates
     ICON_SIZE = 16  # Diamond size in pixels (increased from 14)
@@ -84,8 +77,8 @@ class EventItem(QGraphicsItem):
         self.event = event
         self.scale_factor = scale_factor
 
-        # Determine Color
-        self.base_color = self.COLORS.get(event.type, self.COLORS["generic"])
+        # Determine Color from StyleHelper
+        self.base_color = QColor(StyleHelper.get_event_color())
 
         # Position is handled by parent/layout, but X is strictly date-based
         self.setPos(event.lore_date * scale_factor, 0)
@@ -123,7 +116,7 @@ class EventItem(QGraphicsItem):
         """
         self.prepareGeometryChange()
         self.event = event
-        self.base_color = self.COLORS.get(event.type, self.COLORS["generic"])
+        self.base_color = QColor(StyleHelper.get_event_color())
         self.setPos(event.lore_date * self.scale_factor, self.y())
         self.update()
 

@@ -149,10 +149,14 @@ class GraphWidget(QWidget):
         return {
             "background_color": theme.get("app_bg", "#1e1e1e"),
             "text_color": theme.get("text_main", "#ffffff"),
-            # Entity -> Accent/Primary (e.g. "#4A90D9" or "#FF9900")
-            "node_entity_color": theme.get("accent_secondary", "#4A90D9"),
-            # Event -> Primary (e.g. "#E67E22")
-            "node_event_color": theme.get("primary", "#E67E22"),
+            # Entity -> entity_main with fallback to accent_secondary
+            "node_entity_color": theme.get(
+                "entity_main", theme.get("accent_secondary", "#4A90D9")
+            ),
+            # Event -> event_main with fallback to primary
+            "node_event_color": theme.get(
+                "event_main", theme.get("primary", "#E67E22")
+            ),
             "edge_color": theme.get("text_dim", "#888888"),
         }
 

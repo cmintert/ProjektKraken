@@ -25,9 +25,9 @@ class GraphBuilder:
     PyVis, not about Qt or database concerns.
     """
 
-    # Node styling by object_type
-    ENTITY_COLOR = "#4A90D9"  # Blue for entities
-    EVENT_COLOR = "#E67E22"  # Orange for events
+    # Node styling defaults (should be overridden by theme_config)
+    ENTITY_COLOR = "#CCCCCC"
+    EVENT_COLOR = "#AAAAAA"
     ENTITY_SHAPE = "dot"
     EVENT_SHAPE = "diamond"
 
@@ -35,13 +35,13 @@ class GraphBuilder:
     DEFAULT_HEIGHT = "100%"
     DEFAULT_WIDTH = "100%"
 
-    # Default Theme Config
+    # Fallback Theme Config
     DEFAULT_THEME = {
-        "background_color": "#1e1e1e",
-        "text_color": "#ffffff",
-        "node_entity_color": "#4A90D9",
-        "node_event_color": "#E67E22",
-        "edge_color": "#888888",
+        "background_color": "#000000",
+        "text_color": "#FFFFFF",
+        "node_entity_color": "#CCCCCC",
+        "node_event_color": "#AAAAAA",
+        "edge_color": "#666666",
     }
 
     # Cached local vis-network library content
