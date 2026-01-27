@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-27
 ### Added
-- Add Warhammer 40k theme and centralize color control
+- Add Cyberpunk Mode and rename Imperial Mode in themes.json
 
 
 *This changelog was automatically generated.*
