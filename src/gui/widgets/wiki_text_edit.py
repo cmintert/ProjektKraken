@@ -385,7 +385,7 @@ class WikiTextEditView(QTextEdit):
         scrollbar_handle = theme.get("scrollbar_handle", theme.get("border", "#454545"))
         primary = theme.get("primary", "#FF9900")
         surface = theme.get("surface", "#323232")
-        border = theme.get("border", "#454545")
+        # border = theme.get("border", "#454545")  # Unused
 
         from src.gui.utils.style_helper import StyleHelper
 
@@ -395,7 +395,7 @@ class WikiTextEditView(QTextEdit):
             QTextEdit {{
                 {transparent_style}
                 selection-background-color: {primary};
-                selection-color: {theme['surface']};
+                selection-color: {surface};
             }}
             QTextEdit > QWidget {{
                 border: none;
@@ -444,7 +444,7 @@ class WikiTextEditView(QTextEdit):
         """
         self.setStyleSheet(widget_qss)
 
-    def set_wiki_text(self, text: Optional[str]) -> None:
+    def set_wiki_text(self, text: Optional[str], force: bool = False) -> None:
         """Sets the content using WikiLink syntax, converting it to HTML anchors.
 
         Uses the 'markdown' library for rich text rendering.
@@ -456,7 +456,11 @@ class WikiTextEditView(QTextEdit):
 
         # Check if text is identical to avoid unnecessary reload
         # This applies to BOTH Rich and Source modes.
-        if hasattr(self, "_current_wiki_text") and self._current_wiki_text == text:
+        if (
+            not force
+            and hasattr(self, "_current_wiki_text")
+            and self._current_wiki_text == text
+        ):
             # Check if we are actually fully rendered?
             # If we just initialized, we might need to render.
             # But usually safe to skip.
@@ -1166,7 +1170,7 @@ class WikiTextEditView(QTextEdit):
         try:
             # Re-render with stored text to apply new stylesheet
             if self._current_wiki_text:
-                self.set_wiki_text(self._current_wiki_text)
+                self.set_wiki_text(self._current_wiki_text, force=True)
             else:
                 # Just update stylesheet for empty or non-wiki content
                 self._apply_theme_stylesheet()

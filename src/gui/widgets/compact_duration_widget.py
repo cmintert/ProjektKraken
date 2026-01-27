@@ -146,13 +146,41 @@ class CompactDurationWidget(QWidget):
 
         main_layout.addLayout(hm_row)
 
+        # Apply initial styles
+        self._apply_styles()
+
+    def _apply_styles(self) -> None:
+        """Applies theme-aware styles to all inputs."""
+        input_style = StyleHelper.get_input_field_style()
+        self.spin_years.setStyleSheet(input_style)
+        self.spin_months.setStyleSheet(input_style)
+        self.spin_days.setStyleSheet(input_style)
+        self.spin_hours.setStyleSheet(input_style)
+        self.spin_minutes.setStyleSheet(input_style)
+
+        # Preview label handles its own style via StyleHelper inside itself if we wanted,
+        # but here we set it once. It uses get_preview_label_style which is theme-aware
+        # but static string returned. We need to re-apply it on theme change.
+        self.lbl_preview.setStyleSheet(StyleHelper.get_preview_label_style())
+
     def _connect_signals(self) -> None:
         """Connects internal signals."""
         self.spin_years.valueChanged.connect(self._on_input_changed)
         self.spin_months.valueChanged.connect(self._on_input_changed)
         self.spin_days.valueChanged.connect(self._on_input_changed)
         self.spin_hours.valueChanged.connect(self._on_input_changed)
+        self.spin_hours.valueChanged.connect(self._on_input_changed)
         self.spin_minutes.valueChanged.connect(self._on_input_changed)
+
+        # Theme changes
+        from src.core.theme_manager import ThemeManager
+
+        ThemeManager().theme_changed.connect(self._on_theme_changed)
+
+    @Slot(dict)
+    def _on_theme_changed(self, theme: dict) -> None:
+        """Handles theme changes to update styles."""
+        self._apply_styles()
 
     def set_calendar_converter(self, converter: CalendarConverter) -> None:
         """Sets the calendar converter for calculations.

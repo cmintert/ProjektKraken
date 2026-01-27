@@ -10,6 +10,7 @@ Provides a polished, calendar-aware date input widget with:
 """
 
 import logging
+import os
 from typing import Optional
 
 from PySide6.QtCore import QSize, Signal, Slot
@@ -28,6 +29,8 @@ from PySide6.QtWidgets import (
 
 from src.core.calendar import CalendarConverter, CalendarDate
 from src.core.date_parser import DateParser
+from src.core.theme_manager import ThemeManager
+from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
 
 logger = logging.getLogger(__name__)
@@ -118,9 +121,15 @@ class CompactDateWidget(QWidget):
         date_row.addWidget(self.combo_day, stretch=1)
 
         # Calendar button with icon
-        self.btn_calendar = QPushButton("📅")
-        self.btn_calendar.setFixedWidth(32)  # Icon button - fixed small size
+        self.btn_calendar = QPushButton()
+        self.btn_calendar.setFixedSize(32, 24)  # Icon button - fixed small size
         self.btn_calendar.setToolTip("Open calendar picker")
+
+        # Apply initial icon and style
+        self.btn_calendar.setStyleSheet(StyleHelper.get_icon_button_style())
+        theme = ThemeManager().get_theme()
+        self._update_icon(theme)
+
         date_row.addWidget(self.btn_calendar, stretch=0)
 
         main_layout.addLayout(date_row)
@@ -154,21 +163,10 @@ class CompactDateWidget(QWidget):
         self.txt_date.setPlaceholderText("Type date...")
         self.txt_date.setToolTip("Enter date text (e.g. '15 Jan 3019')")
         # Use a style similar to preview label but editable
-        self.txt_date.setStyleSheet(
-            """
-            QLineEdit {
-                border: 1px solid #333333;
-                border-radius: 4px;
-                padding: 2px;
-                background-color: #1e1e1e;
-                color: #e0e0e0;
-                font-family: 'Consolas', monospace;
-                font-size: 11px;
-            }
-            QLineEdit:focus {
-                border: 1px solid #5a5a5a;
-            }
-        """
+        self.txt_date.setPlaceholderText("Type date...")
+        self.txt_date.setToolTip("Enter date text (e.g. '15 Jan 3019')")
+        self.txt_date.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
         self.txt_date.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
@@ -178,8 +176,28 @@ class CompactDateWidget(QWidget):
         main_layout.addLayout(time_row)
 
         # Initialize with default months
+        # Initialize with default months
         self._populate_months()
         self._populate_days()
+
+        # Apply initial styles
+        self._apply_styles()
+
+    def _apply_styles(self) -> None:
+        """Applies theme-aware styles to all inputs."""
+        input_style = StyleHelper.get_input_field_style()
+        self.spin_year.setStyleSheet(input_style)
+        self.combo_month.setStyleSheet(input_style)
+        self.combo_day.setStyleSheet(input_style)
+        self.spin_hour.setStyleSheet(input_style)
+        self.spin_minute.setStyleSheet(input_style)
+
+        # Text date needs input style + monospace font
+        self.txt_date.setStyleSheet(
+            input_style + " font-family: 'Consolas', monospace; font-size: 11px;"
+        )
+
+        self.btn_calendar.setStyleSheet(StyleHelper.get_icon_button_style())
 
     def _connect_signals(self) -> None:
         """Connects internal signals."""
@@ -190,6 +208,9 @@ class CompactDateWidget(QWidget):
         self.spin_minute.valueChanged.connect(self._on_input_changed)
         self.btn_calendar.clicked.connect(self._open_calendar_popup)
         self.txt_date.editingFinished.connect(self._on_text_edited)
+
+        # Theme changes
+        ThemeManager().theme_changed.connect(self._on_theme_changed)
 
     def set_calendar_converter(self, converter: CalendarConverter) -> None:
         """Sets the calendar converter for date calculations.
@@ -272,6 +293,21 @@ class CompactDateWidget(QWidget):
         self._update_preview()
         value = self.get_value()
         self.value_changed.emit(value)
+
+    @Slot(dict)
+    def _on_theme_changed(self, theme: dict) -> None:
+        """Handles theme changes to update icon and style."""
+        self._apply_styles()
+        self._update_icon(theme)
+
+    def _update_icon(self, theme: dict) -> None:
+        """Updates the calendar icon with the current theme color."""
+        icon_path = os.path.join("default_assets", "icons", "ui_icons", "calendar.svg")
+        if os.path.exists(icon_path):
+            # Use secondary accent or text main for the icon
+            color = theme.get("accent_secondary", theme.get("text_main", "#e0e0e0"))
+            self.btn_calendar.setIcon(load_icon(icon_path, color=color))
+            self.btn_calendar.setIconSize(QSize(16, 16))
 
     @Slot()
     def _on_text_edited(self) -> None:

@@ -31,9 +31,24 @@ def load_icon(relative_path: str, color: str = None) -> QIcon:
             # Create icon from data
             pixmap = QPixmap()
             # loadFromData returns boolean, we load into the pixmap
-            pixmap.loadFromData(QByteArray(svg_content.encode("utf-8")))
+            success = pixmap.loadFromData(QByteArray(svg_content.encode("utf-8")))
+            if not success:
+                import logging
+
+                logging.getLogger(__name__).warning(
+                    f"Failed to load SVG from data for {relative_path}. "
+                    f"Supported formats: {QPixmap().activeFormats()}"
+                )
+                # Fallback to loading directly from file (will lose color)
+                return QIcon(full_path)
+
             return QIcon(pixmap)
-        except Exception:
+        except Exception as e:
+            import logging
+
+            logging.getLogger(__name__).error(
+                f"Error loading icon {relative_path}: {e}"
+            )
             return QIcon(full_path)
     else:
         return QIcon(full_path)
