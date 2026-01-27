@@ -528,6 +528,10 @@ class UIManager:
         save_action = self.layouts_menu.addAction("Save Current Layout...")
         save_action.triggered.connect(self.prompt_save_layout)
 
+        # Save Override Defaults Action
+        save_default_action = self.layouts_menu.addAction("Save as Default Layout")
+        save_default_action.triggered.connect(self.save_as_default_layout)
+
         self.layouts_menu.addSeparator()
 
         # Existing Layouts
