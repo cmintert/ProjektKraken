@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-27
-### Fixed
-- Fix theme adherence and refine aesthetics in date/duration widgets
+### Added
+- Add Warhammer 40k theme and centralize color control
 
 
 *This changelog was automatically generated.*
