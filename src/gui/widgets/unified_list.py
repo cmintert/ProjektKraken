@@ -250,9 +250,18 @@ class UnifiedListWidget(QWidget):
         from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
-        self.color_event = QColor(theme["accent_secondary"])
-        self.color_entity = QColor(theme["primary"])
+        self.color_event = QColor(theme.get("accent_secondary", "#0078D4"))
+        self.color_entity = QColor(theme.get("primary", "#FF9900"))
 
+        ThemeManager().theme_changed.connect(self._on_theme_changed)
+
+        self._render_list()
+
+    @Slot(dict)
+    def _on_theme_changed(self, theme: dict) -> None:
+        """Handle theme change."""
+        self.color_event = QColor(theme.get("accent_secondary", "#0078D4"))
+        self.color_entity = QColor(theme.get("primary", "#FF9900"))
         self._render_list()
 
     def set_data(self, events: List[Event], entities: List[Entity]) -> None:
@@ -781,7 +790,7 @@ class UnifiedListWidget(QWidget):
         Returns:
             bool: True if safe to trigger, False if a text widget is focused.
         """
-        from PySide6.QtWidgets import QApplication, QTextEdit, QPlainTextEdit, QLineEdit
+        from PySide6.QtWidgets import QApplication, QLineEdit, QPlainTextEdit, QTextEdit
 
         focus_widget = QApplication.focusWidget()
         if focus_widget and isinstance(

@@ -18,6 +18,7 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import (
     QTreeWidget,
     QTreeWidgetItem,
+    QTreeWidgetItemIterator,
     QWidget,
 )
 
@@ -35,10 +36,6 @@ class LongformOutlineWidget(QTreeWidget):
     item_moved = Signal(str, str, dict, dict)  # table, id, old_meta, new_meta
     item_promoted = Signal(str, str, dict)  # table, id, old_meta
     item_demoted = Signal(str, str, dict)  # table, id, old_meta
-    item_removed = Signal(str, str, dict)  # table, id, old_meta
-
-    COLOR_EVENT = QColor("#0078D4")
-    COLOR_ENTITY = QColor("#FF9900")
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the outline widget."""
@@ -54,6 +51,40 @@ class LongformOutlineWidget(QTreeWidget):
         # Connect signals
         self.itemSelectionChanged.connect(self._on_selection_changed)
         self.customContextMenuRequested.connect(self._show_context_menu)
+
+        from src.core.theme_manager import ThemeManager
+
+        ThemeManager().theme_changed.connect(self._on_theme_changed)
+        self._update_colors()
+
+    def _update_colors(self) -> None:
+        """Update colors from current theme."""
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
+        # Fallback to defaults if theme keys missing
+        self.color_event = QColor(theme.get("accent_secondary", "#0078D4"))
+        self.color_entity = QColor(theme.get("primary", "#FF9900"))
+
+    @Slot(dict)
+    def _on_theme_changed(self, theme: dict) -> None:
+        """Handle theme change."""
+        self._update_colors()
+        self._colorize_items()
+
+    def _colorize_items(self) -> None:
+        """Re-apply colors to all items."""
+        iterator = QTreeWidgetItemIterator(self)
+        while iterator.value():
+            item = iterator.value()
+            meta = self._item_meta.get(id(item))
+            if meta:
+                table = meta[0]
+                if table == "events":
+                    item.setForeground(0, QBrush(self.color_event))
+                elif table == "entities":
+                    item.setForeground(0, QBrush(self.color_entity))
+            iterator += 1
 
     def startDrag(self, supportedActions: Qt.DropActions) -> None:
         """Override to provide custom MIME data for external drags.
@@ -223,9 +254,9 @@ class LongformOutlineWidget(QTreeWidget):
 
             # Color code
             if item["table"] == "events":
-                tree_item.setForeground(0, QBrush(self.COLOR_EVENT))
+                tree_item.setForeground(0, QBrush(self.color_event))
             elif item["table"] == "entities":
-                tree_item.setForeground(0, QBrush(self.COLOR_ENTITY))
+                tree_item.setForeground(0, QBrush(self.color_entity))
 
             # Store metadata
             # IMPORTANT: We must store the updated meta so we can

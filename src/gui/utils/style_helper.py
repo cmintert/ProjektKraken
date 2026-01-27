@@ -199,6 +199,27 @@ class StyleHelper:
         )
 
     @staticmethod
+    def get_icon_button_style() -> str:
+        """Returns QSS for theme-aware square icon buttons.
+
+        Provides consistent styling for small buttons that contain only icons,
+        matching the look of search buttons while using theme tokens.
+
+        Returns:
+            str: QSS stylesheet string for icon buttons.
+        """
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
+        return (
+            f"QPushButton {{ background-color: {theme['surface']}; "
+            f"border: 1px solid {theme['border']}; "
+            f"border-radius: 4px; padding: 2px; }}"
+            f"QPushButton:hover {{ background-color: {theme['border']}; }}"
+            f"QPushButton:pressed {{ background-color: {theme['app_bg']}; }}"
+        )
+
+    @staticmethod
     def get_scroll_area_style() -> str:
         """Returns QSS for transparent scroll areas.
 
@@ -243,9 +264,7 @@ class StyleHelper:
 
         theme = ThemeManager().get_theme()
         return (
-            f"background-color: transparent; "
-            f"color: {theme['text_main']}; "
-            f"border: none;"
+            f"background-color: transparent; color: {theme['text_main']}; border: none;"
         )
 
     @staticmethod

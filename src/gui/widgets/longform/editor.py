@@ -10,8 +10,9 @@ import os
 from typing import Any, Dict, List, Optional
 
 from PySide6.QtCore import QSize, Qt, Signal, Slot
-from PySide6.QtGui import QCloseEvent, QKeySequence, QShortcut, QIcon
+from PySide6.QtGui import QCloseEvent, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
+    QHBoxLayout,
     QLabel,
     QLineEdit,
     QMessageBox,
@@ -21,13 +22,12 @@ from PySide6.QtWidgets import (
     QToolBar,
     QVBoxLayout,
     QWidget,
-    QHBoxLayout,
 )
 
-from src.core.paths import get_resource_path
+from src.core.theme_manager import ThemeManager
+from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.shortcut_manager import ShortcutManager
 from src.gui.utils.style_helper import StyleHelper
-
 from src.gui.widgets.longform.content import LongformContentWidget
 from src.gui.widgets.longform.outline import LongformOutlineWidget
 from src.services.web_service_manager import WebServiceManager
@@ -87,6 +87,10 @@ class LongformEditorWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
+        # Theme for icons
+        theme = ThemeManager().get_theme()
+        icon_color = theme["text_main"]
+
         # Toolbar
         toolbar = QToolBar()
         toolbar.setIconSize(QSize(16, 16))
@@ -139,11 +143,13 @@ class LongformEditorWidget(QWidget):
         toolbar.addWidget(spacer)
 
         # Find Button (Discoverability - Far Right)
-        search_icon_path = get_resource_path(
-            os.path.join("default_assets", "icons", "ui_icons", "search.svg")
-        )
         self.btn_find = QPushButton()
-        self.btn_find.setIcon(QIcon(search_icon_path))
+        self.btn_find.setIcon(
+            load_icon(
+                os.path.join("default_assets", "icons", "ui_icons", "search.svg"),
+                color=icon_color,
+            )
+        )
         self.btn_find.setToolTip(f"Find Text ({ShortcutManager.FIND.sequence})")
         self.btn_find.clicked.connect(self._toggle_search)
         toolbar.addWidget(self.btn_find)
@@ -162,28 +168,33 @@ class LongformEditorWidget(QWidget):
         self.search_input.returnPressed.connect(self._perform_search_next)
 
         # Icons
-        icon_up_path = get_resource_path(
-            os.path.join("default_assets", "icons", "ui_icons", "arrow_up.svg")
-        )
-        icon_down_path = get_resource_path(
-            os.path.join("default_assets", "icons", "ui_icons", "arrow_down.svg")
-        )
-        icon_close_path = get_resource_path(
-            os.path.join("default_assets", "icons", "ui_icons", "close.svg")
-        )
-
         btn_prev = QPushButton()
-        btn_prev.setIcon(QIcon(icon_up_path))
+        btn_prev.setIcon(
+            load_icon(
+                os.path.join("default_assets", "icons", "ui_icons", "arrow_up.svg"),
+                color=icon_color,
+            )
+        )
         btn_prev.setToolTip("Find Previous (Shift+Enter)")
         btn_prev.clicked.connect(self._perform_search_prev)
 
         btn_next = QPushButton()
-        btn_next.setIcon(QIcon(icon_down_path))
+        btn_next.setIcon(
+            load_icon(
+                os.path.join("default_assets", "icons", "ui_icons", "arrow_down.svg"),
+                color=icon_color,
+            )
+        )
         btn_next.setToolTip("Find Next (Enter)")
         btn_next.clicked.connect(self._perform_search_next)
 
         btn_close = QPushButton()
-        btn_close.setIcon(QIcon(icon_close_path))
+        btn_close.setIcon(
+            load_icon(
+                os.path.join("default_assets", "icons", "ui_icons", "close.svg"),
+                color=icon_color,
+            )
+        )
         btn_close.setToolTip("Close Search (Esc)")
         btn_close.clicked.connect(self._hide_search)
 

@@ -90,7 +90,7 @@ class EntityEditorWidget(QWidget):
         self.tab_details = QWidget()
 
         # Scroll Area Wrapper
-        from PySide6.QtWidgets import QScrollArea, QFrame
+        from PySide6.QtWidgets import QFrame, QScrollArea
 
         tab_layout = QVBoxLayout(self.tab_details)
         tab_layout.setContentsMargins(0, 0, 0, 0)
@@ -130,6 +130,11 @@ class EntityEditorWidget(QWidget):
         self.inject_menu = QMenu(self.btn_inject)
         self.btn_inject.setMenu(self.inject_menu)
         self.inject_menu.aboutToShow.connect(self._populate_inject_menu)
+
+        # Connect to theme changes
+        from src.core.theme_manager import ThemeManager
+
+        ThemeManager().theme_changed.connect(self._on_theme_changed)
 
         # We'll place it at the top right, or embedded in form row?
         # Plan said "beside Name or separate header row".
@@ -589,6 +594,22 @@ class EntityEditorWidget(QWidget):
         finally:
             self._is_loading = False
 
+    @Slot(dict)
+    def _on_theme_changed(self, theme: dict) -> None:
+        """Updates UI elements when the theme changes.
+
+        Args:
+            theme (dict): The new theme data.
+
+        """
+        from src.gui.utils.style_helper import StyleHelper
+
+        # Update Inject Button
+        self.btn_inject.setStyleSheet(
+            StyleHelper.get_tool_button_style()
+            + " QToolButton::menu-indicator { image: none; }"
+        )
+
     @Slot()
     def _on_save(self) -> None:
         """Collects data and emits save signal."""
@@ -1017,9 +1038,7 @@ class EntityEditorWidget(QWidget):
     @Slot()
     def _on_summary_generate_requested(self) -> None:
         """Handles summary generation request."""
-        print(
-            f"[DEBUG] _on_summary_generate_requested ID: " f"{self._current_entity_id}"
-        )
+        print(f"[DEBUG] _on_summary_generate_requested ID: {self._current_entity_id}")
         if not self._current_entity_id:
             print("[DEBUG] Aborting: No current entity ID")
             return

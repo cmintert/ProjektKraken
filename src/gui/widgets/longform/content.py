@@ -3,14 +3,14 @@
 Handles the rendering of the longform document content using a lightweight QTextBrowser.
 """
 
+import contextlib
 import logging
 import re
-import contextlib
 from typing import Any, Dict, List, Optional
 
 import markdown
 from PySide6.QtCore import QUrl, Signal, Slot
-from PySide6.QtGui import QDesktopServices, QTextCursor, QTextDocument
+from PySide6.QtGui import QDesktopServices, QMouseEvent, QTextCursor, QTextDocument
 from PySide6.QtWidgets import QTextBrowser, QWidget
 
 from src.core.theme_manager import ThemeManager
@@ -40,7 +40,7 @@ class LongformContentWidget(QTextBrowser):
         # Apply initial theme
         self._apply_theme()
 
-    def mousePressEvent(self, event) -> None:
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         """Detect card clicks vs link clicks."""
         pos = event.position().toPoint()
 
@@ -343,6 +343,14 @@ class LongformContentWidget(QTextBrowser):
             {scrollbar_style}
         """
         self.setStyleSheet(style)
+
+        # Reload content to update CSS in <head>
+        if self._sequence:
+            # Preserve scroll
+            scrollbar = self.verticalScrollBar()
+            val = scrollbar.value()
+            self.load_content(self._sequence)
+            scrollbar.setValue(val)
 
     def find_text(self, text: str, backward: bool = False) -> bool:
         """Find and highlight text.
