@@ -23,7 +23,8 @@ def get_resource_path(relative_path: str) -> str:
     """
     # PyInstaller creates a temp folder and stores path in _MEIPASS
     base_path = getattr(sys, "_MEIPASS", os.path.abspath("."))
-    return os.path.join(base_path, relative_path)
+    path = os.path.join(base_path, relative_path)
+    return path.replace("\\", "/")
 
 
 def get_user_data_path(filename: str = "") -> str:

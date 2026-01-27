@@ -453,9 +453,11 @@ class StyleHelper:
         Returns:
             str: QSS stylesheet string for checkboxes.
         """
+        from src.core.paths import get_resource_path
         from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
+        check_icon_path = get_resource_path("default_assets/icons/ui_icons/check.svg")
         return (
             f"QCheckBox {{ color: {theme['text_main']}; spacing: 8px; }}"
             f"QCheckBox::indicator, QListWidget::indicator {{ "
@@ -468,7 +470,7 @@ class StyleHelper:
             f"QCheckBox::indicator:checked, QListWidget::indicator:checked {{ "
             f"background-color: {theme['primary']}; "
             f"border: 1px solid {theme['primary']}; "
-            f"image: url(default_assets/icons/ui_icons/check.svg); }}"
+            f"image: url({check_icon_path}); }}"
         )
 
     @staticmethod

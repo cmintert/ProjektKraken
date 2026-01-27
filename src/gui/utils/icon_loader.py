@@ -18,6 +18,11 @@ def load_icon(relative_path: str, color: str = None) -> QIcon:
     """
     full_path = get_resource_path(relative_path)
     if not os.path.exists(full_path):
+        import logging
+
+        logging.getLogger(__name__).warning(
+            f"Icon path not found: {relative_path} (Resolved: {full_path})"
+        )
         return QIcon()
 
     if color:
