@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-27
 ### Fixed
-- Fix UI theming issues across multiple components
+- Fix checkbox clipping and apply theme-aware styling
 
 
 *This changelog was automatically generated.*
