@@ -76,18 +76,9 @@ class CompactDateWidget(QWidget):
 
     def _setup_ui(self) -> None:
         """Sets up the widget UI."""
-        outer_layout = QVBoxLayout(self)
-        outer_layout.setContentsMargins(0, 0, 0, 0)
-        outer_layout.setSpacing(0)
-
-        # Styled frame container
-        self.frame = QFrame()
-        self.frame.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Raised)
-        self.frame.setStyleSheet(StyleHelper.get_frame_style())
-        outer_layout.addWidget(self.frame)
-
-        main_layout = QVBoxLayout(self.frame)
-        main_layout.setContentsMargins(4, 2, 4, 2)
+        # Use direct primary layout (replacing outer frame)
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(2)
 
         # Row 1: Date inputs
@@ -162,12 +153,6 @@ class CompactDateWidget(QWidget):
         self.txt_date = QLineEdit()
         self.txt_date.setPlaceholderText("Type date...")
         self.txt_date.setToolTip("Enter date text (e.g. '15 Jan 3019')")
-        # Use a style similar to preview label but editable
-        self.txt_date.setPlaceholderText("Type date...")
-        self.txt_date.setToolTip("Enter date text (e.g. '15 Jan 3019')")
-        self.txt_date.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
-        )
         self.txt_date.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
@@ -175,7 +160,6 @@ class CompactDateWidget(QWidget):
 
         main_layout.addLayout(time_row)
 
-        # Initialize with default months
         # Initialize with default months
         self._populate_months()
         self._populate_days()

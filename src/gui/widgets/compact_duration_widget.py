@@ -11,7 +11,6 @@ from typing import Optional
 
 from PySide6.QtCore import QSize, Signal, Slot
 from PySide6.QtWidgets import (
-    QFrame,
     QHBoxLayout,
     QLabel,
     QSpinBox,
@@ -60,18 +59,9 @@ class CompactDurationWidget(QWidget):
 
     def _setup_ui(self) -> None:
         """Sets up the widget UI."""
-        outer_layout = QVBoxLayout(self)
-        outer_layout.setContentsMargins(0, 0, 0, 0)
-        outer_layout.setSpacing(0)
-
-        # Styled frame container
-        self.frame = QFrame()
-        self.frame.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Raised)
-        self.frame.setStyleSheet(StyleHelper.get_frame_style())
-        outer_layout.addWidget(self.frame)
-
-        main_layout = QVBoxLayout(self.frame)
-        main_layout.setContentsMargins(4, 2, 4, 2)
+        # Use direct primary layout (replacing outer frame)
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(2)
 
         # Row 1: Years, Months, Days
@@ -159,8 +149,8 @@ class CompactDurationWidget(QWidget):
         self.spin_minutes.setStyleSheet(input_style)
 
         # Preview label handles its own style via StyleHelper inside itself if we wanted,
-        # but here we set it once. It uses get_preview_label_style which is theme-aware
-        # but static string returned. We need to re-apply it on theme change.
+        # but here we set it once. It uses get_preview_label_style which is
+        # theme-aware but static string returned. We need to re-apply it on theme change.
         self.lbl_preview.setStyleSheet(StyleHelper.get_preview_label_style())
 
     def _connect_signals(self) -> None:
