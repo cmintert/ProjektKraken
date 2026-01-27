@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-27
 ### Fixed
-- Fix checkbox clipping and apply theme-aware styling
+- Fix theme adherence in date widgets and description editor
 
 
 *This changelog was automatically generated.*
