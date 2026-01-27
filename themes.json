@@ -53,7 +53,7 @@
         "event_main": "#E3B659",
         "entity_main": "#63B0B0"
     },
-    "warhammer_40k": {
+    "imperial_mode": {
         "app_bg": "#0D0D0D",
         "surface": "#1C1C1C",
         "border": "#3E3E3E",
@@ -70,5 +70,23 @@
         "font_size_body": "10pt",
         "event_main": "#E02A2A",
         "entity_main": "#D4AF37"
+    },
+    "cyberpunk_mode": {
+        "app_bg": "#0A0A12",
+        "surface": "#12121F",
+        "border": "#2E2E48",
+        "primary": "#FF00FF",
+        "accent_secondary": "#00D8FF",
+        "text_main": "#D1D1FF",
+        "text_dim": "#6B6B99",
+        "error": "#FE2D2D",
+        "scrollbar_bg": "#0A0A12",
+        "scrollbar_handle": "#3C3C5A",
+        "font_size_h1": "14pt",
+        "font_size_h2": "12pt",
+        "font_size_h3": "11pt",
+        "font_size_body": "10pt",
+        "event_main": "#FF00FF",
+        "entity_main": "#00D8FF"
     }
 }
