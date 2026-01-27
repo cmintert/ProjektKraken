@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-01-25
-**Commit:** `2fa3cce`
+**Last Updated:** 2026-01-27
+**Commit:** `97ba338`
 ---
 
 # Changelog
@@ -12,6 +12,21 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- *(2026-01-27)* **UI**: Added "Cyberpunk Mode" theme with high-contrast tech-noir neon palette.
+- *(2026-01-27)* **UI**: Added "Imperial Mode" with a Grimdark crimson aesthetic.
+- *(2026-01-27)* **UI**: Centralized event and entity color control in `themes.json` for all themes.
+- *(2026-01-26)* **UI**: Overhauled Longform Search with Ctrl+F support, results highlighting, and dedicated search buttons.
+
+### Changed
+- *(2026-01-27)* **UI**: Refined theme-aware color retrieval logic in `StyleHelper`, `EventItem`, and `GraphWidget` to ensure 100% theme adherence.
+- *(2026-01-26)* **UI**: Improved consistency of `CompactDateWidget` and `DescriptionEditor` across all themes.
+- *(2026-01-26)* **Refactor**: Moved `sqlite3` import to `DatabaseWorker` to ensure proper thread affinity for SQLite objects.
+
+### Fixed
+- *(2026-01-26)* **Bug**: Fixed regression where Longform Search bar failed to toggle visibility correctly on Escape or Ctrl+F.
+- *(2026-01-26)* **Stability**: Fixed theme compliance for `CompactDateWidget`, `CompactDurationWidget`, and `DescriptionEditor`.
+- *(2026-01-26)* **Testing**: Mocked `QMessageBox` in `UnifiedListWidget` tests to prevent hanging in headless environments.
+
 - *(2026-01-24)* **AI**: Implemented `RAGService` with Hybrid Search (Lexical + Semantic) for robust context retrieval.
 - *(2026-01-24)* **AI**: Overhauled `LLMGenerationWidget` with RAG context preview and detailed logging.
 - *(2026-01-24)* **AI**: Refactored prompt generation to 'Trinity' architecture (Persona-Task-Data).
