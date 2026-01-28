@@ -170,11 +170,13 @@ class CompactDateWidget(QWidget):
     def _apply_styles(self) -> None:
         """Applies theme-aware styles to all inputs."""
         input_style = StyleHelper.get_input_field_style()
-        self.spin_year.setStyleSheet(input_style)
+        spinbox_style = StyleHelper.get_spinbox_style()
+
+        self.spin_year.setStyleSheet(spinbox_style)
         self.combo_month.setStyleSheet(input_style)
         self.combo_day.setStyleSheet(input_style)
-        self.spin_hour.setStyleSheet(input_style)
-        self.spin_minute.setStyleSheet(input_style)
+        self.spin_hour.setStyleSheet(spinbox_style)
+        self.spin_minute.setStyleSheet(spinbox_style)
 
         # Text date needs input style + monospace font
         self.txt_date.setStyleSheet(

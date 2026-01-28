@@ -500,3 +500,49 @@ class StyleHelper:
 
         theme = ThemeManager().get_theme()
         return theme.get("entity_main", theme.get("accent_secondary", "#4A90D9"))
+
+    @staticmethod
+    def get_spinbox_style() -> str:
+        """Returns QSS for themed spinboxes with custom up/down buttons.
+
+        Fixes the issue where setting background/border on QSpinBox hides the
+        native arrows. Uses arrow SVG icons from default assets.
+
+        Returns:
+            str: QSS stylesheet string for spinboxes.
+        """
+        from src.core.paths import get_resource_path
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
+        base_style = StyleHelper.get_input_field_style()
+
+        # Get raw file paths and convert to forward slashes for CSS
+        up_icon_path = get_resource_path(
+            "default_assets/icons/ui_icons/arrow_up.svg"
+        ).replace("\\", "/")
+        down_icon_path = get_resource_path(
+            "default_assets/icons/ui_icons/arrow_down.svg"
+        ).replace("\\", "/")
+
+        return (
+            f"QSpinBox {{ {base_style} padding-right: 20px; }}"
+            f"QSpinBox::up-button {{ "
+            f"subcontrol-origin: border; subcontrol-position: top right; "
+            f"width: 16px; border: none; "
+            f"background-color: transparent; "
+            f"margin-top: 1px; margin-right: 1px; }}"
+            f"QSpinBox::down-button {{ "
+            f"subcontrol-origin: border; subcontrol-position: bottom right; "
+            f"width: 16px; border: none; "
+            f"background-color: transparent; "
+            f"margin-bottom: 1px; margin-right: 1px; }}"
+            f"QSpinBox::up-button:hover, QSpinBox::down-button:hover {{ "
+            f"background-color: {theme['border']}; border-radius: 2px; }}"
+            f"QSpinBox::up-button:pressed, QSpinBox::down-button:pressed {{ "
+            f"background-color: {theme['primary']}; }}"
+            f"QSpinBox::up-arrow {{ "
+            f"image: url('{up_icon_path}'); width: 10px; height: 10px; }}"
+            f"QSpinBox::down-arrow {{ "
+            f"image: url('{down_icon_path}'); width: 10px; height: 10px; }}"
+        )

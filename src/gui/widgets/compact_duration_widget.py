@@ -141,16 +141,18 @@ class CompactDurationWidget(QWidget):
 
     def _apply_styles(self) -> None:
         """Applies theme-aware styles to all inputs."""
-        input_style = StyleHelper.get_input_field_style()
-        self.spin_years.setStyleSheet(input_style)
-        self.spin_months.setStyleSheet(input_style)
-        self.spin_days.setStyleSheet(input_style)
-        self.spin_hours.setStyleSheet(input_style)
-        self.spin_minutes.setStyleSheet(input_style)
+        spinbox_style = StyleHelper.get_spinbox_style()
+
+        self.spin_years.setStyleSheet(spinbox_style)
+        self.spin_months.setStyleSheet(spinbox_style)
+        self.spin_days.setStyleSheet(spinbox_style)
+        self.spin_hours.setStyleSheet(spinbox_style)
+        self.spin_minutes.setStyleSheet(spinbox_style)
 
         # Preview label handles its own style via StyleHelper inside itself if we wanted,
         # but here we set it once. It uses get_preview_label_style which is
-        # theme-aware but static string returned. We need to re-apply it on theme change.
+        # theme-aware but static string returned. We need to re-apply it on
+        # theme change.
         self.lbl_preview.setStyleSheet(StyleHelper.get_preview_label_style())
 
     def _connect_signals(self) -> None:
