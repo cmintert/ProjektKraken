@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-01-27
-### Internal
-- Optimize calendar calculations impacting performance
+## [Development] - 2026-01-28
+### Fixed
+- Fix spinbox up/down arrow visibility in Event Inspector
 
 
 *This changelog was automatically generated.*
