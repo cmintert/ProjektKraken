@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-29
-### Documentation
-- docs: update CHANGELOG with timeline improvements and recent fixes
+### Changed
+- refactor(ui): move 'Reset Layouts' to Layouts menu
 
 
 *This changelog was automatically generated.*
