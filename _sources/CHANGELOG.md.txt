@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-29
-### Fixed
-- fix(timeline): duration bars now scale correctly with zoom
+### Added
+- feat(timeline): implement global selection sync and enforce single selection
 
 
 *This changelog was automatically generated.*
