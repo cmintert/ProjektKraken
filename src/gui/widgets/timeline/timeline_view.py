@@ -668,6 +668,9 @@ class TimelineView(QGraphicsView):
                 )
                 item = existing_items[event.id]
 
+                # Update zoom level for duration bar scaling
+                item.set_zoom(self._current_zoom)
+
                 # Set Y position and ensure visible
                 item.setY(y)
                 item.setVisible(True)

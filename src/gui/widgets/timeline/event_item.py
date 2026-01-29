@@ -107,6 +107,24 @@ class EventItem(QGraphicsItem):
         # Track if we're currently dragging
         self._is_dragging = False
 
+        # Zoom level for scaling duration bars (updated by TimelineView)
+        self._zoom_level = 1.0
+
+    def set_zoom(self, zoom: float) -> None:
+        """Updates the zoom level for duration bar scaling.
+
+        This method is called by TimelineView when the zoom level changes.
+        Duration bars will be drawn with width = duration * scale_factor * zoom.
+
+        Args:
+            zoom: The current zoom level of the timeline view.
+
+        """
+        if zoom != self._zoom_level:
+            self.prepareGeometryChange()
+            self._zoom_level = zoom
+            self.update()
+
     def update_event(self, event: Event) -> None:
         """Updates the event data for this item and refreshes the display.
 
@@ -127,7 +145,8 @@ class EventItem(QGraphicsItem):
         (border width).
         """
         if self.event.lore_duration > 0:
-            width = self.event.lore_duration * self.scale_factor
+            # Width scales with zoom to match the timeline grid
+            width = self.event.lore_duration * self.scale_factor * self._zoom_level
             # Ensure minimum width for visibility and clicking
             width = max(width, 10)
             # Extra height below for label + date
@@ -150,7 +169,8 @@ class EventItem(QGraphicsItem):
 
         if self.event.lore_duration > 0:
             # For duration events, the bar is clickable
-            width = self.event.lore_duration * self.scale_factor
+            # Width scales with zoom to match the timeline grid
+            width = self.event.lore_duration * self.scale_factor * self._zoom_level
             width = max(width, 10)
             path.addRoundedRect(QRectF(0, -6, width, 12), 4, 4)
         else:
@@ -247,7 +267,8 @@ class EventItem(QGraphicsItem):
 
     def _paint_duration_bar(self, painter: QPainter) -> None:
         """Draws the event as a horizontal bar spanning its duration."""
-        width = self.event.lore_duration * self.scale_factor
+        # Width scales with zoom to match the timeline grid
+        width = self.event.lore_duration * self.scale_factor * self._zoom_level
         width = max(width, 10)  # Minimum width visual
 
         rect = QRectF(0, -6, width, 12)
