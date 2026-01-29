@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-01-27
-**Commit:** `0.10.0`
+**Last Updated:** 2026-01-29
+**Commit:** `75d3f56`
 ---
 
 # Changelog
@@ -10,6 +10,23 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Added
+- *(2026-01-29)* **UI**: Implemented global selection sync between Timeline, List, and Inspectors.
+- *(2026-01-27)* **UI**: Added "Save as Default Layout" menu action for easier workspace configuration.
+
+### Fixed
+- *(2026-01-29)* **Timeline**: Fixed duration bars scaling correctly with zoom level.
+- *(2026-01-29)* **Timeline**: Fixed Fit View to include full event durations and respect actual viewport size.
+- *(2026-01-29)* **Timeline**: Lowered MIN_ZOOM from 0.0001 to 0.000001 to support massive timelines (up to 40M lore days).
+- *(2026-01-29)* **Timeline**: Enforced single event selection (disabled Ctrl+Click multi-select).
+- *(2026-01-28)* **UI**: Fixed spinbox up/down arrow visibility in Event Inspector.
+- *(2026-01-27)* **Performance**: Optimized calendar calculations with year caching for >50x speedup.
+- *(2026-01-27)* **Build**: Fixed gallery image path resolution in portable builds.
+- *(2026-01-27)* **Build**: Resolved missing calendar icon in frozen build.
+
+### Changed
+- *(2026-01-27)* **UI**: Renamed "Imperial Mode" theme and improved theme color control across widgets.
 
 ## [0.10.0]
 
