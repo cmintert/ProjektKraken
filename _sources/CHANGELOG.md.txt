@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-01-29
-### Added
-- feat(timeline): implement global selection sync and enforce single selection
+### Fixed
+- fix(timeline): fit view now respects viewport size and event durations
 
 
 *This changelog was automatically generated.*
