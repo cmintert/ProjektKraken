@@ -82,6 +82,8 @@ class NavigationCoordinator(BaseCoordinator):
         if item_type == "event":
             self.main_window.ui_manager.docks["event"].raise_()
             self.main_window.load_event_details(item_id)
+            # Sync Timeline (Focus and Select)
+            self.main_window.timeline.focus_event(item_id)
 
         elif item_type == "entity":
             self.main_window.ui_manager.docks["entity"].raise_()

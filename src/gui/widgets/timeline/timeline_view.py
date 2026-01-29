@@ -1085,7 +1085,11 @@ class TimelineView(QGraphicsView):
         item = self.scene.itemAt(self.mapToScene(pos), self.transform())
 
         # Traverse up if needed
+        # Traverse up if needed
         if isinstance(item, EventItem):
+            # Enforce single selection
+            self.scene.clearSelection()
+            item.setSelected(True)
             self.event_selected.emit(item.event.id)
         elif isinstance(item, PlayheadItem):
             # Track that we're dragging the playhead
@@ -1111,6 +1115,9 @@ class TimelineView(QGraphicsView):
 
     def focus_event(self, event_id: str) -> None:
         """Centers the view on the specified event."""
+        # Enforce single selection
+        self.scene.clearSelection()
+
         for item in self.scene.items():
             if isinstance(item, EventItem) and item.event.id == event_id:
                 self.centerOn(item)
