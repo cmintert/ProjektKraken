@@ -922,11 +922,14 @@ class TimelineView(QGraphicsView):
         """
         dates = []
 
-        # 1. Collect dates from Events
+        # 1. Collect dates from Events (including their full duration)
         if self.events:
-            # Events are sorted by date in set_events
-            dates.append(self.events[0].lore_date)
-            dates.append(self.events[-1].lore_date)
+            for event in self.events:
+                # Include start date
+                dates.append(event.lore_date)
+                # Include end date if event has duration
+                if event.lore_duration > 0:
+                    dates.append(event.lore_date + event.lore_duration)
 
         # 2. Include Playhead
         # Playhead is always present
@@ -949,26 +952,32 @@ class TimelineView(QGraphicsView):
             min_date -= 10
             max_date += 10
 
+        # Add margin
         margin = (max_date - min_date) * 0.1
         if margin == 0:
             margin = 10
 
-        start_x = (min_date - margin) * self.scale_factor
-        end_x = (max_date + margin) * self.scale_factor
-        width = end_x - start_x
+        # Calculate range in lore date units WITH margin
+        date_range_with_margin = (max_date + margin) - (min_date - margin)
 
         # 4. Fit Horizontal Only
         viewport_width = self.viewport().width()
-        if viewport_width > 0 and width > 0:
-            scale_x = viewport_width / width
+        if viewport_width > 0 and date_range_with_margin > 0:
+            # We need: viewport_width = date_range * (scale_factor * zoom)
+            # So: zoom = viewport_width / (date_range * scale_factor)
+            required_zoom = viewport_width / (
+                date_range_with_margin * self.scale_factor
+            )
 
             # Enforce limits
-            scale_x = max(self.MIN_ZOOM, min(scale_x, self.MAX_ZOOM))
+            required_zoom = max(self.MIN_ZOOM, min(required_zoom, self.MAX_ZOOM))
 
-            self._apply_zoom(scale_x)
+            # Apply zoom (this updates scale_factor and repack)
+            self._apply_zoom(required_zoom)
 
-            # Center X, Align Top Y
-            center_x = (start_x + end_x) / 2
+            # Center on the date range (now in scene coords with new scale)
+            center_date = (min_date - margin + max_date + margin) / 2
+            center_x = center_date * self.scale_factor
             vh = self.viewport().height()
             scene_top = self.scene.sceneRect().top()
 
