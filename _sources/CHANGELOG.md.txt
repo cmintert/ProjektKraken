@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-01-28
+## [Development] - 2026-01-29
 ### Fixed
-- Fix spinbox up/down arrow visibility in Event Inspector
+- fix(timeline): duration bars now scale correctly with zoom
 
 
 *This changelog was automatically generated.*
