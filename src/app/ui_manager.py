@@ -506,9 +506,6 @@ class UIManager:
             action_group.addAction(action)
 
         view_menu.addSeparator()
-        reset_action = view_menu.addAction("Reset Layout")
-        reset_action.triggered.connect(self.reset_layout)
-
         # Layouts Menu
         self.create_layouts_menu(menu_bar)
 
@@ -563,6 +560,12 @@ class UIManager:
                 delete_action.triggered.connect(
                     lambda checked=False, n=name: self.delete_layout(n)
                 )
+
+        self.layouts_menu.addSeparator()
+
+        # Reset Layout Action
+        reset_action = self.layouts_menu.addAction("Reset Layout")
+        reset_action.triggered.connect(self.reset_layout)
 
     def prompt_save_layout(self) -> None:
         """Prompts user for a layout name and saves it."""
