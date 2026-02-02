@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-02-02
-**Commit:** `a191011`
+**Commit:** `b9864f0`
 ---
 
 # Changelog
@@ -12,8 +12,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- *(2026-02-02)* **Core**: Added application version number (v0.10.1) to startup log message.
+- *(2026-02-02)* **GUI**: Improved relation list behavior - clicking empty space or an already-selected item now deselects it.
 - *(2026-02-02)* **UI**: Added Edit and Remove buttons to Event Editor relation sections (Participants, Locations, Custom Relations) for consistency with Entity Editor.
 - *(2026-02-02)* **UI**: Unified destructive button behavior across all editors - Remove buttons now disable when nothing is selected and show warning color when enabled.
+
+### Fixed
+- *(2026-02-02)* **Core**: Fixed triplicate startup logging by centralized logging initialization.
+- *(2026-02-02)* **GUI**: Fixed relation reselection bug where items could not be reselected after deselection.
 
 ### Refactor
 - *(2026-02-02)* **UI**: Added explicit `:disabled` state styling for destructive buttons with greyed-out appearance.
