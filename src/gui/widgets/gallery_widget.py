@@ -32,7 +32,7 @@ from src.commands.image_commands import (
 from src.core.image_attachment import ImageAttachment
 from src.core.paths import get_user_data_path
 from src.gui.dialogs.image_viewer_dialog import ImageViewerDialog
-from src.gui.widgets.standard_buttons import StandardButton
+from src.gui.widgets.standard_buttons import DestructiveButton, StandardButton
 
 logger = logging.getLogger(__name__)
 
@@ -107,9 +107,8 @@ class GalleryWidget(QWidget):
         self.btn_edit.clicked.connect(self._on_edit_caption_clicked)
         self.btn_edit.setEnabled(False)
 
-        self.btn_remove = StandardButton("Remove")
+        self.btn_remove = DestructiveButton("Remove")
         self.btn_remove.setToolTip("Remove selected image")
-        self.btn_remove.setStyleSheet(StyleHelper.get_destructive_button_style())
         self.btn_remove.clicked.connect(self._on_remove_clicked)
         self.btn_remove.setEnabled(False)
 
@@ -202,12 +201,12 @@ class GalleryWidget(QWidget):
 
         for att in attachments:
             item = QListWidgetItem()
-            item.setText(att.caption if att.caption else "")
+            item.setText(att.caption or "")
             item.setData(Qt.ItemDataRole.UserRole, att.id)
 
             # Load thumbnail
             # Try thumb path, else full path
-            rel_path = att.thumb_rel_path if att.thumb_rel_path else att.image_rel_path
+            rel_path = att.thumb_rel_path or att.image_rel_path
             full_path = self._resolve_path(rel_path)
 
             if full_path.exists():
@@ -231,12 +230,13 @@ class GalleryWidget(QWidget):
         should_refresh = False
 
         # 1. Check Owner Match (Add, Reorder)
-        if "owner_id" in result.data and "owner_type" in result.data:
-            if (
-                result.data["owner_id"] == self.owner_id
-                and result.data["owner_type"] == self.owner_type
-            ):
-                should_refresh = True
+        if (
+            "owner_id" in result.data
+            and "owner_type" in result.data
+            and result.data["owner_id"] == self.owner_id
+            and result.data["owner_type"] == self.owner_type
+        ):
+            should_refresh = True
 
         # 2. Check Attachment Match (Remove, UpdateCaption)
         if not should_refresh and "attachment_id" in result.data:
@@ -321,15 +321,13 @@ class GalleryWidget(QWidget):
     @Slot()
     def _on_edit_caption_clicked(self) -> None:
         """Handles toolbar button click for editing caption."""
-        item = self.list_widget.currentItem()
-        if item:
+        if item := self.list_widget.currentItem():
             self.edit_caption(item)
 
     @Slot()
     def _on_remove_clicked(self) -> None:
         """Handles toolbar button click for removal."""
-        item = self.list_widget.currentItem()
-        if item:
+        if item := self.list_widget.currentItem():
             self.remove_item(item)
 
     def edit_caption(self, item: QListWidgetItem) -> None:
@@ -385,22 +383,16 @@ class GalleryWidget(QWidget):
         if not urls:
             return
 
-        files = []
-        for url in urls:
-            if url.isLocalFile():
-                files.append(url.toLocalFile())
-
-        if files:
+        if files := [url.toLocalFile() for url in urls if url.isLocalFile()]:
             logger.info(f"GalleryWidget: Dropped files: {files}")
             # Filter for images roughly
-            valid_files = [
+            if valid_files := [
                 f
                 for f in files
                 if f.lower().endswith(
                     (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp")
                 )
-            ]
-            if valid_files:
+            ]:
                 cmd = AddImagesCommand(self.owner_type, self.owner_id, valid_files)
                 self.main_window.command_requested.emit(cmd)
                 event.acceptProposedAction()

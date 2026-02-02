@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.gui.widgets.standard_buttons import StandardButton
+from src.gui.widgets.standard_buttons import DestructiveButton, StandardButton
 
 
 class AttributeEditorWidget(QWidget):
@@ -47,8 +47,7 @@ class AttributeEditorWidget(QWidget):
         self.toolbar_layout = QHBoxLayout()
         self.btn_add = StandardButton("Add Attribute")
         self.btn_add.clicked.connect(self._on_add)
-        self.btn_remove = StandardButton("Remove")
-        self.btn_remove.setStyleSheet(StyleHelper.get_destructive_button_style())
+        self.btn_remove = DestructiveButton("Remove")
         self.btn_remove.clicked.connect(self._on_remove)
 
         self.toolbar_layout.addWidget(self.btn_add)
@@ -224,6 +223,8 @@ class AttributeEditorWidget(QWidget):
                 return int(raw_val)
             except ValueError:
                 return 0  # Fallback
-        elif val_type == "Boolean":
-            return raw_val.lower() in ("true", "1", "yes", "on")
+
+        if val_type == "Boolean":
+            return raw_val.lower() in {"true", "1", "yes", "on"}
+
         return raw_val

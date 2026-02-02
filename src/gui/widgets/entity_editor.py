@@ -6,6 +6,7 @@ text editing, custom attributes, tags, and relationship management.
 
 import logging
 import traceback
+from contextlib import suppress
 from typing import Optional, Any
 
 from PySide6.QtCore import QPoint, QSize, Qt, Signal, Slot
@@ -28,7 +29,11 @@ from src.gui.mixins.autosave_mixin import AutoSaveManager
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.relation_item_widget import RelationItemWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
-from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
+from src.gui.widgets.standard_buttons import (
+    PrimaryButton,
+    StandardButton,
+    DestructiveButton,
+)
 from src.gui.widgets.summary_widget import SummaryWidget
 from src.gui.widgets.tag_editor import TagEditorWidget
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
@@ -252,8 +257,7 @@ class EntityEditorWidget(QWidget):
         self.btn_edit_rel.clicked.connect(self._on_edit_selected_relation)
         rel_btn_layout.addWidget(self.btn_edit_rel)
 
-        self.btn_remove_rel = StandardButton("Remove")
-        self.btn_remove_rel.setStyleSheet(StyleHelper.get_destructive_button_style())
+        self.btn_remove_rel = DestructiveButton("Remove")
         self.btn_remove_rel.clicked.connect(self._on_remove_selected_relation)
         rel_btn_layout.addWidget(self.btn_remove_rel)
 
@@ -348,26 +352,34 @@ class EntityEditorWidget(QWidget):
             return
 
         if self._is_dirty != dirty:
-            logger.info(
-                f"[EntityEditor] set_dirty: {self._is_dirty} -> {dirty} "
-                f"(entity_id={self._current_entity_id})"
+            self._update_dirty_ui(dirty)
+
+    def _update_dirty_ui(self, dirty: bool) -> None:
+        """Updates the UI based on the dirty state.
+
+        Args:
+            dirty: The new dirty state.
+        """
+        logger.info(
+            f"[EntityEditor] set_dirty: {self._is_dirty} -> {dirty} "
+            f"(entity_id={self._current_entity_id})"
+        )
+        if not dirty:
+            # Log stack trace when clearing dirty to trace the source
+            logger.debug(
+                f"[EntityEditor] Clearing dirty state. Stack trace:\n"
+                f"{traceback.format_stack(limit=10)}"
             )
-            if not dirty:
-                # Log stack trace when clearing dirty to trace the source
-                logger.debug(
-                    f"[EntityEditor] Clearing dirty state. Stack trace:\n"
-                    f"{traceback.format_stack(limit=10)}"
-                )
-            self._is_dirty = dirty
-            self.dirty_changed.emit(dirty)
-            self.btn_save.setEnabled(dirty)
-            self.btn_discard.setEnabled(dirty)
-            if dirty:
-                self.btn_save.setText("Save Changes *")
-                self.autosave_manager.start_timer()
-            else:
-                self.btn_save.setText("Save Changes")
-                self.autosave_manager.stop_timer()
+        self._is_dirty = dirty
+        self.dirty_changed.emit(dirty)
+        self.btn_save.setEnabled(dirty)
+        self.btn_discard.setEnabled(dirty)
+        if dirty:
+            self.btn_save.setText("Save Changes *")
+            self.autosave_manager.start_timer()
+        else:
+            self.btn_save.setText("Save Changes")
+            self.autosave_manager.stop_timer()
 
     def has_unsaved_changes(self) -> bool:
         """Returns True if dirty."""
@@ -398,10 +410,7 @@ class EntityEditorWidget(QWidget):
                 self.desc_edit.blockSignals(False)
 
         # Store for RelationEditDialog
-        if items:
-            self._suggestion_items = items
-        else:
-            self._suggestion_items = []
+        self._suggestion_items = items or []
 
     def update_tag_suggestions(self, tags: list[str]) -> None:
         """Updates tag suggestions."""
@@ -440,9 +449,8 @@ class EntityEditorWidget(QWidget):
             self._current_created_at = entity.created_at
 
             # Block signals
-            self.name_edit.blockSignals(True)
-            self.type_edit.blockSignals(True)
-            self.desc_edit.blockSignals(True)
+            # Block signals
+            self._set_input_signals_blocked(True)
 
             if self.name_edit.text() != entity.name:
                 self.name_edit.setText(entity.name)
@@ -483,16 +491,14 @@ class EntityEditorWidget(QWidget):
             self.gallery.set_owner("entity", entity.id)
 
             # Load Summary
-            if self.summary_service:
-                summary_data = entity.attributes.get("_summary_data")
-                if summary_data:
-                    try:
-                        data = SummaryData.from_dict(summary_data)
-                        self.summary_widget.set_summary(data)
-                        # Open if summary exists ? Or keep user preference?
-                        # Keep existing state or open if user preference set (later)
-                    except Exception:
-                        pass
+            if self.summary_service and (
+                summary_data := entity.attributes.get("_summary_data")
+            ):
+                with suppress(Exception):
+                    data = SummaryData.from_dict(summary_data)
+                    self.summary_widget.set_summary(data)
+                    # Open if summary exists ? Or keep user preference?
+                    # Keep existing state or open if user preference set (later)
 
                 is_stale = self.summary_service.is_stale(entity)
                 self.summary_widget.set_stale(is_stale)
@@ -559,9 +565,8 @@ class EntityEditorWidget(QWidget):
             self.setEnabled(True)
 
             # Unblock & Reset
-            self.name_edit.blockSignals(False)
-            self.type_edit.blockSignals(False)
-            self.desc_edit.blockSignals(False)
+            # Unblock & Reset
+            self._set_input_signals_blocked(False)
             self.set_dirty(False)
         finally:
             self._is_loading = False
@@ -615,7 +620,8 @@ class EntityEditorWidget(QWidget):
             # Else? If we loaded an entity, it had _summary_data.
             # If we didn't touch it, AttributeEditor didn't have it (filtered).
             # So we lose it on save?!
-            # FIX: We must store the originally loaded hidden attributes and merge them back.
+            # FIX: We must store the originally loaded hidden attributes and merge
+            # them back.
             # This is a general issue with the editor if it filters attrs.
             # Assuming AttributeEditor might hold onto them?
             # Let's check AttributeEditor.
@@ -635,9 +641,9 @@ class EntityEditorWidget(QWidget):
             }
 
             logger.info(
-                f"[EntityEditor] Emitting save_requested for entity '{entity_data['name']}' "
-                f"(id={entity_data['id']}, "
-                f"desc_len={len(entity_data['description'])})"
+                f"[EntityEditor] Emitting save_requested for entity "
+                f"'{entity_data['name']}' "
+                f"(id={entity_data['id']}, desc_len={len(entity_data['description'])})"
             )
             self.save_requested.emit(entity_data)
 
@@ -777,15 +783,13 @@ class EntityEditorWidget(QWidget):
     @Slot()
     def _on_edit_selected_relation(self) -> None:
         """Handles editing the currently selected relation."""
-        item = self.rel_list.currentItem()
-        if item:
+        if item := self.rel_list.currentItem():
             self._on_edit_relation(item)
 
     @Slot()
     def _on_remove_selected_relation(self) -> None:
         """Handles removing the currently selected relation."""
-        item = self.rel_list.currentItem()
-        if item:
+        if item := self.rel_list.currentItem():
             self._on_remove_relation_item(item)
 
     def get_generation_context(self) -> dict:
@@ -795,12 +799,11 @@ class EntityEditorWidget(QWidget):
             dict: Context dictionary with 'name', 'type', etc.
 
         """
-        context = {
+        return {
             "name": self.name_edit.text(),
             "type": self.type_edit.currentText(),
             "existing_description": self.desc_edit.toPlainText(),
         }
-        return context
 
     @Slot(str)
     def _on_text_generated(self, text: str) -> None:
@@ -819,10 +822,7 @@ class EntityEditorWidget(QWidget):
         current = self.desc_edit.toPlainText()
 
         # Append generated text with newline separator if there's existing content
-        if current.strip():
-            new_text = current + "\n\n" + text
-        else:
-            new_text = text
+        new_text = current + "\n\n" + text if current.strip() else text
 
         # Update description
         self.desc_edit.setPlainText(new_text)
@@ -994,19 +994,27 @@ class EntityEditorWidget(QWidget):
 
         if readonly:
             if reason == "Viewing Past/Future State":
-                self.btn_save.setText("Return to Present")
-                self.btn_save.setEnabled(True)
-                self.btn_save.setStyleSheet(
-                    "background-color: #2196F3; color: white; font-weight: bold;"
+                self._update_save_button(
+                    "Return to Present",
+                    True,
+                    "background-color: #2196F3; color: white; font-weight: bold;",
                 )
             else:
-                self.btn_save.setText(reason or "Read Only")
-                self.btn_save.setEnabled(False)
-                self.btn_save.setStyleSheet("")
+                self._update_save_button(reason or "Read Only", False)
         else:
-            self.btn_save.setText("Save Changes")
-            self.btn_save.setEnabled(True)
-            self.btn_save.setStyleSheet("")
+            self._update_save_button("Save Changes", True)
+
+    def _update_save_button(self, text: str, enabled: bool, style: str = "") -> None:
+        """Updates the save button state."""
+        self.btn_save.setText(text)
+        self.btn_save.setEnabled(enabled)
+        self.btn_save.setStyleSheet(style)
+
+    def _set_input_signals_blocked(self, blocked: bool) -> None:
+        """Blocks or unblocks signals for input fields."""
+        self.name_edit.blockSignals(blocked)
+        self.type_edit.blockSignals(blocked)
+        self.desc_edit.blockSignals(blocked)
 
     def exit_read_only_mode(self) -> None:
         """Restores normal editing mode."""

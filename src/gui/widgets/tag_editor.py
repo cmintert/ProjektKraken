@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.gui.widgets.standard_buttons import StandardButton
+from src.gui.widgets.standard_buttons import DestructiveButton, StandardButton
 
 
 class TagEditorWidget(QWidget):
@@ -49,8 +49,7 @@ class TagEditorWidget(QWidget):
         self.btn_add.clicked.connect(self._on_add)
         toolbar_layout.addWidget(self.btn_add)
 
-        self.btn_remove = StandardButton("Remove")
-        self.btn_remove.setStyleSheet(StyleHelper.get_destructive_button_style())
+        self.btn_remove = DestructiveButton("Remove")
         self.btn_remove.clicked.connect(self._on_remove)
         toolbar_layout.addWidget(self.btn_remove)
 
@@ -132,8 +131,7 @@ class TagEditorWidget(QWidget):
     @Slot()
     def _on_remove(self) -> None:
         """Handles removing the selected tag."""
-        current_item = self.tag_list.currentItem()
-        if current_item:
+        if current_item := self.tag_list.currentItem():
             row = self.tag_list.row(current_item)
             self.tag_list.takeItem(row)
             self.tags_changed.emit()
