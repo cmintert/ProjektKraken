@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-02-02
-**Commit:** `b9864f0`
+**Commit:** `0.10.2`
 ---
 
 # Changelog
@@ -10,6 +10,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [0.10.2]
 
 ### Changed
 - *(2026-02-02)* **Core**: Added application version number (v0.10.1) to startup log message.

@@ -42,11 +42,11 @@ def get_pyproject_version() -> str:
 def get_constant_version() -> str:
     try:
         content = CONSTANTS_PATH.read_text(encoding="utf-8")
-        # Look for WINDOW_TITLE = "Project Kraken - v0.5.0 (Beta)"
-        match = re.search(r'WINDOW_TITLE\s*=\s*".*v(\d+\.\d+\.\d+).*?"', content)
+        # Look for VERSION = "0.10.1"
+        match = re.search(r'VERSION\s*=\s*"(\d+\.\d+\.\d+)"', content)
         if match:
             return match.group(1)
-        return "Version not found in WINDOW_TITLE"
+        return "Version not found in constants.py"
     except Exception as e:
         return f"Error reading constants.py: {e}"
 
