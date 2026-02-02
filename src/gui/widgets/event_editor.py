@@ -403,6 +403,11 @@ class EventEditorWidget(QWidget):
                 lambda pos: self._show_rel_menu(pos, lst)
             )
             lst.itemDoubleClicked.connect(self._on_edit_relation)
+
+            # Allow deselection by clicking on empty space or selected item
+            lst.viewport().installEventFilter(self)
+            lst.setProperty("_relation_list_widget", True)  # Mark for event filter
+
             # Fixed height for compactness, but expandable
             lst.setMinimumHeight(80)
 
@@ -489,7 +494,7 @@ class EventEditorWidget(QWidget):
 
     def _update_participant_button_states(self) -> None:
         """Updates enabled states for participant Edit and Remove buttons."""
-        has_selection = self.participant_list.currentItem() is not None
+        has_selection = len(self.participant_list.selectedItems()) > 0
         self.btn_edit_participant.setEnabled(has_selection)
         self.btn_remove_participant.setEnabled(has_selection)
 
@@ -505,7 +510,7 @@ class EventEditorWidget(QWidget):
 
     def _update_location_button_states(self) -> None:
         """Updates enabled states for location Edit and Remove buttons."""
-        has_selection = self.location_list.currentItem() is not None
+        has_selection = len(self.location_list.selectedItems()) > 0
         self.btn_edit_location.setEnabled(has_selection)
         self.btn_remove_location.setEnabled(has_selection)
 
@@ -521,9 +526,50 @@ class EventEditorWidget(QWidget):
 
     def _update_rel_button_states(self) -> None:
         """Updates enabled states for custom relation Edit and Remove buttons."""
-        has_selection = self.rel_list.currentItem() is not None
+        has_selection = len(self.rel_list.selectedItems()) > 0
         self.btn_edit_rel.setEnabled(has_selection)
         self.btn_remove_rel.setEnabled(has_selection)
+
+    def eventFilter(self, obj: QWidget, event: Any) -> bool:
+        """Event filter to handle clicks on empty space in relation lists.
+
+        Args:
+            obj: Object that received the event.
+            event: The event.
+
+        Returns:
+            True if event was handled, False otherwise.
+
+        """
+        from PySide6.QtCore import QEvent
+        from PySide6.QtGui import QMouseEvent
+
+        # Check if this is a mouse press on a relation list viewport
+        if (
+            isinstance(event, QMouseEvent)
+            and event.type() == QEvent.Type.MouseButtonPress
+        ):
+            if event.button() == Qt.MouseButton.LeftButton:
+                # Find the list widget this viewport belongs to
+                parent = obj.parent()
+                if isinstance(parent, QListWidget) and parent.property(
+                    "_relation_list_widget"
+                ):
+                    # Get the item at the click position
+                    item = parent.itemAt(event.pos())
+
+                    if item is None:
+                        # Clicked on empty space - clear selection
+                        parent.clearSelection()
+                        parent.setCurrentItem(None)
+                        return False  # Let Qt handle the event normally
+                    elif item.isSelected():
+                        # Clicked on already-selected item - deselect it
+                        parent.clearSelection()
+                        parent.setCurrentItem(None)
+                        return True  # Consume the event to prevent re-selection
+
+        return super().eventFilter(obj, event)
 
     def _connect_dirty_signals(self) -> None:
         """Connects input widget signals to set_dirty(True)."""

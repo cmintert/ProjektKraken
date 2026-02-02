@@ -273,6 +273,11 @@ class EntityEditorWidget(QWidget):
         self.rel_list.customContextMenuRequested.connect(self._show_rel_menu)
         self.rel_list.itemDoubleClicked.connect(self._on_edit_relation)
         self.rel_list.itemSelectionChanged.connect(self._update_relation_button_states)
+
+        # Allow deselection by clicking on empty space or selected item
+        self.rel_list.viewport().installEventFilter(self)
+        self.rel_list.setProperty("_relation_list_widget", True)
+
         rel_tab_layout.addWidget(self.rel_list)
 
         self.inspector.add_tab(self.tab_relations, "Relations")
@@ -797,9 +802,50 @@ class EntityEditorWidget(QWidget):
 
     def _update_relation_button_states(self) -> None:
         """Updates enabled states for Edit and Remove buttons based on selection."""
-        has_selection = self.rel_list.currentItem() is not None
+        has_selection = len(self.rel_list.selectedItems()) > 0
         self.btn_edit_rel.setEnabled(has_selection)
         self.btn_remove_rel.setEnabled(has_selection)
+
+    def eventFilter(self, obj: QWidget, event: Any) -> bool:
+        """Event filter to handle clicks on empty space in relation lists.
+
+        Args:
+            obj: Object that received the event.
+            event: The event.
+
+        Returns:
+            True if event was handled, False otherwise.
+
+        """
+        from PySide6.QtCore import QEvent
+        from PySide6.QtGui import QMouseEvent
+
+        # Check if this is a mouse press on a relation list viewport
+        if (
+            isinstance(event, QMouseEvent)
+            and event.type() == QEvent.Type.MouseButtonPress
+        ):
+            if event.button() == Qt.MouseButton.LeftButton:
+                # Find the list widget this viewport belongs to
+                parent = obj.parent()
+                if isinstance(parent, QListWidget) and parent.property(
+                    "_relation_list_widget"
+                ):
+                    # Get the item at the click position
+                    item = parent.itemAt(event.pos())
+
+                    if item is None:
+                        # Clicked on empty space - clear selection
+                        parent.clearSelection()
+                        parent.setCurrentItem(None)
+                        return False  # Let Qt handle the event normally
+                    elif item.isSelected():
+                        # Clicked on already-selected item - deselect it
+                        parent.clearSelection()
+                        parent.setCurrentItem(None)
+                        return True  # Consume the event to prevent re-selection
+
+        return super().eventFilter(obj, event)
 
     def get_generation_context(self) -> dict:
         """Get context for LLM generation.
