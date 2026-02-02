@@ -66,8 +66,21 @@ class ObsidianExporter:
         errors: List[str] = []
         files_created = 0
 
+        # Security Check: Ensure output_dir is absolute and valid
+        # We can't strictly enforce "must be in X" because the user chooses the export folder.
+        # But we MUST ensure that subsequent file writes stay WITHIN this folder.
+        output_dir = output_dir.resolve()
+
         # Ensure output directory exists
-        output_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            output_dir.mkdir(parents=True, exist_ok=True)
+        except OSError as e:
+            return ExportResult(
+                success=False,
+                files_created=0,
+                output_dir=output_dir,
+                errors=[f"Failed to create output directory: {e}"],
+            )
 
         # Fetch all data
         entities = self._db.get_all_entities()
@@ -96,7 +109,13 @@ class ObsidianExporter:
                 )
                 content = self._build_entity_markdown(entity, relations)
                 filename = self._get_unique_filename(entity.name, used_filenames)
-                filepath = output_dir / filename
+                filepath = (output_dir / filename).resolve()
+
+                # Security Check: Prevent traversal in filename
+                if not filepath.is_relative_to(output_dir):
+                    raise ValueError(
+                        f"Security Violation: Export filename '{filename}' attempts traversal"
+                    )
 
                 filepath.write_text(content, encoding="utf-8")
                 files_created += 1
@@ -117,7 +136,13 @@ class ObsidianExporter:
                 )
                 content = self._build_event_markdown(event, relations)
                 filename = self._get_unique_filename(event.name, used_filenames)
-                filepath = output_dir / filename
+                filepath = (output_dir / filename).resolve()
+
+                # Security Check: Prevent traversal in filename
+                if not filepath.is_relative_to(output_dir):
+                    raise ValueError(
+                        f"Security Violation: Export filename '{filename}' attempts traversal"
+                    )
 
                 filepath.write_text(content, encoding="utf-8")
                 files_created += 1

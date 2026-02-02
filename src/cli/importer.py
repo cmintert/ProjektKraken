@@ -43,10 +43,16 @@ def run_import_cli(args: List[str]) -> int:
     except SystemExit:
         return 1
 
-    file_path = Path(parsed_args.file)
+    file_path = Path(parsed_args.file).resolve()  # Security: Resolve path
+
     if not file_path.exists():
         logger.error(f"File not found: {file_path}")
         print(f"Error: File '{file_path}' does not exist.")
+        return 1
+
+    if not file_path.is_file():
+        logger.error(f"Not a file: {file_path}")
+        print(f"Error: '{file_path}' is not a file.")
         return 1
 
     # 1. Setup Database Connection
@@ -71,8 +77,18 @@ def run_import_cli(args: List[str]) -> int:
 
         # 2. Read File
         print(f"Reading {file_path}...")
-        with open(file_path, "r", encoding="utf-8") as f:
-            json_content = f.read()
+        # Modified file reading to include JSON parsing error handling
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                json_content = f.read()
+        except FileNotFoundError:  # Should be caught by file_path.exists() earlier
+            logger.error(f"File not found: {file_path}")
+            print(f"Error: File not found: '{file_path}'.")
+            return 1
+        except Exception as e:  # Catch other potential file reading errors
+            logger.error(f"Error reading file '{file_path}': {e}")
+            print(f"Error reading file '{file_path}': {e}")
+            return 1
 
         # 3. Parse and Validate
         try:

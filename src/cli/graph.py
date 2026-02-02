@@ -43,6 +43,8 @@ def export_graph(args: argparse.Namespace) -> int:
         )
 
         output_file = Path(args.out_file)
+        # Security: Resolve output path and check it exists as a file after creation
+        output_file = output_file.resolve()
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
 

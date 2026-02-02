@@ -147,14 +147,26 @@ class World:
             World instance if valid, None otherwise.
 
         """
-        manifest_path = world_path / "world.json"
+        # Security: Resolve world path
+        world_path = world_path.resolve()
+
+        manifest_path = (world_path / "world.json").resolve()
+
+        # Check for traversal
+        if not manifest_path.is_relative_to(world_path):
+            logger.error(
+                f"Security Violation: Manifest path {manifest_path} outside world {world_path}"
+            )
+            return None
 
         if not manifest_path.exists():
             logger.warning(f"No manifest found at: {manifest_path}")
             return None
 
         try:
-            with open(manifest_path, "r", encoding="utf-8") as f:
+            with open(
+                manifest_path, "r", encoding="utf-8"
+            ) as f:  # Use manifest_path (resolved)
                 manifest_data = json.load(f)
 
             manifest = WorldManifest.from_dict(manifest_data)

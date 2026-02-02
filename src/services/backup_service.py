@@ -392,6 +392,27 @@ class BackupService:
         temp_path = None  # Initialize to None for cleanup handling
 
         try:
+            # Security Check: Ensure backup path is within authorized backup directory
+            # Resolve paths to handle symlinks and relative paths
+            resolved_backup = backup_path.resolve()
+
+            # Get authorized backup directory (dynamically resolved)
+            # Use the configured backup directory if available, otherwise default
+            backup_dir = (
+                self.config.backup_dir
+                if self.config.backup_dir
+                else get_backup_directory()
+            ).resolve()
+
+            # Check if backup file is within the backup directory
+            if not resolved_backup.is_relative_to(backup_dir):
+                msg = (
+                    f"Security Violation: Path '{resolved_backup}' is not allowed. "
+                    f"It must be inside '{backup_dir}'."
+                )
+                logger.error(msg)
+                raise ValueError(msg)
+
             # Verify backup integrity
             if not self._verify_backup_file(backup_path):
                 logger.error("Backup verification failed")
@@ -419,6 +440,10 @@ class BackupService:
             return True
 
         except Exception as e:
+            # Re-raise security violations (ValueError) to be handled by caller/UI
+            if isinstance(e, ValueError):
+                raise
+
             logger.error(f"Failed to restore backup: {e}", exc_info=True)
             # Clean up temp file if exists
             if temp_path and temp_path.exists():
@@ -613,6 +638,10 @@ class BackupService:
             str: Hexadecimal checksum string.
 
         """
+        # Security: Resolve path and check existence
+        # (though usually called on internal paths)
+        file_path = file_path.resolve()
+
         sha256_hash = hashlib.sha256()
         with open(file_path, "rb") as f:
             for byte_block in iter(lambda: f.read(4096), b""):

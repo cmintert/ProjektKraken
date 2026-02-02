@@ -109,7 +109,17 @@ class PromptLoader:
 
         # Construct filename: {template_id}_v{version}.txt
         filename = f"{template_id}_v{version}.txt"
-        file_path = self.templates_dir / filename
+        file_path = (self.templates_dir / filename).resolve()
+
+        # Security Check: Ensure path is within templates directory
+        # templates_dir is resolved in __init__ or we resolve it here
+        templates_dir = self.templates_dir.resolve()
+
+        if not file_path.is_relative_to(templates_dir):
+            raise ValueError(
+                f"Security Violation: Template path '{file_path}' "
+                f"must be inside '{templates_dir}'"
+            )
 
         if not file_path.exists():
             raise FileNotFoundError(
@@ -407,10 +417,17 @@ class PromptLoader:
 
         # Filename
         filename = f"{template_id}_v{version}.txt"
-        file_path = self.templates_dir / filename
+        file_path = (self.templates_dir / filename).resolve()
 
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(file_content)
+        # Security Check: Ensure path is within templates directory
+        templates_dir = self.templates_dir.resolve()
+        if not file_path.is_relative_to(templates_dir):
+            raise ValueError(
+                f"Security Violation: Template path '{file_path}' "
+                f"must be inside '{templates_dir}'"
+            )
+
+        file_path.write_text(file_content, encoding="utf-8")
 
         logger.info(f"Saved template to {file_path}")
         return filename

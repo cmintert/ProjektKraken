@@ -7,6 +7,7 @@ theme system to work in headless environments.
 import json
 import logging
 import os
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 from src.core.paths import get_resource_path
@@ -127,10 +128,19 @@ class BaseThemeManager:
 
         """
         try:
-            with open(path, "r") as f:
+            # Security: Resolve path
+            resolved_path = Path(path).resolve()
+
+            # Ensure it exists (basic check) - strict sandbox is hard without known base
+            # But we can check it exists as a FILE
+            if not resolved_path.is_file():
+                logger.error(f"Style template not found or not a file: {resolved_path}")
+                return
+
+            with open(resolved_path, "r", encoding="utf-8") as f:
                 self._qss_template = f.read()
-        except FileNotFoundError:
-            logger.error(f"Style template not found: {path}")
+        except (FileNotFoundError, OSError) as e:
+            logger.error(f"Style template error: {path} - {e}")
 
     def get_available_themes(self) -> list[str]:
         """Returns a list of available theme names.

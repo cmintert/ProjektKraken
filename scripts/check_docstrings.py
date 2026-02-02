@@ -2,17 +2,37 @@ import ast
 import os
 import sys
 from typing import List, Tuple
+from pathlib import Path
 
 
-def check_file(filepath: str, root_dir: str) -> Tuple[List[str], int, int]:
+def check_file(filepath: Path, root_dir: str) -> Tuple[List[str], int, int]:
+    """Check a single Python file for missing or incomplete docstrings.
+
+    Args:
+        filepath: Path to the Python file to check.
+        root_dir: The root directory for calculating relative paths.
+
+    Returns:
+        Tuple[List[str], int, int]: A tuple containing:
+            - list: List of missing docstring messages.
+            - int: Total number of items checked (modules, classes, functions).
+            - int: Number of items with docstrings.
+
+    """
     missing_docs = []
     total = 0
     documented = 0
+
+    # Security: Resolve path and check it's a file
+    filepath = filepath.resolve()
+    if not filepath.is_file():
+        return [], 0, 0
+
     rel_path = os.path.relpath(filepath, root_dir)
 
     with open(filepath, "r", encoding="utf-8") as f:
         try:
-            tree = ast.parse(f.read(), filename=filepath)
+            tree = ast.parse(f.read(), filename=str(filepath))
         except SyntaxError:
             print(f"Syntax error in {filepath}")
             return [], 0, 0

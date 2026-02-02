@@ -155,8 +155,14 @@ class FastInjectManager:
         """
         import shutil
 
+        # Security: Resolve and validate existence
+        source_path = source_path.resolve()
+
         if not source_path.exists():
             raise FileNotFoundError(f"Template file not found: {source_path}")
+
+        if not source_path.is_file():
+            raise ValueError(f"Template path is not a file: {source_path}")
 
         # Load and validate the template
         with open(source_path, "r", encoding="utf-8") as f:
