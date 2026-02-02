@@ -14,7 +14,7 @@ import logging
 import os
 from typing import Iterator, List, Optional, Tuple
 
-from PySide6.QtCore import QSettings, Qt, Signal, Slot
+from PySide6.QtCore import QSettings, QSize, Qt, Signal, Slot
 from PySide6.QtGui import QKeyEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QComboBox,
@@ -52,6 +52,56 @@ def get_available_icons() -> List[str]:
     if not os.path.exists(MARKER_ICONS_PATH):
         return []
     return [f for f in os.listdir(MARKER_ICONS_PATH) if f.endswith(".svg")]
+
+
+class NoLayoutLabel(QWidget):
+    """A minimal label that draws text without participating in layout.
+
+    This solves the infinite resize loop where updating text triggers layout
+    recalculation, which resizes docks, which triggers more updates.
+    """
+
+    def __init__(self, text: str = "", parent=None):
+        super().__init__(parent)
+        self._text = text
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
+    def setText(self, text: str) -> None:
+        if self._text != text:
+            self._text = text
+            # Trigger paint directly - DO NOT call updateGeometry
+            self.update()
+
+    def text(self) -> str:
+        return self._text
+
+    def sizeHint(self) -> QSize:
+        # minimal fixed size
+        return QSize(50, 20)
+
+    def minimumSizeHint(self) -> QSize:
+        return QSize(50, 20)
+
+    def paintEvent(self, event) -> None:
+        from PySide6.QtGui import QPainter, QColor
+
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        # Draw text aligned right
+        painter.setPen(QColor("#888888"))
+
+        # Basic font setup - can be enhanced if needed
+        # We assume styling is minimal
+        # Since we bypass stylesheet drawing, we must draw manually
+
+        rect = self.rect().adjusted(0, 0, -5, 0)  # Padding right
+        painter.drawText(
+            rect,
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+            self._text,
+        )
 
 
 class MapWidget(QWidget):
@@ -97,7 +147,6 @@ class MapWidget(QWidget):
         # Create view
         self.view = MapGraphicsView(self)
 
-        # Clock Mode state
         self._pinned_marker_id: Optional[str] = None
         self._pinned_original_t: Optional[float] = None
 
@@ -183,12 +232,11 @@ class MapWidget(QWidget):
         self.overlay_banner.hide()
 
         # Coordinate Label
-        self.coord_label = QLabel("Ready")
-        self.coord_label.setAlignment(
-            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
-        )
-        self.coord_label.setStyleSheet(
-            "color: #888888; font-size: 10px; padding: 2px 5px;"
+        self.coord_label = NoLayoutLabel("Ready")
+
+        # Prevent label from pushing layout width when text changes
+        self.coord_label.setSizePolicy(
+            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed
         )
         layout.addWidget(self.coord_label)
 
@@ -538,7 +586,12 @@ class MapWidget(QWidget):
 
         km_str = f"RW: {km_x:.2f} km, {km_y:.2f} km"
 
-        self.coord_label.setText(f"{norm_str} | {km_str} | {time_str}")
+        new_text = f"{norm_str} | {km_str} | {time_str}"
+
+        # Only update if text changed
+        if self.coord_label.text() != new_text:
+            self.coord_label.setText(new_text)
+            # logger.debug(f"Coords updated: {new_text} | Label Width Hint: {self.coord_label.sizeHint().width()}")
 
     def load_map(self, image_path: str) -> bool:
         """Loads a map image.
@@ -885,6 +938,9 @@ class MapWidget(QWidget):
         """Handle resize to keep overlay centered."""
         super().resizeEvent(event)
         self._update_overlay_position()
+        logger.debug(
+            f"MapWidget Resized: {event.size().width()}x{event.size().height()} (Old: {event.oldSize().width()}x{event.oldSize().height()})"
+        )
 
 
 class OnboardingDialog(QDialog):

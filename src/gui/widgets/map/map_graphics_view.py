@@ -538,6 +538,15 @@ class MapGraphicsView(QGraphicsView):
         """
         super().resizeEvent(event)
 
+    def sizeHint(self) -> QSize:
+        """Return a stable preferred size to prevent dock layout jitter.
+
+        Returns:
+            QSize: A reasonable default size that doesn't fight the layout.
+
+        """
+        return QSize(400, 300)
+
     def fit_to_view(self) -> None:
         """Fits the map to the current view size."""
         if self.pixmap_item:

@@ -301,6 +301,10 @@ class LongformEditorWidget(QWidget):
         """
         return QSize(600, 700)  # Comfortable size for split view
 
+    def minimumSizeHint(self) -> QSize:
+        """Minimum size for the longform editor."""
+        return QSize(300, 300)
+
     @Slot(bool)
     def _toggle_publish(self, checked: bool) -> None:
         """Handle publish toggle."""
