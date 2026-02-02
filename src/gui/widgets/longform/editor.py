@@ -274,11 +274,9 @@ class LongformEditorWidget(QWidget):
             Tuple of (table, id) or None.
 
         """
-        items = self.outline.selectedItems()
-        if items:
+        if items := self.outline.selectedItems():
             item = items[0]
-            meta_data = self.outline._item_meta.get(id(item))
-            if meta_data:
+            if meta_data := self.outline._item_meta.get(id(item)):
                 table, row_id, _ = meta_data
                 return (table, row_id)
         return None
@@ -367,20 +365,14 @@ class LongformEditorWidget(QWidget):
 
     def _perform_search_next(self) -> None:
         """Search for next occurrence."""
-        text = self.search_input.text()
-        if not text:
-            return
-
-        self.content.find_text(text, backward=False)
-        # Note: If not found, we could implement wrap-around logic here
+        if text := self.search_input.text():
+            self.content.find_text(text, backward=False)
+            # Note: If not found, we could implement wrap-around logic here
 
     def _perform_search_prev(self) -> None:
         """Search for previous occurrence."""
-        text = self.search_input.text()
-        if not text:
-            return
-
-        self.content.find_text(text, backward=True)
+        if text := self.search_input.text():
+            self.content.find_text(text, backward=True)
 
     def set_refresh_button_visible(self, visible: bool) -> None:
         """Sets the visibility of the manual refresh button."""
