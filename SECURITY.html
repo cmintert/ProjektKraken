@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Semantic Search in ProjektKraken" href="SEMANTIC_SEARCH.html"><link rel="prev" title="Database Schema Reference" href="SCHEMA_REFERENCE.html">
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
-        <title>Security Best Practices - Project Kraken 0.10.1 documentation</title>
+        <title>Security Best Practices - Project Kraken 0.10.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -167,7 +167,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">Project Kraken 0.10.1 documentation</div></a>
+      <a href="index.html"><div class="brand">Project Kraken 0.10.2 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
-  <span class="sidebar-brand-text">Project Kraken 0.10.1 documentation</span>
+  <span class="sidebar-brand-text">Project Kraken 0.10.2 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -494,24 +494,45 @@ world.kraken
 </section>
 <section id="path-traversal-prevention">
 <h3>Path Traversal Prevention<a class="headerlink" href="#path-traversal-prevention" title="Link to this heading">¶</a></h3>
-<p>If implementing file operations:</p>
+<p>When handling file paths provided by users or external sources:</p>
+<ol class="arabic simple">
+<li><p><strong>Resolve</strong> the path to an absolute path (handling <code class="docutils literal notranslate"><span class="pre">..</span></code> and symlinks).</p></li>
+<li><p><strong>Sandbox</strong> the path to an authorized directory using <code class="docutils literal notranslate"><span class="pre">is_relative_to()</span></code>.</p></li>
+<li><p><strong>Validate</strong> existence and type (file vs directory).</p></li>
+<li><p><strong>Feedback</strong> Provide clear error messages for security violations.</p></li>
+</ol>
+<p><strong>Recommended Pattern:</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
-<span class="k">def</span><span class="w"> </span><span class="nf">safe_file_access</span><span class="p">(</span><span class="n">user_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">base_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Prevent directory traversal attacks.&quot;&quot;&quot;</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">requested</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">base_dir</span><span class="p">)</span> <span class="o">/</span> <span class="n">user_path</span>
-        <span class="n">requested</span> <span class="o">=</span> <span class="n">requested</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">process_user_file</span><span class="p">(</span><span class="n">user_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">allowed_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Safely process a user-provided file path.&quot;&quot;&quot;</span>
+    <span class="c1"># 1. Resolve paths</span>
+    <span class="n">target_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">user_path</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+    <span class="n">base_dir</span> <span class="o">=</span> <span class="n">allowed_dir</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+    
+    <span class="c1"># 2. Sandbox check</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">target_path</span><span class="o">.</span><span class="n">is_relative_to</span><span class="p">(</span><span class="n">base_dir</span><span class="p">):</span>
+        <span class="c1"># 4. Clear security feedback</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Security Violation: Path &#39;</span><span class="si">{</span><span class="n">target_path</span><span class="si">}</span><span class="s2">&#39; is not allowed. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;It must be inside &#39;</span><span class="si">{</span><span class="n">base_dir</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># 3. Validation</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">target_path</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;File not found: </span><span class="si">{</span><span class="n">target_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         
-        <span class="c1"># Ensure it&#39;s within base_dir</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">str</span><span class="p">(</span><span class="n">requested</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">base_dir</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">())):</span>
-            <span class="k">return</span> <span class="kc">False</span>
-        
-        <span class="k">return</span> <span class="kc">True</span>
-    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-        <span class="k">return</span> <span class="kc">False</span>
+    <span class="c1"># Safe to proceed</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">target_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="o">...</span>
 </pre></div>
 </div>
+<p><strong>Key Improvements in v0.10.x:</strong></p>
+<ul class="simple">
+<li><p>Replaced string-based prefix checks with <code class="docutils literal notranslate"><span class="pre">pathlib.Path.is_relative_to()</span></code></p></li>
+<li><p>Standardized security error messages across CLI and GUI</p></li>
+<li><p>Enforced strict sandboxing for Backups, Exports, templates, and World loading</p></li>
+</ul>
 </section>
 </section>
 <section id="logging-security">
@@ -812,7 +833,7 @@ pip<span class="w"> </span>list<span class="w"> </span>--outdated
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=d714ba09"></script>
+</div><script src="_static/documentation_options.js?v=f7a520e2"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

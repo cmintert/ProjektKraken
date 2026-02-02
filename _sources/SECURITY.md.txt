@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Security Best Practices  
-**Last Updated:** 2026-01-01  
-**Commit:** `d9e3f83`  
+**Last Updated:** 2026-02-02  
+**Commit:** `current`  
 ---
 
 # Security Best Practices
@@ -226,25 +226,45 @@ os.chmod(db_path, stat.S_IRUSR | stat.S_IWUSR)  # 0600 - owner only
 
 ### Path Traversal Prevention
 
-If implementing file operations:
+When handling file paths provided by users or external sources:
+
+1.  **Resolve** the path to an absolute path (handling `..` and symlinks).
+2.  **Sandbox** the path to an authorized directory using `is_relative_to()`.
+3.  **Validate** existence and type (file vs directory).
+4.  **Feedback** Provide clear error messages for security violations.
+
+**Recommended Pattern:**
 
 ```python
 from pathlib import Path
 
-def safe_file_access(user_path: str, base_dir: str) -> bool:
-    """Prevent directory traversal attacks."""
-    try:
-        requested = Path(base_dir) / user_path
-        requested = requested.resolve()
+def process_user_file(user_path: str, allowed_dir: Path) -> None:
+    """Safely process a user-provided file path."""
+    # 1. Resolve paths
+    target_path = Path(user_path).resolve()
+    base_dir = allowed_dir.resolve()
+    
+    # 2. Sandbox check
+    if not target_path.is_relative_to(base_dir):
+        # 4. Clear security feedback
+        raise ValueError(
+            f"Security Violation: Path '{target_path}' is not allowed. "
+            f"It must be inside '{base_dir}'."
+        )
+
+    # 3. Validation
+    if not target_path.is_file():
+        raise FileNotFoundError(f"File not found: {target_path}")
         
-        # Ensure it's within base_dir
-        if not str(requested).startswith(str(Path(base_dir).resolve())):
-            return False
-        
-        return True
-    except Exception:
-        return False
+    # Safe to proceed
+    with open(target_path, "r") as f:
+        ...
 ```
+
+**Key Improvements in v0.10.x:**
+- Replaced string-based prefix checks with `pathlib.Path.is_relative_to()`
+- Standardized security error messages across CLI and GUI
+- Enforced strict sandboxing for Backups, Exports, templates, and World loading
 
 ## Logging Security
 

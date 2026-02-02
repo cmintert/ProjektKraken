@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-02
-### Added
-- feat: Add 'destructive' color property to existing themes and introduce new 'muted_light_mode' theme.
+### Internal
+- Security: Fix 9 path traversal vulnerabilities and improve docs
 
 
 *This changelog was automatically generated.*
