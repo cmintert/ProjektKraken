@@ -49,6 +49,7 @@ class AttributeEditorWidget(QWidget):
         self.btn_add.clicked.connect(self._on_add)
         self.btn_remove = DestructiveButton("Remove")
         self.btn_remove.clicked.connect(self._on_remove)
+        self.btn_remove.setEnabled(False)
 
         self.toolbar_layout.addWidget(self.btn_add)
         self.toolbar_layout.addWidget(self.btn_remove)
@@ -70,6 +71,7 @@ class AttributeEditorWidget(QWidget):
         )
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.itemChanged.connect(self._on_item_changed)
+        self.table.itemSelectionChanged.connect(self._update_button_states)
 
         main_layout.addWidget(self.table)
 
@@ -182,6 +184,11 @@ class AttributeEditorWidget(QWidget):
         if current_row >= 0:
             self.table.removeRow(current_row)
             self.attributes_changed.emit()
+
+    def _update_button_states(self) -> None:
+        """Updates enabled state for Remove button based on selection."""
+        has_selection = self.table.currentRow() >= 0
+        self.btn_remove.setEnabled(has_selection)
 
     @Slot(QTableWidgetItem)
     def _on_item_changed(self, item: QTableWidgetItem) -> None:

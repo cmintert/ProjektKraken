@@ -51,6 +51,7 @@ class TagEditorWidget(QWidget):
 
         self.btn_remove = DestructiveButton("Remove")
         self.btn_remove.clicked.connect(self._on_remove)
+        self.btn_remove.setEnabled(False)
         toolbar_layout.addWidget(self.btn_remove)
 
         toolbar_layout.addStretch()
@@ -67,6 +68,7 @@ class TagEditorWidget(QWidget):
         # Tag list
         self.tag_list = QListWidget()
         self.tag_list.setSelectionMode(QListWidget.SingleSelection)
+        self.tag_list.itemSelectionChanged.connect(self._update_button_states)
         main_layout.addWidget(self.tag_list)
 
     def load_tags(self, tags: List[str]) -> None:
@@ -127,6 +129,11 @@ class TagEditorWidget(QWidget):
 
         self.tag_input.clear()
         self.tags_changed.emit()
+
+    def _update_button_states(self) -> None:
+        """Updates enabled state for Remove button based on selection."""
+        has_selection = self.tag_list.currentItem() is not None
+        self.btn_remove.setEnabled(has_selection)
 
     @Slot()
     def _on_remove(self) -> None:

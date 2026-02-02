@@ -255,10 +255,12 @@ class EntityEditorWidget(QWidget):
 
         self.btn_edit_rel = StandardButton("Edit")
         self.btn_edit_rel.clicked.connect(self._on_edit_selected_relation)
+        self.btn_edit_rel.setEnabled(False)
         rel_btn_layout.addWidget(self.btn_edit_rel)
 
         self.btn_remove_rel = DestructiveButton("Remove")
         self.btn_remove_rel.clicked.connect(self._on_remove_selected_relation)
+        self.btn_remove_rel.setEnabled(False)
         rel_btn_layout.addWidget(self.btn_remove_rel)
 
         rel_btn_layout.addStretch()
@@ -270,6 +272,7 @@ class EntityEditorWidget(QWidget):
         self.rel_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.rel_list.customContextMenuRequested.connect(self._show_rel_menu)
         self.rel_list.itemDoubleClicked.connect(self._on_edit_relation)
+        self.rel_list.itemSelectionChanged.connect(self._update_relation_button_states)
         rel_tab_layout.addWidget(self.rel_list)
 
         self.inspector.add_tab(self.tab_relations, "Relations")
@@ -791,6 +794,12 @@ class EntityEditorWidget(QWidget):
         """Handles removing the currently selected relation."""
         if item := self.rel_list.currentItem():
             self._on_remove_relation_item(item)
+
+    def _update_relation_button_states(self) -> None:
+        """Updates enabled states for Edit and Remove buttons based on selection."""
+        has_selection = self.rel_list.currentItem() is not None
+        self.btn_edit_rel.setEnabled(has_selection)
+        self.btn_remove_rel.setEnabled(has_selection)
 
     def get_generation_context(self) -> dict:
         """Get context for LLM generation.

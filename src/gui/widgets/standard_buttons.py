@@ -64,6 +64,50 @@ class PrimaryButton(StandardButton):
 
         """
         super().__init__(text, parent)
+        self._apply_style()
+
+        from src.core.theme_manager import ThemeManager
+
+        ThemeManager().theme_changed.connect(self._on_theme_changed)
+
+    def _apply_style(self) -> None:
+        """Applies the current theme style."""
         from src.gui.utils.style_helper import StyleHelper
 
         self.setStyleSheet(StyleHelper.get_primary_button_style())
+
+    def _on_theme_changed(self) -> None:
+        """Handles theme change events."""
+        self._apply_style()
+
+
+class DestructiveButton(StandardButton):
+    """A destructive action button.
+
+    Applies StyleHelper destructive button styling (e.g. for Delete/Remove).
+    """
+
+    def __init__(self, text: str, parent: Optional[QWidget] = None) -> None:
+        """Initializes a destructive button.
+
+        Args:
+            text: The button text.
+            parent: The parent widget, if any.
+
+        """
+        super().__init__(text, parent)
+        self._apply_style()
+
+        from src.core.theme_manager import ThemeManager
+
+        ThemeManager().theme_changed.connect(self._on_theme_changed)
+
+    def _apply_style(self) -> None:
+        """Applies the current theme style."""
+        from src.gui.utils.style_helper import StyleHelper
+
+        self.setStyleSheet(StyleHelper.get_destructive_button_style())
+
+    def _on_theme_changed(self) -> None:
+        """Handles theme change events."""
+        self._apply_style()

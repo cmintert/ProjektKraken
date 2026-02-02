@@ -191,11 +191,13 @@ class StyleHelper:
 
         theme = ThemeManager().get_theme()
         return (
-            f"QPushButton {{ background-color: {theme['error']}; "
-            f"color: white; border: 1px solid {theme['error']}; "
+            f"QPushButton {{ background-color: {theme['destructive']}; "
+            f"color: white; border: 1px solid {theme['destructive']}; "
             f"border-radius: 4px; padding: 6px 16px; }}"
             f"QPushButton:hover {{ background-color: {theme['border']}; "
             f"color: {theme['text_main']}; }}"
+            f"QPushButton:disabled {{ background-color: {theme['surface']}; "
+            f"color: {theme['text_dim']}; border: 1px solid {theme['border']}; }}"
         )
 
     @staticmethod
