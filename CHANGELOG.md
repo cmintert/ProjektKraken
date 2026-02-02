@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-01-29
-**Commit:** `75d3f56`
+**Last Updated:** 2026-02-02
+**Commit:** `0.10.1`
 ---
 
 # Changelog
@@ -11,11 +11,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.10.1]
+
 ### Added
 - *(2026-01-29)* **UI**: Implemented global selection sync between Timeline, List, and Inspectors.
 - *(2026-01-27)* **UI**: Added "Save as Default Layout" menu action for easier workspace configuration.
 
 ### Fixed
+- *(2026-02-02)* **UI**: Fixed infinite resize loop and separator rendering issues in Map Dock to prevent layout instability.
 - *(2026-01-29)* **Timeline**: Fixed duration bars scaling correctly with zoom level.
 - *(2026-01-29)* **Timeline**: Fixed Fit View to include full event durations and respect actual viewport size.
 - *(2026-01-29)* **Timeline**: Lowered MIN_ZOOM from 0.0001 to 0.000001 to support massive timelines (up to 40M lore days).
@@ -26,7 +29,12 @@ All notable changes to this project will be documented in this file.
 - *(2026-01-27)* **Build**: Resolved missing calendar icon in frozen build.
 
 ### Changed
+- *(2026-01-29)* **UI**: Moved "Reset Layouts" option from "Views" menu to "Layouts" menu for better logical organization.
 - *(2026-01-27)* **UI**: Renamed "Imperial Mode" theme and improved theme color control across widgets.
+
+### Refactor
+- *(2026-02-02)* **Editor**: Applied Sourcery refactoring suggestions to `LongformEditor`, including walrus operator usage and conditional logic simplifications.
+- *(2026-02-02)* **Testing**: Cleaned up code review findings and fixed unit tests to ensure stability after refactoring.
 
 ## [0.10.0]
 
