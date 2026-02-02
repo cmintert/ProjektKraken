@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-01-29
-### Changed
-- refactor(ui): move 'Reset Layouts' to Layouts menu
+## [Development] - 2026-02-02
+### Fixed
+- fix(ui): resolve map dock resize loop and separator issues
 
 
 *This changelog was automatically generated.*
