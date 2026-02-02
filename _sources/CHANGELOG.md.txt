@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-02
 ### Internal
-- Security: Fix 9 path traversal vulnerabilities and improve docs
+- Merge pull request #68 from cmintert/fix/aikido-security-sast-15290347-6KuH
 
 
 *This changelog was automatically generated.*
