@@ -32,7 +32,11 @@ from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.compact_duration_widget import CompactDurationWidget
 from src.gui.widgets.relation_item_widget import RelationItemWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
-from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
+from src.gui.widgets.standard_buttons import (
+    DestructiveButton,
+    PrimaryButton,
+    StandardButton,
+)
 from src.gui.widgets.summary_widget import SummaryWidget
 from src.gui.widgets.tag_editor import TagEditorWidget
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
@@ -332,22 +336,30 @@ class EventEditorWidget(QWidget):
 
         # Helper to create a section
         def create_section(
-            title: str, add_slot: Any, placeholder: str = ""
-        ) -> tuple[QWidget, QListWidget, StandardButton]:
-            """Create a section with title, list widget, and add button."""
+            title: str,
+            add_slot: Any,
+            edit_slot: Any,
+            remove_slot: Any,
+            placeholder: str = "",
+        ) -> tuple[
+            QWidget, QListWidget, StandardButton, StandardButton, DestructiveButton
+        ]:
+            """Create a section with title, list widget, and action buttons."""
             group = QWidget()
             vbox = QVBoxLayout(group)
             vbox.setContentsMargins(0, 0, 0, 0)
             vbox.setSpacing(4)
 
-            # Header
+            # Header with buttons
             hbox = QHBoxLayout()
             from PySide6.QtWidgets import QLabel
 
             lbl = QLabel(title)
             lbl.setStyleSheet("font-weight: bold; color: gray;")
             hbox.addWidget(lbl)
+            hbox.addStretch()
 
+            # Add button
             btn_add = StandardButton("+")
             btn_add.setFixedSize(
                 32, 32
@@ -368,7 +380,19 @@ class EventEditorWidget(QWidget):
 
             btn_add.clicked.connect(add_slot)
             hbox.addWidget(btn_add)
-            hbox.addStretch()
+
+            # Edit button
+            btn_edit = StandardButton("Edit")
+            btn_edit.setEnabled(False)
+            btn_edit.clicked.connect(edit_slot)
+            hbox.addWidget(btn_edit)
+
+            # Remove button
+            btn_remove = DestructiveButton("Remove")
+            btn_remove.setEnabled(False)
+            btn_remove.clicked.connect(remove_slot)
+            hbox.addWidget(btn_remove)
+
             vbox.addLayout(hbox)
 
             # List
@@ -388,32 +412,61 @@ class EventEditorWidget(QWidget):
 
             vbox.addWidget(lst)
 
-            return group, lst, btn_add
+            return group, lst, btn_add, btn_edit, btn_remove
 
         # 1. Participants
-        self.grp_participants, self.participant_list, self.btn_add_participant = (
-            create_section(
-                "Participants",
-                self._on_add_participant,
-                "No participants yet. Click + to link a character or entity.",
-            )
+        (
+            self.grp_participants,
+            self.participant_list,
+            self.btn_add_participant,
+            self.btn_edit_participant,
+            self.btn_remove_participant,
+        ) = create_section(
+            "Participants",
+            self._on_add_participant,
+            self._on_edit_selected_participant,
+            self._on_remove_selected_participant,
+            "No participants yet. Click + to link a character or entity.",
+        )
+        self.participant_list.itemSelectionChanged.connect(
+            self._update_participant_button_states
         )
         layout.addWidget(self.grp_participants)
 
         # 2. Locations
-        self.grp_locations, self.location_list, self.btn_add_location = create_section(
+        (
+            self.grp_locations,
+            self.location_list,
+            self.btn_add_location,
+            self.btn_edit_location,
+            self.btn_remove_location,
+        ) = create_section(
             "Locations",
             self._on_add_location,
+            self._on_edit_selected_location,
+            self._on_remove_selected_location,
             "No locations specified. Click + to link a place.",
+        )
+        self.location_list.itemSelectionChanged.connect(
+            self._update_location_button_states
         )
         layout.addWidget(self.grp_locations)
 
         # 3. Custom Relations (renamed from "Other Relations" for clarity)
-        self.grp_relations, self.rel_list, self.btn_add_rel = create_section(
+        (
+            self.grp_relations,
+            self.rel_list,
+            self.btn_add_rel,
+            self.btn_edit_rel,
+            self.btn_remove_rel,
+        ) = create_section(
             "Custom Relations",
             self._on_add_relation,
+            self._on_edit_selected_relation,
+            self._on_remove_selected_relation,
             "No custom relations. Click + to add a link.",
         )
+        self.rel_list.itemSelectionChanged.connect(self._update_rel_button_states)
         layout.addWidget(self.grp_relations)
 
     def _on_add_participant(self) -> None:
@@ -423,6 +476,54 @@ class EventEditorWidget(QWidget):
     def _on_add_location(self) -> None:
         """Quick add location."""
         self._on_add_relation(rel_type="located_at")
+
+    def _on_edit_selected_participant(self) -> None:
+        """Handles editing the selected participant."""
+        if item := self.participant_list.currentItem():
+            self._on_edit_relation(item)
+
+    def _on_remove_selected_participant(self) -> None:
+        """Handles removing the selected participant."""
+        if item := self.participant_list.currentItem():
+            self._on_remove_relation_item(item)
+
+    def _update_participant_button_states(self) -> None:
+        """Updates enabled states for participant Edit and Remove buttons."""
+        has_selection = self.participant_list.currentItem() is not None
+        self.btn_edit_participant.setEnabled(has_selection)
+        self.btn_remove_participant.setEnabled(has_selection)
+
+    def _on_edit_selected_location(self) -> None:
+        """Handles editing the selected location."""
+        if item := self.location_list.currentItem():
+            self._on_edit_relation(item)
+
+    def _on_remove_selected_location(self) -> None:
+        """Handles removing the selected location."""
+        if item := self.location_list.currentItem():
+            self._on_remove_relation_item(item)
+
+    def _update_location_button_states(self) -> None:
+        """Updates enabled states for location Edit and Remove buttons."""
+        has_selection = self.location_list.currentItem() is not None
+        self.btn_edit_location.setEnabled(has_selection)
+        self.btn_remove_location.setEnabled(has_selection)
+
+    def _on_edit_selected_relation(self) -> None:
+        """Handles editing the selected custom relation."""
+        if item := self.rel_list.currentItem():
+            self._on_edit_relation(item)
+
+    def _on_remove_selected_relation(self) -> None:
+        """Handles removing the selected custom relation."""
+        if item := self.rel_list.currentItem():
+            self._on_remove_relation_item(item)
+
+    def _update_rel_button_states(self) -> None:
+        """Updates enabled states for custom relation Edit and Remove buttons."""
+        has_selection = self.rel_list.currentItem() is not None
+        self.btn_edit_rel.setEnabled(has_selection)
+        self.btn_remove_rel.setEnabled(has_selection)
 
     def _connect_dirty_signals(self) -> None:
         """Connects input widget signals to set_dirty(True)."""
@@ -991,28 +1092,6 @@ class EventEditorWidget(QWidget):
             self.set_dirty(True)
         except Exception as e:
             logger.error(f"Error applying summary: {e}")
-
-    @Slot()
-    def _on_edit_selected_relation(self) -> None:
-        """Edits the currently selected relation."""
-        item = self.rel_list.currentItem()
-        if item:
-            self._on_edit_relation(item)
-        else:
-            QMessageBox.information(
-                self, "Selection", "Please select a relation to edit."
-            )
-
-    @Slot()
-    def _on_remove_selected_relation(self) -> None:
-        """Removes the currently selected relation."""
-        item = self.rel_list.currentItem()
-        if item:
-            self._on_remove_relation_item(item)
-        else:
-            QMessageBox.information(
-                self, "Selection", "Please select a relation to remove."
-            )
 
     def get_generation_context(self) -> dict:
         """Get context for LLM generation.

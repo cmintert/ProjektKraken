@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-02-02
-**Commit:** `0.10.1`
+**Commit:** `a191011`
 ---
 
 # Changelog
@@ -10,6 +10,15 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Changed
+- *(2026-02-02)* **UI**: Added Edit and Remove buttons to Event Editor relation sections (Participants, Locations, Custom Relations) for consistency with Entity Editor.
+- *(2026-02-02)* **UI**: Unified destructive button behavior across all editors - Remove buttons now disable when nothing is selected and show warning color when enabled.
+
+### Refactor
+- *(2026-02-02)* **UI**: Added explicit `:disabled` state styling for destructive buttons with greyed-out appearance.
+- *(2026-02-02)* **UI**: Updated `PrimaryButton` and `DestructiveButton` to dynamically update styles on theme changes.
+- *(2026-02-02)* **Refactor**: Applied Sourcery suggestions to widget code - simplified conditionals, used walrus operator, and improved error handling.
 
 ## [0.10.1]
 
