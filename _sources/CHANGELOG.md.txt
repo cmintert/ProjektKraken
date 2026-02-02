@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-02
-### Fixed
-- fix(ui): resolve map dock resize loop and separator issues
+### Internal
+- chore(refactor): cleanup code review findings and fix tests
 
 
 *This changelog was automatically generated.*
