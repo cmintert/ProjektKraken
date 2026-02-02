@@ -25,7 +25,12 @@ QQuickWindow.setGraphicsApi(QSGRendererInterface.GraphicsApi.OpenGLRhi)
 QApplication.setAttribute(Qt.ApplicationAttribute.AA_ShareOpenGLContexts)
 
 # Now safe to import other modules that may use Qt widgets
-from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY  # noqa: E402
+# Now safe to import other modules that may use Qt widgets
+from src.app.constants import (
+    VERSION,
+    WINDOW_SETTINGS_APP,
+    WINDOW_SETTINGS_KEY,
+)  # noqa: E402
 from src.core.logging_config import (  # noqa: E402
     get_logger,
     setup_logging,
@@ -35,7 +40,7 @@ from src.core.paths import get_resource_path  # noqa: E402
 from src.core.theme_manager import ThemeManager  # noqa: E402
 
 # Initialize Logging
-setup_logging(debug_mode=True)
+# setup_logging(debug_mode=True)  # Removed module-level side-effect
 logger = get_logger(__name__)
 
 
@@ -57,7 +62,9 @@ def main() -> None:
         sys.exit(exit_code)
 
     logger.info("=" * 60)
-    logger.info(f"Project Kraken Session Started at {datetime.now().isoformat()}")
+    logger.info(
+        f"Project Kraken v{VERSION} Session Started at {datetime.now().isoformat()}"
+    )
     logger.info("=" * 60)
 
     try:

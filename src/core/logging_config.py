@@ -7,7 +7,6 @@ rotating file handlers and console output.
 import logging
 import os
 import sys
-from datetime import datetime
 from logging.handlers import RotatingFileHandler
 
 # Configuration
@@ -100,9 +99,9 @@ def setup_logging(debug_mode: bool = False, log_to_console: bool = True) -> None
         root_logger.addHandler(console_handler)
 
     # 6. Initial Log
-    logging.info("=" * 60)
-    logging.info(f"Project Kraken Session Started at {datetime.now().isoformat()}")
-    logging.info("=" * 60)
+    # logging.info("=" * 60)
+    # logging.info(f"Project Kraken Session Started at {datetime.now().isoformat()}")
+    # logging.info("=" * 60)
 
     # Force DEBUG for UnifiedList to troubleshoot focus issue
     logging.getLogger("src.gui.widgets.unified_list").setLevel(logging.DEBUG)
