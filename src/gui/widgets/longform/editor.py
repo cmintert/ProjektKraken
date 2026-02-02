@@ -301,10 +301,6 @@ class LongformEditorWidget(QWidget):
         """
         return QSize(600, 700)  # Comfortable size for split view
 
-    def minimumSizeHint(self) -> QSize:
-        """Minimum size for the longform editor."""
-        return QSize(300, 300)
-
     @Slot(bool)
     def _toggle_publish(self, checked: bool) -> None:
         """Handle publish toggle."""
@@ -332,33 +328,7 @@ class LongformEditorWidget(QWidget):
     @Slot(str)
     def _on_server_error(self, msg: str) -> None:
         """Handle server error manually."""
-
         self.btn_publish.setChecked(False)
-        # was self.publish_action in original but publish_action is not defined in init?
-        # Checking original code...
-        # Original: self.publish_action.setChecked(False)
-        # Wait, in original __init__: self.btn_publish = QPushButton...
-        # It didn't assign to self.publish_action.
-        # Original code had a bug or I missed something?
-        # Line 444: self.refresh_action = toolbar.addWidget(self.btn_refresh)
-        # Line 470: self.btn_publish = QPushButton... toolbar.addWidget(self.btn_publish)
-        # There is no self.publish_action assigned for the Publish button.
-        # But wait, `toolbar.addWidget` returns a QAction.
-        # The original code might have been: `self.publish_action = toolbar.addWidget(...)`?
-        # Let's check the original file content again.
-        # Line 473: toolbar.addWidget(self.btn_publish)
-        # It does NOT assign to self.publish_action.
-        # Line 608: self.publish_action.setChecked(False)
-        # This implies `self.publish_action` exists.
-        # Ah, maybe I missed a line in `view_file`? Or the original code has a bug.
-        # I will check `view_file` output again.
-        # Line 473: toolbar.addWidget(self.btn_publish)
-        # No assignment.
-        # So `self.publish_action` would raise AttributeError if called.
-        # I should probably fix this bug or use `self.btn_publish.setChecked(False)` since `btn_publish` is stored.
-        # `btn_publish` is a `QPushButton`. `setChecked` works on it.
-        # I will use `self.btn_publish.setChecked(False)`.
-
         self.url_label.setText("Error starting server")
         QMessageBox.warning(self, "Web Server Error", msg)
 

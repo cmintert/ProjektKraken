@@ -207,9 +207,9 @@ def test_normalized_coordinates_conversion(map_view):
     setup_map_with_pixmap(map_view, 1000, 800)
 
     # Test corner coordinates
-    top_left = map_view._normalized_to_scene(0.0, 0.0)
-    bottom_right = map_view._normalized_to_scene(1.0, 1.0)
-    center = map_view._normalized_to_scene(0.5, 0.5)
+    top_left = map_view.coord_system.to_scene(0.0, 0.0)
+    bottom_right = map_view.coord_system.to_scene(1.0, 1.0)
+    center = map_view.coord_system.to_scene(0.5, 0.5)
 
     # Top-left should be at pixmap origin
     assert top_left.x() >= 0

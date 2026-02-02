@@ -701,13 +701,6 @@ class MapGraphicsView(QGraphicsView):
 
             marker.set_temporal_state(is_future=is_future, is_past=is_past)
 
-    def _normalized_to_scene(self, x: float, y: float) -> QPointF:
-        """[DEPRECATED] Use self.coord_system.to_scene instead.
-
-        Kept temporarily if external callers use it, but should be removed.
-        """
-        return self.coord_system.to_scene(x, y)
-
     def wheelEvent(self, event: QWheelEvent) -> None:
         """Handle mouse wheel for zooming."""
         # Sensitivity
