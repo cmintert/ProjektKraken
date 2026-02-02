@@ -117,7 +117,11 @@ function renderChips() {
     state.selectedTags.forEach(tag => {
         const chip = document.createElement('div');
         chip.className = 'tag-chip';
-        chip.innerHTML = `${tag} <span class="close-btn">&times;</span>`;
+        chip.textContent = tag + ' ';
+        const closeSpan = document.createElement('span');
+        closeSpan.className = 'close-btn';
+        closeSpan.innerHTML = '&times;';
+        chip.appendChild(closeSpan);
         chip.querySelector('.close-btn').addEventListener('click', (e) => {
             e.stopPropagation();
             removeTag(tag);
