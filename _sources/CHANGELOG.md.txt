@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-03
-### Added
-- Feat: Add unit selection to map calibration
+### Internal
+- chore: update project dependencies.
 
 
 *This changelog was automatically generated.*
