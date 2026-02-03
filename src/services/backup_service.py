@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 try:
     from PySide6.QtCore import QThread, QTimer, Signal
@@ -59,11 +59,17 @@ class BackupMetadata:
     checksum: str
     description: str = ""
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> Dict[str, Any]:
         """Converts metadata to dictionary for serialization.
 
         Returns:
-            dict: Dictionary representation of the metadata.
+            Dict[str, Any]: Dictionary containing backup metadata with keys:
+                - 'backup_path' (str): Path to the backup file
+                - 'backup_type' (str): Type of backup (auto/daily/weekly/manual)
+                - 'timestamp' (str): ISO format creation timestamp
+                - 'size' (int): File size in bytes
+                - 'checksum' (str): SHA256 checksum
+                - 'description' (str): Optional user description
 
         """
         return {
@@ -76,7 +82,7 @@ class BackupMetadata:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "BackupMetadata":
+    def from_dict(cls, data: Dict[str, Any]) -> "BackupMetadata":
         """Creates BackupMetadata from a dictionary.
 
         Args:
