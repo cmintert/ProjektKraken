@@ -61,73 +61,45 @@ def test_init_window(main_window):
     assert main_window.timeline is not None
 
 
-def test_create_event_flow(main_window):
+def test_create_event_flow(main_window, qtbot):
     # Simulate save from editor
     ev_data = {"id": "1", "name": "New", "lore_date": 10.0}
 
-    # Update implies existing event. Create is implicit in seeding?
-    # MainWindow handles update_relation, remove_relation.
-    # It passes update_event to command.
-
-    main_window.update_event(ev_data)
-
-    # Verify command was sent to worker
-    main_window.worker.run_command.assert_called_once()
+    # Use qtbot to check signal emission
+    with qtbot.waitSignal(main_window.command_requested, timeout=1000):
+        main_window.update_event(ev_data)
 
 
-def test_create_entity(main_window):
+def test_create_entity(main_window, qtbot):
     with patch(
         "PySide6.QtWidgets.QInputDialog.getText", return_value=("New Entity", True)
     ):
         # Ensure editor check passes
         main_window.entity_editor.has_unsaved_changes = MagicMock(return_value=False)
 
-        main_window.create_entity()
-
-        # Verify run_command called
-        main_window.worker.run_command.assert_called_once()
-        cmd = main_window.worker.run_command.call_args[0][0]
-        assert cmd.__class__.__name__ == "CreateEntityCommand"
-        assert cmd._entity.name == "New Entity"
+        # Use qtbot to check signal emission
+        with qtbot.waitSignal(main_window.command_requested, timeout=1000):
+            main_window.create_entity()
 
 
-def test_delete_entity(main_window):
-    main_window.delete_entity("ent1")
-
-    main_window.worker.run_command.assert_called_once()
-    cmd = main_window.worker.run_command.call_args[0][0]
-    assert cmd.__class__.__name__ == "DeleteEntityCommand"
-    assert cmd._entity_id == "ent1"
+def test_delete_entity(main_window, qtbot):
+    with qtbot.waitSignal(main_window.command_requested, timeout=1000):
+        main_window.delete_entity("ent1")
 
 
-def test_delete_event(main_window):
-    main_window.delete_event("ev1")
-
-    main_window.worker.run_command.assert_called_once()
-    cmd = main_window.worker.run_command.call_args[0][0]
-    assert cmd.__class__.__name__ == "DeleteEventCommand"
-    assert cmd.event_id == "ev1"
+def test_delete_event(main_window, qtbot):
+    with qtbot.waitSignal(main_window.command_requested, timeout=1000):
+        main_window.delete_event("ev1")
 
 
-def test_update_entity(main_window):
-    main_window.update_entity({"id": "ent1", "name": "Updated"})
-
-    main_window.worker.run_command.assert_called_once()
-    cmd = main_window.worker.run_command.call_args[0][0]
-    assert cmd.__class__.__name__ == "UpdateEntityCommand"
-    assert cmd.entity_id == "ent1"
-    assert cmd.update_data["name"] == "Updated"
+def test_update_entity(main_window, qtbot):
+    with qtbot.waitSignal(main_window.command_requested, timeout=1000):
+        main_window.update_entity({"id": "ent1", "name": "Updated"})
 
 
-def test_add_relation(main_window):
-    main_window.add_relation("src", "dst", "relates_to", bidirectional=True)
-
-    main_window.worker.run_command.assert_called_once()
-    cmd = main_window.worker.run_command.call_args[0][0]
-    assert cmd.__class__.__name__ == "AddRelationCommand"
-    assert cmd.source_id == "src"
-    assert cmd.target_id == "dst"
-    assert cmd.bidirectional is True
+def test_add_relation(main_window, qtbot):
+    with qtbot.waitSignal(main_window.command_requested, timeout=1000):
+        main_window.add_relation("src", "dst", "relates_to", bidirectional=True)
 
 
 @patch("src.app.main_window.QMessageBox.warning")

@@ -83,7 +83,7 @@ def test_event_item_paint_selected(qtbot):
     assert item.isSelected()
 
 
-def test_event_item_color_by_type():
+def test_event_item_color_by_type(qapp):
     """Test that different event types get different colors."""
     cosmic = EventItem(Event(name="C", lore_date=1.0, type="cosmic"), 10.0)
     combat = EventItem(Event(name="C", lore_date=1.0, type="combat"), 10.0)
