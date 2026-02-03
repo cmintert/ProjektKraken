@@ -323,7 +323,7 @@ class LLMGenerationWidget(QWidget):
     def __init__(
         self,
         parent: Optional[QWidget] = None,
-        context_provider: Optional[ContextProvider] = None,
+        context_provider: Optional[GenerationContextProvider] = None,
     ) -> None:
         """Initialize LLM generation widget.
 
