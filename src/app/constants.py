@@ -56,3 +56,16 @@ IMAGE_FILE_FILTER = (
 
 # Autosave Configuration
 AUTOSAVE_DELAY_MS = 2000  # 2 seconds
+
+# UI Timing Constants
+# Delays for deferred initialization and UI updates
+UI_INIT_DELAY_MS = 100  # Initial delay for completing app initialization
+UI_DOCK_RESTORE_DELAY_MS = 100  # Delay for restoring critical docks
+UI_OPTIONAL_DOCK_DELAY_MS = 500  # Delay for restoring optional docks
+UI_LAYOUT_GUARD_DELAY_MS = 100  # Delay for layout constraint resets
+UI_SEARCH_INDEX_REFRESH_DELAY_MS = 100  # Delay for search index status refresh
+UI_CLEANUP_DELAY_MS = 200  # Delay for cleanup operations
+
+# Provider Retry Configuration
+PROVIDER_RETRY_WAIT_TIME_S = 1.0  # Wait time between provider retries
+

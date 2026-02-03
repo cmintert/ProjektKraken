@@ -53,6 +53,9 @@ from src.app.constants import (
     SETTINGS_ACTIVE_DB_KEY,
     SETTINGS_AUTO_RELATION_KEY,
     SETTINGS_FILTER_CONFIG_KEY,
+    UI_DOCK_RESTORE_DELAY_MS,
+    UI_INIT_DELAY_MS,
+    UI_OPTIONAL_DOCK_DELAY_MS,
     WINDOW_SETTINGS_APP,
     WINDOW_SETTINGS_KEY,
     WINDOW_TITLE,
@@ -165,7 +168,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         logger.debug("Phase 2: Widget skeleton created")
 
         # Phase 3: Deferred initialization (after event loop starts)
-        QTimer.singleShot(100, self._complete_initialization)
+        QTimer.singleShot(UI_INIT_DELAY_MS, self._complete_initialization)
         logger.debug("Phase 3: Deferred initialization scheduled")
 
     def _init_core_services(self) -> None:
@@ -501,11 +504,11 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             )
             # We could force reset here if enabled
 
-        # Stage 2: Critical docks after 100ms
-        QTimer.singleShot(100, self._restore_critical_docks)
+        # Stage 2: Critical docks after defined delay
+        QTimer.singleShot(UI_DOCK_RESTORE_DELAY_MS, self._restore_critical_docks)
 
-        # Stage 3: Optional docks after 500ms
-        QTimer.singleShot(500, self._restore_optional_docks)
+        # Stage 3: Optional docks after longer delay
+        QTimer.singleShot(UI_OPTIONAL_DOCK_DELAY_MS, self._restore_optional_docks)
 
     def _restore_geometry(self) -> None:
         """Stage 1: Restore window geometry immediately.
