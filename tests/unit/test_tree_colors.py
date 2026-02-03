@@ -59,6 +59,7 @@ def test_outline_colors_update_on_theme_change(outline_widget, theme_manager):
         "accent_secondary": "#123456",  # Event color
         "primary": "#654321",  # Entity color
         "destructive": "#FF0000",  # Required for DestructiveButton
+        "app_bg": "#000000",  # Required for GraphicsScene
         "text_main": "#FFFFFF",
         "surface": "#000000",
         "border": "#333333",

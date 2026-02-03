@@ -30,6 +30,7 @@ def test_on_theme_changed_forces_rerender(qtbot):
                 "surface": "#333333",
                 "border": "#444444",
                 "destructive": "#ff4444",  # Required key
+                "app_bg": "#111111",  # Required for GraphicsScene
                 "text_dim": "#888888",
             },
             "test_theme_b": {
@@ -45,6 +46,7 @@ def test_on_theme_changed_forces_rerender(qtbot):
                 "surface": "#333333",
                 "border": "#444444",
                 "destructive": "#ff4444",  # Required key
+                "app_bg": "#111111",  # Required for GraphicsScene
                 "text_dim": "#888888",
             },
         }

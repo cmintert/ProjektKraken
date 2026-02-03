@@ -44,6 +44,7 @@ def test_icon_updates_on_theme_change(qtbot):
         tm.theme_changed.emit({
             "text_main": "#FF0000",
             "destructive": "#ff4444",
+            "app_bg": "#000000",
             "surface": "#000000",
             "border": "#333333",
             "text_dim": "#888888"
