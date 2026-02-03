@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-03
 ### Internal
-- Merge pull request #69 from cmintert/copilot/code-review-projektkraken
+- chore(release): Bump version to 0.10.3
 
 
 *This changelog was automatically generated.*
