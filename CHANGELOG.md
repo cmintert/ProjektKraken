@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-02-03
-**Commit:** `d797551`
+**Commit:** `0.10.3`
 ---
 
 # Changelog
@@ -10,6 +10,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [0.10.3]
 
 ### Added
 - *(2026-02-03)* **UI**: Added "Help" menu with "Keyboard Shortcuts" dialog showing all available application shortcuts.
