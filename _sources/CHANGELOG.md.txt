@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-02-02
-### Internal
-- Merge pull request #68 from cmintert/fix/aikido-security-sast-15290347-6KuH
+## [Development] - 2026-02-03
+### Added
+- feat: persist map scale settings per map
 
 
 *This changelog was automatically generated.*
