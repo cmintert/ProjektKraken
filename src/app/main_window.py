@@ -1843,7 +1843,21 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         except Exception as e:
             logger.exception("Import error")
-            QMessageBox.critical(self, "Import Error", f"An error occurred: {e}")
+            QMessageBox.critical(
+                self, 
+                "Import Error", 
+                f"An unexpected error occurred during import: {e}\n\n"
+                "Your existing data is safe and unchanged.\n\n"
+                "Possible causes:\n"
+                "• Invalid file format or corrupted data\n"
+                "• Unsupported import format\n"
+                "• File encoding issues (try UTF-8)\n\n"
+                "To fix:\n"
+                "1. Check that the file is a valid import format\n"
+                "2. Verify file is not corrupted\n"
+                "3. Check application logs for detailed error\n"
+                "4. Try exporting and re-importing a small test dataset"
+            )
 
     @Slot(object)
     def _on_import_finished(self, result: object) -> None:
@@ -1870,7 +1884,20 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             QMessageBox.information(self, "Import Complete", msg)
         else:
             err_msg = "\n".join(result.errors[:10])
-            QMessageBox.critical(self, "Import Failed", f"Errors occurred:\n{err_msg}")
+            if len(result.errors) > 10:
+                err_msg += f"\n...and {len(result.errors) - 10} more errors."
+            
+            QMessageBox.critical(
+                self, 
+                "Import Failed", 
+                f"Import completed with errors. No data was imported.\n\n"
+                f"Errors ({len(result.errors)} total):\n{err_msg}\n\n"
+                "What to do:\n"
+                "1. Fix the errors in your source file\n"
+                "2. Check file format matches expected structure\n"
+                "3. Try importing a smaller subset first\n"
+                "4. Consult documentation for import format details"
+            )
 
     @Slot(str, object)
     def _on_summary_generated_result(self, item_id: str, summary_data: object) -> None:
