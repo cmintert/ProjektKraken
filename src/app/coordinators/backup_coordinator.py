@@ -95,7 +95,17 @@ class BackupCoordinator(BaseCoordinator):
             QMessageBox.critical(
                 self.main_window,
                 "Backup Failed",
-                "Failed to create backup. Check logs for details.",
+                "Failed to create backup. Your data is safe, but the backup "
+                "could not be saved.\n\n"
+                "Possible causes:\n"
+                "• Insufficient disk space\n"
+                "• Write permissions denied in backup directory\n"
+                "• Database file is locked by another process\n\n"
+                "Recovery steps:\n"
+                "1. Check available disk space\n"
+                "2. Try again in a few moments\n"
+                "3. Check application logs for detailed error information\n"
+                "4. Consider changing backup location in Settings",
             )
 
     @Slot()
@@ -170,7 +180,17 @@ class BackupCoordinator(BaseCoordinator):
             QMessageBox.critical(
                 self.main_window,
                 "Restore Failed",
-                "Failed to restore backup. Check logs for details.",
+                "Failed to restore backup. Your current database is unchanged "
+                "and a safety backup was created before the attempt.\n\n"
+                "Possible causes:\n"
+                "• Backup file is corrupted\n"
+                "• Backup file is from an incompatible version\n"
+                "• Insufficient permissions to modify database\n\n"
+                "Recovery steps:\n"
+                "1. Verify the backup file is not corrupted\n"
+                "2. Try a different backup file\n"
+                "3. Check application logs for detailed error information\n"
+                "4. If backup is from an older version, use migration tools",
             )
 
     @Slot()

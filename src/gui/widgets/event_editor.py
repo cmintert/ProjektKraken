@@ -7,7 +7,7 @@ attributes, and relations.
 import logging
 import os
 import traceback
-from typing import Any
+from typing import Any, Dict
 
 from PySide6.QtCore import QPoint, QSize, Qt, Signal, Slot
 from PySide6.QtWidgets import (
@@ -344,7 +344,27 @@ class EventEditorWidget(QWidget):
         ) -> tuple[
             QWidget, QListWidget, StandardButton, StandardButton, DestructiveButton
         ]:
-            """Create a section with title, list widget, and action buttons."""
+            """Create a categorized relation section with list and action buttons.
+            
+            Args:
+                title: Section header text (e.g., "Characters", "Locations").
+                add_slot: Callable to invoke when Add button is clicked.
+                edit_slot: Callable to invoke when Edit button is clicked.
+                remove_slot: Callable to invoke when Remove button is clicked.
+                placeholder: Optional text shown when list is empty. Defaults to "".
+            
+            Returns:
+                Tuple containing:
+                - QWidget: The complete section container
+                - QListWidget: The list widget showing relations
+                - StandardButton: The Add button
+                - StandardButton: The Edit button
+                - DestructiveButton: The Remove button
+            
+            Note:
+                The list widget emits itemDoubleClicked when a relation is
+                double-clicked, which should trigger editing.
+            """
             group = QWidget()
             vbox = QVBoxLayout(group)
             vbox.setContentsMargins(0, 0, 0, 0)
@@ -957,7 +977,16 @@ class EventEditorWidget(QWidget):
         self.discard_requested.emit(self._current_event_id)
 
     def _populate_inject_menu(self) -> None:
-        """Populate the Fast Inject menu."""
+        """Populate the Fast Inject menu with available actions.
+        
+        Clears and rebuilds the inject menu with:
+        - "Open Inject Dialog..." action to launch the inject UI
+        - Separator
+        - "Save Selection as Template..." action to create templates
+        
+        This method is typically called when the menu is about to show,
+        ensuring the menu content is always up-to-date.
+        """
         self.inject_menu.clear()
 
         action_dialog = self.inject_menu.addAction("Open Inject Dialog...")
@@ -969,13 +998,32 @@ class EventEditorWidget(QWidget):
         action_save_tmpl.triggered.connect(self._open_create_template_dialog)
 
     def _open_inject_dialog(self) -> None:
-        """Shim to emit inject signal."""
+        """Open the Fast Inject dialog for the current event.
+        
+        Emits the inject_ui_requested signal with the current event ID,
+        allowing the main window or coordinator to display the Fast Inject
+        dialog for quick data entry.
+        
+        Note:
+            Does nothing if no event is currently loaded in the editor.
+        """
         if self._current_event_id:
             logger.debug(f"Requesting inject UI for event {self._current_event_id}")
             self.inject_ui_requested.emit(self._current_event_id)
 
     def _open_create_template_dialog(self) -> None:
-        """Open create template dialog."""
+        """Open the template creation dialog for the current event.
+        
+        Collects current form data (tags, attributes, description) and
+        opens a dialog allowing the user to save it as a reusable template
+        for Fast Inject operations.
+        
+        The template data is emitted via create_template_requested signal
+        if the user accepts the dialog.
+        
+        Note:
+            Returns early if no event is currently loaded.
+        """
         if not self._current_event_id:
             return
 
@@ -1139,11 +1187,15 @@ class EventEditorWidget(QWidget):
         except Exception as e:
             logger.error(f"Error applying summary: {e}")
 
-    def get_generation_context(self) -> dict:
+    def get_generation_context(self) -> Dict[str, Any]:
         """Get context for LLM generation.
 
         Returns:
-            dict: Context dictionary with 'name', 'type', 'lore_date', etc.
+            Dict[str, Any]: Context dictionary containing:
+                - 'name' (str): Event name
+                - 'type' (str): Event type
+                - 'existing_description' (str): Current description text
+                - 'lore_date' (str, optional): Formatted date string if available
 
         """
         context = {

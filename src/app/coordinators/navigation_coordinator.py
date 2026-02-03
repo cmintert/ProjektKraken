@@ -137,7 +137,15 @@ class NavigationCoordinator(BaseCoordinator):
             QMessageBox.warning(
                 self.main_window,
                 "Broken Link",
-                f"The linked item (ID: {target[:8]}...) no longer exists.",
+                f"The linked item (ID: {target[:8]}...) no longer exists.\n\n"
+                "This link may have been broken because:\n"
+                "• The item was deleted\n"
+                "• The link was created in a different world/database\n"
+                "• Data corruption occurred\n\n"
+                "To fix:\n"
+                "1. Remove or update the broken link\n"
+                "2. Search for the item by name in the Unified List\n"
+                "3. Create a new link to the correct item",
             )
         else:
             # Name-based navigation (legacy) - case-insensitive match
