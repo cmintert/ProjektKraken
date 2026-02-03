@@ -5,9 +5,8 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from PySide6.QtCore import QSettings, Slot
+from PySide6.QtCore import QSettings, QTimer, Slot
 from PySide6.QtWidgets import (
-    QApplication,
     QFileDialog,
     QInputDialog,
     QMessageBox,
@@ -60,10 +59,22 @@ class BackupCoordinator(BaseCoordinator):
         if not ok:
             return  # User cancelled
 
-        # Create backup
+        # Create backup - use QTimer to allow UI to update first
         self.main_window.status_bar.showMessage("Creating backup...")
-        QApplication.processEvents()
 
+        # Defer backup execution to allow status bar message to display
+        QTimer.singleShot(0, lambda: self._execute_backup(description))
+
+    def _execute_backup(self, description: str) -> None:
+        """Execute the backup operation.
+
+        Args:
+            description: Optional description for the backup.
+
+        Note:
+            This method is called via QTimer.singleShot to avoid blocking
+            the UI during status bar updates.
+        """
         metadata = self.backup_service.create_backup(
             backup_type=BackupType.MANUAL, description=description
         )
@@ -123,10 +134,22 @@ class BackupCoordinator(BaseCoordinator):
         if reply != QMessageBox.StandardButton.Yes:
             return
 
-        # Restore backup
+        # Restore backup - use QTimer to allow UI to update first
         self.main_window.status_bar.showMessage("Restoring from backup...")
-        QApplication.processEvents()
 
+        # Defer restore execution to allow status bar message to display
+        QTimer.singleShot(0, lambda: self._execute_restore(backup_file))
+
+    def _execute_restore(self, backup_file: str) -> None:
+        """Execute the restore operation.
+
+        Args:
+            backup_file: Path to the backup file to restore from.
+
+        Note:
+            This method is called via QTimer.singleShot to avoid blocking
+            the UI during status bar updates.
+        """
         success = self.backup_service.restore_backup(
             Path(backup_file), Path(self.main_window.db_path)
         )
