@@ -31,6 +31,7 @@ from PySide6.QtWidgets import (
 
 from src.core.paths import get_resource_path
 from src.core.trajectory import KEYFRAME_TIME_EPSILON, interpolate_position
+from src.gui.widgets.map.calibration_distance_dialog import CalibrationDistanceDialog
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 from src.gui.widgets.map.map_scale_dialog import MapScaleDialog
 from src.gui.widgets.map.marker_item import MarkerItem
@@ -717,17 +718,13 @@ class MapWidget(QWidget):
             logger.warning("Measured distance too small, ignoring.")
             return
 
-        distance, ok = QInputDialog.getDouble(
-            self,
-            "Calibration",
-            "Enter the real-world length of the line you just drew (in meters):",
-            value=100.0,
-            minValue=0.1,
-            maxValue=1_000_000_000.0,
-            decimals=1,
-        )
+        dialog = CalibrationDistanceDialog(self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            segment_meters = dialog.get_distance_meters()
 
-        if ok and distance > 0:
+            if segment_meters <= 0:
+                return
+
             # Calculate new total width
             # Total Width / Image Width = Segment Real / Segment px
             # Total Width = (Image Width * Segment Real) / Segment px
@@ -738,7 +735,7 @@ class MapWidget(QWidget):
 
             image_width_px = pixmap_item.boundingRect().width()
 
-            new_total_width = (image_width_px * distance) / px_distance
+            new_total_width = (image_width_px * segment_meters) / px_distance
 
             self.view.set_map_width_meters(new_total_width)
             self.map_scale_changed.emit(new_total_width)
@@ -750,7 +747,7 @@ class MapWidget(QWidget):
                 self,
                 "Calibration Complete",
                 f"Map scale updated.\n\n"
-                f"Segment: {distance} m ({px_distance:.1f} px)\n"
+                f"Segment: {segment_meters:.1f} m ({px_distance:.1f} px)\n"
                 f"New Total Width: {new_total_width:.2f} m",
             )
 

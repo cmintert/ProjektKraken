@@ -2,6 +2,7 @@
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
+    QComboBox,
     QDialog,
     QDoubleSpinBox,
     QHBoxLayout,
@@ -32,9 +33,7 @@ class MapScaleDialog(QDialog):
         layout.setSpacing(16)
 
         # Instructions
-        instruction = QLabel(
-            "Enter the total real-world width of this map image in meters."
-        )
+        instruction = QLabel("Enter the total real-world width of this map image.")
         instruction.setWordWrap(True)
         layout.addWidget(instruction)
 
@@ -45,12 +44,23 @@ class MapScaleDialog(QDialog):
         self.width_input.setRange(0.1, 1_000_000_000.0)  # Free range: 10cm to 1M km
         self.width_input.setDecimals(1)
         self.width_input.setSingleStep(1.0)  # 1m step
-        self.width_input.setSuffix(" m")
-        self.width_input.setValue(current_width)
         self.width_input.setStyleSheet(StyleHelper.get_spinbox_style())
+
+        self.unit_selector = QComboBox()
+        self.unit_selector.addItems(["m", "km"])
+        self.unit_selector.setStyleSheet(StyleHelper.get_input_field_style())
+
+        # Set initial value and unit
+        if current_width >= 1000.0:
+            self.width_input.setValue(current_width / 1000.0)
+            self.unit_selector.setCurrentText("km")
+        else:
+            self.width_input.setValue(current_width)
+            self.unit_selector.setCurrentText("m")
 
         input_layout.addWidget(QLabel("Total Width:"))
         input_layout.addWidget(self.width_input, 1)  # Stretch input
+        input_layout.addWidget(self.unit_selector)
         layout.addLayout(input_layout)
 
         # Calibration Section
@@ -97,4 +107,7 @@ class MapScaleDialog(QDialog):
 
     def get_width(self) -> float:
         """Returns the configured width in meters."""
-        return self.width_input.value()
+        val = self.width_input.value()
+        if self.unit_selector.currentText() == "km":
+            return val * 1000.0
+        return val
