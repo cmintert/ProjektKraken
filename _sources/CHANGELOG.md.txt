@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-03
 ### Added
-- feat: persist map scale settings per map
+- Feat: Add unit selection to map calibration
 
 
 *This changelog was automatically generated.*
