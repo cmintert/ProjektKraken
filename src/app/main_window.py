@@ -318,6 +318,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.ui_manager.create_timeline_menu(self.menuBar())
         self.ui_manager.create_view_menu(self.menuBar())
         self.ui_manager.create_settings_menu(self.menuBar())
+        self.ui_manager.create_help_menu(self.menuBar())
 
         # Initialize Longform auto-refresh state (default: True)
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
