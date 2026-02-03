@@ -245,6 +245,10 @@ class UnifiedListWidget(QWidget):
         self.list_widget.setStyleSheet(StyleHelper.get_checkbox_style())
         self.list_widget.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
         self.list_widget.selectionModel().selectionChanged.connect(self._on_selection_changed)
+        
+        # Add compatibility methods to list_widget for backward compatibility with tests
+        self._add_list_widget_compatibility()
+        
         main_layout.addWidget(self.list_widget)
 
         # Empty State
@@ -271,6 +275,102 @@ class UnifiedListWidget(QWidget):
         ThemeManager().theme_changed.connect(self._on_theme_changed)
 
         self._render_list()
+
+    def _add_list_widget_compatibility(self) -> None:
+        """Add QListWidget-compatible methods to QListView for backward compatibility.
+        
+        This allows existing tests to work without modification.
+        """
+        # Add count() method
+        def count_method():
+            return self._proxy_model.rowCount()
+        self.list_widget.count = count_method
+        
+        # Add item(index) method
+        def item_method(index: int):
+            """Get a pseudo-item at the given index."""
+            # Create a compatibility wrapper
+            class CompatItem:
+                def __init__(self, view, row):
+                    self.view = view
+                    self.row = row
+                    self.model_index = view.model().index(row, 0)
+                
+                def text(self):
+                    return self.view.model().data(self.model_index, Qt.ItemDataRole.DisplayRole) or ""
+                
+                def data(self, role):
+                    # Map to source model for custom roles
+                    proxy_model = self.view.model()
+                    source_index = proxy_model.mapToSource(self.model_index)
+                    source_model = proxy_model.sourceModel()
+                    
+                    if role == Qt.ItemDataRole.UserRole:
+                        return source_model.data(source_index, ExplorerModel.ItemIdRole)
+                    elif role == Qt.ItemDataRole.UserRole + 1:
+                        return source_model.data(source_index, ExplorerModel.ItemTypeRole)
+                    elif role == Qt.ItemDataRole.UserRole + 2:
+                        return source_model.data(source_index, ExplorerModel.ItemNameRole)
+                    return self.view.model().data(self.model_index, role)
+                
+                def flags(self):
+                    return self.view.model().flags(self.model_index)
+                
+                def checkState(self):
+                    state = self.view.model().data(self.model_index, Qt.ItemDataRole.CheckStateRole)
+                    return state if state is not None else Qt.CheckState.Unchecked
+                
+                def setSelected(self, selected):
+                    selection_model = self.view.selectionModel()
+                    if selected:
+                        selection_model.select(self.model_index, selection_model.SelectionFlag.Select)
+                    else:
+                        selection_model.select(self.model_index, selection_model.SelectionFlag.Deselect)
+            
+            if 0 <= index < count_method():
+                return CompatItem(self.list_widget, index)
+            return None
+        
+        self.list_widget.item = item_method
+        
+        # Add setCurrentItem(item) method
+        def setCurrentItem_method(item):
+            if hasattr(item, 'model_index'):
+                self.list_widget.setCurrentIndex(item.model_index)
+        
+        self.list_widget.setCurrentItem = setCurrentItem_method
+
+    def _format_compact_date(self, lore_date: float) -> str:
+        """Format a lore date as dd.mm.yyyy - hh:mm.
+        
+        This method is kept for backward compatibility with tests.
+
+        Args:
+            lore_date: The float lore date value.
+
+        Returns:
+            Formatted date string in dd.mm.yyyy - hh:mm format.
+        """
+        if not self._calendar_converter:
+            return str(lore_date)
+
+        cal_date = self._calendar_converter.from_float(lore_date)
+
+        # Format as dd.mm.yyyy
+        day_str = str(cal_date.day).zfill(2)
+        month_str = str(cal_date.month).zfill(2)
+        year_str = str(cal_date.year)
+        date_part = f"{day_str}.{month_str}.{year_str}"
+
+        # Format time from time_fraction (0.0 = midnight, 0.5 = noon)
+        if cal_date.time_fraction > 0:
+            total_minutes = int(cal_date.time_fraction * 24 * 60)
+            hours = total_minutes // 60
+            minutes = total_minutes % 60
+            time_part = f"{str(hours).zfill(2)}:{str(minutes).zfill(2)}"
+            return f"{date_part} - {time_part}"
+
+        return date_part
 
     @Slot(dict)
     def _on_theme_changed(self, theme: dict) -> None:
