@@ -541,11 +541,44 @@ class StyleHelper:
             f"background-color: transparent; "
             f"margin-bottom: 1px; margin-right: 1px; }}"
             f"QSpinBox::up-button:hover, QSpinBox::down-button:hover {{ "
-            f"background-color: {theme['border']}; border-radius: 2px; }}"
             f"QSpinBox::up-button:pressed, QSpinBox::down-button:pressed {{ "
             f"background-color: {theme['primary']}; }}"
             f"QSpinBox::up-arrow {{ "
             f"image: url('{up_icon_path}'); width: 10px; height: 10px; }}"
             f"QSpinBox::down-arrow {{ "
             f"image: url('{down_icon_path}'); width: 10px; height: 10px; }}"
+        )
+
+    @staticmethod
+    def get_shortcut_key_style() -> str:
+        """Returns QSS for keyboard shortcut keys.
+
+        Returns:
+            str: QSS stylesheet string for shortcut keys.
+        """
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
+        return (
+            f"background-color: {theme['surface']}; "
+            f"color: {theme['text_main']}; "
+            f"border: 1px solid {theme['border']}; "
+            f"border-radius: 4px; padding: 4px 8px; "
+            f"font-family: monospace; font-weight: bold;"
+        )
+
+    @staticmethod
+    def get_content_header_style() -> str:
+        """Returns QSS for content headers (About dialog etc.).
+
+        Returns:
+            str: QSS stylesheet string.
+        """
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
+        return (
+            f"color: {theme['primary']}; "
+            f"font-size: {theme.get('font_size_h1', '14pt')}; "
+            f"font-weight: bold; margin-bottom: 8px;"
         )
