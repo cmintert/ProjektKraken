@@ -96,6 +96,7 @@ def test_unified_list_colors_update_on_theme_change(unified_list_widget, theme_m
         "border": "#333333",
         "text_dim": "#888888",
         "app_bg": "#000000",  # Required for timeline scene
+        "destructive": "#FF0000",  # Required for DestructiveButton
     }
     
     with patch.object(ThemeManager, "get_theme", return_value=initial_theme):
@@ -134,6 +135,7 @@ def test_unified_list_colors_update_on_theme_change(unified_list_widget, theme_m
         "border": "#333333",
         "text_dim": "#888888",
         "app_bg": "#000000",  # Required for timeline scene
+        "destructive": "#FF0000",  # Required for DestructiveButton
     }
 
     with patch.object(ThemeManager, "get_theme", return_value=new_theme):
