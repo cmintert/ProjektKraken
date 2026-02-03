@@ -39,7 +39,7 @@ def test_get_resource_path_bundled():
         result = get_resource_path("test/resource.txt")
 
         # Use os.path.join for platform-independent comparison
-        expected = os.path.join("/bundled/app", "test/resource.txt")
+        expected = os.path.join("/bundled/app", "test/resource.txt").replace("\\", "/")
         assert result == expected
 
 
