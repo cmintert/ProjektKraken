@@ -3,10 +3,10 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="GNU AFFERO GENERAL PUBLIC LICENSE" href="LICENSE.html"><link rel="prev" title="services package" href="services.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
-        <title>Changelog - Project Kraken 0.10.2 documentation</title>
+        <title>TODO Tracking Document - Project Kraken 0.10.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -237,8 +237,8 @@
 </li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
-<ul class="current">
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Changelog</a></li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
 <li class="toctree-l1"><a class="reference internal" href="LICENSE.html">GNU AFFERO GENERAL PUBLIC LICENSE</a></li>
 </ul>
 
@@ -260,7 +260,7 @@
         </a>
         <div class="content-icon-container">
           <div class="view-this-page">
-  <a class="muted-link" href="_sources/CHANGELOG.md.txt" title="View this page">
+  <a class="muted-link" href="_sources/TODO_TRACKING.md.txt" title="View this page">
     <svg><use href="#svg-eye"></use></svg>
     <span class="visually-hidden">View this page</span>
   </a>
@@ -278,18 +278,203 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="changelog">
-<h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">¶</a></h1>
-<p>All notable changes to this project will be documented in this file.</p>
-<section id="development-2026-02-03">
-<h2>[Development] - 2026-02-03<a class="headerlink" href="#development-2026-02-03" title="Link to this heading">¶</a></h2>
-<section id="internal">
-<h3>Internal<a class="headerlink" href="#internal" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Merge pull request #69 from cmintert/copilot/code-review-projektkraken</p></li>
-</ul>
-<p><em>This changelog was automatically generated.</em></p>
+          <section id="todo-tracking-document">
+<h1>TODO Tracking Document<a class="headerlink" href="#todo-tracking-document" title="Link to this heading">¶</a></h1>
+<p><strong>Date:</strong> 2024-02-03<br />
+<strong>Phase:</strong> 4 (Polish)<br />
+<strong>Status:</strong> Active</p>
+<hr class="docutils" />
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>This document tracks TODO comments that have been reviewed during Phase 4 and their resolution status.</p>
 </section>
+<hr class="docutils" />
+<section id="completed-3-items">
+<h2>Completed (3 items)<a class="headerlink" href="#completed-3-items" title="Link to this heading">¶</a></h2>
+<section id="mainwindow-title-bar-theme-integration">
+<h3>1. MainWindow Title Bar Theme Integration ✅<a class="headerlink" href="#mainwindow-title-bar-theme-integration" title="Link to this heading">¶</a></h3>
+<p><strong>File:</strong> <code class="docutils literal notranslate"><span class="pre">src/app/main_window.py:153</span></code><br />
+<strong>Original:</strong> <code class="docutils literal notranslate"><span class="pre">TODO:</span> <span class="pre">Hook</span> <span class="pre">into</span> <span class="pre">ThemeManager</span> <span class="pre">changes</span></code><br />
+<strong>Status:</strong> IMPLEMENTED<br />
+<strong>Date:</strong> 2024-02-03</p>
+<p><strong>Solution:</strong></p>
+<ul class="simple">
+<li><p>Connected to <code class="docutils literal notranslate"><span class="pre">ThemeManager().theme_changed</span></code> signal</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">_on_theme_changed_for_titlebar()</span></code> handler</p></li>
+<li><p>Title bar now updates dynamically when theme changes</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="unifiedlist-theme-updates">
+<h3>2. UnifiedList Theme Updates ✅<a class="headerlink" href="#unifiedlist-theme-updates" title="Link to this heading">¶</a></h3>
+<p><strong>File:</strong> <code class="docutils literal notranslate"><span class="pre">src/gui/widgets/unified_list.py:249</span></code><br />
+<strong>Original:</strong> <code class="docutils literal notranslate"><span class="pre">TODO:</span> <span class="pre">Migrate</span> <span class="pre">to</span> <span class="pre">fully</span> <span class="pre">dynamic</span> <span class="pre">theme</span> <span class="pre">updates</span> <span class="pre">with</span> <span class="pre">ThemeManager.theme_changed</span> <span class="pre">signal</span></code><br />
+<strong>Status:</strong> ALREADY DONE (TODO removed)<br />
+<strong>Date:</strong> 2024-02-03</p>
+<p><strong>Solution:</strong></p>
+<ul class="simple">
+<li><p>Code already connected to <code class="docutils literal notranslate"><span class="pre">theme_changed</span></code> signal (line 257)</p></li>
+<li><p>Signal handler already implemented (<code class="docutils literal notranslate"><span class="pre">_on_theme_changed</span></code> at line 262)</p></li>
+<li><p>TODO was obsolete, removed comment</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="entity-editor-auto-generate-comment">
+<h3>3. Entity Editor Auto-Generate Comment ✅<a class="headerlink" href="#entity-editor-auto-generate-comment" title="Link to this heading">¶</a></h3>
+<p><strong>File:</strong> <code class="docutils literal notranslate"><span class="pre">src/gui/widgets/entity_editor.py:514</span></code><br />
+<strong>Original:</strong> <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">Auto-generate</span> <span class="pre">if</span> <span class="pre">configured</span> <span class="pre">(TODO</span> <span class="pre">check</span> <span class="pre">config)</span></code><br />
+<strong>Status:</strong> REMOVED (incomplete/abandoned)<br />
+<strong>Date:</strong> 2024-02-03</p>
+<p><strong>Solution:</strong></p>
+<ul class="simple">
+<li><p>Removed incomplete comment</p></li>
+<li><p>No config system exists for auto-generation</p></li>
+<li><p>Feature may be implemented in future if needed</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="to-convert-to-github-issues-5-items">
+<h2>To Convert to GitHub Issues (5 items)<a class="headerlink" href="#to-convert-to-github-issues-5-items" title="Link to this heading">¶</a></h2>
+<p>These TODOs represent legitimate feature requests or enhancements that should be tracked as GitHub issues.</p>
+<section id="configurable-max-tokens-for-summary-generation">
+<h3>4. Configurable Max Tokens for Summary Generation<a class="headerlink" href="#configurable-max-tokens-for-summary-generation" title="Link to this heading">¶</a></h3>
+<p><strong>File:</strong> <code class="docutils literal notranslate"><span class="pre">src/services/summary_service.py:160</span></code><br />
+<strong>Original:</strong> <code class="docutils literal notranslate"><span class="pre">TODO:</span> <span class="pre">Make</span> <span class="pre">max_tokens</span> <span class="pre">configurable</span> <span class="pre">per</span> <span class="pre">request</span> <span class="pre">if</span> <span class="pre">needed</span></code><br />
+<strong>Priority:</strong> Low<br />
+<strong>Category:</strong> Enhancement</p>
+<p><strong>Description:</strong>
+Currently, summary generation uses a hardcoded <code class="docutils literal notranslate"><span class="pre">max_tokens=300</span></code>. This should be configurable per request or via settings.</p>
+<p><strong>Suggested Issue Title:</strong><br />
+“Make max_tokens configurable for summary generation”</p>
+<p><strong>Suggested Labels:</strong><br />
+enhancement, llm-integration, low-priority</p>
+</section>
+<hr class="docutils" />
+<section id="implement-ann-index-for-semantic-search">
+<h3>5. Implement ANN Index for Semantic Search<a class="headerlink" href="#implement-ann-index-for-semantic-search" title="Link to this heading">¶</a></h3>
+<p><strong>File:</strong> <code class="docutils literal notranslate"><span class="pre">src/services/embedding_service.py:289</span></code><br />
+<strong>Original:</strong> <code class="docutils literal notranslate"><span class="pre">TODO:</span> <span class="pre">Implement</span> <span class="pre">actual</span> <span class="pre">ANN</span> <span class="pre">index</span> <span class="pre">building</span> <span class="pre">(e.g.,</span> <span class="pre">FAISS,</span> <span class="pre">Annoy)</span></code><br />
+<strong>Priority:</strong> Medium<br />
+<strong>Category:</strong> Enhancement</p>
+<p><strong>Description:</strong>
+Current implementation saves embedding metadata but doesn’t build an ANN (Approximate Nearest Neighbor) index for fast semantic search. Should integrate FAISS or Annoy for production-quality semantic search.</p>
+<p><strong>Suggested Issue Title:</strong><br />
+“Implement ANN index (FAISS/Annoy) for semantic search”</p>
+<p><strong>Suggested Labels:</strong><br />
+enhancement, semantic-search, performance</p>
+</section>
+<hr class="docutils" />
+<section id="calendar-year-variants-support">
+<h3>6. Calendar Year Variants Support<a class="headerlink" href="#calendar-year-variants-support" title="Link to this heading">¶</a></h3>
+<p><strong>File:</strong> <code class="docutils literal notranslate"><span class="pre">src/core/date_parser.py:323</span></code><br />
+<strong>Original:</strong> <code class="docutils literal notranslate"><span class="pre">TODO:</span> <span class="pre">Handle</span> <span class="pre">year</span> <span class="pre">variants</span> <span class="pre">properly</span> <span class="pre">by</span> <span class="pre">asking</span> <span class="pre">CalendarConfig?</span></code><br />
+<strong>Priority:</strong> Low<br />
+<strong>Category:</strong> Enhancement</p>
+<p><strong>Description:</strong>
+Date validation currently doesn’t handle calendar year variants (e.g., leap years, variable months per year). Should query <code class="docutils literal notranslate"><span class="pre">CalendarConfig</span></code> for year-specific month configurations.</p>
+<p><strong>Suggested Issue Title:</strong><br />
+“Add support for calendar year variants in date parsing”</p>
+<p><strong>Suggested Labels:</strong><br />
+enhancement, calendar, low-priority</p>
+</section>
+<hr class="docutils" />
+<section id="outline-context-menu">
+<h3>7. Outline Context Menu<a class="headerlink" href="#outline-context-menu" title="Link to this heading">¶</a></h3>
+<p><strong>File:</strong> <code class="docutils literal notranslate"><span class="pre">src/gui/widgets/longform/outline.py:301</span></code><br />
+<strong>Original:</strong> <code class="docutils literal notranslate"><span class="pre">TODO:</span> <span class="pre">Implement</span> <span class="pre">context</span> <span class="pre">menu</span> <span class="pre">with</span> <span class="pre">promote/demote/remove</span> <span class="pre">options</span></code><br />
+<strong>Priority:</strong> Medium<br />
+<strong>Category:</strong> UX Enhancement</p>
+<p><strong>Description:</strong>
+Outline widget has keyboard shortcuts for promote/demote but lacks a context menu. Should add right-click menu with:</p>
+<ul class="simple">
+<li><p>Promote</p></li>
+<li><p>Demote</p></li>
+<li><p>Remove</p></li>
+<li><p>Other outline operations</p></li>
+</ul>
+<p><strong>Suggested Issue Title:</strong><br />
+“Add context menu to outline widget with promote/demote/remove options”</p>
+<p><strong>Suggested Labels:</strong><br />
+enhancement, ux, longform-editor</p>
+</section>
+<hr class="docutils" />
+<section id="timeline-tag-operations-multiple">
+<h3>8. Timeline Tag Operations (Multiple)<a class="headerlink" href="#timeline-tag-operations-multiple" title="Link to this heading">¶</a></h3>
+<p><strong>Files:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/timeline/timeline_view.py:1475</span></code> - Color picker</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/timeline/timeline_view.py:1488</span></code> - Rename dialog</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/timeline/timeline_view.py:1500</span></code> - Remove from grouping</p></li>
+</ul>
+<p><strong>Priority:</strong> Low<br />
+<strong>Category:</strong> UX Enhancement<br />
+<strong>Status:</strong> Properly documented (keep as-is)</p>
+<p><strong>Description:</strong>
+These TODOs correctly note that tag operations (color change, rename, remove from grouping) should be handled by the main window/controller. The current comments are appropriate architectural notes.</p>
+<p><strong>Action:</strong> KEEP AS-IS<br />
+These are not bugs but proper documentation of architectural decisions. No issue needed.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="statistics">
+<h2>Statistics<a class="headerlink" href="#statistics" title="Link to this heading">¶</a></h2>
+<p><strong>Total TODOs Found:</strong> 10<br />
+<strong>Implemented:</strong> 1<br />
+<strong>Already Done (removed):</strong> 1<br />
+<strong>Removed (incomplete):</strong> 1<br />
+<strong>To Track as Issues:</strong> 5<br />
+<strong>Keep as Architecture Notes:</strong> 2</p>
+<p><strong>Resolution Rate:</strong> 30% (3/10 immediately resolved)</p>
+</section>
+<hr class="docutils" />
+<section id="recommendations">
+<h2>Recommendations<a class="headerlink" href="#recommendations" title="Link to this heading">¶</a></h2>
+<section id="for-future-development">
+<h3>For Future Development<a class="headerlink" href="#for-future-development" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Issue Creation:</strong> Create 5 GitHub issues from items 4-7 above</p></li>
+<li><p><strong>Labels:</strong> Use consistent labels (enhancement, low-priority, medium-priority)</p></li>
+<li><p><strong>Milestones:</strong> Assign to appropriate future milestones</p></li>
+<li><p><strong>TODO Policy:</strong> New TODOs should:</p>
+<ul class="simple">
+<li><p>Include issue number if tracked: <code class="docutils literal notranslate"><span class="pre">TODO(#123):</span> <span class="pre">Description</span></code></p></li>
+<li><p>Be temporary (max 1 sprint before converting to issue)</p></li>
+<li><p>Have clear owner/context</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="code-quality">
+<h3>Code Quality<a class="headerlink" href="#code-quality" title="Link to this heading">¶</a></h3>
+<p><strong>BEFORE Phase 4:</strong></p>
+<ul class="simple">
+<li><p>10 TODO comments</p></li>
+<li><p>No tracking system</p></li>
+<li><p>Mixed urgency/importance</p></li>
+</ul>
+<p><strong>AFTER Phase 4:</strong></p>
+<ul class="simple">
+<li><p>2 proper architecture notes</p></li>
+<li><p>3 resolved immediately</p></li>
+<li><p>5 documented for issue creation</p></li>
+<li><p>Clear tracking document</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="next-steps">
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p>✅ Implement quick fixes (main_window, unified_list)</p></li>
+<li><p>✅ Remove obsolete TODO (entity_editor)</p></li>
+<li><p>✅ Create tracking document</p></li>
+<li><p>⏳ Create GitHub issues for remaining items (optional)</p></li>
+<li><p>⏳ Establish TODO policy for future development</p></li>
+</ol>
+<hr class="docutils" />
+<p><strong>Document maintained by:</strong> Production Readiness Review<br />
+<strong>Last updated:</strong> 2024-02-03</p>
 </section>
 </section>
 
@@ -298,26 +483,8 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="LICENSE.html">
-              <div class="page-info">
-                <div class="context">
-                  <span>Next</span>
-                </div>
-                <div class="title">GNU AFFERO GENERAL PUBLIC LICENSE</div>
-              </div>
-              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
-            </a>
-          <a class="prev-page" href="services.html">
-              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
-              <div class="page-info">
-                <div class="context">
-                  <span>Previous</span>
-                </div>
-                
-                <div class="title">services package</div>
-                
-              </div>
-            </a>
+          
+          
         </div>
         <div class="bottom-of-page">
           <div class="left-details">
@@ -348,11 +515,29 @@
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Changelog</a><ul>
-<li><a class="reference internal" href="#development-2026-02-03">[Development] - 2026-02-03</a><ul>
-<li><a class="reference internal" href="#internal">Internal</a></li>
+<li><a class="reference internal" href="#">TODO Tracking Document</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#completed-3-items">Completed (3 items)</a><ul>
+<li><a class="reference internal" href="#mainwindow-title-bar-theme-integration">1. MainWindow Title Bar Theme Integration ✅</a></li>
+<li><a class="reference internal" href="#unifiedlist-theme-updates">2. UnifiedList Theme Updates ✅</a></li>
+<li><a class="reference internal" href="#entity-editor-auto-generate-comment">3. Entity Editor Auto-Generate Comment ✅</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#to-convert-to-github-issues-5-items">To Convert to GitHub Issues (5 items)</a><ul>
+<li><a class="reference internal" href="#configurable-max-tokens-for-summary-generation">4. Configurable Max Tokens for Summary Generation</a></li>
+<li><a class="reference internal" href="#implement-ann-index-for-semantic-search">5. Implement ANN Index for Semantic Search</a></li>
+<li><a class="reference internal" href="#calendar-year-variants-support">6. Calendar Year Variants Support</a></li>
+<li><a class="reference internal" href="#outline-context-menu">7. Outline Context Menu</a></li>
+<li><a class="reference internal" href="#timeline-tag-operations-multiple">8. Timeline Tag Operations (Multiple)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#statistics">Statistics</a></li>
+<li><a class="reference internal" href="#recommendations">Recommendations</a><ul>
+<li><a class="reference internal" href="#for-future-development">For Future Development</a></li>
+<li><a class="reference internal" href="#code-quality">Code Quality</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#next-steps">Next Steps</a></li>
 </ul>
 </li>
 </ul>

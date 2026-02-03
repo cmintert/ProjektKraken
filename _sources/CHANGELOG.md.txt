@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-03
-### Fixed
-- Fix all Ruff linting errors and resolve test regressions
+### Internal
+- Merge pull request #69 from cmintert/copilot/code-review-projektkraken
 
 
 *This changelog was automatically generated.*
