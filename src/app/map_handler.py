@@ -18,10 +18,10 @@ from src.commands.map_commands import (
     CreateMarkerCommand,
     DeleteMapCommand,
     DeleteMarkerCommand,
+    UpdateMapCommand,
     UpdateMarkerColorCommand,
     UpdateMarkerCommand,
     UpdateMarkerIconCommand,
-    UpdateMapCommand,
 )
 from src.core.logging_config import get_logger
 

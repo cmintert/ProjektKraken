@@ -1,16 +1,15 @@
 import ctypes
-from ctypes import c_int, byref, sizeof
+import logging
+from ctypes import byref, c_int, sizeof
 from typing import Optional
-from PySide6.QtGui import QColor, QPalette
+
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QWidget
 
 # DWM Constants
 DWMWA_USE_IMMERSIVE_DARK_MODE = 20
 DWMWA_CAPTION_COLOR = 35
 DWMWA_TEXT_COLOR = 36
-
-
-import logging
 
 logger = logging.getLogger(__name__)
 

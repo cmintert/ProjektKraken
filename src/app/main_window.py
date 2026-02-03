@@ -215,8 +215,9 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             theme_data: The dictionary containing theme colors.
         """
         try:
-            from src.gui.utils.window_utils import apply_windows_title_bar_style
             from PySide6.QtGui import QColor
+
+            from src.gui.utils.window_utils import apply_windows_title_bar_style
 
             app_bg = theme_data.get("app_bg", "#2B2B2B")
             text_main = theme_data.get("text_main", "#E0E0E0")

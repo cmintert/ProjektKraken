@@ -1,7 +1,8 @@
 """Tests for UnifiedListWidget multi-selection, sorting, and date formatting."""
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QListWidget
 

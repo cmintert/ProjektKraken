@@ -10,7 +10,13 @@ from typing import Any, Dict, List, Optional
 
 import markdown
 from PySide6.QtCore import QUrl, Signal, Slot
-from PySide6.QtGui import QDesktopServices, QMouseEvent, QTextCursor, QTextDocument
+from PySide6.QtGui import (
+    QDesktopServices,
+    QMouseEvent,
+    QTextCursor,
+    QTextDocument,
+    QTextTable,
+)
 from PySide6.QtWidgets import QTextBrowser, QWidget
 
 from src.core.theme_manager import ThemeManager
@@ -60,7 +66,7 @@ class LongformContentWidget(QTextBrowser):
 
         super().mousePressEvent(event)
 
-    def _get_item_index_from_table(self, table) -> Optional[int]:
+    def _get_item_index_from_table(self, table: QTextTable) -> Optional[int]:
         """Maps a QTextTable to its index in self._sequence."""
         # Check first cell, first character's anchorName
         cell = table.cellAt(0, 0)
@@ -327,30 +333,39 @@ class LongformContentWidget(QTextBrowser):
 
     def _apply_theme(self) -> None:
         """Apply widget-level styling (background, scrollbars)."""
-        tm = ThemeManager()
-        theme = tm.get_theme()
-        from src.gui.utils.style_helper import StyleHelper
+        try:
+            tm = ThemeManager()
+            theme = tm.get_theme()
+            from src.gui.utils.style_helper import StyleHelper
 
-        bg_color = theme.get("app_bg", "#1e1e1e")
-        scrollbar_style = StyleHelper.get_scrollbar_style()
+            bg_color = theme.get("app_bg", "#1e1e1e")
+            scrollbar_style = StyleHelper.get_scrollbar_style()
 
-        # Combine specific browser style with global scrollbar style
-        style = f"""
-            QTextBrowser {{
-                background-color: {bg_color};
-                border: none;
-            }}
-            {scrollbar_style}
-        """
-        self.setStyleSheet(style)
+            # Combine specific browser style with global scrollbar style
+            style = f"""
+                QTextBrowser {{
+                    background-color: {bg_color};
+                    border: none;
+                }}
+                {scrollbar_style}
+            """
+            self.setStyleSheet(style)
 
-        # Reload content to update CSS in <head>
-        if self._sequence:
-            # Preserve scroll
-            scrollbar = self.verticalScrollBar()
-            val = scrollbar.value()
-            self.load_content(self._sequence)
-            scrollbar.setValue(val)
+            # Reload content to update CSS in <head>
+            if self._sequence:
+                # Preserve scroll
+                scrollbar = self.verticalScrollBar()
+                val = scrollbar.value()
+                self.load_content(self._sequence)
+                scrollbar.setValue(val)
+        except Exception:
+            # Prevent crashes during theme changes (especially in tests or shutdown)
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.warning(
+                "Failed to apply theme in LongformContentWidget", exc_info=True
+            )
 
     def find_text(self, text: str, backward: bool = False) -> bool:
         """Find and highlight text.

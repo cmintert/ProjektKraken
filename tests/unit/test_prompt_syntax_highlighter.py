@@ -1,8 +1,7 @@
 import pytest
-from PySide6.QtGui import QTextDocument, QTextCharFormat, QColor, QFont
-from PySide6.QtCore import Qt
+from PySide6.QtGui import QTextCharFormat, QTextDocument
+
 from src.gui.utils.prompt_syntax_highlighter import PromptSyntaxHighlighter
-from src.gui.utils.style_helper import StyleHelper
 
 
 class TestPromptSyntaxHighlighter:

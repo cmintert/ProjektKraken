@@ -1,5 +1,7 @@
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
+
 from src.app.map_handler import MapHandler
 from src.core.map import Map
 

@@ -1,6 +1,7 @@
 import pytest
-from src.gui.widgets.unified_list import UnifiedListWidget
+
 from src.gui.utils.shortcut_manager import ShortcutManager
+from src.gui.widgets.unified_list import UnifiedListWidget
 
 
 @pytest.fixture

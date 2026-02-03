@@ -21,7 +21,6 @@ from PySide6.QtWidgets import QGraphicsItem, QStyleOptionGraphicsItem, QWidget
 
 from src.core.calendar import CalendarConverter
 from src.core.events import Event
-
 from src.gui.utils.style_helper import StyleHelper
 
 logger = logging.getLogger(__name__)

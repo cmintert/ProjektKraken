@@ -1,7 +1,9 @@
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 from PySide6.QtCore import QSettings
-from src.app.constants import WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP
+
+from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
 
 

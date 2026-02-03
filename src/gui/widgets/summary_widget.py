@@ -27,12 +27,12 @@ class SummaryWidget(QWidget):
 
     generate_requested = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._setup_ui()
         self._apply_styles()
 
-    def _setup_ui(self):
+    def _setup_ui(self) -> None:
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
@@ -77,7 +77,7 @@ class SummaryWidget(QWidget):
 
         layout.addLayout(footer_layout)
 
-    def set_summary(self, data: SummaryData):
+    def set_summary(self, data: SummaryData) -> None:
         """Updates the widget with summary data."""
         self.text_display.set_wiki_text(data.text)
 
@@ -96,17 +96,17 @@ class SummaryWidget(QWidget):
         # However, update button text.
         self.generate_btn.setText("Regenerate")
 
-    def set_stale(self, stale: bool):
+    def set_stale(self, stale: bool) -> None:
         """Displays or hides the stale warning."""
         self.stale_banner.setVisible(stale)
         if stale:
             self.generate_btn.setText("Update Summary")
 
-    def _copy_to_clipboard(self):
+    def _copy_to_clipboard(self) -> None:
         """Copies summary text to clipboard."""
         QApplication.clipboard().setText(self.text_display.toPlainText())
 
-    def _apply_styles(self):
+    def _apply_styles(self) -> None:
         """Apply custom styling."""
         # Banner style
         self.stale_banner.setStyleSheet(

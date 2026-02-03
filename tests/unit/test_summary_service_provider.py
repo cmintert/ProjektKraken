@@ -1,5 +1,7 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock, patch, Mock
+
 from src.services.summary_service import SummaryService
 
 

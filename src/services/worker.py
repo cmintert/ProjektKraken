@@ -819,7 +819,7 @@ class DatabaseWorker(QObject):
             self.import_finished.emit(result)
 
     @Slot(object)  # Union[Entity, Event] - use object for union types
-    def generate_summary(self, item) -> None:
+    def generate_summary(self, item: object) -> None:
         """Generates a summary for the given item using LLM.
 
         Args:

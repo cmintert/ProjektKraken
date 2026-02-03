@@ -26,11 +26,11 @@ QApplication.setAttribute(Qt.ApplicationAttribute.AA_ShareOpenGLContexts)
 
 # Now safe to import other modules that may use Qt widgets
 # Now safe to import other modules that may use Qt widgets
-from src.app.constants import (
+from src.app.constants import (  # noqa: E402
     VERSION,
     WINDOW_SETTINGS_APP,
     WINDOW_SETTINGS_KEY,
-)  # noqa: E402
+)
 from src.core.logging_config import (  # noqa: E402
     get_logger,
     setup_logging,

@@ -123,9 +123,7 @@ class WorkerManager(QObject):
         # All connections use QueuedConnection because worker is on a different thread
         connection_type = Qt.ConnectionType.QueuedConnection
 
-        self.window.worker.initialized.connect(
-            self.on_db_initialized, connection_type
-        )
+        self.window.worker.initialized.connect(self.on_db_initialized, connection_type)
         self.window.worker.events_loaded.connect(
             self.window.data_handler.on_events_loaded, connection_type
         )
@@ -330,7 +328,7 @@ class WorkerManager(QObject):
             self.window.status_bar.showMessage(STATUS_DB_INIT_FAIL)
 
     @Slot(object)
-    def generate_summary(self, item) -> None:
+    def generate_summary(self, item: object) -> None:
         """Request summary generation from worker."""
         # Use signal instead of invokeMethod for reliability
         self.summary_requested.emit(item)

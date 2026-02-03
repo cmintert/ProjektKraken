@@ -34,7 +34,7 @@ from src.gui.widgets.prompt_editor import PromptEditorWidget
 from src.services.llm_provider import create_provider
 from src.services.prompt_loader import PromptLoader
 
-# from src.services.search_service import create_search_service # No longer needed directly
+# from src.services.search_service import create_search_service  # No longer needed directly
 from src.services.rag_service import RAGService
 
 logger = logging.getLogger(__name__)
@@ -168,8 +168,9 @@ class GenerationWorker(QThread):
         else:
             user_msg = str(self.prompt)
 
-        # Only perform RAG if placeholder exists OR forced (though we usually rely on placeholder)
-        # RAGService handles query cleaning, so we pass the raw user input (or truncated)
+        # Only perform RAG if placeholder exists OR forced
+        # (though we usually rely on placeholder)
+        # RAGService handles query cleaning, so we pass raw user input
         should_run = "{{RAG_CONTEXT}}" in user_msg or (self.rag_limit > 0)
 
         if should_run:
@@ -347,7 +348,7 @@ class LLMGenerationWidget(QWidget):
         # Controls grid layout (Revised to QGridLayout for alignment)
         # Col 0: Labels, Col 1: Inputs, Col 2: Labels/Checkboxes, Col 3: Inputs
         grid_layout = QGridLayout()
-        # grid_layout.setVerticalSpacing(8) # Optional: StyleHelper handles spacing usually?
+        # grid_layout.setVerticalSpacing(8) # Optional: StyleHelper handles spacing?
 
         # Row 0: Task Template
         grid_layout.addWidget(QLabel("Task Template:"), 0, 0)
@@ -404,11 +405,7 @@ class LLMGenerationWidget(QWidget):
         grid_layout.addWidget(self.rag_cb, 2, 2)
 
         # RAG Limit in Col 3
-        bg_rag_limit = (
-            QWidget()
-        )  # Container for hiding logic if needed, but simple visibility toggle works on widget?
-        # Actually QGridLayout doesn't automatically hide empty cells if widget hidden?
-        # But QLineEdit logic was self.rag_limit_input.setVisible.
+        # bg_rag_limit container removed as it was unused
 
         self.rag_limit_input = QLineEdit()
         self.rag_limit_input.setPlaceholderText("3")
@@ -1054,8 +1051,9 @@ class LLMGenerationWidget(QWidget):
                 # If we hit a window that is not the main one (e.g. floating dock), keep going?
                 # QWidget.parent() returns None for top-level windows unless set.
                 # However, self.window() returns the window.
-                # If we are at top level and haven't found it, we might check self.window() explicitly
-                # if the loop didn't cover it (parent() from child eventually hits window? Yes).
+                # If we are at top level and haven't found it,
+                # we might check self.window() explicitly
+                # if the loop didn't cover it (parent() from child hits window? Yes).
 
                 # Special jump for QDockWidget if floating?
                 # If floating, parent() might be None, but it is effectively parented to main in logic?
@@ -1065,7 +1063,8 @@ class LLMGenerationWidget(QWidget):
                 if not parent:
                     # If we reached top and didn't find it, consider checking QApplication.topLevelWidgets
                     # as last resort? Or just rely on what we found.
-                    # Try accessing .window() just in case we started mid-hierarchy and parent() traversal failure
+                    # Try accessing .window() just in case we started mid-hierarchy
+                    # and parent() traversal failure
                     w = curr.window()
                     if w and w != curr:
                         curr = w

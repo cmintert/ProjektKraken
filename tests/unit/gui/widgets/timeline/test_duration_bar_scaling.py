@@ -1,10 +1,11 @@
 """Tests for duration bar scaling on the timeline.
 
-These tests verify that event duration bars correctly scale with the timeline's zoom level.
+These tests verify that event duration bars correctly scale with the
+timeline's zoom level.
 """
 
-import pytest
 from PySide6.QtCore import QPointF
+
 from src.core.events import Event
 from src.gui.widgets.timeline.event_item import EventItem
 from src.gui.widgets.timeline.timeline_view import TimelineView
@@ -87,16 +88,16 @@ class TestDurationBarScaling:
 
         # At zoom 1.0, width should be duration * scale = 2 * 20 = 40
         item.set_zoom(1.0)
-        rect_1x = item.boundingRect()
+        item.boundingRect()
 
         # At zoom 2.0, width should be duration * scale * zoom = 2 * 20 * 2 = 80
         item.set_zoom(2.0)
-        rect_2x = item.boundingRect()
+        item.boundingRect()
 
         # The bounding rect width should double (40 -> 80)
         # Note: boundingRect uses max(width, MAX_WIDTH), so we check the raw calc
-        expected_1x = 2.0 * 20.0 * 1.0  # 40
-        expected_2x = 2.0 * 20.0 * 2.0  # 80
+        # expected_1x = 2.0 * 20.0 * 1.0  # 40
+        # expected_2x = 2.0 * 20.0 * 2.0  # 80
 
         # Since MAX_WIDTH is 400, both should be clamped to 400 in boundingRect.
         # But the actual bar drawing uses the calculated width.

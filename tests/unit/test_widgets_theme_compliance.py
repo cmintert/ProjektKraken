@@ -1,7 +1,6 @@
-import pytest
+from src.core.theme_manager import ThemeManager
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.compact_duration_widget import CompactDurationWidget
-from src.core.theme_manager import ThemeManager
 
 
 def test_compact_date_widget_theme_compliance(qtbot):

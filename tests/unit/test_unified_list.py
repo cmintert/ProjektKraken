@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import patch
+
+import pytest
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QMessageBox
 

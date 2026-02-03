@@ -106,6 +106,16 @@ class MockEditor(QWidget):
     def _on_save(self):
         pass
 
+    def set_summary_service(self, service):
+        pass
+
+    def set_project_root(self, path):
+        pass
+
+    @property
+    def activeFormats(self):
+        return []
+
 
 def test_mainwindow_check_unsaved_changes(qtbot):
     # We need to test the logic of check_unsaved_changes logic specifically.

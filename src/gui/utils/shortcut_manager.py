@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from typing import Any
+
 from PySide6.QtGui import QKeySequence
 
 
@@ -53,7 +55,7 @@ class ShortcutManager:
         return shortcut.tooltip
 
     @staticmethod
-    def check_event(event, shortcut: KeyboardShortcut) -> bool:
+    def check_event(event: Any, shortcut: KeyboardShortcut) -> bool:
         """Checks if a QKeyEvent matches a shortcut.
 
         Args:

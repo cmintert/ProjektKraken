@@ -1,6 +1,5 @@
-import pytest
-from src.gui.widgets.wiki_text_edit import WikiTextEdit
 from src.core.theme_manager import ThemeManager
+from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
 
 def test_on_theme_changed_forces_rerender(qtbot):

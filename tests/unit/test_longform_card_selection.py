@@ -1,5 +1,6 @@
 import pytest
-from PySide6.QtCore import Qt, QPoint
+from PySide6.QtCore import QPoint, Qt
+
 from src.gui.widgets.longform.content import LongformContentWidget
 
 
@@ -20,7 +21,6 @@ def test_card_click_emits_item_selected(content_widget, qtbot):
             "heading_level": 1,
             "content": "Content of the first card.",
             "meta": {},
-            "table": "events",
         },
     ]
     content_widget.load_content(sequence)

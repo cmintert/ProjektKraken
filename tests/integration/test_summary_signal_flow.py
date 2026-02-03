@@ -1,12 +1,12 @@
-import pytest
-from PySide6.QtCore import QObject, Signal, Slot
 from unittest.mock import MagicMock
 
-from src.gui.widgets.entity_editor import EntityEditorWidget
-from src.gui.widgets.event_editor import EventEditorWidget
+import pytest
+from PySide6.QtCore import QObject, Slot
+
 from src.app.worker_manager import WorkerManager
 from src.core.entities import Entity
-from src.core.events import Event
+from src.gui.widgets.entity_editor import EntityEditorWidget
+from src.gui.widgets.event_editor import EventEditorWidget
 
 
 class MockWorker(QObject):
@@ -16,11 +16,6 @@ class MockWorker(QObject):
         super().__init__()
         self.generate_summary_called = False
         self.last_item = None
-
-    @Slot(object)
-    def generate_summary(self, item):
-        self.generate_summary_called = True
-        self.last_item = item
 
 
 class MockMainWindow(QObject):

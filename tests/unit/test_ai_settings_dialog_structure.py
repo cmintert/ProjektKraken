@@ -1,5 +1,6 @@
 import pytest
 from PySide6.QtWidgets import QApplication
+
 from src.gui.dialogs.ai_settings_dialog import AISettingsDialog
 
 

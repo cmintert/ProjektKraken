@@ -15,12 +15,11 @@ import os
 from typing import Iterator, List, Optional, Tuple
 
 from PySide6.QtCore import QSettings, QSize, Qt, Signal, Slot
-from PySide6.QtGui import QKeyEvent, QResizeEvent
+from PySide6.QtGui import QKeyEvent, QPaintEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QHBoxLayout,
-    QInputDialog,
     QLabel,
     QPushButton,
     QSizePolicy,
@@ -63,7 +62,7 @@ class NoLayoutLabel(QWidget):
     recalculation, which resizes docks, which triggers more updates.
     """
 
-    def __init__(self, text: str = "", parent=None):
+    def __init__(self, text: str = "", parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._text = text
         self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
@@ -85,8 +84,8 @@ class NoLayoutLabel(QWidget):
     def minimumSizeHint(self) -> QSize:
         return QSize(50, 20)
 
-    def paintEvent(self, event) -> None:
-        from PySide6.QtGui import QPainter, QColor
+    def paintEvent(self, event: QPaintEvent) -> None:
+        from PySide6.QtGui import QColor, QPainter
 
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)

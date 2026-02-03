@@ -1,6 +1,5 @@
-import pytest
-from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.core.theme_manager import ThemeManager
+from src.gui.widgets.compact_date_widget import CompactDateWidget
 
 
 def test_calendar_button_styling_applied(qtbot):

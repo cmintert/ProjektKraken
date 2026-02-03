@@ -455,9 +455,10 @@ class StyleHelper:
         Returns:
             str: QSS stylesheet string for checkboxes.
         """
+        from PySide6.QtCore import QUrl
+
         from src.core.paths import get_resource_path
         from src.core.theme_manager import ThemeManager
-        from PySide6.QtCore import QUrl
 
         theme = ThemeManager().get_theme()
         check_icon_path = get_resource_path("default_assets/icons/ui_icons/check.svg")

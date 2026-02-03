@@ -1,12 +1,11 @@
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import MagicMock, patch
 from PySide6.QtCore import Qt
 
 from src.app.main_window import MainWindow
-from src.gui.widgets.longform.editor import LongformEditorWidget
-from src.gui.widgets.unified_list import UnifiedListWidget
-from src.core.events import Event
 from src.core.entities import Entity
+from src.core.events import Event
 
 
 @pytest.fixture

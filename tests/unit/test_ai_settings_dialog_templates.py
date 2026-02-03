@@ -1,7 +1,9 @@
-import pytest
 from unittest.mock import MagicMock, patch
-from PySide6.QtWidgets import QApplication, QMessageBox
+
+import pytest
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication, QMessageBox
+
 from src.gui.dialogs.ai_settings_dialog import AISettingsDialog
 
 
@@ -68,7 +70,6 @@ def test_templates_page_structure(dialog):
     """Test the structure of the templates page."""
     # Select Templates page
     dialog.sidebar_list.setCurrentRow(3)
-    page = dialog.pages_stack.currentWidget()
 
     # Check key widgets exist
     assert hasattr(dialog, "template_list")  # The list of templates
@@ -112,7 +113,8 @@ def test_select_template_populates_editor(dialog, mock_loader, qtbot):
 
     assert dialog.template_id_edit.text() == "test_t1"
     assert dialog.template_name_edit.text() == "Test Template 1"
-    # assert dialog.template_content_edit.toPlainText() == "Content 1" # depends on widget type
+    # assert dialog.template_content_edit.toPlainText() == "Content 1"
+    # depends on widget type
 
 
 def test_new_template_clears_editor(dialog, qtbot):

@@ -1,5 +1,5 @@
 import pytest
-from PySide6.QtCore import Qt
+
 from src.gui.widgets.prompt_editor import PromptEditorWidget
 
 

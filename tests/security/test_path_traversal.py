@@ -1,14 +1,12 @@
 """Security tests for checking Path Traversal vulnerabilities."""
 
+from unittest.mock import MagicMock
+
 import pytest
-from pathlib import Path
-import os
-from src.services.backup_service import BackupService, BackupType, BackupConfig
+
+from src.services.backup_service import BackupConfig, BackupService
 from src.services.obsidian_exporter import ObsidianExporter
-from src.services.prompt_loader import PromptLoader, PromptTemplate
-from src.core.base_theme_manager import BaseThemeManager
-from src.core.fast_inject import FastInjectManager, FastInjectTemplate
-from unittest.mock import MagicMock, patch
+from src.services.prompt_loader import PromptLoader
 
 
 @pytest.fixture

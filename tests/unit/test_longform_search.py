@@ -1,10 +1,9 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pytest
-from PySide6.QtCore import Qt, QSettings
-from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QSettings
 
-from src.gui.utils.shortcut_manager import ShortcutManager, KeyboardShortcut
+from src.gui.utils.shortcut_manager import ShortcutManager
 from src.gui.widgets.longform.content import LongformContentWidget
 from src.gui.widgets.longform.editor import LongformEditorWidget
 

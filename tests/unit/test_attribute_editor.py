@@ -1,5 +1,5 @@
 import pytest
-from PySide6.QtWidgets import QTableWidget, QComboBox
+from PySide6.QtWidgets import QComboBox
 
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 

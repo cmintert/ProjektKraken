@@ -7,7 +7,7 @@ Handles LLM provider integration and summary persistence.
 import hashlib
 import logging
 import time
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from src.core.entities import Entity
 from src.core.events import Event
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class SummaryService:
     """Service for managing natural language summaries of Entities and Events."""
 
-    def __init__(self, db_service: "DatabaseService"):
+    def __init__(self, db_service: "DatabaseService") -> None:
         """Initialize the SummaryService.
 
         Args:
@@ -36,7 +36,7 @@ class SummaryService:
         # Ideally, this should rely on `create_provider` dynamically based on config.
         self._llm_provider = None
 
-    def _get_provider(self):
+    def _get_provider(self) -> Any:
         """Get or create the LLM provider for text generation.
 
         Lazily initializes the provider based on settings priority:
@@ -148,7 +148,8 @@ class SummaryService:
             SummaryData: Generated summary with metadata.
 
         Raises:
-            RuntimeError: If AI provider times out, connection fails, or generation fails.
+            RuntimeError: If AI provider times out, connection fails,
+                          or generation fails.
 
         """
         try:
@@ -183,19 +184,22 @@ class SummaryService:
         except TimeoutError:
             logger.error("Summary generation timed out.")
             raise RuntimeError(
-                "The AI provider timed out. Check your network or increase the timeout setting."
+                "The AI provider timed out. "
+                "Check your network or increase the timeout setting."
             )
         except ConnectionError:
             logger.error("Connection to AI provider failed.")
             raise RuntimeError(
-                "Could not connect to the AI provider. Is LM Studio (or your provider) running?"
+                "Could not connect to the AI provider. "
+                "Is LM Studio (or your provider) running?"
             )
         except Exception as e:
             logger.error(f"Summary generation failed: {e}")
             # Re-raise with a cleaner message if it's a known provider error
             if "Connection refused" in str(e):
                 raise RuntimeError(
-                    "Connection refused. Please ensure your local AI server (e.g., LM Studio) is running."
+                    "Connection refused. "
+                    "Please ensure your local AI server (e.g., LM Studio) is running."
                 )
             raise RuntimeError(f"Generation failed: {str(e)}")
 

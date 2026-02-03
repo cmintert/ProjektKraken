@@ -9,22 +9,22 @@ from typing import Any, List, Optional
 
 from PySide6.QtCore import QStringListModel, Qt, Signal, Slot
 from PySide6.QtGui import (
+    QAction,
     QKeyEvent,
     QMouseEvent,
     QResizeEvent,
     QTextBlock,
     QTextCursor,
     QTextFragment,
-    QAction,
 )
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QCompleter,
+    QFrame,
     QTextEdit,
     QToolButton,
-    QWidget,
-    QFrame,
     QVBoxLayout,
+    QWidget,
 )
 
 from src.core.theme_manager import ThemeManager
@@ -1249,24 +1249,30 @@ class WikiTextEdit(QFrame):
     def setPlaceholderText(self, text: str) -> None:
         self.editor.setPlaceholderText(text)
 
-    def document(self):
+    def document(self) -> Any:
         return self.editor.document()
 
-    def textCursor(self):
+    def textCursor(self) -> Any:
         return self.editor.textCursor()
 
-    def setTextCursor(self, cursor):
+    def setTextCursor(self, cursor: Any) -> None:
         self.editor.setTextCursor(cursor)
 
-    def set_completer(self, items_or_names=None, *, items=None, names=None):
+    def set_completer(
+        self,
+        items_or_names: Optional[list] = None,
+        *,
+        items: Optional[list] = None,
+        names: Optional[list] = None,
+    ) -> None:
         self.editor.set_completer(items_or_names, items=items, names=names)
 
-    def set_link_resolver(self, resolver):
+    def set_link_resolver(self, resolver: Any) -> None:
         self.editor.set_link_resolver(resolver)
 
-    def toggle_view_mode(self):
+    def toggle_view_mode(self) -> None:
         self.editor.toggle_view_mode()
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         """Delegate unknown attributes to the inner editor view."""
         return getattr(self.editor, name)

@@ -6,13 +6,11 @@ provided project root, rather than falling back to default AppData paths which
 causes issues in portable/built versions.
 """
 
-import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from PySide6.QtCore import Qt
-from src.core.image_attachment import ImageAttachment
+
 from src.gui.widgets.gallery_widget import GalleryWidget
 
 # Mock get_user_data_path to return a fixed "AppData" location for verification

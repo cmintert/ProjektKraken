@@ -1,11 +1,13 @@
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QWidget
+
 from src.gui.utils.window_utils import (
-    apply_windows_title_bar_style,
-    DWMWA_USE_IMMERSIVE_DARK_MODE,
     DWMWA_CAPTION_COLOR,
+    DWMWA_USE_IMMERSIVE_DARK_MODE,
+    apply_windows_title_bar_style,
 )
 
 

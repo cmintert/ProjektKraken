@@ -1,6 +1,7 @@
+from PySide6.QtCore import QEvent, Qt
 from PySide6.QtGui import QKeyEvent
-from PySide6.QtCore import Qt, QEvent
-from src.gui.utils.shortcut_manager import ShortcutManager, KeyboardShortcut
+
+from src.gui.utils.shortcut_manager import KeyboardShortcut, ShortcutManager
 
 
 def test_shortcut_definition():

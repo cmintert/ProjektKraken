@@ -1,8 +1,9 @@
-import pytest
-from PySide6.QtGui import QIcon
 from unittest.mock import patch
-from src.gui.widgets.compact_date_widget import CompactDateWidget
+
+from PySide6.QtGui import QIcon
+
 from src.core.theme_manager import ThemeManager
+from src.gui.widgets.compact_date_widget import CompactDateWidget
 
 
 def test_calendar_icon_loaded(qtbot):
@@ -12,7 +13,6 @@ def test_calendar_icon_loaded(qtbot):
         mock_load.return_value = QIcon()
 
         # Ensure theme manager is initialized
-        tm = ThemeManager()
 
         widget = CompactDateWidget()
         qtbot.addWidget(widget)

@@ -7,7 +7,7 @@ attributes, and relations.
 import logging
 import os
 import traceback
-from typing import Any, Optional
+from typing import Any
 
 from PySide6.QtCore import QPoint, QSize, Qt, Signal, Slot
 from PySide6.QtWidgets import (
@@ -74,7 +74,7 @@ class EventEditorWidget(QWidget):
     dirty_changed = Signal(bool)
     current_data_changed = Signal(dict)  # Emits current event data for preview
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initializes the editor widget with form fields.
 
         Args:
@@ -318,7 +318,7 @@ class EventEditorWidget(QWidget):
         self.setEnabled(False)
         self.summary_service = None
 
-    def set_summary_service(self, service) -> None:
+    def set_summary_service(self, service: Any) -> None:
         """Sets the summary service."""
         self.summary_service = service
 

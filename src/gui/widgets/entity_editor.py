@@ -7,7 +7,7 @@ text editing, custom attributes, tags, and relationship management.
 import logging
 import traceback
 from contextlib import suppress
-from typing import Optional, Any
+from typing import Any, Optional
 
 from PySide6.QtCore import QPoint, QSize, Qt, Signal, Slot
 from PySide6.QtWidgets import (
@@ -30,9 +30,9 @@ from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.relation_item_widget import RelationItemWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
 from src.gui.widgets.standard_buttons import (
+    DestructiveButton,
     PrimaryButton,
     StandardButton,
-    DestructiveButton,
 )
 from src.gui.widgets.summary_widget import SummaryWidget
 from src.gui.widgets.tag_editor import TagEditorWidget
@@ -166,9 +166,9 @@ class EntityEditorWidget(QWidget):
         self.form_layout.addRow("Description:", self.desc_edit)
 
         # Add Timeline Display Widget (above LLM section)
-        from src.gui.widgets.timeline_display_widget import TimelineDisplayWidget
-
         from PySide6.QtWidgets import QCheckBox
+
+        from src.gui.widgets.timeline_display_widget import TimelineDisplayWidget
 
         self.timeline_container = QWidget()
         timeline_outer_layout = QVBoxLayout(self.timeline_container)
@@ -327,7 +327,7 @@ class EntityEditorWidget(QWidget):
         self.setEnabled(False)
         self.summary_service = None
 
-    def set_summary_service(self, service) -> None:
+    def set_summary_service(self, service: Any) -> None:
         """Sets the summary service for generation and staleness checks."""
         self.summary_service = service
 
