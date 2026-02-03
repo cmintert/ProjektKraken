@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
 from src.core.paths import get_resource_path
 from src.core.trajectory import KEYFRAME_TIME_EPSILON, interpolate_position
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
+from src.gui.widgets.map.map_scale_dialog import MapScaleDialog
 from src.gui.widgets.map.marker_item import MarkerItem
 
 logger = logging.getLogger(__name__)
@@ -659,26 +660,107 @@ class MapWidget(QWidget):
         """Removes all markers from the map."""
         self.view.clear_markers()
 
+    @Slot()
     def _configure_map_width(self) -> None:
-        """Opens a dialog to configure the real-world width of the map."""
-        if not self.view.pixmap_item:
-            logger.warning("Ignoring request to configure map width: no map loaded.")
+        """Opens dialog to configure the map's total real-world width."""
+        current_map_id = self.get_selected_map_id()
+        if not current_map_id:
+            logger.warning("No map selected, cannot configure scale")
             return
 
-        current_width = int(self.view.map_width_meters)
-        width, ok = QInputDialog.getInt(
-            self,
-            "Map Scale Base",
-            "Enter the real-world width of this map image (in meters):",
-            current_width,
-            100,  # Min 100m
-            100_000_000,  # Max 100,000 km
-            1000,  # Step
+        map_name = self.map_selector.currentText()
+        current_width = self.view.map_width_meters
+
+        dialog = MapScaleDialog(current_width, self, map_name)
+
+        # Determine behavior on result
+        dialog.calibrate_requested.connect(self._handle_calibration_request)
+
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            new_width = dialog.get_width()
+            if new_width != current_width:
+                self.view.set_map_width_meters(new_width)
+                self.map_scale_changed.emit(new_width)
+                logger.info(f"Updated map width to {new_width:.2f} m")
+
+    @Slot()
+    def _handle_calibration_request(self) -> None:
+        """Starts the map calibration workflow from the dialog."""
+        logger.info("Starting map calibration via measurement")
+
+        # Disconnect any old connections to avoid duplicates
+        try:
+            self.view.calibration_completed.disconnect()
+        except Exception:
+            pass  # No slots connected
+
+        self.view.calibration_completed.connect(
+            self._on_calibration_measurement_finished
         )
-        if ok:
-            self.view.set_map_width_meters(float(width))
-            self.map_scale_changed.emit(float(width))
-            logger.info(f"Map width set to {width} meters")
+
+        self.view.start_calibration()
+
+        # Show hint
+        self.overlay_banner.setText(
+            "Click two points on the map to measure a known distance."
+        )
+        self.overlay_banner.show()
+
+    @Slot(float)
+    def _on_calibration_measurement_finished(self, px_distance: float) -> None:
+        """Handle completion of the calibration measurement step."""
+        # 1. Hide overlay
+        self.overlay_banner.hide()
+
+        # 2. Ask for real world distance
+        if px_distance < 1.0:
+            logger.warning("Measured distance too small, ignoring.")
+            return
+
+        distance, ok = QInputDialog.getDouble(
+            self,
+            "Calibration",
+            "Enter the real-world length of the line you just drew (in meters):",
+            value=100.0,
+            minValue=0.1,
+            maxValue=1_000_000_000.0,
+            decimals=1,
+        )
+
+        if ok and distance > 0:
+            # Calculate new total width
+            # Total Width / Image Width = Segment Real / Segment px
+            # Total Width = (Image Width * Segment Real) / Segment px
+
+            pixmap_item = getattr(self.view, "pixmap_item", None)
+            if not pixmap_item:
+                return
+
+            image_width_px = pixmap_item.boundingRect().width()
+
+            new_total_width = (image_width_px * distance) / px_distance
+
+            self.view.set_map_width_meters(new_total_width)
+            self.map_scale_changed.emit(new_total_width)
+
+            # Show confirmation details
+            from PySide6.QtWidgets import QMessageBox
+
+            QMessageBox.information(
+                self,
+                "Calibration Complete",
+                f"Map scale updated.\n\n"
+                f"Segment: {distance} m ({px_distance:.1f} px)\n"
+                f"New Total Width: {new_total_width:.2f} m",
+            )
+
+        # Cleanup
+        try:
+            self.view.calibration_completed.disconnect(
+                self._on_calibration_measurement_finished
+            )
+        except Exception:
+            pass
 
     def _emit_keyframe_upsert(
         self, marker_id: str, t: float, x: float, y: float, is_add: bool = False

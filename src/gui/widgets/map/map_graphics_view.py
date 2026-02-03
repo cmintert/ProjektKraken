@@ -387,7 +387,9 @@ class MapGraphicsView(QGraphicsView):
     keyframe_moved = Signal(str, float, float, float)  # marker_id, t, new_x, new_y
     keyframe_clock_mode_requested = Signal(str, float)  # marker_id, t
     keyframe_delete_requested = Signal(str, float)  # marker_id, t
+    keyframe_delete_requested = Signal(str, float)  # marker_id, t
     keyframe_edit_requested = Signal(str, float, float, float)  # marker_id, t, x, y
+    calibration_completed = Signal(float)  # emitted with pixel distance
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the MapGraphicsView.
@@ -400,6 +402,10 @@ class MapGraphicsView(QGraphicsView):
 
         # Initialize Coordinate System
         self.coord_system = MapCoordinateSystem()
+
+        # Calibration State
+        self.calibration_mode = False
+        self.calibration_points: list[QPointF] = []
 
         # Set OpenGL Viewport (Safe Fallback)
         import os
@@ -489,7 +495,12 @@ class MapGraphicsView(QGraphicsView):
 
         # Scale Bar
         self.scale_bar_painter = ScaleBarPainter()
+        self.scale_bar_painter = ScaleBarPainter()
         self.map_width_meters = 1_000_000.0  # Default 1000km
+
+        # Calibration State
+        self.calibration_mode = False
+        self.calibration_points: list[QPointF] = []
 
     def load_map(self, image_path: str) -> bool:
         """Loads a map image into the view.
@@ -553,11 +564,40 @@ class MapGraphicsView(QGraphicsView):
             self.fitInView(self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        """Handle mouse press to implement Smart Drag.
+        """Handle mouse press to implement Smart Drag and Calibration."""
+        # Handle Calibration Mode
+        if self.calibration_mode and self.pixmap_item:
+            pos = event.position().toPoint()
+            scene_pos = self.mapToScene(pos)
+            item_pos = self.pixmap_item.mapFromScene(scene_pos)
 
-        If clicking a marker, disable view panning. If clicking background, enable view
-        panning.
-        """
+            if self.pixmap_item.contains(item_pos):
+                self.calibration_points.append(scene_pos)
+                self.viewport().update()  # Trigger redraw for line
+
+                # If we have 2 points, finish
+                if len(self.calibration_points) >= 2:
+                    p1 = self.calibration_points[0]
+                    p2 = self.calibration_points[1]
+
+                    # Use accurate euclidean for real calc
+                    import math
+
+                    dx = p2.x() - p1.x()
+                    dy = p2.y() - p1.y()
+                    dist = math.sqrt(dx * dx + dy * dy)
+
+                    self.calibration_mode = False
+                    self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+                    self.setCursor(Qt.ArrowCursor)  # Reset cursor
+                    self.calibration_completed.emit(dist)
+
+                return  # Consume event
+
+        # Normal handling
+        if self.calibration_mode:
+            return  # Prevent drag in calibration mode
+
         pos = event.position().toPoint()
         item = self.itemAt(pos)
 
@@ -570,17 +610,19 @@ class MapGraphicsView(QGraphicsView):
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Reset drag mode on release."""
         super().mouseReleaseEvent(event)
-        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+        if not self.calibration_mode:
+            self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        """Handle mouse move to track coordinates.
-
-        Does not interfere with drag operations as we call super().
-        """
+        """Handle mouse move to track coordinates."""
         super().mouseMoveEvent(event)
 
+        if self.calibration_mode:
+            self.setCursor(Qt.CrossCursor)  # Enforce cursor
+            self.viewport().update()  # Redraw for rubber band line
+
         if self.pixmap_item:
-            # Map view pos to scene pos
+            # map view pos to scene pos
             pos = event.position().toPoint()
             scene_pos = self.mapToScene(pos)
 
@@ -817,12 +859,63 @@ class MapGraphicsView(QGraphicsView):
         """
         super().drawForeground(painter, rect)
 
+        # Draw calibration line
+        if self.calibration_mode and len(self.calibration_points) > 0:
+            painter.save()
+
+            theme = ThemeManager().get_theme()
+            pen = QPen(QColor(theme.get("destructive", "#e74c3c")))
+            pen.setWidth(2)
+            pen.setStyle(Qt.DashLine)
+            painter.setPen(pen)
+
+            start_pos = self.calibration_points[0]
+            end_pos = None
+
+            if len(self.calibration_points) > 1:
+                end_pos = self.calibration_points[1]
+            else:
+                # Use current mouse pos mapped to scene
+                view_pos = self.mapFromGlobal(self.cursor().pos())
+                end_pos = self.mapToScene(view_pos)
+
+            if start_pos and end_pos:
+                painter.drawLine(start_pos, end_pos)
+
+                # Draw distance hint
+                mid = (start_pos + end_pos) / 2
+                import math
+
+                dx = end_pos.x() - start_pos.x()
+                dy = end_pos.y() - start_pos.y()
+                dist_px = math.sqrt(dx * dx + dy * dy)
+
+                # Draw text with backing
+                text = f"{dist_px:.0f} px"
+                font = painter.font()
+                font.setBold(True)
+                painter.setFont(font)
+                fm = painter.fontMetrics()
+                t_rect = fm.boundingRect(text)
+                t_rect.moveCenter(mid.toPoint())
+                t_rect.adjust(-4, -2, 4, 2)
+
+                painter.setBrush(QColor(0, 0, 0, 180))
+                painter.setPen(Qt.NoPen)
+                painter.drawRoundedRect(t_rect, 4, 4)
+
+                painter.setPen(Qt.white)
+                painter.drawText(t_rect, Qt.AlignCenter, text)
+
+            painter.restore()
+
         # Draw Scale Bar Overlay
         if self.pixmap_item and self.map_width_meters > 0:
             # Use pixmap bounding rect width for calculation to rely on image size,
             # not dynamic scene rect which can expand.
             image_width_px = self.pixmap_item.boundingRect().width()
             if image_width_px > 0:
+                # Calculate resolution: meters per scene unit (pixel)
                 # Calculate resolution: meters per scene unit (pixel)
                 base_resolution = self.map_width_meters / image_width_px
 
@@ -845,6 +938,22 @@ class MapGraphicsView(QGraphicsView):
 
                     # Restore painter state
                     painter.restore()
+
+    def start_calibration(self) -> None:
+        """Enters calibration mode."""
+        self.calibration_mode = True
+        self.calibration_points.clear()
+        self.setDragMode(QGraphicsView.DragMode.NoDrag)  # Prevent hand cursor
+        self.setCursor(Qt.CrossCursor)
+        self.viewport().update()
+
+    def cancel_calibration(self) -> None:
+        """Exits calibration mode."""
+        self.calibration_mode = False
+        self.calibration_points.clear()
+        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)  # Restore normal
+        self.setCursor(Qt.ArrowCursor)
+        self.viewport().update()
 
     def _show_icon_picker(self, marker_item: MarkerItem) -> None:
         """Shows the icon picker dialog for a marker.

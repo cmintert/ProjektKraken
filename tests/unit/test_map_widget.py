@@ -404,25 +404,34 @@ def test_mode_indicator_ui(map_widget, qtbot):
 
 
 def test_configure_map_width_emits_signal(map_widget, monkeypatch):
-    """Test that configuring map width emits the signal."""
-    # Mock QInputDialog.getInt to return a specific value and True (accepted)
-    from PySide6.QtWidgets import QInputDialog
+    """Test that configuring map width emits the signal via MapScaleDialog."""
+    from PySide6.QtWidgets import QDialog
 
-    mock_get_int = MagicMock(return_value=(5000, True))
-    monkeypatch.setattr(QInputDialog, "getInt", mock_get_int)
+    # Mock MapScaleDialog
+    mock_dialog = MagicMock()
+    mock_dialog.exec.return_value = QDialog.DialogCode.Accepted
+    mock_dialog.get_width.return_value = 5000.0
+
+    # Patch the class in map_widget module
+    mock_class = MagicMock(return_value=mock_dialog)
+    import src.gui.widgets.map_widget
+
+    monkeypatch.setattr(src.gui.widgets.map_widget, "MapScaleDialog", mock_class)
 
     # Spy on the new signal
     signal_spy = []
 
-    # This will raise AttributeError if signal doesn't exist, which is expected for TDD step 1
-    try:
-        map_widget.map_scale_changed.connect(lambda w: signal_spy.append(w))
-    except AttributeError:
-        pytest.fail("map_scale_changed signal not found on MapWidget")
+    # This will raise AttributeError if signal doesn't exist
+    map_widget.map_scale_changed.connect(lambda w: signal_spy.append(w))
 
     # Set up preconditions
     setup_map_with_pixmap(map_widget.view)
     map_widget.view.map_width_meters = 1000.0
+
+    # Mock map selector currentText to prevent warnings
+    map_widget.map_selector.currentText = MagicMock(return_value="Test Map")
+    # Mock get_selected_map_id to return valid ID
+    map_widget.get_selected_map_id = MagicMock(return_value="map1")
 
     # Call the method
     map_widget._configure_map_width()
