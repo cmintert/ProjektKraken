@@ -193,16 +193,20 @@ class WorkerManager(QObject):
         self.window.worker.summary_generated.connect(
             self.window._on_summary_generated_result, connection_type
         )
-        # Connect filtering request
-        self.window.filter_requested.connect(self.window.worker.apply_filter)
 
-        # Connect summary request
-        self.summary_requested.connect(self.window.worker.generate_summary)
-
-        # Connect MainWindow signal for sending commands to worker thread
-        self.window.command_requested.connect(self.window.worker.run_command)
+        # Connect MainWindow signals to worker (cross-thread: main → worker)
+        # All connections use QueuedConnection because worker is on a different thread
+        self.window.filter_requested.connect(
+            self.window.worker.apply_filter, connection_type
+        )
+        self.summary_requested.connect(
+            self.window.worker.generate_summary, connection_type
+        )
+        self.window.command_requested.connect(
+            self.window.worker.run_command, connection_type
+        )
         self.window.load_graph_data_requested.connect(
-            self.window.worker.load_graph_data
+            self.window.worker.load_graph_data, connection_type
         )
 
         # Connect Thread Start

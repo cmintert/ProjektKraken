@@ -7,7 +7,7 @@ text editing, custom attributes, tags, and relationship management.
 import logging
 import traceback
 from contextlib import suppress
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 from PySide6.QtCore import QPoint, QSize, Qt, Signal, Slot
 from PySide6.QtWidgets import (
@@ -511,8 +511,6 @@ class EntityEditorWidget(QWidget):
                 is_stale = self.summary_service.is_stale(entity)
                 self.summary_widget.set_stale(is_stale)
 
-                # Auto-generate if configured (TODO check config)
-
             # Reset Read-Only mode (in case we were in temporal view)
             self.exit_read_only_mode()
 
@@ -847,11 +845,14 @@ class EntityEditorWidget(QWidget):
 
         return super().eventFilter(obj, event)
 
-    def get_generation_context(self) -> dict:
+    def get_generation_context(self) -> Dict[str, Any]:
         """Get context for LLM generation.
 
         Returns:
-            dict: Context dictionary with 'name', 'type', etc.
+            Dict[str, Any]: Context dictionary containing:
+                - 'name' (str): Entity name
+                - 'type' (str): Entity type
+                - 'existing_description' (str): Current description text
 
         """
         return {
@@ -980,7 +981,16 @@ class EntityEditorWidget(QWidget):
         self.set_read_only_mode(True, reason="Viewing Past/Future State")
 
     def _populate_inject_menu(self) -> None:
-        """Populate the Fast Inject menu."""
+        """Populate the Fast Inject menu with available actions.
+
+        Clears and rebuilds the inject menu with:
+        - "Open Inject Dialog..." action to launch the inject UI
+        - Separator
+        - "Save Selection as Template..." action to create templates
+
+        This method is typically called when the menu is about to show,
+        ensuring the menu content is always up-to-date.
+        """
         self.inject_menu.clear()
 
         # Quick Slots (Top 3 - Placeholder logic for now, or just basic "Open Dialog")
@@ -995,14 +1005,33 @@ class EntityEditorWidget(QWidget):
         action_save_tmpl.triggered.connect(self._open_create_template_dialog)
 
     def _open_inject_dialog(self) -> None:
-        """Open the Fast Inject Dialog."""
+        """Open the Fast Inject dialog for the current entity.
+
+        Emits the inject_ui_requested signal with the current entity ID,
+        allowing the main window or coordinator to display the Fast Inject
+        dialog for quick data entry.
+
+        Note:
+            Returns early if no entity is currently loaded in the editor.
+        """
         if not self._current_entity_id:
             return
 
         self.inject_ui_requested.emit(self._current_entity_id)
 
     def _open_create_template_dialog(self) -> None:
-        """Open create template dialog."""
+        """Open the template creation dialog for the current entity.
+
+        Collects current form data (tags, attributes, description) and
+        opens a dialog allowing the user to save it as a reusable template
+        for Fast Inject operations.
+
+        The template data is emitted via create_template_requested signal
+        if the user accepts the dialog.
+
+        Note:
+            Returns early if no entity is currently loaded.
+        """
         if not self._current_entity_id:
             return
 
@@ -1028,7 +1057,25 @@ class EntityEditorWidget(QWidget):
     create_template_requested = Signal(dict)
 
     def set_read_only_mode(self, readonly: bool, reason: str = None) -> None:
-        """Sets the editor to read-only mode."""
+        """Set the editor to read-only or editable mode.
+
+        When in read-only mode, all form fields, buttons, and editors are
+        disabled to prevent modifications. This is typically used when viewing
+        historical entity states or when the user lacks edit permissions.
+
+        Args:
+            readonly: If True, disables all editing controls. If False, enables
+                normal editing mode.
+            reason: Optional string explaining why read-only mode is active.
+                Special handling for "Viewing Past/Future State" shows a
+                "Return to Present" button. Other reasons show generic read-only
+                state. If None, displays "Read Only".
+
+        Note:
+            The save button is repurposed in read-only mode: for temporal views
+            it becomes "Return to Present" button, otherwise it shows the reason
+            text and is disabled.
+        """
         # Disable form fields
         self.name_edit.setReadOnly(readonly)
         self.type_edit.setEnabled(not readonly)
@@ -1049,10 +1096,14 @@ class EntityEditorWidget(QWidget):
 
         if readonly:
             if reason == "Viewing Past/Future State":
+                from src.core.theme_manager import ThemeManager
+
+                theme = ThemeManager().get_theme()
                 self._update_save_button(
                     "Return to Present",
                     True,
-                    "background-color: #2196F3; color: white; font-weight: bold;",
+                    f"background-color: {theme['accent_secondary']}; "
+                    f"color: white; font-weight: bold;",
                 )
             else:
                 self._update_save_button(reason or "Read Only", False)
@@ -1060,19 +1111,40 @@ class EntityEditorWidget(QWidget):
             self._update_save_button("Save Changes", True)
 
     def _update_save_button(self, text: str, enabled: bool, style: str = "") -> None:
-        """Updates the save button state."""
+        """Update the save button's text, state, and styling.
+
+        Args:
+            text: New button text to display.
+            enabled: Whether the button should be clickable.
+            style: Optional Qt stylesheet string to apply custom styling.
+                Defaults to empty string (no custom styling).
+        """
         self.btn_save.setText(text)
         self.btn_save.setEnabled(enabled)
         self.btn_save.setStyleSheet(style)
 
     def _set_input_signals_blocked(self, blocked: bool) -> None:
-        """Blocks or unblocks signals for input fields."""
+        """Block or unblock signals from input fields during updates.
+
+        Args:
+            blocked: If True, prevents fields from emitting change signals.
+                If False, re-enables signal emission.
+
+        Note:
+            Used to prevent cascading field updates when programmatically
+            setting form values (e.g., when loading an entity from database).
+        """
         self.name_edit.blockSignals(blocked)
         self.type_edit.blockSignals(blocked)
         self.desc_edit.blockSignals(blocked)
 
     def exit_read_only_mode(self) -> None:
-        """Restores normal editing mode."""
+        """Exit read-only mode and restore normal editing capabilities.
+
+        Re-enables all form fields, buttons, and editors that were disabled
+        by set_read_only_mode(). Typically called when returning from viewing
+        a historical entity state to the present.
+        """
         self.set_read_only_mode(False)
 
     @Slot()

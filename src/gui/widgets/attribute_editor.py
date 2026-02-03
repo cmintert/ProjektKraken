@@ -169,7 +169,16 @@ class AttributeEditorWidget(QWidget):
             # Check for duplicates
             existing_keys = self.get_attributes().keys()
             if key in existing_keys:
-                QMessageBox.warning(self, "Duplicate", f"Key '{key}' already exists.")
+                QMessageBox.warning(
+                    self, 
+                    "Duplicate Attribute", 
+                    f"The attribute key '{key}' already exists.\n\n"
+                    "Each attribute must have a unique key name.\n\n"
+                    "To fix:\n"
+                    "1. Choose a different key name\n"
+                    "2. Or modify the existing attribute with this key\n"
+                    "3. Consider using a naming pattern like 'key_2', 'key_v2'"
+                )
                 return
 
             self._block_signals = True

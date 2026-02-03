@@ -5,7 +5,7 @@ Defines configuration settings for the backup system.
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, Optional
 
 
 @dataclass
@@ -37,11 +37,13 @@ class BackupConfig:
     verify_after_backup: bool = True
     vacuum_before_backup: bool = False  # Can be slow for large DBs
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> Dict[str, Any]:
         """Converts the config to a dictionary for JSON serialization.
 
         Returns:
-            dict: Dictionary representation of the configuration.
+            Dict[str, Any]: Dictionary containing all configuration settings
+                with string keys and values of appropriate types (bool, int, str).
+                Path values are converted to strings.
 
         """
         return {

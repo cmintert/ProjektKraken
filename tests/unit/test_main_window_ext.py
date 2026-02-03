@@ -26,66 +26,51 @@ def main_window(qtbot):
         yield window
 
 
-def test_delete_event_success(main_window):
+def test_delete_event_success(main_window, qtbot):
     """Test successful event deletion."""
     event = Event(id="del1", name="To Delete", lore_date=100.0, type="generic")
     main_window.worker.db_service.get_event.return_value = event
     main_window.worker.db_service.delete_event.return_value = True
 
-    # Mock command to return True
+    # Mock command and wait for signal
     with patch("src.app.main_window.DeleteEventCommand") as MockCmd:
-        main_window.delete_event("del1")
+        with qtbot.waitSignal(main_window.command_requested, timeout=1000):
+            main_window.delete_event("del1")
 
-        # Verify command was created and sent to worker
+        # Verify command was created
         MockCmd.assert_called_once()
-        main_window.worker.run_command.assert_called_once()
-        # Verify the argument was the command instance
-        cmd_arg = main_window.worker.run_command.call_args[0][0]
-        assert isinstance(cmd_arg, MockCmd.return_value.__class__)
 
 
-def test_delete_event_sends_command(main_window):
+def test_delete_event_sends_command(main_window, qtbot):
     """Test delete event sends command to worker."""
     with patch("src.app.main_window.DeleteEventCommand"):
-        main_window.delete_event("nonexistent")
-        main_window.worker.run_command.assert_called_once()
+        with qtbot.waitSignal(main_window.command_requested, timeout=1000):
+            main_window.delete_event("nonexistent")
 
 
-def test_update_event_success(main_window):
+def test_update_event_success(main_window, qtbot):
     """Test successful event update."""
     event_data = {"id": "up1", "name": "Updated", "lore_date": 200.0, "type": "combat"}
-    # We mock the DB get to return something valid if needed,
-    # but here we just check if command is emitted or created.
-    # Actually, in MainWindow test, we are checking if it calls emit.
 
     with patch("src.app.main_window.UpdateEventCommand") as MockCmd:
-        main_window.update_event(event_data)
+        with qtbot.waitSignal(main_window.command_requested, timeout=1000):
+            main_window.update_event(event_data)
 
         MockCmd.assert_called_once_with("up1", event_data)
-        # Verify command was sent to worker via signal
-        # Since usage of signals + mocks can be tricky without Qt loop processing,
-        # we check if the worker's slot was called.
-        # NOTE: Real signals connected to Mocks might not fire synchronously
-        # without an event loop spin.
-        # But previous tests (delete) suggest it works or we should use qtbot.
-        # Let's try direct check first as per other tests.
-        main_window.worker.run_command.assert_called_once()
-        args = main_window.worker.run_command.call_args[0]
-        assert args[0] == MockCmd.return_value
 
 
-def test_update_event_sends_command(main_window):
+def test_update_event_sends_command(main_window, qtbot):
     """Test update event sends command to worker."""
     event_data = {"id": "up2", "name": "Failed", "lore_date": 300.0, "type": "generic"}
 
     with patch("src.app.main_window.UpdateEventCommand") as MockCmd:
-        main_window.update_event(event_data)
+        with qtbot.waitSignal(main_window.command_requested, timeout=1000):
+            main_window.update_event(event_data)
 
         MockCmd.assert_called_once_with("up2", event_data)
-        main_window.worker.run_command.assert_called_once()
 
 
-def test_add_relation_success(main_window):
+def test_add_relation_success(main_window, qtbot):
     """Test adding a relation."""
     with patch("src.app.main_window.AddRelationCommand") as MockCmd:
         # Mock the load_event_details to avoid errors
@@ -95,10 +80,10 @@ def test_add_relation_success(main_window):
         main_window.worker.db_service.get_relations.return_value = []
         main_window.worker.db_service.get_incoming_relations.return_value = []
 
-        main_window.add_relation("src", "tgt", "causes", bidirectional=False)
+        with qtbot.waitSignal(main_window.command_requested, timeout=1000):
+            main_window.add_relation("src", "tgt", "causes", bidirectional=False)
 
         MockCmd.assert_called_once()
-        main_window.worker.run_command.assert_called_once()
 
 
 def test_add_relation_bidirectional(main_window):
@@ -117,7 +102,7 @@ def test_add_relation_bidirectional(main_window):
         assert call_args[1]["bidirectional"] is True
 
 
-def test_remove_relation_success(main_window):
+def test_remove_relation_success(main_window, qtbot):
     """Test removing a relation."""
     main_window.event_editor._current_event_id = "evt1"
 
@@ -128,10 +113,8 @@ def test_remove_relation_success(main_window):
         main_window.worker.db_service.get_relations.return_value = []
         main_window.worker.db_service.get_incoming_relations.return_value = []
 
-        main_window.remove_relation("rel1")
-
-        # MockCmd.assert_called_once_with("rel1") # Params changed
-        main_window.worker.run_command.assert_called_once()
+        with qtbot.waitSignal(main_window.command_requested, timeout=1000):
+            main_window.remove_relation("rel1")
 
 
 def test_remove_relation_no_current_event(main_window):
@@ -145,7 +128,7 @@ def test_remove_relation_no_current_event(main_window):
         main_window.worker.db_service.get_event.assert_not_called()
 
 
-def test_update_relation_success(main_window):
+def test_update_relation_success(main_window, qtbot):
     """Test updating a relation."""
     main_window.event_editor._current_event_id = "evt1"
 
@@ -159,23 +142,21 @@ def test_update_relation_success(main_window):
         main_window.worker.db_service.get_relations.return_value = []
         main_window.worker.db_service.get_incoming_relations.return_value = []
 
-        main_window.update_relation("rel1", "new_target", "new_type")
+        with qtbot.waitSignal(main_window.command_requested, timeout=1000):
+            main_window.update_relation("rel1", "new_target", "new_type")
 
         MockCmd.assert_called_once_with(
             "rel1", "new_target", "new_type", attributes=None
         )
-        main_window.worker.run_command.assert_called_once()
 
 
-def test_update_relation_no_current_event(main_window):
+def test_update_relation_no_current_event(main_window, qtbot):
     """Test updating relation when no current event."""
     main_window.event_editor._current_event_id = None
 
     with patch("src.app.main_window.UpdateRelationCommand"):
-        main_window.update_relation("rel1", "tgt", "type")
-
-        # Command should still be sent
-        main_window.worker.run_command.assert_called_once()
+        with qtbot.waitSignal(main_window.command_requested, timeout=1000):
+            main_window.update_relation("rel1", "tgt", "type")
 
 
 def test_dock_options_set(main_window):

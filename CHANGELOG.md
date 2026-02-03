@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-02-02
-**Commit:** `0.10.2`
+**Last Updated:** 2026-02-03
+**Commit:** `d797551`
 ---
 
 # Changelog
@@ -10,6 +10,31 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Added
+- *(2026-02-03)* **UI**: Added "Help" menu with "Keyboard Shortcuts" dialog showing all available application shortcuts.
+- *(2026-02-03)* **UI**: Implemented progress dialog for JSON import operations providing real-time status feedback.
+- *(2026-02-03)* **Scripts**: Added `setup_env.sh` and `validate_env.sh` for automated test environment creation and verification.
+
+### Changed
+- *(2026-02-03)* **UI**: Implemented theme-aware styling for timeline elements and "Return to Present" button.
+  - Timeline active event borders now use `theme['primary']` instead of hardcoded green (#4CAF50).
+  - PLAYHEAD separator uses `theme['primary']`, NOW line uses `theme['accent_secondary']`.
+  - "Return to Present" button uses `theme['accent_secondary']` instead of hardcoded blue (#2196F3).
+  - Timeline display automatically refreshes when theme changes.
+
+### Fixed
+- *(2026-02-03)* **Bug**: Fixed `GenerationContextProvider` reference error in `LLMGenerationWidget`.
+- *(2026-02-03)* **Testing**: Resolved theme-related test failures by ensuring complete theme dictionaries in mocks.
+
+### Documentation
+- *(2026-02-03)* **Testing**: Added comprehensive test environment setup guide (`docs/TESTING_SETUP.md`) and summary (`docs/TEST_ENVIRONMENT_SUMMARY.md`).
+- *(2026-02-03)* **Maintenance**: Created `docs/TODO_TRACKING.md` for technical debt management and tracking.
+
+### Refactor
+- *(2026-02-03)* **Code Quality**: Replaced magic numbers with named constants throughout the codebase.
+- *(2026-02-03)* **Code Quality**: Completed extensive docstring and type hint improvements (Phase 2).
+- *(2026-02-03)* **Cleanup**: Resolved pending TODO comments in `main_window.py` and `unified_list.py`.
 
 ## [0.10.2]
 

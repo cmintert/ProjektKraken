@@ -98,11 +98,11 @@ def test_primary_button_style_contains_theme_values(theme_manager):
 
 
 def test_destructive_button_style_contains_theme_values(theme_manager):
-    """Test that destructive button style includes theme error color."""
+    """Test that destructive button style includes theme destructive color."""
     theme = theme_manager.get_theme()
     style = StyleHelper.get_destructive_button_style()
 
-    assert theme["error"] in style
+    assert theme["destructive"] in style
     assert "QPushButton" in style
     assert "background-color:" in style
 

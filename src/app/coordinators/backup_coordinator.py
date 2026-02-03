@@ -5,9 +5,8 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from PySide6.QtCore import QSettings, Slot
+from PySide6.QtCore import QSettings, QTimer, Slot
 from PySide6.QtWidgets import (
-    QApplication,
     QFileDialog,
     QInputDialog,
     QMessageBox,
@@ -60,10 +59,22 @@ class BackupCoordinator(BaseCoordinator):
         if not ok:
             return  # User cancelled
 
-        # Create backup
+        # Create backup - use QTimer to allow UI to update first
         self.main_window.status_bar.showMessage("Creating backup...")
-        QApplication.processEvents()
 
+        # Defer backup execution to allow status bar message to display
+        QTimer.singleShot(0, lambda: self._execute_backup(description))
+
+    def _execute_backup(self, description: str) -> None:
+        """Execute the backup operation.
+
+        Args:
+            description: Optional description for the backup.
+
+        Note:
+            This method is called via QTimer.singleShot to avoid blocking
+            the UI during status bar updates.
+        """
         metadata = self.backup_service.create_backup(
             backup_type=BackupType.MANUAL, description=description
         )
@@ -84,7 +95,17 @@ class BackupCoordinator(BaseCoordinator):
             QMessageBox.critical(
                 self.main_window,
                 "Backup Failed",
-                "Failed to create backup. Check logs for details.",
+                "Failed to create backup. Your data is safe, but the backup "
+                "could not be saved.\n\n"
+                "Possible causes:\n"
+                "• Insufficient disk space\n"
+                "• Write permissions denied in backup directory\n"
+                "• Database file is locked by another process\n\n"
+                "Recovery steps:\n"
+                "1. Check available disk space\n"
+                "2. Try again in a few moments\n"
+                "3. Check application logs for detailed error information\n"
+                "4. Consider changing backup location in Settings",
             )
 
     @Slot()
@@ -123,10 +144,22 @@ class BackupCoordinator(BaseCoordinator):
         if reply != QMessageBox.StandardButton.Yes:
             return
 
-        # Restore backup
+        # Restore backup - use QTimer to allow UI to update first
         self.main_window.status_bar.showMessage("Restoring from backup...")
-        QApplication.processEvents()
 
+        # Defer restore execution to allow status bar message to display
+        QTimer.singleShot(0, lambda: self._execute_restore(backup_file))
+
+    def _execute_restore(self, backup_file: str) -> None:
+        """Execute the restore operation.
+
+        Args:
+            backup_file: Path to the backup file to restore from.
+
+        Note:
+            This method is called via QTimer.singleShot to avoid blocking
+            the UI during status bar updates.
+        """
         success = self.backup_service.restore_backup(
             Path(backup_file), Path(self.main_window.db_path)
         )
@@ -147,7 +180,17 @@ class BackupCoordinator(BaseCoordinator):
             QMessageBox.critical(
                 self.main_window,
                 "Restore Failed",
-                "Failed to restore backup. Check logs for details.",
+                "Failed to restore backup. Your current database is unchanged "
+                "and a safety backup was created before the attempt.\n\n"
+                "Possible causes:\n"
+                "• Backup file is corrupted\n"
+                "• Backup file is from an incompatible version\n"
+                "• Insufficient permissions to modify database\n\n"
+                "Recovery steps:\n"
+                "1. Verify the backup file is not corrupted\n"
+                "2. Try a different backup file\n"
+                "3. Check application logs for detailed error information\n"
+                "4. If backup is from an older version, use migration tools",
             )
 
     @Slot()

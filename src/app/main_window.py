@@ -39,6 +39,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QMainWindow,
     QMessageBox,
+    QProgressDialog,
     QStatusBar,
     QWidget,
 )
@@ -52,6 +53,9 @@ from src.app.constants import (
     SETTINGS_ACTIVE_DB_KEY,
     SETTINGS_AUTO_RELATION_KEY,
     SETTINGS_FILTER_CONFIG_KEY,
+    UI_DOCK_RESTORE_DELAY_MS,
+    UI_INIT_DELAY_MS,
+    UI_OPTIONAL_DOCK_DELAY_MS,
     WINDOW_SETTINGS_APP,
     WINDOW_SETTINGS_KEY,
     WINDOW_TITLE,
@@ -144,13 +148,18 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self._init_core_services()
         logger.debug("Phase 1: Core services initialized")
 
-        # Apply Windows Title Bar Style (Dark Mode by default)
+        # Apply Windows Title Bar Style based on current theme
         try:
             from src.gui.utils.window_utils import apply_windows_title_bar_style
+            from src.core.theme_manager import ThemeManager
 
-            # We can read the current theme to decide, but for now default to Dark
-            # TODO: Hook into ThemeManager changes
-            apply_windows_title_bar_style(self, dark_mode=True)
+            # Apply based on current theme
+            theme_name = ThemeManager().current_theme_name
+            dark_mode = "dark" in theme_name.lower()
+            apply_windows_title_bar_style(self, dark_mode=dark_mode)
+            
+            # Connect to theme changes to update title bar
+            ThemeManager().theme_changed.connect(self._on_theme_changed_for_titlebar)
         except Exception as e:
             logger.warning(f"Failed to apply title bar style: {e}")
 
@@ -159,7 +168,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         logger.debug("Phase 2: Widget skeleton created")
 
         # Phase 3: Deferred initialization (after event loop starts)
-        QTimer.singleShot(100, self._complete_initialization)
+        QTimer.singleShot(UI_INIT_DELAY_MS, self._complete_initialization)
         logger.debug("Phase 3: Deferred initialization scheduled")
 
     def _init_core_services(self) -> None:
@@ -207,6 +216,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self._pending_select_id = None
         self._pending_select_type = None
         self._graph_reload_timer: QTimer | None = None
+        self._import_progress_dialog: Optional["QProgressDialog"] = None
 
     def _update_window_style(self, theme_data: dict) -> None:
         """Updates the Windows title bar style based on the current theme.
@@ -316,6 +326,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.ui_manager.create_timeline_menu(self.menuBar())
         self.ui_manager.create_view_menu(self.menuBar())
         self.ui_manager.create_settings_menu(self.menuBar())
+        self.ui_manager.create_help_menu(self.menuBar())
 
         # Initialize Longform auto-refresh state (default: True)
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
@@ -493,11 +504,11 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             )
             # We could force reset here if enabled
 
-        # Stage 2: Critical docks after 100ms
-        QTimer.singleShot(100, self._restore_critical_docks)
+        # Stage 2: Critical docks after defined delay
+        QTimer.singleShot(UI_DOCK_RESTORE_DELAY_MS, self._restore_critical_docks)
 
-        # Stage 3: Optional docks after 500ms
-        QTimer.singleShot(500, self._restore_optional_docks)
+        # Stage 3: Optional docks after longer delay
+        QTimer.singleShot(UI_OPTIONAL_DOCK_DELAY_MS, self._restore_optional_docks)
 
     def _restore_geometry(self) -> None:
         """Stage 1: Restore window geometry immediately.
@@ -893,6 +904,23 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         """
         self.grouping_manager.on_grouping_config_loaded(config)
+
+    def _on_theme_changed_for_titlebar(self, theme_dict: dict) -> None:
+        """Update Windows title bar style when theme changes.
+        
+        Args:
+            theme_dict: The new theme dictionary from ThemeManager.
+        """
+        try:
+            from src.gui.utils.window_utils import apply_windows_title_bar_style
+            from src.core.theme_manager import ThemeManager
+            
+            # Determine if new theme is dark
+            theme_name = ThemeManager().current_theme_name
+            dark_mode = "dark" in theme_name.lower()
+            apply_windows_title_bar_style(self, dark_mode=dark_mode)
+        except Exception as e:
+            logger.warning(f"Failed to update title bar style on theme change: {e}")
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Handles application close event.
@@ -1839,11 +1867,35 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
                     Q_ARG(str, parsed_json),
                     Q_ARG(str, options_json),
                 )
+                
+                # Show progress dialog
+                from src.gui.dialogs.progress_dialog import ProgressDialog
+                
+                self._import_progress_dialog = ProgressDialog(
+                    "Importing data...\n\nThis may take a moment for large files.",
+                    parent=self,
+                    cancelable=False,
+                    title="Import in Progress"
+                )
                 self.status_bar.showMessage("Importing...", 0)
 
         except Exception as e:
             logger.exception("Import error")
-            QMessageBox.critical(self, "Import Error", f"An error occurred: {e}")
+            QMessageBox.critical(
+                self, 
+                "Import Error", 
+                f"An unexpected error occurred during import: {e}\n\n"
+                "Your existing data is safe and unchanged.\n\n"
+                "Possible causes:\n"
+                "• Invalid file format or corrupted data\n"
+                "• Unsupported import format\n"
+                "• File encoding issues (try UTF-8)\n\n"
+                "To fix:\n"
+                "1. Check that the file is a valid import format\n"
+                "2. Verify file is not corrupted\n"
+                "3. Check application logs for detailed error\n"
+                "4. Try exporting and re-importing a small test dataset"
+            )
 
     @Slot(object)
     def _on_import_finished(self, result: object) -> None:
@@ -1853,6 +1905,11 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             result: ImportResult from the worker thread.
 
         """
+        # Close progress dialog if open
+        if self._import_progress_dialog:
+            self._import_progress_dialog.finish()
+            self._import_progress_dialog = None
+            
         self.status_bar.clearMessage()
 
         if result.success:
@@ -1870,7 +1927,20 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             QMessageBox.information(self, "Import Complete", msg)
         else:
             err_msg = "\n".join(result.errors[:10])
-            QMessageBox.critical(self, "Import Failed", f"Errors occurred:\n{err_msg}")
+            if len(result.errors) > 10:
+                err_msg += f"\n...and {len(result.errors) - 10} more errors."
+            
+            QMessageBox.critical(
+                self, 
+                "Import Failed", 
+                f"Import completed with errors. No data was imported.\n\n"
+                f"Errors ({len(result.errors)} total):\n{err_msg}\n\n"
+                "What to do:\n"
+                "1. Fix the errors in your source file\n"
+                "2. Check file format matches expected structure\n"
+                "3. Try importing a smaller subset first\n"
+                "4. Consult documentation for import format details"
+            )
 
     @Slot(str, object)
     def _on_summary_generated_result(self, item_id: str, summary_data: object) -> None:

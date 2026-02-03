@@ -49,6 +49,11 @@ class TimelineDisplayWidget(QWidget):
         # self._text_display.setMaximumHeight(200)
         layout.addWidget(self._text_display)
 
+        # Connect to theme changes
+        from src.core.theme_manager import ThemeManager
+
+        ThemeManager().theme_changed.connect(self._on_theme_changed)
+
     def set_relations(self, relations: list[dict[str, Any]]) -> None:
         """Set the relations to display in the timeline.
 
@@ -104,96 +109,12 @@ class TimelineDisplayWidget(QWidget):
             key=lambda r: self._get_event_date(r),
         )
 
-        # Build HTML content with refined styling
+        # Build HTML content with theme-aware styling
+        from src.gui.utils.style_helper import StyleHelper
+
         html_parts = []
         html_parts.append("<style>")
-        # Clean, modern styling
-        html_parts.append(
-            """
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-            .timeline-entry {
-                padding: 8px 10px;
-                margin: 6px 2px;
-                border-radius: 3px;
-                border: 1px solid #555;
-            }
-            .timeline-entry.active {
-                border-color: #4CAF50;
-                border-width: 2px;
-            }
-            .timeline-entry.future {
-                opacity: 0.5;
-                border-color: #444;
-            }
-            .event-header { margin-bottom: 4px; }
-            .event-date {
-                color: #888;
-                font-size: 11px;
-                font-weight: 500;
-            }
-            .event-name {
-                color: #E0E0E0;
-                font-weight: 600;
-                font-size: 13px;
-            }
-            .event-type {
-                color: #666;
-                font-size: 10px;
-                font-style: italic;
-            }
-            .payload-list {
-                margin: 4px 0 0 16px;
-                padding: 0;
-            }
-            .payload-item {
-                color: #888;
-                font-size: 11px;
-                line-height: 1.4;
-            }
-            .payload-key { color: #6A9FB5; }
-            .payload-value { color: #B5BD68; }
-            .now-separator {
-                display: flex;
-                align-items: center;
-                margin: 12px 0;
-                color: #FFD700;
-                font-size: 10px;
-                font-weight: 600;
-                text-transform: uppercase;
-                letter-spacing: 1px;
-            }
-            .now-separator::before,
-            .now-separator::after {
-                content: '';
-                flex: 1;
-                height: 1px;
-                background: linear-gradient(to right, transparent, #FFD700, transparent);
-            }
-            .now-separator span {
-                padding: 0 10px;
-            }
-            .now-line {
-                display: flex;
-                align-items: center;
-                margin: 12px 0;
-                color: #4CAF50;
-                font-size: 10px;
-                font-weight: 600;
-                text-transform: uppercase;
-                letter-spacing: 1px;
-            }
-            .now-line::before,
-            .now-line::after {
-                content: '';
-                flex: 1;
-                height: 2px;
-                background: #4CAF50;
-            }
-            .now-line span {
-                padding: 0 10px;
-            }
-        """
-        )
+        html_parts.append(StyleHelper.get_timeline_display_css())
         html_parts.append("</style>")
 
         for i, rel in enumerate(sorted_relations):
@@ -215,14 +136,13 @@ class TimelineDisplayWidget(QWidget):
                 self._playhead_time is not None and event_date <= self._playhead_time
             )
 
-            # Use table for border (QTextEdit renders table borders properly)
-            border_color = "#4CAF50" if is_active else "#888888"
+            # Use CSS classes for styling instead of inline styles
+            entry_class = "timeline-entry active" if is_active else "timeline-entry"
             text_opacity = "" if is_active else "color: #888;"
 
             html_parts.append(
                 f"<table width='100%' cellpadding='8' cellspacing='0' "
-                f"style='margin: 4px 0; border: 2px solid {border_color}; "
-                f"border-radius: 6px;'>"
+                f"class='{entry_class}' style='margin: 4px 0;'>"
             )
             html_parts.append("<tr><td>")
 
@@ -304,3 +224,12 @@ class TimelineDisplayWidget(QWidget):
         self._relations = []
         self._playhead_time = None
         self._text_display.clear()
+
+    def _on_theme_changed(self, theme: dict) -> None:
+        """Handle theme changes by refreshing the display.
+
+        Args:
+            theme: The new theme data (unused, but required by signal).
+
+        """
+        self._refresh_display()

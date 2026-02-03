@@ -10,12 +10,16 @@ from src.gui.widgets.event_editor import EventEditorWidget
 
 
 class MockWorker(QObject):
-    generate_summary = Slot(object)
-
     def __init__(self):
         super().__init__()
         self.generate_summary_called = False
         self.last_item = None
+
+    @Slot(object)
+    def generate_summary(self, item):
+        """Slot that receives the summary generation request."""
+        self.generate_summary_called = True
+        self.last_item = item
 
 
 class MockMainWindow(QObject):

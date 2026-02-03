@@ -7,7 +7,7 @@ streaming output and appending to existing text.
 import asyncio
 import logging
 import re
-from typing import Any, Optional, Protocol, runtime_checkable
+from typing import Any, Dict, Optional, Protocol, runtime_checkable
 
 from PySide6.QtCore import QSettings, Qt, QThread, Signal, Slot
 from PySide6.QtGui import QIntValidator
@@ -84,11 +84,16 @@ DEFAULT_SYSTEM_PROMPT = (
 
 
 @runtime_checkable
-class ContextProvider(Protocol):
+class GenerationContextProvider(Protocol):
     """Protocol for widgets that provide context for LLM generation."""
 
-    def get_generation_context(self) -> dict:
-        """Return context dictionary for generation."""
+    def get_generation_context(self) -> Dict[str, Any]:
+        """Return context dictionary for generation.
+        
+        Returns:
+            Dict[str, Any]: Context data for LLM prompt construction.
+                Typically includes keys like 'name', 'type', 'existing_description'.
+        """
         ...
 
 
@@ -318,7 +323,7 @@ class LLMGenerationWidget(QWidget):
     def __init__(
         self,
         parent: Optional[QWidget] = None,
-        context_provider: Optional[ContextProvider] = None,
+        context_provider: Optional[GenerationContextProvider] = None,
     ) -> None:
         """Initialize LLM generation widget.
 
@@ -803,7 +808,7 @@ class LLMGenerationWidget(QWidget):
 
         return context if found_editor else None
 
-    def _construct_prompt(self, context_str: str, user_prompt: str) -> dict:
+    def _construct_prompt(self, context_str: str, user_prompt: str) -> Dict[str, Any]:
         """Construct the final prompt with persona and delimited context.
 
         Args:
@@ -811,7 +816,10 @@ class LLMGenerationWidget(QWidget):
             user_prompt: User's custom prompt/task.
 
         Returns:
-            dict: Structured prompt with 'system' and 'user' keys for chat API.
+            Dict[str, Any]: Structured prompt dictionary containing:
+                - 'system' (str): System persona/role instructions
+                - 'user' (str): User message with context and prompt
+                Used for chat-based LLM APIs.
 
         """
         # 1. Persona (System Role)
@@ -984,14 +992,34 @@ class LLMGenerationWidget(QWidget):
         """Show prompt preview dialog."""
         context = self._get_generation_context()
         if not context:
-            QMessageBox.warning(self, "Preview Error", "Could not get context.")
+            QMessageBox.warning(
+                self, 
+                "Preview Error", 
+                "Could not get context information for preview.\n\n"
+                "Possible causes:\n"
+                "• No item is currently loaded in the editor\n"
+                "• Editor is in an invalid state\n\n"
+                "To fix:\n"
+                "1. Ensure an event or entity is loaded\n"
+                "2. Try closing and reopening the editor\n"
+                "3. If the issue persists, save your work and restart"
+            )
             return
 
         # Reuse same logic as generate to ensure accuracy
         # Validate custom prompt
         user_prompt = self.custom_prompt_edit.toPlainText().strip()
         if not user_prompt:
-            QMessageBox.warning(self, "Preview Error", "Please enter a prompt first.")
+            QMessageBox.warning(
+                self, 
+                "Preview Error", 
+                "Please enter a prompt before previewing.\n\n"
+                "The preview shows what will be sent to the AI, but requires\n"
+                "a prompt to be entered in the text box above.\n\n"
+                "To fix:\n"
+                "1. Enter your generation prompt in the text field\n"
+                "2. Click Preview Context again to see what will be sent"
+            )
             return
 
         # Build context string dynamically

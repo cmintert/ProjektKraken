@@ -6,6 +6,7 @@ binary search (bisect) for O(log N) keyframe lookup.
 
 import bisect
 from dataclasses import dataclass
+from typing import Any, Dict, List
 
 
 @dataclass
@@ -94,14 +95,17 @@ def interpolate_position(
     return (x, y)
 
 
-def keyframes_to_mfjson(keyframes: list[Keyframe]) -> dict:
+def keyframes_to_mfjson(keyframes: List[Keyframe]) -> Dict[str, Any]:
     """Serialize a list of Keyframes to an OGC MF-JSON MovingPoint structure.
 
     Args:
         keyframes: List of Keyframe objects.
 
     Returns:
-        A dict representing an MF-JSON TemporalPrimitiveGeometry (MovingPoint).
+        Dict[str, Any]: MF-JSON TemporalPrimitiveGeometry (MovingPoint) with keys:
+            - 'type' (str): Always "MovingPoint"
+            - 'coordinates' (list): List of [x, y] coordinate pairs
+            - 'datetimes' (list): List of time values matching coordinates
 
     Raises:
         ValueError: If keyframes list is empty.

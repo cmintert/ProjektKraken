@@ -808,6 +808,38 @@ class UIManager:
         # Track pending dialog state
         self._calendar_dialog_pending = False
 
+    def create_help_menu(self, menu_bar: "QMenuBar") -> None:
+        """Creates the Help menu with documentation and shortcuts.
+
+        Args:
+            menu_bar: The menu bar to add the Help menu to.
+        """
+        help_menu = menu_bar.addMenu("Help")
+
+        # Keyboard Shortcuts
+        shortcuts_action = help_menu.addAction("Keyboard Shortcuts...")
+        shortcuts_action.triggered.connect(self._show_keyboard_shortcuts)
+
+        help_menu.addSeparator()
+
+        # About (placeholder for future)
+        about_action = help_menu.addAction("About ProjektKraken")
+        about_action.triggered.connect(self._show_about_dialog)
+
+    def _show_keyboard_shortcuts(self) -> None:
+        """Show the keyboard shortcuts dialog."""
+        from src.gui.dialogs.keyboard_shortcuts_dialog import KeyboardShortcutsDialog
+
+        dialog = KeyboardShortcutsDialog(self.main_window)
+        dialog.exec()
+
+    def _show_about_dialog(self) -> None:
+        """Show a simple about dialog."""
+        from src.gui.dialogs.about_dialog import AboutDialog
+
+        dialog = AboutDialog(self.main_window)
+        dialog.exec()
+
     def _open_calendar_config(self) -> None:
         """Requests loading of calendar config to open dialog."""
         from PySide6.QtCore import QMetaObject

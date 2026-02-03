@@ -6,7 +6,7 @@ color-coded differentiation.
 
 import json
 import logging
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from PySide6.QtCore import QMimeData, QSize, Qt, Signal, Slot
 from PySide6.QtGui import QBrush, QColor, QDrag
@@ -246,14 +246,13 @@ class UnifiedListWidget(QWidget):
         # self._active_tags: set = set()   # Removed: Backend handled
 
         # Colors - use ThemeManager for theme-aware colors
-        # TODO: Migrate to fully dynamic theme updates with
-        # ThemeManager.theme_changed signal
         from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         self.color_event = QColor(theme.get("accent_secondary", "#0078D4"))
         self.color_entity = QColor(theme.get("primary", "#FF9900"))
 
+        # Connect to theme changes for dynamic updates
         ThemeManager().theme_changed.connect(self._on_theme_changed)
 
         self._render_list()
@@ -359,11 +358,14 @@ class UnifiedListWidget(QWidget):
         self.set_filter_active(has_filter)
         self._render_list()
 
-    def get_advanced_filter_config(self) -> dict:
+    def get_advanced_filter_config(self) -> Dict[str, Any]:
         """Returns the current advanced filter configuration.
 
         Returns:
-            dict: The current filter configuration.
+            Dict[str, Any]: Filter configuration dictionary containing:
+                - 'include' (List[str], optional): Tags to include
+                - 'exclude' (List[str], optional): Tags to exclude
+                - Additional filter criteria as needed
 
         """
         return self._advanced_filter_config

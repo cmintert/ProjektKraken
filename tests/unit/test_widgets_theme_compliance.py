@@ -35,6 +35,7 @@ def test_compact_date_widget_theme_compliance(qtbot):
         "app_bg": "#111111",
         "primary": "#ff9900",
         "error": "#ff0000",
+        "destructive": "#ff4444",  # Required key
         "text_dim": "#999999",
         "scrollbar_bg": "#222222",
         "scrollbar_handle": "#333333",
@@ -88,6 +89,7 @@ def test_compact_duration_widget_theme_compliance(qtbot):
         "accent_secondary": "#444444",
         "primary": "#ff9900",
         "error": "#ff0000",
+        "destructive": "#ff4444",  # Required key
         "scrollbar_bg": "#222222",
         "scrollbar_handle": "#333333",
         "font_size_h1": "14pt",

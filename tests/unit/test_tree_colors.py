@@ -54,10 +54,16 @@ def test_outline_colors_update_on_theme_change(outline_widget, theme_manager):
         assert item_event.foreground(0).color().name() == "#000000"
         assert item_entity.foreground(0).color().name() == "#000000"
 
-    # Change theme
+    # Change theme - include all required keys
     new_theme = {
         "accent_secondary": "#123456",  # Event color
         "primary": "#654321",  # Entity color
+        "destructive": "#FF0000",  # Required for DestructiveButton
+        "app_bg": "#000000",  # Required for GraphicsScene
+        "text_main": "#FFFFFF",
+        "surface": "#000000",
+        "border": "#333333",
+        "text_dim": "#888888"
     }
 
     with patch.object(ThemeManager, "get_theme", return_value=new_theme):
@@ -108,7 +114,14 @@ def test_unified_list_colors_update_on_theme_change(unified_list_widget, theme_m
         assert item_entity.foreground().color().name() == "#000000"
 
     # Change theme
-    new_theme = {"accent_secondary": "#AABBCC", "primary": "#DDEEFF"}  # Event  # Entity
+    new_theme = {
+        "accent_secondary": "#AABBCC",  # Entity color
+        "primary": "#DDEEFF",  # Event color
+        "text_main": "#FFFFFF",  # Required for checkbox style
+        "surface": "#000000",
+        "border": "#333333",
+        "text_dim": "#888888"
+    }
 
     with patch.object(ThemeManager, "get_theme", return_value=new_theme):
         theme_manager.theme_changed.emit(new_theme)

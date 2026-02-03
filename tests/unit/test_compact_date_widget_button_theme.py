@@ -40,6 +40,7 @@ def test_calendar_button_styling_updates_on_theme_change(qtbot):
             "app_bg": "#000000",
             "primary": "#ff9900",
             "error": "#ff0000",
+            "destructive": "#ff4444",  # Required key
             "text_dim": "#999999",
             "scrollbar_bg": "#222222",
             "scrollbar_handle": "#333333",

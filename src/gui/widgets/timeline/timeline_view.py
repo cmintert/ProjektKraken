@@ -197,6 +197,7 @@ class TimelineView(QGraphicsView):
         new_time = round(x_pos / self.scale_factor, 4)
         self._playhead._time = new_time  # Directly update internal state
         self.playhead_time_changed.emit(new_time)
+        self.update_events_temporal_state()
 
     def _on_event_drag_complete(self, event_id: str, new_lore_date: float) -> None:
         """Called when an event item is dragged to a new position. Emits the
@@ -696,11 +697,29 @@ class TimelineView(QGraphicsView):
                 current_rect.x(), current_rect.y(), current_rect.width(), max_y
             )
 
+        # Update temporal state after repacking
+        self.update_events_temporal_state()
+
         elapsed = (time.perf_counter() - start_time) * 1000
         logger.debug(f"Repack events ({event_count} items) took {elapsed:.2f}ms")
 
     def _partition_events(self, events: list, tag_order: list, mode: str) -> dict:
-        """Partition events into groups based on tags."""
+        """Partition events into groups based on tags for swimlane layout.
+
+        Args:
+            events: List of Event objects to partition.
+            tag_order: Ordered list of tag names to create groups for.
+            mode: Grouping mode - "FIRST_MATCH" stops at first matching tag,
+                other modes may match multiple groups.
+
+        Returns:
+            Tuple containing:
+                - dict: Mapping of tag names to lists of events
+                - list: Ungrouped events that don't match any tag
+
+        Note:
+            Handles both string tags and Tag objects with .name attribute.
+        """
         groups = {tag: [] for tag in tag_order}
         ungrouped = []
 
@@ -728,7 +747,17 @@ class TimelineView(QGraphicsView):
         return groups, ungrouped
 
     def _clear_duplicates(self) -> tuple[dict, list]:
-        """Removes all duplicate event items from the scene."""
+        """Remove all duplicate event items from the scene.
+
+        Returns:
+            Tuple containing:
+                - dict: Empty dict (for compatibility)
+                - list: Empty list (for compatibility)
+
+        Note:
+            Duplicate items are created during grouping mode transitions
+            and must be cleaned up to prevent visual artifacts.
+        """
         if (
             not hasattr(self, "_duplicate_event_items")
             or not self._duplicate_event_items
@@ -741,7 +770,17 @@ class TimelineView(QGraphicsView):
         self._duplicate_event_items.clear()
 
     def _repack_grouped_events(self) -> None:
-        """Repack events using swimlane layout (Band -> Events -> Band)."""
+        """Repack events using swimlane layout with band grouping.
+
+        Organizes events into horizontal bands based on tag grouping configuration.
+        Each band represents a tag group, with events positioned within their band
+        to avoid overlaps. The layout follows: Band → Events → Band → Events...
+
+        Note:
+            This method is performance-critical and processes all events.
+            Events are sorted by date before packing for optimal layout.
+            Duplicate items are cleared before repacking to prevent visual issues.
+        """
         # Sort events by date first for proper packing
         self.events.sort(key=lambda e: e.lore_date)
 
@@ -1203,6 +1242,7 @@ class TimelineView(QGraphicsView):
         """
         self._playhead.set_time(time, self.scale_factor)
         self.playhead_time_changed.emit(time)
+        self.update_events_temporal_state()
 
     def get_playhead_time(self) -> float:
         """Gets the current playhead time position.
@@ -1249,6 +1289,24 @@ class TimelineView(QGraphicsView):
 
         """
         return self._current_time_line.get_time(self.scale_factor)
+
+    def update_events_temporal_state(self) -> None:
+        """Updates all events' temporal state based on the current playhead time.
+
+        Marks events as future or past based on their lore_date relative to the
+        playhead position.
+        """
+        playhead_time = self.get_playhead_time()
+
+        # Iterate through all EventItems in the scene
+        for item in self.scene.items():
+            if isinstance(item, EventItem):
+                # Determine temporal state
+                is_future = item.event.lore_date > playhead_time
+                is_past = item.event.lore_date < playhead_time
+
+                # Update the item's temporal state
+                item.set_temporal_state(is_future=is_future, is_past=is_past)
 
     # -------------------------------------------------------------------------
     # Timeline Grouping Methods (Milestone 3)
