@@ -39,6 +39,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QMainWindow,
     QMessageBox,
+    QProgressDialog,
     QStatusBar,
     QWidget,
 )
@@ -207,6 +208,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self._pending_select_id = None
         self._pending_select_type = None
         self._graph_reload_timer: QTimer | None = None
+        self._import_progress_dialog: Optional["QProgressDialog"] = None
 
     def _update_window_style(self, theme_data: dict) -> None:
         """Updates the Windows title bar style based on the current theme.
@@ -1839,6 +1841,16 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
                     Q_ARG(str, parsed_json),
                     Q_ARG(str, options_json),
                 )
+                
+                # Show progress dialog
+                from src.gui.dialogs.progress_dialog import ProgressDialog
+                
+                self._import_progress_dialog = ProgressDialog(
+                    "Importing data...\n\nThis may take a moment for large files.",
+                    parent=self,
+                    cancelable=False,
+                    title="Import in Progress"
+                )
                 self.status_bar.showMessage("Importing...", 0)
 
         except Exception as e:
@@ -1867,6 +1879,11 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             result: ImportResult from the worker thread.
 
         """
+        # Close progress dialog if open
+        if self._import_progress_dialog:
+            self._import_progress_dialog.finish()
+            self._import_progress_dialog = None
+            
         self.status_bar.clearMessage()
 
         if result.success:
