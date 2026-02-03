@@ -43,7 +43,7 @@ class ExplorerFilterProxyModel(QSortFilterProxyModel):
             term: Search term.
         """
         self._search_term = term.lower().strip()
-        self.invalidateFilter()
+        self.invalidate()  # Use invalidate() instead of deprecated invalidateFilter()
 
     def set_filter_mode(self, mode: str) -> None:
         """Set the filter mode (All/Events/Entities).
@@ -52,7 +52,7 @@ class ExplorerFilterProxyModel(QSortFilterProxyModel):
             mode: Filter mode string.
         """
         self._filter_mode = mode
-        self.invalidateFilter()
+        self.invalidate()  # Use invalidate() instead of deprecated invalidateFilter()
 
     def set_advanced_filter(self, config: dict) -> None:
         """Set advanced filter configuration (tags).
@@ -61,7 +61,7 @@ class ExplorerFilterProxyModel(QSortFilterProxyModel):
             config: Filter configuration dictionary.
         """
         self._advanced_filter_config = config or {}
-        self.invalidateFilter()
+        self.invalidate()  # Use invalidate() instead of deprecated invalidateFilter()
 
     def filterAcceptsRow(self, source_row: int, source_parent: QModelIndex) -> bool:
         """Determine if a row passes the current filters.
