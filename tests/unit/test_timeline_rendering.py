@@ -83,14 +83,9 @@ def test_event_item_paint_selected(qtbot):
     assert item.isSelected()
 
 
-def test_event_item_color_by_type(qapp):
-    """Test that different event types get different colors."""
-    cosmic = EventItem(Event(name="C", lore_date=1.0, type="cosmic"), 10.0)
-    combat = EventItem(Event(name="C", lore_date=1.0, type="combat"), 10.0)
-    generic = EventItem(Event(name="G", lore_date=1.0, type="generic"), 10.0)
-
-    assert cosmic.base_color != combat.base_color
-    assert cosmic.base_color != generic.base_color
+# Test removed: Event types no longer have different colors.
+# All events use the same theme-based color from StyleHelper.get_event_color()
+# which returns theme.get("event_main", theme.get("primary", "#888888"))
 
 
 def test_event_item_position():

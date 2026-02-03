@@ -54,10 +54,15 @@ def test_outline_colors_update_on_theme_change(outline_widget, theme_manager):
         assert item_event.foreground(0).color().name() == "#000000"
         assert item_entity.foreground(0).color().name() == "#000000"
 
-    # Change theme
+    # Change theme - include all required keys
     new_theme = {
         "accent_secondary": "#123456",  # Event color
         "primary": "#654321",  # Entity color
+        "destructive": "#FF0000",  # Required for DestructiveButton
+        "text_main": "#FFFFFF",
+        "surface": "#000000",
+        "border": "#333333",
+        "text_dim": "#888888"
     }
 
     with patch.object(ThemeManager, "get_theme", return_value=new_theme):
