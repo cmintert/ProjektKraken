@@ -87,14 +87,20 @@ def test_unified_list_colors_update_on_theme_change(unified_list_widget, theme_m
     # We'll verify the model colors update on theme change
     model = unified_list_widget._model
     
-    # Mock initial theme
-    with patch.object(
-        ThemeManager,
-        "get_theme",
-        return_value={"accent_secondary": "#000000", "primary": "#000000"},
-    ):
+    # Mock initial theme with all required keys
+    initial_theme = {
+        "accent_secondary": "#000000",
+        "primary": "#000000",
+        "text_main": "#FFFFFF",  # Required for checkbox style
+        "surface": "#000000",
+        "border": "#333333",
+        "text_dim": "#888888",
+        "app_bg": "#000000",  # Required for timeline scene
+    }
+    
+    with patch.object(ThemeManager, "get_theme", return_value=initial_theme):
         # Trigger theme change to set initial colors
-        theme_manager.theme_changed.emit({"accent_secondary": "#000000", "primary": "#000000"})
+        theme_manager.theme_changed.emit(initial_theme)
         unified_list_widget.set_data([event], [entity])
 
         # Check initial colors via model
@@ -126,7 +132,8 @@ def test_unified_list_colors_update_on_theme_change(unified_list_widget, theme_m
         "text_main": "#FFFFFF",  # Required for checkbox style
         "surface": "#000000",
         "border": "#333333",
-        "text_dim": "#888888"
+        "text_dim": "#888888",
+        "app_bg": "#000000",  # Required for timeline scene
     }
 
     with patch.object(ThemeManager, "get_theme", return_value=new_theme):
