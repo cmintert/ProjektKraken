@@ -145,13 +145,18 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self._init_core_services()
         logger.debug("Phase 1: Core services initialized")
 
-        # Apply Windows Title Bar Style (Dark Mode by default)
+        # Apply Windows Title Bar Style based on current theme
         try:
             from src.gui.utils.window_utils import apply_windows_title_bar_style
+            from src.core.theme_manager import ThemeManager
 
-            # We can read the current theme to decide, but for now default to Dark
-            # TODO: Hook into ThemeManager changes
-            apply_windows_title_bar_style(self, dark_mode=True)
+            # Apply based on current theme
+            theme_name = ThemeManager().current_theme_name
+            dark_mode = "dark" in theme_name.lower()
+            apply_windows_title_bar_style(self, dark_mode=dark_mode)
+            
+            # Connect to theme changes to update title bar
+            ThemeManager().theme_changed.connect(self._on_theme_changed_for_titlebar)
         except Exception as e:
             logger.warning(f"Failed to apply title bar style: {e}")
 
@@ -896,6 +901,23 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         """
         self.grouping_manager.on_grouping_config_loaded(config)
+
+    def _on_theme_changed_for_titlebar(self, theme_dict: dict) -> None:
+        """Update Windows title bar style when theme changes.
+        
+        Args:
+            theme_dict: The new theme dictionary from ThemeManager.
+        """
+        try:
+            from src.gui.utils.window_utils import apply_windows_title_bar_style
+            from src.core.theme_manager import ThemeManager
+            
+            # Determine if new theme is dark
+            theme_name = ThemeManager().current_theme_name
+            dark_mode = "dark" in theme_name.lower()
+            apply_windows_title_bar_style(self, dark_mode=dark_mode)
+        except Exception as e:
+            logger.warning(f"Failed to update title bar style on theme change: {e}")
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Handles application close event.

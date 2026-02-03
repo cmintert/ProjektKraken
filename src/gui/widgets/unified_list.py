@@ -246,14 +246,13 @@ class UnifiedListWidget(QWidget):
         # self._active_tags: set = set()   # Removed: Backend handled
 
         # Colors - use ThemeManager for theme-aware colors
-        # TODO: Migrate to fully dynamic theme updates with
-        # ThemeManager.theme_changed signal
         from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         self.color_event = QColor(theme.get("accent_secondary", "#0078D4"))
         self.color_entity = QColor(theme.get("primary", "#FF9900"))
 
+        # Connect to theme changes for dynamic updates
         ThemeManager().theme_changed.connect(self._on_theme_changed)
 
         self._render_list()

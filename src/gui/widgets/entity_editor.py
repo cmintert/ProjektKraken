@@ -511,8 +511,6 @@ class EntityEditorWidget(QWidget):
                 is_stale = self.summary_service.is_stale(entity)
                 self.summary_widget.set_stale(is_stale)
 
-                # Auto-generate if configured (TODO check config)
-
             # Reset Read-Only mode (in case we were in temporal view)
             self.exit_read_only_mode()
 
