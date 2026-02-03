@@ -133,6 +133,14 @@ class UpdateMapCommand(BaseCommand):
                 k: v for k, v in self.update_data.items() if k in valid_fields
             }
 
+            # Safely merge attributes if present
+            if "attributes" in clean_data and isinstance(
+                clean_data["attributes"], dict
+            ):
+                current_attrs = current.attributes.copy() if current.attributes else {}
+                current_attrs.update(clean_data["attributes"])
+                clean_data["attributes"] = current_attrs
+
             self._new_map = dataclasses.replace(current, **clean_data)
 
             db_service.insert_map(self._new_map)

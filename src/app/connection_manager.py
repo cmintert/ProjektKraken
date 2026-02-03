@@ -663,6 +663,14 @@ class ConnectionManager:
 
         if not self._connect_signal_safe(
             map_widget,
+            "map_scale_changed",
+            self.window.map_handler.on_map_scale_changed,
+            "MapWidget",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            map_widget,
             "marker_clicked",
             self.window._on_marker_clicked,
             "MapWidget",

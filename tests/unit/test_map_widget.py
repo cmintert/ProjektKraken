@@ -401,3 +401,35 @@ def test_mode_indicator_ui(map_widget, qtbot):
 
     assert map_widget.mode_indicator.text() == "Normal Mode"
     assert not map_widget.overlay_banner.isVisible()
+
+
+def test_configure_map_width_emits_signal(map_widget, monkeypatch):
+    """Test that configuring map width emits the signal."""
+    # Mock QInputDialog.getInt to return a specific value and True (accepted)
+    from PySide6.QtWidgets import QInputDialog
+
+    mock_get_int = MagicMock(return_value=(5000, True))
+    monkeypatch.setattr(QInputDialog, "getInt", mock_get_int)
+
+    # Spy on the new signal
+    signal_spy = []
+
+    # This will raise AttributeError if signal doesn't exist, which is expected for TDD step 1
+    try:
+        map_widget.map_scale_changed.connect(lambda w: signal_spy.append(w))
+    except AttributeError:
+        pytest.fail("map_scale_changed signal not found on MapWidget")
+
+    # Set up preconditions
+    setup_map_with_pixmap(map_widget.view)
+    map_widget.view.map_width_meters = 1000.0
+
+    # Call the method
+    map_widget._configure_map_width()
+
+    # Verify signal emitted
+    assert len(signal_spy) == 1
+    assert signal_spy[0] == 5000.0
+
+    # Verify view updated
+    assert map_widget.view.map_width_meters == 5000.0

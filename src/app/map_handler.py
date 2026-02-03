@@ -21,6 +21,7 @@ from src.commands.map_commands import (
     UpdateMarkerColorCommand,
     UpdateMarkerCommand,
     UpdateMarkerIconCommand,
+    UpdateMapCommand,
 )
 from src.core.logging_config import get_logger
 
@@ -79,6 +80,14 @@ class MapHandler(QObject):
                 image_path = str(project_dir / image_path)
 
             self.window.map_widget.load_map(image_path)
+
+            # Restore scale
+            width_meters = selected_map.attributes.get("width_meters")
+            if width_meters:
+                self.window.map_widget.view.set_map_width_meters(float(width_meters))
+            else:
+                # Reset to default if no specific scale set (1000 km)
+                self.window.map_widget.view.set_map_width_meters(1_000_000.0)
 
             # Request markers
             QMetaObject.invokeMethod(
@@ -431,3 +440,20 @@ class MapHandler(QObject):
 
         """
         self.window.map_widget.set_trajectories(trajectories)
+
+    @Slot(float)
+    def on_map_scale_changed(self, width_meters: float) -> None:
+        """Handle map scale change from MapWidget.
+
+        Args:
+            width_meters: The new width of the map in meters.
+
+        """
+        current_map_id = self.window.map_widget.map_selector.currentData()
+        if not current_map_id:
+            return
+
+        cmd = UpdateMapCommand(
+            current_map_id, {"attributes": {"width_meters": width_meters}}
+        )
+        self.window.command_requested.emit(cmd)

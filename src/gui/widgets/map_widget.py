@@ -133,6 +133,7 @@ class MapWidget(QWidget):
     )  # map_id, marker_id, old_t, new_t
     delete_keyframe_requested = Signal(str, str, float)  # map_id, marker_id, t
     jump_to_time_requested = Signal(float)  # target_time
+    map_scale_changed = Signal(float)  # For persisting map scale
     show_onboarding_requested = Signal()  # To trigger animation or hints
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
@@ -676,6 +677,7 @@ class MapWidget(QWidget):
         )
         if ok:
             self.view.set_map_width_meters(float(width))
+            self.map_scale_changed.emit(float(width))
             logger.info(f"Map width set to {width} meters")
 
     def _emit_keyframe_upsert(
