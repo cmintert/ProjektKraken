@@ -19,6 +19,11 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QGraphicsItem, QStyleOptionGraphicsItem, QWidget
 
+from src.app.constants import (
+    TEMPORAL_FUTURE_LIGHTNESS_BOOST,
+    TEMPORAL_FUTURE_OPACITY,
+    TEMPORAL_FUTURE_SATURATION_FACTOR,
+)
 from src.core.calendar import CalendarConverter
 from src.core.events import Event
 from src.gui.utils.style_helper import StyleHelper
@@ -108,6 +113,54 @@ class EventItem(QGraphicsItem):
 
         # Zoom level for scaling duration bars (updated by TimelineView)
         self._zoom_level = 1.0
+
+        # Temporal State
+        self.is_future = False
+        self.is_past = False
+
+    def set_temporal_state(self, is_future: bool, is_past: bool = False) -> None:
+        """Updates the event's visual state based on its temporal relation.
+
+        Args:
+            is_future: If True, event is in the future (dull/faded).
+            is_past: If True, event is in the past (reserved for "visited" styling).
+
+        """
+        if self.is_future == is_future and self.is_past == is_past:
+            return
+
+        self.is_future = is_future
+        self.is_past = is_past
+
+        # Update visual properties based on state
+        if is_future:
+            # Dulling effect: Reduced opacity
+            self.setOpacity(TEMPORAL_FUTURE_OPACITY)
+            # Saturation change happens in _get_effective_color()
+        else:
+            # Normal state: Vivid
+            self.setOpacity(1.0)
+
+        self.update()
+
+    def _get_effective_color(self) -> QColor:
+        """Returns the color modified by current state (e.g., desaturated if future).
+
+        Returns:
+            QColor: The effective color for rendering.
+
+        """
+        color = QColor(self.base_color)
+
+        if self.is_future:
+            # Desaturate significantly for future state
+            h, s, lightness, a = color.getHslF()
+            # Reduce saturation by 20% (keep 80%) for a subtle fade
+            s = max(0.0, s * TEMPORAL_FUTURE_SATURATION_FACTOR)
+            lightness = min(1.0, lightness + TEMPORAL_FUTURE_LIGHTNESS_BOOST)
+            color = QColor.fromHslF(h, s, lightness, a)
+
+        return color
 
     def set_zoom(self, zoom: float) -> None:
         """Updates the zoom level for duration bar scaling.
@@ -272,7 +325,7 @@ class EventItem(QGraphicsItem):
 
         rect = QRectF(0, -6, width, 12)
 
-        brush = QBrush(self.base_color)
+        brush = QBrush(self._get_effective_color())
         if self.isSelected():
             brush.setColor(self.base_color.lighter(130))
 
@@ -331,7 +384,7 @@ class EventItem(QGraphicsItem):
             ]
         )
 
-        brush = QBrush(self.base_color)
+        brush = QBrush(self._get_effective_color())
         if self.isSelected():
             brush.setColor(self.base_color.lighter(130))
 

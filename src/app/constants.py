@@ -69,3 +69,8 @@ UI_CLEANUP_DELAY_MS = 200  # Delay for cleanup operations
 # Provider Retry Configuration
 PROVIDER_RETRY_WAIT_TIME_S = 1.0  # Wait time between provider retries
 
+# Temporal Visualization Constants
+# Used for dulling/desaturating future events and markers
+TEMPORAL_FUTURE_OPACITY = 0.7  # Opacity for future events (0.0-1.0)
+TEMPORAL_FUTURE_SATURATION_FACTOR = 0.8  # Saturation multiplier for future events
+TEMPORAL_FUTURE_LIGHTNESS_BOOST = 0.1  # Lightness increase for future events
