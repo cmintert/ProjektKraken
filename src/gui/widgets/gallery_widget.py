@@ -6,9 +6,9 @@ events and entities.
 
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
-from PySide6.QtCore import QPoint, QSize, Qt, Slot
+from PySide6.QtCore import QPoint, QSize, Qt, QThreadPool, Slot
 from PySide6.QtGui import QDragEnterEvent, QDropEvent, QIcon
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -33,6 +33,7 @@ from src.core.image_attachment import ImageAttachment
 from src.core.paths import get_user_data_path
 from src.gui.dialogs.image_viewer_dialog import ImageViewerDialog
 from src.gui.widgets.standard_buttons import DestructiveButton, StandardButton
+from src.gui.workers.thumbnail_loader import ThumbnailLoader
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +60,11 @@ class GalleryWidget(QWidget):
 
         self.attachments: List[ImageAttachment] = []
         self.project_root: Optional[Path] = None
+
+        # Thread pool for async thumbnail loading
+        self._thread_pool = QThreadPool.globalInstance()
+        # Track item ID to list item mapping for async updates
+        self._pending_thumbnails: Dict[str, QListWidgetItem] = {}
 
         self.init_ui()
         self.connect_signals()
@@ -181,6 +187,7 @@ class GalleryWidget(QWidget):
         """Clear all displayed attachments from the gallery."""
         self.list_widget.clear()
         self.attachments = []
+        self._pending_thumbnails.clear()
         self._update_button_states()
 
     @Slot(str, str, list)
@@ -198,28 +205,73 @@ class GalleryWidget(QWidget):
         logger.info(f"GalleryWidget: Data loaded. Count={len(attachments)}")
         self.attachments = attachments
         self.list_widget.clear()
+        self._pending_thumbnails.clear()
+
+        # Create placeholder icon for loading
+        placeholder_icon = QIcon()  # Empty icon initially
 
         for att in attachments:
             item = QListWidgetItem()
-            item.setText(att.caption or "")
+            item.setText(att.caption or "Loading...")
             item.setData(Qt.ItemDataRole.UserRole, att.id)
+            
+            # Set placeholder icon
+            item.setIcon(placeholder_icon)
+            
+            self.list_widget.addItem(item)
+            
+            # Store reference for async update
+            self._pending_thumbnails[att.id] = item
 
-            # Load thumbnail
+            # Load thumbnail asynchronously
             # Try thumb path, else full path
             rel_path = att.thumb_rel_path or att.image_rel_path
             full_path = self._resolve_path(rel_path)
 
-            if full_path.exists():
-                icon = QIcon(str(full_path))
-                item.setIcon(icon)
-            else:
-                logger.warning(f"GalleryWidget: Image not found at {full_path}")
-                item.setText(f"(Missing)\n{item.text()}")
-
-            self.list_widget.addItem(item)
+            # Create and schedule thumbnail loader
+            loader = ThumbnailLoader(att.id, full_path)
+            loader.signals.loaded.connect(self._on_thumbnail_loaded)
+            loader.signals.error.connect(self._on_thumbnail_error)
+            self._thread_pool.start(loader)
 
         self.list_widget.sortItems()
         self._update_button_states()
+
+    @Slot(str, QIcon)
+    def _on_thumbnail_loaded(self, attachment_id: str, icon: QIcon) -> None:
+        """Handle successful thumbnail loading.
+
+        Args:
+            attachment_id: ID of the attachment.
+            icon: Loaded icon.
+        """
+        item = self._pending_thumbnails.get(attachment_id)
+        if item:
+            item.setIcon(icon)
+            # Update caption if it was showing "Loading..."
+            att = next((a for a in self.attachments if a.id == attachment_id), None)
+            if att and item.text() == "Loading...":
+                item.setText(att.caption or "")
+            # Remove from pending
+            del self._pending_thumbnails[attachment_id]
+
+    @Slot(str, str)
+    def _on_thumbnail_error(self, attachment_id: str, error: str) -> None:
+        """Handle thumbnail loading error.
+
+        Args:
+            attachment_id: ID of the attachment.
+            error: Error message.
+        """
+        logger.warning(f"GalleryWidget: {error}")
+        item = self._pending_thumbnails.get(attachment_id)
+        if item:
+            # Update caption to show error
+            att = next((a for a in self.attachments if a.id == attachment_id), None)
+            caption = att.caption if att else ""
+            item.setText(f"(Missing)\n{caption}")
+            # Remove from pending
+            del self._pending_thumbnails[attachment_id]
 
     @Slot(object)
     def on_command_finished(self, result: object) -> None:
