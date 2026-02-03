@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-02-03
-**Commit:** `ff6a94d`
+**Commit:** `d797551`
 ---
 
 # Changelog
@@ -15,6 +15,13 @@ All notable changes to this project will be documented in this file.
 - *(2026-02-03)* **UI**: Added "Help" menu with "Keyboard Shortcuts" dialog showing all available application shortcuts.
 - *(2026-02-03)* **UI**: Implemented progress dialog for JSON import operations providing real-time status feedback.
 - *(2026-02-03)* **Scripts**: Added `setup_env.sh` and `validate_env.sh` for automated test environment creation and verification.
+
+### Changed
+- *(2026-02-03)* **UI**: Implemented theme-aware styling for timeline elements and "Return to Present" button.
+  - Timeline active event borders now use `theme['primary']` instead of hardcoded green (#4CAF50).
+  - PLAYHEAD separator uses `theme['primary']`, NOW line uses `theme['accent_secondary']`.
+  - "Return to Present" button uses `theme['accent_secondary']` instead of hardcoded blue (#2196F3).
+  - Timeline display automatically refreshes when theme changes.
 
 ### Fixed
 - *(2026-02-03)* **Bug**: Fixed `GenerationContextProvider` reference error in `LLMGenerationWidget`.
