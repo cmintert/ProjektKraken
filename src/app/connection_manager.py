@@ -7,6 +7,8 @@ better maintainability.
 import logging
 from typing import TYPE_CHECKING
 
+from PySide6.QtCore import Qt
+
 if TYPE_CHECKING:
     from src.core.protocols import MainWindowProtocol
 
@@ -37,6 +39,7 @@ class ConnectionManager:
         signal_name: str,
         slot: callable,
         obj_description: str = "",
+        connection_type: Qt.ConnectionType = Qt.ConnectionType.AutoConnection,
     ) -> bool:
         """Safely connect a signal with validation and error handling.
 
@@ -45,9 +48,16 @@ class ConnectionManager:
             signal_name: Name of the signal attribute.
             slot: The slot (callable) to connect to.
             obj_description: Description of the object for logging.
+            connection_type: Qt connection type (AutoConnection for same-thread,
+                QueuedConnection for cross-thread). Defaults to AutoConnection.
 
         Returns:
             bool: True if connection successful, False otherwise.
+
+        Note:
+            Use Qt.ConnectionType.QueuedConnection for cross-thread connections
+            (e.g., GUI widget to worker thread). This ensures thread-safe
+            signal delivery via Qt's event queue.
 
         """
         self._connection_stats["attempted"] += 1
@@ -80,12 +90,12 @@ class ConnectionManager:
                 self._connection_stats["failed"] += 1
                 return False
 
-            # Attempt connection
-            signal.connect(slot)
+            # Attempt connection with specified connection type
+            signal.connect(slot, connection_type)
             self._connection_stats["succeeded"] += 1
             logger.debug(
                 f"Successfully connected {obj_description or obj.__class__.__name__}."
-                f"{signal_name}"
+                f"{signal_name} (type: {connection_type.name})"
             )
             return True
 
@@ -749,12 +759,16 @@ class ConnectionManager:
         ):
             failed_count += 1
 
-        # Connect keyframe requests
+        # Connect keyframe requests - CROSS-THREAD to worker
+        # Use QueuedConnection because worker is on a separate thread
+        connection_type = Qt.ConnectionType.QueuedConnection
+
         if not self._connect_signal_safe(
             map_widget,
             "add_keyframe_requested",
             self.window.worker.add_keyframe,
             "MapWidget",
+            connection_type,
         ):
             failed_count += 1
 
@@ -763,6 +777,7 @@ class ConnectionManager:
             "update_keyframe_time_requested",
             self.window.worker.update_keyframe_time,
             "MapWidget",
+            connection_type,
         ):
             failed_count += 1
 
@@ -771,6 +786,7 @@ class ConnectionManager:
             "delete_keyframe_requested",
             self.window.worker.delete_keyframe,
             "MapWidget",
+            connection_type,
         ):
             failed_count += 1
 
