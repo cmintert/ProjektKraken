@@ -6,7 +6,7 @@ color-coded differentiation.
 
 import json
 import logging
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from PySide6.QtCore import QMimeData, QSize, Qt, Signal, Slot
 from PySide6.QtGui import QBrush, QColor, QDrag
@@ -359,11 +359,14 @@ class UnifiedListWidget(QWidget):
         self.set_filter_active(has_filter)
         self._render_list()
 
-    def get_advanced_filter_config(self) -> dict:
+    def get_advanced_filter_config(self) -> Dict[str, Any]:
         """Returns the current advanced filter configuration.
 
         Returns:
-            dict: The current filter configuration.
+            Dict[str, Any]: Filter configuration dictionary containing:
+                - 'include' (List[str], optional): Tags to include
+                - 'exclude' (List[str], optional): Tags to exclude
+                - Additional filter criteria as needed
 
         """
         return self._advanced_filter_config

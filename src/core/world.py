@@ -12,7 +12,7 @@ import logging
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -33,11 +33,18 @@ class WorldManifest:
     version: str = "0.6.0"
     db_filename: str = ""
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> Dict[str, Any]:
         """Converts the manifest to a dictionary for JSON serialization.
 
         Returns:
-            dict: Dictionary representation of the manifest.
+            Dict[str, Any]: Dictionary containing manifest data with keys:
+                - 'id' (str): Unique world identifier
+                - 'name' (str): World display name
+                - 'description' (str): World description
+                - 'created_at' (float): Creation timestamp
+                - 'modified_at' (float): Last modification timestamp
+                - 'version' (str): Application version
+                - 'db_filename' (str): Database filename
 
         """
         return {
