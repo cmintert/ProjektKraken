@@ -73,6 +73,12 @@ class AttributeEditorWidget(QWidget):
         self.table.itemChanged.connect(self._on_item_changed)
         self.table.itemSelectionChanged.connect(self._update_button_states)
 
+        # Set up custom delegate for type-aware editing
+        from src.gui.delegates.attribute_delegate import AttributeDelegate
+        self._delegate = AttributeDelegate(self.table)
+        self._delegate.set_attribute_widget(self)
+        self.table.setItemDelegateForColumn(1, self._delegate)  # Apply to Value column
+
         main_layout.addWidget(self.table)
 
         self._block_signals = False

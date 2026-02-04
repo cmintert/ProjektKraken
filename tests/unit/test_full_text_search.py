@@ -1,4 +1,5 @@
 import pytest
+from PySide6.QtCore import Qt
 
 from src.core.entities import Entity
 from src.core.events import Event
@@ -24,11 +25,12 @@ def test_search_matches_description(list_widget):
     )
     list_widget.set_data([event], [])
 
+    model = list_widget._proxy_model
     list_widget.search_bar.setText("Secret")
-    assert list_widget.list_widget.count() == 1
+    assert model.rowCount() == 1
 
     list_widget.search_bar.setText("Nothing")
-    assert list_widget.list_widget.count() == 0
+    assert model.rowCount() == 0
 
 
 def test_search_matches_tags(list_widget):
@@ -36,11 +38,12 @@ def test_search_matches_tags(list_widget):
     event.tags = ["urgent", "classified"]
     list_widget.set_data([event], [])
 
+    model = list_widget._proxy_model
     list_widget.search_bar.setText("urgent")
-    assert list_widget.list_widget.count() == 1
+    assert model.rowCount() == 1
 
     list_widget.search_bar.setText("random")
-    assert list_widget.list_widget.count() == 0
+    assert model.rowCount() == 0
 
 
 def test_search_matches_attributes(list_widget):
@@ -48,17 +51,19 @@ def test_search_matches_attributes(list_widget):
     entity.attributes = {"alias": "The Shadow", "power": 9000}
     list_widget.set_data([], [entity])
 
+    model = list_widget._proxy_model
     list_widget.search_bar.setText("Shadow")
-    assert list_widget.list_widget.count() == 1
+    assert model.rowCount() == 1
 
     # Integers are not searched in current implementation
     list_widget.search_bar.setText("9000")
-    assert list_widget.list_widget.count() == 0
+    assert model.rowCount() == 0
 
 
 def test_search_matches_type(list_widget):
     entity = Entity(name="Dragon", type="monster")
     list_widget.set_data([], [entity])
 
+    model = list_widget._proxy_model
     list_widget.search_bar.setText("monster")
-    assert list_widget.list_widget.count() == 1
+    assert model.rowCount() == 1

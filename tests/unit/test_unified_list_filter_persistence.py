@@ -1,4 +1,5 @@
 import pytest
+from PySide6.QtCore import Qt
 
 from src.core.events import Event
 from src.gui.widgets.unified_list import UnifiedListWidget
@@ -20,12 +21,15 @@ class TestUnifiedListFilterPersistence:
         e2 = Event(id="e2", name="Beta Event", lore_date=200)
         list_widget.set_data([e1, e2], [])
 
+        model = list_widget._proxy_model
+
         # 2. Apply Filter (Search "Alpha")
         list_widget.search_bar.setText("Alpha")
 
         # Verify filtering worked
-        assert list_widget.list_widget.count() == 1
-        assert list_widget.list_widget.item(0).text().endswith("Alpha Event")
+        assert model.rowCount() == 1
+        text = model.data(model.index(0, 0), Qt.ItemDataRole.DisplayRole)
+        assert "Alpha Event" in text
 
         # 3. Simulate "Save" -> Reload Data
         # User changes e2 (Beta) -> e2_updated
@@ -36,9 +40,9 @@ class TestUnifiedListFilterPersistence:
 
         # 4. Verify Filter is STILL applied
         # Should still only show Alpha
-        # If bug exists: might show both (filter lost)
-        assert list_widget.list_widget.count() == 1
-        assert list_widget.list_widget.item(0).text().endswith("Alpha Event")
+        assert model.rowCount() == 1
+        text = model.data(model.index(0, 0), Qt.ItemDataRole.DisplayRole)
+        assert "Alpha Event" in text
 
         # Verify search bar text is preserved
         assert list_widget.search_bar.text() == "Alpha"
@@ -53,17 +57,21 @@ class TestUnifiedListFilterPersistence:
         e2 = Event(id="e2", name="Beta", lore_date=200)
         list_widget.set_data([e1, e2], [])
 
+        model = list_widget._proxy_model
+
         # Filter "Alpha"
         list_widget.search_bar.setText("Alpha")
-        assert list_widget.list_widget.count() == 1
+        assert model.rowCount() == 1
 
         # Try to select filtered-out "Beta" (e2)
         list_widget.select_item("event", "e2")
 
         # Assert selection is cleared (Fix 1 verification)
-        assert len(list_widget.list_widget.selectedItems()) == 0
+        selection_model = list_widget.list_widget.selectionModel()
+        assert len(selection_model.selectedIndexes()) == 0
 
         # Assert filter is still active (Fix 2 check)
         # Should still only count 1 item (Alpha)
-        assert list_widget.list_widget.count() == 1
-        assert list_widget.list_widget.item(0).text().endswith("Alpha")
+        assert model.rowCount() == 1
+        text = model.data(model.index(0, 0), Qt.ItemDataRole.DisplayRole)
+        assert "Alpha" in text

@@ -1,4 +1,5 @@
 import pytest
+from PySide6.QtCore import Qt
 
 from src.core.events import Event
 from src.gui.widgets.unified_list import UnifiedListWidget
@@ -23,20 +24,24 @@ class TestUnifiedListAdvancedFiltering:
 
         list_widget.set_data([e1, e2], [])
 
+        model = list_widget._proxy_model
+
         # 1. Test Match All
         config = {"include": ["A", "B"], "include_mode": "all"}
         list_widget.set_advanced_filter(config)
 
         # Should only show e1
-        assert list_widget.list_widget.count() == 1
-        assert list_widget.list_widget.item(0).text().endswith("In")
+        assert model.rowCount() == 1
+        text = model.data(model.index(0, 0), Qt.ItemDataRole.DisplayRole)
+        assert "In" in text
 
         # 2. Test Exclude
         config = {"exclude": ["B"]}
         list_widget.set_advanced_filter(config)
         # Should only show e2 (e1 has B)
-        assert list_widget.list_widget.count() == 1
-        assert list_widget.list_widget.item(0).text().endswith("Out")
+        assert model.rowCount() == 1
+        text = model.data(model.index(0, 0), Qt.ItemDataRole.DisplayRole)
+        assert "Out" in text
 
     def test_filter_persists_on_update(self, list_widget, qtbot):
         """
@@ -48,7 +53,8 @@ class TestUnifiedListAdvancedFiltering:
         list_widget.set_data([e1, e2], [])
         list_widget.set_advanced_filter({"include": ["T"]})
 
-        assert list_widget.list_widget.count() == 1
+        model = list_widget._proxy_model
+        assert model.rowCount() == 1
 
         # Reload data
         e3 = Event(name="New Target", lore_date=300, attributes={"_tags": ["T"]})
@@ -56,8 +62,8 @@ class TestUnifiedListAdvancedFiltering:
 
         # Filter should still be active: Target + New Target = 2 items
         items = [
-            list_widget.list_widget.item(i).text()
-            for i in range(list_widget.list_widget.count())
+            model.data(model.index(i, 0), Qt.ItemDataRole.DisplayRole)
+            for i in range(model.rowCount())
         ]
         assert len(items) == 2
         assert any("Target" in x for x in items)
@@ -71,8 +77,10 @@ class TestUnifiedListAdvancedFiltering:
         e1 = Event(name="A", lore_date=1, attributes={"_tags": ["A"]})
         list_widget.set_data([e1], [])
         list_widget.set_advanced_filter({"include": ["B"]})
-        assert list_widget.list_widget.count() == 0
+        
+        model = list_widget._proxy_model
+        assert model.rowCount() == 0
 
         # Set empty config
         list_widget.set_advanced_filter({})
-        assert list_widget.list_widget.count() == 1
+        assert model.rowCount() == 1

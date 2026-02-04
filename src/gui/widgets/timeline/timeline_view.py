@@ -7,7 +7,16 @@ import logging
 import time
 from typing import Any
 
-from PySide6.QtCore import QPointF, QRectF, QSettings, QSize, Qt, QTimer, Signal
+from PySide6.QtCore import (
+    QPointF,
+    QRectF,
+    QSettings,
+    QSize,
+    Qt,
+    QThreadPool,
+    QTimer,
+    Signal,
+)
 from PySide6.QtGui import (
     QColor,
     QFont,
@@ -30,8 +39,10 @@ from src.gui.widgets.timeline.timeline_scene import (
     PlayheadItem,
     TimelineScene,
 )
-from src.gui.widgets.timeline_lane_packer import TimelineLanePacker
 from src.gui.widgets.timeline_ruler import TimelineRuler
+
+# Import TimelineLanePacker inside __init__ to avoid circular import
+# from src.gui.widgets.timeline_lane_packer import TimelineLanePacker
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +93,10 @@ class TimelineView(QGraphicsView):
         super().__init__(parent)
         self.scene = TimelineScene(self)
         self.setScene(self.scene)
+
+        # Import here to avoid circular import
+        from src.gui.widgets.timeline_lane_packer import TimelineLanePacker
+        from src.gui.workers.layout_worker import LayoutWorker
 
         # Initialize semantic ruler engine
         self._ruler = TimelineRuler()
@@ -148,6 +163,16 @@ class TimelineView(QGraphicsView):
         # Apply restoration
         if persisted_time != 0.0:
             self.set_playhead_time(persisted_time)
+
+        # Async layout worker infrastructure
+        self._thread_pool = QThreadPool.globalInstance()
+        self._layout_in_progress = False
+        self._layout_worker = None
+        self._pending_layout_request = None  # Track if a new layout is needed
+        self._layout_start_time = 0.0
+
+        # Threshold for using async layout (number of events)
+        self.ASYNC_LAYOUT_THRESHOLD = 50
 
         # Group band manager (will be initialized when data provider is set)
         self._band_manager = None
@@ -600,23 +625,20 @@ class TimelineView(QGraphicsView):
         This recalculates lane assignments to prevent overlaps as the timeline zooms in
         and out (changing the effective visual duration of text labels). Uses variable
         lane heights based on event content.
+
+        For large datasets (>= ASYNC_LAYOUT_THRESHOLD events), uses async worker.
+        For small datasets, uses synchronous packing for immediate response.
         """
         if not self.events:
             return
 
-        start_time = time.perf_counter()
         event_count = len(self.events)
 
         # Cleanup duplicates before scanning scene for layout
         self._clear_duplicates()
 
         # Calculate effective scale (Scene scale * View zoom)
-        # Note: scale_factor is pixels/day in Scene coordinates.
-        # current_zoom is the View transformation scale.
         effective_scale = self.scale_factor * self._current_zoom
-
-        # Update packer with effective scale
-        self._lane_packer.update_scale_factor(effective_scale)
 
         # Dispatch to swimlane layout if grouping is active
         grouping_active = getattr(self, "_grouping_tag_order", None)
@@ -636,10 +658,131 @@ class TimelineView(QGraphicsView):
                 )
                 self._grouping_tag_order = []
 
+        # Decide between sync and async packing based on event count
+        if event_count >= self.ASYNC_LAYOUT_THRESHOLD:
+            self._repack_events_async(effective_scale)
+        else:
+            self._repack_events_sync(effective_scale)
+
+    def _repack_events_sync(self, effective_scale: float) -> None:
+        """Synchronous version of event repacking for small datasets.
+
+        Args:
+            effective_scale: The effective scale factor (scene scale * view zoom).
+        """
+        start_time = time.perf_counter()
+
+        # Update packer with effective scale
+        self._lane_packer.update_scale_factor(effective_scale)
+
+        # Perform packing
         event_lane_assignments, lane_heights = self._lane_packer.pack_events(
             self.events
         )
 
+        # Apply layout
+        self._apply_layout_results(event_lane_assignments, lane_heights)
+
+        elapsed = (time.perf_counter() - start_time) * 1000
+        logger.debug(
+            f"Repack events sync ({len(self.events)} items) took {elapsed:.2f}ms"
+        )
+
+    def _repack_events_async(self, effective_scale: float) -> None:
+        """Asynchronous version of event repacking for large datasets.
+
+        Args:
+            effective_scale: The effective scale factor (scene scale * view zoom).
+        """
+        # If a layout is already in progress, mark that we need another one
+        if self._layout_in_progress:
+            self._pending_layout_request = effective_scale
+            logger.debug("Layout already in progress, queuing new request")
+            return
+
+        # Mark layout as in progress
+        self._layout_in_progress = True
+        self._layout_start_time = time.perf_counter()
+
+        # Import LayoutWorker here (already imported in __init__, but being explicit)
+        from src.gui.workers.layout_worker import LayoutWorker
+
+        # Create and configure worker
+        worker = LayoutWorker(
+            events=self.events,
+            scale_factor=effective_scale,
+            grouping_config={},  # No grouping in async mode for now
+        )
+
+        # Connect signals
+        worker.signals.finished.connect(self._on_layout_finished)
+        worker.signals.error.connect(self._on_layout_error)
+
+        # Store reference to prevent garbage collection
+        self._layout_worker = worker
+
+        # Start worker in thread pool
+        self._thread_pool.start(worker)
+
+        logger.debug(f"Started async layout for {len(self.events)} events")
+
+    def _on_layout_finished(
+        self, lane_assignments: dict, lane_heights: list, worker_elapsed: float
+    ) -> None:
+        """Called when async layout worker completes.
+
+        Args:
+            lane_assignments: Dict mapping event ID to lane index.
+            lane_heights: List of lane heights.
+            worker_elapsed: Time taken by worker thread.
+        """
+        total_elapsed = time.perf_counter() - self._layout_start_time
+
+        # Apply the layout results to the scene
+        self._apply_layout_results(lane_assignments, lane_heights)
+
+        # Clear progress state
+        self._layout_in_progress = False
+        self._layout_worker = None
+
+        logger.info(
+            f"Async layout complete: {len(self.events)} events, "
+            f"worker: {worker_elapsed:.3f}s, total: {total_elapsed:.3f}s"
+        )
+
+        # If there's a pending request, process it now
+        if self._pending_layout_request is not None:
+            pending_scale = self._pending_layout_request
+            self._pending_layout_request = None
+            logger.debug("Processing pending layout request")
+            self._repack_events_async(pending_scale)
+
+    def _on_layout_error(self, error_message: str) -> None:
+        """Called when async layout worker encounters an error.
+
+        Args:
+            error_message: The error message from the worker.
+        """
+        logger.error(f"Async layout error: {error_message}")
+
+        # Clear progress state
+        self._layout_in_progress = False
+        self._layout_worker = None
+
+        # Fall back to synchronous layout
+        logger.info("Falling back to synchronous layout after error")
+        effective_scale = self.scale_factor * self._current_zoom
+        self._repack_events_sync(effective_scale)
+
+    def _apply_layout_results(
+        self, event_lane_assignments: dict, lane_heights: list
+    ) -> None:
+        """Applies layout results to the scene with batch updates.
+
+        Args:
+            event_lane_assignments: Dict mapping event ID to lane index.
+            lane_heights: List of lane heights.
+        """
         # Calculate cumulative Y offsets for each lane
         from itertools import accumulate
 
@@ -649,59 +792,63 @@ class TimelineView(QGraphicsView):
             accumulate((h + 10 for h in lane_heights[:-1]), initial=80)
         )
 
-        # Update Y positions of existing items
-        existing_items = {}
-        drop_lines = {}
-        for item in self.scene.items():
-            if isinstance(item, EventItem):
-                existing_items[item.event.id] = item
-            elif hasattr(item, "event_id"):
-                drop_lines[item.event_id] = item
+        # Disable view updates during batch operation for better performance
+        self.setUpdatesEnabled(False)
 
-        max_y = 80
-        for event in self.events:
-            if event.id in existing_items:
-                lane_index = event_lane_assignments[event.id]
-                y = (
-                    lane_y_offsets[lane_index]
-                    if lane_index < len(lane_y_offsets)
-                    else 80
+        try:
+            # Collect existing items
+            existing_items = {}
+            drop_lines = {}
+            for item in self.scene.items():
+                if isinstance(item, EventItem):
+                    existing_items[item.event.id] = item
+                elif hasattr(item, "event_id"):
+                    drop_lines[item.event_id] = item
+
+            max_y = 80
+            for event in self.events:
+                if event.id in existing_items:
+                    lane_index = event_lane_assignments[event.id]
+                    y = (
+                        lane_y_offsets[lane_index]
+                        if lane_index < len(lane_y_offsets)
+                        else 80
+                    )
+                    item = existing_items[event.id]
+
+                    # Update zoom level for duration bar scaling
+                    item.set_zoom(self._current_zoom)
+
+                    # Set Y position and ensure visible
+                    item.setY(y)
+                    item.setVisible(True)
+                    item._initial_y = y  # Update constraint
+
+                    # Track max Y for scene rect
+                    event_height = EventItem.get_event_height(event)
+                    max_y = max(max_y, y + event_height)
+
+                    # Update drop line
+                    if event.id in drop_lines:
+                        line = drop_lines[event.id]
+                        line.setLine(item.x(), -self.RULER_HEIGHT, item.x(), y)
+                        line.setVisible(True)
+
+            # Recalculate Scene Rect Height
+            current_rect = self.scene.sceneRect()
+            max_y = max_y + 40  # Add margin
+
+            if max_y != current_rect.height():
+                self.scene.setSceneRect(
+                    current_rect.x(), current_rect.y(), current_rect.width(), max_y
                 )
-                item = existing_items[event.id]
 
-                # Update zoom level for duration bar scaling
-                item.set_zoom(self._current_zoom)
+            # Update temporal state after repacking
+            self.update_events_temporal_state()
 
-                # Set Y position and ensure visible
-                item.setY(y)
-                item.setVisible(True)
-                item._initial_y = y  # Update constraint
-
-                # Track max Y for scene rect
-                event_height = EventItem.get_event_height(event)
-                max_y = max(max_y, y + event_height)
-
-                # Update drop line
-                if event.id in drop_lines:
-                    line = drop_lines[event.id]
-                    line.setLine(item.x(), -self.RULER_HEIGHT, item.x(), y)
-                    line.setVisible(True)
-
-        # Recalculate Scene Rect Height
-        # Recalculate Scene Rect Height
-        current_rect = self.scene.sceneRect()
-        max_y = max_y + 40  # Add margin
-
-        if max_y != current_rect.height():
-            self.scene.setSceneRect(
-                current_rect.x(), current_rect.y(), current_rect.width(), max_y
-            )
-
-        # Update temporal state after repacking
-        self.update_events_temporal_state()
-
-        elapsed = (time.perf_counter() - start_time) * 1000
-        logger.debug(f"Repack events ({event_count} items) took {elapsed:.2f}ms")
+        finally:
+            # Re-enable view updates - this triggers a single batch update
+            self.setUpdatesEnabled(True)
 
     def _partition_events(self, events: list, tag_order: list, mode: str) -> dict:
         """Partition events into groups based on tags for swimlane layout.
@@ -1122,37 +1269,71 @@ class TimelineView(QGraphicsView):
 
         Emits 'event_selected' if an EventItem is clicked. Tracks playhead dragging.
         """
-        super().mousePressEvent(event)
-
         try:
             pos = event.position().toPoint()
         except AttributeError:
             pos = event.pos()
 
-        # Check for item at click position
+        # Check for item at click position BEFORE calling super()
         item = self.scene.itemAt(self.mapToScene(pos), self.transform())
 
-        # Traverse up if needed
-        # Traverse up if needed
+        # Handle playhead click specially to prevent scene drag mode
+        if isinstance(item, PlayheadItem):
+            # Manual drag mode for playhead
+            self._dragging_playhead = True
+            self._drag_start_pos = pos
+            self._playhead_start_x = self._playhead.x()
+            # Disable scene dragging temporarily
+            self.setDragMode(QGraphicsView.DragMode.NoDrag)
+            event.accept()
+            return
+
+        # Standard event handling for other items
+        super().mousePressEvent(event)
+
         if isinstance(item, EventItem):
             # Enforce single selection
             self.scene.clearSelection()
             item.setSelected(True)
             self.event_selected.emit(item.event.id)
-        elif isinstance(item, PlayheadItem):
-            # Track that we're dragging the playhead
-            self._dragging_playhead = True
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        """Handles mouse movement for playhead dragging."""
+        if hasattr(self, "_dragging_playhead") and self._dragging_playhead:
+            # Manual playhead drag
+            try:
+                pos = event.position().toPoint()
+            except AttributeError:
+                pos = event.pos()
+
+            # Calculate drag delta in scene coordinates
+            delta_x = pos.x() - self._drag_start_pos.x()
+            # Convert to scene space (account for zoom)
+            scene_delta = delta_x / self._current_zoom
+
+            # Update playhead position
+            new_x = self._playhead_start_x + scene_delta
+            self._playhead.setPos(new_x, 0)
+
+            # Notify view of position change
+            self._on_playhead_moved(new_x)
+
+            event.accept()
+            return
+
+        # Standard move handling
+        super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Handles mouse release.
 
         Emits playhead_time_changed if playhead was dragged.
         """
-        super().mouseReleaseEvent(event)
-
         if hasattr(self, "_dragging_playhead") and self._dragging_playhead:
+            # Restore drag mode
+            self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+
             # Emit final authoritative signal with rounded playhead time
-            # This ensures markers snap to exact position after scrubbing
             new_time = round(self._playhead.get_time(self.scale_factor), 4)
             self.playhead_time_changed.emit(new_time)
             self._dragging_playhead = False
@@ -1160,6 +1341,12 @@ class TimelineView(QGraphicsView):
             # Persist the new time on release
             settings = QSettings()
             settings.setValue("timeline/playhead_time", new_time)
+
+            event.accept()
+            return
+
+        # Standard release handling
+        super().mouseReleaseEvent(event)
 
     def focus_event(self, event_id: str) -> None:
         """Centers the view on the specified event."""

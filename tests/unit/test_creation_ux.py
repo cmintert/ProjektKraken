@@ -60,14 +60,15 @@ def test_select_item_switches_filter_if_needed(main_window):
     # 1. Set filter to "Entities Only"
     main_window.unified_list.filter_combo.setCurrentText("Entities Only")
     # Verify count - Entities Only shows entities
-    assert main_window.unified_list.list_widget.count() == 1
+    model = main_window.unified_list._proxy_model
+    assert model.rowCount() == 1
 
     # 2. Select Event (which is hidden)
-    # Patch list_widget.setCurrentItem to verify it gets called
+    # Patch list_widget.setCurrentIndex to verify it gets called
     with patch.object(
-        main_window.unified_list.list_widget, "setCurrentItem"
+        main_window.unified_list.list_widget, "setCurrentIndex"
     ) as mock_set:
-        with patch.object(main_window.unified_list.list_widget, "scrollToItem"):
+        with patch.object(main_window.unified_list.list_widget, "scrollTo"):
             main_window.unified_list.select_item("event", "evt1")
 
             # Should have switched filter

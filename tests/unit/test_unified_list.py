@@ -18,7 +18,8 @@ def unified_list(qtbot):
 
 
 def test_init(unified_list):
-    assert unified_list.list_widget.count() == 0
+    model = unified_list._proxy_model
+    assert model.rowCount() == 0
     assert not unified_list.empty_label.isHidden()
     # Check default filter
     assert unified_list.filter_combo.currentText() == "All Items"
@@ -30,20 +31,28 @@ def test_set_data(unified_list):
 
     unified_list.set_data(events, entities)
 
-    assert unified_list.list_widget.count() == 2
+    model = unified_list._proxy_model
+    assert model.rowCount() == 2
     assert unified_list.empty_label.isHidden()
 
-    # Check items
-    # Entity should be first based on logic (Entities loop first)
-    item0 = unified_list.list_widget.item(0)
-    assert "Entity 1" in item0.text()
-    assert item0.data(Qt.UserRole) == "n1"
-    assert item0.data(Qt.UserRole + 1) == "entity"
+    # Check items - get data from model
+    index0 = model.index(0, 0)
+    text0 = model.data(index0, Qt.ItemDataRole.DisplayRole)
+    assert "Entity 1" in text0
+    
+    # Map to source for custom roles
+    source_index0 = model.mapToSource(index0)
+    source_model = model.sourceModel()
+    assert source_model.data(source_index0, source_model.ItemIdRole) == "n1"
+    assert source_model.data(source_index0, source_model.ItemTypeRole) == "entity"
 
-    item1 = unified_list.list_widget.item(1)
-    assert "Event 1" in item1.text()
-    assert item1.data(Qt.UserRole) == "e1"
-    assert item1.data(Qt.UserRole + 1) == "event"
+    index1 = model.index(1, 0)
+    text1 = model.data(index1, Qt.ItemDataRole.DisplayRole)
+    assert "Event 1" in text1
+    
+    source_index1 = model.mapToSource(index1)
+    assert source_model.data(source_index1, source_model.ItemIdRole) == "e1"
+    assert source_model.data(source_index1, source_model.ItemTypeRole) == "event"
 
 
 def test_filtering(unified_list):
@@ -51,19 +60,23 @@ def test_filtering(unified_list):
     entities = [Entity(id="n1", name="Entity 1", type="Person")]
     unified_list.set_data(events, entities)
 
+    model = unified_list._proxy_model
+
     # Filter Events Only
     unified_list.filter_combo.setCurrentText("Events Only")
-    assert unified_list.list_widget.count() == 1
-    assert "Event 1" in unified_list.list_widget.item(0).text()
+    assert model.rowCount() == 1
+    text = model.data(model.index(0, 0), Qt.ItemDataRole.DisplayRole)
+    assert "Event 1" in text
 
     # Filter Entities Only
     unified_list.filter_combo.setCurrentText("Entities Only")
-    assert unified_list.list_widget.count() == 1
-    assert "Entity 1" in unified_list.list_widget.item(0).text()
+    assert model.rowCount() == 1
+    text = model.data(model.index(0, 0), Qt.ItemDataRole.DisplayRole)
+    assert "Entity 1" in text
 
     # Filter All
     unified_list.filter_combo.setCurrentText("All Items")
-    assert unified_list.list_widget.count() == 2
+    assert model.rowCount() == 2
 
 
 def test_selection_signal(unified_list, qtbot):
@@ -71,7 +84,8 @@ def test_selection_signal(unified_list, qtbot):
     unified_list.set_data(events, [])
 
     with qtbot.waitSignal(unified_list.item_selected) as blocker:
-        unified_list.list_widget.setCurrentRow(0)
+        model = unified_list._proxy_model
+        unified_list.list_widget.setCurrentIndex(model.index(0, 0))
 
     assert blocker.args == ["event", "e1"]
     assert unified_list.btn_delete.isEnabled()
@@ -80,7 +94,9 @@ def test_selection_signal(unified_list, qtbot):
 def test_delete_signal(unified_list, qtbot):
     events = [Event(id="e1", name="Event 1", lore_date=10.0)]
     unified_list.set_data(events, [])
-    unified_list.list_widget.setCurrentRow(0)
+    
+    model = unified_list._proxy_model
+    unified_list.list_widget.setCurrentIndex(model.index(0, 0))
 
     with patch(
         "PySide6.QtWidgets.QMessageBox.warning",

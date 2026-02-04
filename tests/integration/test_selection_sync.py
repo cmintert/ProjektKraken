@@ -59,7 +59,8 @@ def test_longform_selection_reflects_in_unified_list(qtbot):
     window.unified_list.set_data([event], [entity])
 
     # Verify items are in list
-    assert window.unified_list.list_widget.count() == 2
+    model = window.unified_list._proxy_model
+    assert model.rowCount() == 2
 
     # 3. Populate Longform Editor
     sequence = [
@@ -91,9 +92,16 @@ def test_longform_selection_reflects_in_unified_list(qtbot):
     # 5. Check if Unified List selection updated
     # This might be async or immediate. Signals are synchronous by default in single thread.
 
-    selected_in_list = window.unified_list.list_widget.selectedItems()
-    assert len(selected_in_list) == 1
+    selection_model = window.unified_list.list_widget.selectionModel()
+    selected_indexes = selection_model.selectedIndexes()
+    assert len(selected_indexes) == 1
 
-    list_item = selected_in_list[0]
-    assert list_item.data(Qt.ItemDataRole.UserRole) == "evt1"
-    assert list_item.data(Qt.ItemDataRole.UserRole + 1) == "event"
+    # Get item data through model
+    selected_idx = selected_indexes[0]
+    source_idx = model.mapToSource(selected_idx)
+    source_model = model.sourceModel()
+    item_id = source_model.data(source_idx, source_model.ItemIdRole)
+    item_type = source_model.data(source_idx, source_model.ItemTypeRole)
+    
+    assert item_id == "evt1"
+    assert item_type == "event"

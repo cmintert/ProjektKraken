@@ -8,13 +8,14 @@ import json
 import logging
 from typing import Any, Dict, List, Optional, Union
 
-from PySide6.QtCore import QMimeData, QSize, Qt, Signal, Slot
+from PySide6.QtCore import QMimeData, QModelIndex, QSize, Qt, Signal, Slot
 from PySide6.QtGui import QBrush, QColor, QDrag
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QListView,
     QListWidget,
     QListWidgetItem,
     QMenu,
@@ -26,6 +27,8 @@ from PySide6.QtWidgets import (
 from src.core.calendar import CalendarConverter
 from src.core.entities import Entity
 from src.core.events import Event
+from src.gui.models.explorer_filter_proxy import ExplorerFilterProxyModel
+from src.gui.models.explorer_model import ExplorerModel
 from src.gui.utils.style_helper import StyleHelper
 
 KRAKEN_ITEM_MIME_TYPE = "application/x-kraken-item"
@@ -33,10 +36,10 @@ KRAKEN_ITEM_MIME_TYPE = "application/x-kraken-item"
 logger = logging.getLogger(__name__)
 
 
-class DraggableListWidget(QListWidget):
-    """A QListWidget that supports dragging items with custom MIME data.
+class DraggableListView(QListView):
+    """A QListView that supports dragging items with custom MIME data.
 
-    Drag data format (JSON):     {"id": "uuid", "type": "event|entity", "name": "Display
+    Drag data format (JSON): {"id": "uuid", "type": "event|entity", "name": "Display
     Name"}
     """
 
@@ -44,7 +47,7 @@ class DraggableListWidget(QListWidget):
         """Initialize with drag enabled."""
         super().__init__(parent)
         self.setDragEnabled(True)
-        self.setDragDropMode(QListWidget.DragOnly)
+        self.setDragDropMode(QListView.DragOnly)
 
     def startDrag(self, supportedActions: Qt.DropAction) -> None:
         """Override to provide custom MIME data for dragged items.
@@ -53,20 +56,33 @@ class DraggableListWidget(QListWidget):
             supportedActions: The drag actions supported.
 
         """
-        item = self.currentItem()
-        if not item:
+        index = self.currentIndex()
+        if not index.isValid():
             return
 
-        # Extract item data (stored via setData in _render_list)
-        item_id = item.data(Qt.ItemDataRole.UserRole)
-        item_type = item.data(Qt.ItemDataRole.UserRole + 1)
-        item_name = item.data(Qt.ItemDataRole.UserRole + 2)  # We'll add this
+        # Get data from model using custom roles
+        model = self.model()
+        if not model:
+            return
+        
+        # Need to map to source model if using proxy
+        source_index = index
+        if hasattr(model, 'mapToSource'):
+            source_index = model.mapToSource(index)
+            source_model = model.sourceModel()
+        else:
+            source_model = model
+
+        # Extract item data using custom roles
+        item_id = source_model.data(source_index, ExplorerModel.ItemIdRole)
+        item_type = source_model.data(source_index, ExplorerModel.ItemTypeRole)
+        item_name = source_model.data(source_index, ExplorerModel.ItemNameRole)
 
         if not item_id or not item_type:
             return
 
         # Build MIME data
-        data = {"id": item_id, "type": item_type, "name": item_name or item.text()}
+        data = {"id": item_id, "type": item_type, "name": item_name}
 
         mime_data = QMimeData()
         mime_data.setData(KRAKEN_ITEM_MIME_TYPE, json.dumps(data).encode("utf-8"))
@@ -218,12 +234,18 @@ class UnifiedListWidget(QWidget):
 
         main_layout.addLayout(filter_row)
 
-        # List (with drag support)
-        self.list_widget = DraggableListWidget()
+        # Create model and proxy for virtualization
+        self._model = ExplorerModel(self)
+        self._proxy_model = ExplorerFilterProxyModel(self)
+        self._proxy_model.setSourceModel(self._model)
+
+        # List (with drag support and virtualization)
+        self.list_widget = DraggableListView()
+        self.list_widget.setModel(self._proxy_model)
         self.list_widget.setStyleSheet(StyleHelper.get_checkbox_style())
-        self.list_widget.setSelectionMode(QListWidget.SelectionMode.ExtendedSelection)
-        self.list_widget.itemSelectionChanged.connect(self._on_selection_changed)
-        self.list_widget.itemChanged.connect(self._on_item_checkbox_changed)
+        self.list_widget.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
+        self.list_widget.selectionModel().selectionChanged.connect(self._on_selection_changed)
+        
         main_layout.addWidget(self.list_widget)
 
         # Empty State
@@ -245,14 +267,8 @@ class UnifiedListWidget(QWidget):
         # self._active_types: set = set()  # Removed: Backend handled
         # self._active_tags: set = set()   # Removed: Backend handled
 
-        # Colors - use ThemeManager for theme-aware colors
+        # Theme connection for checkbox style updates
         from src.core.theme_manager import ThemeManager
-
-        theme = ThemeManager().get_theme()
-        self.color_event = QColor(theme.get("accent_secondary", "#0078D4"))
-        self.color_entity = QColor(theme.get("primary", "#FF9900"))
-
-        # Connect to theme changes for dynamic updates
         ThemeManager().theme_changed.connect(self._on_theme_changed)
 
         self._render_list()
@@ -260,11 +276,9 @@ class UnifiedListWidget(QWidget):
     @Slot(dict)
     def _on_theme_changed(self, theme: dict) -> None:
         """Handle theme change."""
-        self.color_event = QColor(theme.get("accent_secondary", "#0078D4"))
-        self.color_entity = QColor(theme.get("primary", "#FF9900"))
         # Re-apply checkbox style on theme change
         self.list_widget.setStyleSheet(StyleHelper.get_checkbox_style())
-        self._render_list()
+        # Model handles color updates automatically
 
     def set_data(self, events: List[Event], entities: List[Entity]) -> None:
         """Sets the data to display in the list.
@@ -287,38 +301,9 @@ class UnifiedListWidget(QWidget):
 
         """
         self._calendar_converter = converter
-        self._render_list()
+        self._model.set_calendar_converter(converter)
+        # Model triggers dataChanged automatically
 
-    def _format_compact_date(self, lore_date: float) -> str:
-        """Formats a lore date as dd.mm.yyyy - hh:mm.
-
-        Args:
-            lore_date: The float lore date value.
-
-        Returns:
-            str: Formatted date string in dd.mm.yyyy - hh:mm format.
-
-        """
-        if not self._calendar_converter:
-            return str(lore_date)
-
-        cal_date = self._calendar_converter.from_float(lore_date)
-
-        # Format as dd.mm.yyyy
-        day_str = str(cal_date.day).zfill(2)
-        month_str = str(cal_date.month).zfill(2)
-        year_str = str(cal_date.year)
-        date_part = f"{day_str}.{month_str}.{year_str}"
-
-        # Format time from time_fraction (0.0 = midnight, 0.5 = noon)
-        if cal_date.time_fraction > 0:
-            total_minutes = int(cal_date.time_fraction * 24 * 60)
-            hours = total_minutes // 60
-            minutes = total_minutes % 60
-            time_part = f"{str(hours).zfill(2)}:{str(minutes).zfill(2)}"
-            return f"{date_part} - {time_part}"
-
-        return date_part
 
     @Slot()
     @Slot()
@@ -356,7 +341,7 @@ class UnifiedListWidget(QWidget):
         self._advanced_filter_config = config or {}
         has_filter = bool(config.get("include") or config.get("exclude"))
         self.set_filter_active(has_filter)
-        self._render_list()
+        self._proxy_model.set_advanced_filter(config)
 
     def get_advanced_filter_config(self) -> Dict[str, Any]:
         """Returns the current advanced filter configuration.
@@ -378,62 +363,29 @@ class UnifiedListWidget(QWidget):
         Preserves selection during refresh.
         """
         # Capture current selection
+        current_index = self.list_widget.currentIndex()
         current_id = None
         current_type = None
-        selected_items = self.list_widget.selectedItems()
-        if selected_items:
-            current_id = selected_items[0].data(Qt.ItemDataRole.UserRole)
-            current_type = selected_items[0].data(Qt.ItemDataRole.UserRole + 1)
+        
+        if current_index.isValid():
+            # Map through proxy to source model
+            source_index = self._proxy_model.mapToSource(current_index)
+            current_id = self._model.data(source_index, ExplorerModel.ItemIdRole)
+            current_type = self._model.data(source_index, ExplorerModel.ItemTypeRole)
 
-        self.list_widget.clear()
-
+        # Update filter mode in proxy
         filter_mode = self.filter_combo.currentText()
+        self._proxy_model.set_filter_mode(filter_mode)
+
+        # Collect all items that pass filters (filter mode handled by proxy)
         show_events = filter_mode in ["All Items", "Events Only"]
         show_entities = filter_mode in ["All Items", "Entities Only"]
-
-        items_to_show = []
-
-        if show_events:
-            for event in self._events:
-                items_to_show.append(
-                    {
-                        "type": "event",
-                        "obj": event,
-                        "sort_key": str(event.lore_date),  # Sort events by date?
-                    }
-                )
-
+        
+        items_to_display = []
         if show_entities:
-            for entity in self._entities:
-                items_to_show.append(
-                    {"type": "entity", "obj": entity, "sort_key": entity.name}
-                )
-
-        # Sort? For now, mixed sort might be weird.
-        # Let's just append blocks or simple sort.
-        # Simple approach: Entities first (alphabetical),
-        # then Events (chronological)?
-        # Or mixed list? "Unify" usually implies mixed.
-        # User request didn't specify sort. Let's stick to simple append
-        # for now to be safe, or separate blocks like the current UI
-        # but in one list.
-        # Actually, let's keep them somewhat grouped for clarity until
-        # a unified timeline sort is requested.
-
-        has_items = False
-
-        # Collect all items that pass filters
-        filtered_items = []
-
-        if show_entities:
-            for entity in self._entities:
-                if self._passes_filters(entity):
-                    filtered_items.append(("entity", entity))
-
+            items_to_display.extend([("entity", e) for e in self._entities])
         if show_events:
-            for event in self._events:
-                if self._passes_filters(event):
-                    filtered_items.append(("event", event))
+            items_to_display.extend([("event", e) for e in self._events])
 
         # Sort items based on current sort settings
         sort_field = self.sort_combo.currentText()
@@ -455,50 +407,25 @@ class UnifiedListWidget(QWidget):
                     return float("inf") if not reverse else float("-inf")
             return obj.name.lower()
 
-        filtered_items.sort(key=get_sort_key, reverse=reverse)
+        items_to_display.sort(key=get_sort_key, reverse=reverse)
 
-        # Render sorted items
-        for item_type, obj in filtered_items:
-            if item_type == "entity":
-                label = f"{obj.name} ({obj.type})"
-                color = self.color_entity
-            else:
-                # Format lore date in compact dd.mm.yyyy - hh:mm format
-                if self._calendar_converter and obj.lore_date is not None:
-                    date_str = self._format_compact_date(obj.lore_date)
-                else:
-                    date_str = str(obj.lore_date)
-                label = f"[{date_str}] {obj.name}"
-                color = self.color_event
+        # Update model with sorted items
+        self._model.set_items(items_to_display)
 
-            item = QListWidgetItem(label)
-            item.setData(Qt.ItemDataRole.UserRole, obj.id)
-            item.setData(Qt.ItemDataRole.UserRole + 1, item_type)
-            item.setData(Qt.ItemDataRole.UserRole + 2, obj.name)
-            item.setForeground(QBrush(color))
-            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
-            item.setCheckState(Qt.CheckState.Unchecked)
-            self.list_widget.addItem(item)
-            has_items = True
-
+        # Show/hide empty state
+        has_items = self._proxy_model.rowCount() > 0
         if has_items:
             self.list_widget.show()
             self.empty_label.hide()
 
             # Restore selection if possible
             if current_id and current_type:
-                for index in range(self.list_widget.count()):
-                    item = self.list_widget.item(index)
-                    if (
-                        item.data(Qt.ItemDataRole.UserRole) == current_id
-                        and item.data(Qt.ItemDataRole.UserRole + 1) == current_type
-                    ):
-                        # Block signals to prevent re-triggering selection logic
-                        self.list_widget.blockSignals(True)
-                        self.list_widget.setCurrentItem(item)
-                        self.list_widget.blockSignals(False)
-
-                        break
+                restore_index = self._model.find_item_index(current_type, current_id)
+                if restore_index:
+                    # Map to proxy index
+                    proxy_index = self._proxy_model.mapFromSource(restore_index)
+                    if proxy_index.isValid():
+                        self.list_widget.setCurrentIndex(proxy_index)
         else:
             self.list_widget.hide()
             self.empty_label.show()
@@ -513,88 +440,7 @@ class UnifiedListWidget(QWidget):
 
         """
         self._search_term = text.lower().strip()
-        self._render_list()
-
-    def _matches_search(self, obj: Union[Event, Entity]) -> bool:
-        """Checks if an object matches the current search term. Delegates to shared
-        SearchUtils.
-
-        Args:
-            obj: Event or Entity object.
-
-        Returns:
-            bool: True if matches search (or no search active).
-
-        """
-        from src.core.search_utils import SearchUtils
-
-        return SearchUtils.matches_search(obj, self._search_term)
-
-    def _passes_advanced_filters(self, obj: Union[Event, Entity]) -> bool:
-        """Checks if an object passes the advanced tag filters.
-
-        Args:
-            obj: Event or Entity object.
-
-        Returns:
-            bool: True if passes all advanced filters.
-
-        """
-        if not self._advanced_filter_config:
-            return True
-
-        include_tags = self._advanced_filter_config.get("include", [])
-        include_mode = self._advanced_filter_config.get("include_mode", "any")
-        exclude_tags = self._advanced_filter_config.get("exclude", [])
-        exclude_mode = self._advanced_filter_config.get("exclude_mode", "any")
-
-        if not include_tags and not exclude_tags:
-            return True
-
-        item_tags = set(getattr(obj, "tags", []))
-
-        # Exclude check
-        if exclude_tags:
-            if exclude_mode == "all":
-                # Exclude if ALL excluded tags are present
-                if all(tag in item_tags for tag in exclude_tags):
-                    return False
-            else:
-                # Default "any": Exclude if ANY excluded tag is present
-                if any(tag in item_tags for tag in exclude_tags):
-                    return False
-
-        # Include check
-        if include_tags:
-            if include_mode == "all":
-                if not all(tag in item_tags for tag in include_tags):
-                    return False
-            else:
-                # Default "any"
-                if not any(tag in item_tags for tag in include_tags):
-                    return False
-
-        return True
-
-    def _passes_filters(self, obj: Union[Event, Entity]) -> bool:
-        """Checks if an object passes all active filters (search + advanced tags).
-
-        Args:
-            obj: Event or Entity object.
-
-        Returns:
-            bool: True if passes all filters.
-
-        """
-        # Check advanced tag filters
-        if not self._passes_advanced_filters(obj):
-            return False
-
-        # Check search term
-        if not self._matches_search(obj):
-            return False
-
-        return True
+        self._proxy_model.set_search_term(self._search_term)
 
     @Slot(str)
     @Slot(str)
@@ -624,44 +470,23 @@ class UnifiedListWidget(QWidget):
         self.btn_sort_dir.setText("↑" if self._sort_ascending else "↓")
         self._render_list()
 
-    @Slot(QListWidgetItem)
-    def _on_item_checkbox_changed(self, item: QListWidgetItem) -> None:
-        """Sync selection when checkbox is clicked.
-
-        Args:
-            item: The item whose checkbox changed.
-
-        """
-        # Block signals to prevent recursion
-        self.list_widget.blockSignals(True)
-        is_checked = item.checkState() == Qt.CheckState.Checked
-        item.setSelected(is_checked)
-        self.list_widget.blockSignals(False)
-
-        # Trigger selection update manually
-        self._on_selection_changed()
-
     @Slot()
     def _on_selection_changed(self) -> None:
         """Handles item selection changes in the list."""
-        selected_items = self.list_widget.selectedItems()
+        selection_model = self.list_widget.selectionModel()
+        if not selection_model:
+            return
 
-        # Sync checkboxes with selection state
-        self.list_widget.blockSignals(True)
-        for index in range(self.list_widget.count()):
-            item = self.list_widget.item(index)
-            is_selected = item.isSelected()
-            item.setCheckState(
-                Qt.CheckState.Checked if is_selected else Qt.CheckState.Unchecked
-            )
-        self.list_widget.blockSignals(False)
+        selected_indexes = selection_model.selectedIndexes()
 
-        if selected_items:
+        if selected_indexes:
             # Collect all selected items for multi-selection signal
             selected_data = []
-            for item in selected_items:
-                item_id = item.data(Qt.ItemDataRole.UserRole)
-                item_type = item.data(Qt.ItemDataRole.UserRole + 1)
+            for index in selected_indexes:
+                # Map through proxy to source
+                source_index = self._proxy_model.mapToSource(index)
+                item_id = self._model.data(source_index, ExplorerModel.ItemIdRole)
+                item_type = self._model.data(source_index, ExplorerModel.ItemTypeRole)
                 if item_id and item_type:
                     selected_data.append((item_type, item_id))
 
@@ -669,10 +494,9 @@ class UnifiedListWidget(QWidget):
             self.items_selected.emit(selected_data)
 
             # Backward compatibility: emit single selection for first item
-            first_item = selected_items[0]
-            item_id = first_item.data(Qt.ItemDataRole.UserRole)
-            item_type = first_item.data(Qt.ItemDataRole.UserRole + 1)
-            self.item_selected.emit(item_type, item_id)
+            if selected_data:
+                first_type, first_id = selected_data[0]
+                self.item_selected.emit(first_type, first_id)
 
             self.btn_delete.setEnabled(True)
         else:
@@ -683,16 +507,22 @@ class UnifiedListWidget(QWidget):
         """Handles delete button clicks for single or multiple items."""
         from PySide6.QtWidgets import QMessageBox
 
-        selected_items = self.list_widget.selectedItems()
-        if not selected_items:
+        selection_model = self.list_widget.selectionModel()
+        if not selection_model:
+            return
+
+        selected_indexes = selection_model.selectedIndexes()
+        if not selected_indexes:
             return
 
         # Collect all selected items
         items_to_delete = []
-        for item in selected_items:
-            item_id = item.data(Qt.ItemDataRole.UserRole)
-            item_type = item.data(Qt.ItemDataRole.UserRole + 1)
-            item_name = item.text().split(" (")[0].split("] ")[-1]  # Extract name
+        for index in selected_indexes:
+            # Map through proxy to source
+            source_index = self._proxy_model.mapToSource(index)
+            item_id = self._model.data(source_index, ExplorerModel.ItemIdRole)
+            item_type = self._model.data(source_index, ExplorerModel.ItemTypeRole)
+            item_name = self._model.data(source_index, ExplorerModel.ItemNameRole)
             if item_id and item_type:
                 items_to_delete.append((item_type, item_id, item_name))
 
@@ -730,21 +560,25 @@ class UnifiedListWidget(QWidget):
         """
 
         def find_and_select() -> bool:
-            """Inner function to search list and select matching item.
+            """Inner function to search model and select matching item.
 
-            Searches all items in the list widget for one matching the given type and
-            ID, then selects and scrolls to it.
+            Searches the model for an item matching the given type and ID,
+            then selects and scrolls to it.
             """
-            for index in range(self.list_widget.count()):
-                item = self.list_widget.item(index)
-                if (
-                    item.data(Qt.ItemDataRole.UserRole) == item_id
-                    and item.data(Qt.ItemDataRole.UserRole + 1) == item_type
-                ):
-                    self.list_widget.setCurrentItem(item)
-                    self.list_widget.scrollToItem(item)
-                    return True
-            return False
+            # Find in source model
+            source_index = self._model.find_item_index(item_type, item_id)
+            if not source_index:
+                return False
+
+            # Map to proxy
+            proxy_index = self._proxy_model.mapFromSource(source_index)
+            if not proxy_index.isValid():
+                return False
+
+            # Select and scroll
+            self.list_widget.setCurrentIndex(proxy_index)
+            self.list_widget.scrollTo(proxy_index)
+            return True
 
         if find_and_select():
             return
@@ -765,10 +599,7 @@ class UnifiedListWidget(QWidget):
             # Signal should trigger _render_list synchronously
             find_and_select()
         else:
-            # If we didn't switch filters (or even if we did and it's still not
-            # there due to another reason),
-            # validation failed or item is truly gone/filtered by search.
-            # We MUST clear selection to prevent "stale" selection from persisting.
+            # Clear selection if item truly not found
             self.list_widget.clearSelection()
 
     def minimumSizeHint(self) -> QSize:
