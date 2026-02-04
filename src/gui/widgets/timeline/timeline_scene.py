@@ -55,8 +55,9 @@ class PlayheadItem(QGraphicsLineItem):
         pen.setCosmetic(True)
         self.setPen(pen)
 
-        # Make draggable
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
+        # Make interactive but NOT movable via scene
+        # Movement will be handled manually in TimelineView
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
         self.setAcceptHoverEvents(True)  # Enable hover for visual feedback

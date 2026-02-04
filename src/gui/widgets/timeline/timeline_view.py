@@ -170,7 +170,7 @@ class TimelineView(QGraphicsView):
         self._layout_worker = None
         self._pending_layout_request = None  # Track if a new layout is needed
         self._layout_start_time = 0.0
-        
+
         # Threshold for using async layout (number of events)
         self.ASYNC_LAYOUT_THRESHOLD = 50
 
@@ -625,7 +625,7 @@ class TimelineView(QGraphicsView):
         This recalculates lane assignments to prevent overlaps as the timeline zooms in
         and out (changing the effective visual duration of text labels). Uses variable
         lane heights based on event content.
-        
+
         For large datasets (>= ASYNC_LAYOUT_THRESHOLD events), uses async worker.
         For small datasets, uses synchronous packing for immediate response.
         """
@@ -666,7 +666,7 @@ class TimelineView(QGraphicsView):
 
     def _repack_events_sync(self, effective_scale: float) -> None:
         """Synchronous version of event repacking for small datasets.
-        
+
         Args:
             effective_scale: The effective scale factor (scene scale * view zoom).
         """
@@ -690,7 +690,7 @@ class TimelineView(QGraphicsView):
 
     def _repack_events_async(self, effective_scale: float) -> None:
         """Asynchronous version of event repacking for large datasets.
-        
+
         Args:
             effective_scale: The effective scale factor (scene scale * view zoom).
         """
@@ -730,7 +730,7 @@ class TimelineView(QGraphicsView):
         self, lane_assignments: dict, lane_heights: list, worker_elapsed: float
     ) -> None:
         """Called when async layout worker completes.
-        
+
         Args:
             lane_assignments: Dict mapping event ID to lane index.
             lane_heights: List of lane heights.
@@ -759,16 +759,16 @@ class TimelineView(QGraphicsView):
 
     def _on_layout_error(self, error_message: str) -> None:
         """Called when async layout worker encounters an error.
-        
+
         Args:
             error_message: The error message from the worker.
         """
         logger.error(f"Async layout error: {error_message}")
-        
+
         # Clear progress state
         self._layout_in_progress = False
         self._layout_worker = None
-        
+
         # Fall back to synchronous layout
         logger.info("Falling back to synchronous layout after error")
         effective_scale = self.scale_factor * self._current_zoom
@@ -778,7 +778,7 @@ class TimelineView(QGraphicsView):
         self, event_lane_assignments: dict, lane_heights: list
     ) -> None:
         """Applies layout results to the scene with batch updates.
-        
+
         Args:
             event_lane_assignments: Dict mapping event ID to lane index.
             lane_heights: List of lane heights.
@@ -1269,37 +1269,71 @@ class TimelineView(QGraphicsView):
 
         Emits 'event_selected' if an EventItem is clicked. Tracks playhead dragging.
         """
-        super().mousePressEvent(event)
-
         try:
             pos = event.position().toPoint()
         except AttributeError:
             pos = event.pos()
 
-        # Check for item at click position
+        # Check for item at click position BEFORE calling super()
         item = self.scene.itemAt(self.mapToScene(pos), self.transform())
 
-        # Traverse up if needed
-        # Traverse up if needed
+        # Handle playhead click specially to prevent scene drag mode
+        if isinstance(item, PlayheadItem):
+            # Manual drag mode for playhead
+            self._dragging_playhead = True
+            self._drag_start_pos = pos
+            self._playhead_start_x = self._playhead.x()
+            # Disable scene dragging temporarily
+            self.setDragMode(QGraphicsView.DragMode.NoDrag)
+            event.accept()
+            return
+
+        # Standard event handling for other items
+        super().mousePressEvent(event)
+
         if isinstance(item, EventItem):
             # Enforce single selection
             self.scene.clearSelection()
             item.setSelected(True)
             self.event_selected.emit(item.event.id)
-        elif isinstance(item, PlayheadItem):
-            # Track that we're dragging the playhead
-            self._dragging_playhead = True
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        """Handles mouse movement for playhead dragging."""
+        if hasattr(self, "_dragging_playhead") and self._dragging_playhead:
+            # Manual playhead drag
+            try:
+                pos = event.position().toPoint()
+            except AttributeError:
+                pos = event.pos()
+
+            # Calculate drag delta in scene coordinates
+            delta_x = pos.x() - self._drag_start_pos.x()
+            # Convert to scene space (account for zoom)
+            scene_delta = delta_x / self._current_zoom
+
+            # Update playhead position
+            new_x = self._playhead_start_x + scene_delta
+            self._playhead.setPos(new_x, 0)
+
+            # Notify view of position change
+            self._on_playhead_moved(new_x)
+
+            event.accept()
+            return
+
+        # Standard move handling
+        super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Handles mouse release.
 
         Emits playhead_time_changed if playhead was dragged.
         """
-        super().mouseReleaseEvent(event)
-
         if hasattr(self, "_dragging_playhead") and self._dragging_playhead:
+            # Restore drag mode
+            self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+
             # Emit final authoritative signal with rounded playhead time
-            # This ensures markers snap to exact position after scrubbing
             new_time = round(self._playhead.get_time(self.scale_factor), 4)
             self.playhead_time_changed.emit(new_time)
             self._dragging_playhead = False
@@ -1307,6 +1341,12 @@ class TimelineView(QGraphicsView):
             # Persist the new time on release
             settings = QSettings()
             settings.setValue("timeline/playhead_time", new_time)
+
+            event.accept()
+            return
+
+        # Standard release handling
+        super().mouseReleaseEvent(event)
 
     def focus_event(self, event_id: str) -> None:
         """Centers the view on the specified event."""
