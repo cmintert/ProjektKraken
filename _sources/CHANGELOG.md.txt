@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-02-03
+## [Development] - 2026-02-04
 ### Internal
-- chore(release): Bump version to 0.10.3
+- Merge pull request #70 from cmintert/copilot/audit-ux-architecture
 
 
 *This changelog was automatically generated.*
