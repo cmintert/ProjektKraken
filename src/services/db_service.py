@@ -363,6 +363,39 @@ class DatabaseService:
 
         CREATE INDEX IF NOT EXISTS idx_embeddings_created_at
             ON embeddings(created_at);
+
+        -- Command History for Persistent Undo/Redo (Phase 2)
+        CREATE TABLE IF NOT EXISTS command_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            world_id TEXT NOT NULL,
+            session_id TEXT NOT NULL,
+            command_type TEXT NOT NULL,
+            command_data TEXT NOT NULL,
+            description TEXT,
+            timestamp REAL NOT NULL,
+            is_executed BOOLEAN DEFAULT 1,
+            aggregate_id TEXT,
+            aggregate_type TEXT,
+            is_snapshot BOOLEAN DEFAULT 0
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_ch_world_time 
+            ON command_history(world_id, timestamp DESC);
+        
+        CREATE INDEX IF NOT EXISTS idx_ch_session 
+            ON command_history(session_id);
+        
+        CREATE INDEX IF NOT EXISTS idx_ch_aggregate 
+            ON command_history(aggregate_id, timestamp);
+
+        -- Edit Sessions for Session Tracking
+        CREATE TABLE IF NOT EXISTS edit_sessions (
+            session_id TEXT PRIMARY KEY,
+            world_id TEXT NOT NULL,
+            started_at REAL NOT NULL,
+            ended_at REAL,
+            app_version TEXT
+        );
         """
 
         try:

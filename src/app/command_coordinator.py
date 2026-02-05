@@ -5,13 +5,14 @@ database worker thread.
 """
 
 import logging
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 from PySide6.QtCore import QObject, Signal, Slot
 
 if TYPE_CHECKING:
     from src.commands.base_command import BaseCommand, CommandResult
     from src.core.protocols import MainWindowProtocol
+    from src.services.history_service import HistoryService
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ class CommandCoordinator(QObject):
     - Command submission to worker thread
     - Result handling
     - Undo/redo stack management
+    - Command history persistence (Phase 2)
 
     Attributes:
         command_requested: Signal emitted when a command needs execution.
@@ -50,7 +52,35 @@ class CommandCoordinator(QObject):
         self.undo_stack: List["BaseCommand"] = []
         self.redo_stack: List["BaseCommand"] = []
         self.max_stack_size = 100  # Limit memory usage
+        self.history_service: Optional["HistoryService"] = None
         logger.debug("CommandCoordinator initialized with undo/redo support")
+
+    def set_history_service(self, history_service: "HistoryService") -> None:
+        """Set the history service for persistent command storage.
+
+        Args:
+            history_service: HistoryService instance for this world
+        """
+        self.history_service = history_service
+        logger.debug("HistoryService attached to CommandCoordinator")
+
+    def load_history(self) -> None:
+        """Load command history from database.
+
+        Populates the undo stack with recent commands from previous sessions.
+        """
+        if not self.history_service:
+            logger.warning("No history service available, skipping history load")
+            return
+
+        try:
+            commands = self.history_service.load_recent_history(limit=self.max_stack_size)
+            self.undo_stack = commands
+            self.redo_stack.clear()
+            self.history_changed.emit()
+            logger.info(f"Loaded {len(commands)} commands from history")
+        except Exception as e:
+            logger.error(f"Failed to load command history: {e}")
 
     def execute_command(self, command: "BaseCommand") -> None:
         """Execute a command via the worker thread.
@@ -139,6 +169,13 @@ class CommandCoordinator(QObject):
             if command is not None:
                 self.undo_stack.append(command)
                 self.redo_stack.clear()  # Clear redo stack on new action
+                
+                # Save command to database for persistence (Phase 2)
+                if self.history_service:
+                    try:
+                        self.history_service.save_command(command)
+                    except Exception as e:
+                        logger.error(f"Failed to save command to history: {e}")
                 
                 # Limit stack size to prevent memory bloat
                 if len(self.undo_stack) > self.max_stack_size:

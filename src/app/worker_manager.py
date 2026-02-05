@@ -300,6 +300,45 @@ class WorkerManager(QObject):
                 # Don't fail the entire app if backup service fails to init
                 self.window.backup_service = None
 
+            # Initialize History Service for Phase 2 persistent undo/redo
+            try:
+                from src.services.history_service import HistoryService
+                from src.commands.event_commands import (
+                    CreateEventCommand,
+                    UpdateEventCommand,
+                    DeleteEventCommand,
+                )
+
+                # Create history service with current world ID
+                world_id = self.window.current_world.id if self.window.current_world else "default"
+                self.window.history_service = HistoryService(
+                    self.window.gui_db_service, world_id
+                )
+
+                # Register command types for deserialization
+                self.window.history_service.register_command_type(
+                    "CreateEventCommand", CreateEventCommand
+                )
+                self.window.history_service.register_command_type(
+                    "UpdateEventCommand", UpdateEventCommand
+                )
+                self.window.history_service.register_command_type(
+                    "DeleteEventCommand", DeleteEventCommand
+                )
+
+                # Connect to command coordinator
+                self.window.coordinator.set_history_service(self.window.history_service)
+
+                # Load command history from database
+                self.window.coordinator.load_history()
+
+                logger.info("History service initialized successfully")
+
+            except Exception as e:
+                logger.error(f"Failed to initialize history service: {e}")
+                # Don't fail the entire app if history service fails to init
+                self.window.history_service = None
+
             self.window.load_data()
             self.window._request_calendar_config()
             self.window._request_current_time()

@@ -102,6 +102,32 @@ class CreateEventCommand(BaseCommand):
         db_service.delete_event(self.event.id)
         self._is_executed = False
 
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            dict: Command data for persistence
+        """
+        return {
+            "event": self.event.to_dict(),
+            "is_executed": self._is_executed
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "CreateEventCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Command data from database
+
+        Returns:
+            CreateEventCommand: Reconstructed command
+        """
+        event_data = data["event"]
+        cmd = cls(event_data)
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd
+
 
 class UpdateEventCommand(BaseCommand):
     """Command to update an existing event.
@@ -229,6 +255,38 @@ class UpdateEventCommand(BaseCommand):
             db_service.insert_event(self._previous_event)
             self._is_executed = False
 
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            dict: Command data for persistence
+        """
+        return {
+            "event_id": self.event_id,
+            "update_data": self.update_data,
+            "previous_event": self._previous_event.to_dict() if self._previous_event else None,
+            "new_event": self._new_event.to_dict() if self._new_event else None,
+            "is_executed": self._is_executed
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "UpdateEventCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Command data from database
+
+        Returns:
+            UpdateEventCommand: Reconstructed command
+        """
+        cmd = cls(data["event_id"], data["update_data"])
+        if data.get("previous_event"):
+            cmd._previous_event = Event.from_dict(data["previous_event"])
+        if data.get("new_event"):
+            cmd._new_event = Event.from_dict(data["new_event"])
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd
+
 
 class DeleteEventCommand(BaseCommand):
     """Command to delete an event, storing its state for undo."""
@@ -302,3 +360,31 @@ class DeleteEventCommand(BaseCommand):
             logger.info(f"Undoing DeleteEvent: Restoring {self._backup_event.name}")
             db_service.insert_event(self._backup_event)
             self._is_executed = False
+
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            dict: Command data for persistence
+        """
+        return {
+            "event_id": self.event_id,
+            "backup_event": self._backup_event.to_dict() if self._backup_event else None,
+            "is_executed": self._is_executed
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "DeleteEventCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Command data from database
+
+        Returns:
+            DeleteEventCommand: Reconstructed command
+        """
+        cmd = cls(data["event_id"])
+        if data.get("backup_event"):
+            cmd._backup_event = Event.from_dict(data["backup_event"])
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd

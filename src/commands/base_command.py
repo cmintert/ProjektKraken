@@ -69,6 +69,30 @@ class BaseCommand(ABC):
         """
         pass
 
+    @abstractmethod
+    def to_dict(self) -> Dict:
+        """Serialize command to dictionary for persistence.
+
+        Returns:
+            Dict: Dictionary containing all command data needed for reconstruction.
+
+        """
+        pass
+
+    @classmethod
+    @abstractmethod
+    def from_dict(cls, data: Dict) -> "BaseCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data (Dict): Dictionary containing command data.
+
+        Returns:
+            BaseCommand: Reconstructed command instance.
+
+        """
+        pass
+
     def get_description(self) -> str:
         """Get a human-readable description of this command.
 
