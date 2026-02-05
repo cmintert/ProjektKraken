@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-05
-### Internal
-- Final: Add code review documentation index and summary
+### Fixed
+- Fix Project Explorer multi-select checkboxes by persisting check state in ExplorerModel and updating CSS visibility.
 
 
 *This changelog was automatically generated.*
