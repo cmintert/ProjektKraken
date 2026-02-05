@@ -308,6 +308,11 @@ class WorkerManager(QObject):
                     UpdateEventCommand,
                     DeleteEventCommand,
                 )
+                from src.commands.entity_commands import (
+                    CreateEntityCommand,
+                    UpdateEntityCommand as UpdateEntityCmd,
+                    DeleteEntityCommand as DeleteEntityCmd,
+                )
 
                 # Create history service with current world ID
                 world_id = self.window.current_world.id if self.window.current_world else "default"
@@ -316,6 +321,7 @@ class WorkerManager(QObject):
                 )
 
                 # Register command types for deserialization
+                # Event commands
                 self.window.history_service.register_command_type(
                     "CreateEventCommand", CreateEventCommand
                 )
@@ -324,6 +330,17 @@ class WorkerManager(QObject):
                 )
                 self.window.history_service.register_command_type(
                     "DeleteEventCommand", DeleteEventCommand
+                )
+                
+                # Entity commands
+                self.window.history_service.register_command_type(
+                    "CreateEntityCommand", CreateEntityCommand
+                )
+                self.window.history_service.register_command_type(
+                    "UpdateEntityCommand", UpdateEntityCmd
+                )
+                self.window.history_service.register_command_type(
+                    "DeleteEntityCommand", DeleteEntityCmd
                 )
 
                 # Connect to command coordinator
