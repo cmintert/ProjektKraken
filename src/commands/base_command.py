@@ -69,6 +69,22 @@ class BaseCommand(ABC):
         """
         pass
 
+    def get_description(self) -> str:
+        """Get a human-readable description of this command.
+
+        Returns:
+            str: A brief description of what this command does (e.g., "Create Event").
+
+        """
+        # Default implementation: use class name without "Command" suffix
+        class_name = self.__class__.__name__
+        if class_name.endswith("Command"):
+            class_name = class_name[:-7]  # Remove "Command"
+        # Convert CamelCase to Title Case with spaces
+        import re
+        result = re.sub(r'([A-Z])', r' \1', class_name).strip()
+        return result
+
     @property
     def is_executed(self) -> bool:
         """Checks if the command has been executed.

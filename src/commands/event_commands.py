@@ -41,6 +41,15 @@ class CreateEventCommand(BaseCommand):
 
         self._previous_state = None
 
+    def get_description(self) -> str:
+        """Get a human-readable description of this command.
+
+        Returns:
+            str: Description like "Create Event 'Battle of Vale'".
+
+        """
+        return f"Create Event '{self.event.name}'"
+
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Executes the command to insert the event into the database.
 
@@ -114,6 +123,19 @@ class UpdateEventCommand(BaseCommand):
         self.update_data = update_data
         self._previous_event: Optional[Event] = None
         self._new_event: Optional[Event] = None  # Store result for logs/UI
+
+    def get_description(self) -> str:
+        """Get a human-readable description of this command.
+
+        Returns:
+            str: Description like "Update Event 'Battle of Vale'".
+
+        """
+        if self._new_event:
+            return f"Update Event '{self._new_event.name}'"
+        elif self._previous_event:
+            return f"Update Event '{self._previous_event.name}'"
+        return "Update Event"
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Executes the update.
@@ -221,6 +243,17 @@ class DeleteEventCommand(BaseCommand):
         super().__init__()
         self.event_id = event_id
         self._backup_event: Optional[Event] = None
+
+    def get_description(self) -> str:
+        """Get a human-readable description of this command.
+
+        Returns:
+            str: Description like "Delete Event 'Battle of Vale'".
+
+        """
+        if self._backup_event:
+            return f"Delete Event '{self._backup_event.name}'"
+        return "Delete Event"
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Executes the command to delete the event.

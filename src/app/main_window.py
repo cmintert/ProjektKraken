@@ -323,6 +323,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         # Create Menus
         self.ui_manager.create_file_menu(self.menuBar())
+        self.ui_manager.create_edit_menu(self.menuBar())  # Add Edit menu
         self.ui_manager.create_timeline_menu(self.menuBar())
         self.ui_manager.create_view_menu(self.menuBar())
         self.ui_manager.create_settings_menu(self.menuBar())
@@ -353,8 +354,20 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         # Initialize Command Coordinator
         self.command_coordinator = CommandCoordinator(self)
+        self.coordinator = self.command_coordinator  # Alias for shorter access
         self.command_coordinator.command_requested.connect(
             lambda cmd: self.command_requested.emit(cmd)
+        )
+        # Connect undo/redo signals to worker
+        self.command_coordinator.undo_requested.connect(
+            self.worker.run_undo, Qt.ConnectionType.QueuedConnection
+        )
+        self.command_coordinator.redo_requested.connect(
+            self.worker.run_redo, Qt.ConnectionType.QueuedConnection
+        )
+        # Update UI when history changes
+        self.command_coordinator.history_changed.connect(
+            self.ui_manager.update_undo_redo_state
         )
 
         # Connect editor dirty signals (these are safe to connect early)

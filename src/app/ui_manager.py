@@ -474,6 +474,34 @@ class UIManager:
         exit_action = file_menu.addAction("Exit")
         exit_action.triggered.connect(self.main_window.close)
 
+    def create_edit_menu(self, menu_bar: QMenuBar) -> None:
+        """Creates the Edit menu with undo/redo actions."""
+        from PySide6.QtGui import QKeySequence
+
+        edit_menu = menu_bar.addMenu("Edit")
+
+        # Undo Action
+        self.undo_action = edit_menu.addAction("Undo")
+        self.undo_action.setShortcut(QKeySequence.StandardKey.Undo)
+        self.undo_action.setEnabled(False)  # Disabled by default
+        self.undo_action.triggered.connect(self.main_window.coordinator.undo)
+
+        # Redo Action
+        self.redo_action = edit_menu.addAction("Redo")
+        self.redo_action.setShortcut(QKeySequence.StandardKey.Redo)
+        self.redo_action.setEnabled(False)  # Disabled by default
+        self.redo_action.triggered.connect(self.main_window.coordinator.redo)
+
+    def update_undo_redo_state(self) -> None:
+        """Updates the enabled/disabled state of undo/redo actions.
+
+        Should be called when the command history changes.
+        """
+        if hasattr(self, "undo_action") and hasattr(self, "redo_action"):
+            coordinator = self.main_window.coordinator
+            self.undo_action.setEnabled(coordinator.can_undo())
+            self.redo_action.setEnabled(coordinator.can_redo())
+
     def create_view_menu(self, menu_bar: QMenuBar) -> None:
         """Creates the View menu for toggling docks."""
         view_menu = menu_bar.addMenu("View")

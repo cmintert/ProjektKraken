@@ -5,7 +5,7 @@ database worker thread.
 """
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from PySide6.QtCore import QObject, Signal, Slot
 
@@ -22,15 +22,21 @@ class CommandCoordinator(QObject):
     Manages:
     - Command submission to worker thread
     - Result handling
-    - Undo/redo operations (future enhancement)
+    - Undo/redo stack management
 
     Attributes:
         command_requested: Signal emitted when a command needs execution.
+        undo_requested: Signal emitted when undo operation is requested.
+        redo_requested: Signal emitted when redo operation is requested.
+        history_changed: Signal emitted when undo/redo history changes.
 
     """
 
-    # Signal to send commands to worker thread
+    # Signals
     command_requested = Signal(object)
+    undo_requested = Signal(object)  # Emits the command to undo
+    redo_requested = Signal(object)  # Emits the command to redo
+    history_changed = Signal()  # For UI updates
 
     def __init__(self, main_window: "MainWindowProtocol") -> None:
         """Initialize the command coordinator.
@@ -41,7 +47,10 @@ class CommandCoordinator(QObject):
         """
         super().__init__()
         self.window = main_window
-        logger.debug("CommandCoordinator initialized")
+        self.undo_stack: List["BaseCommand"] = []
+        self.redo_stack: List["BaseCommand"] = []
+        self.max_stack_size = 100  # Limit memory usage
+        logger.debug("CommandCoordinator initialized with undo/redo support")
 
     def execute_command(self, command: "BaseCommand") -> None:
         """Execute a command via the worker thread.
@@ -53,6 +62,66 @@ class CommandCoordinator(QObject):
         logger.debug(f"Executing command: {command.__class__.__name__}")
         self.command_requested.emit(command)
 
+    def undo(self) -> None:
+        """Undo the last executed command.
+
+        Pops a command from the undo stack, requests its undo execution,
+        and pushes it to the redo stack.
+        """
+        if not self.can_undo():
+            logger.warning("Undo called with empty undo stack")
+            return
+
+        command = self.undo_stack.pop()
+        logger.debug(f"Undoing command: {command.__class__.__name__}")
+        self.undo_requested.emit(command)
+        self.redo_stack.append(command)
+        self.history_changed.emit()
+
+    def redo(self) -> None:
+        """Redo the last undone command.
+
+        Pops a command from the redo stack, requests its re-execution,
+        and pushes it to the undo stack.
+        """
+        if not self.can_redo():
+            logger.warning("Redo called with empty redo stack")
+            return
+
+        command = self.redo_stack.pop()
+        logger.debug(f"Redoing command: {command.__class__.__name__}")
+        self.redo_requested.emit(command)
+        self.undo_stack.append(command)
+        self.history_changed.emit()
+
+    def can_undo(self) -> bool:
+        """Check if undo operation is available.
+
+        Returns:
+            bool: True if there are commands in the undo stack.
+
+        """
+        return len(self.undo_stack) > 0
+
+    def can_redo(self) -> bool:
+        """Check if redo operation is available.
+
+        Returns:
+            bool: True if there are commands in the redo stack.
+
+        """
+        return len(self.redo_stack) > 0
+
+    def clear_history(self) -> None:
+        """Clear all undo/redo history.
+
+        Should be called when switching worlds to avoid cross-world undo.
+        """
+        logger.debug("Clearing undo/redo history")
+        self.undo_stack.clear()
+        self.redo_stack.clear()
+        self.history_changed.emit()
+
     @Slot(object)
     def on_command_result(self, result: "CommandResult") -> None:
         """Handle command execution result from worker thread.
@@ -63,6 +132,21 @@ class CommandCoordinator(QObject):
         """
         if result.success:
             logger.info(f"Command succeeded: {result.message}")
+            
+            # Add command to undo stack if it was successful
+            # The command object should be in result.data
+            command = result.data.get("command")
+            if command is not None:
+                self.undo_stack.append(command)
+                self.redo_stack.clear()  # Clear redo stack on new action
+                
+                # Limit stack size to prevent memory bloat
+                if len(self.undo_stack) > self.max_stack_size:
+                    removed = self.undo_stack.pop(0)
+                    logger.debug(f"Removed oldest command from stack: {removed.__class__.__name__}")
+                
+                self.history_changed.emit()
+            
             # Trigger data refresh based on command type
             self._refresh_after_command(result)
         else:
