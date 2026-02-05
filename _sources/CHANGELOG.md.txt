@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-05
-### Internal
-- Optimize deletion UX with high-speed unblocking workflow
+### Added
+- feat: Add global keyboard shortcuts via application event filter
 
 
 *This changelog was automatically generated.*
