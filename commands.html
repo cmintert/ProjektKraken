@@ -321,6 +321,37 @@ BaseCommand: Abstract base class implementing command pattern with undo/redo.</p
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.base_command.BaseCommand.from_dict">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#commands.base_command.BaseCommand" title="commands.base_command.BaseCommand"><span class="pre">BaseCommand</span></a></span></span><a class="reference internal" href="_modules/commands/base_command.html#BaseCommand.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.base_command.BaseCommand.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Deserialize command from dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>Dict</em>) – Dictionary containing command data.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Reconstructed command instance.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.base_command.BaseCommand" title="commands.base_command.BaseCommand">BaseCommand</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.base_command.BaseCommand.get_description">
+<span class="sig-name descname"><span class="pre">get_description</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/commands/base_command.html#BaseCommand.get_description"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.base_command.BaseCommand.get_description" title="Link to this definition">¶</a></dt>
+<dd><p>Get a human-readable description of this command.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A brief description of what this command does (e.g., “Create Event”).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="commands.base_command.BaseCommand.is_executed">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_executed</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#commands.base_command.BaseCommand.is_executed" title="Link to this definition">¶</a></dt>
@@ -331,6 +362,20 @@ BaseCommand: Abstract base class implementing command pattern with undo/redo.</p
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.base_command.BaseCommand.to_dict">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="_modules/commands/base_command.html#BaseCommand.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.base_command.BaseCommand.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Serialize command to dictionary for persistence.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary containing all command data needed for reconstruction.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict</p>
 </dd>
 </dl>
 </dd></dl>
@@ -667,6 +712,37 @@ If None, default values are used.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="commands.entity_commands.CreateEntityCommand.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#commands.entity_commands.CreateEntityCommand" title="commands.entity_commands.CreateEntityCommand"><span class="pre">CreateEntityCommand</span></a></span></span><a class="reference internal" href="_modules/commands/entity_commands.html#CreateEntityCommand.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.entity_commands.CreateEntityCommand.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Deserialize command from dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> – Command data from database</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Reconstructed command</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.entity_commands.CreateEntityCommand" title="commands.entity_commands.CreateEntityCommand">CreateEntityCommand</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.entity_commands.CreateEntityCommand.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/commands/entity_commands.html#CreateEntityCommand.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.entity_commands.CreateEntityCommand.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Serialize command to dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Command data for persistence</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="commands.entity_commands.CreateEntityCommand.undo">
 <span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/entity_commands.html#CreateEntityCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.entity_commands.CreateEntityCommand.undo" title="Link to this definition">¶</a></dt>
 <dd><p>Reverts the entity creation by deleting it from the database.</p>
@@ -708,6 +784,51 @@ If None, default values are used.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult">CommandResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.entity_commands.DeleteEntityCommand.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#commands.entity_commands.DeleteEntityCommand" title="commands.entity_commands.DeleteEntityCommand"><span class="pre">DeleteEntityCommand</span></a></span></span><a class="reference internal" href="_modules/commands/entity_commands.html#DeleteEntityCommand.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.entity_commands.DeleteEntityCommand.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Deserialize command from dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> – Command data from database</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Reconstructed command</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.entity_commands.DeleteEntityCommand" title="commands.entity_commands.DeleteEntityCommand">DeleteEntityCommand</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.entity_commands.DeleteEntityCommand.get_description">
+<span class="sig-name descname"><span class="pre">get_description</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/commands/entity_commands.html#DeleteEntityCommand.get_description"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.entity_commands.DeleteEntityCommand.get_description" title="Link to this definition">¶</a></dt>
+<dd><p>Get a human-readable description of this command.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Description like “Delete Entity ‘John Doe’”.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.entity_commands.DeleteEntityCommand.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/commands/entity_commands.html#DeleteEntityCommand.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.entity_commands.DeleteEntityCommand.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Serialize command to dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Command data for persistence</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
 </dd>
 </dl>
 </dd></dl>
@@ -758,6 +879,37 @@ If None, default values are used.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult">CommandResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.entity_commands.UpdateEntityCommand.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#commands.entity_commands.UpdateEntityCommand" title="commands.entity_commands.UpdateEntityCommand"><span class="pre">UpdateEntityCommand</span></a></span></span><a class="reference internal" href="_modules/commands/entity_commands.html#UpdateEntityCommand.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.entity_commands.UpdateEntityCommand.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Deserialize command from dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> – Command data from database</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Reconstructed command</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.entity_commands.UpdateEntityCommand" title="commands.entity_commands.UpdateEntityCommand">UpdateEntityCommand</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.entity_commands.UpdateEntityCommand.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/commands/entity_commands.html#UpdateEntityCommand.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.entity_commands.UpdateEntityCommand.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Serialize command to dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Command data for persistence</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
 </dd>
 </dl>
 </dd></dl>
@@ -819,6 +971,51 @@ If None, default values are used.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="commands.event_commands.CreateEventCommand.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#commands.event_commands.CreateEventCommand" title="commands.event_commands.CreateEventCommand"><span class="pre">CreateEventCommand</span></a></span></span><a class="reference internal" href="_modules/commands/event_commands.html#CreateEventCommand.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.event_commands.CreateEventCommand.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Deserialize command from dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> – Command data from database</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Reconstructed command</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.event_commands.CreateEventCommand" title="commands.event_commands.CreateEventCommand">CreateEventCommand</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.event_commands.CreateEventCommand.get_description">
+<span class="sig-name descname"><span class="pre">get_description</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/commands/event_commands.html#CreateEventCommand.get_description"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.event_commands.CreateEventCommand.get_description" title="Link to this definition">¶</a></dt>
+<dd><p>Get a human-readable description of this command.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Description like “Create Event ‘Battle of Vale’”.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.event_commands.CreateEventCommand.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/commands/event_commands.html#CreateEventCommand.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.event_commands.CreateEventCommand.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Serialize command to dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Command data for persistence</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="commands.event_commands.CreateEventCommand.undo">
 <span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/event_commands.html#CreateEventCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.event_commands.CreateEventCommand.undo" title="Link to this definition">¶</a></dt>
 <dd><p>Reverts the event creation by deleting it from the database.</p>
@@ -860,6 +1057,51 @@ If None, default values are used.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult">CommandResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.event_commands.DeleteEventCommand.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#commands.event_commands.DeleteEventCommand" title="commands.event_commands.DeleteEventCommand"><span class="pre">DeleteEventCommand</span></a></span></span><a class="reference internal" href="_modules/commands/event_commands.html#DeleteEventCommand.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.event_commands.DeleteEventCommand.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Deserialize command from dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> – Command data from database</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Reconstructed command</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.event_commands.DeleteEventCommand" title="commands.event_commands.DeleteEventCommand">DeleteEventCommand</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.event_commands.DeleteEventCommand.get_description">
+<span class="sig-name descname"><span class="pre">get_description</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/commands/event_commands.html#DeleteEventCommand.get_description"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.event_commands.DeleteEventCommand.get_description" title="Link to this definition">¶</a></dt>
+<dd><p>Get a human-readable description of this command.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Description like “Delete Event ‘Battle of Vale’”.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.event_commands.DeleteEventCommand.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/commands/event_commands.html#DeleteEventCommand.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.event_commands.DeleteEventCommand.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Serialize command to dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Command data for persistence</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
 </dd>
 </dl>
 </dd></dl>
@@ -911,6 +1153,51 @@ state before update for undo.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult">CommandResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.event_commands.UpdateEventCommand.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#commands.event_commands.UpdateEventCommand" title="commands.event_commands.UpdateEventCommand"><span class="pre">UpdateEventCommand</span></a></span></span><a class="reference internal" href="_modules/commands/event_commands.html#UpdateEventCommand.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.event_commands.UpdateEventCommand.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Deserialize command from dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> – Command data from database</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Reconstructed command</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.event_commands.UpdateEventCommand" title="commands.event_commands.UpdateEventCommand">UpdateEventCommand</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.event_commands.UpdateEventCommand.get_description">
+<span class="sig-name descname"><span class="pre">get_description</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/commands/event_commands.html#UpdateEventCommand.get_description"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.event_commands.UpdateEventCommand.get_description" title="Link to this definition">¶</a></dt>
+<dd><p>Get a human-readable description of this command.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Description like “Update Event ‘Battle of Vale’”.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.event_commands.UpdateEventCommand.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/commands/event_commands.html#UpdateEventCommand.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.event_commands.UpdateEventCommand.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Serialize command to dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Command data for persistence</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
 </dd>
 </dl>
 </dd></dl>
@@ -973,6 +1260,18 @@ state before update for undo.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="commands.longform_commands.DemoteLongformEntryCommand.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#commands.longform_commands.DemoteLongformEntryCommand" title="commands.longform_commands.DemoteLongformEntryCommand"><span class="pre">DemoteLongformEntryCommand</span></a></span></span><a class="reference internal" href="_modules/commands/longform_commands.html#DemoteLongformEntryCommand.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.DemoteLongformEntryCommand.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Deserialize command from dictionary.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.longform_commands.DemoteLongformEntryCommand.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/commands/longform_commands.html#DemoteLongformEntryCommand.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.DemoteLongformEntryCommand.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Serialize command to dictionary.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="commands.longform_commands.DemoteLongformEntryCommand.undo">
 <span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/longform_commands.html#DemoteLongformEntryCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.DemoteLongformEntryCommand.undo" title="Link to this definition">¶</a></dt>
 <dd><p>Undo the demote by restoring old metadata.</p>
@@ -1023,6 +1322,18 @@ state before update for undo.</p>
 <dd class="field-odd"><p><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult">CommandResult</a></p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.longform_commands.MoveLongformEntryCommand.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#commands.longform_commands.MoveLongformEntryCommand" title="commands.longform_commands.MoveLongformEntryCommand"><span class="pre">MoveLongformEntryCommand</span></a></span></span><a class="reference internal" href="_modules/commands/longform_commands.html#MoveLongformEntryCommand.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.MoveLongformEntryCommand.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Deserialize command from dictionary.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.longform_commands.MoveLongformEntryCommand.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/commands/longform_commands.html#MoveLongformEntryCommand.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.MoveLongformEntryCommand.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Serialize command to dictionary.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1078,6 +1389,18 @@ state before update for undo.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="commands.longform_commands.PromoteLongformEntryCommand.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#commands.longform_commands.PromoteLongformEntryCommand" title="commands.longform_commands.PromoteLongformEntryCommand"><span class="pre">PromoteLongformEntryCommand</span></a></span></span><a class="reference internal" href="_modules/commands/longform_commands.html#PromoteLongformEntryCommand.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.PromoteLongformEntryCommand.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Deserialize command from dictionary.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.longform_commands.PromoteLongformEntryCommand.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/commands/longform_commands.html#PromoteLongformEntryCommand.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.PromoteLongformEntryCommand.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Serialize command to dictionary.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="commands.longform_commands.PromoteLongformEntryCommand.undo">
 <span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/longform_commands.html#PromoteLongformEntryCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.PromoteLongformEntryCommand.undo" title="Link to this definition">¶</a></dt>
 <dd><p>Undo the promote by restoring old metadata.</p>
@@ -1127,6 +1450,18 @@ state before update for undo.</p>
 <dd class="field-odd"><p><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult">CommandResult</a></p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.longform_commands.RemoveLongformEntryCommand.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#commands.longform_commands.RemoveLongformEntryCommand" title="commands.longform_commands.RemoveLongformEntryCommand"><span class="pre">RemoveLongformEntryCommand</span></a></span></span><a class="reference internal" href="_modules/commands/longform_commands.html#RemoveLongformEntryCommand.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.RemoveLongformEntryCommand.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Deserialize command from dictionary.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.longform_commands.RemoveLongformEntryCommand.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/commands/longform_commands.html#RemoveLongformEntryCommand.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.longform_commands.RemoveLongformEntryCommand.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Serialize command to dictionary.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1188,6 +1523,18 @@ state before update for undo.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="commands.relation_commands.AddRelationCommand.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#commands.relation_commands.AddRelationCommand" title="commands.relation_commands.AddRelationCommand"><span class="pre">AddRelationCommand</span></a></span></span><a class="reference internal" href="_modules/commands/relation_commands.html#AddRelationCommand.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.relation_commands.AddRelationCommand.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Deserialize command from dictionary.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.relation_commands.AddRelationCommand.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="_modules/commands/relation_commands.html#AddRelationCommand.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.relation_commands.AddRelationCommand.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Serialize command to dictionary.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="commands.relation_commands.AddRelationCommand.undo">
 <span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/relation_commands.html#AddRelationCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.relation_commands.AddRelationCommand.undo" title="Link to this definition">¶</a></dt>
 <dd><p>Reverts the action by deleting the created relation(s).</p>
@@ -1223,6 +1570,18 @@ state before update for undo.</p>
 <dd class="field-even"><p>bool</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.relation_commands.RemoveRelationCommand.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#commands.relation_commands.RemoveRelationCommand" title="commands.relation_commands.RemoveRelationCommand"><span class="pre">RemoveRelationCommand</span></a></span></span><a class="reference internal" href="_modules/commands/relation_commands.html#RemoveRelationCommand.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.relation_commands.RemoveRelationCommand.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Deserialize command from dictionary.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.relation_commands.RemoveRelationCommand.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="_modules/commands/relation_commands.html#RemoveRelationCommand.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.relation_commands.RemoveRelationCommand.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Serialize command to dictionary.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1266,6 +1625,18 @@ state before update for undo.</p>
 <dd class="field-even"><p>bool</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.relation_commands.UpdateRelationCommand.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#commands.relation_commands.UpdateRelationCommand" title="commands.relation_commands.UpdateRelationCommand"><span class="pre">UpdateRelationCommand</span></a></span></span><a class="reference internal" href="_modules/commands/relation_commands.html#UpdateRelationCommand.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.relation_commands.UpdateRelationCommand.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Deserialize command from dictionary.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.relation_commands.UpdateRelationCommand.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="_modules/commands/relation_commands.html#UpdateRelationCommand.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.relation_commands.UpdateRelationCommand.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Serialize command to dictionary.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1329,9 +1700,54 @@ snippet, and offsets.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="commands.wiki_commands.ProcessWikiLinksCommand.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#commands.wiki_commands.ProcessWikiLinksCommand" title="commands.wiki_commands.ProcessWikiLinksCommand"><span class="pre">ProcessWikiLinksCommand</span></a></span></span><a class="reference internal" href="_modules/commands/wiki_commands.html#ProcessWikiLinksCommand.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.wiki_commands.ProcessWikiLinksCommand.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Deserialize command from dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> – Command data from database</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Reconstructed command</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.wiki_commands.ProcessWikiLinksCommand" title="commands.wiki_commands.ProcessWikiLinksCommand">ProcessWikiLinksCommand</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.wiki_commands.ProcessWikiLinksCommand.get_description">
+<span class="sig-name descname"><span class="pre">get_description</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/commands/wiki_commands.html#ProcessWikiLinksCommand.get_description"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.wiki_commands.ProcessWikiLinksCommand.get_description" title="Link to this definition">¶</a></dt>
+<dd><p>Get a human-readable description of this command.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Description like “Process WikiLinks for Entity ‘SourceID’”.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.wiki_commands.ProcessWikiLinksCommand.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/commands/wiki_commands.html#ProcessWikiLinksCommand.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.wiki_commands.ProcessWikiLinksCommand.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Serialize command to dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Command data for persistence</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="commands.wiki_commands.ProcessWikiLinksCommand.undo">
 <span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/wiki_commands.html#ProcessWikiLinksCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.wiki_commands.ProcessWikiLinksCommand.undo" title="Link to this definition">¶</a></dt>
-<dd><p>Undo operation is not applicable for read-only validation.</p>
+<dd><p>Undo operation: deletes the created ‘mentions’ relations.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1406,7 +1822,10 @@ functionality. Commands encapsulate actions related to entities, events, and rel
 <li><a class="reference internal" href="#commands.base_command.BaseCommand"><code class="docutils literal notranslate"><span class="pre">BaseCommand</span></code></a><ul>
 <li><a class="reference internal" href="#commands.base_command.BaseCommand.__init__"><code class="docutils literal notranslate"><span class="pre">BaseCommand.__init__()</span></code></a></li>
 <li><a class="reference internal" href="#commands.base_command.BaseCommand.execute"><code class="docutils literal notranslate"><span class="pre">BaseCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.base_command.BaseCommand.from_dict"><code class="docutils literal notranslate"><span class="pre">BaseCommand.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#commands.base_command.BaseCommand.get_description"><code class="docutils literal notranslate"><span class="pre">BaseCommand.get_description()</span></code></a></li>
 <li><a class="reference internal" href="#commands.base_command.BaseCommand.is_executed"><code class="docutils literal notranslate"><span class="pre">BaseCommand.is_executed</span></code></a></li>
+<li><a class="reference internal" href="#commands.base_command.BaseCommand.to_dict"><code class="docutils literal notranslate"><span class="pre">BaseCommand.to_dict()</span></code></a></li>
 <li><a class="reference internal" href="#commands.base_command.BaseCommand.undo"><code class="docutils literal notranslate"><span class="pre">BaseCommand.undo()</span></code></a></li>
 </ul>
 </li>
@@ -1455,18 +1874,25 @@ functionality. Commands encapsulate actions related to entities, events, and rel
 <li><a class="reference internal" href="#commands.entity_commands.CreateEntityCommand"><code class="docutils literal notranslate"><span class="pre">CreateEntityCommand</span></code></a><ul>
 <li><a class="reference internal" href="#commands.entity_commands.CreateEntityCommand.__init__"><code class="docutils literal notranslate"><span class="pre">CreateEntityCommand.__init__()</span></code></a></li>
 <li><a class="reference internal" href="#commands.entity_commands.CreateEntityCommand.execute"><code class="docutils literal notranslate"><span class="pre">CreateEntityCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.entity_commands.CreateEntityCommand.from_dict"><code class="docutils literal notranslate"><span class="pre">CreateEntityCommand.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#commands.entity_commands.CreateEntityCommand.to_dict"><code class="docutils literal notranslate"><span class="pre">CreateEntityCommand.to_dict()</span></code></a></li>
 <li><a class="reference internal" href="#commands.entity_commands.CreateEntityCommand.undo"><code class="docutils literal notranslate"><span class="pre">CreateEntityCommand.undo()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#commands.entity_commands.DeleteEntityCommand"><code class="docutils literal notranslate"><span class="pre">DeleteEntityCommand</span></code></a><ul>
 <li><a class="reference internal" href="#commands.entity_commands.DeleteEntityCommand.__init__"><code class="docutils literal notranslate"><span class="pre">DeleteEntityCommand.__init__()</span></code></a></li>
 <li><a class="reference internal" href="#commands.entity_commands.DeleteEntityCommand.execute"><code class="docutils literal notranslate"><span class="pre">DeleteEntityCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.entity_commands.DeleteEntityCommand.from_dict"><code class="docutils literal notranslate"><span class="pre">DeleteEntityCommand.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#commands.entity_commands.DeleteEntityCommand.get_description"><code class="docutils literal notranslate"><span class="pre">DeleteEntityCommand.get_description()</span></code></a></li>
+<li><a class="reference internal" href="#commands.entity_commands.DeleteEntityCommand.to_dict"><code class="docutils literal notranslate"><span class="pre">DeleteEntityCommand.to_dict()</span></code></a></li>
 <li><a class="reference internal" href="#commands.entity_commands.DeleteEntityCommand.undo"><code class="docutils literal notranslate"><span class="pre">DeleteEntityCommand.undo()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#commands.entity_commands.UpdateEntityCommand"><code class="docutils literal notranslate"><span class="pre">UpdateEntityCommand</span></code></a><ul>
 <li><a class="reference internal" href="#commands.entity_commands.UpdateEntityCommand.__init__"><code class="docutils literal notranslate"><span class="pre">UpdateEntityCommand.__init__()</span></code></a></li>
 <li><a class="reference internal" href="#commands.entity_commands.UpdateEntityCommand.execute"><code class="docutils literal notranslate"><span class="pre">UpdateEntityCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.entity_commands.UpdateEntityCommand.from_dict"><code class="docutils literal notranslate"><span class="pre">UpdateEntityCommand.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#commands.entity_commands.UpdateEntityCommand.to_dict"><code class="docutils literal notranslate"><span class="pre">UpdateEntityCommand.to_dict()</span></code></a></li>
 <li><a class="reference internal" href="#commands.entity_commands.UpdateEntityCommand.undo"><code class="docutils literal notranslate"><span class="pre">UpdateEntityCommand.undo()</span></code></a></li>
 </ul>
 </li>
@@ -1476,18 +1902,27 @@ functionality. Commands encapsulate actions related to entities, events, and rel
 <li><a class="reference internal" href="#commands.event_commands.CreateEventCommand"><code class="docutils literal notranslate"><span class="pre">CreateEventCommand</span></code></a><ul>
 <li><a class="reference internal" href="#commands.event_commands.CreateEventCommand.__init__"><code class="docutils literal notranslate"><span class="pre">CreateEventCommand.__init__()</span></code></a></li>
 <li><a class="reference internal" href="#commands.event_commands.CreateEventCommand.execute"><code class="docutils literal notranslate"><span class="pre">CreateEventCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.event_commands.CreateEventCommand.from_dict"><code class="docutils literal notranslate"><span class="pre">CreateEventCommand.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#commands.event_commands.CreateEventCommand.get_description"><code class="docutils literal notranslate"><span class="pre">CreateEventCommand.get_description()</span></code></a></li>
+<li><a class="reference internal" href="#commands.event_commands.CreateEventCommand.to_dict"><code class="docutils literal notranslate"><span class="pre">CreateEventCommand.to_dict()</span></code></a></li>
 <li><a class="reference internal" href="#commands.event_commands.CreateEventCommand.undo"><code class="docutils literal notranslate"><span class="pre">CreateEventCommand.undo()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#commands.event_commands.DeleteEventCommand"><code class="docutils literal notranslate"><span class="pre">DeleteEventCommand</span></code></a><ul>
 <li><a class="reference internal" href="#commands.event_commands.DeleteEventCommand.__init__"><code class="docutils literal notranslate"><span class="pre">DeleteEventCommand.__init__()</span></code></a></li>
 <li><a class="reference internal" href="#commands.event_commands.DeleteEventCommand.execute"><code class="docutils literal notranslate"><span class="pre">DeleteEventCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.event_commands.DeleteEventCommand.from_dict"><code class="docutils literal notranslate"><span class="pre">DeleteEventCommand.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#commands.event_commands.DeleteEventCommand.get_description"><code class="docutils literal notranslate"><span class="pre">DeleteEventCommand.get_description()</span></code></a></li>
+<li><a class="reference internal" href="#commands.event_commands.DeleteEventCommand.to_dict"><code class="docutils literal notranslate"><span class="pre">DeleteEventCommand.to_dict()</span></code></a></li>
 <li><a class="reference internal" href="#commands.event_commands.DeleteEventCommand.undo"><code class="docutils literal notranslate"><span class="pre">DeleteEventCommand.undo()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#commands.event_commands.UpdateEventCommand"><code class="docutils literal notranslate"><span class="pre">UpdateEventCommand</span></code></a><ul>
 <li><a class="reference internal" href="#commands.event_commands.UpdateEventCommand.__init__"><code class="docutils literal notranslate"><span class="pre">UpdateEventCommand.__init__()</span></code></a></li>
 <li><a class="reference internal" href="#commands.event_commands.UpdateEventCommand.execute"><code class="docutils literal notranslate"><span class="pre">UpdateEventCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.event_commands.UpdateEventCommand.from_dict"><code class="docutils literal notranslate"><span class="pre">UpdateEventCommand.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#commands.event_commands.UpdateEventCommand.get_description"><code class="docutils literal notranslate"><span class="pre">UpdateEventCommand.get_description()</span></code></a></li>
+<li><a class="reference internal" href="#commands.event_commands.UpdateEventCommand.to_dict"><code class="docutils literal notranslate"><span class="pre">UpdateEventCommand.to_dict()</span></code></a></li>
 <li><a class="reference internal" href="#commands.event_commands.UpdateEventCommand.undo"><code class="docutils literal notranslate"><span class="pre">UpdateEventCommand.undo()</span></code></a></li>
 </ul>
 </li>
@@ -1497,24 +1932,32 @@ functionality. Commands encapsulate actions related to entities, events, and rel
 <li><a class="reference internal" href="#commands.longform_commands.DemoteLongformEntryCommand"><code class="docutils literal notranslate"><span class="pre">DemoteLongformEntryCommand</span></code></a><ul>
 <li><a class="reference internal" href="#commands.longform_commands.DemoteLongformEntryCommand.__init__"><code class="docutils literal notranslate"><span class="pre">DemoteLongformEntryCommand.__init__()</span></code></a></li>
 <li><a class="reference internal" href="#commands.longform_commands.DemoteLongformEntryCommand.execute"><code class="docutils literal notranslate"><span class="pre">DemoteLongformEntryCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.longform_commands.DemoteLongformEntryCommand.from_dict"><code class="docutils literal notranslate"><span class="pre">DemoteLongformEntryCommand.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#commands.longform_commands.DemoteLongformEntryCommand.to_dict"><code class="docutils literal notranslate"><span class="pre">DemoteLongformEntryCommand.to_dict()</span></code></a></li>
 <li><a class="reference internal" href="#commands.longform_commands.DemoteLongformEntryCommand.undo"><code class="docutils literal notranslate"><span class="pre">DemoteLongformEntryCommand.undo()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#commands.longform_commands.MoveLongformEntryCommand"><code class="docutils literal notranslate"><span class="pre">MoveLongformEntryCommand</span></code></a><ul>
 <li><a class="reference internal" href="#commands.longform_commands.MoveLongformEntryCommand.__init__"><code class="docutils literal notranslate"><span class="pre">MoveLongformEntryCommand.__init__()</span></code></a></li>
 <li><a class="reference internal" href="#commands.longform_commands.MoveLongformEntryCommand.execute"><code class="docutils literal notranslate"><span class="pre">MoveLongformEntryCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.longform_commands.MoveLongformEntryCommand.from_dict"><code class="docutils literal notranslate"><span class="pre">MoveLongformEntryCommand.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#commands.longform_commands.MoveLongformEntryCommand.to_dict"><code class="docutils literal notranslate"><span class="pre">MoveLongformEntryCommand.to_dict()</span></code></a></li>
 <li><a class="reference internal" href="#commands.longform_commands.MoveLongformEntryCommand.undo"><code class="docutils literal notranslate"><span class="pre">MoveLongformEntryCommand.undo()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#commands.longform_commands.PromoteLongformEntryCommand"><code class="docutils literal notranslate"><span class="pre">PromoteLongformEntryCommand</span></code></a><ul>
 <li><a class="reference internal" href="#commands.longform_commands.PromoteLongformEntryCommand.__init__"><code class="docutils literal notranslate"><span class="pre">PromoteLongformEntryCommand.__init__()</span></code></a></li>
 <li><a class="reference internal" href="#commands.longform_commands.PromoteLongformEntryCommand.execute"><code class="docutils literal notranslate"><span class="pre">PromoteLongformEntryCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.longform_commands.PromoteLongformEntryCommand.from_dict"><code class="docutils literal notranslate"><span class="pre">PromoteLongformEntryCommand.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#commands.longform_commands.PromoteLongformEntryCommand.to_dict"><code class="docutils literal notranslate"><span class="pre">PromoteLongformEntryCommand.to_dict()</span></code></a></li>
 <li><a class="reference internal" href="#commands.longform_commands.PromoteLongformEntryCommand.undo"><code class="docutils literal notranslate"><span class="pre">PromoteLongformEntryCommand.undo()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#commands.longform_commands.RemoveLongformEntryCommand"><code class="docutils literal notranslate"><span class="pre">RemoveLongformEntryCommand</span></code></a><ul>
 <li><a class="reference internal" href="#commands.longform_commands.RemoveLongformEntryCommand.__init__"><code class="docutils literal notranslate"><span class="pre">RemoveLongformEntryCommand.__init__()</span></code></a></li>
 <li><a class="reference internal" href="#commands.longform_commands.RemoveLongformEntryCommand.execute"><code class="docutils literal notranslate"><span class="pre">RemoveLongformEntryCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.longform_commands.RemoveLongformEntryCommand.from_dict"><code class="docutils literal notranslate"><span class="pre">RemoveLongformEntryCommand.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#commands.longform_commands.RemoveLongformEntryCommand.to_dict"><code class="docutils literal notranslate"><span class="pre">RemoveLongformEntryCommand.to_dict()</span></code></a></li>
 <li><a class="reference internal" href="#commands.longform_commands.RemoveLongformEntryCommand.undo"><code class="docutils literal notranslate"><span class="pre">RemoveLongformEntryCommand.undo()</span></code></a></li>
 </ul>
 </li>
@@ -1524,18 +1967,24 @@ functionality. Commands encapsulate actions related to entities, events, and rel
 <li><a class="reference internal" href="#commands.relation_commands.AddRelationCommand"><code class="docutils literal notranslate"><span class="pre">AddRelationCommand</span></code></a><ul>
 <li><a class="reference internal" href="#commands.relation_commands.AddRelationCommand.__init__"><code class="docutils literal notranslate"><span class="pre">AddRelationCommand.__init__()</span></code></a></li>
 <li><a class="reference internal" href="#commands.relation_commands.AddRelationCommand.execute"><code class="docutils literal notranslate"><span class="pre">AddRelationCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.relation_commands.AddRelationCommand.from_dict"><code class="docutils literal notranslate"><span class="pre">AddRelationCommand.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#commands.relation_commands.AddRelationCommand.to_dict"><code class="docutils literal notranslate"><span class="pre">AddRelationCommand.to_dict()</span></code></a></li>
 <li><a class="reference internal" href="#commands.relation_commands.AddRelationCommand.undo"><code class="docutils literal notranslate"><span class="pre">AddRelationCommand.undo()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#commands.relation_commands.RemoveRelationCommand"><code class="docutils literal notranslate"><span class="pre">RemoveRelationCommand</span></code></a><ul>
 <li><a class="reference internal" href="#commands.relation_commands.RemoveRelationCommand.__init__"><code class="docutils literal notranslate"><span class="pre">RemoveRelationCommand.__init__()</span></code></a></li>
 <li><a class="reference internal" href="#commands.relation_commands.RemoveRelationCommand.execute"><code class="docutils literal notranslate"><span class="pre">RemoveRelationCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.relation_commands.RemoveRelationCommand.from_dict"><code class="docutils literal notranslate"><span class="pre">RemoveRelationCommand.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#commands.relation_commands.RemoveRelationCommand.to_dict"><code class="docutils literal notranslate"><span class="pre">RemoveRelationCommand.to_dict()</span></code></a></li>
 <li><a class="reference internal" href="#commands.relation_commands.RemoveRelationCommand.undo"><code class="docutils literal notranslate"><span class="pre">RemoveRelationCommand.undo()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#commands.relation_commands.UpdateRelationCommand"><code class="docutils literal notranslate"><span class="pre">UpdateRelationCommand</span></code></a><ul>
 <li><a class="reference internal" href="#commands.relation_commands.UpdateRelationCommand.__init__"><code class="docutils literal notranslate"><span class="pre">UpdateRelationCommand.__init__()</span></code></a></li>
 <li><a class="reference internal" href="#commands.relation_commands.UpdateRelationCommand.execute"><code class="docutils literal notranslate"><span class="pre">UpdateRelationCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.relation_commands.UpdateRelationCommand.from_dict"><code class="docutils literal notranslate"><span class="pre">UpdateRelationCommand.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#commands.relation_commands.UpdateRelationCommand.to_dict"><code class="docutils literal notranslate"><span class="pre">UpdateRelationCommand.to_dict()</span></code></a></li>
 <li><a class="reference internal" href="#commands.relation_commands.UpdateRelationCommand.undo"><code class="docutils literal notranslate"><span class="pre">UpdateRelationCommand.undo()</span></code></a></li>
 </ul>
 </li>
@@ -1545,6 +1994,9 @@ functionality. Commands encapsulate actions related to entities, events, and rel
 <li><a class="reference internal" href="#commands.wiki_commands.ProcessWikiLinksCommand"><code class="docutils literal notranslate"><span class="pre">ProcessWikiLinksCommand</span></code></a><ul>
 <li><a class="reference internal" href="#commands.wiki_commands.ProcessWikiLinksCommand.__init__"><code class="docutils literal notranslate"><span class="pre">ProcessWikiLinksCommand.__init__()</span></code></a></li>
 <li><a class="reference internal" href="#commands.wiki_commands.ProcessWikiLinksCommand.execute"><code class="docutils literal notranslate"><span class="pre">ProcessWikiLinksCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.wiki_commands.ProcessWikiLinksCommand.from_dict"><code class="docutils literal notranslate"><span class="pre">ProcessWikiLinksCommand.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#commands.wiki_commands.ProcessWikiLinksCommand.get_description"><code class="docutils literal notranslate"><span class="pre">ProcessWikiLinksCommand.get_description()</span></code></a></li>
+<li><a class="reference internal" href="#commands.wiki_commands.ProcessWikiLinksCommand.to_dict"><code class="docutils literal notranslate"><span class="pre">ProcessWikiLinksCommand.to_dict()</span></code></a></li>
 <li><a class="reference internal" href="#commands.wiki_commands.ProcessWikiLinksCommand.undo"><code class="docutils literal notranslate"><span class="pre">ProcessWikiLinksCommand.undo()</span></code></a></li>
 </ul>
 </li>

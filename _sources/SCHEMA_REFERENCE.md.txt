@@ -131,6 +131,28 @@ erDiagram
         REAL created_at
     }
 
+    command_history {
+        INTEGER id PK
+        TEXT world_id
+        TEXT session_id
+        TEXT command_type
+        TEXT command_data
+        TEXT description
+        REAL timestamp
+        BOOLEAN is_executed
+        TEXT aggregate_id
+        TEXT aggregate_type
+        BOOLEAN is_snapshot
+    }
+
+    edit_sessions {
+        TEXT session_id PK
+        TEXT world_id
+        REAL started_at
+        REAL ended_at
+        TEXT app_version
+    }
+
     markers }o--|| maps : "map_id"
     moving_features }o--|| markers : "marker_id"
     event_tags }o--|| events : "event_id"
@@ -301,3 +323,29 @@ erDiagram
 | `text_hash` | TEXT |  |
 | `metadata` | JSON | DEFAULT '{}' |
 | `created_at` | REAL | NOT NULL |
+
+### `command_history`
+
+| Column | Type | Constraints |
+|--------|------|-------------|
+| `id` | INTEGER | PRIMARY KEY AUTOINCREMENT |
+| `world_id` | TEXT | NOT NULL |
+| `session_id` | TEXT | NOT NULL |
+| `command_type` | TEXT | NOT NULL |
+| `command_data` | TEXT | NOT NULL |
+| `description` | TEXT |  |
+| `timestamp` | REAL | NOT NULL |
+| `is_executed` | BOOLEAN | DEFAULT 1 |
+| `aggregate_id` | TEXT |  |
+| `aggregate_type` | TEXT |  |
+| `is_snapshot` | BOOLEAN | DEFAULT 0 |
+
+### `edit_sessions`
+
+| Column | Type | Constraints |
+|--------|------|-------------|
+| `session_id` | TEXT | PRIMARY KEY |
+| `world_id` | TEXT | NOT NULL |
+| `started_at` | REAL | NOT NULL |
+| `ended_at` | REAL |  |
+| `app_version` | TEXT |  |

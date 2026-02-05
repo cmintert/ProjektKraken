@@ -323,8 +323,8 @@
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;:memory:&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Args:</span>
-<span class="sd">            db_path: Path to the .kraken database file.</span>
-<span class="sd">                     Defaults to :memory: for testing.</span>
+<span class="sd">        db_path: Path to the .kraken database file.</span>
+<span class="sd">                 Defaults to :memory: for testing.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">db_path</span> <span class="o">=</span> <span class="n">db_path</span>
@@ -663,6 +663,39 @@
 
 <span class="s2">        CREATE INDEX IF NOT EXISTS idx_embeddings_created_at</span>
 <span class="s2">            ON embeddings(created_at);</span>
+
+<span class="s2">        -- Command History for Persistent Undo/Redo (Phase 2)</span>
+<span class="s2">        CREATE TABLE IF NOT EXISTS command_history (</span>
+<span class="s2">            id INTEGER PRIMARY KEY AUTOINCREMENT,</span>
+<span class="s2">            world_id TEXT NOT NULL,</span>
+<span class="s2">            session_id TEXT NOT NULL,</span>
+<span class="s2">            command_type TEXT NOT NULL,</span>
+<span class="s2">            command_data TEXT NOT NULL,</span>
+<span class="s2">            description TEXT,</span>
+<span class="s2">            timestamp REAL NOT NULL,</span>
+<span class="s2">            is_executed BOOLEAN DEFAULT 1,</span>
+<span class="s2">            aggregate_id TEXT,</span>
+<span class="s2">            aggregate_type TEXT,</span>
+<span class="s2">            is_snapshot BOOLEAN DEFAULT 0</span>
+<span class="s2">        );</span>
+
+<span class="s2">        CREATE INDEX IF NOT EXISTS idx_ch_world_time </span>
+<span class="s2">            ON command_history(world_id, timestamp DESC);</span>
+<span class="s2">        </span>
+<span class="s2">        CREATE INDEX IF NOT EXISTS idx_ch_session </span>
+<span class="s2">            ON command_history(session_id);</span>
+<span class="s2">        </span>
+<span class="s2">        CREATE INDEX IF NOT EXISTS idx_ch_aggregate </span>
+<span class="s2">            ON command_history(aggregate_id, timestamp);</span>
+
+<span class="s2">        -- Edit Sessions for Session Tracking</span>
+<span class="s2">        CREATE TABLE IF NOT EXISTS edit_sessions (</span>
+<span class="s2">            session_id TEXT PRIMARY KEY,</span>
+<span class="s2">            world_id TEXT NOT NULL,</span>
+<span class="s2">            started_at REAL NOT NULL,</span>
+<span class="s2">            ended_at REAL,</span>
+<span class="s2">            app_version TEXT</span>
+<span class="s2">        );</span>
 <span class="s2">        &quot;&quot;&quot;</span>
 
         <span class="k">try</span><span class="p">:</span>
@@ -694,6 +727,30 @@
                 <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
                     <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to add color column to tags table: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span>
+
+            <span class="c1"># Check for &#39;timestamp&#39; column in &#39;command_history&#39; table</span>
+            <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;PRAGMA table_info(command_history)&quot;</span><span class="p">)</span>
+            <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()]</span>
+
+            <span class="k">if</span> <span class="s2">&quot;timestamp&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="s2">&quot;Applying migration: Add timestamp column to command_history table&quot;</span>
+                <span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="c1"># Add column with default 0.0 (old commands will have 0 timestamp)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                        <span class="s2">&quot;ALTER TABLE command_history ADD COLUMN timestamp REAL NOT NULL DEFAULT 0.0&quot;</span>
+                    <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="s2">&quot;Migration successful: Added timestamp column to command_history table&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Failed to add timestamp column to command_history table: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
                     <span class="k">raise</span>
 
             <span class="c1"># Migrate trajectory data from old format to MF-JSON</span>

@@ -408,6 +408,28 @@
         REAL created_at
     }
 
+    command_history {
+        INTEGER id PK
+        TEXT world_id
+        TEXT session_id
+        TEXT command_type
+        TEXT command_data
+        TEXT description
+        REAL timestamp
+        BOOLEAN is_executed
+        TEXT aggregate_id
+        TEXT aggregate_type
+        BOOLEAN is_snapshot
+    }
+
+    edit_sessions {
+        TEXT session_id PK
+        TEXT world_id
+        REAL started_at
+        REAL ended_at
+        TEXT app_version
+    }
+
     markers }o--|| maps : &quot;map_id&quot;
     moving_features }o--|| markers : &quot;marker_id&quot;
     event_tags }o--|| events : &quot;event_id&quot;
@@ -956,6 +978,100 @@
 </table>
 </div>
 </section>
+<section id="command-history">
+<h3><code class="docutils literal notranslate"><span class="pre">command_history</span></code><a class="headerlink" href="#command-history" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Column</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Constraints</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">id</span></code></p></td>
+<td><p>INTEGER</p></td>
+<td><p>PRIMARY KEY AUTOINCREMENT</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">world_id</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>NOT NULL</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">session_id</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>NOT NULL</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">command_type</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>NOT NULL</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">command_data</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>NOT NULL</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">description</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">timestamp</span></code></p></td>
+<td><p>REAL</p></td>
+<td><p>NOT NULL</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">is_executed</span></code></p></td>
+<td><p>BOOLEAN</p></td>
+<td><p>DEFAULT 1</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">aggregate_id</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">aggregate_type</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">is_snapshot</span></code></p></td>
+<td><p>BOOLEAN</p></td>
+<td><p>DEFAULT 0</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="edit-sessions">
+<h3><code class="docutils literal notranslate"><span class="pre">edit_sessions</span></code><a class="headerlink" href="#edit-sessions" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Column</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Constraints</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">session_id</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>PRIMARY KEY</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">world_id</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>NOT NULL</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">started_at</span></code></p></td>
+<td><p>REAL</p></td>
+<td><p>NOT NULL</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ended_at</span></code></p></td>
+<td><p>REAL</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">app_version</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
 </section>
 </section>
 
@@ -1030,6 +1146,8 @@
 <li><a class="reference internal" href="#event-tags"><code class="docutils literal notranslate"><span class="pre">event_tags</span></code></a></li>
 <li><a class="reference internal" href="#entity-tags"><code class="docutils literal notranslate"><span class="pre">entity_tags</span></code></a></li>
 <li><a class="reference internal" href="#embeddings"><code class="docutils literal notranslate"><span class="pre">embeddings</span></code></a></li>
+<li><a class="reference internal" href="#command-history"><code class="docutils literal notranslate"><span class="pre">command_history</span></code></a></li>
+<li><a class="reference internal" href="#edit-sessions"><code class="docutils literal notranslate"><span class="pre">edit_sessions</span></code></a></li>
 </ul>
 </li>
 </ul>

@@ -400,6 +400,36 @@
             <span class="n">doc_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">doc_id</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="MoveLongformEntryCommand.to_dict">
+<a class="viewcode-back" href="../../commands.html#commands.longform_commands.MoveLongformEntryCommand.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize command to dictionary.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;table&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="p">,</span>
+            <span class="s2">&quot;row_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">row_id</span><span class="p">,</span>
+            <span class="s2">&quot;old_meta&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">old_meta</span><span class="p">,</span>
+            <span class="s2">&quot;new_meta&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_meta</span><span class="p">,</span>
+            <span class="s2">&quot;doc_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">doc_id</span><span class="p">,</span>
+            <span class="s2">&quot;is_executed&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="MoveLongformEntryCommand.from_dict">
+<a class="viewcode-back" href="../../commands.html#commands.longform_commands.MoveLongformEntryCommand.from_dict">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;MoveLongformEntryCommand&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deserialize command from dictionary.&quot;&quot;&quot;</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">table</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;table&quot;</span><span class="p">],</span>
+            <span class="n">row_id</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;row_id&quot;</span><span class="p">],</span>
+            <span class="n">old_meta</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;old_meta&quot;</span><span class="p">],</span>
+            <span class="n">new_meta</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;new_meta&quot;</span><span class="p">],</span>
+            <span class="n">doc_id</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;doc_id&quot;</span><span class="p">,</span> <span class="n">longform_builder</span><span class="o">.</span><span class="n">DOC_ID_DEFAULT</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">_is_executed</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;is_executed&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cmd</span></div>
 </div>
 
 
@@ -504,6 +534,34 @@
             <span class="n">doc_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">doc_id</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="PromoteLongformEntryCommand.to_dict">
+<a class="viewcode-back" href="../../commands.html#commands.longform_commands.PromoteLongformEntryCommand.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize command to dictionary.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;table&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="p">,</span>
+            <span class="s2">&quot;row_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">row_id</span><span class="p">,</span>
+            <span class="s2">&quot;old_meta&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">old_meta</span><span class="p">,</span>
+            <span class="s2">&quot;doc_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">doc_id</span><span class="p">,</span>
+            <span class="s2">&quot;is_executed&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="PromoteLongformEntryCommand.from_dict">
+<a class="viewcode-back" href="../../commands.html#commands.longform_commands.PromoteLongformEntryCommand.from_dict">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;PromoteLongformEntryCommand&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deserialize command from dictionary.&quot;&quot;&quot;</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">table</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;table&quot;</span><span class="p">],</span>
+            <span class="n">row_id</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;row_id&quot;</span><span class="p">],</span>
+            <span class="n">old_meta</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;old_meta&quot;</span><span class="p">],</span>
+            <span class="n">doc_id</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;doc_id&quot;</span><span class="p">,</span> <span class="n">longform_builder</span><span class="o">.</span><span class="n">DOC_ID_DEFAULT</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">_is_executed</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;is_executed&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cmd</span></div>
 </div>
 
 
@@ -608,6 +666,34 @@
             <span class="n">doc_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">doc_id</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="DemoteLongformEntryCommand.to_dict">
+<a class="viewcode-back" href="../../commands.html#commands.longform_commands.DemoteLongformEntryCommand.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize command to dictionary.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;table&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="p">,</span>
+            <span class="s2">&quot;row_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">row_id</span><span class="p">,</span>
+            <span class="s2">&quot;old_meta&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">old_meta</span><span class="p">,</span>
+            <span class="s2">&quot;doc_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">doc_id</span><span class="p">,</span>
+            <span class="s2">&quot;is_executed&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="DemoteLongformEntryCommand.from_dict">
+<a class="viewcode-back" href="../../commands.html#commands.longform_commands.DemoteLongformEntryCommand.from_dict">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DemoteLongformEntryCommand&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deserialize command from dictionary.&quot;&quot;&quot;</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">table</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;table&quot;</span><span class="p">],</span>
+            <span class="n">row_id</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;row_id&quot;</span><span class="p">],</span>
+            <span class="n">old_meta</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;old_meta&quot;</span><span class="p">],</span>
+            <span class="n">doc_id</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;doc_id&quot;</span><span class="p">,</span> <span class="n">longform_builder</span><span class="o">.</span><span class="n">DOC_ID_DEFAULT</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">_is_executed</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;is_executed&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cmd</span></div>
 </div>
 
 
@@ -712,6 +798,34 @@
             <span class="n">doc_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">doc_id</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="RemoveLongformEntryCommand.to_dict">
+<a class="viewcode-back" href="../../commands.html#commands.longform_commands.RemoveLongformEntryCommand.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize command to dictionary.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;table&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">table</span><span class="p">,</span>
+            <span class="s2">&quot;row_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">row_id</span><span class="p">,</span>
+            <span class="s2">&quot;old_meta&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">old_meta</span><span class="p">,</span>
+            <span class="s2">&quot;doc_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">doc_id</span><span class="p">,</span>
+            <span class="s2">&quot;is_executed&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="RemoveLongformEntryCommand.from_dict">
+<a class="viewcode-back" href="../../commands.html#commands.longform_commands.RemoveLongformEntryCommand.from_dict">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;RemoveLongformEntryCommand&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deserialize command from dictionary.&quot;&quot;&quot;</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">table</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;table&quot;</span><span class="p">],</span>
+            <span class="n">row_id</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;row_id&quot;</span><span class="p">],</span>
+            <span class="n">old_meta</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;old_meta&quot;</span><span class="p">],</span>
+            <span class="n">doc_id</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;doc_id&quot;</span><span class="p">,</span> <span class="n">longform_builder</span><span class="o">.</span><span class="n">DOC_ID_DEFAULT</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">_is_executed</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;is_executed&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cmd</span></div>
 </div>
 
 </pre></div>

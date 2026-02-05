@@ -372,6 +372,38 @@
                 <span class="n">db_service</span><span class="o">.</span><span class="n">delete_relation</span><span class="p">(</span><span class="n">rel_id</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_created_rel_ids</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="AddRelationCommand.to_dict">
+<a class="viewcode-back" href="../../commands.html#commands.relation_commands.AddRelationCommand.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize command to dictionary.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;source_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_id</span><span class="p">,</span>
+            <span class="s2">&quot;target_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_id</span><span class="p">,</span>
+            <span class="s2">&quot;rel_type&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">rel_type</span><span class="p">,</span>
+            <span class="s2">&quot;attributes&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">,</span>
+            <span class="s2">&quot;bidirectional&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bidirectional</span><span class="p">,</span>
+            <span class="s2">&quot;created_rel_ids&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_created_rel_ids</span><span class="p">,</span>
+            <span class="s2">&quot;is_executed&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="AddRelationCommand.from_dict">
+<a class="viewcode-back" href="../../commands.html#commands.relation_commands.AddRelationCommand.from_dict">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;AddRelationCommand&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deserialize command from dictionary.&quot;&quot;&quot;</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">source_id</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;source_id&quot;</span><span class="p">],</span>
+            <span class="n">target_id</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;target_id&quot;</span><span class="p">],</span>
+            <span class="n">rel_type</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;rel_type&quot;</span><span class="p">],</span>
+            <span class="n">attributes</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attributes&quot;</span><span class="p">),</span>
+            <span class="n">bidirectional</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bidirectional&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">_created_rel_ids</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;created_rel_ids&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">_is_executed</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;is_executed&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cmd</span></div>
 </div>
 
 
@@ -417,8 +449,27 @@
 <div class="viewcode-block" id="RemoveRelationCommand.undo">
 <a class="viewcode-back" href="../../commands.html#commands.relation_commands.RemoveRelationCommand.undo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reverts the deletion (Not fully implemented yet, needs backup logic).&quot;&quot;&quot;</span>
-        <span class="k">pass</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reverts the deletion (Not fully implemented yet, needs backup logic).&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="RemoveRelationCommand.to_dict">
+<a class="viewcode-back" href="../../commands.html#commands.relation_commands.RemoveRelationCommand.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize command to dictionary.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;rel_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">rel_id</span><span class="p">,</span>
+            <span class="s2">&quot;is_executed&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="RemoveRelationCommand.from_dict">
+<a class="viewcode-back" href="../../commands.html#commands.relation_commands.RemoveRelationCommand.from_dict">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;RemoveRelationCommand&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deserialize command from dictionary.&quot;&quot;&quot;</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">rel_id</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;rel_id&quot;</span><span class="p">])</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">_is_executed</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;is_executed&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cmd</span></div>
 </div>
 
 
@@ -497,6 +548,36 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_previous_state</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">],</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="UpdateRelationCommand.to_dict">
+<a class="viewcode-back" href="../../commands.html#commands.relation_commands.UpdateRelationCommand.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize command to dictionary.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;rel_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">rel_id</span><span class="p">,</span>
+            <span class="s2">&quot;target_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_id</span><span class="p">,</span>
+            <span class="s2">&quot;rel_type&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">rel_type</span><span class="p">,</span>
+            <span class="s2">&quot;attributes&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">,</span>
+            <span class="s2">&quot;previous_state&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_previous_state</span><span class="p">,</span>
+            <span class="s2">&quot;is_executed&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="UpdateRelationCommand.from_dict">
+<a class="viewcode-back" href="../../commands.html#commands.relation_commands.UpdateRelationCommand.from_dict">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;UpdateRelationCommand&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deserialize command from dictionary.&quot;&quot;&quot;</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">rel_id</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;rel_id&quot;</span><span class="p">],</span>
+            <span class="n">target_id</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;target_id&quot;</span><span class="p">],</span>
+            <span class="n">rel_type</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;rel_type&quot;</span><span class="p">],</span>
+            <span class="n">attributes</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attributes&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">_previous_state</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;previous_state&quot;</span><span class="p">)</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">_is_executed</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;is_executed&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cmd</span></div>
 </div>
 
 </pre></div>

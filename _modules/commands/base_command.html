@@ -325,7 +325,10 @@
 <a class="viewcode-back" href="../../commands.html#commands.base_command.BaseCommand.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the command.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span> <span class="o">=</span> <span class="kc">False</span></div>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timestamp</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="BaseCommand.execute">
@@ -355,6 +358,56 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseCommand.to_dict">
+<a class="viewcode-back" href="../../commands.html#commands.base_command.BaseCommand.to_dict">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize command to dictionary for persistence.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict: Dictionary containing all command data needed for reconstruction.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseCommand.from_dict">
+<a class="viewcode-back" href="../../commands.html#commands.base_command.BaseCommand.from_dict">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;BaseCommand&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deserialize command from dictionary.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data (Dict): Dictionary containing command data.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            BaseCommand: Reconstructed command instance.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseCommand.get_description">
+<a class="viewcode-back" href="../../commands.html#commands.base_command.BaseCommand.get_description">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_description</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a human-readable description of this command.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: A brief description of what this command does (e.g., &quot;Create Event&quot;).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Default implementation: use class name without &quot;Command&quot; suffix</span>
+        <span class="n">class_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="k">if</span> <span class="n">class_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;Command&quot;</span><span class="p">):</span>
+            <span class="n">class_name</span> <span class="o">=</span> <span class="n">class_name</span><span class="p">[:</span><span class="o">-</span><span class="mi">7</span><span class="p">]</span>  <span class="c1"># Remove &quot;Command&quot;</span>
+        <span class="c1"># Convert CamelCase to Title Case with spaces</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;([A-Z])&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot; \1&quot;</span><span class="p">,</span> <span class="n">class_name</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">result</span></div>
 
 
     <span class="nd">@property</span>
