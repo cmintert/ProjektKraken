@@ -484,13 +484,24 @@ class UIManager:
         self.undo_action = edit_menu.addAction("Undo")
         self.undo_action.setShortcut(QKeySequence.StandardKey.Undo)
         self.undo_action.setEnabled(False)  # Disabled by default
-        self.undo_action.triggered.connect(self.main_window.coordinator.undo)
+        # Note: Connection deferred to connect_undo_redo_actions()
+        # (called after coordinator is initialized)
 
         # Redo Action
         self.redo_action = edit_menu.addAction("Redo")
         self.redo_action.setShortcut(QKeySequence.StandardKey.Redo)
         self.redo_action.setEnabled(False)  # Disabled by default
-        self.redo_action.triggered.connect(self.main_window.coordinator.redo)
+        # Note: Connection deferred to connect_undo_redo_actions()
+        # (called after coordinator is initialized)
+
+    def connect_undo_redo_actions(self) -> None:
+        """Connects undo/redo actions to the coordinator.
+
+        Must be called after the command coordinator is initialized.
+        """
+        if hasattr(self, "undo_action") and hasattr(self, "redo_action"):
+            self.undo_action.triggered.connect(self.main_window.coordinator.undo)
+            self.redo_action.triggered.connect(self.main_window.coordinator.redo)
 
     def update_undo_redo_state(self) -> None:
         """Updates the enabled/disabled state of undo/redo actions.

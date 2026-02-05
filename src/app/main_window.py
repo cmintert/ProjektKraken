@@ -157,7 +157,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             theme_name = ThemeManager().current_theme_name
             dark_mode = "dark" in theme_name.lower()
             apply_windows_title_bar_style(self, dark_mode=dark_mode)
-            
+
             # Connect to theme changes to update title bar
             ThemeManager().theme_changed.connect(self._on_theme_changed_for_titlebar)
         except Exception as e:
@@ -369,6 +369,14 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.command_coordinator.history_changed.connect(
             self.ui_manager.update_undo_redo_state
         )
+        # Connect worker's command results to coordinator for undo stack management
+        self.worker.command_finished.connect(
+            self.command_coordinator.on_command_result,
+            Qt.ConnectionType.QueuedConnection,
+        )
+
+        # Connect undo/redo menu actions (deferred from Phase 2)
+        self.ui_manager.connect_undo_redo_actions()
 
         # Connect editor dirty signals (these are safe to connect early)
         self.event_editor.dirty_changed.connect(
@@ -920,14 +928,14 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     def _on_theme_changed_for_titlebar(self, theme_dict: dict) -> None:
         """Update Windows title bar style when theme changes.
-        
+
         Args:
             theme_dict: The new theme dictionary from ThemeManager.
         """
         try:
             from src.gui.utils.window_utils import apply_windows_title_bar_style
             from src.core.theme_manager import ThemeManager
-            
+
             # Determine if new theme is dark
             theme_name = ThemeManager().current_theme_name
             dark_mode = "dark" in theme_name.lower()
@@ -1880,23 +1888,23 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
                     Q_ARG(str, parsed_json),
                     Q_ARG(str, options_json),
                 )
-                
+
                 # Show progress dialog
                 from src.gui.dialogs.progress_dialog import ProgressDialog
-                
+
                 self._import_progress_dialog = ProgressDialog(
                     "Importing data...\n\nThis may take a moment for large files.",
                     parent=self,
                     cancelable=False,
-                    title="Import in Progress"
+                    title="Import in Progress",
                 )
                 self.status_bar.showMessage("Importing...", 0)
 
         except Exception as e:
             logger.exception("Import error")
             QMessageBox.critical(
-                self, 
-                "Import Error", 
+                self,
+                "Import Error",
                 f"An unexpected error occurred during import: {e}\n\n"
                 "Your existing data is safe and unchanged.\n\n"
                 "Possible causes:\n"
@@ -1907,7 +1915,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
                 "1. Check that the file is a valid import format\n"
                 "2. Verify file is not corrupted\n"
                 "3. Check application logs for detailed error\n"
-                "4. Try exporting and re-importing a small test dataset"
+                "4. Try exporting and re-importing a small test dataset",
             )
 
     @Slot(object)
@@ -1922,7 +1930,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         if self._import_progress_dialog:
             self._import_progress_dialog.finish()
             self._import_progress_dialog = None
-            
+
         self.status_bar.clearMessage()
 
         if result.success:
@@ -1942,17 +1950,17 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             err_msg = "\n".join(result.errors[:10])
             if len(result.errors) > 10:
                 err_msg += f"\n...and {len(result.errors) - 10} more errors."
-            
+
             QMessageBox.critical(
-                self, 
-                "Import Failed", 
+                self,
+                "Import Failed",
                 f"Import completed with errors. No data was imported.\n\n"
                 f"Errors ({len(result.errors)} total):\n{err_msg}\n\n"
                 "What to do:\n"
                 "1. Fix the errors in your source file\n"
                 "2. Check file format matches expected structure\n"
                 "3. Try importing a smaller subset first\n"
-                "4. Consult documentation for import format details"
+                "4. Consult documentation for import format details",
             )
 
     @Slot(str, object)
