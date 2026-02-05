@@ -59,6 +59,7 @@ class HistoryPanelWidget(QWidget):
         super().__init__(parent)
         self._undo_stack: List["BaseCommand"] = []
         self._redo_stack: List["BaseCommand"] = []
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._setup_ui()
         self._apply_theme()
         self._connect_theme_changes()
@@ -123,43 +124,32 @@ class HistoryPanelWidget(QWidget):
     def _apply_theme(self) -> None:
         """Apply current theme colors to the widget."""
         try:
+            from src.gui.utils.style_helper import StyleHelper
+
             theme = ThemeManager().get_theme()
 
-            # Get theme colors
-            bg_color = theme.get("surface_bg", "#2B2B2B")
-            text_color = theme.get("text_main", "#E0E0E0")
-            text_dim = theme.get("text_dim", "#A0A0A0")
-            border_color = theme.get("border", "#404040")
-
-            # Style the widget and list using theme tokens
-            # StandardButton handles its own styling
-            self.setStyleSheet(
-                f"""
-                QWidget {{
-                    background-color: {bg_color};
-                    color: {text_color};
-                }}
-                QListWidget {{
-                    background-color: {bg_color};
-                    color: {text_color};
-                    border: 1px solid {border_color};
-                    border-radius: 3px;
-                    padding: 2px;
-                }}
-                QListWidget::item {{
-                    padding: 4px;
-                    border-radius: 2px;
-                }}
-                QListWidget::item:hover {{
-                    background-color: rgba(74, 158, 255, 0.1);
-                }}
-                QLabel {{
-                    color: {text_dim};
-                }}
-            """
+            # Set background and text color directly to the widget
+            # (without broad CSS selector to avoid inheritance issues)
+            self.setAutoFillBackground(True)
+            palette = self.palette()
+            palette.setColor(
+                self.backgroundRole(), QColor(theme.get("surface", "#323232"))
             )
+            palette.setColor(
+                self.foregroundRole(), QColor(theme.get("text_main", "#E0E0E0"))
+            )
+            self.setPalette(palette)
 
-            logger.debug("Theme applied to history panel")
+            # Apply Stylesheet for components
+            self.undo_btn.setStyleSheet(StyleHelper.get_icon_button_style())
+            self.redo_btn.setStyleSheet(StyleHelper.get_icon_button_style())
+            self.command_list.setStyleSheet(StyleHelper.get_list_widget_style())
+
+            # Specific colors for labels
+            self.status_label.setStyleSheet(StyleHelper.get_empty_state_style())
+            self.info_label.setStyleSheet(StyleHelper.get_preview_label_style())
+
+            logger.debug("Theme applied to history panel (v2)")
 
         except Exception as e:
             logger.error(f"Failed to apply theme: {e}")
@@ -179,6 +169,8 @@ class HistoryPanelWidget(QWidget):
             theme_data: New theme data dictionary
         """
         self._apply_theme()
+        # Refresh display to re-generate items with new theme colors
+        self._refresh_display()
 
     @Slot(list, list)
     def update_history(
