@@ -499,20 +499,28 @@ class UIManager:
     def create_edit_menu(self, menu_bar: QMenuBar) -> None:
         """Creates the Edit menu with undo/redo actions."""
         from PySide6.QtGui import QKeySequence
+        from src.gui.utils.shortcut_manager import ShortcutManager
 
         edit_menu = menu_bar.addMenu("Edit")
 
         # Undo Action
+        # Undo Action
         self.undo_action = edit_menu.addAction("Undo")
-        self.undo_action.setShortcut(QKeySequence.StandardKey.Undo)
+        self.undo_action.setShortcut(ShortcutManager.UNDO.key_sequence)
+        self.undo_action.setShortcutContext(Qt.ShortcutContext.ApplicationShortcut)
         self.undo_action.setEnabled(False)  # Disabled by default
-        # Note: Connection deferred to connect_undo_redo_actions()
-        # (called after coordinator is initialized)
+        self.main_window.addAction(self.undo_action)  # Ensure global capture
 
         # Redo Action
         self.redo_action = edit_menu.addAction("Redo")
-        self.redo_action.setShortcut(QKeySequence.StandardKey.Redo)
+        self.redo_action.setShortcut(ShortcutManager.REDO.key_sequence)
+        # Add secondary shortcut for Redo (Ctrl+Shift+Z)
+        self.redo_action.setShortcuts(
+            [ShortcutManager.REDO.key_sequence, QKeySequence("Ctrl+Shift+Z")]
+        )
+        self.redo_action.setShortcutContext(Qt.ShortcutContext.ApplicationShortcut)
         self.redo_action.setEnabled(False)  # Disabled by default
+        self.main_window.addAction(self.redo_action)  # Ensure global capture
         # Note: Connection deferred to connect_undo_redo_actions()
         # (called after coordinator is initialized)
 

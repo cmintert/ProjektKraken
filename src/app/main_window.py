@@ -102,8 +102,86 @@ from src.gui.widgets.longform import LongformEditorWidget
 from src.gui.widgets.map_widget import MapWidget
 from src.gui.widgets.timeline import TimelineWidget
 from src.gui.widgets.unified_list import UnifiedListWidget
+from PySide6.QtCore import QObject, QEvent
 
 logger = get_logger(__name__)
+
+
+class GlobalShortcutFilter(QObject):
+    """Event filter that intercepts global keyboard shortcuts.
+
+    Installed on QApplication to capture Ctrl+Z (Undo) and Ctrl+Y/Ctrl+Shift+Z
+    (Redo) before individual widgets can consume them.
+    """
+
+    def __init__(self, main_window: "MainWindow") -> None:
+        """Initialize the filter with a reference to the main window.
+
+        Args:
+            main_window: The MainWindow instance to route commands to.
+
+        """
+        super().__init__(main_window)
+        self.main_window = main_window
+
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        """Filter key events and intercept global shortcuts.
+
+        Args:
+            obj: The object receiving the event.
+            event: The event to filter.
+
+        Returns:
+            True if the event was handled (consumed), False otherwise.
+
+        """
+        if event.type() == QEvent.Type.KeyPress:
+            key_event = event  # type: QKeyEvent
+            key = key_event.key()
+            modifiers = key_event.modifiers()
+
+            # Check for Ctrl+Z (Undo)
+            if key == Qt.Key.Key_Z and modifiers == Qt.KeyboardModifier.ControlModifier:
+                if hasattr(self.main_window, "coordinator"):
+                    if self.main_window.coordinator.can_undo():
+                        self.main_window.coordinator.undo()
+                        return True  # Consume the event
+
+            # Check for Ctrl+Y (Redo)
+            if key == Qt.Key.Key_Y and modifiers == Qt.KeyboardModifier.ControlModifier:
+                if hasattr(self.main_window, "coordinator"):
+                    if self.main_window.coordinator.can_redo():
+                        self.main_window.coordinator.redo()
+                        return True  # Consume the event
+
+            # Check for Ctrl+Shift+Z (Redo alternative)
+            if key == Qt.Key.Key_Z and modifiers == (
+                Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier
+            ):
+                if hasattr(self.main_window, "coordinator"):
+                    if self.main_window.coordinator.can_redo():
+                        self.main_window.coordinator.redo()
+                        return True  # Consume the event
+
+            # Check for Ctrl+E (Create Event)
+            if key == Qt.Key.Key_E and modifiers == Qt.KeyboardModifier.ControlModifier:
+                if hasattr(self.main_window, "list_widget"):
+                    self.main_window.list_widget.action_create_event.trigger()
+                    return True
+
+            # Check for Ctrl+I (Create Entity)
+            if key == Qt.Key.Key_I and modifiers == Qt.KeyboardModifier.ControlModifier:
+                if hasattr(self.main_window, "list_widget"):
+                    self.main_window.list_widget.action_create_entity.trigger()
+                    return True
+
+            # Check for Ctrl+M (Create Map)
+            if key == Qt.Key.Key_M and modifiers == Qt.KeyboardModifier.ControlModifier:
+                if hasattr(self.main_window, "list_widget"):
+                    self.main_window.list_widget.action_create_map.trigger()
+                    return True
+
+        return False  # Don't consume, let event propagate
 
 
 class MainWindow(QMainWindow, LayoutGuardMixin):
@@ -171,6 +249,14 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         # Phase 3: Deferred initialization (after event loop starts)
         QTimer.singleShot(UI_INIT_DELAY_MS, self._complete_initialization)
         logger.debug("Phase 3: Deferred initialization scheduled")
+
+        # Install global shortcut filter for Undo/Redo
+        from PySide6.QtWidgets import QApplication
+
+        self._global_shortcut_filter = GlobalShortcutFilter(self)
+        if app := QApplication.instance():
+            app.installEventFilter(self._global_shortcut_filter)
+            logger.debug("Global shortcut filter installed")
 
     def _init_core_services(self) -> None:
         """Phase 1: Initialize core services and infrastructure.

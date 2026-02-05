@@ -95,6 +95,7 @@ class CommandCoordinator(QObject):
         logger.debug(f"Executing command: {command.__class__.__name__}")
         self.command_requested.emit(command)
 
+    @Slot()
     def undo(self) -> None:
         """Undo the last executed command.
 
@@ -111,6 +112,7 @@ class CommandCoordinator(QObject):
         self.redo_stack.append(command)
         self.history_changed.emit()
 
+    @Slot()
     def redo(self) -> None:
         """Redo the last undone command.
 

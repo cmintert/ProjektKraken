@@ -26,6 +26,10 @@ class KeyboardShortcut:
 class ShortcutManager:
     """Centralized manager for application keyboard shortcuts."""
 
+    # Edit Actions
+    UNDO = KeyboardShortcut("Undo", "Ctrl+Z", "Undo last action")
+    REDO = KeyboardShortcut("Redo", "Ctrl+Y", "Redo last action")
+
     CREATE_EVENT = KeyboardShortcut("Create Event", "Ctrl+E", "Create a new event")
 
     CREATE_ENTITY = KeyboardShortcut("Create Entity", "Ctrl+I", "Create a new entity")

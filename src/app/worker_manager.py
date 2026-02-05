@@ -375,6 +375,30 @@ class WorkerManager(QObject):
                     "DeleteEntityCommand", DeleteEntityCmd
                 )
 
+                # Map commands
+                from src.commands.map_commands import (
+                    CreateMapCommand,
+                    UpdateMapCommand,
+                    DeleteMapCommand,
+                )
+
+                self.window.history_service.register_command_type(
+                    "CreateMapCommand", CreateMapCommand
+                )
+                self.window.history_service.register_command_type(
+                    "UpdateMapCommand", UpdateMapCommand
+                )
+                self.window.history_service.register_command_type(
+                    "DeleteMapCommand", DeleteMapCommand
+                )
+
+                # Calendar commands
+                from src.commands.calendar_commands import UpdateCalendarConfigCommand
+
+                self.window.history_service.register_command_type(
+                    "UpdateCalendarConfigCommand", UpdateCalendarConfigCommand
+                )
+
                 # Connect to command coordinator
                 self.window.coordinator.set_history_service(self.window.history_service)
 
