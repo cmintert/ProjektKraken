@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-05
-### Fixed
-- Fix Project Explorer multi-select checkboxes by persisting check state in ExplorerModel and updating CSS visibility.
+### Internal
+- Optimize deletion UX with high-speed unblocking workflow
 
 
 *This changelog was automatically generated.*
