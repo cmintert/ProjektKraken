@@ -26,6 +26,7 @@ from src.app.constants import (
     DOCK_OBJ_ENTITY_INSPECTOR,
     DOCK_OBJ_EVENT_INSPECTOR,
     DOCK_OBJ_GRAPH,
+    DOCK_OBJ_HISTORY,
     DOCK_OBJ_LONGFORM,
     DOCK_OBJ_MAP,
     DOCK_OBJ_PROJECT,
@@ -34,6 +35,7 @@ from src.app.constants import (
     DOCK_TITLE_ENTITY_INSPECTOR,
     DOCK_TITLE_EVENT_INSPECTOR,
     DOCK_TITLE_GRAPH,
+    DOCK_TITLE_HISTORY,
     DOCK_TITLE_LONGFORM,
     DOCK_TITLE_MAP,
     DOCK_TITLE_PROJECT,
@@ -159,6 +161,7 @@ class UIManager:
                 - 'longform_editor': LongformEditorWidget
                 - 'map_widget': MapWidget
                 - 'ai_search_panel': AISearchPanelWidget (optional)
+                - 'history_panel': HistoryPanelWidget (optional)
 
         """
         from src.core.logging_config import get_logger
@@ -326,6 +329,25 @@ class UIManager:
                     )
             else:
                 failed_docks.append("graph")
+
+        # 9. History Panel (Right, tabbed with inspectors)
+        if "history_panel" in widgets:
+            dock = self._create_dock(
+                DOCK_TITLE_HISTORY, DOCK_OBJ_HISTORY, widgets["history_panel"]
+            )
+            if dock:
+                self.docks["history"] = dock
+                self.main_window.addDockWidget(
+                    Qt.DockWidgetArea.RightDockWidgetArea, self.docks["history"]
+                )
+                self._attach_diagnostics(self.docks["history"])
+                # Tabify with entity inspector if it exists
+                if "entity" in self.docks:
+                    self.main_window.tabifyDockWidget(
+                        self.docks["entity"], self.docks["history"]
+                    )
+            else:
+                failed_docks.append("history")
 
         # Report results
         if failed_docks:

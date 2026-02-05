@@ -269,6 +269,10 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.ai_search_panel = AISearchPanelWidget()
         self.graph_widget = GraphWidget()
         self.longform_editor = LongformEditorWidget(db_path=self.db_path)
+        
+        # Create History Panel (Phase 3)
+        from src.gui.widgets.history_panel import HistoryPanelWidget
+        self.history_panel = HistoryPanelWidget()
 
         # Initialize Managers
         self.map_handler = MapHandler(self)
@@ -310,6 +314,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
                 "map_widget": self.map_widget,
                 "ai_search_panel": self.ai_search_panel,
                 "graph_widget": self.graph_widget,
+                "history_panel": self.history_panel,
             }
         )
 
@@ -368,6 +373,20 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         # Update UI when history changes
         self.command_coordinator.history_changed.connect(
             self.ui_manager.update_undo_redo_state
+        )
+        # Connect history panel to coordinator
+        self.command_coordinator.history_changed.connect(
+            self._update_history_panel
+        )
+        # Connect history panel buttons to coordinator
+        self.history_panel.undo_clicked.connect(
+            self.command_coordinator.undo
+        )
+        self.history_panel.redo_clicked.connect(
+            self.command_coordinator.redo
+        )
+        self.history_panel.clear_history_clicked.connect(
+            self.command_coordinator.clear_history
         )
         # Connect worker's command results to coordinator for undo stack management
         self.worker.command_finished.connect(
@@ -767,6 +786,18 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             self.delete_event(item_id)
         elif item_type == "entity":
             self.delete_entity(item_id)
+
+    @Slot()
+    def _update_history_panel(self) -> None:
+        """Update the history panel with current undo/redo stacks."""
+        try:
+            if hasattr(self, "history_panel") and hasattr(self, "command_coordinator"):
+                self.history_panel.update_history(
+                    self.command_coordinator.undo_stack,
+                    self.command_coordinator.redo_stack
+                )
+        except Exception as e:
+            logger.error(f"Failed to update history panel: {e}")
 
     @Slot(str)
     def update_status_message(self, message: str) -> None:
