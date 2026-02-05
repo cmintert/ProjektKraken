@@ -131,3 +131,50 @@ def test_check_unsaved_changes_cancel(mock_warning, main_window):
     result = main_window.check_unsaved_changes(main_window.event_editor)
 
     assert result is False
+
+
+def test_load_data_refreshes_editors(main_window):
+    """Verify that load_data refetches details for open editors."""
+    # Mock data loading methods to track calls
+    main_window.load_events = MagicMock()
+    main_window.load_entities = MagicMock()
+    main_window.load_longform_sequence = MagicMock()
+    main_window.load_graph_data = MagicMock()
+    main_window.load_completer_data = MagicMock()
+    main_window.load_event_details = MagicMock()
+    main_window.load_entity_details = MagicMock()
+
+    # Case 1: No open items
+    main_window.event_editor._current_event_id = None
+    main_window.entity_editor._current_entity_id = None
+
+    main_window.load_data()
+
+    main_window.load_events.assert_called_once()
+    main_window.load_event_details.assert_not_called()
+    main_window.load_entity_details.assert_not_called()
+
+    # Reset mocks
+    main_window.load_events.reset_mock()
+    main_window.load_event_details.reset_mock()
+
+    # Case 2: Open Event
+    main_window.event_editor._current_event_id = "ev_123"
+    main_window.load_data()
+
+    main_window.load_events.assert_called_once()
+    main_window.load_event_details.assert_called_once_with("ev_123")
+    main_window.load_entity_details.assert_not_called()
+
+    # Reset mocks
+    main_window.load_events.reset_mock()
+    main_window.load_event_details.reset_mock()
+    main_window.load_entity_details.reset_mock()
+
+    # Case 3: Open Entity
+    main_window.event_editor._current_event_id = None
+    main_window.entity_editor._current_entity_id = "ent_456"
+
+    main_window.load_data()
+
+    main_window.load_entity_details.assert_called_once_with("ent_456")

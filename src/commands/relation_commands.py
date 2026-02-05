@@ -89,6 +89,32 @@ class AddRelationCommand(BaseCommand):
             self._created_rel_ids.clear()
             self._is_executed = False
 
+    def to_dict(self) -> Dict:
+        """Serialize command to dictionary."""
+        return {
+            "source_id": self.source_id,
+            "target_id": self.target_id,
+            "rel_type": self.rel_type,
+            "attributes": self.attributes,
+            "bidirectional": self.bidirectional,
+            "created_rel_ids": self._created_rel_ids,
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "AddRelationCommand":
+        """Deserialize command from dictionary."""
+        cmd = cls(
+            source_id=data["source_id"],
+            target_id=data["target_id"],
+            rel_type=data["rel_type"],
+            attributes=data.get("attributes"),
+            bidirectional=data.get("bidirectional", False),
+        )
+        cmd._created_rel_ids = data.get("created_rel_ids", [])
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd
+
 
 class RemoveRelationCommand(BaseCommand):
     """Command to remove a relationship."""
@@ -122,7 +148,20 @@ class RemoveRelationCommand(BaseCommand):
 
     def undo(self, db_service: DatabaseService) -> None:
         """Reverts the deletion (Not fully implemented yet, needs backup logic)."""
-        pass
+
+    def to_dict(self) -> Dict:
+        """Serialize command to dictionary."""
+        return {
+            "rel_id": self.rel_id,
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "RemoveRelationCommand":
+        """Deserialize command from dictionary."""
+        cmd = cls(rel_id=data["rel_id"])
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd
 
 
 class UpdateRelationCommand(BaseCommand):
@@ -189,3 +228,27 @@ class UpdateRelationCommand(BaseCommand):
                 self._previous_state["attributes"],
             )
             self._is_executed = False
+
+    def to_dict(self) -> Dict:
+        """Serialize command to dictionary."""
+        return {
+            "rel_id": self.rel_id,
+            "target_id": self.target_id,
+            "rel_type": self.rel_type,
+            "attributes": self.attributes,
+            "previous_state": self._previous_state,
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "UpdateRelationCommand":
+        """Deserialize command from dictionary."""
+        cmd = cls(
+            rel_id=data["rel_id"],
+            target_id=data["target_id"],
+            rel_type=data["rel_type"],
+            attributes=data.get("attributes"),
+        )
+        cmd._previous_state = data.get("previous_state")
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd

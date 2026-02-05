@@ -45,8 +45,8 @@ class DatabaseService:
 
     def __init__(self, db_path: str = ":memory:") -> None:
         """Args:
-            db_path: Path to the .kraken database file.
-                     Defaults to :memory: for testing.
+        db_path: Path to the .kraken database file.
+                 Defaults to :memory: for testing.
 
         """
         self.db_path = db_path
@@ -427,6 +427,30 @@ class DatabaseService:
                 except sqlite3.Error as e:
                     self._connection.rollback()
                     logger.error(f"Failed to add color column to tags table: {e}")
+                    raise
+
+            # Check for 'timestamp' column in 'command_history' table
+            cursor = self._connection.execute("PRAGMA table_info(command_history)")
+            columns = [row["name"] for row in cursor.fetchall()]
+
+            if "timestamp" not in columns:
+                logger.info(
+                    "Applying migration: Add timestamp column to command_history table"
+                )
+                try:
+                    # Add column with default 0.0 (old commands will have 0 timestamp)
+                    self._connection.execute(
+                        "ALTER TABLE command_history ADD COLUMN timestamp REAL NOT NULL DEFAULT 0.0"
+                    )
+                    self._connection.commit()
+                    logger.info(
+                        "Migration successful: Added timestamp column to command_history table"
+                    )
+                except sqlite3.Error as e:
+                    self._connection.rollback()
+                    logger.error(
+                        f"Failed to add timestamp column to command_history table: {e}"
+                    )
                     raise
 
             # Migrate trajectory data from old format to MF-JSON

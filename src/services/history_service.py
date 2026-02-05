@@ -97,6 +97,14 @@ class HistoryService:
         self._command_registry[command_type] = command_class
         logger.debug(f"Registered command type: {command_type}")
 
+    def _register_default_commands(self) -> None:
+        """Register core commands."""
+        # This could be called in __init__, or we let the coordinator handle registration.
+        # But for reliability, having them known is good.
+        from src.commands.composite_command import CompositeCommand
+
+        self.register_command_type("CompositeCommand", CompositeCommand)
+
     def save_command(
         self,
         command: "BaseCommand",
@@ -159,7 +167,7 @@ class HistoryService:
 
             cursor = self.db_service._connection.execute(
                 """
-                SELECT command_type, command_data, description
+                SELECT command_type, command_data, description, timestamp
                 FROM command_history
                 WHERE world_id = ?
                 ORDER BY timestamp DESC
@@ -171,7 +179,7 @@ class HistoryService:
             commands = []
             for row in cursor.fetchall():
                 command = self._deserialize_command(
-                    row["command_type"], row["command_data"]
+                    row["command_type"], row["command_data"], row["timestamp"]
                 )
                 if command:
                     commands.append(command)
@@ -187,13 +195,14 @@ class HistoryService:
             return []
 
     def _deserialize_command(
-        self, command_type: str, command_data_json: str
+        self, command_type: str, command_data_json: str, timestamp: float = 0.0
     ) -> Optional["BaseCommand"]:
         """Reconstruct a command from stored data.
 
         Args:
             command_type: Name of the command class
             command_data_json: JSON string containing command data
+            timestamp: The timestamp when the command was originally executed
 
         Returns:
             Reconstructed command or None if deserialization fails
@@ -210,6 +219,7 @@ class HistoryService:
 
             # Reconstruct command
             command = command_class.from_dict(data)
+            command.timestamp = timestamp
             return command
 
         except Exception as e:

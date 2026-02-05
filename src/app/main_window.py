@@ -86,6 +86,7 @@ from src.commands.relation_commands import (
     UpdateRelationCommand,
 )
 from src.commands.wiki_commands import ProcessWikiLinksCommand
+from src.commands.composite_command import CompositeCommand
 from src.core.fast_inject import FastInjectManager
 from src.core.logging_config import get_logger
 from src.core.paths import get_worlds_dir
@@ -269,9 +270,10 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.ai_search_panel = AISearchPanelWidget()
         self.graph_widget = GraphWidget()
         self.longform_editor = LongformEditorWidget(db_path=self.db_path)
-        
+
         # Create History Panel (Phase 3)
         from src.gui.widgets.history_panel import HistoryPanelWidget
+
         self.history_panel = HistoryPanelWidget()
 
         # Initialize Managers
@@ -375,16 +377,10 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             self.ui_manager.update_undo_redo_state
         )
         # Connect history panel to coordinator
-        self.command_coordinator.history_changed.connect(
-            self._update_history_panel
-        )
+        self.command_coordinator.history_changed.connect(self._update_history_panel)
         # Connect history panel buttons to coordinator
-        self.history_panel.undo_clicked.connect(
-            self.command_coordinator.undo
-        )
-        self.history_panel.redo_clicked.connect(
-            self.command_coordinator.redo
-        )
+        self.history_panel.undo_clicked.connect(self.command_coordinator.undo)
+        self.history_panel.redo_clicked.connect(self.command_coordinator.redo)
         self.history_panel.clear_history_clicked.connect(
             self.command_coordinator.clear_history
         )
@@ -688,12 +684,27 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         pass
 
     def load_data(self) -> None:
-        """Refreshes both events and entities."""
+        """Refreshes data and active editors."""
         self.load_events()
         self.load_entities()
         self.load_longform_sequence()
         self.load_graph_data()
         self.load_completer_data()
+
+        # Reload active editors to ensure they reflect current state (e.g. after undo)
+        # This prevents the editor from holding onto "future" state that might be
+        # auto-saved, restoring the undone change.
+        if (
+            hasattr(self.event_editor, "_current_event_id")
+            and self.event_editor._current_event_id
+        ):
+            self.load_event_details(self.event_editor._current_event_id)
+
+        if (
+            hasattr(self.entity_editor, "_current_entity_id")
+            and self.entity_editor._current_entity_id
+        ):
+            self.load_entity_details(self.entity_editor._current_entity_id)
 
     def load_completer_data(self) -> None:
         """Requests loading of completer data."""
@@ -794,7 +805,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             if hasattr(self, "history_panel") and hasattr(self, "command_coordinator"):
                 self.history_panel.update_history(
                     self.command_coordinator.undo_stack,
-                    self.command_coordinator.redo_stack
+                    self.command_coordinator.redo_stack,
                 )
         except Exception as e:
             logger.error(f"Failed to update history panel: {e}")
@@ -1372,14 +1383,22 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             logger.error("[MainWindow] update_event aborted - no ID")
             return
 
-        cmd = UpdateEventCommand(event_id, event_data)
-        logger.debug("[MainWindow] Emitting UpdateEventCommand")
-        self.command_requested.emit(cmd)
+        cmds = []
+        cmds.append(UpdateEventCommand(event_id, event_data))
 
         if "description" in event_data:
             wiki_cmd = ProcessWikiLinksCommand(event_id, event_data["description"])
-            logger.debug("[MainWindow] Emitting ProcessWikiLinksCommand")
-            self.command_requested.emit(wiki_cmd)
+            cmds.append(wiki_cmd)
+
+        if len(cmds) > 1:
+            desc = f"Update Event '{event_data.get('name', '?')}'"
+            cmd = CompositeCommand(cmds, description=desc)
+            logger.debug("[MainWindow] Emitting CompositeCommand (Update+Wiki)")
+        else:
+            cmd = cmds[0]
+            logger.debug(f"[MainWindow] Emitting {cmd.__class__.__name__}")
+
+        self.command_requested.emit(cmd)
 
     @Slot(str, float)
     def _on_event_date_changed(self, event_id: str, new_lore_date: float) -> None:
@@ -1456,14 +1475,22 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             logger.error("[MainWindow] update_entity aborted - no ID")
             return
 
-        cmd = UpdateEntityCommand(entity_id, entity_data)
-        logger.debug("[MainWindow] Emitting UpdateEntityCommand")
-        self.command_requested.emit(cmd)
+        cmds = []
+        cmds.append(UpdateEntityCommand(entity_id, entity_data))
 
         if "description" in entity_data:
             wiki_cmd = ProcessWikiLinksCommand(entity_id, entity_data["description"])
-            logger.debug("[MainWindow] Emitting ProcessWikiLinksCommand")
-            self.command_requested.emit(wiki_cmd)
+            cmds.append(wiki_cmd)
+
+        if len(cmds) > 1:
+            desc = f"Update Entity '{entity_data.get('name', '?')}'"
+            cmd = CompositeCommand(cmds, description=desc)
+            logger.debug("[MainWindow] Emitting CompositeCommand (Update+Wiki)")
+        else:
+            cmd = cmds[0]
+            logger.debug(f"[MainWindow] Emitting {cmd.__class__.__name__}")
+
+        self.command_requested.emit(cmd)
 
     def add_relation(
         self,
@@ -1993,31 +2020,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
                 "3. Try importing a smaller subset first\n"
                 "4. Consult documentation for import format details",
             )
-
-    @Slot(str, object)
-    def _on_summary_generated_result(self, item_id: str, summary_data: object) -> None:
-        """Handles asynchronous summary generation result.
-
-        Args:
-            item_id: The ID of the item the summary is for.
-            summary_data: The generated SummaryData object.
-
-        """
-        # Determine target editor logic
-        # Simple check: Does EntityEditor currently hold this ID?
-        if self.entity_editor._current_entity_id == item_id:
-            self.entity_editor.on_summary_generated(summary_data)
-            return
-
-        # Does EventEditor hold it?
-        if self.event_editor._current_event_id == item_id:
-            self.event_editor.on_summary_generated(summary_data)
-            return
-
-        # Warn if neither (user navigated away?)
-        self.show_error_message(
-            f"Summary generated for {item_id}, but item is no longer active in editor."
-        )
 
     @Slot(str, object)
     def _on_summary_generated_result(self, item_id: str, summary_data: object) -> None:

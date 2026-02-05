@@ -44,7 +44,10 @@ class BaseCommand(ABC):
 
     def __init__(self) -> None:
         """Initializes the command."""
+        import time
+
         self._is_executed = False
+        self.timestamp: float = time.time()
 
     @abstractmethod
     def execute(self, db_service: DatabaseService) -> Union[bool, CommandResult]:
@@ -106,7 +109,8 @@ class BaseCommand(ABC):
             class_name = class_name[:-7]  # Remove "Command"
         # Convert CamelCase to Title Case with spaces
         import re
-        result = re.sub(r'([A-Z])', r' \1', class_name).strip()
+
+        result = re.sub(r"([A-Z])", r" \1", class_name).strip()
         return result
 
     @property

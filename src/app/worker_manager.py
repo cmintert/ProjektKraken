@@ -336,6 +336,34 @@ class WorkerManager(QObject):
                     "DeleteEventCommand", DeleteEventCommand
                 )
 
+                # Relation commands
+                from src.commands.relation_commands import (
+                    AddRelationCommand,
+                    UpdateRelationCommand,
+                    RemoveRelationCommand,
+                )
+
+                self.window.history_service.register_command_type(
+                    "AddRelationCommand", AddRelationCommand
+                )
+                self.window.history_service.register_command_type(
+                    "UpdateRelationCommand", UpdateRelationCommand
+                )
+                self.window.history_service.register_command_type(
+                    "RemoveRelationCommand", RemoveRelationCommand
+                )
+
+                # Composite and Wiki commands
+                from src.commands.composite_command import CompositeCommand
+                from src.commands.wiki_commands import ProcessWikiLinksCommand
+
+                self.window.history_service.register_command_type(
+                    "CompositeCommand", CompositeCommand
+                )
+                self.window.history_service.register_command_type(
+                    "ProcessWikiLinksCommand", ProcessWikiLinksCommand
+                )
+
                 # Entity commands
                 self.window.history_service.register_command_type(
                     "CreateEntityCommand", CreateEntityCommand

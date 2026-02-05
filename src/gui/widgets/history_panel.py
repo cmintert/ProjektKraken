@@ -245,19 +245,26 @@ class HistoryPanelWidget(QWidget):
             # Get command description
             description = command.get_description()
 
+            # Format timestamp
+            import datetime
+
+            ts_str = ""
+            if hasattr(command, "timestamp") and command.timestamp:
+                dt = datetime.datetime.fromtimestamp(command.timestamp)
+                ts_str = dt.strftime("%Y-%m-%d %H:%M:%S")
+
             # Build display text
+            prefix = "  "
             if can_undo:
                 if is_top:
-                    text = f"▲ {description}"  # Next to undo
-                else:
-                    text = f"  {description}"  # Can undo but not next
+                    prefix = "▲ "
             elif can_redo:
                 if is_top:
-                    text = f"▼ {description}"  # Next to redo
-                else:
-                    text = f"  {description}"  # Can redo but not next
-            else:
-                text = f"  {description}"
+                    prefix = "▼ "
+
+            text = f"{prefix}{description}"
+            if ts_str:
+                text += f" ({ts_str})"
 
             # Create list item
             item = QListWidgetItem(text)
