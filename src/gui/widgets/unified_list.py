@@ -64,10 +64,10 @@ class DraggableListView(QListView):
         model = self.model()
         if not model:
             return
-        
+
         # Need to map to source model if using proxy
         source_index = index
-        if hasattr(model, 'mapToSource'):
+        if hasattr(model, "mapToSource"):
             source_index = model.mapToSource(index)
             source_model = model.sourceModel()
         else:
@@ -244,8 +244,10 @@ class UnifiedListWidget(QWidget):
         self.list_widget.setModel(self._proxy_model)
         self.list_widget.setStyleSheet(StyleHelper.get_checkbox_style())
         self.list_widget.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
-        self.list_widget.selectionModel().selectionChanged.connect(self._on_selection_changed)
-        
+        self.list_widget.selectionModel().selectionChanged.connect(
+            self._on_selection_changed
+        )
+
         main_layout.addWidget(self.list_widget)
 
         # Empty State
@@ -269,8 +271,10 @@ class UnifiedListWidget(QWidget):
 
         # Theme connection for checkbox style updates
         from src.core.theme_manager import ThemeManager
+
         ThemeManager().theme_changed.connect(self._on_theme_changed)
 
+        self._model.dataChanged.connect(self._update_delete_button_state)
         self._render_list()
 
     @Slot(dict)
@@ -303,7 +307,6 @@ class UnifiedListWidget(QWidget):
         self._calendar_converter = converter
         self._model.set_calendar_converter(converter)
         # Model triggers dataChanged automatically
-
 
     @Slot()
     @Slot()
@@ -366,7 +369,7 @@ class UnifiedListWidget(QWidget):
         current_index = self.list_widget.currentIndex()
         current_id = None
         current_type = None
-        
+
         if current_index.isValid():
             # Map through proxy to source model
             source_index = self._proxy_model.mapToSource(current_index)
@@ -380,7 +383,7 @@ class UnifiedListWidget(QWidget):
         # Collect all items that pass filters (filter mode handled by proxy)
         show_events = filter_mode in ["All Items", "Events Only"]
         show_entities = filter_mode in ["All Items", "Entities Only"]
-        
+
         items_to_display = []
         if show_entities:
             items_to_display.extend([("entity", e) for e in self._entities])
@@ -498,9 +501,14 @@ class UnifiedListWidget(QWidget):
                 first_type, first_id = selected_data[0]
                 self.item_selected.emit(first_type, first_id)
 
-            self.btn_delete.setEnabled(True)
-        else:
-            self.btn_delete.setEnabled(False)
+        self._update_delete_button_state()
+
+    def _update_delete_button_state(self) -> None:
+        """Update enable state of delete button based on selection or checks."""
+        selection_model = self.list_widget.selectionModel()
+        has_selection = selection_model and selection_model.hasSelection()
+        has_checks = bool(self._model.get_checked_items())
+        self.btn_delete.setEnabled(has_selection or has_checks)
 
     @Slot()
     def _on_delete_clicked(self) -> None:
@@ -511,20 +519,32 @@ class UnifiedListWidget(QWidget):
         if not selection_model:
             return
 
-        selected_indexes = selection_model.selectedIndexes()
-        if not selected_indexes:
-            return
-
-        # Collect all selected items
+        # Try checked items first for multi-select
+        checked_items = self._model.get_checked_items()
         items_to_delete = []
-        for index in selected_indexes:
-            # Map through proxy to source
-            source_index = self._proxy_model.mapToSource(index)
-            item_id = self._model.data(source_index, ExplorerModel.ItemIdRole)
-            item_type = self._model.data(source_index, ExplorerModel.ItemTypeRole)
-            item_name = self._model.data(source_index, ExplorerModel.ItemNameRole)
-            if item_id and item_type:
-                items_to_delete.append((item_type, item_id, item_name))
+
+        if checked_items:
+            for item_type, item_id in checked_items:
+                # Find in cache to get name
+                name = "Unknown"
+                if item_type == "event":
+                    obj = next((e for e in self._events if e.id == item_id), None)
+                else:
+                    obj = next((e for e in self._entities if e.id == item_id), None)
+                if obj:
+                    name = obj.name
+                items_to_delete.append((item_type, item_id, name))
+        else:
+            # Fallback to selection
+            selected_indexes = selection_model.selectedIndexes()
+            for index in selected_indexes:
+                # Map through proxy to source
+                source_index = self._proxy_model.mapToSource(index)
+                item_id = self._model.data(source_index, ExplorerModel.ItemIdRole)
+                item_type = self._model.data(source_index, ExplorerModel.ItemTypeRole)
+                item_name = self._model.data(source_index, ExplorerModel.ItemNameRole)
+                if item_id and item_type:
+                    items_to_delete.append((item_type, item_id, item_name))
 
         if not items_to_delete:
             return

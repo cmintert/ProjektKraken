@@ -39,13 +39,15 @@ class ExplorerModel(QAbstractListModel):
         super().__init__(parent)
         self._items: List[tuple[str, Union[Event, Entity]]] = []
         self._calendar_converter: Optional[CalendarConverter] = None
-        
+        self._checked_ids = set()  # Set of (item_type, item_id) tuples
+
         # Theme colors
         from src.core.theme_manager import ThemeManager
+
         theme = ThemeManager().get_theme()
         self.color_event = QColor(theme.get("accent_secondary", "#0078D4"))
         self.color_entity = QColor(theme.get("primary", "#FF9900"))
-        
+
         # Connect to theme changes
         ThemeManager().theme_changed.connect(self._on_theme_changed)
 
@@ -61,7 +63,9 @@ class ExplorerModel(QAbstractListModel):
         if self._items:
             top_left = self.index(0, 0)
             bottom_right = self.index(len(self._items) - 1, 0)
-            self.dataChanged.emit(top_left, bottom_right, [Qt.ItemDataRole.ForegroundRole])
+            self.dataChanged.emit(
+                top_left, bottom_right, [Qt.ItemDataRole.ForegroundRole]
+            )
 
     def set_calendar_converter(self, converter: Optional[CalendarConverter]) -> None:
         """Set the calendar converter for date formatting.
@@ -135,6 +139,9 @@ class ExplorerModel(QAbstractListModel):
 
         elif role == Qt.ItemDataRole.CheckStateRole:
             # Support checkboxes
+            identity = (item_type, obj.id)
+            if identity in self._checked_ids:
+                return Qt.CheckState.Checked
             return Qt.CheckState.Unchecked
 
         elif role == self.ItemIdRole:
@@ -151,7 +158,9 @@ class ExplorerModel(QAbstractListModel):
 
         return None
 
-    def setData(self, index: QModelIndex, value: Any, role: int = Qt.ItemDataRole.EditRole) -> bool:
+    def setData(
+        self, index: QModelIndex, value: Any, role: int = Qt.ItemDataRole.EditRole
+    ) -> bool:
         """Set data for the given index and role.
 
         Args:
@@ -166,7 +175,20 @@ class ExplorerModel(QAbstractListModel):
             return False
 
         if role == Qt.ItemDataRole.CheckStateRole:
-            # Checkbox state changed - emit signal
+            # Checkbox state changed
+            item_type, obj = self._items[index.row()]
+            identity = (item_type, obj.id)
+
+            # Robust value handling (enum or int)
+            is_checked = (
+                value == Qt.CheckState.Checked or value == 2 or str(value) == "2"
+            )
+
+            if is_checked:
+                self._checked_ids.add(identity)
+            else:
+                self._checked_ids.discard(identity)
+
             self.dataChanged.emit(index, index, [role])
             return True
 
@@ -220,7 +242,17 @@ class ExplorerModel(QAbstractListModel):
 
         return date_part
 
-    def get_item(self, index: QModelIndex) -> Optional[tuple[str, Union[Event, Entity]]]:
+    def get_checked_items(self) -> List[tuple[str, str]]:
+        """Return a list of (type, id) for all checked items.
+
+        Returns:
+            List of (item_type, item_id) tuples.
+        """
+        return list(self._checked_ids)
+
+    def get_item(
+        self, index: QModelIndex
+    ) -> Optional[tuple[str, Union[Event, Entity]]]:
         """Get the item at the given index.
 
         Args:
