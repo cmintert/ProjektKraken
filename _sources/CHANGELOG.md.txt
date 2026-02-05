@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-05
 ### Internal
-- Merge pull request #71 from cmintert/copilot/add-per-document-history-feature
+- Final: Add code review documentation index and summary
 
 
 *This changelog was automatically generated.*
