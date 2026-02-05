@@ -86,6 +86,7 @@ from src.commands.relation_commands import (
     UpdateRelationCommand,
 )
 from src.commands.wiki_commands import ProcessWikiLinksCommand
+from src.commands.composite_command import CompositeCommand
 from src.core.fast_inject import FastInjectManager
 from src.core.logging_config import get_logger
 from src.core.paths import get_worlds_dir
@@ -157,7 +158,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             theme_name = ThemeManager().current_theme_name
             dark_mode = "dark" in theme_name.lower()
             apply_windows_title_bar_style(self, dark_mode=dark_mode)
-            
+
             # Connect to theme changes to update title bar
             ThemeManager().theme_changed.connect(self._on_theme_changed_for_titlebar)
         except Exception as e:
@@ -270,6 +271,11 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.graph_widget = GraphWidget()
         self.longform_editor = LongformEditorWidget(db_path=self.db_path)
 
+        # Create History Panel (Phase 3)
+        from src.gui.widgets.history_panel import HistoryPanelWidget
+
+        self.history_panel = HistoryPanelWidget()
+
         # Initialize Managers
         self.map_handler = MapHandler(self)
         self.grouping_manager = TimelineGroupingManager(self)
@@ -310,6 +316,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
                 "map_widget": self.map_widget,
                 "ai_search_panel": self.ai_search_panel,
                 "graph_widget": self.graph_widget,
+                "history_panel": self.history_panel,
             }
         )
 
@@ -323,6 +330,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         # Create Menus
         self.ui_manager.create_file_menu(self.menuBar())
+        self.ui_manager.create_edit_menu(self.menuBar())  # Add Edit menu
         self.ui_manager.create_timeline_menu(self.menuBar())
         self.ui_manager.create_view_menu(self.menuBar())
         self.ui_manager.create_settings_menu(self.menuBar())
@@ -353,9 +361,37 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         # Initialize Command Coordinator
         self.command_coordinator = CommandCoordinator(self)
+        self.coordinator = self.command_coordinator  # Alias for shorter access
         self.command_coordinator.command_requested.connect(
             lambda cmd: self.command_requested.emit(cmd)
         )
+        # Connect undo/redo signals to worker
+        self.command_coordinator.undo_requested.connect(
+            self.worker.run_undo, Qt.ConnectionType.QueuedConnection
+        )
+        self.command_coordinator.redo_requested.connect(
+            self.worker.run_redo, Qt.ConnectionType.QueuedConnection
+        )
+        # Update UI when history changes
+        self.command_coordinator.history_changed.connect(
+            self.ui_manager.update_undo_redo_state
+        )
+        # Connect history panel to coordinator
+        self.command_coordinator.history_changed.connect(self._update_history_panel)
+        # Connect history panel buttons to coordinator
+        self.history_panel.undo_clicked.connect(self.command_coordinator.undo)
+        self.history_panel.redo_clicked.connect(self.command_coordinator.redo)
+        self.history_panel.clear_history_clicked.connect(
+            self.command_coordinator.clear_history
+        )
+        # Connect worker's command results to coordinator for undo stack management
+        self.worker.command_finished.connect(
+            self.command_coordinator.on_command_result,
+            Qt.ConnectionType.QueuedConnection,
+        )
+
+        # Connect undo/redo menu actions (deferred from Phase 2)
+        self.ui_manager.connect_undo_redo_actions()
 
         # Connect editor dirty signals (these are safe to connect early)
         self.event_editor.dirty_changed.connect(
@@ -648,12 +684,27 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         pass
 
     def load_data(self) -> None:
-        """Refreshes both events and entities."""
+        """Refreshes data and active editors."""
         self.load_events()
         self.load_entities()
         self.load_longform_sequence()
         self.load_graph_data()
         self.load_completer_data()
+
+        # Reload active editors to ensure they reflect current state (e.g. after undo)
+        # This prevents the editor from holding onto "future" state that might be
+        # auto-saved, restoring the undone change.
+        if (
+            hasattr(self.event_editor, "_current_event_id")
+            and self.event_editor._current_event_id
+        ):
+            self.load_event_details(self.event_editor._current_event_id)
+
+        if (
+            hasattr(self.entity_editor, "_current_entity_id")
+            and self.entity_editor._current_entity_id
+        ):
+            self.load_entity_details(self.entity_editor._current_entity_id)
 
     def load_completer_data(self) -> None:
         """Requests loading of completer data."""
@@ -746,6 +797,18 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             self.delete_event(item_id)
         elif item_type == "entity":
             self.delete_entity(item_id)
+
+    @Slot()
+    def _update_history_panel(self) -> None:
+        """Update the history panel with current undo/redo stacks."""
+        try:
+            if hasattr(self, "history_panel") and hasattr(self, "command_coordinator"):
+                self.history_panel.update_history(
+                    self.command_coordinator.undo_stack,
+                    self.command_coordinator.redo_stack,
+                )
+        except Exception as e:
+            logger.error(f"Failed to update history panel: {e}")
 
     @Slot(str)
     def update_status_message(self, message: str) -> None:
@@ -907,14 +970,14 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     def _on_theme_changed_for_titlebar(self, theme_dict: dict) -> None:
         """Update Windows title bar style when theme changes.
-        
+
         Args:
             theme_dict: The new theme dictionary from ThemeManager.
         """
         try:
             from src.gui.utils.window_utils import apply_windows_title_bar_style
             from src.core.theme_manager import ThemeManager
-            
+
             # Determine if new theme is dark
             theme_name = ThemeManager().current_theme_name
             dark_mode = "dark" in theme_name.lower()
@@ -1320,14 +1383,22 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             logger.error("[MainWindow] update_event aborted - no ID")
             return
 
-        cmd = UpdateEventCommand(event_id, event_data)
-        logger.debug("[MainWindow] Emitting UpdateEventCommand")
-        self.command_requested.emit(cmd)
+        cmds = []
+        cmds.append(UpdateEventCommand(event_id, event_data))
 
         if "description" in event_data:
             wiki_cmd = ProcessWikiLinksCommand(event_id, event_data["description"])
-            logger.debug("[MainWindow] Emitting ProcessWikiLinksCommand")
-            self.command_requested.emit(wiki_cmd)
+            cmds.append(wiki_cmd)
+
+        if len(cmds) > 1:
+            desc = f"Update Event '{event_data.get('name', '?')}'"
+            cmd = CompositeCommand(cmds, description=desc)
+            logger.debug("[MainWindow] Emitting CompositeCommand (Update+Wiki)")
+        else:
+            cmd = cmds[0]
+            logger.debug(f"[MainWindow] Emitting {cmd.__class__.__name__}")
+
+        self.command_requested.emit(cmd)
 
     @Slot(str, float)
     def _on_event_date_changed(self, event_id: str, new_lore_date: float) -> None:
@@ -1404,14 +1475,22 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             logger.error("[MainWindow] update_entity aborted - no ID")
             return
 
-        cmd = UpdateEntityCommand(entity_id, entity_data)
-        logger.debug("[MainWindow] Emitting UpdateEntityCommand")
-        self.command_requested.emit(cmd)
+        cmds = []
+        cmds.append(UpdateEntityCommand(entity_id, entity_data))
 
         if "description" in entity_data:
             wiki_cmd = ProcessWikiLinksCommand(entity_id, entity_data["description"])
-            logger.debug("[MainWindow] Emitting ProcessWikiLinksCommand")
-            self.command_requested.emit(wiki_cmd)
+            cmds.append(wiki_cmd)
+
+        if len(cmds) > 1:
+            desc = f"Update Entity '{entity_data.get('name', '?')}'"
+            cmd = CompositeCommand(cmds, description=desc)
+            logger.debug("[MainWindow] Emitting CompositeCommand (Update+Wiki)")
+        else:
+            cmd = cmds[0]
+            logger.debug(f"[MainWindow] Emitting {cmd.__class__.__name__}")
+
+        self.command_requested.emit(cmd)
 
     def add_relation(
         self,
@@ -1867,23 +1946,23 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
                     Q_ARG(str, parsed_json),
                     Q_ARG(str, options_json),
                 )
-                
+
                 # Show progress dialog
                 from src.gui.dialogs.progress_dialog import ProgressDialog
-                
+
                 self._import_progress_dialog = ProgressDialog(
                     "Importing data...\n\nThis may take a moment for large files.",
                     parent=self,
                     cancelable=False,
-                    title="Import in Progress"
+                    title="Import in Progress",
                 )
                 self.status_bar.showMessage("Importing...", 0)
 
         except Exception as e:
             logger.exception("Import error")
             QMessageBox.critical(
-                self, 
-                "Import Error", 
+                self,
+                "Import Error",
                 f"An unexpected error occurred during import: {e}\n\n"
                 "Your existing data is safe and unchanged.\n\n"
                 "Possible causes:\n"
@@ -1894,7 +1973,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
                 "1. Check that the file is a valid import format\n"
                 "2. Verify file is not corrupted\n"
                 "3. Check application logs for detailed error\n"
-                "4. Try exporting and re-importing a small test dataset"
+                "4. Try exporting and re-importing a small test dataset",
             )
 
     @Slot(object)
@@ -1909,7 +1988,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         if self._import_progress_dialog:
             self._import_progress_dialog.finish()
             self._import_progress_dialog = None
-            
+
         self.status_bar.clearMessage()
 
         if result.success:
@@ -1929,43 +2008,18 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             err_msg = "\n".join(result.errors[:10])
             if len(result.errors) > 10:
                 err_msg += f"\n...and {len(result.errors) - 10} more errors."
-            
+
             QMessageBox.critical(
-                self, 
-                "Import Failed", 
+                self,
+                "Import Failed",
                 f"Import completed with errors. No data was imported.\n\n"
                 f"Errors ({len(result.errors)} total):\n{err_msg}\n\n"
                 "What to do:\n"
                 "1. Fix the errors in your source file\n"
                 "2. Check file format matches expected structure\n"
                 "3. Try importing a smaller subset first\n"
-                "4. Consult documentation for import format details"
+                "4. Consult documentation for import format details",
             )
-
-    @Slot(str, object)
-    def _on_summary_generated_result(self, item_id: str, summary_data: object) -> None:
-        """Handles asynchronous summary generation result.
-
-        Args:
-            item_id: The ID of the item the summary is for.
-            summary_data: The generated SummaryData object.
-
-        """
-        # Determine target editor logic
-        # Simple check: Does EntityEditor currently hold this ID?
-        if self.entity_editor._current_entity_id == item_id:
-            self.entity_editor.on_summary_generated(summary_data)
-            return
-
-        # Does EventEditor hold it?
-        if self.event_editor._current_event_id == item_id:
-            self.event_editor.on_summary_generated(summary_data)
-            return
-
-        # Warn if neither (user navigated away?)
-        self.show_error_message(
-            f"Summary generated for {item_id}, but item is no longer active in editor."
-        )
 
     @Slot(str, object)
     def _on_summary_generated_result(self, item_id: str, summary_data: object) -> None:

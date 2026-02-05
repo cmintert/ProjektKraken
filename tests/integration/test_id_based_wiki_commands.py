@@ -33,11 +33,11 @@ def test_id_based_link_processing(db_service):
     result = cmd.execute(db_service)
 
     assert result.success is True
-    assert "Found 2 valid links" in result.message
+    assert "Created 2 new links" in result.message
 
-    # Verify NO relations were created (Command is read-only)
+    # Verify relations were created
     relations = db_service.get_relations(event.id)
-    assert len(relations) == 0
+    assert len(relations) == 2
 
 
 def test_mixed_links_processing(db_service):
@@ -61,11 +61,11 @@ def test_mixed_links_processing(db_service):
     result = cmd.execute(db_service)
 
     assert result.success is True
-    assert "Found 2 valid links" in result.message
+    assert "Created 2 new links" in result.message
 
-    # Verify NO relations created
+    # Verify relations created
     relations = db_service.get_relations(event.id)
-    assert len(relations) == 0
+    assert len(relations) == 2
 
 
 def test_broken_id_link_skipped(db_service):
@@ -84,7 +84,7 @@ def test_broken_id_link_skipped(db_service):
     result = cmd.execute(db_service)
 
     assert result.success is True
-    assert "Found 0 valid links" in result.message
+    assert "Created 0 new links" in result.message
     assert "broken link(s)" in result.message
 
     # Verify no relations were created
@@ -115,9 +115,9 @@ def test_id_link_with_display_name(db_service):
     # Check string representation in valid_links
     assert any("Sauron the Great" in link for link in result.data["valid_links"])
 
-    # Verify NO relations created
+    # Verify relation created
     relations = db_service.get_relations(event.id)
-    assert len(relations) == 0
+    assert len(relations) == 1
 
 
 def test_id_link_self_reference_skipped(db_service):
@@ -136,7 +136,7 @@ def test_id_link_self_reference_skipped(db_service):
     # Should succeed but find no valid external links
     assert result.success is True
     # Self-reference is skipped, so 0 valid links
-    assert "Found 0 valid links" in result.message
+    assert "Created 0 new links" in result.message
 
     # Verify no relations
     relations = db_service.get_relations(entity.id)

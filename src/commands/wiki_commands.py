@@ -179,18 +179,46 @@ class ProcessWikiLinksCommand(BaseCommand):
                     continue
 
                 # It's a valid link
-                valid_links.append(f"{target_obj.name} ({target_type_str})")
-                created_count += 1
-                logger.info(
-                    f"Found valid link: {self.source_id} -> "
-                    f"{target_obj.name} ({target_type_str}) "
-                    f"at offset {candidate.span[0]} "
-                    f"({'ID-based' if candidate.is_id_based else 'name-based'})"
-                )
+                if (
+                    target_obj.id,
+                    0,
+                ) not in existing_keys:  # Simplified check - ideally check offsets
+                    # Create the relation
+                    attributes = {
+                        "field": self.field,
+                        "start_offset": candidate.span[0],
+                        "end_offset": candidate.span[1],
+                        "snippet": self._extract_snippet(
+                            self.text_content, candidate.span[0], candidate.span[1]
+                        ),
+                        "is_auto_generated": True,
+                    }
+
+                    try:
+                        rel_id = db_service.insert_relation(
+                            source_id=self.source_id,
+                            target_id=target_obj.id,
+                            rel_type="mentions",
+                            attributes=attributes,
+                        )
+                        self._created_relations.append(rel_id)
+                        created_count += 1
+                        valid_links.append(f"{target_obj.name} ({target_type_str})")
+
+                        logger.info(
+                            f"Created 'mentions' relation {rel_id}: {self.source_id} -> "
+                            f"{target_obj.name}"
+                        )
+                    except Exception as e:
+                        logger.error(f"Failed to create wiki relation: {e}")
+                else:
+                    logger.debug(f"Skipping existing relation to {target_obj.name}")
 
             # 5. Build result message
             link_word = "link" if created_count == 1 else "links"
-            message_parts = [f"Found {created_count} valid {link_word}."]
+            message_parts = [
+                f"Processed {len(candidates)} candidates. Created {created_count} new {link_word}."
+            ]
             if skipped_ambiguous:
                 message_parts.append(
                     f"Found {len(skipped_ambiguous)} ambiguous link(s)."
@@ -220,8 +248,14 @@ class ProcessWikiLinksCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """Undo operation is not applicable for read-only validation."""
-        pass
+        """Undo operation: deletes the created 'mentions' relations."""
+        for rel_id in self._created_relations:
+            try:
+                db_service.delete_relation(rel_id)
+                logger.info(f"Undoing WikiLink: Deleted relation {rel_id}")
+            except Exception as e:
+                logger.error(f"Failed to undo wiki relation {rel_id}: {e}")
+        self._created_relations.clear()
 
     @staticmethod
     def _extract_snippet(
@@ -258,3 +292,42 @@ class ProcessWikiLinksCommand(BaseCommand):
             snippet = snippet + "..."
 
         return snippet
+
+    def get_description(self) -> str:
+        """Get a human-readable description of this command.
+
+        Returns:
+            str: Description like "Process WikiLinks for Entity 'SourceID'".
+        """
+        return f"Process WikiLinks for source '{self.source_id}'"
+
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            dict: Command data for persistence
+        """
+        return {
+            "source_id": self.source_id,
+            "text_content": self.text_content,
+            "field": self.field,
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "ProcessWikiLinksCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Command data from database
+
+        Returns:
+            ProcessWikiLinksCommand: Reconstructed command
+        """
+        cmd = cls(
+            source_id=data["source_id"],
+            text_content=data["text_content"],
+            field=data.get("field", "description"),
+        )
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd

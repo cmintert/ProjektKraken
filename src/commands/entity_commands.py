@@ -77,6 +77,29 @@ class CreateEntityCommand(BaseCommand):
             self._is_executed = False
             logger.info(f"Undid creation of entity: {self._entity.id}")
 
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            dict: Command data for persistence
+        """
+        return {"entity": self._entity.to_dict(), "is_executed": self._is_executed}
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "CreateEntityCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Command data from database
+
+        Returns:
+            CreateEntityCommand: Reconstructed command
+        """
+        entity_data = data["entity"]
+        cmd = cls(entity_data)
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd
+
 
 class UpdateEntityCommand(BaseCommand):
     """Command to update an existing entity.
@@ -182,6 +205,40 @@ class UpdateEntityCommand(BaseCommand):
             self._is_executed = False
             logger.info(f"Undid update of entity: {self._previous_entity.id}")
 
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            dict: Command data for persistence
+        """
+        return {
+            "entity_id": self.entity_id,
+            "update_data": self.update_data,
+            "previous_entity": (
+                self._previous_entity.to_dict() if self._previous_entity else None
+            ),
+            "new_entity": self._new_entity.to_dict() if self._new_entity else None,
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "UpdateEntityCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Command data from database
+
+        Returns:
+            UpdateEntityCommand: Reconstructed command
+        """
+        cmd = cls(data["entity_id"], data["update_data"])
+        if data.get("previous_entity"):
+            cmd._previous_entity = Entity.from_dict(data["previous_entity"])
+        if data.get("new_entity"):
+            cmd._new_entity = Entity.from_dict(data["new_entity"])
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd
+
 
 class DeleteEntityCommand(BaseCommand):
     """Command to delete an entity."""
@@ -196,6 +253,17 @@ class DeleteEntityCommand(BaseCommand):
         super().__init__()
         self._entity_id = entity_id
         self._backup_entity: Optional[Entity] = None
+
+    def get_description(self) -> str:
+        """Get a human-readable description of this command.
+
+        Returns:
+            str: Description like "Delete Entity 'John Doe'".
+
+        """
+        if self._backup_entity:
+            return f"Delete Entity '{self._backup_entity.name}'"
+        return "Delete Entity"
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Executes the command to delete the entity.
@@ -245,3 +313,33 @@ class DeleteEntityCommand(BaseCommand):
             db_service.insert_entity(self._backup_entity)
             self._is_executed = False
             logger.info(f"Undid deletion of entity: {self._entity_id}")
+
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            dict: Command data for persistence
+        """
+        return {
+            "entity_id": self._entity_id,
+            "backup_entity": (
+                self._backup_entity.to_dict() if self._backup_entity else None
+            ),
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "DeleteEntityCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Command data from database
+
+        Returns:
+            DeleteEntityCommand: Reconstructed command
+        """
+        cmd = cls(data["entity_id"])
+        if data.get("backup_entity"):
+            cmd._backup_entity = Entity.from_dict(data["backup_entity"])
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd

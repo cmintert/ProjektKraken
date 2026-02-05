@@ -215,54 +215,59 @@ class CompactDateWidget(QWidget):
 
     def _populate_months(self) -> None:
         """Populates month dropdown from calendar."""
+        prev_updating = self._updating
         self._updating = True
-        current_index = self.combo_month.currentIndex()
-        self.combo_month.clear()
+        try:
+            current_index = self.combo_month.currentIndex()
+            self.combo_month.clear()
 
-        if self._converter and self._converter._config:
-            year = self.spin_year.value()
-            months = self._converter._config.get_months_for_year(year)
-            for month in months:
-                self.combo_month.addItem(month.name)
-        else:
-            # Fallback: 12 generic months
-            for i in range(12):
-                self.combo_month.addItem(f"Month {i + 1}")
+            if self._converter and self._converter._config:
+                year = self.spin_year.value()
+                months = self._converter._config.get_months_for_year(year)
+                for month in months:
+                    self.combo_month.addItem(month.name)
+            else:
+                # Fallback: 12 generic months
+                for i in range(12):
+                    self.combo_month.addItem(f"Month {i + 1}")
 
-        # Restore selection
-        if current_index >= 0 and current_index < self.combo_month.count():
-            self.combo_month.setCurrentIndex(current_index)
-        elif self.combo_month.count() > 0:
-            self.combo_month.setCurrentIndex(0)
-
-        self._updating = False
+            # Restore selection
+            if current_index >= 0 and current_index < self.combo_month.count():
+                self.combo_month.setCurrentIndex(current_index)
+            elif self.combo_month.count() > 0:
+                self.combo_month.setCurrentIndex(0)
+        finally:
+            self._updating = prev_updating
 
     def _populate_days(self) -> None:
         """Populates day dropdown based on selected month."""
+        prev_updating = self._updating
         self._updating = True
-        current_day = self.combo_day.currentIndex()
-        self.combo_month.blockSignals(True)
-        self.combo_day.clear()
+        try:
+            current_day = self.combo_day.currentIndex()
+            self.combo_month.blockSignals(True)
+            self.combo_day.clear()
 
-        days_in_month = 30  # Default
-        if self._converter and self._converter._config:
-            year = self.spin_year.value()
-            month_index = self.combo_month.currentIndex()
-            months = self._converter._config.get_months_for_year(year)
-            if 0 <= month_index < len(months):
-                days_in_month = months[month_index].days
+            days_in_month = 30  # Default
+            if self._converter and self._converter._config:
+                year = self.spin_year.value()
+                month_index = self.combo_month.currentIndex()
+                months = self._converter._config.get_months_for_year(year)
+                if 0 <= month_index < len(months):
+                    days_in_month = months[month_index].days
 
-        for d in range(1, days_in_month + 1):
-            self.combo_day.addItem(f"Day {d}")
+            for d in range(1, days_in_month + 1):
+                self.combo_day.addItem(f"Day {d}")
 
-        # Restore or clamp day selection
-        if current_day >= 0 and current_day < days_in_month:
-            self.combo_day.setCurrentIndex(current_day)
-        elif days_in_month > 0:
-            self.combo_day.setCurrentIndex(min(current_day, days_in_month - 1))
+            # Restore or clamp day selection
+            if current_day >= 0 and current_day < days_in_month:
+                self.combo_day.setCurrentIndex(current_day)
+            elif days_in_month > 0:
+                self.combo_day.setCurrentIndex(min(current_day, days_in_month - 1))
 
-        self.combo_month.blockSignals(False)
-        self._updating = False
+            self.combo_month.blockSignals(False)
+        finally:
+            self._updating = prev_updating
 
     @Slot(int)
     def _on_month_changed(self, index: int) -> None:
@@ -380,6 +385,7 @@ class CompactDateWidget(QWidget):
         if self._updating:
             return
 
+        prev_updating = self._updating
         self._updating = True
         try:
             if self._converter:
@@ -417,7 +423,7 @@ class CompactDateWidget(QWidget):
 
             self._update_preview()
         finally:
-            self._updating = False
+            self._updating = prev_updating
 
     @Slot()
     def _open_calendar_popup(self) -> None:

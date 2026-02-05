@@ -109,6 +109,11 @@ class World:
         return self.path / "assets"
 
     @property
+    def id(self) -> str:
+        """Returns the world's unique identifier."""
+        return self.manifest.id
+
+    @property
     def manifest_path(self) -> Path:
         """Returns the path to the world's manifest file."""
         return self.path / "world.json"
@@ -162,7 +167,8 @@ class World:
         # Check for traversal
         if not manifest_path.is_relative_to(world_path):
             logger.error(
-                f"Security Violation: Manifest path {manifest_path} outside world {world_path}"
+                f"Security Violation: Manifest path {manifest_path} "
+                f"outside world {world_path}"
             )
             return None
 

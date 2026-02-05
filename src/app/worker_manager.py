@@ -300,6 +300,94 @@ class WorkerManager(QObject):
                 # Don't fail the entire app if backup service fails to init
                 self.window.backup_service = None
 
+            # Initialize History Service for Phase 2 persistent undo/redo
+            try:
+                from src.services.history_service import HistoryService
+                from src.commands.event_commands import (
+                    CreateEventCommand,
+                    UpdateEventCommand,
+                    DeleteEventCommand,
+                )
+                from src.commands.entity_commands import (
+                    CreateEntityCommand,
+                    UpdateEntityCommand as UpdateEntityCmd,
+                    DeleteEntityCommand as DeleteEntityCmd,
+                )
+
+                # Create history service with current world ID
+                world_id = (
+                    self.window.current_world.id
+                    if self.window.current_world
+                    else "default"
+                )
+                self.window.history_service = HistoryService(
+                    self.window.gui_db_service, world_id
+                )
+
+                # Register command types for deserialization
+                # Event commands
+                self.window.history_service.register_command_type(
+                    "CreateEventCommand", CreateEventCommand
+                )
+                self.window.history_service.register_command_type(
+                    "UpdateEventCommand", UpdateEventCommand
+                )
+                self.window.history_service.register_command_type(
+                    "DeleteEventCommand", DeleteEventCommand
+                )
+
+                # Relation commands
+                from src.commands.relation_commands import (
+                    AddRelationCommand,
+                    UpdateRelationCommand,
+                    RemoveRelationCommand,
+                )
+
+                self.window.history_service.register_command_type(
+                    "AddRelationCommand", AddRelationCommand
+                )
+                self.window.history_service.register_command_type(
+                    "UpdateRelationCommand", UpdateRelationCommand
+                )
+                self.window.history_service.register_command_type(
+                    "RemoveRelationCommand", RemoveRelationCommand
+                )
+
+                # Composite and Wiki commands
+                from src.commands.composite_command import CompositeCommand
+                from src.commands.wiki_commands import ProcessWikiLinksCommand
+
+                self.window.history_service.register_command_type(
+                    "CompositeCommand", CompositeCommand
+                )
+                self.window.history_service.register_command_type(
+                    "ProcessWikiLinksCommand", ProcessWikiLinksCommand
+                )
+
+                # Entity commands
+                self.window.history_service.register_command_type(
+                    "CreateEntityCommand", CreateEntityCommand
+                )
+                self.window.history_service.register_command_type(
+                    "UpdateEntityCommand", UpdateEntityCmd
+                )
+                self.window.history_service.register_command_type(
+                    "DeleteEntityCommand", DeleteEntityCmd
+                )
+
+                # Connect to command coordinator
+                self.window.coordinator.set_history_service(self.window.history_service)
+
+                # Load command history from database
+                self.window.coordinator.load_history()
+
+                logger.info("History service initialized successfully")
+
+            except Exception as e:
+                logger.error(f"Failed to initialize history service: {e}")
+                # Don't fail the entire app if history service fails to init
+                self.window.history_service = None
+
             self.window.load_data()
             self.window._request_calendar_config()
             self.window._request_current_time()

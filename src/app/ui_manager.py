@@ -26,6 +26,7 @@ from src.app.constants import (
     DOCK_OBJ_ENTITY_INSPECTOR,
     DOCK_OBJ_EVENT_INSPECTOR,
     DOCK_OBJ_GRAPH,
+    DOCK_OBJ_HISTORY,
     DOCK_OBJ_LONGFORM,
     DOCK_OBJ_MAP,
     DOCK_OBJ_PROJECT,
@@ -34,6 +35,7 @@ from src.app.constants import (
     DOCK_TITLE_ENTITY_INSPECTOR,
     DOCK_TITLE_EVENT_INSPECTOR,
     DOCK_TITLE_GRAPH,
+    DOCK_TITLE_HISTORY,
     DOCK_TITLE_LONGFORM,
     DOCK_TITLE_MAP,
     DOCK_TITLE_PROJECT,
@@ -159,6 +161,7 @@ class UIManager:
                 - 'longform_editor': LongformEditorWidget
                 - 'map_widget': MapWidget
                 - 'ai_search_panel': AISearchPanelWidget (optional)
+                - 'history_panel': HistoryPanelWidget (optional)
 
         """
         from src.core.logging_config import get_logger
@@ -327,6 +330,25 @@ class UIManager:
             else:
                 failed_docks.append("graph")
 
+        # 9. History Panel (Right, tabbed with inspectors)
+        if "history_panel" in widgets:
+            dock = self._create_dock(
+                DOCK_TITLE_HISTORY, DOCK_OBJ_HISTORY, widgets["history_panel"]
+            )
+            if dock:
+                self.docks["history"] = dock
+                self.main_window.addDockWidget(
+                    Qt.DockWidgetArea.RightDockWidgetArea, self.docks["history"]
+                )
+                self._attach_diagnostics(self.docks["history"])
+                # Tabify with entity inspector if it exists
+                if "entity" in self.docks:
+                    self.main_window.tabifyDockWidget(
+                        self.docks["entity"], self.docks["history"]
+                    )
+            else:
+                failed_docks.append("history")
+
         # Report results
         if failed_docks:
             logger.warning(f"Failed to create docks: {failed_docks}")
@@ -473,6 +495,45 @@ class UIManager:
         # Exit
         exit_action = file_menu.addAction("Exit")
         exit_action.triggered.connect(self.main_window.close)
+
+    def create_edit_menu(self, menu_bar: QMenuBar) -> None:
+        """Creates the Edit menu with undo/redo actions."""
+        from PySide6.QtGui import QKeySequence
+
+        edit_menu = menu_bar.addMenu("Edit")
+
+        # Undo Action
+        self.undo_action = edit_menu.addAction("Undo")
+        self.undo_action.setShortcut(QKeySequence.StandardKey.Undo)
+        self.undo_action.setEnabled(False)  # Disabled by default
+        # Note: Connection deferred to connect_undo_redo_actions()
+        # (called after coordinator is initialized)
+
+        # Redo Action
+        self.redo_action = edit_menu.addAction("Redo")
+        self.redo_action.setShortcut(QKeySequence.StandardKey.Redo)
+        self.redo_action.setEnabled(False)  # Disabled by default
+        # Note: Connection deferred to connect_undo_redo_actions()
+        # (called after coordinator is initialized)
+
+    def connect_undo_redo_actions(self) -> None:
+        """Connects undo/redo actions to the coordinator.
+
+        Must be called after the command coordinator is initialized.
+        """
+        if hasattr(self, "undo_action") and hasattr(self, "redo_action"):
+            self.undo_action.triggered.connect(self.main_window.coordinator.undo)
+            self.redo_action.triggered.connect(self.main_window.coordinator.redo)
+
+    def update_undo_redo_state(self) -> None:
+        """Updates the enabled/disabled state of undo/redo actions.
+
+        Should be called when the command history changes.
+        """
+        if hasattr(self, "undo_action") and hasattr(self, "redo_action"):
+            coordinator = self.main_window.coordinator
+            self.undo_action.setEnabled(coordinator.can_undo())
+            self.redo_action.setEnabled(coordinator.can_redo())
 
     def create_view_menu(self, menu_bar: QMenuBar) -> None:
         """Creates the View menu for toggling docks."""

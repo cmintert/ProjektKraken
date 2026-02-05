@@ -484,13 +484,19 @@ class DatabaseWorker(QObject):
                 success = result
                 msg = f"{command_name} {'succeeded' if success else 'failed'}"
                 result_obj = CommandResult(
-                    success=success, message=msg, command_name=command_name
+                    success=success, 
+                    message=msg, 
+                    command_name=command_name,
+                    data={"command": command}  # Include command for undo stack
                 )
             elif isinstance(result, CommandResult):
                 result_obj = result
                 # Ensure command_name is set if missing
                 if not result_obj.command_name:
                     result_obj.command_name = command_name
+                # Include command in result data for undo stack
+                if "command" not in result_obj.data:
+                    result_obj.data["command"] = command
             else:
                 # Unexpected return type
                 logger.warning(
@@ -513,6 +519,99 @@ class DatabaseWorker(QObject):
                 success=False,
                 message="An unexpected error occurred during execution.",
                 command_name=command_name,
+            )
+            self.command_finished.emit(fail_res)
+
+    @Slot(object)
+    def run_undo(self, command: BaseCommand) -> None:
+        """Undoes a command.
+
+        Args:
+            command (BaseCommand): The command object to undo.
+
+        Emits:
+            command_finished (CommandResult): Result indicating undo success.
+
+        """
+        if not self.db_service:
+            logger.error("Database not ready for undo")
+            self.error_occurred.emit("Database not ready for undo.")
+            return
+
+        command_name = command.__class__.__name__
+        try:
+            self.operation_started.emit(f"Undoing {command_name}...")
+            command.undo(self.db_service)
+            
+            result_obj = CommandResult(
+                success=True,
+                message=f"Undone: {command.get_description()}",
+                command_name=f"Undo_{command_name}",
+            )
+            self.command_finished.emit(result_obj)
+            self.operation_finished.emit(f"Undone {command_name}.")
+            
+        except Exception:
+            logger.error(f"Undo {command_name} failed: {traceback.format_exc()}")
+            self.error_occurred.emit(f"Undo {command_name} failed.")
+            fail_res = CommandResult(
+                success=False,
+                message="Failed to undo operation.",
+                command_name=f"Undo_{command_name}",
+            )
+            self.command_finished.emit(fail_res)
+
+    @Slot(object)
+    def run_redo(self, command: BaseCommand) -> None:
+        """Redoes a command.
+
+        Args:
+            command (BaseCommand): The command object to redo.
+
+        Emits:
+            command_finished (CommandResult): Result indicating redo success.
+
+        """
+        if not self.db_service:
+            logger.error("Database not ready for redo")
+            self.error_occurred.emit("Database not ready for redo.")
+            return
+
+        command_name = command.__class__.__name__
+        try:
+            self.operation_started.emit(f"Redoing {command_name}...")
+            result = command.execute(self.db_service)
+            
+            # Normalize result to CommandResult
+            if isinstance(result, bool):
+                success = result
+                msg = f"Redone: {command.get_description()}"
+                result_obj = CommandResult(
+                    success=success,
+                    message=msg,
+                    command_name=f"Redo_{command_name}",
+                )
+            elif isinstance(result, CommandResult):
+                result_obj = result
+                result_obj.message = f"Redone: {command.get_description()}"
+                result_obj.command_name = f"Redo_{command_name}"
+            else:
+                result_obj = CommandResult(
+                    success=False,
+                    message="Internal Error: Invalid command result",
+                    command_name=f"Redo_{command_name}",
+                )
+            
+            self.command_finished.emit(result_obj)
+            self.operation_finished.emit(f"Redone {command_name}.")
+            
+        except Exception:
+            logger.error(f"Redo {command_name} failed: {traceback.format_exc()}")
+            self.error_occurred.emit(f"Redo {command_name} failed.")
+            fail_res = CommandResult(
+                success=False,
+                message="Failed to redo operation.",
+                command_name=f"Redo_{command_name}",
             )
             self.command_finished.emit(fail_res)
 

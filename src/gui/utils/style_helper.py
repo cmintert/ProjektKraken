@@ -481,6 +481,44 @@ class StyleHelper:
         )
 
     @staticmethod
+    def get_list_widget_style() -> str:
+        """Returns QSS for themed list widgets.
+
+        Provides consistent background, text, border, and item hover colors.
+
+        Returns:
+            str: QSS stylesheet string for list widgets.
+        """
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
+        primary = theme.get("primary", "#4A9EFF")
+
+        # Create a semi-transparent version of the primary color for hover
+        if len(primary) == 7 and primary.startswith("#"):
+            r = int(primary[1:3], 16)
+            g = int(primary[3:5], 16)
+            b = int(primary[5:7], 16)
+            hover_bg = f"rgba({r}, {g}, {b}, 0.1)"
+        else:
+            hover_bg = "rgba(74, 158, 255, 0.1)"
+
+        return (
+            f"QListWidget {{ "
+            f"background-color: {theme['surface']}; "
+            f"color: {theme['text_main']}; "
+            f"border: 1px solid {theme['border']}; "
+            f"border-radius: 4px; padding: 2px; }}"
+            f"QListWidget::item {{ "
+            f"padding: 4px; border-radius: 2px; }}"
+            f"QListWidget::item:hover {{ "
+            f"background-color: {hover_bg}; }}"
+            f"QListWidget::item:selected {{ "
+            f"background-color: {theme['border']}; "
+            f"color: {theme['text_main']}; }}"
+        )
+
+    @staticmethod
     def get_event_color() -> str:
         """Returns the theme-aware color for events.
 
