@@ -372,6 +372,15 @@ class ConnectionManager:
             ):
                 failed_count += 1
 
+        if hasattr(ul, "status_message_requested"):
+            if not self._connect_signal_safe(
+                ul,
+                "status_message_requested",
+                self.window.status_bar.showMessage,
+                "UnifiedList",
+            ):
+                failed_count += 1
+
         logger.debug(
             f"UnifiedList connections: {7 - failed_count}/7 succeeded, "
             f"{failed_count} failed"

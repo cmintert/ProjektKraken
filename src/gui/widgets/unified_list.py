@@ -8,17 +8,16 @@ import json
 import logging
 from typing import Any, Dict, List, Optional, Union
 
-from PySide6.QtCore import QMimeData, QModelIndex, QSize, Qt, Signal, Slot
-from PySide6.QtGui import QBrush, QColor, QDrag
+from PySide6.QtCore import QMimeData, QSize, Qt, QTimer, Signal, Slot
+from PySide6.QtGui import QDrag
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QListView,
-    QListWidget,
-    QListWidgetItem,
     QMenu,
+    QMessageBox,
     QPushButton,
     QVBoxLayout,
     QWidget,
@@ -30,6 +29,7 @@ from src.core.events import Event
 from src.gui.models.explorer_filter_proxy import ExplorerFilterProxyModel
 from src.gui.models.explorer_model import ExplorerModel
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.standard_buttons import DestructiveButton
 
 KRAKEN_ITEM_MIME_TYPE = "application/x-kraken-item"
 
@@ -96,6 +96,54 @@ class DraggableListView(QListView):
         drag.exec(Qt.CopyAction)
 
 
+class AutoClosingMessageBox(QMessageBox):
+    """A QMessageBox that closes itself after a specified timeout."""
+
+    def __init__(
+        self,
+        title: str,
+        text: str,
+        timeout_ms: int = 1000,
+        icon: QMessageBox.Icon = QMessageBox.Icon.Information,
+        parent: Optional[QWidget] = None,
+    ) -> None:
+        """Initialize the message box.
+
+        Args:
+            title: Window title.
+            text: Message text.
+            timeout_ms: Timeout in milliseconds before closing.
+            icon: Icon to display.
+            parent: Parent widget.
+        """
+        super().__init__(parent)
+        self.setWindowTitle(title)
+        self.setText(text)
+        self.setIcon(icon)
+        self._timeout_ms = timeout_ms
+
+        # QMessageBox often requires at least one button to display correctly as a
+        # modal dialog. We add OK and hide it to maintain the "toast" look.
+        self.setStandardButtons(QMessageBox.StandardButton.Ok)
+        ok_button = self.button(QMessageBox.StandardButton.Ok)
+        if ok_button:
+            ok_button.hide()
+
+        # Center on parent if available
+        if parent:
+            self.setWindowModality(Qt.WindowModality.WindowModal)
+
+    def showEvent(self, event) -> None:
+        """Starts the auto-close timer when the dialog is shown."""
+        super().showEvent(event)
+        # Use an explicit timer object as a child of the dialog for maximum
+        # reliability in modal loops on Windows.
+        self.timer = QTimer(self)
+        self.timer.setSingleShot(True)
+        self.timer.timeout.connect(self.accept)
+        self.timer.start(self._timeout_ms)
+
+
 class UnifiedListWidget(QWidget):
     """A unified list widget determining displaying both Events and Entities.
 
@@ -112,6 +160,7 @@ class UnifiedListWidget(QWidget):
     create_map_requested = Signal()
     show_filter_dialog_requested = Signal()  # Request to open filter dialog
     clear_filter_requested = Signal()  # Request to clear filters
+    status_message_requested = Signal(str, int)  # message, timeout_ms (Toast-like)
 
     def __init__(self, parent: QWidget = None) -> None:
         """Initializes the UnifiedListWidget.
@@ -183,7 +232,7 @@ class UnifiedListWidget(QWidget):
         self.btn_refresh.clicked.connect(self.refresh_requested.emit)
         top_bar.addWidget(self.btn_refresh)
 
-        self.btn_delete = QPushButton("Delete")
+        self.btn_delete = DestructiveButton("Delete")
         self.btn_delete.clicked.connect(self._on_delete_clicked)
         self.btn_delete.setEnabled(False)
         top_bar.addWidget(self.btn_delete)
@@ -513,7 +562,6 @@ class UnifiedListWidget(QWidget):
     @Slot()
     def _on_delete_clicked(self) -> None:
         """Handles delete button clicks for single or multiple items."""
-        from PySide6.QtWidgets import QMessageBox
 
         selection_model = self.list_widget.selectionModel()
         if not selection_model:
@@ -549,25 +597,27 @@ class UnifiedListWidget(QWidget):
         if not items_to_delete:
             return
 
-        # Confirmation dialog
+        # Proceed with deletion immediately since it's undoable (Unblocking)
+        for item_type, item_id, _ in items_to_delete:
+            self.delete_requested.emit(item_type, item_id)
+
+        # Show self-closing short delete confirmation modal (Unblocking UX)
         count = len(items_to_delete)
         if count == 1:
-            msg = f"Delete '{items_to_delete[0][2]}'?\n\nThis action cannot be undone."
+            msg = f"Deleted '{items_to_delete[0][2]}'.\n\n(Ctrl+Z to Undo)"
         else:
-            msg = f"Delete {count} items?\n\nThis action cannot be undone."
+            msg = f"Deleted {count} items.\n\n(Ctrl+Z to Undo)"
 
-        reply = QMessageBox.warning(
-            self,
-            "Confirm Delete",
-            msg,
-            QMessageBox.StandardButton.Cancel | QMessageBox.StandardButton.Yes,
-            QMessageBox.StandardButton.Cancel,
-        )
+        # Emit status bar message as secondary feedback
+        self.status_message_requested.emit(msg.replace("\n\n", " "), 3000)
 
-        if reply == QMessageBox.StandardButton.Yes:
-            # Emit delete signal for each item
-            for item_type, item_id, _ in items_to_delete:
-                self.delete_requested.emit(item_type, item_id)
+        # Show the auto-closing modal (1 second)
+        popup = AutoClosingMessageBox("Deletion Success", msg, 1000, parent=self)
+        popup.exec()
+
+        # Optional: Clear check state after deletion to avoid stale references
+        self._model._checked_ids.clear()
+        self._update_delete_button_state()
 
     def select_item(self, item_type: str, item_id: str) -> None:
         """Programmatically selects an item in the list. Auto-switches filter if item
