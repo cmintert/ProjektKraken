@@ -315,7 +315,11 @@ class WorkerManager(QObject):
                 )
 
                 # Create history service with current world ID
-                world_id = self.window.current_world.id if self.window.current_world else "default"
+                world_id = (
+                    self.window.current_world.id
+                    if self.window.current_world
+                    else "default"
+                )
                 self.window.history_service = HistoryService(
                     self.window.gui_db_service, world_id
                 )
@@ -331,7 +335,7 @@ class WorkerManager(QObject):
                 self.window.history_service.register_command_type(
                     "DeleteEventCommand", DeleteEventCommand
                 )
-                
+
                 # Entity commands
                 self.window.history_service.register_command_type(
                     "CreateEntityCommand", CreateEntityCommand

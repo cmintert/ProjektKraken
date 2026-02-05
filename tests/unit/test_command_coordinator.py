@@ -105,9 +105,7 @@ def test_on_command_result_clears_redo_stack(coordinator, main_window):
     coordinator.redo_stack.append(cmd1)
 
     # Execute cmd2
-    result = CommandResult(
-        success=True, message="Success", data={"command": cmd2}
-    )
+    result = CommandResult(success=True, message="Success", data={"command": cmd2})
     coordinator.on_command_result(result)
 
     # Redo stack should be cleared
@@ -121,9 +119,7 @@ def test_stack_size_limit(coordinator, main_window):
 
     for i in range(5):
         cmd = MockCommand(f"Cmd{i}")
-        result = CommandResult(
-            success=True, message="Success", data={"command": cmd}
-        )
+        result = CommandResult(success=True, message="Success", data={"command": cmd})
         coordinator.on_command_result(result)
 
     # Should only keep last 3
@@ -212,10 +208,10 @@ def test_clear_history(coordinator):
 def test_undo_on_empty_stack_does_nothing(coordinator):
     """Test that undo on empty stack doesn't crash."""
     assert not coordinator.can_undo()
-    
+
     # Should not raise
     coordinator.undo()
-    
+
     assert len(coordinator.undo_stack) == 0
     assert len(coordinator.redo_stack) == 0
 
@@ -223,10 +219,10 @@ def test_undo_on_empty_stack_does_nothing(coordinator):
 def test_redo_on_empty_stack_does_nothing(coordinator):
     """Test that redo on empty stack doesn't crash."""
     assert not coordinator.can_redo()
-    
+
     # Should not raise
     coordinator.redo()
-    
+
     assert len(coordinator.undo_stack) == 0
     assert len(coordinator.redo_stack) == 0
 
@@ -274,6 +270,6 @@ def test_on_command_result_failure(mock_msg_box, coordinator, main_window):
 
     # Should NOT trigger load_data
     main_window.load_data.assert_not_called()
-    
+
     # Should NOT add to undo stack
     assert len(coordinator.undo_stack) == 0
