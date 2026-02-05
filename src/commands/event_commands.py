@@ -108,10 +108,7 @@ class CreateEventCommand(BaseCommand):
         Returns:
             dict: Command data for persistence
         """
-        return {
-            "event": self.event.to_dict(),
-            "is_executed": self._is_executed
-        }
+        return {"event": self.event.to_dict(), "is_executed": self._is_executed}
 
     @classmethod
     def from_dict(cls, data: dict) -> "CreateEventCommand":
@@ -264,9 +261,11 @@ class UpdateEventCommand(BaseCommand):
         return {
             "event_id": self.event_id,
             "update_data": self.update_data,
-            "previous_event": self._previous_event.to_dict() if self._previous_event else None,
+            "previous_event": (
+                self._previous_event.to_dict() if self._previous_event else None
+            ),
             "new_event": self._new_event.to_dict() if self._new_event else None,
-            "is_executed": self._is_executed
+            "is_executed": self._is_executed,
         }
 
     @classmethod
@@ -369,8 +368,10 @@ class DeleteEventCommand(BaseCommand):
         """
         return {
             "event_id": self.event_id,
-            "backup_event": self._backup_event.to_dict() if self._backup_event else None,
-            "is_executed": self._is_executed
+            "backup_event": (
+                self._backup_event.to_dict() if self._backup_event else None
+            ),
+            "is_executed": self._is_executed,
         }
 
     @classmethod

@@ -14,10 +14,11 @@ from PySide6.QtWidgets import (
     QLabel,
     QListWidget,
     QListWidgetItem,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
+
+from src.gui.widgets.standard_buttons import DestructiveButton, StandardButton
 
 from src.core.theme_manager import ThemeManager
 
@@ -75,21 +76,21 @@ class HistoryPanelWidget(QWidget):
         header_layout.setSpacing(5)
 
         # Undo button
-        self.undo_btn = QPushButton("⟲ Undo")
+        self.undo_btn = StandardButton("⟲ Undo")
         self.undo_btn.setToolTip("Undo last action (Ctrl+Z)")
         self.undo_btn.clicked.connect(self.undo_clicked.emit)
         self.undo_btn.setEnabled(False)
         header_layout.addWidget(self.undo_btn)
 
         # Redo button
-        self.redo_btn = QPushButton("⟳ Redo")
+        self.redo_btn = StandardButton("⟳ Redo")
         self.redo_btn.setToolTip("Redo undone action (Ctrl+Y)")
         self.redo_btn.clicked.connect(self.redo_clicked.emit)
         self.redo_btn.setEnabled(False)
         header_layout.addWidget(self.redo_btn)
 
-        # Clear button
-        self.clear_btn = QPushButton("✕ Clear")
+        # Clear button (destructive action)
+        self.clear_btn = DestructiveButton("✕ Clear")
         self.clear_btn.setToolTip("Clear all history")
         self.clear_btn.clicked.connect(self.clear_history_clicked.emit)
         self.clear_btn.setEnabled(False)
@@ -123,16 +124,17 @@ class HistoryPanelWidget(QWidget):
         """Apply current theme colors to the widget."""
         try:
             theme = ThemeManager().get_theme()
-            
+
             # Get theme colors
             bg_color = theme.get("surface_bg", "#2B2B2B")
             text_color = theme.get("text_main", "#E0E0E0")
             text_dim = theme.get("text_dim", "#A0A0A0")
             border_color = theme.get("border", "#404040")
-            primary = theme.get("primary", "#4A9EFF")
-            
-            # Style the widget
-            self.setStyleSheet(f"""
+
+            # Style the widget and list using theme tokens
+            # StandardButton handles its own styling
+            self.setStyleSheet(
+                f"""
                 QWidget {{
                     background-color: {bg_color};
                     color: {text_color};
@@ -151,32 +153,14 @@ class HistoryPanelWidget(QWidget):
                 QListWidget::item:hover {{
                     background-color: rgba(74, 158, 255, 0.1);
                 }}
-                QPushButton {{
-                    background-color: {bg_color};
-                    color: {text_color};
-                    border: 1px solid {border_color};
-                    border-radius: 3px;
-                    padding: 5px 10px;
-                    min-width: 60px;
-                }}
-                QPushButton:hover {{
-                    background-color: {primary};
-                    border-color: {primary};
-                }}
-                QPushButton:pressed {{
-                    background-color: rgba(74, 158, 255, 0.8);
-                }}
-                QPushButton:disabled {{
-                    color: {text_dim};
-                    border-color: {text_dim};
-                }}
                 QLabel {{
                     color: {text_dim};
                 }}
-            """)
-            
+            """
+            )
+
             logger.debug("Theme applied to history panel")
-            
+
         except Exception as e:
             logger.error(f"Failed to apply theme: {e}")
 
@@ -213,9 +197,9 @@ class HistoryPanelWidget(QWidget):
     def _refresh_display(self) -> None:
         """Refresh the command list display."""
         self.command_list.clear()
-        
+
         total_commands = len(self._undo_stack) + len(self._redo_stack)
-        
+
         # Update status label
         if total_commands == 0:
             self.status_label.setText("No history")
@@ -226,17 +210,17 @@ class HistoryPanelWidget(QWidget):
                 f"{total_commands} command{'s' if total_commands != 1 else ''} "
                 f"({undo_count} undo / {redo_count} redo)"
             )
-        
+
         # Update button states
         self.undo_btn.setEnabled(len(self._undo_stack) > 0)
         self.redo_btn.setEnabled(len(self._redo_stack) > 0)
         self.clear_btn.setEnabled(total_commands > 0)
-        
+
         # Display commands - redo stack first (most recent undone at top)
         if self._redo_stack:
             for i, command in enumerate(reversed(self._redo_stack)):
                 self._add_command_item(command, can_redo=True, is_top=i == 0)
-        
+
         # Then undo stack (most recent at top)
         if self._undo_stack:
             for i, command in enumerate(reversed(self._undo_stack)):
@@ -260,7 +244,7 @@ class HistoryPanelWidget(QWidget):
         try:
             # Get command description
             description = command.get_description()
-            
+
             # Build display text
             if can_undo:
                 if is_top:
@@ -274,13 +258,13 @@ class HistoryPanelWidget(QWidget):
                     text = f"  {description}"  # Can redo but not next
             else:
                 text = f"  {description}"
-            
+
             # Create list item
             item = QListWidgetItem(text)
-            
+
             # Style based on state
             theme = ThemeManager().get_theme()
-            
+
             if can_undo:
                 # Commands that can be undone - normal color
                 color = QColor(theme.get("text_main", "#E0E0E0"))
@@ -305,12 +289,12 @@ class HistoryPanelWidget(QWidget):
                     item.setBackground(QBrush(bg_color))
             else:
                 color = QColor(theme.get("text_main", "#E0E0E0"))
-            
+
             item.setForeground(QBrush(color))
-            
+
             # Add to list
             self.command_list.addItem(item)
-            
+
         except Exception as e:
             logger.error(f"Failed to add command item: {e}")
 

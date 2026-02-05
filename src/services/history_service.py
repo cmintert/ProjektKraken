@@ -38,10 +38,12 @@ class HistoryService:
         self.world_id = world_id
         self.session_id = self._generate_session_id()
         self._command_registry: Dict[str, type] = {}
-        
+
         # Start a new session
         self._start_session()
-        logger.info(f"HistoryService initialized for world {world_id}, session {self.session_id}")
+        logger.info(
+            f"HistoryService initialized for world {world_id}, session {self.session_id}"
+        )
 
     def _generate_session_id(self) -> str:
         """Generate a unique session ID.
@@ -56,14 +58,14 @@ class HistoryService:
         try:
             # Get app version
             app_version = "0.10.3"  # TODO: Get from config/package
-            
+
             with self.db_service.transaction() as conn:
                 conn.execute(
                     """
                     INSERT INTO edit_sessions (session_id, world_id, started_at, app_version)
                     VALUES (?, ?, ?, ?)
                     """,
-                    (self.session_id, self.world_id, time.time(), app_version)
+                    (self.session_id, self.world_id, time.time(), app_version),
                 )
             logger.debug(f"Session {self.session_id} started")
         except Exception as e:
@@ -79,7 +81,7 @@ class HistoryService:
                     SET ended_at = ?
                     WHERE session_id = ?
                     """,
-                    (time.time(), self.session_id)
+                    (time.time(), self.session_id),
                 )
             logger.debug(f"Session {self.session_id} ended")
         except Exception as e:
@@ -100,7 +102,7 @@ class HistoryService:
         command: "BaseCommand",
         description: Optional[str] = None,
         aggregate_id: Optional[str] = None,
-        aggregate_type: Optional[str] = None
+        aggregate_type: Optional[str] = None,
     ) -> None:
         """Save a command to the history table.
 
@@ -113,10 +115,10 @@ class HistoryService:
         try:
             command_type = command.__class__.__name__
             command_data = json.dumps(command.to_dict())
-            
+
             if description is None:
                 description = command.get_description()
-            
+
             with self.db_service.transaction() as conn:
                 conn.execute(
                     """
@@ -133,8 +135,8 @@ class HistoryService:
                         description,
                         time.time(),
                         aggregate_id,
-                        aggregate_type
-                    )
+                        aggregate_type,
+                    ),
                 )
             logger.debug(f"Saved command: {command_type}")
         except Exception as e:
@@ -154,7 +156,7 @@ class HistoryService:
             if not self.db_service._connection:
                 logger.warning("No database connection available")
                 return []
-            
+
             cursor = self.db_service._connection.execute(
                 """
                 SELECT command_type, command_data, description
@@ -163,32 +165,29 @@ class HistoryService:
                 ORDER BY timestamp DESC
                 LIMIT ?
                 """,
-                (self.world_id, limit)
+                (self.world_id, limit),
             )
-            
+
             commands = []
             for row in cursor.fetchall():
                 command = self._deserialize_command(
-                    row["command_type"],
-                    row["command_data"]
+                    row["command_type"], row["command_data"]
                 )
                 if command:
                     commands.append(command)
-            
+
             # Reverse to get oldest first (chronological order)
             commands.reverse()
-            
+
             logger.info(f"Loaded {len(commands)} commands from history")
             return commands
-            
+
         except Exception as e:
             logger.error(f"Failed to load command history: {e}")
             return []
 
     def _deserialize_command(
-        self, 
-        command_type: str, 
-        command_data_json: str
+        self, command_type: str, command_data_json: str
     ) -> Optional["BaseCommand"]:
         """Reconstruct a command from stored data.
 
@@ -205,14 +204,14 @@ class HistoryService:
             if not command_class:
                 logger.warning(f"Unknown command type: {command_type}")
                 return None
-            
+
             # Deserialize data
             data = json.loads(command_data_json)
-            
+
             # Reconstruct command
             command = command_class.from_dict(data)
             return command
-            
+
         except Exception as e:
             logger.error(f"Failed to deserialize {command_type}: {e}")
             return None
@@ -236,13 +235,13 @@ class HistoryService:
                     ORDER BY started_at DESC
                     LIMIT ?
                     """,
-                    (self.world_id, keep_sessions)
+                    (self.world_id, keep_sessions),
                 )
                 keep_session_ids = [row["session_id"] for row in cursor.fetchall()]
-                
+
                 if not keep_session_ids:
                     return 0
-                
+
                 # Delete commands from old sessions
                 placeholders = ",".join("?" * len(keep_session_ids))
                 cursor = conn.execute(
@@ -250,24 +249,60 @@ class HistoryService:
                     DELETE FROM command_history
                     WHERE world_id = ? AND session_id NOT IN ({placeholders})
                     """,
-                    [self.world_id] + keep_session_ids
+                    [self.world_id] + keep_session_ids,
                 )
                 deleted_count = cursor.rowcount
-                
+
                 # Delete old sessions
                 conn.execute(
                     f"""
                     DELETE FROM edit_sessions
                     WHERE world_id = ? AND session_id NOT IN ({placeholders})
                     """,
-                    [self.world_id] + keep_session_ids
+                    [self.world_id] + keep_session_ids,
                 )
-                
+
             logger.info(f"Cleared {deleted_count} old commands from history")
             return deleted_count
-            
+
         except Exception as e:
             logger.error(f"Failed to clear history: {e}")
+            return 0
+
+    def clear_all_history(self) -> int:
+        """Clear ALL command history for this world.
+
+        This is a destructive operation that removes all command history
+        and session data. Use with caution.
+
+        Returns:
+            Number of commands deleted
+        """
+        try:
+            with self.db_service.transaction() as conn:
+                # Count commands before deletion
+                cursor = conn.execute(
+                    "SELECT COUNT(*) as count FROM command_history WHERE world_id = ?",
+                    (self.world_id,),
+                )
+                deleted_count = cursor.fetchone()["count"]
+
+                # Delete all commands for this world
+                conn.execute(
+                    "DELETE FROM command_history WHERE world_id = ?", (self.world_id,)
+                )
+
+                # Delete all sessions for this world (except current)
+                conn.execute(
+                    "DELETE FROM edit_sessions WHERE world_id = ? AND session_id != ?",
+                    (self.world_id, self.session_id),
+                )
+
+            logger.info(f"Cleared ALL history: {deleted_count} commands deleted")
+            return deleted_count
+
+        except Exception as e:
+            logger.error(f"Failed to clear all history: {e}")
             return 0
 
     def get_history_stats(self) -> Dict[str, int]:
@@ -278,26 +313,26 @@ class HistoryService:
         """
         try:
             stats = {}
-            
+
             if not self.db_service._connection:
                 return stats
-            
+
             # Count total commands
             cursor = self.db_service._connection.execute(
                 "SELECT COUNT(*) as count FROM command_history WHERE world_id = ?",
-                (self.world_id,)
+                (self.world_id,),
             )
             stats["command_count"] = cursor.fetchone()["count"]
-            
+
             # Count sessions
             cursor = self.db_service._connection.execute(
                 "SELECT COUNT(*) as count FROM edit_sessions WHERE world_id = ?",
-                (self.world_id,)
+                (self.world_id,),
             )
             stats["session_count"] = cursor.fetchone()["count"]
-            
+
             return stats
-            
+
         except Exception as e:
             logger.error(f"Failed to get history stats: {e}")
             return {}

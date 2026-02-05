@@ -74,7 +74,9 @@ class CommandCoordinator(QObject):
             return
 
         try:
-            commands = self.history_service.load_recent_history(limit=self.max_stack_size)
+            commands = self.history_service.load_recent_history(
+                limit=self.max_stack_size
+            )
             self.undo_stack = commands
             self.redo_stack.clear()
             self.history_changed.emit()
@@ -145,11 +147,21 @@ class CommandCoordinator(QObject):
     def clear_history(self) -> None:
         """Clear all undo/redo history.
 
+        Clears both in-memory stacks and persistent history in the database.
         Should be called when switching worlds to avoid cross-world undo.
         """
         logger.debug("Clearing undo/redo history")
         self.undo_stack.clear()
         self.redo_stack.clear()
+
+        # Also clear persistent history from database
+        if self.history_service:
+            try:
+                deleted_count = self.history_service.clear_all_history()
+                logger.info(f"Cleared {deleted_count} commands from persistent history")
+            except Exception as e:
+                logger.error(f"Failed to clear persistent history: {e}")
+
         self.history_changed.emit()
 
     @Slot(object)
@@ -162,28 +174,30 @@ class CommandCoordinator(QObject):
         """
         if result.success:
             logger.info(f"Command succeeded: {result.message}")
-            
+
             # Add command to undo stack if it was successful
             # The command object should be in result.data
             command = result.data.get("command")
             if command is not None:
                 self.undo_stack.append(command)
                 self.redo_stack.clear()  # Clear redo stack on new action
-                
+
                 # Save command to database for persistence (Phase 2)
                 if self.history_service:
                     try:
                         self.history_service.save_command(command)
                     except Exception as e:
                         logger.error(f"Failed to save command to history: {e}")
-                
+
                 # Limit stack size to prevent memory bloat
                 if len(self.undo_stack) > self.max_stack_size:
                     removed = self.undo_stack.pop(0)
-                    logger.debug(f"Removed oldest command from stack: {removed.__class__.__name__}")
-                
+                    logger.debug(
+                        f"Removed oldest command from stack: {removed.__class__.__name__}"
+                    )
+
                 self.history_changed.emit()
-            
+
             # Trigger data refresh based on command type
             self._refresh_after_command(result)
         else:

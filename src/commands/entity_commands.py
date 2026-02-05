@@ -83,10 +83,7 @@ class CreateEntityCommand(BaseCommand):
         Returns:
             dict: Command data for persistence
         """
-        return {
-            "entity": self._entity.to_dict(),
-            "is_executed": self._is_executed
-        }
+        return {"entity": self._entity.to_dict(), "is_executed": self._is_executed}
 
     @classmethod
     def from_dict(cls, data: dict) -> "CreateEntityCommand":
@@ -217,9 +214,11 @@ class UpdateEntityCommand(BaseCommand):
         return {
             "entity_id": self.entity_id,
             "update_data": self.update_data,
-            "previous_entity": self._previous_entity.to_dict() if self._previous_entity else None,
+            "previous_entity": (
+                self._previous_entity.to_dict() if self._previous_entity else None
+            ),
             "new_entity": self._new_entity.to_dict() if self._new_entity else None,
-            "is_executed": self._is_executed
+            "is_executed": self._is_executed,
         }
 
     @classmethod
@@ -254,6 +253,17 @@ class DeleteEntityCommand(BaseCommand):
         super().__init__()
         self._entity_id = entity_id
         self._backup_entity: Optional[Entity] = None
+
+    def get_description(self) -> str:
+        """Get a human-readable description of this command.
+
+        Returns:
+            str: Description like "Delete Entity 'John Doe'".
+
+        """
+        if self._backup_entity:
+            return f"Delete Entity '{self._backup_entity.name}'"
+        return "Delete Entity"
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Executes the command to delete the entity.
@@ -312,8 +322,10 @@ class DeleteEntityCommand(BaseCommand):
         """
         return {
             "entity_id": self._entity_id,
-            "backup_entity": self._backup_entity.to_dict() if self._backup_entity else None,
-            "is_executed": self._is_executed
+            "backup_entity": (
+                self._backup_entity.to_dict() if self._backup_entity else None
+            ),
+            "is_executed": self._is_executed,
         }
 
     @classmethod
