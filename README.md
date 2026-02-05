@@ -224,16 +224,23 @@ pytest --cov=src --cov-report=term-missing
 
 ## Documentation
 
+### User Documentation
+- **[Installation Guide](docs/INSTALLATION.md)** - Setup and installation instructions
+- **[User Guide](docs/USER_GUIDE.md)** - Complete user manual for all features
+- **[Workflows](docs/WORKFLOWS.md)** - Step-by-step tutorials and common use cases
+- **[FAQ](docs/FAQ.md)** - Frequently asked questions and troubleshooting
+
+### Technical Documentation
+- **[Architecture](docs/ARCHITECTURE.md)** - System design and architectural patterns
+- **[Development Guide](docs/DEVELOPMENT.md)** - Developer setup and coding standards
+- **[Database Schema](docs/DATABASE.md)** - Database structure and data model
+- **[API Reference](docs/API.md)** - Code reference and API documentation
+- **[Testing Guide](docs/TESTING.md)** - Testing practices and guidelines
+- **[Contributing](docs/CONTRIBUTING.md)** - How to contribute to the project
+
+### Additional Resources
 - **[CLI Tools](src/cli/README.md)** - Command-line interface reference
-- **[Database Architecture](docs/DATABASE.md)** - Schema and data model
-- **[Backup Strategy](docs/BACKUP_STRATEGY.md)** - Backup and restore guide
-- **[Temporal Relations](docs/TEMPORAL_RELATIONS.md)** - Timeline logic and staging system
-- **[Semantic Search](docs/SEMANTIC_SEARCH.md)** - AI search and embeddings setup
-- **[Fast Inject Guide](docs/FAST_INJECT.md)** - Fast Inject system architecture and usage
-- **[Import Strategy](docs/imports.md)** - JSON import system and two-pass resolution
-- **[Security Guidelines](docs/SECURITY.md)** - Security best practices
-- **[Wiki Linking](docs/WIKI_LINKING.md)** - Wiki syntax and navigation
-- **[Design Notes](Design.md)** - Architecture and design decisions
+- **[Archived Documentation](docs/archive_old/)** - Previous documentation versions
 
 ## Architecture
 
