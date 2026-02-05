@@ -81,6 +81,7 @@ class CommandCoordinator(QObject):
             self.redo_stack.clear()
             self.history_changed.emit()
             logger.info(f"Loaded {len(commands)} commands from history")
+            self.log_stack_state()
         except Exception as e:
             logger.error(f"Failed to load command history: {e}")
 
@@ -197,6 +198,7 @@ class CommandCoordinator(QObject):
                     )
 
                 self.history_changed.emit()
+                self.log_stack_state()
 
             # Trigger data refresh based on command type
             self._refresh_after_command(result)
@@ -215,6 +217,19 @@ class CommandCoordinator(QObject):
         # This could be enhanced to be more specific per command
         if hasattr(self.window, "load_data"):
             self.window.load_data()
+
+    def log_stack_state(self) -> None:
+        """Logs the current state of the undo/redo stacks."""
+        logger.info(f"=== UNDO STACK ({len(self.undo_stack)} items) ===")
+        for i, cmd in enumerate(reversed(self.undo_stack)):
+            logger.info(f"  [{i}] {cmd.get_description()}")
+
+        if self.redo_stack:
+            logger.info(f"=== REDO STACK ({len(self.redo_stack)} items) ===")
+            for i, cmd in enumerate(reversed(self.redo_stack)):
+                logger.info(f"  [{i}] {cmd.get_description()}")
+        else:
+            logger.info("=== REDO STACK (Empty) ===")
 
     def _show_error(self, message: str) -> None:
         """Display error message to user.

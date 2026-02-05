@@ -345,14 +345,14 @@ class EventEditorWidget(QWidget):
             QWidget, QListWidget, StandardButton, StandardButton, DestructiveButton
         ]:
             """Create a categorized relation section with list and action buttons.
-            
+
             Args:
                 title: Section header text (e.g., "Characters", "Locations").
                 add_slot: Callable to invoke when Add button is clicked.
                 edit_slot: Callable to invoke when Edit button is clicked.
                 remove_slot: Callable to invoke when Remove button is clicked.
                 placeholder: Optional text shown when list is empty. Defaults to "".
-            
+
             Returns:
                 Tuple containing:
                 - QWidget: The complete section container
@@ -360,7 +360,7 @@ class EventEditorWidget(QWidget):
                 - StandardButton: The Add button
                 - StandardButton: The Edit button
                 - DestructiveButton: The Remove button
-            
+
             Note:
                 The list widget emits itemDoubleClicked when a relation is
                 double-clicked, which should trigger editing.
@@ -610,21 +610,17 @@ class EventEditorWidget(QWidget):
             dirty (bool): True if changes are unsaved, False otherwise.
 
         """
+        if self._is_loading and dirty:
+            logger.debug(
+                f"[EventEditor] set_dirty({dirty}) ignored - loading in progress"
+            )
+            return
+
         if self._current_event_id is None and dirty:
             logger.debug(f"[EventEditor] set_dirty({dirty}) ignored - no event loaded")
             return
 
         if self._is_dirty != dirty:
-            logger.info(
-                f"[EventEditor] set_dirty: {self._is_dirty} -> {dirty} "
-                f"(event_id={self._current_event_id})"
-            )
-            if not dirty:
-                # Log stack trace when clearing dirty to trace the source
-                logger.debug(
-                    f"[EventEditor] Clearing dirty state. Stack trace:\n"
-                    f"{traceback.format_stack(limit=10)}"
-                )
             self._is_dirty = dirty
             self.dirty_changed.emit(dirty)
             self.btn_save.setEnabled(dirty)
@@ -978,12 +974,12 @@ class EventEditorWidget(QWidget):
 
     def _populate_inject_menu(self) -> None:
         """Populate the Fast Inject menu with available actions.
-        
+
         Clears and rebuilds the inject menu with:
         - "Open Inject Dialog..." action to launch the inject UI
         - Separator
         - "Save Selection as Template..." action to create templates
-        
+
         This method is typically called when the menu is about to show,
         ensuring the menu content is always up-to-date.
         """
@@ -999,11 +995,11 @@ class EventEditorWidget(QWidget):
 
     def _open_inject_dialog(self) -> None:
         """Open the Fast Inject dialog for the current event.
-        
+
         Emits the inject_ui_requested signal with the current event ID,
         allowing the main window or coordinator to display the Fast Inject
         dialog for quick data entry.
-        
+
         Note:
             Does nothing if no event is currently loaded in the editor.
         """
@@ -1013,14 +1009,14 @@ class EventEditorWidget(QWidget):
 
     def _open_create_template_dialog(self) -> None:
         """Open the template creation dialog for the current event.
-        
+
         Collects current form data (tags, attributes, description) and
         opens a dialog allowing the user to save it as a reusable template
         for Fast Inject operations.
-        
+
         The template data is emitted via create_template_requested signal
         if the user accepts the dialog.
-        
+
         Note:
             Returns early if no event is currently loaded.
         """

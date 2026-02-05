@@ -117,6 +117,30 @@ class MoveLongformEntryCommand(BaseCommand):
         )
         self._is_executed = False
 
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary."""
+        return {
+            "table": self.table,
+            "row_id": self.row_id,
+            "old_meta": self.old_meta,
+            "new_meta": self.new_meta,
+            "doc_id": self.doc_id,
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "MoveLongformEntryCommand":
+        """Deserialize command from dictionary."""
+        cmd = cls(
+            table=data["table"],
+            row_id=data["row_id"],
+            old_meta=data["old_meta"],
+            new_meta=data["new_meta"],
+            doc_id=data.get("doc_id", longform_builder.DOC_ID_DEFAULT),
+        )
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd
+
 
 class PromoteLongformEntryCommand(BaseCommand):
     """Command to promote a longform entry (reduce depth).
@@ -208,6 +232,28 @@ class PromoteLongformEntryCommand(BaseCommand):
             doc_id=self.doc_id,
         )
         self._is_executed = False
+
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary."""
+        return {
+            "table": self.table,
+            "row_id": self.row_id,
+            "old_meta": self.old_meta,
+            "doc_id": self.doc_id,
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "PromoteLongformEntryCommand":
+        """Deserialize command from dictionary."""
+        cmd = cls(
+            table=data["table"],
+            row_id=data["row_id"],
+            old_meta=data["old_meta"],
+            doc_id=data.get("doc_id", longform_builder.DOC_ID_DEFAULT),
+        )
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd
 
 
 class DemoteLongformEntryCommand(BaseCommand):
@@ -301,6 +347,28 @@ class DemoteLongformEntryCommand(BaseCommand):
         )
         self._is_executed = False
 
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary."""
+        return {
+            "table": self.table,
+            "row_id": self.row_id,
+            "old_meta": self.old_meta,
+            "doc_id": self.doc_id,
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "DemoteLongformEntryCommand":
+        """Deserialize command from dictionary."""
+        cmd = cls(
+            table=data["table"],
+            row_id=data["row_id"],
+            old_meta=data["old_meta"],
+            doc_id=data.get("doc_id", longform_builder.DOC_ID_DEFAULT),
+        )
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd
+
 
 class RemoveLongformEntryCommand(BaseCommand):
     """Command to remove an entry from the longform document.
@@ -392,3 +460,25 @@ class RemoveLongformEntryCommand(BaseCommand):
             doc_id=self.doc_id,
         )
         self._is_executed = False
+
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary."""
+        return {
+            "table": self.table,
+            "row_id": self.row_id,
+            "old_meta": self.old_meta,
+            "doc_id": self.doc_id,
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "RemoveLongformEntryCommand":
+        """Deserialize command from dictionary."""
+        cmd = cls(
+            table=data["table"],
+            row_id=data["row_id"],
+            old_meta=data["old_meta"],
+            doc_id=data.get("doc_id", longform_builder.DOC_ID_DEFAULT),
+        )
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd
