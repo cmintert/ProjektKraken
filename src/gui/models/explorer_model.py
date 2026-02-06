@@ -210,6 +210,7 @@ class ExplorerModel(QAbstractListModel):
             Qt.ItemFlag.ItemIsEnabled
             | Qt.ItemFlag.ItemIsSelectable
             | Qt.ItemFlag.ItemIsUserCheckable
+            | Qt.ItemFlag.ItemIsDragEnabled
         )
 
     def _format_compact_date(self, lore_date: float) -> str:

@@ -47,29 +47,9 @@ class DraggableListView(QListView):
         """Initialize with drag enabled."""
         super().__init__(parent)
         self.setDragEnabled(True)
-        self.setDragDropMode(QListView.DragOnly)
+        self.setDragDropMode(QListView.DragDropMode.DragOnly)
         # Enable keyboard focus so ESC can be captured
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-
-    def mousePressEvent(self, event) -> None:
-        """Override to implement click-to-deselect on already-selected items.
-
-        Args:
-            event: The mouse press event.
-        """
-        index = self.indexAt(event.pos())
-
-        # If clicking on an already-selected item, deselect it
-        if index.isValid() and self.selectionModel().isSelected(index):
-            # Check if it's the only selected item and we're clicking it again
-            selected_indexes = self.selectionModel().selectedIndexes()
-            if len(selected_indexes) == 1:
-                self.clearSelection()
-                event.accept()
-                return
-
-        # Otherwise, use default behavior (select the item)
-        super().mousePressEvent(event)
 
     def startDrag(self, supportedActions: Qt.DropAction) -> None:
         """Override to provide custom MIME data for dragged items.
@@ -115,7 +95,7 @@ class DraggableListView(QListView):
         # Create and execute drag
         drag = QDrag(self)
         drag.setMimeData(mime_data)
-        drag.exec(Qt.CopyAction)
+        drag.exec(Qt.DropAction.CopyAction)
 
 
 class AutoClosingMessageBox(QMessageBox):
@@ -322,7 +302,7 @@ class UnifiedListWidget(QWidget):
         self.list_widget = DraggableListView()
         self.list_widget.setModel(self._proxy_model)
         self.list_widget.setStyleSheet(StyleHelper.get_checkbox_style())
-        self.list_widget.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
+        self.list_widget.setSelectionMode(QListView.SelectionMode.SingleSelection)
         self.list_widget.selectionModel().selectionChanged.connect(
             self._on_selection_changed
         )
