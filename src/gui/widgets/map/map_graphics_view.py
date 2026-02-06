@@ -48,6 +48,7 @@ from PySide6.QtWidgets import (
     QGraphicsRectItem,
     QGraphicsScene,
     QGraphicsSceneHoverEvent,
+    QGraphicsSceneMouseEvent,
     QGraphicsSimpleTextItem,
     QGraphicsView,
     QHBoxLayout,
@@ -155,10 +156,10 @@ class KeyframeGizmo(QGraphicsItemGroup):
         if not self.keyframe_item.isUnderMouse():
             self.keyframe_item._cleanup_gizmo()
 
-    def mousePressEvent(self, event: QMouseEvent) -> None:
+    def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """Handle icon clicks - clock for Clock Mode, X for delete."""
         # Determine which icon was clicked based on local position
-        click_x = event.position().x()
+        click_x = event.pos().x()
 
         if click_x < GIZMO_SIZE + 1:
             # Clock icon clicked - enter Clock Mode
