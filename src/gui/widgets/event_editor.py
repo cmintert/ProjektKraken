@@ -7,6 +7,7 @@ attributes, and relations.
 import logging
 import os
 import traceback
+from contextlib import suppress
 from typing import Any, Dict
 
 from PySide6.QtCore import QPoint, QSize, Qt, Signal, Slot
@@ -576,28 +577,31 @@ class EventEditorWidget(QWidget):
         if (
             isinstance(event, QMouseEvent)
             and event.type() == QEvent.Type.MouseButtonPress
+            and event.button() == Qt.MouseButton.LeftButton
         ):
-            if event.button() == Qt.MouseButton.LeftButton:
-                # Find the list widget this viewport belongs to
-                parent = obj.parent()
-                if isinstance(parent, QListWidget) and parent.property(
-                    "_relation_list_widget"
-                ):
-                    # Get the item at the click position
-                    item = parent.itemAt(event.pos())
+            # Find the list widget this viewport belongs to
+            parent = obj.parent()
+            if isinstance(parent, QListWidget) and parent.property(
+                "_relation_list_widget"
+            ):
+                # Get the item at the click position
+                item = parent.itemAt(event.pos())
 
-                    if item is None:
-                        # Clicked on empty space - clear selection
-                        parent.clearSelection()
-                        parent.setCurrentItem(None)
-                        return False  # Let Qt handle the event normally
-                    elif item.isSelected():
-                        # Clicked on already-selected item - deselect it
-                        parent.clearSelection()
-                        parent.setCurrentItem(None)
-                        return True  # Consume the event to prevent re-selection
+                if item is None:
+                    # Clicked on empty space - clear selection
+                    self._clear_selection(parent)
+                    return False  # Let Qt handle the event normally
+                elif item.isSelected():
+                    # Clicked on already-selected item - deselect it
+                    self._clear_selection(parent)
+                    return True  # Consume the event to prevent re-selection
 
         return super().eventFilter(obj, event)
+
+    def _clear_selection(self, parent_list: QListWidget) -> None:
+        """Clears selection and current item from the list widget."""
+        parent_list.clearSelection()
+        parent_list.setCurrentItem(None)
 
     def _connect_dirty_signals(self) -> None:
         """Connects input widget signals to set_dirty(True)."""
@@ -703,10 +707,7 @@ class EventEditorWidget(QWidget):
             self.desc_edit.set_wiki_text(self.desc_edit._current_wiki_text)
 
         # Store for RelationEditDialog
-        if items:
-            self._suggestion_items = items
-        else:
-            self._suggestion_items = []
+        self._suggestion_items = items or []
 
     def update_tag_suggestions(self, tags: list[str]) -> None:
         """Updates tag suggestions."""
@@ -793,11 +794,9 @@ class EventEditorWidget(QWidget):
             if self.summary_service:
                 summary_data = event.attributes.get("_summary_data")
                 if summary_data:
-                    try:
+                    with suppress(Exception):
                         data = SummaryData.from_dict(summary_data)
                         self.summary_widget.set_summary(data)
-                    except Exception:
-                        pass
 
                 is_stale = self.summary_service.is_stale(event)
                 self.summary_widget.set_stale(is_stale)
@@ -1210,10 +1209,10 @@ class EventEditorWidget(QWidget):
         }
 
         # Add formatted date if available
-        if hasattr(self.date_edit, "lbl_preview"):
-            text = self.date_edit.lbl_preview.text()
-            if text:
-                context["lore_date"] = text
+        if hasattr(self.date_edit, "lbl_preview") and (
+            text := self.date_edit.lbl_preview.text()
+        ):
+            context["lore_date"] = text
 
         return context
 
@@ -1262,10 +1261,8 @@ class EventEditorWidget(QWidget):
         current = self.desc_edit.toPlainText()
 
         # Append generated text with newline separator if there's existing content
-        if current.strip():
-            new_text = current + "\n\n" + text
-        else:
-            new_text = text
+        # Append generated text with newline separator if there's existing content
+        new_text = current + "\n\n" + text if current.strip() else text
 
         # Update description
         self.desc_edit.setPlainText(new_text)

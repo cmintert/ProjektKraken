@@ -831,28 +831,31 @@ class EntityEditorWidget(QWidget):
         if (
             isinstance(event, QMouseEvent)
             and event.type() == QEvent.Type.MouseButtonPress
+            and event.button() == Qt.MouseButton.LeftButton
         ):
-            if event.button() == Qt.MouseButton.LeftButton:
-                # Find the list widget this viewport belongs to
-                parent = obj.parent()
-                if isinstance(parent, QListWidget) and parent.property(
-                    "_relation_list_widget"
-                ):
-                    # Get the item at the click position
-                    item = parent.itemAt(event.pos())
+            # Find the list widget this viewport belongs to
+            parent = obj.parent()
+            if isinstance(parent, QListWidget) and parent.property(
+                "_relation_list_widget"
+            ):
+                # Get the item at the click position
+                item = parent.itemAt(event.pos())
 
-                    if item is None:
-                        # Clicked on empty space - clear selection
-                        parent.clearSelection()
-                        parent.setCurrentItem(None)
-                        return False  # Let Qt handle the event normally
-                    elif item.isSelected():
-                        # Clicked on already-selected item - deselect it
-                        parent.clearSelection()
-                        parent.setCurrentItem(None)
-                        return True  # Consume the event to prevent re-selection
+                if item is None:
+                    # Clicked on empty space - clear selection
+                    self._clear_selection(parent)
+                    return False  # Let Qt handle the event normally
+                elif item.isSelected():
+                    # Clicked on already-selected item - deselect it
+                    self._clear_selection(parent)
+                    return True  # Consume the event to prevent re-selection
 
         return super().eventFilter(obj, event)
+
+    def _clear_selection(self, parent_list: QListWidget) -> None:
+        """Clears selection and current item from the list widget."""
+        parent_list.clearSelection()
+        parent_list.setCurrentItem(None)
 
     def get_generation_context(self) -> Dict[str, Any]:
         """Get context for LLM generation.
