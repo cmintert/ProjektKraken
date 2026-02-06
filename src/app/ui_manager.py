@@ -79,17 +79,8 @@ class _DockEventFilter(QObject):
             bool: Always False (don't consume events).
 
         """
-        if event.type() == QEvent.Type.Resize:
-            # s = event.size()
-            # self._logger.debug(
-            #     f"Dock widget '{self._name}' resized -> {s.width()}x{s.height()}"
-            # )
-            pass
-        elif event.type() == QEvent.Type.Show:
-            # self._logger.debug(f"Dock widget '{self._name}' showEvent")
-            pass
-        elif event.type() == QEvent.Type.Hide:
-            # self._logger.debug(f"Dock widget '{self._name}' hideEvent")
+        if event.type() in (QEvent.Type.Resize, QEvent.Type.Show, QEvent.Type.Hide):
+            # Logging commented out for performance/noise reduction
             pass
         return False
 
@@ -196,10 +187,9 @@ class UIManager:
         )
 
         # 1. Project Explorer (Left)
-        dock = self._create_dock(
+        if dock := self._create_dock(
             DOCK_TITLE_PROJECT, DOCK_OBJ_PROJECT, widgets.get("unified_list")
-        )
-        if dock:
+        ):
             self.docks["list"] = dock
             self.main_window.addDockWidget(
                 Qt.DockWidgetArea.LeftDockWidgetArea, self.docks["list"]
@@ -209,12 +199,12 @@ class UIManager:
             failed_docks.append("list")
 
         # 2. Event Inspector (Right)
-        dock = self._create_dock(
+        # 2. Event Inspector (Right)
+        if dock := self._create_dock(
             DOCK_TITLE_EVENT_INSPECTOR,
             DOCK_OBJ_EVENT_INSPECTOR,
             widgets.get("event_editor"),
-        )
-        if dock:
+        ):
             self.docks["event"] = dock
             self.main_window.addDockWidget(
                 Qt.DockWidgetArea.RightDockWidgetArea, self.docks["event"]
@@ -224,12 +214,12 @@ class UIManager:
             failed_docks.append("event")
 
         # 3. Entity Inspector (Right)
-        dock = self._create_dock(
+        # 3. Entity Inspector (Right)
+        if dock := self._create_dock(
             DOCK_TITLE_ENTITY_INSPECTOR,
             DOCK_OBJ_ENTITY_INSPECTOR,
             widgets.get("entity_editor"),
-        )
-        if dock:
+        ):
             self.docks["entity"] = dock
             self.main_window.addDockWidget(
                 Qt.DockWidgetArea.RightDockWidgetArea, self.docks["entity"]
@@ -243,10 +233,10 @@ class UIManager:
             self.main_window.tabifyDockWidget(self.docks["event"], self.docks["entity"])
 
         # 4. Timeline (Bottom)
-        dock = self._create_dock(
+        # 4. Timeline (Bottom)
+        if dock := self._create_dock(
             DOCK_TITLE_TIMELINE, DOCK_OBJ_TIMELINE, widgets.get("timeline")
-        )
-        if dock:
+        ):
             self.docks["timeline"] = dock
             self.main_window.addDockWidget(
                 Qt.DockWidgetArea.BottomDockWidgetArea, self.docks["timeline"]
@@ -256,11 +246,11 @@ class UIManager:
             failed_docks.append("timeline")
 
         # 5. Longform Editor (Right)
+        # 5. Longform Editor (Right)
         if "longform_editor" in widgets:
-            dock = self._create_dock(
+            if dock := self._create_dock(
                 DOCK_TITLE_LONGFORM, DOCK_OBJ_LONGFORM, widgets["longform_editor"]
-            )
-            if dock:
+            ):
                 self.docks["longform"] = dock
                 self.main_window.addDockWidget(
                     Qt.DockWidgetArea.RightDockWidgetArea, self.docks["longform"]
@@ -270,11 +260,11 @@ class UIManager:
                 failed_docks.append("longform")
 
         # 6. Map Widget (Bottom, tabbed with Timeline by default)
+        # 6. Map Widget (Bottom, tabbed with Timeline by default)
         if "map_widget" in widgets:
-            dock = self._create_dock(
+            if dock := self._create_dock(
                 DOCK_TITLE_MAP, DOCK_OBJ_MAP, widgets["map_widget"]
-            )
-            if dock:
+            ):
                 self.docks["map"] = dock
                 self.main_window.addDockWidget(
                     Qt.DockWidgetArea.BottomDockWidgetArea, self.docks["map"]
@@ -288,11 +278,11 @@ class UIManager:
                 failed_docks.append("map")
 
         # 7. AI Search Panel (Right, tabbed with inspectors)
+        # 7. AI Search Panel (Right, tabbed with inspectors)
         if "ai_search_panel" in widgets:
-            dock = self._create_dock(
+            if dock := self._create_dock(
                 DOCK_TITLE_AI_SEARCH, DOCK_OBJ_AI_SEARCH, widgets["ai_search_panel"]
-            )
-            if dock:
+            ):
                 self.docks["ai_search"] = dock
                 self.main_window.addDockWidget(
                     Qt.DockWidgetArea.RightDockWidgetArea, self.docks["ai_search"]
@@ -307,11 +297,11 @@ class UIManager:
                 failed_docks.append("ai_search")
 
         # 8. Graph Widget (Bottom, tabbed with Map)
+        # 8. Graph Widget (Bottom, tabbed with Map)
         if "graph_widget" in widgets:
-            dock = self._create_dock(
+            if dock := self._create_dock(
                 DOCK_TITLE_GRAPH, DOCK_OBJ_GRAPH, widgets["graph_widget"]
-            )
-            if dock:
+            ):
                 self.docks["graph"] = dock
                 self.main_window.addDockWidget(
                     Qt.DockWidgetArea.BottomDockWidgetArea, self.docks["graph"]
@@ -331,11 +321,11 @@ class UIManager:
                 failed_docks.append("graph")
 
         # 9. History Panel (Right, tabbed with inspectors)
+        # 9. History Panel (Right, tabbed with inspectors)
         if "history_panel" in widgets:
-            dock = self._create_dock(
+            if dock := self._create_dock(
                 DOCK_TITLE_HISTORY, DOCK_OBJ_HISTORY, widgets["history_panel"]
-            )
-            if dock:
+            ):
                 self.docks["history"] = dock
                 self.main_window.addDockWidget(
                     Qt.DockWidgetArea.RightDockWidgetArea, self.docks["history"]
@@ -355,9 +345,7 @@ class UIManager:
 
         # Validate critical docks are present
         critical_docks = ["list", "event", "entity", "timeline"]
-        missing_critical = [d for d in critical_docks if d not in self.docks]
-
-        if missing_critical:
+        if missing_critical := [d for d in critical_docks if d not in self.docks]:
             error_msg = f"Critical docks missing: {missing_critical}"
             logger.error(error_msg)
             raise RuntimeError(
@@ -499,6 +487,7 @@ class UIManager:
     def create_edit_menu(self, menu_bar: QMenuBar) -> None:
         """Creates the Edit menu with undo/redo actions."""
         from PySide6.QtGui import QKeySequence
+
         from src.gui.utils.shortcut_manager import ShortcutManager
 
         edit_menu = menu_bar.addMenu("Edit")
@@ -628,11 +617,9 @@ class UIManager:
         self.layouts_menu.addSeparator()
 
         # Existing Layouts
+        # Existing Layouts
         layouts = self.get_saved_layouts()
-        if not layouts:
-            no_layouts = self.layouts_menu.addAction("No Saved Layouts")
-            no_layouts.setEnabled(False)
-        else:
+        if layouts:
             for name in layouts:
                 # Add a submenu or just click to restore?
                 # Let's do: Name -> Restore
@@ -656,6 +643,9 @@ class UIManager:
                 delete_action.triggered.connect(
                     lambda checked=False, n=name: self.delete_layout(n)
                 )
+        else:
+            no_layouts = self.layouts_menu.addAction("No Saved Layouts")
+            no_layouts.setEnabled(False)
 
         self.layouts_menu.addSeparator()
 
@@ -753,9 +743,7 @@ class UIManager:
         """
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         layouts = settings.value(SETTINGS_LAYOUTS_KEY, {})
-        if isinstance(layouts, dict):
-            return sorted(layouts.keys())
-        return []
+        return sorted(layouts.keys()) if isinstance(layouts, dict) else []
 
     def create_timeline_menu(self, menu_bar: QMenuBar) -> None:
         """Creates the Timeline menu for grouping and calendar."""
@@ -802,9 +790,12 @@ class UIManager:
             except Exception as e:
                 # Fallback if load fails
                 logger.warning(f"Failed to load custom layout: {e}")
-                pass
 
         # 2. Hardcoded fallback
+        self._apply_hardcoded_layout()
+
+    def _apply_hardcoded_layout(self) -> None:
+        """Applies the default hardcoded layout."""
         if "list" in self.docks:
             self.main_window.addDockWidget(
                 Qt.DockWidgetArea.LeftDockWidgetArea, self.docks["list"]
