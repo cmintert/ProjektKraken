@@ -9,7 +9,7 @@ import logging
 from typing import Any, Dict, List, Optional, Union
 
 from PySide6.QtCore import QMimeData, QSize, Qt, QTimer, Signal, Slot
-from PySide6.QtGui import QDrag
+from PySide6.QtGui import QDrag, QShowEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -48,6 +48,28 @@ class DraggableListView(QListView):
         super().__init__(parent)
         self.setDragEnabled(True)
         self.setDragDropMode(QListView.DragOnly)
+        # Enable keyboard focus so ESC can be captured
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+
+    def mousePressEvent(self, event) -> None:
+        """Override to implement click-to-deselect on already-selected items.
+
+        Args:
+            event: The mouse press event.
+        """
+        index = self.indexAt(event.pos())
+
+        # If clicking on an already-selected item, deselect it
+        if index.isValid() and self.selectionModel().isSelected(index):
+            # Check if it's the only selected item and we're clicking it again
+            selected_indexes = self.selectionModel().selectedIndexes()
+            if len(selected_indexes) == 1:
+                self.clearSelection()
+                event.accept()
+                return
+
+        # Otherwise, use default behavior (select the item)
+        super().mousePressEvent(event)
 
     def startDrag(self, supportedActions: Qt.DropAction) -> None:
         """Override to provide custom MIME data for dragged items.
@@ -125,15 +147,14 @@ class AutoClosingMessageBox(QMessageBox):
         # QMessageBox often requires at least one button to display correctly as a
         # modal dialog. We add OK and hide it to maintain the "toast" look.
         self.setStandardButtons(QMessageBox.StandardButton.Ok)
-        ok_button = self.button(QMessageBox.StandardButton.Ok)
-        if ok_button:
+        if ok_button := self.button(QMessageBox.StandardButton.Ok):
             ok_button.hide()
 
         # Center on parent if available
         if parent:
             self.setWindowModality(Qt.WindowModality.WindowModal)
 
-    def showEvent(self, event) -> None:
+    def showEvent(self, event: QShowEvent) -> None:
         """Starts the auto-close timer when the dialog is shown."""
         super().showEvent(event)
         # Use an explicit timer object as a child of the dialog for maximum
@@ -145,9 +166,18 @@ class AutoClosingMessageBox(QMessageBox):
 
 
 class UnifiedListWidget(QWidget):
-    """A unified list widget determining displaying both Events and Entities.
+    """A unified widget for displaying, filtering, and managing project items.
 
-    Differentiates items by color.
+    This widget combines a list view for both Events and Entities with a comprehensive
+    toolbar for filtering, searching, and sorting. It supports drag-and-drop operations,
+    multi-selection, and context-aware actions like deletion and creation of new items.
+
+    Key Features:
+        - Unified display of Events and Entities with color-coded differentiation.
+        - Live filtering by text, type, and advanced tag criteria.
+        - Sorting by name, creation date, and lore date.
+        - Drag-and-drop support for organizing items in other views (e.g., Timeline).
+        - Theme-aware styling and automatic updates.
     """
 
     # Signals
@@ -456,7 +486,7 @@ class UnifiedListWidget(QWidget):
                     return getattr(obj, "lore_date", float("inf")) or float("inf")
                 else:
                     # Entities go to end when sorting by lore date
-                    return float("inf") if not reverse else float("-inf")
+                    return float("-inf") if reverse else float("inf")
             return obj.name.lower()
 
         items_to_display.sort(key=get_sort_key, reverse=reverse)
@@ -529,9 +559,7 @@ class UnifiedListWidget(QWidget):
         if not selection_model:
             return
 
-        selected_indexes = selection_model.selectedIndexes()
-
-        if selected_indexes:
+        if selected_indexes := selection_model.selectedIndexes():
             # Collect all selected items for multi-selection signal
             selected_data = []
             for index in selected_indexes:
@@ -699,11 +727,10 @@ class UnifiedListWidget(QWidget):
         from PySide6.QtWidgets import QApplication, QLineEdit, QPlainTextEdit, QTextEdit
 
         focus_widget = QApplication.focusWidget()
-        if focus_widget and isinstance(
-            focus_widget, (QTextEdit, QPlainTextEdit, QLineEdit)
-        ):
-            return False
-        return True
+        return not (
+            focus_widget
+            and isinstance(focus_widget, (QTextEdit, QPlainTextEdit, QLineEdit))
+        )
 
     def _create_event_trigger(self) -> None:
         if self._should_trigger_shortcut():

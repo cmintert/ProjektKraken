@@ -524,6 +524,16 @@ class UIManager:
         # Note: Connection deferred to connect_undo_redo_actions()
         # (called after coordinator is initialized)
 
+        edit_menu.addSeparator()
+
+        # Deselect Action (ESC key)
+        self.deselect_action = edit_menu.addAction("Deselect")
+        self.deselect_action.setShortcut(ShortcutManager.DESELECT.key_sequence)
+        self.deselect_action.setShortcutContext(Qt.ShortcutContext.ApplicationShortcut)
+        self.main_window.addAction(self.deselect_action)  # Ensure global capture
+        # Connect immediately - clears selection in unified list
+        self.deselect_action.triggered.connect(self._on_deselect_triggered)
+
     def connect_undo_redo_actions(self) -> None:
         """Connects undo/redo actions to the coordinator.
 
@@ -542,6 +552,23 @@ class UIManager:
             coordinator = self.main_window.coordinator
             self.undo_action.setEnabled(coordinator.can_undo())
             self.redo_action.setEnabled(coordinator.can_redo())
+
+    def _on_deselect_triggered(self) -> None:
+        """Handle ESC key press to clear selection in unified list."""
+        from src.core.logging_config import get_logger
+
+        logger = get_logger(__name__)
+
+        # Find the unified list widget and clear its selection
+        if "list" in self.docks:
+            list_dock = self.docks["list"]
+            unified_list_widget = list_dock.widget()
+            if unified_list_widget and hasattr(unified_list_widget, "list_widget"):
+                logger.debug("UIManager: Clearing unified list selection via ESC")
+                unified_list_widget.list_widget.clearSelection()
+                unified_list_widget.list_widget.setCurrentIndex(
+                    unified_list_widget._model.index(-1, -1)
+                )
 
     def create_view_menu(self, menu_bar: QMenuBar) -> None:
         """Creates the View menu for toggling docks."""

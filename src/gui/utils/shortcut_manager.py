@@ -39,6 +39,9 @@ class ShortcutManager:
     # Search
     FIND = KeyboardShortcut("Find", "Ctrl+F", "Find text in document")
 
+    # Selection
+    DESELECT = KeyboardShortcut("Deselect", "Esc", "Clear selection")
+
     # Formatting Shortcuts (WikiTextEdit)
     FORMAT_BOLD = KeyboardShortcut("Bold", "Ctrl+B", "Toggle bold")
     FORMAT_ITALIC = KeyboardShortcut("Italic", "Ctrl+I", "Toggle italic")
