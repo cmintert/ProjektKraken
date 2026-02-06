@@ -1496,5 +1496,5 @@ class MapGraphicsView(QGraphicsView):
                             text = f"{new_time:.0f}"
                     else:
                         text = f"{new_time:.0f}"
-                    label.setText(text)
+                    label.set_text(text)
                 return
