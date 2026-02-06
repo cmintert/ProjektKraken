@@ -61,10 +61,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.app import constants
 from src.core.theme_manager import ThemeManager
 from src.core.trajectory import KEYFRAME_TIME_EPSILON
 from src.gui.widgets.map.coordinate_system import MapCoordinateSystem
 from src.gui.widgets.map.icon_picker_dialog import IconPickerDialog
+from src.gui.widgets.map.keyframe_label_item import KeyframeLabelItem
 from src.gui.widgets.map.marker_item import MarkerItem
 from src.gui.widgets.map.scale_bar_painter import ScaleBarPainter
 
@@ -456,24 +458,25 @@ class MapGraphicsView(QGraphicsView):
         self.pixmap_item: Optional[QGraphicsPixmapItem] = None
         self.markers: Dict[str, MarkerItem] = {}
 
-        # Theme
-        self.tm = ThemeManager()
-        self.tm.theme_changed.connect(self._update_theme)
-        self._update_theme(self.tm.get_theme())
+        # Trajectory Visualization
+        self.trajectory_path_item: Optional[QGraphicsPathItem] = None
+        self.keyframe_items: list[KeyframeItem] = []
+        self.keyframe_label_items: list[KeyframeLabelItem] = []
+        self._calendar_converter: Optional[object] = None  # CalendarConverter instance
+        self.trigger_first_use_animation: bool = False
+        self._animations: list[QPropertyAnimation] = []  # Keep references
 
+        # Theme
         # Enable drop support for drag-from-explorer
         self.setAcceptDrops(True)
 
         # Temporal state (for future trajectory animation)
         self._current_time: float = 0.0
 
-        # Trajectory Visualization
-        self.trajectory_path_item: Optional[QGraphicsPathItem] = None
-        self.keyframe_items: list[KeyframeItem] = []
-        self.keyframe_label_items: list[QGraphicsSimpleTextItem] = []
-        self._calendar_converter: Optional[object] = None  # CalendarConverter instance
-        self.trigger_first_use_animation: bool = False
-        self._animations: list[QPropertyAnimation] = []  # Keep references
+        # Theme
+        self.tm = ThemeManager()
+        self.tm.theme_changed.connect(self._update_theme)
+        self._update_theme(self.tm.get_theme())
 
     def minimumSizeHint(self) -> QSize:
         """Override minimum size hint to allow resizing below map image size.
@@ -491,11 +494,20 @@ class MapGraphicsView(QGraphicsView):
         return QSize(200, 150)
 
     def _update_theme(self, theme: dict) -> None:
-        """Updates the scene background."""
+        """Updates the scene background and propagates theme to items."""
         self.scene.setBackgroundBrush(QBrush(QColor(theme["app_bg"])))
 
+        # Update all markers
+        for marker in self.markers.values():
+            if hasattr(marker, "update_theme"):
+                marker.update_theme(theme)
+
+        # Update keyframe labels
+        for label in self.keyframe_label_items:
+            if hasattr(label, "update_theme"):
+                label.update_theme(theme)
+
         # Scale Bar
-        self.scale_bar_painter = ScaleBarPainter()
         self.scale_bar_painter = ScaleBarPainter()
         self.map_width_meters = 1_000_000.0  # Default 1000km
 
@@ -693,6 +705,9 @@ class MapGraphicsView(QGraphicsView):
         # Connect click signal
         marker.clicked.connect(self.marker_clicked.emit)
 
+        # Run collision detection to optimize label placement
+        self.auto_layout_labels()
+
     def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
         """Updates a marker's position to new normalized coordinates."""
         if marker_id not in self.markers:
@@ -744,6 +759,137 @@ class MapGraphicsView(QGraphicsView):
 
             marker.set_temporal_state(is_future=is_future, is_past=is_past)
 
+    def auto_layout_labels(self) -> None:
+        """Automatically adjusts marker label positions to avoid collisions.
+
+        Algorithm:
+        1. Collect all visible labels (markers + keyframes)
+        2. For each marker, check if label intersects with already-placed labels
+        3. If collision: try anchors in order (bottom -> top -> right -> left)
+        4. If all anchors collide: keep bottom (default)
+
+        This is called after adding/updating markers and on zoom events.
+        """
+        if not self.markers:
+            return
+
+        logger.debug(
+            f"auto_layout_labels: Processing {len(self.markers)} markers, {len(self.keyframe_label_items)} keyframe labels"
+        )
+
+        # Track occupied label rectangles (in scene coords)
+        # Using list of QRectF for overlap calculations
+        placed_rects: list[QRectF] = []
+        # Track which rects belong to which marker (for trajectory filtering)
+        placed_marker_ids: list[str] = []
+        margin = constants.MAP_LABEL_COLLISION_MARGIN
+
+        # 1. Add keyframe labels as immovable obstacles
+        for kf_label in self.keyframe_label_items:
+            if kf_label.isVisible():
+                kf_rect = kf_label.sceneBoundingRect()
+                kf_rect = kf_rect.adjusted(-margin, -margin, margin, margin)
+                placed_rects.append(kf_rect)
+                placed_marker_ids.append(getattr(kf_label, "marker_id", ""))
+
+        # 2. Add marker icons as obstacles (so labels don't cover markers)
+        markers = list(self.markers.values())
+        for marker in markers:
+            icon_rect = self._get_marker_icon_scene_rect(marker)
+            icon_rect = icon_rect.adjusted(-margin, -margin, margin, margin)
+            placed_rects.append(icon_rect)
+            placed_marker_ids.append("")  # Icons don't have trajectory filtering
+
+        # 3. Process markers in deterministic order
+        anchor_order = constants.MAP_LABEL_ANCHOR_PRIORITY
+
+        for marker in markers:
+            # Skip if no label background
+            if not hasattr(marker, "_label_bg") or not marker._label_bg.isVisible():
+                continue
+
+            # Build obstacle list excluding own trajectory keyframes
+            obstacles = [
+                rect
+                for rect, mid in zip(placed_rects, placed_marker_ids)
+                if not (mid and mid == marker.marker_id)
+            ]
+
+            # Track best anchor with overlap scoring
+            best_anchor = anchor_order[0]  # Default to first priority
+            best_overlap = float("inf")
+
+            for anchor in anchor_order:
+                marker.set_label_anchor(anchor)
+                label_rect = self._get_label_scene_rect(marker)
+                test_rect = label_rect.adjusted(-margin, -margin, margin, margin)
+
+                # Calculate overlap area
+                overlap = self._calculate_overlap_area(test_rect, obstacles)
+
+                if overlap == 0.0:
+                    # No collision - use this anchor immediately
+                    best_anchor = anchor
+                    best_overlap = 0.0
+                    break
+                elif overlap < best_overlap:
+                    # Track minimum overlap for fallback
+                    best_anchor = anchor
+                    best_overlap = overlap
+
+            # Set final anchor (non-colliding or minimum overlap)
+            marker.set_label_anchor(best_anchor)
+            final_rect = self._get_label_scene_rect(marker)
+            final_rect = final_rect.adjusted(-margin, -margin, margin, margin)
+            placed_rects.append(final_rect)
+            placed_marker_ids.append("")  # Marker labels don't filter trajectories
+
+    def _get_label_scene_rect(self, marker: MarkerItem) -> QRectF:
+        """Calculate the label's bounding rectangle in scene coordinates.
+
+        Args:
+            marker: The marker item to get label rect for.
+
+        Returns:
+            QRectF in scene coordinates representing the label bounds.
+        """
+        # Get label background item
+        label_bg = marker._label_bg
+
+        # Map to scene coordinates
+        # sceneBoundingRect() gives us the rect in scene coords
+        return label_bg.sceneBoundingRect()
+
+    def _calculate_overlap_area(self, rect: QRectF, obstacles: list[QRectF]) -> float:
+        """Calculate total overlap area between a rect and obstacles.
+
+        Args:
+            rect: The rectangle to check.
+            obstacles: List of obstacle rectangles.
+
+        Returns:
+            Total overlap area in square scene units.
+        """
+        total_area = 0.0
+        for obstacle in obstacles:
+            intersection = rect.intersected(obstacle)
+            if not intersection.isEmpty():
+                total_area += intersection.width() * intersection.height()
+        return total_area
+
+    def _get_marker_icon_scene_rect(self, marker: MarkerItem) -> QRectF:
+        """Get the bounding rect of a marker's icon in scene coordinates.
+
+        Args:
+            marker: The marker item.
+
+        Returns:
+            QRectF representing the marker icon bounds in scene coords.
+        """
+        # Marker is centered at its pos(), with icon inside
+        # Use the marker's bounding rect mapped to scene
+        return marker.sceneBoundingRect()
+
     def wheelEvent(self, event: QWheelEvent) -> None:
         """Handle mouse wheel for zooming."""
         # Sensitivity
@@ -755,6 +901,9 @@ class MapGraphicsView(QGraphicsView):
 
         self.scale(factor, factor)
         self._update_label_scales()
+
+        # Re-layout labels after zoom to prevent overlaps
+        self.auto_layout_labels()
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """Accept drag events with our custom MIME type."""
@@ -1105,23 +1254,22 @@ class MapGraphicsView(QGraphicsView):
             else:
                 date_str = f"{kf.t:.0f}"
 
-            label = QGraphicsSimpleTextItem(date_str)
-            # Position at the dot center (scene coords)
+            label = KeyframeLabelItem(date_str, marker_id=marker_id)
             label.setPos(pos)
-            label.setBrush(QBrush(QColor(KEYFRAME_LABEL_COLOR)))
-            font = QFont(KEYFRAME_LABEL_FONT_FAMILY, KEYFRAME_LABEL_FONT_SIZE)
-            label.setFont(font)
-            label.setZValue(LAYER_MARKERS + 2)
-            # Ignore transformations to keep constant screen size
-            label.setFlag(
-                QGraphicsSimpleTextItem.GraphicsItemFlag.ItemIgnoresTransformations
-            )
+            label.setZValue(constants.MAP_LAYER_MARKERS + 2)
+
             # Apply offset in screen pixels via transform
             label.setTransform(
-                QTransform().translate(KEYFRAME_LABEL_OFFSET_X, KEYFRAME_LABEL_OFFSET_Y)
+                QTransform().translate(
+                    constants.MAP_KEYFRAME_LABEL_OFFSET_X,
+                    constants.MAP_KEYFRAME_LABEL_OFFSET_Y,
+                )
             )
             self.scene.addItem(label)
             self.keyframe_label_items.append(label)
+
+        # Run collision detection for trajectory labels
+        self.auto_layout_labels()
 
         # Draw path initially
         self._update_trajectory_path()

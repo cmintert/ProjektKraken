@@ -76,3 +76,42 @@ PROVIDER_RETRY_WAIT_TIME_S = 1.0  # Wait time between provider retries
 TEMPORAL_FUTURE_OPACITY = 0.7  # Opacity for future events (0.0-1.0)
 TEMPORAL_FUTURE_SATURATION_FACTOR = 0.8  # Saturation multiplier for future events
 TEMPORAL_FUTURE_LIGHTNESS_BOOST = 0.1  # Lightness increase for future events
+
+# Map Visualization Constants
+# Layer Z-Values
+MAP_LAYER_BG = 0
+MAP_LAYER_TRAJECTORIES = 5
+MAP_LAYER_MARKERS = 10
+MAP_LAYER_UI_OVERLAY = 100
+
+# Map Colors
+MAP_KEYFRAME_COLOR_DEFAULT = "#f1c40f"  # Yellow
+MAP_KEYFRAME_COLOR_SELECTED = "#e74c3c"  # Red
+MAP_KEYFRAME_LABEL_COLOR = "#000000"  # Black
+MAP_TRAJECTORY_PATH_COLOR = "#3498db"  # Blue
+MAP_GIZMO_TEXT_COLOR = "#ffffff"  # White
+MAP_LABEL_BG_COLOR = "#000000"
+MAP_LABEL_TEXT_COLOR = "#FFFFFF"
+
+# Map Layout & Sizes
+MAP_GIZMO_SIZE = 6
+MAP_KEYFRAME_LABEL_OFFSET_X = -10
+MAP_KEYFRAME_LABEL_OFFSET_Y = 10
+MAP_KEYFRAME_LABEL_MIN_SIZE_PT = 8
+MAP_KEYFRAME_LABEL_MAX_SIZE_PT = 10
+MAP_LABEL_PADDING_X = 6
+MAP_LABEL_PADDING_Y = 2
+MAP_LABEL_BG_OPACITY = 160  # 0-255
+MAP_LABEL_BG_OPACITY_FUTURE = 128  # 50% ish
+MAP_LABEL_FONT_FAMILY = "Segoe UI"
+MAP_LABEL_FONT_SIZE = 9
+MAP_LABEL_CORNER_RADIUS = 4
+MAP_LABEL_GAP_Y = (
+    8  # Gap between marker edge and label (increased for collision avoidance)
+)
+MAP_LABEL_COLLISION_MARGIN = (
+    8  # Extra pixels for collision detection buffer (increased)
+)
+# PerceptPPO priority: research shows "above" is most preferred by users
+MAP_LABEL_ANCHOR_PRIORITY = ["top", "top_right", "top_left", "right", "left", "bottom"]
+MAP_MARKER_DRAG_THRESHOLD = 3

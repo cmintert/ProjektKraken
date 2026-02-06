@@ -6,6 +6,8 @@ Provides the MarkerItem class for rendering markers on the map.
 import logging
 import os
 
+from src.app import constants
+
 # Forward declaration to avoid circular import
 from typing import Any, Optional
 
@@ -25,6 +27,7 @@ from PySide6.QtWidgets import (
     QGraphicsItem,
     QGraphicsObject,
     QGraphicsPixmapItem,
+    QGraphicsRectItem,
     QGraphicsSimpleTextItem,
     QStyleOptionGraphicsItem,
     QWidget,
@@ -135,25 +138,92 @@ class MarkerItem(QGraphicsObject):
         self._is_dragging = False
         self._drag_start_pos = None
 
-        # Text Label - dark grey for visibility on light/dark backgrounds
-        self._label_item = QGraphicsSimpleTextItem(label, self)
-        self._label_item.setBrush(QBrush(QColor("#333333")))  # Dark grey
+        # Text Label Group
+        # We use a background rect for contrast
+        self._label_bg = QGraphicsRectItem(self)
+        self._label_bg.setPen(QPen(Qt.PenStyle.NoPen))
+        # QGraphicsRectItem doesn't support rounded corners directly.
+        # We use a standard rect for now.
 
-        font = QFont("Segoe UI", 8)
+        self._label_text = QGraphicsSimpleTextItem(label, self._label_bg)
+
+        # Initial colors (will be updated by view or default fallback)
+        color = QColor(constants.MAP_LABEL_BG_COLOR)
+        color.setAlpha(constants.MAP_LABEL_BG_OPACITY)
+        self._label_bg.setBrush(QBrush(color))
+        self._label_text.setBrush(QBrush(QColor(constants.MAP_LABEL_TEXT_COLOR)))
+
+        font = QFont(constants.MAP_LABEL_FONT_FAMILY, constants.MAP_LABEL_FONT_SIZE)
         font.setBold(True)
-        self._label_item.setFont(font)
+        self._label_text.setFont(font)
 
-        # Center the label below the marker
-        self._update_label_position()
+        # Initial layout
+        self._current_anchor = "bottom"
+        self._update_label_layout()
 
-    def _update_label_position(self) -> None:
-        """Centers the label below the marker."""
-        rect = self._label_item.boundingRect()
-        # Center horizontally relative to 0 (marker center)
-        x = -rect.width() / 2
-        # Position vertically below the marker (MARKER_SIZE/2 is bottom edge)
-        y = (self.MARKER_SIZE / 2) + 2  # 2px padding
-        self._label_item.setPos(x, y)
+    def set_label_anchor(self, anchor: str) -> None:
+        """Sets the anchor position of the label relative to the marker.
+
+        Args:
+            anchor: One of 'top', 'bottom', 'left', 'right', 'top_right', 'top_left'.
+        """
+        valid_anchors = {"top", "bottom", "left", "right", "top_right", "top_left"}
+        if anchor not in valid_anchors:
+            return
+
+        if self._current_anchor != anchor:
+            self._current_anchor = anchor
+            self._update_label_layout()
+
+    def _update_label_layout(self) -> None:
+        """Updates the label background size and position."""
+        if not self._label_text.text():
+            self._label_bg.setVisible(False)
+            return
+
+        self._label_bg.setVisible(True)
+        text_rect = self._label_text.boundingRect()
+        padding_x = constants.MAP_LABEL_PADDING_X
+        padding_y = constants.MAP_LABEL_PADDING_Y
+
+        # Setup Background Rect
+        bg_width = text_rect.width() + (padding_x * 2)
+        bg_height = text_rect.height() + (padding_y * 2)
+
+        # Center text in background
+        self._label_text.setPos(padding_x, padding_y)
+        self._label_bg.setRect(0, 0, bg_width, bg_height)
+
+        # Calculate Position based on Anchor
+        gap = constants.MAP_LABEL_GAP_Y
+        marker_radius = self.MARKER_SIZE / 2
+
+        if self._current_anchor == "top":
+            # Above marker
+            x = -bg_width / 2
+            y = -(marker_radius + gap + bg_height)
+        elif self._current_anchor == "top_right":
+            # Above and right of marker (diagonal)
+            x = marker_radius
+            y = -(marker_radius + gap + bg_height)
+        elif self._current_anchor == "top_left":
+            # Above and left of marker (diagonal)
+            x = -(marker_radius + bg_width)
+            y = -(marker_radius + gap + bg_height)
+        elif self._current_anchor == "left":
+            # Left of marker
+            x = -(marker_radius + gap + bg_width)
+            y = -bg_height / 2
+        elif self._current_anchor == "right":
+            # Right of marker
+            x = marker_radius + gap
+            y = -bg_height / 2
+        else:
+            # Bottom (Default)
+            x = -bg_width / 2
+            y = marker_radius + gap
+
+        self._label_bg.setPos(x, y)
 
     def _load_icon(self, icon_name: Optional[str]) -> None:
         """Loads an SVG icon for the marker.
@@ -240,6 +310,30 @@ class MarkerItem(QGraphicsObject):
             self.setOpacity(1.0)
 
         self.update()
+
+        # Fade label too
+        opacity = constants.TEMPORAL_FUTURE_OPACITY if is_future else 1.0
+        if hasattr(self, "_label_bg"):
+            self._label_bg.setOpacity(opacity)
+
+    def update_theme(self, theme: dict) -> None:
+        """Updates the marker styling based on the current theme."""
+        # Use theme surface color but with opacity for background
+        bg_color = QColor(theme.get("surface", "#000000"))
+        # Ensure high contrast or hardcoded preference for map overlays
+        # For maps, semi-transparent black is often better than theme surface which might be light
+        # However, to adhere to themes:
+        # If dark mode: surface is dark. Opacity makes it darker.
+        # If light mode: surface is light. Opacity makes it milky.
+
+        # Let's try to follow the theme strictly but add opacity.
+        # Slightly more opaque than default for theme mode
+        bg_color.setAlpha(constants.MAP_LABEL_BG_OPACITY + 40)
+        self._label_bg.setBrush(QBrush(bg_color))
+
+        # Text color
+        text_color = QColor(theme.get("text_main", "#FFFFFF"))
+        self._label_text.setBrush(QBrush(text_color))
 
     def _get_effective_color(self) -> QColor:
         """Returns the color modified by current state (e.g., deseaturated if
@@ -352,7 +446,7 @@ class MarkerItem(QGraphicsObject):
         # Check for click vs drag
         if self._drag_start_pos is not None:
             dist = (self.pos() - self._drag_start_pos).manhattanLength()
-            if dist < 3:
+            if dist < constants.MAP_MARKER_DRAG_THRESHOLD:
                 # It's a click!
                 self.clicked.emit(self.marker_id, self.object_type)
                 logger.debug(f"Marker {self.marker_id} clicked.")
