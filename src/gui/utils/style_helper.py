@@ -455,15 +455,38 @@ class StyleHelper:
         Returns:
             str: QSS stylesheet string for checkboxes.
         """
-        from PySide6.QtCore import QUrl
+        import tempfile
+        from pathlib import Path
 
         from src.core.paths import get_resource_path
         from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         check_icon_path = get_resource_path("default_assets/icons/ui_icons/check.svg")
-        # Use file:/// schema for more robust path resolution in QSS
-        icon_url = QUrl.fromLocalFile(check_icon_path).toString()
+
+        # Read and recolor SVG, then write to temp file
+        # Qt doesn't support data URIs in QSS, so we need a file path
+        try:
+            with open(check_icon_path, "r", encoding="utf-8") as f:
+                svg_content = f.read()
+
+            # Replace white stroke with primary theme color
+            svg_content = svg_content.replace(
+                'stroke="white"', f'stroke="{theme["primary"]}"'
+            )
+
+            # Write to temp file with a deterministic name
+            temp_dir = Path(tempfile.gettempdir())
+            temp_svg_path = temp_dir / "kraken_check_themed.svg"
+            with open(temp_svg_path, "w", encoding="utf-8") as f:
+                f.write(svg_content)
+
+            # Use raw path with forward slashes for QSS compatibility
+            icon_path = str(temp_svg_path).replace("\\", "/")
+
+        except Exception:
+            # Fallback to original icon path
+            icon_path = check_icon_path
 
         return (
             f"QCheckBox {{ color: {theme['text_main']}; spacing: 8px; }}"
@@ -478,9 +501,9 @@ class StyleHelper:
             f"QCheckBox::indicator:checked, "
             f"QListWidget::indicator:checked, "
             f"QListView::indicator:checked {{ "
-            f"background-color: {theme['primary']}; "
+            f"background-color: {theme['surface']}; "
             f"border: 1px solid {theme['primary']}; "
-            f"image: url({icon_url}); }}"
+            f"image: url({icon_path}); }}"
         )
 
     @staticmethod
