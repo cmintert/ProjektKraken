@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QVBoxLayout,
     QWidget,
+    QLabel,
 )
 
 from src.core.entities import Entity
@@ -84,6 +85,12 @@ class EntityEditorWidget(QWidget):
         from src.gui.utils.style_helper import StyleHelper
 
         StyleHelper.apply_form_spacing(main_layout)
+
+        # Persistent Header
+        self.header_label = QLabel("No Selection")
+        self.header_label.setStyleSheet(StyleHelper.get_content_header_style())
+        self.header_label.setWordWrap(True)
+        main_layout.addWidget(self.header_label)
 
         # Splitter-based tab inspector for vertical stacking
         self.inspector = SplitterTabInspector()
@@ -338,6 +345,7 @@ class EntityEditorWidget(QWidget):
 
     def _connect_dirty_signals(self) -> None:
         """Connects signals that should trigger dirty state."""
+        self.name_edit.textChanged.connect(self.header_label.setText)
         self.name_edit.textChanged.connect(lambda: self.set_dirty(True))
         self.type_edit.currentTextChanged.connect(lambda: self.set_dirty(True))
         self.desc_edit.textChanged.connect(lambda: self.set_dirty(True))
@@ -462,6 +470,7 @@ class EntityEditorWidget(QWidget):
 
             if self.name_edit.text() != entity.name:
                 self.name_edit.setText(entity.name)
+            self.header_label.setText(entity.name)
 
             if self.type_edit.currentText() != entity.type:
                 self.type_edit.setCurrentText(entity.type)

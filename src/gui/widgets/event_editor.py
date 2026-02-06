@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QVBoxLayout,
     QWidget,
+    QLabel,
 )
 
 from src.core.events import Event
@@ -99,6 +100,12 @@ class EventEditorWidget(QWidget):
         self._is_loading = False
         self._is_dirty = False
         self._calendar_converter = None
+
+        # Persistent Header
+        self.header_label = QLabel("No Selection")
+        self.header_label.setStyleSheet(StyleHelper.get_content_header_style())
+        self.header_label.setWordWrap(True)
+        main_layout.addWidget(self.header_label)
 
         # Splitter-based tab inspector for vertical stacking
         self.inspector = SplitterTabInspector()
@@ -252,6 +259,7 @@ class EventEditorWidget(QWidget):
         self.date_edit.value_changed.connect(self._on_start_date_changed)
 
         # Connect modifications to dirty check and live preview
+        self.name_edit.textChanged.connect(self.header_label.setText)
         self.name_edit.textChanged.connect(self._on_field_changed)
         self.date_edit.value_changed.connect(lambda val: self._on_field_changed())
         self.type_edit.editTextChanged.connect(self._on_field_changed)
@@ -739,6 +747,7 @@ class EventEditorWidget(QWidget):
 
             if self.name_edit.text() != event.name:
                 self.name_edit.setText(event.name)
+            self.header_label.setText(event.name)
 
             # Date/Time widgets have set_value which triggers internal updates
             # Ideally we check value equality first.
