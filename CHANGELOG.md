@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-02-06
-**Commit:** `899cbd9`
+**Last Updated:** 2026-02-07
+**Commit:** `24e56ff`
 ---
 
 # Changelog
@@ -10,6 +10,12 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Added
+- *(2026-02-07)* **Map**: Implemented smart 6-position label collision avoidance with priority ranking algorithm (Top > Top-Right > Top-Left > Right > Left > Bottom).
+- *(2026-02-07)* **Map**: Implemented overlap scoring fallback strategy to minimize occlusion when all preferred label positions are blocked.
+- *(2026-02-07)* **Map**: Added constant-size keyframe rendering and cosmetic trajectory lines (2px) that maintain visibility regardless of zoom level.
+- *(2026-02-07)* **UI**: Enhanced Keyframe Gizmo interactions with larger target areas (24px) and hover debounce logic to prevent flickering.
 
 ### Fixed
 - *(2026-02-06)* **GUI**: Resolved drag and drop conflict in Unified List where dragging triggered box selection.
