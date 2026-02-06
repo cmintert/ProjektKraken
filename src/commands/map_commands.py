@@ -83,6 +83,28 @@ class CreateMapCommand(BaseCommand):
             self._is_executed = False
             logger.info(f"Undid creation of map: {self._map.id}")
 
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            dict: Command data for persistence.
+        """
+        return {"map": self._map.to_dict(), "is_executed": self._is_executed}
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "CreateMapCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Command data from dictionary.
+
+        Returns:
+            CreateMapCommand: Reconstructed command.
+        """
+        cmd = cls(data["map"])
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd
+
 
 class UpdateMapCommand(BaseCommand):
     """Command to update an existing map.
@@ -171,6 +193,40 @@ class UpdateMapCommand(BaseCommand):
             self._is_executed = False
             logger.info(f"Undid update of map: {self.map_id}")
 
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            dict: Command data for persistence.
+        """
+        return {
+            "map_id": self.map_id,
+            "update_data": self.update_data,
+            "previous_map": (
+                self._previous_map.to_dict() if self._previous_map else None
+            ),
+            "new_map": self._new_map.to_dict() if self._new_map else None,
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "UpdateMapCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Command data from dictionary.
+
+        Returns:
+            UpdateMapCommand: Reconstructed command.
+        """
+        cmd = cls(data["map_id"], data["update_data"])
+        if data.get("previous_map"):
+            cmd._previous_map = Map.from_dict(data["previous_map"])
+        if data.get("new_map"):
+            cmd._new_map = Map.from_dict(data["new_map"])
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd
+
 
 class DeleteMapCommand(BaseCommand):
     """Command to delete a map and all its markers."""
@@ -238,6 +294,39 @@ class DeleteMapCommand(BaseCommand):
                 db_service.insert_marker(marker)
             self._is_executed = False
             logger.info(f"Undid deletion of map: {self.map_id}")
+
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            dict: Command data for persistence.
+        """
+        return {
+            "map_id": self.map_id,
+            "deleted_map": self._deleted_map.to_dict() if self._deleted_map else None,
+            "deleted_markers": [m.to_dict() for m in self._deleted_markers],
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "DeleteMapCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Command data from dictionary.
+
+        Returns:
+            DeleteMapCommand: Reconstructed command.
+        """
+        cmd = cls(data["map_id"])
+        if data.get("deleted_map"):
+            cmd._deleted_map = Map.from_dict(data["deleted_map"])
+        if data.get("deleted_markers"):
+            cmd._deleted_markers = [
+                Marker.from_dict(m) for m in data["deleted_markers"]
+            ]
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd
 
 
 # --------------------------------------------------------------------------
@@ -307,6 +396,33 @@ class CreateMarkerCommand(BaseCommand):
             db_service.delete_marker(self._actual_marker_id)
             self._is_executed = False
             logger.info(f"Undid creation of marker: {self._actual_marker_id}")
+
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            dict: Command data for persistence.
+        """
+        return {
+            "marker": self._marker.to_dict(),
+            "actual_marker_id": self._actual_marker_id,
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "CreateMarkerCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Command data from dictionary.
+
+        Returns:
+            CreateMarkerCommand: Reconstructed command.
+        """
+        cmd = cls(data["marker"])
+        cmd._actual_marker_id = data.get("actual_marker_id")
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd
 
 
 class UpdateMarkerCommand(BaseCommand):
@@ -385,6 +501,40 @@ class UpdateMarkerCommand(BaseCommand):
             self._is_executed = False
             logger.info(f"Undid update of marker: {self.marker_id}")
 
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            dict: Command data for persistence.
+        """
+        return {
+            "marker_id": self.marker_id,
+            "update_data": self.update_data,
+            "previous_marker": (
+                self._previous_marker.to_dict() if self._previous_marker else None
+            ),
+            "new_marker": self._new_marker.to_dict() if self._new_marker else None,
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "UpdateMarkerCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Command data from dictionary.
+
+        Returns:
+            UpdateMarkerCommand: Reconstructed command.
+        """
+        cmd = cls(data["marker_id"], data["update_data"])
+        if data.get("previous_marker"):
+            cmd._previous_marker = Marker.from_dict(data["previous_marker"])
+        if data.get("new_marker"):
+            cmd._new_marker = Marker.from_dict(data["new_marker"])
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd
+
 
 class DeleteMarkerCommand(BaseCommand):
     """Command to delete a marker from a map."""
@@ -447,6 +597,36 @@ class DeleteMarkerCommand(BaseCommand):
             db_service.insert_marker(self._deleted_marker)
             self._is_executed = False
             logger.info(f"Undid deletion of marker: {self.marker_id}")
+
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            dict: Command data for persistence.
+        """
+        return {
+            "marker_id": self.marker_id,
+            "deleted_marker": (
+                self._deleted_marker.to_dict() if self._deleted_marker else None
+            ),
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "DeleteMarkerCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Command data from dictionary.
+
+        Returns:
+            DeleteMarkerCommand: Reconstructed command.
+        """
+        cmd = cls(data["marker_id"])
+        if data.get("deleted_marker"):
+            cmd._deleted_marker = Marker.from_dict(data["deleted_marker"])
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd
 
 
 class UpdateMarkerIconCommand(BaseCommand):
@@ -538,6 +718,37 @@ class UpdateMarkerIconCommand(BaseCommand):
             self._is_executed = False
             logger.info(f"Undid icon update of marker: {self.marker_id}")
 
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            dict: Command data for persistence.
+        """
+        return {
+            "marker_id": self.marker_id,
+            "icon": self.icon,
+            "previous_icon": self._previous_icon,
+            "marker": self._marker.to_dict() if self._marker else None,
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "UpdateMarkerIconCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Command data from dictionary.
+
+        Returns:
+            UpdateMarkerIconCommand: Reconstructed command.
+        """
+        cmd = cls(data["marker_id"], data["icon"])
+        cmd._previous_icon = data.get("previous_icon")
+        if data.get("marker"):
+            cmd._marker = Marker.from_dict(data["marker"])
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd
+
 
 class UpdateMarkerColorCommand(BaseCommand):
     """Command to update a marker's color.
@@ -627,6 +838,37 @@ class UpdateMarkerColorCommand(BaseCommand):
             db_service.insert_marker(restored_marker)
             self._is_executed = False
             logger.info(f"Undid color update of marker: {self.marker_id}")
+
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            dict: Command data for persistence.
+        """
+        return {
+            "marker_id": self.marker_id,
+            "color": self.color,
+            "previous_color": self._previous_color,
+            "marker": self._marker.to_dict() if self._marker else None,
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "UpdateMarkerColorCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Command data from dictionary.
+
+        Returns:
+            UpdateMarkerColorCommand: Reconstructed command.
+        """
+        cmd = cls(data["marker_id"], data["color"])
+        cmd._previous_color = data.get("previous_color")
+        if data.get("marker"):
+            cmd._marker = Marker.from_dict(data["marker"])
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd
 
 
 class DeleteKeyframeCommand(BaseCommand):
@@ -720,3 +962,33 @@ class DeleteKeyframeCommand(BaseCommand):
             )
             self._is_executed = False
             logger.info(f"Undid deletion of keyframe at t={t:.2f} for {self.marker_id}")
+
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            dict: Command data for persistence.
+        """
+        return {
+            "map_id": self.map_id,
+            "marker_id": self.marker_id,
+            "t": self.t,
+            "deleted_keyframe": self._deleted_keyframe,
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "DeleteKeyframeCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Command data from dictionary.
+
+        Returns:
+            DeleteKeyframeCommand: Reconstructed command.
+        """
+        cmd = cls(data["map_id"], data["marker_id"], data["t"])
+        if data.get("deleted_keyframe"):
+            cmd._deleted_keyframe = tuple(data["deleted_keyframe"])
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd
