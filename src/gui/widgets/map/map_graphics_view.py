@@ -83,12 +83,10 @@ KEYFRAME_COLOR_DEFAULT = "#f1c40f"  # Yellow
 KEYFRAME_COLOR_SELECTED = "#e74c3c"  # Red
 KEYFRAME_LABEL_COLOR = "#000000"  # Black
 TRAJECTORY_PATH_COLOR = "#3498db"  # Blue
-GIZMO_TEXT_COLOR = "#ffffff"  # White
+
 
 # Layout Constants
-GIZMO_SIZE = 6
-GIZMO_FONT_FAMILY = "Segoe UI"
-GIZMO_FONT_SIZE = 6
+
 
 KEYFRAME_LABEL_FONT_FAMILY = "Segoe UI"
 KEYFRAME_LABEL_FONT_SIZE = 12
@@ -112,22 +110,26 @@ class KeyframeGizmo(QGraphicsItemGroup):
         self.setAcceptHoverEvents(True)
 
         # Create Clock icon (left)
-        self.clock_icon = self._create_icon("🕐", 0, GIZMO_TEXT_COLOR)
+        self.clock_icon = self._create_icon(
+            "🕐", 0, constants.MAP_KEYFRAME_GIZMO_TEXT_COLOR
+        )
         self.addToGroup(self.clock_icon)
 
         # Create Delete icon (right) - red X
-        self.delete_icon = self._create_icon("✕", GIZMO_SIZE + 4, "#FF4444")
+        self.delete_icon = self._create_icon(
+            "✕", constants.MAP_KEYFRAME_GIZMO_SIZE + 4, "#FF4444"
+        )
         self.addToGroup(self.delete_icon)
 
         # Position gizmo to Northeast of keyframe (Right and Up)
-        self.setPos(3, -8)
+        self.setPos(5, -12)
 
     def _create_icon(self, text: str, x_offset: float, color: str) -> QGraphicsRectItem:
         """Creates a clickable icon button."""
         from PySide6.QtCore import Qt
 
         # Background rect (smaller)
-        size = GIZMO_SIZE
+        size = constants.MAP_KEYFRAME_GIZMO_SIZE
         rect = QGraphicsRectItem(x_offset, 0, size, size)
         rect.setBrush(Qt.NoBrush)
         rect.setPen(Qt.NoPen)
@@ -137,7 +139,10 @@ class KeyframeGizmo(QGraphicsItemGroup):
         label = QGraphicsSimpleTextItem(text, rect)
         label.setPos(x_offset + 1, -3)
         label.setBrush(QBrush(QColor(color)))
-        font = QFont(GIZMO_FONT_FAMILY, GIZMO_FONT_SIZE)
+        font = QFont(
+            constants.MAP_KEYFRAME_GIZMO_FONT_FAMILY,
+            constants.MAP_KEYFRAME_GIZMO_FONT_SIZE,
+        )
         label.setFont(font)
 
         # Make clickable
@@ -163,7 +168,7 @@ class KeyframeGizmo(QGraphicsItemGroup):
         # Determine which icon was clicked based on local position
         click_x = event.pos().x()
 
-        if click_x < GIZMO_SIZE + 1:
+        if click_x < constants.MAP_KEYFRAME_GIZMO_SIZE + 1:
             # Clock icon clicked - enter Clock Mode
             logger.info(f"Clock icon clicked for marker {self.keyframe_item.marker_id}")
             self.keyframe_item.set_mode("clock")
@@ -214,6 +219,7 @@ class KeyframeItem(QGraphicsObject):
         # Enable interaction
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations)
         self.setAcceptHoverEvents(True)
 
     def boundingRect(self) -> QRectF:
@@ -320,26 +326,34 @@ class KeyframeItem(QGraphicsObject):
             # For now, let's use the standard tooltip and mark it as seen.
             settings.setValue("map/onboarding_hover_hint_shown", True)
 
-    def _cleanup_gizmo(self) -> None:
-        """Remove gizmo if not being hovered."""
-        # Additional guard: check if gizmo itself thinks it's under mouse
-        # This handles the race condition where we leave keyframe but enter gizmo
-        gizmo_under_mouse = self.gizmo and self.gizmo.isUnderMouse()
-
-        if (
-            self.gizmo
-            and not self._gizmo_hovered
-            and not self.is_pinned
-            and not gizmo_under_mouse
-        ):
-            self.gizmo.setVisible(False)
-
     def hoverLeaveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
         """Hide gizmo when leaving keyframe."""
         super().hoverLeaveEvent(event)
         self.unsetCursor()
-        # Attempt cleanup when leaving the keyframe dot
         self._cleanup_gizmo()
+
+    def _cleanup_gizmo(self) -> None:
+        """Schedule gizmo hide check."""
+        # Use a small delay to allow mouse to move from dot to gizmo
+        from PySide6.QtCore import QTimer
+
+        QTimer.singleShot(100, self._check_hide_gizmo)
+
+    def _check_hide_gizmo(self) -> None:
+        """Actually hide if neither dot nor gizmo is hovered."""
+        gizmo_hovered = self.gizmo and self.gizmo.isUnderMouse()
+        # Note: isUnderMouse() might be fickle with ignoring transforms, checking internal flag
+        gizmo_flag_hovered = self._gizmo_hovered
+        dot_hovered = self.isUnderMouse()
+
+        if (
+            self.gizmo
+            and not gizmo_hovered
+            and not gizmo_flag_hovered
+            and not dot_hovered
+            and not self.is_pinned
+        ):
+            self.gizmo.setVisible(False)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Clear any existing selection before starting drag."""
@@ -1409,7 +1423,9 @@ class MapGraphicsView(QGraphicsView):
     def _create_trajectory_item(self, path: QPainterPath) -> QGraphicsPathItem:
         """Creates and configures the trajectory path item."""
         item = QGraphicsPathItem(path)
-        pen = QPen(QColor(TRAJECTORY_PATH_COLOR), 1)  # Blue path, thin line
+        # Cosmetic pen = constant width on screen regardless of zoom
+        pen = QPen(QColor(TRAJECTORY_PATH_COLOR), 2)
+        pen.setCosmetic(True)
         pen.setStyle(Qt.PenStyle.DashLine)
         item.setPen(pen)
         item.setZValue(LAYER_TRAJECTORIES)

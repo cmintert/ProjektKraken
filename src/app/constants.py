@@ -115,3 +115,9 @@ MAP_LABEL_COLLISION_MARGIN = (
 # PerceptPPO priority: research shows "above" is most preferred by users
 MAP_LABEL_ANCHOR_PRIORITY = ["top", "top_right", "top_left", "right", "left", "bottom"]
 MAP_MARKER_DRAG_THRESHOLD = 3
+
+# Keyframe Gizmo (Clock/Delete icons)
+MAP_KEYFRAME_GIZMO_SIZE = 24  # 4x original size (was 6 -> 12 -> 24)
+MAP_KEYFRAME_GIZMO_FONT_SIZE = 16
+MAP_KEYFRAME_GIZMO_FONT_FAMILY = "Segoe UI"
+MAP_KEYFRAME_GIZMO_TEXT_COLOR = "#ffffff"
