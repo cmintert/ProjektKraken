@@ -329,6 +329,45 @@ class EntityEditorWidget(QWidget):
 
         # Enable drag-and-drop for relation creation
         self.setAcceptDrops(True)
+        
+        # Create drop hint label (Sprint 1 - visual feedback)
+        self._drop_hint_label = None
+        self._is_drag_over = False
+
+    def _show_drop_hint(self, rel_type: str = "related") -> None:
+        """Show drop hint overlay during drag-over.
+
+        Args:
+            rel_type: Relation type to display in hint.
+        """
+        if self._drop_hint_label is None:
+            from PySide6.QtWidgets import QLabel
+            
+            self._drop_hint_label = QLabel(self)
+            self._drop_hint_label.setStyleSheet(
+                """
+                QLabel {
+                    background-color: rgba(51, 153, 255, 0.15);
+                    border: 2px dashed #3399FF;
+                    border-radius: 6px;
+                    color: #3399FF;
+                    font-size: 12px;
+                    font-weight: bold;
+                    padding: 8px;
+                }
+                """
+            )
+            self._drop_hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        self._drop_hint_label.setText(f"→ {rel_type}")
+        self._drop_hint_label.setGeometry(self.rect())
+        self._drop_hint_label.show()
+        self._drop_hint_label.raise_()
+
+    def _hide_drop_hint(self) -> None:
+        """Hide drop hint overlay."""
+        if self._drop_hint_label:
+            self._drop_hint_label.hide()
 
     def dragEnterEvent(self, event) -> None:
         """Handle drag enter event to accept MIME data from Project Explorer.
@@ -341,6 +380,8 @@ class EntityEditorWidget(QWidget):
         # Accept if MIME type matches and we have an entity loaded
         if event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE) and self._current_entity_id:
             event.acceptProposedAction()
+            self._is_drag_over = True
+            self._show_drop_hint("related")  # Show visual feedback
             logger.debug("EntityEditor: Accepting drag from Project Explorer")
         else:
             event.ignore()
@@ -355,8 +396,22 @@ class EntityEditorWidget(QWidget):
 
         if event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE) and self._current_entity_id:
             event.acceptProposedAction()
+            # Keep drop hint visible during drag
+            if not self._is_drag_over:
+                self._is_drag_over = True
+                self._show_drop_hint("related")
         else:
             event.ignore()
+
+    def dragLeaveEvent(self, event) -> None:
+        """Handle drag leave event - hide drop hint.
+
+        Args:
+            event: QDragLeaveEvent.
+        """
+        self._is_drag_over = False
+        self._hide_drop_hint()
+        logger.debug("EntityEditor: Drag left editor area")
 
     def dropEvent(self, event) -> None:
         """Handle drop event to create relation from dragged item to current entity.
@@ -408,10 +463,15 @@ class EntityEditorWidget(QWidget):
 
             event.acceptProposedAction()
             logger.debug("EntityEditor: Drop accepted, relation signal emitted")
+            
+            # Hide drop hint after successful drop
+            self._is_drag_over = False
+            self._hide_drop_hint()
 
         except Exception as e:
             logger.error(f"Error handling drop event: {e}", exc_info=True)
             event.ignore()
+            self._hide_drop_hint()
 
     def set_summary_service(self, service: Any) -> None:
         """Sets the summary service for generation and staleness checks."""

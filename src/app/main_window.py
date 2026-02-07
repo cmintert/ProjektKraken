@@ -362,6 +362,10 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         self.history_panel = HistoryPanelWidget()
 
+        # Create Toast Notification (Sprint 1)
+        self.active_toast = None  # Track currently displayed toast
+        self._last_drag_drop_command_id = None  # Track last drag-drop command for toast
+
         # Initialize Managers
         self.map_handler = MapHandler(self)
         self.grouping_manager = TimelineGroupingManager(self)
@@ -515,6 +519,12 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         )
         self.event_editor.add_relation_requested.connect(
             self._on_add_relation_via_drag
+        )
+
+        # Connect to worker's command_finished to show toast for drag-drop relations (Sprint 1)
+        self.worker.command_finished.connect(
+            self._on_command_finished_check_toast,
+            Qt.ConnectionType.QueuedConnection
         )
 
         # Connect Coordinator Signals
@@ -1539,7 +1549,57 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             attributes=attributes,
             bidirectional=bidirectional
         )
+        
+        # Mark this command as a drag-drop command for toast display
+        self._last_drag_drop_command_id = id(cmd)
+        
         self.command_requested.emit(cmd)
+
+    @Slot(object)
+    def _on_command_finished_check_toast(self, result) -> None:
+        """Check if completed command was a drag-drop relation and show toast.
+
+        Args:
+            result: CommandResult object from worker.
+        """
+        # Check if this was a drag-drop relation command
+        if not result.success:
+            return
+            
+        command = result.data.get("command")
+        if command is None:
+            return
+            
+        # Check if this is the drag-drop command we're tracking
+        if id(command) == self._last_drag_drop_command_id:
+            # This was our drag-drop command, show toast
+            self._show_relation_created_toast()
+            # Clear the tracking ID
+            self._last_drag_drop_command_id = None
+
+    def _show_relation_created_toast(self) -> None:
+        """Show toast notification for successful relation creation with undo button."""
+        from src.gui.widgets.toast_notification import ToastNotification
+
+        # Dismiss any existing toast
+        if self.active_toast and self.active_toast.isVisible():
+            self.active_toast.dismiss()
+
+        # Create new toast with undo button
+        self.active_toast = ToastNotification(
+            message="Relation created",
+            duration_ms=3000,
+            show_undo=True,
+            parent=self
+        )
+        
+        # Connect undo button to command coordinator
+        self.active_toast.undo_clicked.connect(self.command_coordinator.undo)
+        
+        # Show toast at bottom-right corner
+        self.active_toast.show_at_bottom_right()
+        
+        logger.debug("Drag-drop relation toast displayed")
 
     def create_entity(self) -> None:
         """Creates a new entity by emitting a create command."""
