@@ -50,6 +50,8 @@ class DraggableListView(QListView):
         self.setDragDropMode(QListView.DragOnly)
         self._drag_pill = None  # Will be created during drag
 
+    drag_started = Signal()
+
     def startDrag(self, supportedActions: Qt.DropAction) -> None:
         """Override to provide custom MIME data for dragged items.
 
@@ -62,6 +64,8 @@ class DraggableListView(QListView):
         index = self.currentIndex()
         if not index.isValid():
             return
+
+        self.drag_started.emit()
 
         # Get data from model using custom roles
         model = self.model()
@@ -191,6 +195,7 @@ class UnifiedListWidget(QWidget):
     show_filter_dialog_requested = Signal()  # Request to open filter dialog
     clear_filter_requested = Signal()  # Request to clear filters
     status_message_requested = Signal(str, int)  # message, timeout_ms (Toast-like)
+    drag_started = Signal()
 
     def __init__(self, parent: QWidget = None) -> None:
         """Initializes the UnifiedListWidget.
@@ -327,6 +332,7 @@ class UnifiedListWidget(QWidget):
         self.list_widget.selectionModel().selectionChanged.connect(
             self._on_selection_changed
         )
+        self.list_widget.drag_started.connect(self.drag_started)
 
         main_layout.addWidget(self.list_widget)
 

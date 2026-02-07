@@ -517,14 +517,12 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.entity_editor.add_relation_requested.connect(
             self._on_add_relation_via_drag
         )
-        self.event_editor.add_relation_requested.connect(
-            self._on_add_relation_via_drag
-        )
+        self.event_editor.add_relation_requested.connect(self._on_add_relation_via_drag)
 
-        # Connect to worker's command_finished to show toast for drag-drop relations (Sprint 1)
+        # Connect to worker's command_finished to show toast for
+        # drag-drop relations (Sprint 1)
         self.worker.command_finished.connect(
-            self._on_command_finished_check_toast,
-            Qt.ConnectionType.QueuedConnection
+            self._on_command_finished_check_toast, Qt.ConnectionType.QueuedConnection
         )
 
         # Connect Coordinator Signals
@@ -1525,7 +1523,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         target_id: str,
         rel_type: str,
         attributes: dict,
-        bidirectional: bool
+        bidirectional: bool,
     ) -> None:
         """Handle drag-and-drop relation creation.
 
@@ -1547,12 +1545,12 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             target_id=target_id,
             rel_type=rel_type,
             attributes=attributes,
-            bidirectional=bidirectional
+            bidirectional=bidirectional,
         )
-        
+
         # Mark this command as a drag-drop command for toast display
         self._last_drag_drop_command_id = id(cmd)
-        
+
         self.command_requested.emit(cmd)
 
     @Slot(object)
@@ -1565,11 +1563,11 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         # Check if this was a drag-drop relation command
         if not result.success:
             return
-            
+
         command = result.data.get("command")
         if command is None:
             return
-            
+
         # Check if this is the drag-drop command we're tracking
         if id(command) == self._last_drag_drop_command_id:
             # This was our drag-drop command, show toast
@@ -1587,18 +1585,15 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         # Create new toast with undo button
         self.active_toast = ToastNotification(
-            message="Relation created",
-            duration_ms=3000,
-            show_undo=True,
-            parent=self
+            message="Relation created", duration_ms=3000, show_undo=True, parent=self
         )
-        
+
         # Connect undo button to command coordinator
         self.active_toast.undo_clicked.connect(self.command_coordinator.undo)
-        
-        # Show toast at bottom-right corner
-        self.active_toast.show_at_bottom_right()
-        
+
+        # Show toast centered in the application window
+        self.active_toast.show_centered()
+
         logger.debug("Drag-drop relation toast displayed")
 
     def create_entity(self) -> None:

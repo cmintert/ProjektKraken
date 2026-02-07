@@ -356,6 +356,14 @@ class ConnectionManager:
         ):
             failed_count += 1
 
+        if not self._connect_signal_safe(
+            ul,
+            "drag_started",
+            self.window.navigation_coordinator.on_drag_started,
+            "UnifiedList",
+        ):
+            failed_count += 1
+
         # Optional signals
         if hasattr(ul, "show_filter_dialog_requested"):
             if not self._connect_signal_safe(
