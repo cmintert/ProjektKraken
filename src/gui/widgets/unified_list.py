@@ -292,7 +292,8 @@ class UnifiedListWidget(QWidget):
         self.list_widget = DraggableListView()
         self.list_widget.setModel(self._proxy_model)
         self.list_widget.setStyleSheet(StyleHelper.get_checkbox_style())
-        self.list_widget.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
+        # Use SingleSelection to prevent box-select interfering with drag operations
+        self.list_widget.setSelectionMode(QListView.SelectionMode.SingleSelection)
         self.list_widget.selectionModel().selectionChanged.connect(
             self._on_selection_changed
         )
