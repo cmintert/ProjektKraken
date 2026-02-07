@@ -318,6 +318,92 @@ class EventEditorWidget(QWidget):
         self.setEnabled(False)
         self.summary_service = None
 
+        # Enable drag-and-drop for relation creation
+        self.setAcceptDrops(True)
+
+    def dragEnterEvent(self, event) -> None:
+        """Handle drag enter event to accept MIME data from Project Explorer.
+
+        Args:
+            event: QDragEnterEvent with MIME data.
+        """
+        from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
+
+        # Accept if MIME type matches and we have an event loaded
+        if event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE) and self._current_event_id:
+            event.acceptProposedAction()
+            logger.debug("EventEditor: Accepting drag from Project Explorer")
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event) -> None:
+        """Handle drag move event.
+
+        Args:
+            event: QDragMoveEvent.
+        """
+        from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
+
+        if event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE) and self._current_event_id:
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event) -> None:
+        """Handle drop event to create relation from dragged item to current event.
+
+        Args:
+            event: QDropEvent with MIME data.
+        """
+        import json
+        from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
+
+        if not event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE):
+            event.ignore()
+            return
+
+        if not self._current_event_id:
+            logger.warning("Cannot drop: No event loaded in editor")
+            event.ignore()
+            return
+
+        try:
+            # Parse MIME data
+            mime_data = event.mimeData().data(KRAKEN_ITEM_MIME_TYPE)
+            data = json.loads(bytes(mime_data).decode("utf-8"))
+
+            dropped_id = data.get("id")
+            dropped_type = data.get("type")
+            dropped_name = data.get("name", "Unknown")
+
+            if not dropped_id or not dropped_type:
+                logger.error("Invalid MIME data: missing id or type")
+                event.ignore()
+                return
+
+            # Emit signal to create relation from dropped item to current event
+            # Source: dropped item, Target: current event, Type: "related" (default)
+            logger.info(
+                f"EventEditor: Creating relation {dropped_id} -> {self._current_event_id} "
+                f"(dropped {dropped_type}: {dropped_name})"
+            )
+
+            # Emit signal with source=dropped_id, target=current_event_id, type="related"
+            self.add_relation_requested.emit(
+                dropped_id,  # source: the dropped item
+                self._current_event_id,  # target: current event
+                "related",  # relation type (default)
+                {},  # attributes (empty for now)
+                False  # bidirectional (not for prototype)
+            )
+
+            event.acceptProposedAction()
+            logger.debug("EventEditor: Drop accepted, relation signal emitted")
+
+        except Exception as e:
+            logger.error(f"Error handling drop event: {e}", exc_info=True)
+            event.ignore()
+
     def set_summary_service(self, service: Any) -> None:
         """Sets the summary service."""
         self.summary_service = service

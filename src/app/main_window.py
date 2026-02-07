@@ -509,6 +509,14 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             self.worker_manager.generate_summary
         )
 
+        # Connect Drag-Drop Relation Creation (Sprint 0)
+        self.entity_editor.add_relation_requested.connect(
+            self._on_add_relation_via_drag
+        )
+        self.event_editor.add_relation_requested.connect(
+            self._on_add_relation_via_drag
+        )
+
         # Connect Coordinator Signals
         self.fast_inject_coordinator.command_requested.connect(
             lambda cmd: self.command_requested.emit(cmd)
@@ -1498,6 +1506,39 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """
         logger.debug(f"Event {event_id} date changed to {new_lore_date}")
         cmd = UpdateEventCommand(event_id, {"lore_date": new_lore_date})
+        self.command_requested.emit(cmd)
+
+    @Slot(str, str, str, dict, bool)
+    def _on_add_relation_via_drag(
+        self,
+        source_id: str,
+        target_id: str,
+        rel_type: str,
+        attributes: dict,
+        bidirectional: bool
+    ) -> None:
+        """Handle drag-and-drop relation creation.
+
+        Args:
+            source_id: ID of the source object (dragged item).
+            target_id: ID of the target object (drop location).
+            rel_type: Type of relation (e.g., "related").
+            attributes: Optional relation attributes.
+            bidirectional: Whether to create reverse relation.
+        """
+        logger.info(
+            f"[MainWindow] Creating relation via drag-drop: "
+            f"{source_id} -> {target_id} ({rel_type})"
+        )
+
+        # Create and emit the AddRelationCommand
+        cmd = AddRelationCommand(
+            source_id=source_id,
+            target_id=target_id,
+            rel_type=rel_type,
+            attributes=attributes,
+            bidirectional=bidirectional
+        )
         self.command_requested.emit(cmd)
 
     def create_entity(self) -> None:
