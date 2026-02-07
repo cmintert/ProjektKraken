@@ -48,9 +48,12 @@ class DraggableListView(QListView):
         super().__init__(parent)
         self.setDragEnabled(True)
         self.setDragDropMode(QListView.DragOnly)
+        self._drag_pill = None  # Will be created during drag
 
     def startDrag(self, supportedActions: Qt.DropAction) -> None:
         """Override to provide custom MIME data for dragged items.
+
+        Also shows a drag pill widget that follows the cursor.
 
         Args:
             supportedActions: The drag actions supported.
@@ -90,10 +93,31 @@ class DraggableListView(QListView):
         # Also set plain text for debugging/compatibility
         mime_data.setText(f"{item_type}:{item_id}")
 
+        # Create drag pill widget to follow cursor
+        from src.gui.widgets.drag_pill import DragPill
+        from PySide6.QtGui import QCursor
+
+        self._drag_pill = DragPill(item_name=item_name, item_type=item_type)
+        self._drag_pill.show_at_position(QCursor.pos())
+
         # Create and execute drag
         drag = QDrag(self)
         drag.setMimeData(mime_data)
-        drag.exec(Qt.CopyAction)
+        
+        # Connect to drag finished to hide pill
+        drag.destroyed.connect(self._on_drag_finished)
+        
+        result = drag.exec(Qt.CopyAction)
+        
+        # Clean up drag pill
+        self._on_drag_finished()
+
+    def _on_drag_finished(self) -> None:
+        """Clean up drag pill when drag finishes."""
+        if self._drag_pill:
+            self._drag_pill.hide()
+            self._drag_pill.deleteLater()
+            self._drag_pill = None
 
 
 class AutoClosingMessageBox(QMessageBox):

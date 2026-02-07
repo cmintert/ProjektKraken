@@ -333,6 +333,10 @@ class EntityEditorWidget(QWidget):
         # Create drop hint label (Sprint 1 - visual feedback)
         self._drop_hint_label = None
         self._is_drag_over = False
+        
+        # Type picker for relation type selection (activated by Shift key)
+        self._type_picker = None
+        self._selected_relation_type = "related"  # Default type
 
     def _show_drop_hint(self, rel_type: str = "related") -> None:
         """Show drop hint overlay during drag-over.
@@ -381,7 +385,14 @@ class EntityEditorWidget(QWidget):
         if event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE) and self._current_entity_id:
             event.acceptProposedAction()
             self._is_drag_over = True
-            self._show_drop_hint("related")  # Show visual feedback
+            
+            # Check if Shift key is pressed - show type picker
+            if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
+                self._show_type_picker(event.pos())
+            else:
+                self._selected_relation_type = "related"  # Reset to default
+                self._show_drop_hint(self._selected_relation_type)
+            
             logger.debug("EntityEditor: Accepting drag from Project Explorer")
         else:
             event.ignore()
@@ -396,22 +407,81 @@ class EntityEditorWidget(QWidget):
 
         if event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE) and self._current_entity_id:
             event.acceptProposedAction()
-            # Keep drop hint visible during drag
-            if not self._is_drag_over:
-                self._is_drag_over = True
-                self._show_drop_hint("related")
+            
+            # Check for Shift key to show/hide type picker
+            if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
+                if not self._type_picker or not self._type_picker.isVisible():
+                    self._show_type_picker(event.pos())
+            else:
+                # Shift released, hide type picker if visible
+                if self._type_picker and self._type_picker.isVisible():
+                    self._type_picker.hide()
+                
+                # Keep drop hint visible during drag
+                if not self._is_drag_over:
+                    self._is_drag_over = True
+                self._show_drop_hint(self._selected_relation_type)
         else:
             event.ignore()
 
     def dragLeaveEvent(self, event) -> None:
-        """Handle drag leave event - hide drop hint.
+        """Handle drag leave event - hide drop hint and type picker.
 
         Args:
             event: QDragLeaveEvent.
         """
         self._is_drag_over = False
         self._hide_drop_hint()
+        
+        # Hide type picker if visible
+        if self._type_picker and self._type_picker.isVisible():
+            self._type_picker.hide()
+        
         logger.debug("EntityEditor: Drag left editor area")
+
+    def _show_type_picker(self, position: QPoint) -> None:
+        """Show the relation type picker at the specified position.
+
+        Args:
+            position: Position relative to this widget.
+        """
+        if not self._type_picker:
+            from src.gui.widgets.relation_type_picker import RelationTypePicker
+            
+            # Define available relation types (can be expanded later)
+            relation_types = [
+                "related",
+                "caused",
+                "participated_in",
+                "located_at",
+                "owns",
+                "created_by",
+                "part_of",
+            ]
+            
+            self._type_picker = RelationTypePicker(relation_types=relation_types)
+            
+            # Connect to type selection signal
+            self._type_picker.type_selected.connect(self._on_relation_type_selected)
+        
+        # Convert position to global coordinates
+        global_pos = self.mapToGlobal(position)
+        self._type_picker.show_at_position(global_pos)
+        
+        # Hide drop hint while picker is visible
+        self._hide_drop_hint()
+
+    def _on_relation_type_selected(self, relation_type: str) -> None:
+        """Handle relation type selection from picker.
+
+        Args:
+            relation_type: The selected relation type.
+        """
+        self._selected_relation_type = relation_type
+        logger.info(f"EntityEditor: Relation type selected: {relation_type}")
+        
+        # Update drop hint with selected type
+        self._show_drop_hint(self._selected_relation_type)
 
     def dropEvent(self, event) -> None:
         """Handle drop event to create relation from dragged item to current entity.
@@ -446,17 +516,17 @@ class EntityEditorWidget(QWidget):
                 return
 
             # Emit signal to create relation from dropped item to current entity
-            # Source: dropped item, Target: current entity, Type: "related" (default)
+            # Source: dropped item, Target: current entity, Type: from type picker or default
             logger.info(
                 f"EntityEditor: Creating relation {dropped_id} -> {self._current_entity_id} "
-                f"(dropped {dropped_type}: {dropped_name})"
+                f"(dropped {dropped_type}: {dropped_name}, type: {self._selected_relation_type})"
             )
 
-            # Emit signal with source=dropped_id, target=current_entity_id, type="related"
+            # Emit signal with source=dropped_id, target=current_entity_id, type=selected
             self.add_relation_requested.emit(
                 dropped_id,  # source: the dropped item
                 self._current_entity_id,  # target: current entity
-                "related",  # relation type (default)
+                self._selected_relation_type,  # relation type (from picker or default)
                 {},  # attributes (empty for now)
                 False  # bidirectional (not for prototype)
             )
@@ -464,14 +534,23 @@ class EntityEditorWidget(QWidget):
             event.acceptProposedAction()
             logger.debug("EntityEditor: Drop accepted, relation signal emitted")
             
-            # Hide drop hint after successful drop
+            # Hide drop hint and type picker after successful drop
             self._is_drag_over = False
             self._hide_drop_hint()
+            
+            if self._type_picker and self._type_picker.isVisible():
+                self._type_picker.hide()
+            
+            # Reset relation type to default for next drag
+            self._selected_relation_type = "related"
 
         except Exception as e:
             logger.error(f"Error handling drop event: {e}", exc_info=True)
             event.ignore()
             self._hide_drop_hint()
+            
+            if self._type_picker and self._type_picker.isVisible():
+                self._type_picker.hide()
 
     def set_summary_service(self, service: Any) -> None:
         """Sets the summary service for generation and staleness checks."""
