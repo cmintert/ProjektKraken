@@ -56,7 +56,11 @@ class DragPill(QWidget):
         self.hide()
 
     def _setup_ui(self) -> None:
-        """Setup the UI layout and components."""
+        """Set up the UI layout and components.
+
+        Creates a frameless, floating window with icon, name, and type labels
+        arranged horizontally.
+        """
         # Set window flags for floating, frameless, always-on-top window
         self.setWindowFlags(
             Qt.WindowType.Tool
@@ -91,7 +95,11 @@ class DragPill(QWidget):
         self.adjustSize()
 
     def _apply_theme(self) -> None:
-        """Apply theme colors to the widget."""
+        """Apply theme colors to the widget.
+
+        Retrieves colors from ThemeManager and applies them to the background,
+        borders, and text. Also adds a drop shadow effect for depth.
+        """
         theme_manager = ThemeManager()
         theme = theme_manager.get_theme()
 
@@ -155,6 +163,6 @@ class DragPill(QWidget):
         self.move(offset_position)
 
     def hide(self) -> None:
-        """Hide the drag pill."""
+        """Hide the drag pill widget."""
         super().hide()
         logger.debug("DragPill hidden")

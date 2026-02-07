@@ -86,7 +86,11 @@ class RelationTypePicker(QWidget):
         self.combo_box.setCurrentText("related")
 
     def _setup_ui(self) -> None:
-        """Setup the UI layout and components."""
+        """Set up the UI layout and components.
+
+        Creates the picker window with a combo box for relation type selection
+        and OK/Cancel buttons.
+        """
         # Set window flags for floating, frameless, always-on-top window
         self.setWindowFlags(
             Qt.WindowType.Tool
@@ -158,7 +162,11 @@ class RelationTypePicker(QWidget):
         self.installEventFilter(self)
 
     def _apply_theme(self) -> None:
-        """Apply theme colors to the widget."""
+        """Apply theme colors to the widget.
+
+        Retrieves colors from ThemeManager and applies them to all
+        components including the combo box and labels.
+        """
         theme_manager = ThemeManager()
         theme = theme_manager.get_theme()
 
@@ -234,7 +242,11 @@ class RelationTypePicker(QWidget):
         logger.debug(f"RelationTypePicker shown at ({position.x()}, {position.y()})")
 
     def _on_confirmed(self) -> None:
-        """Handle confirmation via Enter or OK button."""
+        """Handle confirmation via Enter or OK button.
+
+        Emits the type_selected signal with the chosen relation type,
+        then hides the picker widget.
+        """
         selected_type = self.combo_box.currentText().strip()
         if not selected_type:
             return
@@ -252,7 +264,7 @@ class RelationTypePicker(QWidget):
 
         Args:
             obj: Object that received the event.
-            event: The event.
+            event: The event to process.
 
         Returns:
             True if event was handled, False otherwise.
@@ -267,6 +279,6 @@ class RelationTypePicker(QWidget):
         return super().eventFilter(obj, event)
 
     def hide(self) -> None:
-        """Hide the type picker."""
+        """Hide the type picker widget."""
         super().hide()
         logger.debug("RelationTypePicker hidden")
