@@ -62,6 +62,7 @@ from src.app.constants import (
 )
 from src.app.coordinators.backup_coordinator import BackupCoordinator
 from src.app.coordinators.fast_inject_coordinator import FastInjectCoordinator
+from src.gui.widgets.auto_closing_message_box import AutoClosingMessageBox
 from src.app.coordinators.navigation_coordinator import NavigationCoordinator
 from src.app.coordinators.time_coordinator import TimeCoordinator
 from src.app.data_handler import DataHandler
@@ -363,7 +364,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.history_panel = HistoryPanelWidget()
 
         # Create Toast Notification (Sprint 1)
-        self.active_toast = None  # Track currently displayed toast
         self._last_drag_drop_command_id = None  # Track last drag-drop command for toast
 
         # Initialize Managers
@@ -1533,23 +1533,11 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             self._last_drag_drop_command_id = None
 
     def _show_relation_created_toast(self) -> None:
-        """Show toast notification for successful relation creation with undo button."""
-        from src.gui.widgets.toast_notification import ToastNotification
-
-        # Dismiss any existing toast
-        if self.active_toast and self.active_toast.isVisible():
-            self.active_toast.dismiss()
-
-        # Create new toast with undo button
-        self.active_toast = ToastNotification(
-            message="Relation created", duration_ms=3000, show_undo=True, parent=self
-        )
-
-        # Connect undo button to command coordinator
-        self.active_toast.undo_clicked.connect(self.command_coordinator.undo)
-
-        # Show toast centered in the application window
-        self.active_toast.show_centered()
+        """Show toast notification for successful relation creation."""
+        # Use AutoClosingMessageBox for consistency with deletion toast (themed + timed)
+        msg = "Relation created.\n\n(Ctrl+Z to Undo)"
+        popup = AutoClosingMessageBox("Success", msg, 1500, parent=self)
+        popup.exec()
 
         logger.debug("Drag-drop relation toast displayed")
 

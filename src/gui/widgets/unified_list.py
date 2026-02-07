@@ -8,7 +8,7 @@ import json
 import logging
 from typing import Any, Dict, List, Optional, Union
 
-from PySide6.QtCore import QMimeData, QSize, Qt, QTimer, Signal, Slot
+from PySide6.QtCore import QMimeData, QSize, Qt, Signal, Slot
 from PySide6.QtGui import QDrag
 from PySide6.QtWidgets import (
     QComboBox,
@@ -17,7 +17,6 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QListView,
     QMenu,
-    QMessageBox,
     QPushButton,
     QVBoxLayout,
     QWidget,
@@ -29,11 +28,10 @@ from src.core.events import Event
 from src.gui.models.explorer_filter_proxy import ExplorerFilterProxyModel
 from src.gui.models.explorer_model import ExplorerModel
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.auto_closing_message_box import AutoClosingMessageBox
 from src.gui.widgets.standard_buttons import DestructiveButton
 
 KRAKEN_ITEM_MIME_TYPE = "application/x-kraken-item"
-
-logger = logging.getLogger(__name__)
 
 
 class DraggableListView(QListView):
@@ -128,54 +126,6 @@ class DraggableListView(QListView):
             self._drag_pill.hide()
             self._drag_pill.deleteLater()
             self._drag_pill = None
-
-
-class AutoClosingMessageBox(QMessageBox):
-    """A QMessageBox that closes itself after a specified timeout."""
-
-    def __init__(
-        self,
-        title: str,
-        text: str,
-        timeout_ms: int = 1000,
-        icon: QMessageBox.Icon = QMessageBox.Icon.Information,
-        parent: Optional[QWidget] = None,
-    ) -> None:
-        """Initialize the message box.
-
-        Args:
-            title: Window title.
-            text: Message text.
-            timeout_ms: Timeout in milliseconds before closing.
-            icon: Icon to display.
-            parent: Parent widget.
-        """
-        super().__init__(parent)
-        self.setWindowTitle(title)
-        self.setText(text)
-        self.setIcon(icon)
-        self._timeout_ms = timeout_ms
-
-        # QMessageBox often requires at least one button to display correctly as a
-        # modal dialog. We add OK and hide it to maintain the "toast" look.
-        self.setStandardButtons(QMessageBox.StandardButton.Ok)
-        ok_button = self.button(QMessageBox.StandardButton.Ok)
-        if ok_button:
-            ok_button.hide()
-
-        # Center on parent if available
-        if parent:
-            self.setWindowModality(Qt.WindowModality.WindowModal)
-
-    def showEvent(self, event) -> None:
-        """Starts the auto-close timer when the dialog is shown."""
-        super().showEvent(event)
-        # Use an explicit timer object as a child of the dialog for maximum
-        # reliability in modal loops on Windows.
-        self.timer = QTimer(self)
-        self.timer.setSingleShot(True)
-        self.timer.timeout.connect(self.accept)
-        self.timer.start(self._timeout_ms)
 
 
 class UnifiedListWidget(QWidget):
