@@ -454,21 +454,29 @@ class EventEditorWidget(QWidget):
         if not self._type_picker:
             from src.gui.widgets.relation_type_picker import RelationTypePicker
 
-            # Define available relation types (can be expanded later)
-            relation_types = [
-                "related",
-                "caused",
-                "participated_in",
-                "located_at",
-                "owns",
-                "created_by",
-                "part_of",
-            ]
-
-            self._type_picker = RelationTypePicker(relation_types=relation_types)
+            self._type_picker = RelationTypePicker()
 
             # Connect to type selection signal
             self._type_picker.type_selected.connect(self._on_relation_type_selected)
+
+        # Define default relation types
+        default_types = [
+            "related",
+            "caused",
+            "participated_in",
+            "located_at",
+            "owns",
+            "created_by",
+            "part_of",
+        ]
+
+        # Merge with backend suggestions if available
+        all_types = set(default_types)
+        if hasattr(self, "_suggestion_types") and self._suggestion_types:
+            all_types.update(self._suggestion_types)
+
+        # Update picker with current types
+        self._type_picker.set_relation_types(list(all_types))
 
         # Convert position to global coordinates
         global_pos = self.mapToGlobal(position)
