@@ -369,19 +369,9 @@ class EntityEditorWidget(QWidget):
             from PySide6.QtWidgets import QLabel
 
             self._drop_hint_label = QLabel(self)
-            self._drop_hint_label.setStyleSheet(
-                """
-                QLabel {
-                    background-color: rgba(51, 153, 255, 0.15);
-                    border: 2px dashed #3399FF;
-                    border-radius: 6px;
-                    color: #3399FF;
-                    font-size: 12px;
-                    font-weight: bold;
-                    padding: 8px;
-                }
-                """
-            )
+            from src.gui.utils.style_helper import StyleHelper
+
+            self._drop_hint_label.setStyleSheet(StyleHelper.get_drag_overlay_style())
             self._drop_hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self._drop_hint_label.setText(f"→ {rel_type}")

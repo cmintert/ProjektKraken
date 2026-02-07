@@ -463,6 +463,15 @@ class MapGraphicsView(QGraphicsView):
         # Enable drop support for drag-from-explorer
         self.setAcceptDrops(True)
 
+        # Drop Hint Overlay (blue dashed box)
+        self._drop_hint_overlay = QLabel(self.viewport())
+        from src.gui.utils.style_helper import StyleHelper
+
+        self._drop_hint_overlay.setStyleSheet(StyleHelper.get_drag_overlay_style())
+        self._drop_hint_overlay.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._drop_hint_overlay.setText("Drop to Place Marker")
+        self._drop_hint_overlay.hide()
+
         # Temporal state (for future trajectory animation)
         self._current_time: float = 0.0
 
@@ -548,6 +557,9 @@ class MapGraphicsView(QGraphicsView):
         Note: We no longer auto-fit here to allow the user to maintain zoom level.
         """
         super().resizeEvent(event)
+        if hasattr(self, "_drop_hint_overlay") and self._drop_hint_overlay:
+            # Match the viewport size precisely
+            self._drop_hint_overlay.setGeometry(self.viewport().rect())
 
     def sizeHint(self) -> QSize:
         """Return a stable preferred size to prevent dock layout jitter.
@@ -761,6 +773,7 @@ class MapGraphicsView(QGraphicsView):
 
         if event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE):
             event.acceptProposedAction()
+            self._show_drop_hint()
         else:
             event.ignore()
 
@@ -781,11 +794,31 @@ class MapGraphicsView(QGraphicsView):
         item_pos = self.pixmap_item.mapFromScene(scene_pos)
         if self.pixmap_item.contains(item_pos):
             event.acceptProposedAction()
+            self._show_drop_hint()
         else:
             event.ignore()
+            self._hide_drop_hint()
+
+    def dragLeaveEvent(self, event) -> None:
+        """Handle drag leave."""
+        super().dragLeaveEvent(event)
+        self._hide_drop_hint()
+
+    def _show_drop_hint(self) -> None:
+        """Show the blue drag-and-drop overlay."""
+        if self._drop_hint_overlay:
+            self._drop_hint_overlay.setGeometry(self.viewport().rect())
+            self._drop_hint_overlay.show()
+            self._drop_hint_overlay.raise_()
+
+    def _hide_drop_hint(self) -> None:
+        """Hide the blue drag-and-drop overlay."""
+        if self._drop_hint_overlay:
+            self._drop_hint_overlay.hide()
 
     def dropEvent(self, event: QDropEvent) -> None:
         """Handle drop of item from Project Explorer to create a marker."""
+        self._hide_drop_hint()
         from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
 
         if not event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE):
