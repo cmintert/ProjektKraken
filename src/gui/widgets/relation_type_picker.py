@@ -96,10 +96,18 @@ class RelationTypePicker(QWidget):
         layout.addWidget(self.list_widget)
 
         # Set size constraints
-        self.setMinimumWidth(180)
-        self.setMaximumWidth(250)
-        self.setMinimumHeight(100)
-        self.setMaximumHeight(300)
+        # Set size constraints
+        from src.app.constants import (
+            RELATION_PICKER_MAX_HEIGHT,
+            RELATION_PICKER_MAX_WIDTH,
+            RELATION_PICKER_MIN_HEIGHT,
+            RELATION_PICKER_MIN_WIDTH,
+        )
+
+        self.setMinimumWidth(RELATION_PICKER_MIN_WIDTH)
+        self.setMaximumWidth(RELATION_PICKER_MAX_WIDTH)
+        self.setMinimumHeight(RELATION_PICKER_MIN_HEIGHT)
+        self.setMaximumHeight(RELATION_PICKER_MAX_HEIGHT)
 
         # Install event filter for escape key
         self.installEventFilter(self)

@@ -513,12 +513,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             self.worker_manager.generate_summary
         )
 
-        # Connect Drag-Drop Relation Creation (Sprint 0)
-        self.entity_editor.add_relation_requested.connect(
-            self._on_add_relation_via_drag
-        )
-        self.event_editor.add_relation_requested.connect(self._on_add_relation_via_drag)
-
         # Connect to worker's command_finished to show toast for
         # drag-drop relations (Sprint 1)
         self.worker.command_finished.connect(
@@ -1516,43 +1510,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         cmd = UpdateEventCommand(event_id, {"lore_date": new_lore_date})
         self.command_requested.emit(cmd)
 
-    @Slot(str, str, str, dict, bool)
-    def _on_add_relation_via_drag(
-        self,
-        source_id: str,
-        target_id: str,
-        rel_type: str,
-        attributes: dict,
-        bidirectional: bool,
-    ) -> None:
-        """Handle drag-and-drop relation creation.
-
-        Args:
-            source_id: ID of the source object (dragged item).
-            target_id: ID of the target object (drop location).
-            rel_type: Type of relation (e.g., "related").
-            attributes: Optional relation attributes.
-            bidirectional: Whether to create reverse relation.
-        """
-        logger.info(
-            f"[MainWindow] Creating relation via drag-drop: "
-            f"{source_id} -> {target_id} ({rel_type})"
-        )
-
-        # Create and emit the AddRelationCommand
-        cmd = AddRelationCommand(
-            source_id=source_id,
-            target_id=target_id,
-            rel_type=rel_type,
-            attributes=attributes,
-            bidirectional=bidirectional,
-        )
-
-        # Mark this command as a drag-drop command for toast display
-        self._last_drag_drop_command_id = id(cmd)
-
-        self.command_requested.emit(cmd)
-
     @Slot(object)
     def _on_command_finished_check_toast(self, result) -> None:
         """Check if completed command was a drag-drop relation and show toast.
@@ -1700,6 +1657,13 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             attributes=attributes,
             bidirectional=bidirectional,
         )
+
+        # Mark this command as a drag-drop command for toast display
+        # (This handles both drag-drop and manual creation, which is acceptable usually,
+        # or we could add a flag if strictly needed only for drag-drop.
+        # For now, showing toast for all relation creations is good UX.)
+        self._last_drag_drop_command_id = id(cmd)
+
         self.command_requested.emit(cmd)
 
     def load_maps(self) -> None:

@@ -114,9 +114,15 @@ class EntityEditorWidget(QWidget):
 
         ThemeManager().theme_changed.connect(self._on_theme_changed)
 
+        from src.app.constants import (
+            EDITOR_FORM_VERTICAL_SPACING,
+            EDITOR_LIST_SPACING,
+            EDITOR_SECTION_SPACING,
+        )
+
         # Header Form Layout
         self.header_form = QFormLayout()
-        self.header_form.setVerticalSpacing(12)
+        self.header_form.setVerticalSpacing(EDITOR_FORM_VERTICAL_SPACING)
         self.header_form.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
         self.header_form.setRowWrapPolicy(QFormLayout.DontWrapRows)
         self.header_form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
@@ -169,7 +175,7 @@ class EntityEditorWidget(QWidget):
         tab_layout.addWidget(self.scroll_area)
 
         self.form_layout = QFormLayout()
-        self.form_layout.setVerticalSpacing(12)
+        self.form_layout.setVerticalSpacing(EDITOR_FORM_VERTICAL_SPACING)
         self.form_layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
         self.form_layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
         self.form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
@@ -188,7 +194,7 @@ class EntityEditorWidget(QWidget):
         self.timeline_container = QWidget()
         timeline_outer_layout = QVBoxLayout(self.timeline_container)
         timeline_outer_layout.setContentsMargins(0, 0, 0, 0)
-        timeline_outer_layout.setSpacing(4)
+        timeline_outer_layout.setSpacing(EDITOR_SECTION_SPACING)
 
         self.timeline_checkbox = QCheckBox("")  # Text in form label
         self.timeline_checkbox.setStyleSheet(StyleHelper.get_checkbox_style())
@@ -207,7 +213,7 @@ class EntityEditorWidget(QWidget):
         self.summary_container = QWidget()
         summary_outer_layout = QVBoxLayout(self.summary_container)
         summary_outer_layout.setContentsMargins(0, 0, 0, 0)
-        summary_outer_layout.setSpacing(4)
+        summary_outer_layout.setSpacing(EDITOR_SECTION_SPACING)
 
         self.summary_checkbox = QCheckBox("")
         self.summary_checkbox.setStyleSheet(StyleHelper.get_checkbox_style())
@@ -230,7 +236,7 @@ class EntityEditorWidget(QWidget):
         self.llm_container = QWidget()
         llm_outer_layout = QVBoxLayout(self.llm_container)
         llm_outer_layout.setContentsMargins(0, 0, 0, 0)
-        llm_outer_layout.setSpacing(4)
+        llm_outer_layout.setSpacing(EDITOR_SECTION_SPACING)
 
         self.llm_checkbox = QCheckBox("")
         self.llm_checkbox.setStyleSheet(StyleHelper.get_checkbox_style())
@@ -283,7 +289,7 @@ class EntityEditorWidget(QWidget):
 
         # List second
         self.rel_list = QListWidget()
-        self.rel_list.setSpacing(2)  # Add spacing between items
+        self.rel_list.setSpacing(EDITOR_LIST_SPACING)  # Add spacing between items
         self.rel_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.rel_list.customContextMenuRequested.connect(self._show_rel_menu)
         self.rel_list.itemDoubleClicked.connect(self._on_edit_relation)
@@ -404,12 +410,9 @@ class EntityEditorWidget(QWidget):
             event.acceptProposedAction()
             self._is_drag_over = True
 
-            # Check if Shift key is pressed - show type picker
-            if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
-                self._show_type_picker(event.pos())
-            else:
-                self._selected_relation_type = "related"  # Reset to default
-                self._show_drop_hint(self._selected_relation_type)
+            # Always use default hint, no inline picker
+            self._selected_relation_type = "related"
+            self._show_drop_hint(self._selected_relation_type)
 
             logger.debug("EntityEditor: Accepting drag from Project Explorer")
         else:
@@ -429,19 +432,12 @@ class EntityEditorWidget(QWidget):
         ):
             event.acceptProposedAction()
 
-            # Check for Shift key to show/hide type picker
-            if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
-                if not self._type_picker or not self._type_picker.isVisible():
-                    self._show_type_picker(event.pos())
-            else:
-                # Shift released, hide type picker if visible
-                if self._type_picker and self._type_picker.isVisible():
-                    self._type_picker.hide()
+            event.acceptProposedAction()
 
-                # Keep drop hint visible during drag
-                if not self._is_drag_over:
-                    self._is_drag_over = True
-                self._show_drop_hint(self._selected_relation_type)
+            # Keep drop hint visible during drag
+            if not self._is_drag_over:
+                self._is_drag_over = True
+            self._show_drop_hint(self._selected_relation_type)
         else:
             event.ignore()
 
@@ -498,11 +494,21 @@ class EntityEditorWidget(QWidget):
         Args:
             relation_type: The selected relation type.
         """
-        self._selected_relation_type = relation_type
-        logger.info(f"EntityEditor: Relation type selected: {relation_type}")
-
-        # Update drop hint with selected type
-        self._show_drop_hint(self._selected_relation_type)
+        if hasattr(self, "_initiated_relation_drop") and self._initiated_relation_drop:
+            # Complete the drop
+            data = self._initiated_relation_drop
+            self._create_relation(
+                data["source_id"],
+                data["source_type"],
+                data["source_name"],
+                relation_type,
+            )
+            self._initiated_relation_drop = None
+        else:
+            # Just verify logic for pre-selection (legacy/unused now but good to keep)
+            self._selected_relation_type = relation_type
+            logger.info(f"EntityEditor: Relation type selected: {relation_type}")
+            self._show_drop_hint(self._selected_relation_type)
 
     def dropEvent(self, event) -> None:
         """Handle drop event to create relation from dragged item to current entity.
@@ -536,34 +542,21 @@ class EntityEditorWidget(QWidget):
                 event.ignore()
                 return
 
-            # Emit signal to create relation from dropped item to current entity
-            # Source: dropped item, Target: current entity, Type: from type picker or default
-            logger.info(
-                f"EntityEditor: Creating relation {dropped_id} -> {self._current_entity_id} "
-                f"(dropped {dropped_type}: {dropped_name}, type: {self._selected_relation_type})"
-            )
+            # Check if Shift key is pressed - show type picker
+            if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
+                # Post-drop selection flow
+                self._initiated_relation_drop = {
+                    "source_id": dropped_id,
+                    "source_type": dropped_type,
+                    "source_name": dropped_name,
+                }
+                event.acceptProposedAction()
+                self._show_type_picker(event.pos())
+                return
 
-            # Emit signal with source=dropped_id, target=current_entity_id, type=selected
-            self.add_relation_requested.emit(
-                dropped_id,  # source: the dropped item
-                self._current_entity_id,  # target: current entity
-                self._selected_relation_type,  # relation type (from picker or default)
-                {},  # attributes (empty for now)
-                False,  # bidirectional (not for prototype)
-            )
-
+            # Standard Flow (Default "related")
+            self._create_relation(dropped_id, dropped_type, dropped_name, "related")
             event.acceptProposedAction()
-            logger.debug("EntityEditor: Drop accepted, relation signal emitted")
-
-            # Hide drop hint and type picker after successful drop
-            self._is_drag_over = False
-            self._hide_drop_hint()
-
-            if self._type_picker and self._type_picker.isVisible():
-                self._type_picker.hide()
-
-            # Reset relation type to default for next drag
-            self._selected_relation_type = "related"
 
         except Exception as e:
             logger.error(f"Error handling drop event: {e}", exc_info=True)
@@ -572,6 +565,29 @@ class EntityEditorWidget(QWidget):
 
             if self._type_picker and self._type_picker.isVisible():
                 self._type_picker.hide()
+
+    def _create_relation(
+        self, source_id: str, source_type: str, source_name: str, rel_type: str
+    ) -> None:
+        """Helper to emit relation creation signal."""
+        logger.info(
+            f"EntityEditor: Creating relation {source_id} -> {self._current_entity_id} "
+            f"(dropped {source_type}: {source_name}, type: {rel_type})"
+        )
+
+        self.add_relation_requested.emit(
+            source_id,
+            self._current_entity_id,
+            rel_type,
+            {},
+            False,
+        )
+
+        # Cleanup UI
+        self._is_drag_over = False
+        self._hide_drop_hint()
+        if self._type_picker:
+            self._type_picker.hide()
 
     def set_summary_service(self, service: Any) -> None:
         """Sets the summary service for generation and staleness checks."""

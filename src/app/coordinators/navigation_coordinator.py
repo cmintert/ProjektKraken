@@ -8,6 +8,7 @@ from PySide6.QtCore import QSettings, Slot
 from PySide6.QtWidgets import QMessageBox
 
 from src.app.constants import (
+    NAVIGATION_SELECTION_DELAY_MS,
     SETTINGS_LAST_ITEM_ID_KEY,
     SETTINGS_LAST_ITEM_TYPE_KEY,
     WINDOW_SETTINGS_APP,
@@ -43,7 +44,7 @@ class NavigationCoordinator(BaseCoordinator):
 
         self._selection_timer = QTimer()
         self._selection_timer.setSingleShot(True)
-        self._selection_timer.setInterval(150)  # 150ms delay
+        self._selection_timer.setInterval(NAVIGATION_SELECTION_DELAY_MS)
         self._selection_timer.timeout.connect(self._perform_delayed_selection)
 
     @Slot(str, str)
