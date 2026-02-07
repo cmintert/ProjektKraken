@@ -100,6 +100,64 @@ class EventEditorWidget(QWidget):
         self._is_dirty = False
         self._calendar_converter = None
 
+        # --- Persistent Header ---
+        self.header_widget = QWidget()
+        header_layout = QVBoxLayout(self.header_widget)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Header Form Layout
+        self.header_form = QFormLayout()
+        self.header_form.setVerticalSpacing(12)
+        self.header_form.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+        self.header_form.setRowWrapPolicy(QFormLayout.DontWrapRows)
+        self.header_form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+
+        # Inject Button Header
+        # Inject Button (QToolButton with Menu)
+        from PySide6.QtWidgets import QToolButton
+
+        self.btn_inject = QToolButton()
+        self.btn_inject.setText("Fast Inject")  # Down arrow
+        self.btn_inject.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        self.btn_inject.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
+        self.btn_inject.setStyleSheet(
+            StyleHelper.get_tool_button_style()
+            + " QToolButton::menu-indicator { image: none; }"
+        )
+
+        # Connect to theme changes
+        from src.core.theme_manager import ThemeManager
+
+        ThemeManager().theme_changed.connect(self._on_theme_changed)
+
+        self.inject_menu = QMenu(self.btn_inject)
+        self.btn_inject.setMenu(self.inject_menu)
+        self.inject_menu.aboutToShow.connect(self._populate_inject_menu)
+
+        self.name_edit = QLineEdit()
+
+        # Name row with Inject button
+        name_layout = QHBoxLayout()
+        name_layout.addWidget(self.name_edit)
+        name_layout.addWidget(self.btn_inject)
+
+        self.type_edit = QComboBox()
+        self.type_edit.addItems(
+            ["generic", "cosmic", "historical", "personal", "session", "combat"]
+        )
+        self.type_edit.setEditable(True)
+        from PySide6.QtWidgets import QSizePolicy
+
+        self.type_edit.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
+
+        self.header_form.addRow("Name:", name_layout)
+        self.header_form.addRow("Type:", self.type_edit)
+
+        header_layout.addLayout(self.header_form)
+        main_layout.addWidget(self.header_widget)
+
         # Splitter-based tab inspector for vertical stacking
         self.inspector = SplitterTabInspector()
         main_layout.addWidget(self.inspector)
@@ -131,55 +189,13 @@ class EventEditorWidget(QWidget):
         self.form_layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
         self.form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
-        # Inject Button Header
-        header_layout = QHBoxLayout()
-        # Inject Button (QToolButton with Menu)
-        from PySide6.QtWidgets import QToolButton
-
-        self.btn_inject = QToolButton()
-        self.btn_inject.setText("Fast Inject")  # Down arrow
-        self.btn_inject.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
-        self.btn_inject.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
-        self.btn_inject.setStyleSheet(
-            StyleHelper.get_tool_button_style()
-            + " QToolButton::menu-indicator { image: none; }"
-        )
-
-        # Connect to theme changes
-        from src.core.theme_manager import ThemeManager
-
-        ThemeManager().theme_changed.connect(self._on_theme_changed)
-
-        self.inject_menu = QMenu(self.btn_inject)
-        self.btn_inject.setMenu(self.inject_menu)
-        self.inject_menu.aboutToShow.connect(self._populate_inject_menu)
-
-        header_layout.addStretch()
-        header_layout.addWidget(self.btn_inject)
-
-        details_layout.addLayout(header_layout)
-
-        self.name_edit = QLineEdit()
-
         # Lore date widget with structured input
         self.date_edit = CompactDateWidget()
-
-        self.type_edit = QComboBox()
-        self.type_edit.addItems(
-            ["generic", "cosmic", "historical", "personal", "session", "combat"]
-        )
-        self.type_edit.setEditable(True)
-        from PySide6.QtWidgets import QSizePolicy
-
-        self.type_edit.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
-        )
 
         self.desc_edit = WikiTextEdit()
         self.desc_edit.link_clicked.connect(self.link_clicked.emit)
         self.desc_edit.link_added.connect(self._on_wikilink_added)
 
-        self.form_layout.addRow("Name:", self.name_edit)
         self.form_layout.addRow("Lore Date:", self.date_edit)
 
         # Duration & End Date
@@ -194,7 +210,7 @@ class EventEditorWidget(QWidget):
         self.form_layout.addRow("Duration:", self.duration_widget)
         self.form_layout.addRow("End Date:", self.end_date_edit)
 
-        self.form_layout.addRow("Type:", self.type_edit)
+        self.form_layout.addRow("End Date:", self.end_date_edit)
         self.form_layout.addRow("Description:", self.desc_edit)
 
         # Add Summary Widget (Collapsible)
@@ -320,11 +336,11 @@ class EventEditorWidget(QWidget):
 
         # Enable drag-and-drop for relation creation
         self.setAcceptDrops(True)
-        
+
         # Create drop hint label (Sprint 1 - visual feedback)
         self._drop_hint_label = None
         self._is_drag_over = False
-        
+
         # Type picker for relation type selection (activated by Shift key)
         self._type_picker = None
         self._selected_relation_type = "related"  # Default type
@@ -337,7 +353,7 @@ class EventEditorWidget(QWidget):
         """
         if self._drop_hint_label is None:
             from PySide6.QtWidgets import QLabel
-            
+
             self._drop_hint_label = QLabel(self)
             self._drop_hint_label.setStyleSheet(
                 """
@@ -353,7 +369,7 @@ class EventEditorWidget(QWidget):
                 """
             )
             self._drop_hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
+
         self._drop_hint_label.setText(f"→ {rel_type}")
         self._drop_hint_label.setGeometry(self.rect())
         self._drop_hint_label.show()
@@ -376,14 +392,14 @@ class EventEditorWidget(QWidget):
         if event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE) and self._current_event_id:
             event.acceptProposedAction()
             self._is_drag_over = True
-            
+
             # Check if Shift key is pressed - show type picker
             if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
                 self._show_type_picker(event.pos())
             else:
                 self._selected_relation_type = "related"  # Reset to default
                 self._show_drop_hint(self._selected_relation_type)
-            
+
             logger.debug("EventEditor: Accepting drag from Project Explorer")
         else:
             event.ignore()
@@ -398,7 +414,7 @@ class EventEditorWidget(QWidget):
 
         if event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE) and self._current_event_id:
             event.acceptProposedAction()
-            
+
             # Check for Shift key to show/hide type picker
             if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
                 if not self._type_picker or not self._type_picker.isVisible():
@@ -407,7 +423,7 @@ class EventEditorWidget(QWidget):
                 # Shift released, hide type picker if visible
                 if self._type_picker and self._type_picker.isVisible():
                     self._type_picker.hide()
-                
+
                 # Keep drop hint visible during drag
                 if not self._is_drag_over:
                     self._is_drag_over = True
@@ -423,11 +439,11 @@ class EventEditorWidget(QWidget):
         """
         self._is_drag_over = False
         self._hide_drop_hint()
-        
+
         # Hide type picker if visible
         if self._type_picker and self._type_picker.isVisible():
             self._type_picker.hide()
-        
+
         logger.debug("EventEditor: Drag left editor area")
 
     def _show_type_picker(self, position: QPoint) -> None:
@@ -438,7 +454,7 @@ class EventEditorWidget(QWidget):
         """
         if not self._type_picker:
             from src.gui.widgets.relation_type_picker import RelationTypePicker
-            
+
             # Define available relation types (can be expanded later)
             relation_types = [
                 "related",
@@ -449,16 +465,16 @@ class EventEditorWidget(QWidget):
                 "created_by",
                 "part_of",
             ]
-            
+
             self._type_picker = RelationTypePicker(relation_types=relation_types)
-            
+
             # Connect to type selection signal
             self._type_picker.type_selected.connect(self._on_relation_type_selected)
-        
+
         # Convert position to global coordinates
         global_pos = self.mapToGlobal(position)
         self._type_picker.show_at_position(global_pos)
-        
+
         # Hide drop hint while picker is visible
         self._hide_drop_hint()
 
@@ -470,7 +486,7 @@ class EventEditorWidget(QWidget):
         """
         self._selected_relation_type = relation_type
         logger.info(f"EventEditor: Relation type selected: {relation_type}")
-        
+
         # Update drop hint with selected type
         self._show_drop_hint(self._selected_relation_type)
 
@@ -519,19 +535,19 @@ class EventEditorWidget(QWidget):
                 self._current_event_id,  # target: current event
                 self._selected_relation_type,  # relation type (from picker or default)
                 {},  # attributes (empty for now)
-                False  # bidirectional (not for prototype)
+                False,  # bidirectional (not for prototype)
             )
 
             event.acceptProposedAction()
             logger.debug("EventEditor: Drop accepted, relation signal emitted")
-            
+
             # Hide drop hint and type picker after successful drop
             self._is_drag_over = False
             self._hide_drop_hint()
-            
+
             if self._type_picker and self._type_picker.isVisible():
                 self._type_picker.hide()
-            
+
             # Reset relation type to default for next drag
             self._selected_relation_type = "related"
 
@@ -539,7 +555,7 @@ class EventEditorWidget(QWidget):
             logger.error(f"Error handling drop event: {e}", exc_info=True)
             event.ignore()
             self._hide_drop_hint()
-            
+
             if self._type_picker and self._type_picker.isVisible():
                 self._type_picker.hide()
 

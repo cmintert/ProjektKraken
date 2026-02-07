@@ -85,39 +85,13 @@ class EntityEditorWidget(QWidget):
 
         StyleHelper.apply_form_spacing(main_layout)
 
-        # Splitter-based tab inspector for vertical stacking
-        self.inspector = SplitterTabInspector()
-        main_layout.addWidget(self.inspector)
+        # --- Persistent Header ---
+        self.header_widget = QWidget()
+        header_layout = QVBoxLayout(self.header_widget)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        from src.gui.utils.style_helper import StyleHelper
 
-        # --- Tab 1: Details ---
-        # --- Tab 1: Details ---
-        self.tab_details = QWidget()
-
-        # Scroll Area Wrapper
-        from PySide6.QtWidgets import QFrame, QScrollArea
-
-        tab_layout = QVBoxLayout(self.tab_details)
-        tab_layout.setContentsMargins(0, 0, 0, 0)
-
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
-        self.scroll_area.setStyleSheet(StyleHelper.get_scroll_area_style())
-
-        self.details_container = QWidget()
-        details_layout = QVBoxLayout(self.details_container)
-        StyleHelper.apply_compact_spacing(details_layout)
-
-        self.scroll_area.setWidget(self.details_container)
-        tab_layout.addWidget(self.scroll_area)
-
-        # Header with Name and inject button
-        header_layout = QHBoxLayout()
-        self.form_layout = QFormLayout()
-        self.form_layout.setVerticalSpacing(12)
-        self.form_layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
-        self.form_layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
-        self.form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+        # It seems StyleHelper is imported inside __init__ in original code at line 84
 
         # Inject Button (QToolButton with Menu)
         from PySide6.QtWidgets import QToolButton
@@ -140,13 +114,12 @@ class EntityEditorWidget(QWidget):
 
         ThemeManager().theme_changed.connect(self._on_theme_changed)
 
-        # We'll place it at the top right, or embedded in form row?
-        # Plan said "beside Name or separate header row".
-        # Let's put it on top right of the tab.
-        header_layout.addStretch()
-        header_layout.addWidget(self.btn_inject)
-
-        details_layout.addLayout(header_layout)
+        # Header Form Layout
+        self.header_form = QFormLayout()
+        self.header_form.setVerticalSpacing(12)
+        self.header_form.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+        self.header_form.setRowWrapPolicy(QFormLayout.DontWrapRows)
+        self.header_form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         self.name_edit = QLineEdit()
         self.type_edit = QComboBox()
@@ -157,12 +130,54 @@ class EntityEditorWidget(QWidget):
         )
         self.type_edit.addItems(["Character", "Location", "Faction", "Item", "Concept"])
         self.type_edit.setEditable(True)
+
+        # Name row with Inject button
+        name_layout = QHBoxLayout()
+        name_layout.addWidget(self.name_edit)
+        name_layout.addWidget(self.btn_inject)
+
+        self.header_form.addRow("Name:", name_layout)
+        self.header_form.addRow("Type:", self.type_edit)
+
+        header_layout.addLayout(self.header_form)
+
+        main_layout.addWidget(self.header_widget)
+
+        # Splitter-based tab inspector for vertical stacking
+        self.inspector = SplitterTabInspector()
+        main_layout.addWidget(self.inspector)
+
+        # --- Tab 1: Details ---
+        self.tab_details = QWidget()
+
+        # Scroll Area Wrapper
+        from PySide6.QtWidgets import QFrame, QScrollArea
+
+        tab_layout = QVBoxLayout(self.tab_details)
+        tab_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        self.scroll_area.setStyleSheet(StyleHelper.get_scroll_area_style())
+
+        self.details_container = QWidget()
+        details_layout = QVBoxLayout(self.details_container)
+        StyleHelper.apply_compact_spacing(details_layout)
+
+        self.scroll_area.setWidget(self.details_container)
+        tab_layout.addWidget(self.scroll_area)
+
+        self.form_layout = QFormLayout()
+        self.form_layout.setVerticalSpacing(12)
+        self.form_layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+        self.form_layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
+        self.form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+
         self.desc_edit = WikiTextEdit()
         self.desc_edit.link_clicked.connect(self.link_clicked.emit)
         self.desc_edit.link_added.connect(self._on_wikilink_added)
 
-        self.form_layout.addRow("Name:", self.name_edit)
-        self.form_layout.addRow("Type:", self.type_edit)
         self.form_layout.addRow("Description:", self.desc_edit)
 
         # Add Timeline Display Widget (above LLM section)
@@ -329,11 +344,11 @@ class EntityEditorWidget(QWidget):
 
         # Enable drag-and-drop for relation creation
         self.setAcceptDrops(True)
-        
+
         # Create drop hint label (Sprint 1 - visual feedback)
         self._drop_hint_label = None
         self._is_drag_over = False
-        
+
         # Type picker for relation type selection (activated by Shift key)
         self._type_picker = None
         self._selected_relation_type = "related"  # Default type
@@ -346,7 +361,7 @@ class EntityEditorWidget(QWidget):
         """
         if self._drop_hint_label is None:
             from PySide6.QtWidgets import QLabel
-            
+
             self._drop_hint_label = QLabel(self)
             self._drop_hint_label.setStyleSheet(
                 """
@@ -362,7 +377,7 @@ class EntityEditorWidget(QWidget):
                 """
             )
             self._drop_hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
+
         self._drop_hint_label.setText(f"→ {rel_type}")
         self._drop_hint_label.setGeometry(self.rect())
         self._drop_hint_label.show()
@@ -382,17 +397,20 @@ class EntityEditorWidget(QWidget):
         from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
 
         # Accept if MIME type matches and we have an entity loaded
-        if event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE) and self._current_entity_id:
+        if (
+            event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE)
+            and self._current_entity_id
+        ):
             event.acceptProposedAction()
             self._is_drag_over = True
-            
+
             # Check if Shift key is pressed - show type picker
             if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
                 self._show_type_picker(event.pos())
             else:
                 self._selected_relation_type = "related"  # Reset to default
                 self._show_drop_hint(self._selected_relation_type)
-            
+
             logger.debug("EntityEditor: Accepting drag from Project Explorer")
         else:
             event.ignore()
@@ -405,9 +423,12 @@ class EntityEditorWidget(QWidget):
         """
         from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
 
-        if event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE) and self._current_entity_id:
+        if (
+            event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE)
+            and self._current_entity_id
+        ):
             event.acceptProposedAction()
-            
+
             # Check for Shift key to show/hide type picker
             if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
                 if not self._type_picker or not self._type_picker.isVisible():
@@ -416,7 +437,7 @@ class EntityEditorWidget(QWidget):
                 # Shift released, hide type picker if visible
                 if self._type_picker and self._type_picker.isVisible():
                     self._type_picker.hide()
-                
+
                 # Keep drop hint visible during drag
                 if not self._is_drag_over:
                     self._is_drag_over = True
@@ -432,11 +453,11 @@ class EntityEditorWidget(QWidget):
         """
         self._is_drag_over = False
         self._hide_drop_hint()
-        
+
         # Hide type picker if visible
         if self._type_picker and self._type_picker.isVisible():
             self._type_picker.hide()
-        
+
         logger.debug("EntityEditor: Drag left editor area")
 
     def _show_type_picker(self, position: QPoint) -> None:
@@ -447,7 +468,7 @@ class EntityEditorWidget(QWidget):
         """
         if not self._type_picker:
             from src.gui.widgets.relation_type_picker import RelationTypePicker
-            
+
             # Define available relation types (can be expanded later)
             relation_types = [
                 "related",
@@ -458,16 +479,16 @@ class EntityEditorWidget(QWidget):
                 "created_by",
                 "part_of",
             ]
-            
+
             self._type_picker = RelationTypePicker(relation_types=relation_types)
-            
+
             # Connect to type selection signal
             self._type_picker.type_selected.connect(self._on_relation_type_selected)
-        
+
         # Convert position to global coordinates
         global_pos = self.mapToGlobal(position)
         self._type_picker.show_at_position(global_pos)
-        
+
         # Hide drop hint while picker is visible
         self._hide_drop_hint()
 
@@ -479,7 +500,7 @@ class EntityEditorWidget(QWidget):
         """
         self._selected_relation_type = relation_type
         logger.info(f"EntityEditor: Relation type selected: {relation_type}")
-        
+
         # Update drop hint with selected type
         self._show_drop_hint(self._selected_relation_type)
 
@@ -528,19 +549,19 @@ class EntityEditorWidget(QWidget):
                 self._current_entity_id,  # target: current entity
                 self._selected_relation_type,  # relation type (from picker or default)
                 {},  # attributes (empty for now)
-                False  # bidirectional (not for prototype)
+                False,  # bidirectional (not for prototype)
             )
 
             event.acceptProposedAction()
             logger.debug("EntityEditor: Drop accepted, relation signal emitted")
-            
+
             # Hide drop hint and type picker after successful drop
             self._is_drag_over = False
             self._hide_drop_hint()
-            
+
             if self._type_picker and self._type_picker.isVisible():
                 self._type_picker.hide()
-            
+
             # Reset relation type to default for next drag
             self._selected_relation_type = "related"
 
@@ -548,7 +569,7 @@ class EntityEditorWidget(QWidget):
             logger.error(f"Error handling drop event: {e}", exc_info=True)
             event.ignore()
             self._hide_drop_hint()
-            
+
             if self._type_picker and self._type_picker.isVisible():
                 self._type_picker.hide()
 

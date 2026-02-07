@@ -95,22 +95,28 @@ class DraggableListView(QListView):
 
         # Create drag pill widget to follow cursor
         from src.gui.widgets.drag_pill import DragPill
-        from PySide6.QtGui import QCursor
 
-        self._drag_pill = DragPill(item_name=item_name, item_type=item_type)
-        self._drag_pill.show_at_position(QCursor.pos())
+        # Create the pill but don't show it as a window
+        pill = DragPill(item_name=item_name, item_type=item_type)
+        # Force layout update to get correct size
+        pill.adjustSize()
+
+        # Render to pixmap
+        pixmap = pill.grab()
 
         # Create and execute drag
         drag = QDrag(self)
         drag.setMimeData(mime_data)
-        
-        # Connect to drag finished to hide pill
-        drag.destroyed.connect(self._on_drag_finished)
-        
-        result = drag.exec(Qt.CopyAction)
-        
-        # Clean up drag pill
-        self._on_drag_finished()
+        drag.setPixmap(pixmap)
+
+        # Set hotspot to the pill's defined offset (default 10, 10)
+        # This aligns the cursor with the defined hotspot on the pill
+        drag.setHotSpot(pill.cursor_offset)
+
+        drag.exec(Qt.CopyAction)
+
+        # Clean up
+        pill.deleteLater()
 
     def _on_drag_finished(self) -> None:
         """Clean up drag pill when drag finishes."""
