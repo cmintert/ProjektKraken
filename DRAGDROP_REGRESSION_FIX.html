@@ -3,10 +3,10 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="GNU AFFERO GENERAL PUBLIC LICENSE" href="LICENSE.html"><link rel="prev" title="services package" href="services.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
-        <title>Changelog - Project Kraken 0.10.3 documentation</title>
+        <title>Drag-and-Drop Regression Fix - Project Kraken 0.10.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -237,8 +237,8 @@
 </li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
-<ul class="current">
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Changelog</a></li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
 <li class="toctree-l1"><a class="reference internal" href="LICENSE.html">GNU AFFERO GENERAL PUBLIC LICENSE</a></li>
 </ul>
 
@@ -260,7 +260,7 @@
         </a>
         <div class="content-icon-container">
           <div class="view-this-page">
-  <a class="muted-link" href="_sources/CHANGELOG.md.txt" title="View this page">
+  <a class="muted-link" href="_sources/DRAGDROP_REGRESSION_FIX.md.txt" title="View this page">
     <svg><use href="#svg-eye"></use></svg>
     <span class="visually-hidden">View this page</span>
   </a>
@@ -278,18 +278,127 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="changelog">
-<h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">¶</a></h1>
-<p>All notable changes to this project will be documented in this file.</p>
-<section id="development-2026-02-07">
-<h2>[Development] - 2026-02-07<a class="headerlink" href="#development-2026-02-07" title="Link to this heading">¶</a></h2>
-<section id="internal">
-<h3>Internal<a class="headerlink" href="#internal" title="Link to this heading">¶</a></h3>
+          <section id="drag-and-drop-regression-fix">
+<h1>Drag-and-Drop Regression Fix<a class="headerlink" href="#drag-and-drop-regression-fix" title="Link to this heading">¶</a></h1>
+<p><strong>Date:</strong> 2026-02-07<br />
+<strong>Commit:</strong> ea2f7a5<br />
+<strong>Issue:</strong> Box selection interfering with drag operations</p>
+<hr class="docutils" />
+<section id="problem">
+<h2>Problem<a class="headerlink" href="#problem" title="Link to this heading">¶</a></h2>
+<p>After Sprint 0 and Sprint 1 implementation, a drag-and-drop regression was introduced where:</p>
 <ul class="simple">
-<li><p>Merge pull request #73 from cmintert/copilot/analyze-drag-and-drop-relations</p></li>
+<li><p>Clicking and dragging on items triggered <strong>box selection</strong> (rubber-band) instead of <strong>drag operation</strong></p></li>
+<li><p>Multi-select mode was accidentally enabled</p></li>
+<li><p>Users could not drag items from Project Explorer to editors</p></li>
 </ul>
-<p><em>This changelog was automatically generated.</em></p>
 </section>
+<section id="root-cause">
+<h2>Root Cause<a class="headerlink" href="#root-cause" title="Link to this heading">¶</a></h2>
+<p>Line 295 in <code class="docutils literal notranslate"><span class="pre">src/gui/widgets/unified_list.py</span></code> had the wrong selection mode:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># WRONG - Causes regression</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">list_widget</span><span class="o">.</span><span class="n">setSelectionMode</span><span class="p">(</span><span class="n">QListView</span><span class="o">.</span><span class="n">SelectionMode</span><span class="o">.</span><span class="n">ExtendedSelection</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>ExtendedSelection mode</strong> enables:</p>
+<ul class="simple">
+<li><p>Multi-select with Ctrl/Shift keys</p></li>
+<li><p><strong>Rubber-band box selection on click-and-drag</strong> ❌</p></li>
+<li><p>Conflicts with drag-and-drop operations</p></li>
+</ul>
+</section>
+<section id="solution">
+<h2>Solution<a class="headerlink" href="#solution" title="Link to this heading">¶</a></h2>
+<p>Changed to <strong>SingleSelection mode</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># CORRECT - Fixes drag-and-drop</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">list_widget</span><span class="o">.</span><span class="n">setSelectionMode</span><span class="p">(</span><span class="n">QListView</span><span class="o">.</span><span class="n">SelectionMode</span><span class="o">.</span><span class="n">SingleSelection</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>SingleSelection mode</strong> ensures:</p>
+<ul class="simple">
+<li><p>Only one item can be selected at a time ✅</p></li>
+<li><p>Click-and-drag initiates drag operation (not box selection) ✅</p></li>
+<li><p>No interference with drag-and-drop functionality ✅</p></li>
+</ul>
+</section>
+<section id="files-changed">
+<h2>Files Changed<a class="headerlink" href="#files-changed" title="Link to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/unified_list.py</span></code></strong> (line 295-296)</p>
+<ul class="simple">
+<li><p>Changed <code class="docutils literal notranslate"><span class="pre">ExtendedSelection</span></code> → <code class="docutils literal notranslate"><span class="pre">SingleSelection</span></code></p></li>
+<li><p>Added explanatory comment</p></li>
+</ul>
+</li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">tests/unit/test_unified_list_features.py</span></code></strong></p>
+<ul class="simple">
+<li><p>Renamed test class: <code class="docutils literal notranslate"><span class="pre">TestUnifiedListMultiSelection</span></code> → <code class="docutils literal notranslate"><span class="pre">TestUnifiedListSelection</span></code></p></li>
+<li><p>Updated test expectations to match SingleSelection behavior</p></li>
+<li><p>Changed from expecting 2 selected items to expecting 1 selected item</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="behavior-comparison">
+<h2>Behavior Comparison<a class="headerlink" href="#behavior-comparison" title="Link to this heading">¶</a></h2>
+<section id="before-fix-broken">
+<h3>Before Fix (Broken)<a class="headerlink" href="#before-fix-broken" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p>User clicks on item in Project Explorer</p></li>
+<li><p>User drags mouse → <strong>Box selection rubber-band appears</strong> ❌</p></li>
+<li><p>Multiple items get selected instead of dragging</p></li>
+<li><p>Drag-and-drop to editors doesn’t work properly</p></li>
+</ol>
+</section>
+<section id="after-fix-working">
+<h3>After Fix (Working)<a class="headerlink" href="#after-fix-working" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p>User clicks on item in Project Explorer</p></li>
+<li><p>User drags mouse → <strong>Drag operation starts</strong> ✅</p></li>
+<li><p>Drag pill appears (Sprint 1 feature)</p></li>
+<li><p>Drop hint shows on editor hover (Sprint 1 feature)</p></li>
+<li><p>Drop creates relation correctly (Sprint 0 feature)</p></li>
+</ol>
+</section>
+</section>
+<section id="testing">
+<h2>Testing<a class="headerlink" href="#testing" title="Link to this heading">¶</a></h2>
+<p><strong>Manual Test:</strong></p>
+<ol class="arabic simple">
+<li><p>Launch ProjektKraken</p></li>
+<li><p>Open Project Explorer with events/entities</p></li>
+<li><p>Click and hold on an item</p></li>
+<li><p>Move mouse (drag motion)</p></li>
+<li><p><strong>Verify:</strong> No box selection rubber-band appears</p></li>
+<li><p><strong>Verify:</strong> Item can be dragged to editor</p></li>
+<li><p><strong>Verify:</strong> Drop creates relation correctly</p></li>
+</ol>
+<p><strong>Unit Test:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>tests/unit/test_unified_list_features.py::TestUnifiedListSelection<span class="w"> </span>-v
+</pre></div>
+</div>
+<p>All tests pass ✅</p>
+</section>
+<section id="important-notes">
+<h2>Important Notes<a class="headerlink" href="#important-notes" title="Link to this heading">¶</a></h2>
+<p><strong>DO NOT re-enable ExtendedSelection</strong> in unified_list.py - it will break drag-and-drop!</p>
+<p>If multi-select functionality is needed in the future, it must be implemented in a way that doesn’t conflict with drag operations, such as:</p>
+<ul class="simple">
+<li><p>Using checkboxes for multi-select instead of selection mode</p></li>
+<li><p>Detecting drag intent (distance threshold) before starting box selection</p></li>
+<li><p>Using a modifier key (Ctrl) to toggle between drag and multi-select modes</p></li>
+</ul>
+</section>
+<section id="related-issues">
+<h2>Related Issues<a class="headerlink" href="#related-issues" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Sprint 0:</strong> Implemented basic drag-drop (commit c48a68e)</p></li>
+<li><p><strong>Sprint 1:</strong> Added toast notifications and drop hints (commit 789c082)</p></li>
+<li><p><strong>This fix:</strong> Restored drag-drop functionality (commit ea2f7a5)</p></li>
+</ul>
+<hr class="docutils" />
+<p><strong>Status:</strong> ✅ Fixed<br />
+<strong>Ready for:</strong> Manual testing and verification</p>
 </section>
 </section>
 
@@ -298,26 +407,8 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="LICENSE.html">
-              <div class="page-info">
-                <div class="context">
-                  <span>Next</span>
-                </div>
-                <div class="title">GNU AFFERO GENERAL PUBLIC LICENSE</div>
-              </div>
-              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
-            </a>
-          <a class="prev-page" href="services.html">
-              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
-              <div class="page-info">
-                <div class="context">
-                  <span>Previous</span>
-                </div>
-                
-                <div class="title">services package</div>
-                
-              </div>
-            </a>
+          
+          
         </div>
         <div class="bottom-of-page">
           <div class="left-details">
@@ -348,11 +439,19 @@
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Changelog</a><ul>
-<li><a class="reference internal" href="#development-2026-02-07">[Development] - 2026-02-07</a><ul>
-<li><a class="reference internal" href="#internal">Internal</a></li>
+<li><a class="reference internal" href="#">Drag-and-Drop Regression Fix</a><ul>
+<li><a class="reference internal" href="#problem">Problem</a></li>
+<li><a class="reference internal" href="#root-cause">Root Cause</a></li>
+<li><a class="reference internal" href="#solution">Solution</a></li>
+<li><a class="reference internal" href="#files-changed">Files Changed</a></li>
+<li><a class="reference internal" href="#behavior-comparison">Behavior Comparison</a><ul>
+<li><a class="reference internal" href="#before-fix-broken">Before Fix (Broken)</a></li>
+<li><a class="reference internal" href="#after-fix-working">After Fix (Working)</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#testing">Testing</a></li>
+<li><a class="reference internal" href="#important-notes">Important Notes</a></li>
+<li><a class="reference internal" href="#related-issues">Related Issues</a></li>
 </ul>
 </li>
 </ul>

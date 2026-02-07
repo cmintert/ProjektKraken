@@ -1,0 +1,1996 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
+        <title>RFC: Drag-and-Drop Relations Feature for ProjektKraken - Project Kraken 0.10.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">Project Kraken 0.10.3 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  <span class="sidebar-brand-text">Project Kraken 0.10.3 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="WIKI_LINKING.html">ID-Based Wiki Linking Implementation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MAP_USAGE_EXAMPLES.html">Map System Usage Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="LONGFORM.html">Longform Document Feature</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="Design.html">Project Kraken: Comprehensive Design Specification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DATABASE.html">Database Architecture and Best Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DEVELOPMENT.html">Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security Best Practices</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
+<li class="toctree-l1"><a class="reference internal" href="LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAST_INJECT.html">Fast Inject Service</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html">Tag Normalization Migration Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="modules.html">src</a><input aria-label="Toggle navigation of src" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="app.html">app package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html">cli package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="commands.html">commands package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core.html">core package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="gui.html">gui package</a><input aria-label="Toggle navigation of gui package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui.widgets.html">gui.widgets package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui.dialogs.html">gui.dialogs package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="services.html">services package</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="LICENSE.html">GNU AFFERO GENERAL PUBLIC LICENSE</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/DRAG_DROP_RELATIONS_PLAN.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="rfc-drag-and-drop-relations-feature-for-projektkraken">
+<h1>RFC: Drag-and-Drop Relations Feature for ProjektKraken<a class="headerlink" href="#rfc-drag-and-drop-relations-feature-for-projektkraken" title="Link to this heading">¶</a></h1>
+<p><strong>Status:</strong> Draft<br />
+<strong>Author:</strong> ProjektKraken Development Team<br />
+<strong>Created:</strong> 2024<br />
+<strong>Target Version:</strong> 2.0.0</p>
+<hr class="docutils" />
+<section id="executive-summary">
+<h2>1. Executive Summary<a class="headerlink" href="#executive-summary" title="Link to this heading">¶</a></h2>
+<p>This RFC proposes a comprehensive drag-and-drop interaction system for creating entity-to-entity relations in ProjektKraken. The feature enables worldbuilders to establish connections between entities and events through natural, intuitive gestures across all major UI surfaces: the Project Explorer (UnifiedList), Timeline cards, Graph nodes, and Map markers. By leveraging the existing command pattern infrastructure, undo/redo support, and Qt’s drag-and-drop framework, this enhancement transforms relation creation from a multi-step dialog workflow into a single fluid motion. The implementation introduces visual feedback systems (drag pills, preview lines, drop hints, and confirmation toasts), coordinates with the existing DatabaseWorker for async persistence, and maintains the application’s strict separation of concerns across GUI, commands, services, and core layers. This feature represents a major UX advancement that aligns with ProjektKraken’s timeline-first, context-aware design philosophy.</p>
+</section>
+<hr class="docutils" />
+<section id="grounding-in-current-repository">
+<h2>2. Grounding in Current Repository<a class="headerlink" href="#grounding-in-current-repository" title="Link to this heading">¶</a></h2>
+<section id="existing-architecture">
+<h3>2.1 Existing Architecture<a class="headerlink" href="#existing-architecture" title="Link to this heading">¶</a></h3>
+<p><strong>Commands Layer</strong> (<code class="docutils literal notranslate"><span class="pre">src/commands/</span></code>):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">base_command.py</span></code>: Defines <code class="docutils literal notranslate"><span class="pre">BaseCommand</span></code> abstract class with <code class="docutils literal notranslate"><span class="pre">execute()</span></code> and <code class="docutils literal notranslate"><span class="pre">undo()</span></code> methods</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">relation_commands.py</span></code>: Contains <code class="docutils literal notranslate"><span class="pre">AddRelationCommand</span></code>, <code class="docutils literal notranslate"><span class="pre">RemoveRelationCommand</span></code>, and <code class="docutils literal notranslate"><span class="pre">UpdateRelationCommand</span></code></p></li>
+<li><p>Command pattern already supports undo/redo through <code class="docutils literal notranslate"><span class="pre">CommandStack</span></code></p></li>
+</ul>
+<p><strong>Services Layer</strong> (<code class="docutils literal notranslate"><span class="pre">src/services/</span></code>):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">db_service.py</span></code>: <code class="docutils literal notranslate"><span class="pre">DatabaseService</span></code> class with repository pattern for entity, event, and relation access</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">worker.py</span></code>: <code class="docutils literal notranslate"><span class="pre">DatabaseWorker</span></code> class extends <code class="docutils literal notranslate"><span class="pre">QThread</span></code> for async database operations</p>
+<ul>
+<li><p>Emits signals: <code class="docutils literal notranslate"><span class="pre">entity_created</span></code>, <code class="docutils literal notranslate"><span class="pre">entity_updated</span></code>, <code class="docutils literal notranslate"><span class="pre">relation_added</span></code>, <code class="docutils literal notranslate"><span class="pre">relation_removed</span></code></p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">search_service.py</span></code>: Contains <code class="docutils literal notranslate"><span class="pre">index_entity()</span></code> and <code class="docutils literal notranslate"><span class="pre">index_event()</span></code> functions for full-text search</p></li>
+</ul>
+<p><strong>GUI Layer</strong> (<code class="docutils literal notranslate"><span class="pre">src/gui/widgets/</span></code>):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">unified_list.py</span></code>: Already implements <code class="docutils literal notranslate"><span class="pre">DraggableListView</span></code> with MIME type <code class="docutils literal notranslate"><span class="pre">&quot;application/x-kraken-item&quot;</span></code></p>
+<ul>
+<li><p>Uses custom <code class="docutils literal notranslate"><span class="pre">UnifiedListModel</span></code> for entities and events</p></li>
+<li><p>Supports drag operations with item metadata</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">entity_editor.py</span></code>: <code class="docutils literal notranslate"><span class="pre">EntityEditor</span></code> widget displays entity details with relation chips</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">event_editor.py</span></code>: <code class="docutils literal notranslate"><span class="pre">EventEditor</span></code> widget for event editing</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">graph_view/</span></code>: Graph visualization with nodes and edges</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">graph_widget.py</span></code>: Main graph canvas</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">graph_node.py</span></code>: Node representations</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">map/</span></code>: Geographic map interface</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">map_widget.py</span></code>: Map canvas with markers</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">map_marker.py</span></code>: Entity location markers</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">timeline_view.py</span></code>: Timeline visualization with event cards</p></li>
+</ul>
+<p><strong>Core Layer</strong> (<code class="docutils literal notranslate"><span class="pre">src/core/</span></code>):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">events.py</span></code>: <code class="docutils literal notranslate"><span class="pre">Event</span></code> dataclass with <code class="docutils literal notranslate"><span class="pre">to_dict()</span></code> and <code class="docutils literal notranslate"><span class="pre">from_dict()</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">entities.py</span></code>: <code class="docutils literal notranslate"><span class="pre">Entity</span></code> dataclass with relations support</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">relations.py</span></code>: <code class="docutils literal notranslate"><span class="pre">Relation</span></code> dataclass defining entity-to-entity connections</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">theme_manager.py</span></code>: <code class="docutils literal notranslate"><span class="pre">ThemeManager</span></code> class uses <code class="docutils literal notranslate"><span class="pre">themes.json</span></code> for styling</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">constants.py</span></code>: Defines <code class="docutils literal notranslate"><span class="pre">AUTOSAVE_DELAY_MS</span> <span class="pre">=</span> <span class="pre">2000</span></code></p></li>
+</ul>
+<p><strong>App Layer</strong> (<code class="docutils literal notranslate"><span class="pre">src/app/</span></code>):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">main.py</span></code>: Application entry point</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">main_window.py</span></code>: <code class="docutils literal notranslate"><span class="pre">MainWindow</span></code> orchestrates all components via signal/slot connections</p></li>
+</ul>
+</section>
+<section id="current-relation-workflow">
+<h3>2.2 Current Relation Workflow<a class="headerlink" href="#current-relation-workflow" title="Link to this heading">¶</a></h3>
+<p>Today, users create relations through:</p>
+<ol class="arabic simple">
+<li><p>Right-click context menu on entity → “Add Relation”</p></li>
+<li><p>Dialog popup with dropdowns for target entity and relation type</p></li>
+<li><p>OK button to confirm → <code class="docutils literal notranslate"><span class="pre">AddRelationCommand</span></code> executed</p></li>
+<li><p>Relation appears as chip in EntityEditor’s relation section</p></li>
+</ol>
+<p>This workflow requires 4+ clicks and breaks the user’s flow when rapidly connecting entities.</p>
+</section>
+<section id="existing-drag-infrastructure">
+<h3>2.3 Existing Drag Infrastructure<a class="headerlink" href="#existing-drag-infrastructure" title="Link to this heading">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">DraggableListView</span></code> in <code class="docutils literal notranslate"><span class="pre">unified_list.py</span></code> already:</p>
+<ul class="simple">
+<li><p>Implements <code class="docutils literal notranslate"><span class="pre">QAbstractItemView</span></code> drag/drop</p></li>
+<li><p>Serializes item data to MIME type with JSON payload: <code class="docutils literal notranslate"><span class="pre">{&quot;type&quot;:</span> <span class="pre">&quot;entity|event&quot;,</span> <span class="pre">&quot;id&quot;:</span> <span class="pre">&quot;uuid&quot;,</span> <span class="pre">&quot;name&quot;:</span> <span class="pre">&quot;...&quot;}</span></code></p></li>
+<li><p>Handles <code class="docutils literal notranslate"><span class="pre">dragEnterEvent()</span></code>, <code class="docutils literal notranslate"><span class="pre">dragMoveEvent()</span></code>, <code class="docutils literal notranslate"><span class="pre">dropEvent()</span></code></p></li>
+<li><p>Currently used for reordering items within the list</p></li>
+</ul>
+<p><strong>Gap:</strong> No drop acceptance logic exists for cross-widget drops or relation creation.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="detailed-ux-flows">
+<h2>3. Detailed UX Flows<a class="headerlink" href="#detailed-ux-flows" title="Link to this heading">¶</a></h2>
+<section id="flow-a-project-explorer-entity-editor">
+<h3>3.1 Flow A: Project Explorer → Entity Editor<a class="headerlink" href="#flow-a-project-explorer-entity-editor" title="Link to this heading">¶</a></h3>
+<p><strong>Scenario:</strong> User drags “Aragorn” entity from UnifiedList onto “Fellowship” entity in EntityEditor.</p>
+<p><strong>Steps:</strong></p>
+<ol class="arabic simple">
+<li><p>User clicks and holds on “Aragorn” item in UnifiedList (left panel)</p></li>
+<li><p><strong>Drag Start:</strong> Mouse moves 5px → <code class="docutils literal notranslate"><span class="pre">startDrag()</span></code> called</p>
+<ul class="simple">
+<li><p>Semi-transparent “drag pill” appears under cursor showing “Aragorn” with entity icon</p></li>
+<li><p>Original item in list dims to 50% opacity</p></li>
+</ul>
+</li>
+<li><p><strong>Drag Move:</strong> User drags over EntityEditor (center panel) showing “Fellowship”</p>
+<ul class="simple">
+<li><p>Drop zone highlight appears: 2px dashed border around entity name header</p></li>
+<li><p>Tooltip appears: “Add relation: Aragorn → Fellowship”</p></li>
+</ul>
+</li>
+<li><p><strong>Drop:</strong> User releases mouse over EntityEditor</p>
+<ul class="simple">
+<li><p>Drop zone flashes green (200ms)</p></li>
+<li><p>Confirmation toast appears bottom-right: “Added relation: Aragorn → Fellowship (member_of)”</p></li>
+<li><p>Relation chip appears instantly in Fellowship’s relation section</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AddRelationCommand</span></code> executes async via DatabaseWorker</p></li>
+</ul>
+</li>
+<li><p><strong>Undo:</strong> Ctrl+Z reverses the action</p>
+<ul class="simple">
+<li><p>Relation chip disappears</p></li>
+<li><p>Toast: “Removed relation: Aragorn → Fellowship”</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Edge Cases:</strong></p>
+<ul class="simple">
+<li><p><strong>Drag over self:</strong> No drop zone highlight, cursor shows “not-allowed” icon</p></li>
+<li><p><strong>Existing relation:</strong> Drop hint shows “⚠ Relation already exists” in yellow</p></li>
+<li><p><strong>Drop outside valid zones:</strong> No action, drag pill fades away</p></li>
+</ul>
+</section>
+<section id="flow-b-graph-node-graph-node">
+<h3>3.2 Flow B: Graph Node → Graph Node<a class="headerlink" href="#flow-b-graph-node-graph-node" title="Link to this heading">¶</a></h3>
+<p><strong>Scenario:</strong> User connects two nodes in the graph visualization.</p>
+<p><strong>Steps:</strong></p>
+<ol class="arabic simple">
+<li><p>User clicks “Aragorn” node in graph and drags</p></li>
+<li><p><strong>Visual Feedback:</strong></p>
+<ul class="simple">
+<li><p>Drag pill shows “Aragorn” with mini avatar</p></li>
+<li><p>Dotted preview line follows cursor from source node center</p></li>
+<li><p>Line color: theme’s <code class="docutils literal notranslate"><span class="pre">primary_accent</span></code> color</p></li>
+</ul>
+</li>
+<li><p><strong>Hover Target:</strong> User drags over “Gondor” node</p>
+<ul class="simple">
+<li><p>Target node border glows (3px solid, pulsing animation)</p></li>
+<li><p>Arrow head appears on preview line pointing to target</p></li>
+<li><p>Tooltip: “Create relation: Aragorn → Gondor”</p></li>
+</ul>
+</li>
+<li><p><strong>Drop:</strong> User releases on “Gondor”</p>
+<ul class="simple">
+<li><p>Preview line morphs into solid edge (300ms animation)</p></li>
+<li><p>Edge labeled with default relation type (“related_to”)</p></li>
+<li><p>Confirmation toast with undo button</p></li>
+<li><p>Double-click edge to edit relation type</p></li>
+</ul>
+</li>
+<li><p><strong>Modifier Keys:</strong></p>
+<ul class="simple">
+<li><p><strong>Shift+Drag:</strong> Bidirectional relation (two arrows)</p></li>
+<li><p><strong>Ctrl+Drag:</strong> Opens mini relation-type picker under cursor before drop</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Edge Cases:</strong></p>
+<ul class="simple">
+<li><p><strong>Drop on empty canvas:</strong> No action, line fades</p></li>
+<li><p><strong>Circular dependencies:</strong> Allowed (worldbuilding permits time loops, paradoxes)</p></li>
+<li><p><strong>Multiple simultaneous drags:</strong> Not supported (Qt limitation)</p></li>
+</ul>
+</section>
+<section id="flow-c-timeline-card-drag">
+<h3>3.3 Flow C: Timeline Card Drag<a class="headerlink" href="#flow-c-timeline-card-drag" title="Link to this heading">¶</a></h3>
+<p><strong>Scenario:</strong> Link event to entity by dragging timeline card.</p>
+<p><strong>Steps:</strong></p>
+<ol class="arabic simple">
+<li><p>User drags “Battle of Helm’s Deep” event card from timeline</p></li>
+<li><p><strong>Drag Representation:</strong></p>
+<ul class="simple">
+<li><p>Drag pill shows event name + date + icon</p></li>
+<li><p>Drag pill follows cursor with slight trailing animation</p></li>
+</ul>
+</li>
+<li><p><strong>Drop on Entity:</strong></p>
+<ul class="simple">
+<li><p>User drops on “Rohan” entity in UnifiedList</p></li>
+<li><p>Creates relation: Event → Entity with type “involves”</p></li>
+<li><p>Entity card in list gains small event badge counter (e.g., “3 events”)</p></li>
+</ul>
+</li>
+<li><p><strong>Drop on Graph Node:</strong></p>
+<ul class="simple">
+<li><p>Event node appears in graph at drop location</p></li>
+<li><p>Automatic layout algorithm runs to position nearby</p></li>
+<li><p>Edge connects event to entity</p></li>
+</ul>
+</li>
+<li><p><strong>Visual Feedback:</strong></p>
+<ul class="simple">
+<li><p>Timeline card temporarily “flashes” to indicate successful link</p></li>
+<li><p>Entity/node shows brief highlight pulse</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Notes:</strong></p>
+<ul class="simple">
+<li><p>Events can relate to entities but not to other events (per data model)</p></li>
+<li><p>Dropping event on another event shows “not-allowed” cursor</p></li>
+</ul>
+</section>
+<section id="flow-d-map-marker-to-marker">
+<h3>3.4 Flow D: Map Marker to Marker<a class="headerlink" href="#flow-d-map-marker-to-marker" title="Link to this heading">¶</a></h3>
+<p><strong>Scenario:</strong> Connect two locations on the world map.</p>
+<p><strong>Steps:</strong></p>
+<ol class="arabic simple">
+<li><p>User drags “Rivendell” marker on map</p></li>
+<li><p><strong>Drag Visuals:</strong></p>
+<ul class="simple">
+<li><p>Marker lifts up (z-index increase, shadow grows)</p></li>
+<li><p>Drag pill shows location name + coordinates</p></li>
+<li><p>Dotted line trail from original position to cursor</p></li>
+</ul>
+</li>
+<li><p><strong>Hover Target:</strong> Drag over “Lothlórien” marker</p>
+<ul class="simple">
+<li><p>Target marker scales to 120% and pulses</p></li>
+<li><p>Preview arc line appears between locations (geodesic curve)</p></li>
+<li><p>Distance shown on line: “234 km”</p></li>
+</ul>
+</li>
+<li><p><strong>Drop:</strong></p>
+<ul class="simple">
+<li><p>Arc line becomes solid edge with arrow</p></li>
+<li><p>Default relation: “connected_to”</p></li>
+<li><p>Both markers briefly flash</p></li>
+<li><p>Relation appears in both entities’ editor views</p></li>
+</ul>
+</li>
+<li><p><strong>Map-Specific Features:</strong></p>
+<ul class="simple">
+<li><p><strong>Alt+Drag:</strong> Create waypoint mid-drag (route planning)</p></li>
+<li><p><strong>Right-drag:</strong> Move marker without creating relation</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Edge Cases:</strong></p>
+<ul class="simple">
+<li><p><strong>Ocean-to-ocean:</strong> Allowed (sea routes)</p></li>
+<li><p><strong>Cross-layer drops:</strong> Map supports multiple layers (underground, sky) — drop hint shows layer mismatch warning</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="visual-indicators-specification">
+<h2>4. Visual Indicators Specification<a class="headerlink" href="#visual-indicators-specification" title="Link to this heading">¶</a></h2>
+<section id="drag-pill">
+<h3>4.1 Drag Pill<a class="headerlink" href="#drag-pill" title="Link to this heading">¶</a></h3>
+<p><strong>Appearance:</strong></p>
+<ul class="simple">
+<li><p>Semi-transparent rounded rectangle (8px border-radius)</p></li>
+<li><p>Background: <code class="docutils literal notranslate"><span class="pre">rgba(theme.surface,</span> <span class="pre">0.9)</span></code> with 4px blur backdrop</p></li>
+<li><p>Border: 1px solid <code class="docutils literal notranslate"><span class="pre">theme.border</span></code></p></li>
+<li><p>Icon (16x16) + Text (14pt, <code class="docutils literal notranslate"><span class="pre">theme.text</span></code>) + Type label (10pt, <code class="docutils literal notranslate"><span class="pre">theme.text_dim</span></code>)</p></li>
+<li><p>Shadow: <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">4px</span> <span class="pre">12px</span> <span class="pre">rgba(0,</span> <span class="pre">0,</span> <span class="pre">0,</span> <span class="pre">0.3)</span></code></p></li>
+<li><p>Size: Auto-width (max 200px) × 40px height</p></li>
+</ul>
+<p><strong>Implementation:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">QLabel</span></code> with <code class="docutils literal notranslate"><span class="pre">Qt.WA_TransparentForMouseEvents</span></code></p></li>
+<li><p>Positioned at <code class="docutils literal notranslate"><span class="pre">QCursor.pos()</span> <span class="pre">+</span> <span class="pre">QPoint(10,</span> <span class="pre">10)</span></code></p></li>
+<li><p>Updates position in <code class="docutils literal notranslate"><span class="pre">dragMoveEvent()</span></code> (60 FPS)</p></li>
+</ul>
+<p><strong>Code Location:</strong> <code class="docutils literal notranslate"><span class="pre">src/gui/widgets/drag_pill.py</span></code> (new file)</p>
+</section>
+<section id="preview-line">
+<h3>4.2 Preview Line<a class="headerlink" href="#preview-line" title="Link to this heading">¶</a></h3>
+<p><strong>Graph/Map Context:</strong></p>
+<ul class="simple">
+<li><p>SVG path drawn on overlay layer</p></li>
+<li><p>Style: 2px dashed line, dash pattern <code class="docutils literal notranslate"><span class="pre">[8,</span> <span class="pre">4]</span></code></p></li>
+<li><p>Color: <code class="docutils literal notranslate"><span class="pre">theme.primary_accent</span></code> with 80% opacity</p></li>
+<li><p>Arrow head: 12px equilateral triangle at cursor end</p></li>
+<li><p>Animation: Dash offset animates to create “marching ants” effect (10px/sec)</p></li>
+</ul>
+<p><strong>Implementation:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">QPainterPath</span></code> drawn in <code class="docutils literal notranslate"><span class="pre">paintEvent()</span></code></p></li>
+<li><p>Recalculated in <code class="docutils literal notranslate"><span class="pre">dragMoveEvent()</span></code></p></li>
+<li><p>Uses <code class="docutils literal notranslate"><span class="pre">QPen(Qt.DashLine)</span></code> with custom dash pattern</p></li>
+</ul>
+<p><strong>Code Location:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/graph_view/drag_overlay.py</span></code> (new file)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/map/drag_overlay.py</span></code> (new file)</p></li>
+</ul>
+</section>
+<section id="node-entity-highlight">
+<h3>4.3 Node/Entity Highlight<a class="headerlink" href="#node-entity-highlight" title="Link to this heading">¶</a></h3>
+<p><strong>On Hover (Valid Drop Target):</strong></p>
+<ul class="simple">
+<li><p>Border: 3px solid <code class="docutils literal notranslate"><span class="pre">theme.primary_accent</span></code></p></li>
+<li><p>Glow: Box-shadow <code class="docutils literal notranslate"><span class="pre">0</span> <span class="pre">0</span> <span class="pre">12px</span> <span class="pre">rgba(theme.primary_accent,</span> <span class="pre">0.6)</span></code></p></li>
+<li><p>Animation: Pulse (1.5s duration, infinite loop, opacity 60%-100%)</p></li>
+<li><p>Background: Tint with <code class="docutils literal notranslate"><span class="pre">rgba(theme.primary_accent,</span> <span class="pre">0.1)</span></code></p></li>
+</ul>
+<p><strong>On Invalid Hover:</strong></p>
+<ul class="simple">
+<li><p>Border: 2px solid <code class="docutils literal notranslate"><span class="pre">theme.error</span></code></p></li>
+<li><p>No glow</p></li>
+<li><p>Cursor: <code class="docutils literal notranslate"><span class="pre">Qt.ForbiddenCursor</span></code></p></li>
+</ul>
+<p><strong>Implementation:</strong></p>
+<ul>
+<li><p>QSS dynamic property <code class="docutils literal notranslate"><span class="pre">dropTarget:</span> <span class="pre">true/false</span></code></p></li>
+<li><p>Applied via <code class="docutils literal notranslate"><span class="pre">setProperty(&quot;dropTarget&quot;,</span> <span class="pre">True)</span></code> + <code class="docutils literal notranslate"><span class="pre">style().polish()</span></code></p></li>
+<li><p>Stylesheet in <code class="docutils literal notranslate"><span class="pre">themes.json</span></code>:</p>
+<div class="highlight-css notranslate"><div class="highlight"><pre><span></span><span class="nt">QWidget</span><span class="o">[</span><span class="nt">dropTarget</span><span class="o">=</span><span class="s2">&quot;true&quot;</span><span class="o">]</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">border</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="kt">px</span><span class="w"> </span><span class="kc">solid</span><span class="w"> </span><span class="err">$</span><span class="n">primary_accent</span><span class="p">;</span>
+<span class="w">    </span><span class="k">background-color</span><span class="p">:</span><span class="w"> </span><span class="nb">rgba</span><span class="p">(</span><span class="err">$</span><span class="n">primary_accent</span><span class="p">,</span><span class="w"> </span><span class="mf">0.1</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+<section id="drop-hint-tooltip">
+<h3>4.4 Drop Hint Tooltip<a class="headerlink" href="#drop-hint-tooltip" title="Link to this heading">¶</a></h3>
+<p><strong>Appearance:</strong></p>
+<ul class="simple">
+<li><p>Floating tooltip near cursor (offset 20px below)</p></li>
+<li><p>Background: <code class="docutils literal notranslate"><span class="pre">theme.surface_raised</span></code> with 6px border-radius</p></li>
+<li><p>Text: 12pt, <code class="docutils literal notranslate"><span class="pre">theme.text</span></code></p></li>
+<li><p>Prefix icon: ✓ (valid) or ⚠ (warning) or ✗ (invalid)</p></li>
+<li><p>Auto-hide after 1.5s if no movement</p></li>
+</ul>
+<p><strong>Content:</strong></p>
+<ul class="simple">
+<li><p>Valid: “Add relation: {source} → {target} ({relation_type})”</p></li>
+<li><p>Existing: “⚠ Relation already exists”</p></li>
+<li><p>Invalid: “✗ Cannot relate {type_a} to {type_b}”</p></li>
+<li><p>Self-drop: “✗ Cannot relate entity to itself”</p></li>
+</ul>
+<p><strong>Implementation:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">QToolTip.showText(QCursor.pos()</span> <span class="pre">+</span> <span class="pre">QPoint(0,</span> <span class="pre">20),</span> <span class="pre">hint_text)</span></code></p></li>
+<li><p>Updated in <code class="docutils literal notranslate"><span class="pre">dragMoveEvent()</span></code> with 100ms debounce</p></li>
+</ul>
+</section>
+<section id="relation-chips">
+<h3>4.5 Relation Chips<a class="headerlink" href="#relation-chips" title="Link to this heading">¶</a></h3>
+<p><strong>Existing Design (Enhanced):</strong></p>
+<ul class="simple">
+<li><p>Pill-shaped buttons in EntityEditor’s relation section</p></li>
+<li><p>Click to navigate, right-click to edit/remove</p></li>
+<li><p><strong>New:</strong> Drag-initiated chips have 300ms “spawn” animation:</p>
+<ul>
+<li><p>Fade in from 0% to 100% opacity</p></li>
+<li><p>Scale from 80% to 100%</p></li>
+<li><p>Slide in from drop location</p></li>
+</ul>
+</li>
+</ul>
+<p><strong>Code Location:</strong> <code class="docutils literal notranslate"><span class="pre">src/gui/widgets/entity_editor.py</span></code> (modify existing)</p>
+</section>
+<section id="confirmation-toast">
+<h3>4.6 Confirmation Toast<a class="headerlink" href="#confirmation-toast" title="Link to this heading">¶</a></h3>
+<p><strong>Appearance:</strong></p>
+<ul class="simple">
+<li><p>Bottom-right corner, 16px margin</p></li>
+<li><p>320px wide × auto height</p></li>
+<li><p>Background: <code class="docutils literal notranslate"><span class="pre">theme.surface_raised</span></code></p></li>
+<li><p>Border-left: 4px solid <code class="docutils literal notranslate"><span class="pre">theme.success</span></code> (or <code class="docutils literal notranslate"><span class="pre">theme.error</span></code> for failures)</p></li>
+<li><p>Text: 13pt, <code class="docutils literal notranslate"><span class="pre">theme.text</span></code></p></li>
+<li><p>Icon + Message + Undo button</p></li>
+<li><p>Auto-dismiss after 4 seconds (configurable)</p></li>
+</ul>
+<p><strong>Behavior:</strong></p>
+<ul class="simple">
+<li><p>Slides in from right (200ms ease-out)</p></li>
+<li><p>Stacks vertically if multiple toasts</p></li>
+<li><p>Undo button executes <code class="docutils literal notranslate"><span class="pre">command_stack.undo()</span></code></p></li>
+<li><p>Clicking toast dismisses it</p></li>
+</ul>
+<p><strong>Implementation:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ToastManager</span></code> singleton in <code class="docutils literal notranslate"><span class="pre">src/gui/widgets/toast_manager.py</span></code> (new)</p></li>
+<li><p>Uses <code class="docutils literal notranslate"><span class="pre">QPropertyAnimation</span></code> for slide</p></li>
+<li><p>Connected to <code class="docutils literal notranslate"><span class="pre">DatabaseWorker</span></code> signals for feedback</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="data-command-flow">
+<h2>5. Data &amp; Command Flow<a class="headerlink" href="#data-command-flow" title="Link to this heading">¶</a></h2>
+<section id="drag-initiation-flow">
+<h3>5.1 Drag Initiation Flow<a class="headerlink" href="#drag-initiation-flow" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>┌─────────────────┐
+│ User MousePress │
+│   on ListItem   │
+└────────┬────────┘
+         │ QMouseEvent
+         ▼
+┌─────────────────────┐
+│ mouseMoveEvent()    │ (5px threshold)
+│ in DraggableList    │
+└────────┬────────────┘
+         │
+         ▼
+┌──────────────────────────┐
+│ startDrag()              │
+│ - Create QDrag object    │
+│ - Set MIME data (JSON)   │
+│ - Set drag pixmap        │
+│ - Show DragPill widget   │
+└────────┬─────────────────┘
+         │
+         ▼
+┌───────────────────────────┐
+│ Qt Event Loop             │
+│ - Propagate to drop zones│
+│ - dragEnterEvent()        │
+│ - dragMoveEvent()         │
+└────────┬──────────────────┘
+         │
+         ▼
+    Drop or Cancel
+</pre></div>
+</div>
+</section>
+<section id="drop-command-execution-flow">
+<h3>5.2 Drop &amp; Command Execution Flow<a class="headerlink" href="#drop-command-execution-flow" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>┌──────────────────┐
+│ dropEvent()      │
+│ in EntityEditor  │
+└────────┬─────────┘
+         │ Extract MIME data
+         ▼
+┌────────────────────────────────┐
+│ _handle_drop()                 │
+│ - Parse JSON                   │
+│ - Validate relation            │
+│ - Determine relation type      │
+└────────┬───────────────────────┘
+         │
+         ▼
+┌──────────────────────────────────┐
+│ MainWindow.create_relation()     │
+│ (slot connected to widget signal)│
+└────────┬─────────────────────────┘
+         │ emit relation_requested(source_id, target_id, rel_type)
+         ▼
+┌────────────────────────────────┐
+│ AddRelationCommand.__init__()  │
+│ - Store source_id, target_id   │
+│ - Store relation_type          │
+│ - Store old_state (for undo)   │
+└────────┬───────────────────────┘
+         │
+         ▼
+┌──────────────────────────┐
+│ CommandStack.execute()   │
+│ - Call cmd.execute()     │
+│ - Push to undo stack     │
+└────────┬─────────────────┘
+         │
+         ▼
+┌────────────────────────────────┐
+│ AddRelationCommand.execute()   │
+│ - Create Relation object       │
+│ - Call db_service.add_relation()│
+└────────┬───────────────────────┘
+         │
+         ▼
+┌──────────────────────────────────┐
+│ DatabaseService.add_relation()   │
+│ - relation_repo.add(relation)    │
+│ - Enqueue worker task            │
+└────────┬─────────────────────────┘
+         │ QMetaObject.invokeMethod()
+         ▼
+┌─────────────────────────────┐
+│ DatabaseWorker.run()        │ (Background thread)
+│ - SQL INSERT                │
+│ - Commit transaction        │
+└────────┬────────────────────┘
+         │ emit relation_added(relation)
+         ▼
+┌───────────────────────────────────┐
+│ MainWindow._on_relation_added()   │ (Main thread)
+│ - Update EntityEditor UI          │
+│ - Add relation chip               │
+│ - Update graph edge               │
+│ - Show success toast              │
+└───────────────────────────────────┘
+</pre></div>
+</div>
+</section>
+<section id="signal-definitions">
+<h3>5.3 Signal Definitions<a class="headerlink" href="#signal-definitions" title="Link to this heading">¶</a></h3>
+<p><strong>New Signals in EntityEditor:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># src/gui/widgets/entity_editor.py</span>
+<span class="n">relation_drop_requested</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>  <span class="c1"># (source_id, target_id, relation_type)</span>
+<span class="n">invalid_drop_attempted</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>  <span class="c1"># (reason)</span>
+</pre></div>
+</div>
+<p><strong>New Signals in GraphWidget:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># src/gui/widgets/graph_view/graph_widget.py</span>
+<span class="n">node_drop_completed</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>  <span class="c1"># (source_node_id, target_node_id)</span>
+<span class="n">preview_line_update</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="n">QPointF</span><span class="p">,</span> <span class="n">QPointF</span><span class="p">)</span>  <span class="c1"># (start_pos, end_pos)</span>
+</pre></div>
+</div>
+<p><strong>New Signals in MapWidget:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># src/gui/widgets/map/map_widget.py</span>
+<span class="n">marker_drop_completed</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>  <span class="c1"># (source_id, target_id, distance_km)</span>
+</pre></div>
+</div>
+<p><strong>Existing DatabaseWorker Signals (reused):</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># src/services/worker.py</span>
+<span class="n">relation_added</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>  <span class="c1"># Relation as dict</span>
+<span class="n">relation_removed</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>  <span class="c1"># Relation ID</span>
+<span class="n">operation_failed</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>  <span class="c1"># (operation_name, error_message)</span>
+</pre></div>
+</div>
+</section>
+<section id="undo-flow">
+<h3>5.4 Undo Flow<a class="headerlink" href="#undo-flow" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>┌──────────────────┐
+│ User presses     │
+│ Ctrl+Z           │
+└────────┬─────────┘
+         │ QKeySequence::Undo
+         ▼
+┌────────────────────┐
+│ CommandStack.undo()│
+└────────┬───────────┘
+         │
+         ▼
+┌──────────────────────────────┐
+│ AddRelationCommand.undo()    │
+│ - Call db_service.remove()   │
+│ - Restore old state          │
+└────────┬─────────────────────┘
+         │
+         ▼
+┌──────────────────────────────┐
+│ DatabaseWorker               │
+│ - SQL DELETE                 │
+│ - emit relation_removed      │
+└────────┬─────────────────────┘
+         │
+         ▼
+┌──────────────────────────────┐
+│ MainWindow                   │
+│ - Remove relation chip       │
+│ - Remove graph edge          │
+│ - Show undo toast            │
+└──────────────────────────────┘
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="files-to-add-and-modify">
+<h2>6. Files to Add and Modify<a class="headerlink" href="#files-to-add-and-modify" title="Link to this heading">¶</a></h2>
+<section id="new-files">
+<h3>6.1 New Files<a class="headerlink" href="#new-files" title="Link to this heading">¶</a></h3>
+<p><strong>GUI Components:</strong></p>
+<ol class="arabic simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/drag_pill.py</span></code></strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">DragPill(QLabel)</span></code>: Floating widget that follows cursor</p></li>
+<li><p>Methods: <code class="docutils literal notranslate"><span class="pre">update_position(QPoint)</span></code>, <code class="docutils literal notranslate"><span class="pre">set_content(item_dict)</span></code>, <code class="docutils literal notranslate"><span class="pre">show_invalid()</span></code></p></li>
+<li><p>~100 LOC</p></li>
+</ul>
+</li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/toast_manager.py</span></code></strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ToastManager(QObject)</span></code>: Singleton for notification management</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Toast(QWidget)</span></code>: Individual toast notification</p></li>
+<li><p>Methods: <code class="docutils literal notranslate"><span class="pre">show_success()</span></code>, <code class="docutils literal notranslate"><span class="pre">show_error()</span></code>, <code class="docutils literal notranslate"><span class="pre">show_info()</span></code>, <code class="docutils literal notranslate"><span class="pre">_auto_dismiss()</span></code></p></li>
+<li><p>Supports undo button integration</p></li>
+<li><p>~200 LOC</p></li>
+</ul>
+</li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/graph_view/drag_overlay.py</span></code></strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">GraphDragOverlay(QWidget)</span></code>: Transparent overlay for preview lines</p></li>
+<li><p>Methods: <code class="docutils literal notranslate"><span class="pre">update_preview_line(start,</span> <span class="pre">end)</span></code>, <code class="docutils literal notranslate"><span class="pre">clear_preview()</span></code>, <code class="docutils literal notranslate"><span class="pre">paintEvent()</span></code></p></li>
+<li><p>~150 LOC</p></li>
+</ul>
+</li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/map/drag_overlay.py</span></code></strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">MapDragOverlay(QWidget)</span></code>: Similar to graph overlay but for map</p></li>
+<li><p>Draws geodesic curves between markers</p></li>
+<li><p>~150 LOC</p></li>
+</ul>
+</li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/drop_mixin.py</span></code></strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">DropTargetMixin</span></code>: Reusable logic for widgets accepting drops</p></li>
+<li><p>Methods: <code class="docutils literal notranslate"><span class="pre">_handle_drop_enter()</span></code>, <code class="docutils literal notranslate"><span class="pre">_handle_drop_move()</span></code>, <code class="docutils literal notranslate"><span class="pre">_parse_mime_data()</span></code>, <code class="docutils literal notranslate"><span class="pre">_validate_drop()</span></code></p></li>
+<li><p>Reduces code duplication across EntityEditor, GraphWidget, MapWidget</p></li>
+<li><p>~120 LOC</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Commands:</strong></p>
+<ol class="arabic simple" start="6">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">src/commands/bulk_relation_command.py</span></code></strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">BulkAddRelationCommand(BaseCommand)</span></code>: For multiple relations at once</p></li>
+<li><p>Optimizes database writes for multi-select drops</p></li>
+<li><p>~80 LOC</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Tests:</strong></p>
+<ol class="arabic simple" start="7">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">tests/unit/test_drag_pill.py</span></code></strong></p>
+<ul class="simple">
+<li><p>Unit tests for DragPill widget</p></li>
+<li><p>~100 LOC</p></li>
+</ul>
+</li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">tests/integration/test_drag_drop_relations.py</span></code></strong></p>
+<ul class="simple">
+<li><p>Integration tests for full drag-drop-persist cycle</p></li>
+<li><p>Uses <code class="docutils literal notranslate"><span class="pre">qtbot</span></code> fixture for simulated drags</p></li>
+<li><p>~300 LOC</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="files-to-modify">
+<h3>6.2 Files to Modify<a class="headerlink" href="#files-to-modify" title="Link to this heading">¶</a></h3>
+<p><strong>Core Layer:</strong></p>
+<ol class="arabic simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">src/core/constants.py</span></code></strong></p>
+<ul class="simple">
+<li><p>Add: <code class="docutils literal notranslate"><span class="pre">DRAG_THRESHOLD_PX</span> <span class="pre">=</span> <span class="pre">5</span></code></p></li>
+<li><p>Add: <code class="docutils literal notranslate"><span class="pre">TOAST_AUTO_DISMISS_MS</span> <span class="pre">=</span> <span class="pre">4000</span></code></p></li>
+<li><p>Add: <code class="docutils literal notranslate"><span class="pre">BULK_RELATION_THRESHOLD</span> <span class="pre">=</span> <span class="pre">5</span></code></p></li>
+<li><p>Add: <code class="docutils literal notranslate"><span class="pre">DEFAULT_RELATION_TYPE</span> <span class="pre">=</span> <span class="pre">&quot;related_to&quot;</span></code></p></li>
+<li><p>+10 LOC</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>GUI Layer:</strong></p>
+<ol class="arabic simple" start="2">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/unified_list.py</span></code></strong></p>
+<ul class="simple">
+<li><p>Modify <code class="docutils literal notranslate"><span class="pre">DraggableListView.startDrag()</span></code>: Initialize DragPill widget</p></li>
+<li><p>Add multi-select drag support (Ctrl+Click → drag multiple items)</p></li>
+<li><p>+50 LOC</p></li>
+</ul>
+</li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/entity_editor.py</span></code></strong></p>
+<ul class="simple">
+<li><p>Implement <code class="docutils literal notranslate"><span class="pre">dropEvent()</span></code>, <code class="docutils literal notranslate"><span class="pre">dragEnterEvent()</span></code>, <code class="docutils literal notranslate"><span class="pre">dragMoveEvent()</span></code></p></li>
+<li><p>Add signal: <code class="docutils literal notranslate"><span class="pre">relation_drop_requested</span></code></p></li>
+<li><p>Integrate drop zone highlight via dynamic QSS properties</p></li>
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">_spawn_relation_chip_animated()</span></code> method</p></li>
+<li><p>+120 LOC</p></li>
+</ul>
+</li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/event_editor.py</span></code></strong></p>
+<ul class="simple">
+<li><p>Similar drop handling for event-to-entity relations</p></li>
+<li><p>+80 LOC</p></li>
+</ul>
+</li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/graph_view/graph_widget.py</span></code></strong></p>
+<ul class="simple">
+<li><p>Add drag overlay layer (<code class="docutils literal notranslate"><span class="pre">GraphDragOverlay</span></code> instance)</p></li>
+<li><p>Modify <code class="docutils literal notranslate"><span class="pre">mouseMoveEvent()</span></code> for node dragging disambiguation</p></li>
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">_create_edge_from_drop()</span></code> method</p></li>
+<li><p>Connect to <code class="docutils literal notranslate"><span class="pre">node_drop_completed</span></code> signal</p></li>
+<li><p>+150 LOC</p></li>
+</ul>
+</li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/graph_view/graph_node.py</span></code></strong></p>
+<ul class="simple">
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">setDropHighlight(bool)</span></code> method for glow effect</p></li>
+<li><p>Modify <code class="docutils literal notranslate"><span class="pre">paint()</span></code> to render highlight border</p></li>
+<li><p>+40 LOC</p></li>
+</ul>
+</li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/map/map_widget.py</span></code></strong></p>
+<ul class="simple">
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">MapDragOverlay</span></code> integration</p></li>
+<li><p>Implement geodesic line calculation for preview</p></li>
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">_calculate_marker_distance()</span></code> method</p></li>
+<li><p>+130 LOC</p></li>
+</ul>
+</li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/map/map_marker.py</span></code></strong></p>
+<ul class="simple">
+<li><p>Add lift/drop animation (z-index + shadow)</p></li>
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">setHoverScale(float)</span></code> for target highlighting</p></li>
+<li><p>+50 LOC</p></li>
+</ul>
+</li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/timeline_view.py</span></code></strong></p>
+<ul class="simple">
+<li><p>Enable drag on timeline cards (currently view-only)</p></li>
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">TimelineCard.mouseMoveEvent()</span></code> to initiate drag</p></li>
+<li><p>+60 LOC</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>App Layer:</strong></p>
+<ol class="arabic simple" start="10">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">src/app/main_window.py</span></code></strong></p>
+<ul class="simple">
+<li><p>Add slot: <code class="docutils literal notranslate"><span class="pre">_on_relation_drop_requested(source_id,</span> <span class="pre">target_id,</span> <span class="pre">rel_type)</span></code></p></li>
+<li><p>Connect new signals from all drop-enabled widgets</p></li>
+<li><p>Instantiate <code class="docutils literal notranslate"><span class="pre">ToastManager</span></code> and connect to worker signals</p></li>
+<li><p>Add keyboard shortcut: Ctrl+Shift+Z for redo</p></li>
+<li><p>+80 LOC</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Services Layer:</strong></p>
+<ol class="arabic simple" start="11">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">src/services/worker.py</span></code></strong></p>
+<ul class="simple">
+<li><p>Add task type: <code class="docutils literal notranslate"><span class="pre">&quot;bulk_add_relations&quot;</span></code> for batch processing</p></li>
+<li><p>Optimize transaction handling for bulk inserts</p></li>
+<li><p>+40 LOC</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Theme Layer:</strong></p>
+<ol class="arabic simple" start="12">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">themes.json</span></code></strong></p>
+<ul class="simple">
+<li><p>Add QSS rules for <code class="docutils literal notranslate"><span class="pre">[dropTarget=&quot;true&quot;]</span></code> pseudo-state</p></li>
+<li><p>Add animation keyframes for pulse effect</p></li>
+<li><p>Add toast notification styles</p></li>
+<li><p>+60 lines JSON</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Documentation:</strong></p>
+<ol class="arabic simple" start="13">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">docs/USER_GUIDE.md</span></code></strong></p>
+<ul class="simple">
+<li><p>Add “Creating Relations via Drag-and-Drop” section</p></li>
+<li><p>Add animated GIF demos (to be created)</p></li>
+<li><p>+200 LOC (including examples)</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Total Estimated Changes:</strong></p>
+<ul class="simple">
+<li><p>New files: ~1,100 LOC</p></li>
+<li><p>Modified files: ~930 LOC</p></li>
+<li><p><strong>Total: ~2,030 LOC</strong></p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="acceptance-criteria-tests">
+<h2>7. Acceptance Criteria &amp; Tests<a class="headerlink" href="#acceptance-criteria-tests" title="Link to this heading">¶</a></h2>
+<section id="functional-acceptance-criteria">
+<h3>7.1 Functional Acceptance Criteria<a class="headerlink" href="#functional-acceptance-criteria" title="Link to this heading">¶</a></h3>
+<p><strong>AC1: Basic Drag-Drop Relation Creation</strong></p>
+<ul class="simple">
+<li><p>✅ User can drag entity from UnifiedList and drop on EntityEditor to create relation</p></li>
+<li><p>✅ Relation appears as chip in target entity’s relation section</p></li>
+<li><p>✅ Relation persists to database within 2 seconds</p></li>
+<li><p>✅ Confirmation toast appears with undo button</p></li>
+</ul>
+<p><strong>AC2: Visual Feedback</strong></p>
+<ul class="simple">
+<li><p>✅ Drag pill follows cursor during drag</p></li>
+<li><p>✅ Drop target highlights with border/glow when valid</p></li>
+<li><p>✅ Cursor changes to “not-allowed” when hovering invalid drop zone</p></li>
+<li><p>✅ Preview line animates in graph/map views</p></li>
+</ul>
+<p><strong>AC3: Undo/Redo</strong></p>
+<ul class="simple">
+<li><p>✅ Ctrl+Z removes drag-created relation</p></li>
+<li><p>✅ Ctrl+Shift+Z restores undone relation</p></li>
+<li><p>✅ Undo works after relation persisted to database</p></li>
+<li><p>✅ Undo toast notification appears</p></li>
+</ul>
+<p><strong>AC4: Edge Cases</strong></p>
+<ul class="simple">
+<li><p>✅ Dropping entity on itself shows error toast</p></li>
+<li><p>✅ Dropping duplicate relation shows warning (does not create duplicate)</p></li>
+<li><p>✅ Dropping on invalid target type shows error</p></li>
+<li><p>✅ Dragging multiple items (multi-select) creates multiple relations</p></li>
+</ul>
+<p><strong>AC5: Cross-Widget Support</strong></p>
+<ul class="simple">
+<li><p>✅ Drag from UnifiedList → drop on Graph node works</p></li>
+<li><p>✅ Drag from Graph node → drop on Map marker works</p></li>
+<li><p>✅ Drag Timeline card → drop on Entity works</p></li>
+<li><p>✅ Drag Map marker → drop on EntityEditor works</p></li>
+</ul>
+<p><strong>AC6: Performance</strong></p>
+<ul class="simple">
+<li><p>✅ Drag pill updates at 60 FPS (≤16ms frame time)</p></li>
+<li><p>✅ Bulk relation creation (&gt;5 items) uses batch command</p></li>
+<li><p>✅ UI remains responsive during database write</p></li>
+<li><p>✅ No memory leaks after 100 drag-drop cycles</p></li>
+</ul>
+</section>
+<section id="unit-tests">
+<h3>7.2 Unit Tests<a class="headerlink" href="#unit-tests" title="Link to this heading">¶</a></h3>
+<p><strong>Test File: <code class="docutils literal notranslate"><span class="pre">tests/unit/test_drag_pill.py</span></code></strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_drag_pill_creation</span><span class="p">(</span><span class="n">qtbot</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test DragPill widget initializes correctly.&quot;&quot;&quot;</span>
+    <span class="n">pill</span> <span class="o">=</span> <span class="n">DragPill</span><span class="p">()</span>
+    <span class="n">qtbot</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">pill</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">pill</span><span class="o">.</span><span class="n">isHidden</span><span class="p">()</span>
+    <span class="n">pill</span><span class="o">.</span><span class="n">set_content</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Test&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;entity&quot;</span><span class="p">})</span>
+    <span class="n">pill</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">pill</span><span class="o">.</span><span class="n">isVisible</span><span class="p">()</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_drag_pill_position_update</span><span class="p">(</span><span class="n">qtbot</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test DragPill follows cursor position.&quot;&quot;&quot;</span>
+    <span class="n">pill</span> <span class="o">=</span> <span class="n">DragPill</span><span class="p">()</span>
+    <span class="n">qtbot</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">pill</span><span class="p">)</span>
+    <span class="n">pill</span><span class="o">.</span><span class="n">update_position</span><span class="p">(</span><span class="n">QPoint</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">))</span>
+    <span class="k">assert</span> <span class="n">pill</span><span class="o">.</span><span class="n">pos</span><span class="p">()</span> <span class="o">==</span> <span class="n">QPoint</span><span class="p">(</span><span class="mi">110</span><span class="p">,</span> <span class="mi">210</span><span class="p">)</span>  <span class="c1"># Offset applied</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_drag_pill_invalid_state</span><span class="p">(</span><span class="n">qtbot</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test DragPill shows error styling for invalid drops.&quot;&quot;&quot;</span>
+    <span class="n">pill</span> <span class="o">=</span> <span class="n">DragPill</span><span class="p">()</span>
+    <span class="n">qtbot</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">pill</span><span class="p">)</span>
+    <span class="n">pill</span><span class="o">.</span><span class="n">show_invalid</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="s2">&quot;error&quot;</span> <span class="ow">in</span> <span class="n">pill</span><span class="o">.</span><span class="n">styleSheet</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><strong>Test File: <code class="docutils literal notranslate"><span class="pre">tests/unit/test_drop_mixin.py</span></code></strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_parse_mime_data_valid</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test MIME data parsing for valid entity.&quot;&quot;&quot;</span>
+    <span class="n">mime</span> <span class="o">=</span> <span class="n">QMimeData</span><span class="p">()</span>
+    <span class="n">mime</span><span class="o">.</span><span class="n">setData</span><span class="p">(</span><span class="s2">&quot;application/x-kraken-item&quot;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;{&quot;type&quot;:&quot;entity&quot;,&quot;id&quot;:&quot;123&quot;}&#39;</span><span class="p">)</span>
+    <span class="n">mixin</span> <span class="o">=</span> <span class="n">DropTargetMixin</span><span class="p">()</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">mixin</span><span class="o">.</span><span class="n">_parse_mime_data</span><span class="p">(</span><span class="n">mime</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;entity&quot;</span>
+    <span class="k">assert</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;123&quot;</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_validate_drop_self_rejection</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test dropping entity on itself is rejected.&quot;&quot;&quot;</span>
+    <span class="n">mixin</span> <span class="o">=</span> <span class="n">DropTargetMixin</span><span class="p">()</span>
+    <span class="n">mixin</span><span class="o">.</span><span class="n">entity_id</span> <span class="o">=</span> <span class="s2">&quot;123&quot;</span>
+    <span class="n">is_valid</span> <span class="o">=</span> <span class="n">mixin</span><span class="o">.</span><span class="n">_validate_drop</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;123&quot;</span><span class="p">},</span> <span class="s2">&quot;entity&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">is_valid</span>
+</pre></div>
+</div>
+<p><strong>Test File: <code class="docutils literal notranslate"><span class="pre">tests/unit/test_bulk_relation_command.py</span></code></strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_bulk_command_execute</span><span class="p">(</span><span class="n">db_service</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test bulk relation command creates multiple relations.&quot;&quot;&quot;</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="n">BulkAddRelationCommand</span><span class="p">(</span>
+        <span class="n">db_service</span><span class="p">,</span>
+        <span class="n">source_ids</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">],</span>
+        <span class="n">target_id</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">,</span>
+        <span class="n">relation_type</span><span class="o">=</span><span class="s2">&quot;related_to&quot;</span>
+    <span class="p">)</span>
+    <span class="n">cmd</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+    <span class="n">relations</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">relation_repo</span><span class="o">.</span><span class="n">get_by_target</span><span class="p">(</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">relations</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_bulk_command_undo</span><span class="p">(</span><span class="n">db_service</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test bulk undo removes all relations.&quot;&quot;&quot;</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="n">BulkAddRelationCommand</span><span class="p">(</span><span class="n">db_service</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">],</span> <span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="s2">&quot;member_of&quot;</span><span class="p">)</span>
+    <span class="n">cmd</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+    <span class="n">cmd</span><span class="o">.</span><span class="n">undo</span><span class="p">()</span>
+    <span class="n">relations</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">relation_repo</span><span class="o">.</span><span class="n">get_by_target</span><span class="p">(</span><span class="s2">&quot;target&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">relations</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+</pre></div>
+</div>
+</section>
+<section id="integration-tests">
+<h3>7.3 Integration Tests<a class="headerlink" href="#integration-tests" title="Link to this heading">¶</a></h3>
+<p><strong>Test File: <code class="docutils literal notranslate"><span class="pre">tests/integration/test_drag_drop_relations.py</span></code></strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_drag_entity_to_entity_editor</span><span class="p">(</span><span class="n">qtbot</span><span class="p">,</span> <span class="n">main_window</span><span class="p">,</span> <span class="n">db_service</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test full drag-drop flow from list to editor.&quot;&quot;&quot;</span>
+    <span class="c1"># Setup</span>
+    <span class="n">entity1</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Source&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;character&quot;</span><span class="p">)</span>
+    <span class="n">entity2</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Target&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;location&quot;</span><span class="p">)</span>
+    <span class="n">db_service</span><span class="o">.</span><span class="n">entity_repo</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">entity1</span><span class="p">)</span>
+    <span class="n">db_service</span><span class="o">.</span><span class="n">entity_repo</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">entity2</span><span class="p">)</span>
+    <span class="n">main_window</span><span class="o">.</span><span class="n">refresh_unified_list</span><span class="p">()</span>
+    <span class="n">main_window</span><span class="o">.</span><span class="n">load_entity</span><span class="p">(</span><span class="n">entity2</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+
+    <span class="c1"># Simulate drag</span>
+    <span class="n">list_view</span> <span class="o">=</span> <span class="n">main_window</span><span class="o">.</span><span class="n">unified_list</span>
+    <span class="n">editor</span> <span class="o">=</span> <span class="n">main_window</span><span class="o">.</span><span class="n">entity_editor</span>
+    
+    <span class="n">mime</span> <span class="o">=</span> <span class="n">QMimeData</span><span class="p">()</span>
+    <span class="n">mime</span><span class="o">.</span><span class="n">setData</span><span class="p">(</span><span class="s2">&quot;application/x-kraken-item&quot;</span><span class="p">,</span> 
+                 <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;entity&quot;</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">entity1</span><span class="o">.</span><span class="n">id</span><span class="p">})</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+    
+    <span class="c1"># Simulate drop</span>
+    <span class="n">drop_event</span> <span class="o">=</span> <span class="n">QDropEvent</span><span class="p">(</span>
+        <span class="n">editor</span><span class="o">.</span><span class="n">rect</span><span class="p">()</span><span class="o">.</span><span class="n">center</span><span class="p">(),</span>
+        <span class="n">Qt</span><span class="o">.</span><span class="n">CopyAction</span><span class="p">,</span>
+        <span class="n">mime</span><span class="p">,</span>
+        <span class="n">Qt</span><span class="o">.</span><span class="n">LeftButton</span><span class="p">,</span>
+        <span class="n">Qt</span><span class="o">.</span><span class="n">NoModifier</span>
+    <span class="p">)</span>
+    <span class="n">editor</span><span class="o">.</span><span class="n">dropEvent</span><span class="p">(</span><span class="n">drop_event</span><span class="p">)</span>
+    
+    <span class="c1"># Wait for async persistence</span>
+    <span class="n">qtbot</span><span class="o">.</span><span class="n">waitSignal</span><span class="p">(</span><span class="n">db_service</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">relation_added</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>
+    
+    <span class="c1"># Verify relation created</span>
+    <span class="n">relations</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">relation_repo</span><span class="o">.</span><span class="n">get_by_source</span><span class="p">(</span><span class="n">entity1</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">relations</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="k">assert</span> <span class="n">relations</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">target_id</span> <span class="o">==</span> <span class="n">entity2</span><span class="o">.</span><span class="n">id</span>
+    
+    <span class="c1"># Verify UI updated</span>
+    <span class="n">chips</span> <span class="o">=</span> <span class="n">editor</span><span class="o">.</span><span class="n">findChildren</span><span class="p">(</span><span class="n">RelationChip</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">chips</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_drag_graph_node_to_node</span><span class="p">(</span><span class="n">qtbot</span><span class="p">,</span> <span class="n">main_window</span><span class="p">,</span> <span class="n">db_service</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test drag-drop between graph nodes.&quot;&quot;&quot;</span>
+    <span class="c1"># Setup graph with two nodes</span>
+    <span class="n">entity1</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Node1&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;character&quot;</span><span class="p">)</span>
+    <span class="n">entity2</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Node2&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;character&quot;</span><span class="p">)</span>
+    <span class="n">db_service</span><span class="o">.</span><span class="n">entity_repo</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">entity1</span><span class="p">)</span>
+    <span class="n">db_service</span><span class="o">.</span><span class="n">entity_repo</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">entity2</span><span class="p">)</span>
+    
+    <span class="n">graph</span> <span class="o">=</span> <span class="n">main_window</span><span class="o">.</span><span class="n">graph_widget</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">load_entities</span><span class="p">([</span><span class="n">entity1</span><span class="p">,</span> <span class="n">entity2</span><span class="p">])</span>
+    
+    <span class="c1"># Get node widgets</span>
+    <span class="n">node1</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">get_node_by_entity_id</span><span class="p">(</span><span class="n">entity1</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+    <span class="n">node2</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">get_node_by_entity_id</span><span class="p">(</span><span class="n">entity2</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+    
+    <span class="c1"># Simulate drag</span>
+    <span class="k">with</span> <span class="n">qtbot</span><span class="o">.</span><span class="n">waitSignal</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">node_drop_completed</span><span class="p">)</span> <span class="k">as</span> <span class="n">blocker</span><span class="p">:</span>
+        <span class="n">graph</span><span class="o">.</span><span class="n">_simulate_node_drag</span><span class="p">(</span><span class="n">node1</span><span class="p">,</span> <span class="n">node2</span><span class="p">)</span>
+    
+    <span class="k">assert</span> <span class="n">blocker</span><span class="o">.</span><span class="n">args</span> <span class="o">==</span> <span class="p">[</span><span class="n">entity1</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">entity2</span><span class="o">.</span><span class="n">id</span><span class="p">]</span>
+    
+    <span class="c1"># Verify edge rendered</span>
+    <span class="n">edges</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">get_edges</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">edges</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="k">assert</span> <span class="n">edges</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">source_id</span> <span class="o">==</span> <span class="n">entity1</span><span class="o">.</span><span class="n">id</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_undo_drag_created_relation</span><span class="p">(</span><span class="n">qtbot</span><span class="p">,</span> <span class="n">main_window</span><span class="p">,</span> <span class="n">db_service</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test undo of drag-created relation.&quot;&quot;&quot;</span>
+    <span class="c1"># Create relation via drag-drop</span>
+    <span class="n">entity1</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Source&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;character&quot;</span><span class="p">)</span>
+    <span class="n">entity2</span> <span class="o">=</span> <span class="n">Entity</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Target&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;location&quot;</span><span class="p">)</span>
+    <span class="n">db_service</span><span class="o">.</span><span class="n">entity_repo</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">entity1</span><span class="p">)</span>
+    <span class="n">db_service</span><span class="o">.</span><span class="n">entity_repo</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">entity2</span><span class="p">)</span>
+    
+    <span class="c1"># Simulate drop (reuse helper from previous test)</span>
+    <span class="n">main_window</span><span class="o">.</span><span class="n">create_relation_via_drop</span><span class="p">(</span><span class="n">entity1</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">entity2</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s2">&quot;related_to&quot;</span><span class="p">)</span>
+    <span class="n">qtbot</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+    
+    <span class="c1"># Undo</span>
+    <span class="n">main_window</span><span class="o">.</span><span class="n">command_stack</span><span class="o">.</span><span class="n">undo</span><span class="p">()</span>
+    <span class="n">qtbot</span><span class="o">.</span><span class="n">waitSignal</span><span class="p">(</span><span class="n">db_service</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">relation_removed</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>
+    
+    <span class="c1"># Verify relation removed</span>
+    <span class="n">relations</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">relation_repo</span><span class="o">.</span><span class="n">get_by_source</span><span class="p">(</span><span class="n">entity1</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">relations</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+</pre></div>
+</div>
+</section>
+<section id="test-execution">
+<h3>7.4 Test Execution<a class="headerlink" href="#test-execution" title="Link to this heading">¶</a></h3>
+<p><strong>Run all tests:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>tests/<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>term-missing<span class="w"> </span>-v
+</pre></div>
+</div>
+<p><strong>Run only drag-drop tests:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>tests/integration/test_drag_drop_relations.py<span class="w"> </span>-v
+</pre></div>
+</div>
+<p><strong>Run with Qt visual debugging:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>tests/integration/test_drag_drop_relations.py<span class="w"> </span>--qt-debug
+</pre></div>
+</div>
+<p><strong>Performance benchmarks:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>tests/integration/test_drag_drop_relations.py::test_drag_performance<span class="w"> </span>-v<span class="w"> </span>--benchmark
+</pre></div>
+</div>
+<p><strong>Coverage target:</strong></p>
+<ul class="simple">
+<li><p>Drag-drop code: 100% (critical UX path)</p></li>
+<li><p>Overall project: Maintain ≥95%</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="rollout-plan-milestones">
+<h2>8. Rollout Plan &amp; Milestones<a class="headerlink" href="#rollout-plan-milestones" title="Link to this heading">¶</a></h2>
+<section id="sprint-1-foundation-week-1-2-40-hours">
+<h3>8.1 Sprint 1: Foundation (Week 1-2, 40 hours)<a class="headerlink" href="#sprint-1-foundation-week-1-2-40-hours" title="Link to this heading">¶</a></h3>
+<p><strong>Goals:</strong></p>
+<ul class="simple">
+<li><p>Implement core drag infrastructure</p></li>
+<li><p>Add visual feedback components</p></li>
+<li><p>No database persistence yet (in-memory only)</p></li>
+</ul>
+<p><strong>Tasks:</strong></p>
+<ol class="arabic simple">
+<li><p>Create <code class="docutils literal notranslate"><span class="pre">DragPill</span></code> widget with cursor tracking (6h)</p></li>
+<li><p>Create <code class="docutils literal notranslate"><span class="pre">DropTargetMixin</span></code> with validation logic (8h)</p></li>
+<li><p>Modify <code class="docutils literal notranslate"><span class="pre">DraggableListView</span></code> to use <code class="docutils literal notranslate"><span class="pre">DragPill</span></code> (4h)</p></li>
+<li><p>Implement drop handling in <code class="docutils literal notranslate"><span class="pre">EntityEditor</span></code> (UI only) (8h)</p></li>
+<li><p>Add QSS styling for drop highlights in <code class="docutils literal notranslate"><span class="pre">themes.json</span></code> (4h)</p></li>
+<li><p>Write unit tests for <code class="docutils literal notranslate"><span class="pre">DragPill</span></code> and <code class="docutils literal notranslate"><span class="pre">DropTargetMixin</span></code> (6h)</p></li>
+<li><p>Create <code class="docutils literal notranslate"><span class="pre">ToastManager</span></code> widget (4h)</p></li>
+</ol>
+<p><strong>Deliverables:</strong></p>
+<ul class="simple">
+<li><p>✅ Drag pill appears and follows cursor</p></li>
+<li><p>✅ EntityEditor highlights on valid hover</p></li>
+<li><p>✅ Toast notifications appear (mock data)</p></li>
+<li><p>✅ Unit tests pass</p></li>
+</ul>
+<p><strong>Risks:</strong></p>
+<ul class="simple">
+<li><p>Qt drag-drop event propagation quirks → Mitigation: Test on multiple platforms early</p></li>
+</ul>
+</section>
+<section id="sprint-2-command-integration-week-3-4-40-hours">
+<h3>8.2 Sprint 2: Command Integration (Week 3-4, 40 hours)<a class="headerlink" href="#sprint-2-command-integration-week-3-4-40-hours" title="Link to this heading">¶</a></h3>
+<p><strong>Goals:</strong></p>
+<ul class="simple">
+<li><p>Connect drag-drop to command pattern</p></li>
+<li><p>Implement database persistence</p></li>
+<li><p>Add undo/redo support</p></li>
+</ul>
+<p><strong>Tasks:</strong></p>
+<ol class="arabic simple">
+<li><p>Integrate <code class="docutils literal notranslate"><span class="pre">AddRelationCommand</span></code> with drop events (6h)</p></li>
+<li><p>Connect <code class="docutils literal notranslate"><span class="pre">MainWindow</span></code> signals to command execution (4h)</p></li>
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">DatabaseWorker</span></code> task for async relation creation (4h)</p></li>
+<li><p>Implement <code class="docutils literal notranslate"><span class="pre">BulkAddRelationCommand</span></code> for multi-select (6h)</p></li>
+<li><p>Wire up toast notifications to <code class="docutils literal notranslate"><span class="pre">DatabaseWorker</span></code> signals (4h)</p></li>
+<li><p>Add undo button to toast widget (3h)</p></li>
+<li><p>Write integration tests for full drop-persist cycle (10h)</p></li>
+<li><p>Bug fixing and polish (3h)</p></li>
+</ol>
+<p><strong>Deliverables:</strong></p>
+<ul class="simple">
+<li><p>✅ Drag-drop creates relations in database</p></li>
+<li><p>✅ Undo/redo works correctly</p></li>
+<li><p>✅ Integration tests pass</p></li>
+<li><p>✅ Bulk drops optimized</p></li>
+</ul>
+<p><strong>Risks:</strong></p>
+<ul class="simple">
+<li><p>Race conditions between UI update and DB write → Mitigation: Use signals for synchronization</p></li>
+</ul>
+</section>
+<section id="sprint-3-graph-map-support-week-5-6-40-hours">
+<h3>8.3 Sprint 3: Graph &amp; Map Support (Week 5-6, 40 hours)<a class="headerlink" href="#sprint-3-graph-map-support-week-5-6-40-hours" title="Link to this heading">¶</a></h3>
+<p><strong>Goals:</strong></p>
+<ul class="simple">
+<li><p>Extend drag-drop to graph and map widgets</p></li>
+<li><p>Add preview line animations</p></li>
+<li><p>Support cross-widget drops</p></li>
+</ul>
+<p><strong>Tasks:</strong></p>
+<ol class="arabic simple">
+<li><p>Create <code class="docutils literal notranslate"><span class="pre">GraphDragOverlay</span></code> with preview line rendering (8h)</p></li>
+<li><p>Implement drop handling in <code class="docutils literal notranslate"><span class="pre">GraphWidget</span></code> (8h)</p></li>
+<li><p>Add node highlight effects in <code class="docutils literal notranslate"><span class="pre">GraphNode</span></code> (4h)</p></li>
+<li><p>Create <code class="docutils literal notranslate"><span class="pre">MapDragOverlay</span></code> with geodesic curves (8h)</p></li>
+<li><p>Implement drop handling in <code class="docutils literal notranslate"><span class="pre">MapWidget</span></code> (6h)</p></li>
+<li><p>Add marker lift/drop animations (4h)</p></li>
+<li><p>Write integration tests for graph and map drops (8h)</p></li>
+<li><p>Performance optimization (60 FPS target) (4h)</p></li>
+</ol>
+<p><strong>Deliverables:</strong></p>
+<ul class="simple">
+<li><p>✅ Graph node-to-node drag works</p></li>
+<li><p>✅ Map marker-to-marker drag works</p></li>
+<li><p>✅ Preview lines animate smoothly</p></li>
+<li><p>✅ Cross-widget drops functional</p></li>
+</ul>
+<p><strong>Risks:</strong></p>
+<ul class="simple">
+<li><p>Performance issues with complex graphs → Mitigation: Implement LOD (level of detail) for preview rendering</p></li>
+</ul>
+</section>
+<section id="sprint-4-timeline-polish-week-7-8-40-hours">
+<h3>8.4 Sprint 4: Timeline &amp; Polish (Week 7-8, 40 hours)<a class="headerlink" href="#sprint-4-timeline-polish-week-7-8-40-hours" title="Link to this heading">¶</a></h3>
+<p><strong>Goals:</strong></p>
+<ul class="simple">
+<li><p>Add timeline card dragging</p></li>
+<li><p>Comprehensive testing</p></li>
+<li><p>User documentation</p></li>
+<li><p>Bug fixes and UX refinements</p></li>
+</ul>
+<p><strong>Tasks:</strong></p>
+<ol class="arabic simple">
+<li><p>Enable drag on <code class="docutils literal notranslate"><span class="pre">TimelineCard</span></code> widgets (6h)</p></li>
+<li><p>Implement event-to-entity drop logic (6h)</p></li>
+<li><p>Add timeline card “flash” feedback (3h)</p></li>
+<li><p>Create user guide section with GIFs (6h)</p></li>
+<li><p>Accessibility testing (keyboard navigation, screen readers) (4h)</p></li>
+<li><p>Cross-platform testing (Windows, macOS, Linux) (6h)</p></li>
+<li><p>Performance profiling and optimization (4h)</p></li>
+<li><p>Fix bugs from testing phase (5h)</p></li>
+</ol>
+<p><strong>Deliverables:</strong></p>
+<ul class="simple">
+<li><p>✅ Timeline drag-drop works</p></li>
+<li><p>✅ User documentation complete</p></li>
+<li><p>✅ All acceptance criteria met</p></li>
+<li><p>✅ Cross-platform verified</p></li>
+<li><p>✅ 95%+ test coverage</p></li>
+</ul>
+<p><strong>Risks:</strong></p>
+<ul class="simple">
+<li><p>Timeline widget complexity → Mitigation: Refactor if needed, keep scope focused</p></li>
+</ul>
+</section>
+<section id="total-effort-estimate">
+<h3>8.5 Total Effort Estimate<a class="headerlink" href="#total-effort-estimate" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Development:</strong> 120 hours (3 weeks for 1 developer)</p></li>
+<li><p><strong>Testing:</strong> 40 hours</p></li>
+<li><p><strong>Documentation:</strong> 8 hours</p></li>
+<li><p><strong>Code review &amp; polish:</strong> 12 hours</p></li>
+<li><p><strong>Total:</strong> 180 hours (~5 weeks for 1 developer, or 2.5 weeks for 2 developers)</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="open-questions-decisions">
+<h2>9. Open Questions &amp; Decisions<a class="headerlink" href="#open-questions-decisions" title="Link to this heading">¶</a></h2>
+<section id="default-relation-type">
+<h3>9.1 Default Relation Type<a class="headerlink" href="#default-relation-type" title="Link to this heading">¶</a></h3>
+<p><strong>Question:</strong> When drag-dropping without specifying a relation type, what should be the default?</p>
+<p><strong>Options:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Always “related_to”</strong> (generic)</p></li>
+<li><p><strong>Context-aware heuristics</strong> (e.g., character → location = “lives_in”, character → event = “participated_in”)</p></li>
+<li><p><strong>Show quick-picker popup</strong> on drop before creating relation</p></li>
+<li><p><strong>User-configurable default</strong> in settings</p></li>
+</ol>
+<p><strong>Current Proposal:</strong> Option 1 (always “related_to”) for MVP, with Option 3 (quick-picker) on Ctrl+Drop.</p>
+<p><strong>Decision Needed By:</strong> Sprint 1</p>
+<p><strong>Impacts:</strong></p>
+<ul class="simple">
+<li><p>User guide content</p></li>
+<li><p>Command implementation</p></li>
+<li><p>UX flow complexity</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="bulk-relation-threshold">
+<h3>9.2 Bulk Relation Threshold<a class="headerlink" href="#bulk-relation-threshold" title="Link to this heading">¶</a></h3>
+<p><strong>Question:</strong> When dragging multiple items, at what count should we switch to bulk command?</p>
+<p><strong>Options:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Always use individual commands</strong> (simpler undo)</p></li>
+<li><p><strong>Threshold of 5 items</strong> (current proposal)</p></li>
+<li><p><strong>Threshold of 10 items</strong></p></li>
+<li><p><strong>Always use bulk command</strong> (faster)</p></li>
+</ol>
+<p><strong>Current Proposal:</strong> Option 2 (threshold of 5) with configurable constant.</p>
+<p><strong>Trade-offs:</strong></p>
+<ul class="simple">
+<li><p>Individual commands: Granular undo, slower for large batches</p></li>
+<li><p>Bulk commands: All-or-nothing undo, faster execution</p></li>
+</ul>
+<p><strong>Decision Needed By:</strong> Sprint 2</p>
+<p><strong>Impacts:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">BulkAddRelationCommand</span></code> implementation</p></li>
+<li><p>Undo/redo UX</p></li>
+<li><p>Performance benchmarks</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="modifier-key-behavior">
+<h3>9.3 Modifier Key Behavior<a class="headerlink" href="#modifier-key-behavior" title="Link to this heading">¶</a></h3>
+<p><strong>Question:</strong> What should Shift, Ctrl, Alt do during drag?</p>
+<p><strong>Options:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Shift:</strong> Bidirectional relation (creates two edges)</p></li>
+<li><p><strong>Ctrl:</strong> Show relation-type picker popup</p></li>
+<li><p><strong>Alt:</strong> Copy instead of link (duplicate entity at target)</p></li>
+<li><p><strong>Shift+Ctrl:</strong> Multi-select mode</p></li>
+</ol>
+<p><strong>Current Proposal:</strong></p>
+<ul class="simple">
+<li><p>Shift: Bidirectional</p></li>
+<li><p>Ctrl: Relation-type picker</p></li>
+<li><p>Alt: Reserved for OS drag-copy behavior</p></li>
+<li><p>Shift+Ctrl: Not used (too complex)</p></li>
+</ul>
+<p><strong>Decision Needed By:</strong> Sprint 1</p>
+<p><strong>Impacts:</strong></p>
+<ul class="simple">
+<li><p>Drag pill visual indicators (show modifier hints)</p></li>
+<li><p>Command implementation (bidirectional = 2 commands)</p></li>
+<li><p>User documentation</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="cross-world-dragging">
+<h3>9.4 Cross-World Dragging<a class="headerlink" href="#cross-world-dragging" title="Link to this heading">¶</a></h3>
+<p><strong>Question:</strong> Should users be able to drag entities from one world file to another?</p>
+<p><strong>Context:</strong> ProjektKraken supports multiple open world files (tabs).</p>
+<p><strong>Options:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Disallow:</strong> Show error toast if attempting cross-world drop</p></li>
+<li><p><strong>Copy entity:</strong> Clone entity to target world with relations</p></li>
+<li><p><strong>Create reference:</strong> Special “external reference” relation type</p></li>
+<li><p><strong>Defer to Phase 2:</strong> Not in MVP</p></li>
+</ol>
+<p><strong>Current Proposal:</strong> Option 1 (disallow) for MVP, Option 3 (references) for future enhancement.</p>
+<p><strong>Decision Needed By:</strong> Sprint 3</p>
+<p><strong>Impacts:</strong></p>
+<ul class="simple">
+<li><p>Drop validation logic</p></li>
+<li><p>Multi-tab architecture</p></li>
+<li><p>Data model (external references table)</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="auto-suggest-relation-type">
+<h3>9.5 Auto-Suggest Relation Type<a class="headerlink" href="#auto-suggest-relation-type" title="Link to this heading">¶</a></h3>
+<p><strong>Question:</strong> Should the system suggest relation types based on entity types?</p>
+<p><strong>Example:</strong> Dragging character → location could suggest “lives_in”, “visited”, “born_in”</p>
+<p><strong>Options:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>No auto-suggest:</strong> User always picks type (or uses default)</p></li>
+<li><p><strong>Simple heuristics:</strong> Hardcoded rules (character+location = “lives_in”)</p></li>
+<li><p><strong>ML-based:</strong> Learn from user’s past relations</p></li>
+<li><p><strong>Template library:</strong> User defines relation-type templates per world</p></li>
+</ol>
+<p><strong>Current Proposal:</strong> Option 4 (templates) deferred to Phase 2; Option 1 (no auto-suggest) for MVP.</p>
+<p><strong>Decision Needed By:</strong> Sprint 4</p>
+<p><strong>Impacts:</strong></p>
+<ul class="simple">
+<li><p>Data model (relation templates table)</p></li>
+<li><p>UI (template picker widget)</p></li>
+<li><p>User onboarding (template setup wizard)</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="preview-line-performance">
+<h3>9.6 Preview Line Performance<a class="headerlink" href="#preview-line-performance" title="Link to this heading">¶</a></h3>
+<p><strong>Question:</strong> How to optimize preview line rendering for large graphs (1000+ nodes)?</p>
+<p><strong>Options:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Always render:</strong> Simple but potentially slow</p></li>
+<li><p><strong>Throttle updates:</strong> Only update every 50ms</p></li>
+<li><p><strong>Simplified rendering:</strong> Use straight line instead of curves for large graphs</p></li>
+<li><p><strong>GPU acceleration:</strong> Use OpenGL widget for graph rendering</p></li>
+</ol>
+<p><strong>Current Proposal:</strong> Option 2 (throttle) + Option 3 (simplified) based on node count.</p>
+<p><strong>Decision Needed By:</strong> Sprint 3</p>
+<p><strong>Impacts:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">GraphDragOverlay</span></code> implementation</p></li>
+<li><p>Frame rate benchmarks</p></li>
+<li><p>Graph rendering architecture</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="follow-up-pr-checklist">
+<h2>10. Follow-up PR Checklist<a class="headerlink" href="#follow-up-pr-checklist" title="Link to this heading">¶</a></h2>
+<section id="pr-1-foundation-components">
+<h3>PR #1: Foundation Components<a class="headerlink" href="#pr-1-foundation-components" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Drag pill, toast manager, drop mixin</p>
+<p><strong>Changes:</strong></p>
+<ul class="simple">
+<li><p>✅ Add <code class="docutils literal notranslate"><span class="pre">src/gui/widgets/drag_pill.py</span></code></p></li>
+<li><p>✅ Add <code class="docutils literal notranslate"><span class="pre">src/gui/widgets/toast_manager.py</span></code></p></li>
+<li><p>✅ Add <code class="docutils literal notranslate"><span class="pre">src/gui/widgets/drop_mixin.py</span></code></p></li>
+<li><p>✅ Add unit tests</p></li>
+<li><p>✅ Update <code class="docutils literal notranslate"><span class="pre">themes.json</span></code> with drag-drop styles</p></li>
+</ul>
+<p><strong>Acceptance:</strong></p>
+<ul class="simple">
+<li><p>All unit tests pass</p></li>
+<li><p>Code coverage ≥95%</p></li>
+<li><p>No lint warnings</p></li>
+<li><p>Docstrings complete (Google Style)</p></li>
+</ul>
+<p><strong>Estimated Size:</strong> +450 LOC</p>
+</section>
+<hr class="docutils" />
+<section id="pr-2-list-to-editor-drag">
+<h3>PR #2: List-to-Editor Drag<a class="headerlink" href="#pr-2-list-to-editor-drag" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Enable drag from UnifiedList to EntityEditor</p>
+<p><strong>Changes:</strong></p>
+<ul class="simple">
+<li><p>✅ Modify <code class="docutils literal notranslate"><span class="pre">src/gui/widgets/unified_list.py</span></code> to use DragPill</p></li>
+<li><p>✅ Modify <code class="docutils literal notranslate"><span class="pre">src/gui/widgets/entity_editor.py</span></code> with drop handling</p></li>
+<li><p>✅ Add signals for drop events</p></li>
+<li><p>✅ Add integration test</p></li>
+</ul>
+<p><strong>Acceptance:</strong></p>
+<ul class="simple">
+<li><p>Can drag entity from list to editor</p></li>
+<li><p>Drop zone highlights correctly</p></li>
+<li><p>Toast appears (mock data)</p></li>
+<li><p>No database persistence yet</p></li>
+</ul>
+<p><strong>Estimated Size:</strong> +200 LOC</p>
+</section>
+<hr class="docutils" />
+<section id="pr-3-command-integration">
+<h3>PR #3: Command Integration<a class="headerlink" href="#pr-3-command-integration" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Connect drag-drop to database persistence</p>
+<p><strong>Changes:</strong></p>
+<ul class="simple">
+<li><p>✅ Modify <code class="docutils literal notranslate"><span class="pre">src/app/main_window.py</span></code> to handle drop signals</p></li>
+<li><p>✅ Connect to <code class="docutils literal notranslate"><span class="pre">AddRelationCommand</span></code></p></li>
+<li><p>✅ Wire up <code class="docutils literal notranslate"><span class="pre">DatabaseWorker</span></code> signals to toast</p></li>
+<li><p>✅ Add undo/redo support</p></li>
+<li><p>✅ Add integration tests</p></li>
+</ul>
+<p><strong>Acceptance:</strong></p>
+<ul class="simple">
+<li><p>Relations persist to database</p></li>
+<li><p>Undo/redo works</p></li>
+<li><p>Toast shows success/error from DB</p></li>
+<li><p>Integration tests pass</p></li>
+</ul>
+<p><strong>Estimated Size:</strong> +180 LOC</p>
+</section>
+<hr class="docutils" />
+<section id="pr-4-bulk-relations">
+<h3>PR #4: Bulk Relations<a class="headerlink" href="#pr-4-bulk-relations" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Optimize multi-select drag performance</p>
+<p><strong>Changes:</strong></p>
+<ul class="simple">
+<li><p>✅ Add <code class="docutils literal notranslate"><span class="pre">src/commands/bulk_relation_command.py</span></code></p></li>
+<li><p>✅ Modify <code class="docutils literal notranslate"><span class="pre">unified_list.py</span></code> for multi-select drag</p></li>
+<li><p>✅ Modify <code class="docutils literal notranslate"><span class="pre">main_window.py</span></code> to use bulk command when threshold exceeded</p></li>
+<li><p>✅ Add unit tests</p></li>
+</ul>
+<p><strong>Acceptance:</strong></p>
+<ul class="simple">
+<li><p>Can drag 10 entities at once</p></li>
+<li><p>Bulk command executes in &lt;1 second</p></li>
+<li><p>Undo removes all relations</p></li>
+<li><p>Tests verify transaction atomicity</p></li>
+</ul>
+<p><strong>Estimated Size:</strong> +150 LOC</p>
+</section>
+<hr class="docutils" />
+<section id="pr-5-graph-drag-support">
+<h3>PR #5: Graph Drag Support<a class="headerlink" href="#pr-5-graph-drag-support" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Node-to-node dragging in graph view</p>
+<p><strong>Changes:</strong></p>
+<ul class="simple">
+<li><p>✅ Add <code class="docutils literal notranslate"><span class="pre">src/gui/widgets/graph_view/drag_overlay.py</span></code></p></li>
+<li><p>✅ Modify <code class="docutils literal notranslate"><span class="pre">src/gui/widgets/graph_view/graph_widget.py</span></code></p></li>
+<li><p>✅ Modify <code class="docutils literal notranslate"><span class="pre">src/gui/widgets/graph_view/graph_node.py</span></code> for highlights</p></li>
+<li><p>✅ Add integration tests</p></li>
+</ul>
+<p><strong>Acceptance:</strong></p>
+<ul class="simple">
+<li><p>Can drag node to node</p></li>
+<li><p>Preview line animates at 60 FPS</p></li>
+<li><p>Edge appears after drop</p></li>
+<li><p>Integration tests pass</p></li>
+</ul>
+<p><strong>Estimated Size:</strong> +340 LOC</p>
+</section>
+<hr class="docutils" />
+<section id="pr-6-map-drag-support">
+<h3>PR #6: Map Drag Support<a class="headerlink" href="#pr-6-map-drag-support" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Marker-to-marker dragging on map</p>
+<p><strong>Changes:</strong></p>
+<ul class="simple">
+<li><p>✅ Add <code class="docutils literal notranslate"><span class="pre">src/gui/widgets/map/drag_overlay.py</span></code></p></li>
+<li><p>✅ Modify <code class="docutils literal notranslate"><span class="pre">src/gui/widgets/map/map_widget.py</span></code></p></li>
+<li><p>✅ Modify <code class="docutils literal notranslate"><span class="pre">src/gui/widgets/map/map_marker.py</span></code> for animations</p></li>
+<li><p>✅ Add geodesic curve calculation</p></li>
+<li><p>✅ Add integration tests</p></li>
+</ul>
+<p><strong>Acceptance:</strong></p>
+<ul class="simple">
+<li><p>Can drag marker to marker</p></li>
+<li><p>Geodesic curve renders correctly</p></li>
+<li><p>Distance displayed on line</p></li>
+<li><p>Integration tests pass</p></li>
+</ul>
+<p><strong>Estimated Size:</strong> +310 LOC</p>
+</section>
+<hr class="docutils" />
+<section id="pr-7-timeline-drag">
+<h3>PR #7: Timeline Drag<a class="headerlink" href="#pr-7-timeline-drag" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Event card dragging from timeline</p>
+<p><strong>Changes:</strong></p>
+<ul class="simple">
+<li><p>✅ Modify <code class="docutils literal notranslate"><span class="pre">src/gui/widgets/timeline_view.py</span></code></p></li>
+<li><p>✅ Add <code class="docutils literal notranslate"><span class="pre">TimelineCard</span></code> drag initiation</p></li>
+<li><p>✅ Support event-to-entity drops</p></li>
+<li><p>✅ Add flash animation on success</p></li>
+<li><p>✅ Add integration tests</p></li>
+</ul>
+<p><strong>Acceptance:</strong></p>
+<ul class="simple">
+<li><p>Can drag timeline card</p></li>
+<li><p>Drop on entity works</p></li>
+<li><p>Flash feedback appears</p></li>
+<li><p>Integration tests pass</p></li>
+</ul>
+<p><strong>Estimated Size:</strong> +120 LOC</p>
+</section>
+<hr class="docutils" />
+<section id="pr-8-cross-widget-drops">
+<h3>PR #8: Cross-Widget Drops<a class="headerlink" href="#pr-8-cross-widget-drops" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Support drops across all widget combinations</p>
+<p><strong>Changes:</strong></p>
+<ul class="simple">
+<li><p>✅ Test and fix: List → Graph</p></li>
+<li><p>✅ Test and fix: Graph → Map</p></li>
+<li><p>✅ Test and fix: Map → Editor</p></li>
+<li><p>✅ Test and fix: Timeline → Map</p></li>
+<li><p>✅ Add comprehensive integration tests</p></li>
+</ul>
+<p><strong>Acceptance:</strong></p>
+<ul class="simple">
+<li><p>All 12 widget-pair combinations work</p></li>
+<li><p>No crashes or data loss</p></li>
+<li><p>Performance acceptable (&lt;100ms drop handling)</p></li>
+</ul>
+<p><strong>Estimated Size:</strong> +80 LOC (mostly fixes)</p>
+</section>
+<hr class="docutils" />
+<section id="pr-9-polish-performance">
+<h3>PR #9: Polish &amp; Performance<a class="headerlink" href="#pr-9-polish-performance" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Optimize performance and add final polish</p>
+<p><strong>Changes:</strong></p>
+<ul class="simple">
+<li><p>✅ Profile drag-drop frame rate</p></li>
+<li><p>✅ Optimize preview line rendering</p></li>
+<li><p>✅ Add keyboard shortcuts (Ctrl+Shift+Z for redo)</p></li>
+<li><p>✅ Add accessibility features (focus indicators)</p></li>
+<li><p>✅ Fix any remaining bugs</p></li>
+</ul>
+<p><strong>Acceptance:</strong></p>
+<ul class="simple">
+<li><p>60 FPS maintained during drag</p></li>
+<li><p>No memory leaks after 100 cycles</p></li>
+<li><p>Keyboard navigation works</p></li>
+<li><p>All acceptance criteria met</p></li>
+</ul>
+<p><strong>Estimated Size:</strong> +100 LOC</p>
+</section>
+<hr class="docutils" />
+<section id="pr-10-documentation">
+<h3>PR #10: Documentation<a class="headerlink" href="#pr-10-documentation" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Complete user and developer documentation</p>
+<p><strong>Changes:</strong></p>
+<ul class="simple">
+<li><p>✅ Update <code class="docutils literal notranslate"><span class="pre">docs/USER_GUIDE.md</span></code></p></li>
+<li><p>✅ Create animated GIF demos</p></li>
+<li><p>✅ Add code examples to docstrings</p></li>
+<li><p>✅ Update architecture diagrams</p></li>
+<li><p>✅ Add troubleshooting section</p></li>
+</ul>
+<p><strong>Acceptance:</strong></p>
+<ul class="simple">
+<li><p>User guide section complete</p></li>
+<li><p>All public APIs documented</p></li>
+<li><p>GIFs demonstrate each flow</p></li>
+<li><p>Sphinx docs build without warnings</p></li>
+</ul>
+<p><strong>Estimated Size:</strong> +300 LOC documentation</p>
+</section>
+<hr class="docutils" />
+<section id="total-pr-summary">
+<h3>Total PR Summary<a class="headerlink" href="#total-pr-summary" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>10 PRs</strong></p></li>
+<li><p><strong>~2,230 LOC</strong> added/modified</p></li>
+<li><p><strong>~40 hours</strong> review time estimated</p></li>
+<li><p><strong>Dependency chain:</strong> PRs 1-2-3 sequential, then PRs 4-7 parallel, then 8-9-10 sequential</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="appendix-a-implementation-timeline-gantt-chart">
+<h2>Appendix A: Implementation Timeline Gantt Chart<a class="headerlink" href="#appendix-a-implementation-timeline-gantt-chart" title="Link to this heading">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Week</span> <span class="mi">1</span><span class="o">-</span><span class="mi">2</span> <span class="p">(</span><span class="n">Sprint</span> <span class="mi">1</span><span class="p">):</span>
+  <span class="n">PR</span> <span class="c1">#1 [========]</span>
+  <span class="n">PR</span> <span class="c1">#2         [====]</span>
+
+<span class="n">Week</span> <span class="mi">3</span><span class="o">-</span><span class="mi">4</span> <span class="p">(</span><span class="n">Sprint</span> <span class="mi">2</span><span class="p">):</span>
+  <span class="n">PR</span> <span class="c1">#3              [========]</span>
+  <span class="n">PR</span> <span class="c1">#4                    [====]</span>
+
+<span class="n">Week</span> <span class="mi">5</span><span class="o">-</span><span class="mi">6</span> <span class="p">(</span><span class="n">Sprint</span> <span class="mi">3</span><span class="p">):</span>
+  <span class="n">PR</span> <span class="c1">#5                        [=====]</span>
+  <span class="n">PR</span> <span class="c1">#6                        [=====]</span>
+  <span class="n">PR</span> <span class="c1">#7                            [===]</span>
+
+<span class="n">Week</span> <span class="mi">7</span><span class="o">-</span><span class="mi">8</span> <span class="p">(</span><span class="n">Sprint</span> <span class="mi">4</span><span class="p">):</span>
+  <span class="n">PR</span> <span class="c1">#8                                 [====]</span>
+  <span class="n">PR</span> <span class="c1">#9                                     [====]</span>
+  <span class="n">PR</span> <span class="c1">#10                                        [====]</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="appendix-b-risk-register">
+<h2>Appendix B: Risk Register<a class="headerlink" href="#appendix-b-risk-register" title="Link to this heading">¶</a></h2>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Risk</p></th>
+<th class="head"><p>Probability</p></th>
+<th class="head"><p>Impact</p></th>
+<th class="head"><p>Mitigation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Qt drag-drop bugs</p></td>
+<td><p>Medium</p></td>
+<td><p>High</p></td>
+<td><p>Early cross-platform testing</p></td>
+</tr>
+<tr class="row-odd"><td><p>Performance degradation</p></td>
+<td><p>Low</p></td>
+<td><p>Medium</p></td>
+<td><p>Profile frequently, use throttling</p></td>
+</tr>
+<tr class="row-even"><td><p>Race conditions (UI vs DB)</p></td>
+<td><p>Medium</p></td>
+<td><p>High</p></td>
+<td><p>Use signals, avoid blocking calls</p></td>
+</tr>
+<tr class="row-odd"><td><p>Scope creep</p></td>
+<td><p>High</p></td>
+<td><p>Medium</p></td>
+<td><p>Stick to MVP, defer enhancements</p></td>
+</tr>
+<tr class="row-even"><td><p>User confusion (new UX)</p></td>
+<td><p>Low</p></td>
+<td><p>Low</p></td>
+<td><p>Comprehensive user guide + tooltips</p></td>
+</tr>
+<tr class="row-odd"><td><p>Undo stack corruption</p></td>
+<td><p>Low</p></td>
+<td><p>High</p></td>
+<td><p>Extensive integration tests</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<hr class="docutils" />
+<section id="appendix-c-glossary">
+<h2>Appendix C: Glossary<a class="headerlink" href="#appendix-c-glossary" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Drag Pill:</strong> Floating widget that follows cursor during drag</p></li>
+<li><p><strong>Drop Zone:</strong> Area that accepts drops (e.g., EntityEditor)</p></li>
+<li><p><strong>Preview Line:</strong> Animated line showing potential relation in graph/map</p></li>
+<li><p><strong>Toast:</strong> Temporary notification popup</p></li>
+<li><p><strong>Relation Chip:</strong> Pill-shaped button representing a relation in EntityEditor</p></li>
+<li><p><strong>MIME Type:</strong> Data format identifier for drag-drop (<code class="docutils literal notranslate"><span class="pre">application/x-kraken-item</span></code>)</p></li>
+<li><p><strong>Command Stack:</strong> Undo/redo history manager</p></li>
+<li><p><strong>DatabaseWorker:</strong> Background thread for async DB operations</p></li>
+<li><p><strong>Trinity View:</strong> The three-panel layout (Editor, Timeline, Relations)</p></li>
+</ul>
+<hr class="docutils" />
+<p><strong>End of RFC</strong></p>
+<p>This document is a living specification and will be updated as decisions are made and implementation progresses. All stakeholders are encouraged to provide feedback via issue tracker or team meetings.</p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, Christian Mintert
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">RFC: Drag-and-Drop Relations Feature for ProjektKraken</a><ul>
+<li><a class="reference internal" href="#executive-summary">1. Executive Summary</a></li>
+<li><a class="reference internal" href="#grounding-in-current-repository">2. Grounding in Current Repository</a><ul>
+<li><a class="reference internal" href="#existing-architecture">2.1 Existing Architecture</a></li>
+<li><a class="reference internal" href="#current-relation-workflow">2.2 Current Relation Workflow</a></li>
+<li><a class="reference internal" href="#existing-drag-infrastructure">2.3 Existing Drag Infrastructure</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#detailed-ux-flows">3. Detailed UX Flows</a><ul>
+<li><a class="reference internal" href="#flow-a-project-explorer-entity-editor">3.1 Flow A: Project Explorer → Entity Editor</a></li>
+<li><a class="reference internal" href="#flow-b-graph-node-graph-node">3.2 Flow B: Graph Node → Graph Node</a></li>
+<li><a class="reference internal" href="#flow-c-timeline-card-drag">3.3 Flow C: Timeline Card Drag</a></li>
+<li><a class="reference internal" href="#flow-d-map-marker-to-marker">3.4 Flow D: Map Marker to Marker</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#visual-indicators-specification">4. Visual Indicators Specification</a><ul>
+<li><a class="reference internal" href="#drag-pill">4.1 Drag Pill</a></li>
+<li><a class="reference internal" href="#preview-line">4.2 Preview Line</a></li>
+<li><a class="reference internal" href="#node-entity-highlight">4.3 Node/Entity Highlight</a></li>
+<li><a class="reference internal" href="#drop-hint-tooltip">4.4 Drop Hint Tooltip</a></li>
+<li><a class="reference internal" href="#relation-chips">4.5 Relation Chips</a></li>
+<li><a class="reference internal" href="#confirmation-toast">4.6 Confirmation Toast</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#data-command-flow">5. Data &amp; Command Flow</a><ul>
+<li><a class="reference internal" href="#drag-initiation-flow">5.1 Drag Initiation Flow</a></li>
+<li><a class="reference internal" href="#drop-command-execution-flow">5.2 Drop &amp; Command Execution Flow</a></li>
+<li><a class="reference internal" href="#signal-definitions">5.3 Signal Definitions</a></li>
+<li><a class="reference internal" href="#undo-flow">5.4 Undo Flow</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#files-to-add-and-modify">6. Files to Add and Modify</a><ul>
+<li><a class="reference internal" href="#new-files">6.1 New Files</a></li>
+<li><a class="reference internal" href="#files-to-modify">6.2 Files to Modify</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#acceptance-criteria-tests">7. Acceptance Criteria &amp; Tests</a><ul>
+<li><a class="reference internal" href="#functional-acceptance-criteria">7.1 Functional Acceptance Criteria</a></li>
+<li><a class="reference internal" href="#unit-tests">7.2 Unit Tests</a></li>
+<li><a class="reference internal" href="#integration-tests">7.3 Integration Tests</a></li>
+<li><a class="reference internal" href="#test-execution">7.4 Test Execution</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#rollout-plan-milestones">8. Rollout Plan &amp; Milestones</a><ul>
+<li><a class="reference internal" href="#sprint-1-foundation-week-1-2-40-hours">8.1 Sprint 1: Foundation (Week 1-2, 40 hours)</a></li>
+<li><a class="reference internal" href="#sprint-2-command-integration-week-3-4-40-hours">8.2 Sprint 2: Command Integration (Week 3-4, 40 hours)</a></li>
+<li><a class="reference internal" href="#sprint-3-graph-map-support-week-5-6-40-hours">8.3 Sprint 3: Graph &amp; Map Support (Week 5-6, 40 hours)</a></li>
+<li><a class="reference internal" href="#sprint-4-timeline-polish-week-7-8-40-hours">8.4 Sprint 4: Timeline &amp; Polish (Week 7-8, 40 hours)</a></li>
+<li><a class="reference internal" href="#total-effort-estimate">8.5 Total Effort Estimate</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#open-questions-decisions">9. Open Questions &amp; Decisions</a><ul>
+<li><a class="reference internal" href="#default-relation-type">9.1 Default Relation Type</a></li>
+<li><a class="reference internal" href="#bulk-relation-threshold">9.2 Bulk Relation Threshold</a></li>
+<li><a class="reference internal" href="#modifier-key-behavior">9.3 Modifier Key Behavior</a></li>
+<li><a class="reference internal" href="#cross-world-dragging">9.4 Cross-World Dragging</a></li>
+<li><a class="reference internal" href="#auto-suggest-relation-type">9.5 Auto-Suggest Relation Type</a></li>
+<li><a class="reference internal" href="#preview-line-performance">9.6 Preview Line Performance</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#follow-up-pr-checklist">10. Follow-up PR Checklist</a><ul>
+<li><a class="reference internal" href="#pr-1-foundation-components">PR #1: Foundation Components</a></li>
+<li><a class="reference internal" href="#pr-2-list-to-editor-drag">PR #2: List-to-Editor Drag</a></li>
+<li><a class="reference internal" href="#pr-3-command-integration">PR #3: Command Integration</a></li>
+<li><a class="reference internal" href="#pr-4-bulk-relations">PR #4: Bulk Relations</a></li>
+<li><a class="reference internal" href="#pr-5-graph-drag-support">PR #5: Graph Drag Support</a></li>
+<li><a class="reference internal" href="#pr-6-map-drag-support">PR #6: Map Drag Support</a></li>
+<li><a class="reference internal" href="#pr-7-timeline-drag">PR #7: Timeline Drag</a></li>
+<li><a class="reference internal" href="#pr-8-cross-widget-drops">PR #8: Cross-Widget Drops</a></li>
+<li><a class="reference internal" href="#pr-9-polish-performance">PR #9: Polish &amp; Performance</a></li>
+<li><a class="reference internal" href="#pr-10-documentation">PR #10: Documentation</a></li>
+<li><a class="reference internal" href="#total-pr-summary">Total PR Summary</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#appendix-a-implementation-timeline-gantt-chart">Appendix A: Implementation Timeline Gantt Chart</a></li>
+<li><a class="reference internal" href="#appendix-b-risk-register">Appendix B: Risk Register</a></li>
+<li><a class="reference internal" href="#appendix-c-glossary">Appendix C: Glossary</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=5ee55484"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>
