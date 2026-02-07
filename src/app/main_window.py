@@ -62,6 +62,7 @@ from src.app.constants import (
 )
 from src.app.coordinators.backup_coordinator import BackupCoordinator
 from src.app.coordinators.fast_inject_coordinator import FastInjectCoordinator
+from src.gui.widgets.auto_closing_message_box import AutoClosingMessageBox
 from src.app.coordinators.navigation_coordinator import NavigationCoordinator
 from src.app.coordinators.time_coordinator import TimeCoordinator
 from src.app.data_handler import DataHandler
@@ -362,6 +363,9 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         self.history_panel = HistoryPanelWidget()
 
+        # Create Toast Notification (Sprint 1)
+        self._last_drag_drop_command_id = None  # Track last drag-drop command for toast
+
         # Initialize Managers
         self.map_handler = MapHandler(self)
         self.grouping_manager = TimelineGroupingManager(self)
@@ -507,6 +511,12 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         )
         self.event_editor.summary_generation_requested.connect(
             self.worker_manager.generate_summary
+        )
+
+        # Connect to worker's command_finished to show toast for
+        # drag-drop relations (Sprint 1)
+        self.worker.command_finished.connect(
+            self._on_command_finished_check_toast, Qt.ConnectionType.QueuedConnection
         )
 
         # Connect Coordinator Signals
@@ -1500,6 +1510,37 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         cmd = UpdateEventCommand(event_id, {"lore_date": new_lore_date})
         self.command_requested.emit(cmd)
 
+    @Slot(object)
+    def _on_command_finished_check_toast(self, result) -> None:
+        """Check if completed command was a drag-drop relation and show toast.
+
+        Args:
+            result: CommandResult object from worker.
+        """
+        # Check if this was a drag-drop relation command
+        if not result.success:
+            return
+
+        command = result.data.get("command")
+        if command is None:
+            return
+
+        # Check if this is the drag-drop command we're tracking
+        if id(command) == self._last_drag_drop_command_id:
+            # This was our drag-drop command, show toast
+            self._show_relation_created_toast()
+            # Clear the tracking ID
+            self._last_drag_drop_command_id = None
+
+    def _show_relation_created_toast(self) -> None:
+        """Show toast notification for successful relation creation."""
+        # Use AutoClosingMessageBox for consistency with deletion toast (themed + timed)
+        msg = "Relation created.\n\n(Ctrl+Z to Undo)"
+        popup = AutoClosingMessageBox("Success", msg, 1500, parent=self)
+        popup.exec()
+
+        logger.debug("Drag-drop relation toast displayed")
+
     def create_entity(self) -> None:
         """Creates a new entity by emitting a create command."""
         if not self.check_unsaved_changes(self.entity_editor):
@@ -1604,6 +1645,13 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             attributes=attributes,
             bidirectional=bidirectional,
         )
+
+        # Mark this command as a drag-drop command for toast display
+        # (This handles both drag-drop and manual creation, which is acceptable usually,
+        # or we could add a flag if strictly needed only for drag-drop.
+        # For now, showing toast for all relation creations is good UX.)
+        self._last_drag_drop_command_id = id(cmd)
+
         self.command_requested.emit(cmd)
 
     def load_maps(self) -> None:

@@ -8,6 +8,7 @@ from PySide6.QtCore import QSettings, Slot
 from PySide6.QtWidgets import QMessageBox
 
 from src.app.constants import (
+    NAVIGATION_SELECTION_DELAY_MS,
     SETTINGS_LAST_ITEM_ID_KEY,
     SETTINGS_LAST_ITEM_TYPE_KEY,
     WINDOW_SETTINGS_APP,
@@ -36,6 +37,15 @@ class NavigationCoordinator(BaseCoordinator):
         # State
         self._last_selected_id: Optional[str] = None
         self._last_selected_type: Optional[str] = None
+
+        # Delayed Selection State
+        self._pending_selection: Optional[tuple[str, str]] = None
+        from PySide6.QtCore import QTimer
+
+        self._selection_timer = QTimer()
+        self._selection_timer.setSingleShot(True)
+        self._selection_timer.setInterval(NAVIGATION_SELECTION_DELAY_MS)
+        self._selection_timer.timeout.connect(self._perform_delayed_selection)
 
     @Slot(str, str)
     def set_global_selection(self, item_type: str, item_id: str) -> None:
@@ -198,7 +208,47 @@ class NavigationCoordinator(BaseCoordinator):
     @Slot(str, str)
     def on_item_selected(self, item_type: str, item_id: str) -> None:
         """Handles selection from unified list or longform editor."""
-        self.set_global_selection(item_type, item_id)
+        # Start delayed selection to allow drag operations to cancel it
+        self._pending_selection = (item_type, item_id)
+        self._selection_timer.start()
+
+    @Slot()
+    def on_drag_started(self) -> None:
+        """Handles drag start event to cancel pending selection."""
+        # Stop timer to prevent new selection from taking effect
+        if self._selection_timer.isActive():
+            self._selection_timer.stop()
+            self._pending_selection = None
+            logger.debug(
+                "[NavigationCoordinator] Selection cancelled due to drag start"
+            )
+
+        # Revert list selection to the currently active global selection
+        # This ensures the dragged item doesn't appear selected in the UI
+        if self._last_selected_id and self._last_selected_type:
+            # We must use a slight delay or QMetaObject.invokeMethod because
+            # dragging might still be processing mouse events
+            from PySide6.QtCore import QTimer
+
+            QTimer.singleShot(
+                0,
+                lambda: self.main_window.unified_list.select_item(
+                    self._last_selected_type, self._last_selected_id
+                ),
+            )
+        else:
+            from PySide6.QtCore import QTimer
+
+            QTimer.singleShot(
+                0, self.main_window.unified_list.list_widget.clearSelection
+            )
+
+    def _perform_delayed_selection(self) -> None:
+        """Executes the pending selection."""
+        if self._pending_selection:
+            item_type, item_id = self._pending_selection
+            self.set_global_selection(item_type, item_id)
+            self._pending_selection = None
 
     def restore_last_selection(self) -> None:
         """Restores the last selected item from settings."""

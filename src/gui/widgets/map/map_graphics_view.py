@@ -103,6 +103,12 @@ class KeyframeGizmo(QGraphicsItemGroup):
     def __init__(
         self, keyframe_item: "KeyframeItem", parent: Optional[QGraphicsItem] = None
     ) -> None:
+        """Initialize the keyframe gizmo.
+
+        Args:
+            keyframe_item: The parent keyframe item this gizmo belongs to.
+            parent: Optional parent graphics item.
+        """
         super().__init__(parent)
         self.keyframe_item = keyframe_item
         self.setZValue(LAYER_UI_OVERLAY)
@@ -120,7 +126,16 @@ class KeyframeGizmo(QGraphicsItemGroup):
         self.setPos(3, -8)
 
     def _create_icon(self, text: str, x_offset: float, color: str) -> QGraphicsRectItem:
-        """Creates a clickable icon button."""
+        """Create a clickable icon button.
+
+        Args:
+            text: Unicode character to display as icon.
+            x_offset: Horizontal offset in pixels.
+            color: Hex color code for the icon.
+
+        Returns:
+            QGraphicsRectItem containing the styled icon.
+        """
         from PySide6.QtCore import Qt
 
         # Background rect (smaller)
@@ -144,19 +159,31 @@ class KeyframeGizmo(QGraphicsItemGroup):
         return rect
 
     def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
-        """Keep gizmo visible while hovering over it."""
+        """Keep gizmo visible while hovering over it.
+
+        Args:
+            event: The hover enter event.
+        """
         super().hoverEnterEvent(event)
         self.keyframe_item._gizmo_hovered = True
 
     def hoverLeaveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
-        """Remove gizmo when mouse leaves."""
+        """Remove gizmo when mouse leaves.
+
+        Args:
+            event: The hover leave event.
+        """
         super().hoverLeaveEvent(event)
         self.keyframe_item._gizmo_hovered = False
         if not self.keyframe_item.isUnderMouse():
             self.keyframe_item._cleanup_gizmo()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        """Handle icon clicks - clock for Clock Mode, X for delete."""
+        """Handle icon clicks - clock for Clock Mode, X for delete.
+
+        Args:
+            event: The mouse press event.
+        """
         # Determine which icon was clicked based on local position
         click_x = event.position().x()
 
@@ -175,7 +202,11 @@ class KeyframeGizmo(QGraphicsItemGroup):
 
 
 class KeyframeItem(QGraphicsObject):
-    """A draggable keyframe dot on the trajectory."""
+    """A draggable keyframe dot on the trajectory.
+
+    Represents a temporal keyframe for a marker's position on the map.
+    Supports transform and clock modes for editing position and time.
+    """
 
     def __init__(
         self,
@@ -187,6 +218,17 @@ class KeyframeItem(QGraphicsObject):
         on_drop_callback: Callable[["KeyframeItem"], None],
         on_drag_callback: Optional[Callable[[], None]] = None,
     ) -> None:
+        """Initialize the keyframe item.
+
+        Args:
+            marker_id: Unique identifier for the associated marker.
+            t: Time value for this keyframe (normalized).
+            x: X coordinate (normalized 0-1).
+            y: Y coordinate (normalized 0-1).
+            rect: Bounding rectangle for the keyframe dot.
+            on_drop_callback: Callback invoked when keyframe is dropped after drag.
+            on_drag_callback: Optional callback invoked during dragging.
+        """
         super().__init__()
         self._rect = rect
         self.marker_id = marker_id
@@ -214,7 +256,11 @@ class KeyframeItem(QGraphicsObject):
         self.setAcceptHoverEvents(True)
 
     def boundingRect(self) -> QRectF:
-        """Returns the bounding rectangle for the dot."""
+        """Return the bounding rectangle for the keyframe dot.
+
+        Returns:
+            QRectF defining the bounds of this graphics item.
+        """
         return self._rect
 
     def paint(
@@ -223,43 +269,77 @@ class KeyframeItem(QGraphicsObject):
         option: QStyleOptionGraphicsItem,
         widget: Optional[QWidget] = None,
     ) -> None:
-        """Paints the keyframe dot."""
+        """Paint the keyframe dot.
+
+        Args:
+            painter: QPainter to use for drawing.
+            option: Style options for the graphics item.
+            widget: Optional widget being painted on.
+        """
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setBrush(self._brush)
         painter.setPen(self._pen)
         painter.drawEllipse(self._rect)
 
     def setBrush(self, brush: QBrush) -> None:
-        """Sets the brush for the dot."""
+        """Set the brush for the keyframe dot.
+
+        Args:
+            brush: QBrush to use for filling the dot.
+        """
         self._brush = brush
         self.update()
 
     def brush(self) -> QBrush:
-        """Returns the brush for the dot."""
+        """Get the current brush.
+
+        Returns:
+            QBrush used for filling the dot.
+        """
         return self._brush
 
     @Property(float)
     def scale_val(self) -> float:
-        """Returns the scale for animation."""
+        """Get the scale value for animation.
+
+        Returns:
+            Current scale factor.
+        """
         return self.scale()
 
     @scale_val.setter
     def scale_val(self, value: float) -> None:
-        """Sets the scale for animation."""
+        """Set the scale value for animation.
+
+        Args:
+            value: New scale factor.
+        """
         self.setScale(value)
         self.update()
 
     def setPen(self, pen: QPen) -> None:
-        """Sets the pen for the dot."""
+        """Set the pen for the keyframe dot border.
+
+        Args:
+            pen: QPen to use for drawing the dot border.
+        """
         self._pen = pen
         self.update()
 
     def pen(self) -> QPen:
-        """Returns the pen for the dot."""
+        """Get the current pen.
+
+        Returns:
+            QPen used for drawing the dot border.
+        """
         return self._pen
 
     def set_mode(self, mode: str) -> None:
-        """Switch between transform and clock modes."""
+        """Switch between transform and clock modes.
+
+        Args:
+            mode: Mode to switch to ('transform' or 'clock').
+        """
         logger.info(f"Keyframe {self.marker_id} mode set to: {mode}")
         self.mode = mode
         if mode == "clock":
@@ -271,7 +351,11 @@ class KeyframeItem(QGraphicsObject):
         self._cleanup_gizmo()
 
     def set_pinned(self, pinned: bool) -> None:
-        """Set visual state for pinned keyframe (Clock Mode)."""
+        """Set visual state for pinned keyframe (Clock Mode).
+
+        Args:
+            pinned: True if keyframe is pinned in Clock Mode.
+        """
         self.is_pinned = pinned
         color = KEYFRAME_COLOR_SELECTED if pinned else KEYFRAME_COLOR_DEFAULT
         pen_width = 3 if pinned else 1
@@ -291,7 +375,11 @@ class KeyframeItem(QGraphicsObject):
         self._cleanup_gizmo()
 
     def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
-        """Show gizmo when hovering over keyframe."""
+        """Show gizmo when hovering over keyframe.
+
+        Args:
+            event: The hover enter event.
+        """
         super().hoverEnterEvent(event)
         if not self.gizmo and not self.is_pinned:
             self.gizmo = KeyframeGizmo(self)
@@ -307,7 +395,7 @@ class KeyframeItem(QGraphicsObject):
         self._show_hover_hint()
 
     def _show_hover_hint(self) -> None:
-        """Shows a one-time hint tooltip."""
+        """Show a one-time hint tooltip for first-time users."""
         settings = QSettings()
         if not settings.value("map/onboarding_hover_hint_shown", False, type=bool):
             self.setToolTip("💡 Tip: Hover keyframes to edit position or time")
@@ -332,14 +420,22 @@ class KeyframeItem(QGraphicsObject):
             self.gizmo.setVisible(False)
 
     def hoverLeaveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
-        """Hide gizmo when leaving keyframe."""
+        """Hide gizmo when leaving keyframe.
+
+        Args:
+            event: The hover leave event.
+        """
         super().hoverLeaveEvent(event)
         self.unsetCursor()
         # Attempt cleanup when leaving the keyframe dot
         self._cleanup_gizmo()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        """Clear any existing selection before starting drag."""
+        """Clear any existing selection before starting drag.
+
+        Args:
+            event: The mouse press event.
+        """
         if self.scene():
             self.scene().clearSelection()
         # Hide gizmo immediately when starting drag
@@ -348,7 +444,11 @@ class KeyframeItem(QGraphicsObject):
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        """Handle drop event."""
+        """Handle drop event after dragging.
+
+        Args:
+            event: The mouse release event.
+        """
         super().mouseReleaseEvent(event)
         if self.on_drop_callback:
             self.on_drop_callback(self)
@@ -356,7 +456,15 @@ class KeyframeItem(QGraphicsObject):
     def itemChange(
         self, change: QGraphicsEllipseItem.GraphicsItemChange, value: Any
     ) -> Any:
-        """Handle position changes during drag."""
+        """Handle position changes during drag.
+
+        Args:
+            change: The type of change occurring.
+            value: The new value for the change.
+
+        Returns:
+            The processed value for the change.
+        """
         if (
             change == QGraphicsEllipseItem.GraphicsItemChange.ItemPositionHasChanged
             and self.on_drag_callback
@@ -463,6 +571,15 @@ class MapGraphicsView(QGraphicsView):
         # Enable drop support for drag-from-explorer
         self.setAcceptDrops(True)
 
+        # Drop Hint Overlay (blue dashed box)
+        self._drop_hint_overlay = QLabel(self.viewport())
+        from src.gui.utils.style_helper import StyleHelper
+
+        self._drop_hint_overlay.setStyleSheet(StyleHelper.get_drag_overlay_style())
+        self._drop_hint_overlay.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._drop_hint_overlay.setText("Drop to Place Marker")
+        self._drop_hint_overlay.hide()
+
         # Temporal state (for future trajectory animation)
         self._current_time: float = 0.0
 
@@ -548,6 +665,9 @@ class MapGraphicsView(QGraphicsView):
         Note: We no longer auto-fit here to allow the user to maintain zoom level.
         """
         super().resizeEvent(event)
+        if hasattr(self, "_drop_hint_overlay") and self._drop_hint_overlay:
+            # Match the viewport size precisely
+            self._drop_hint_overlay.setGeometry(self.viewport().rect())
 
     def sizeHint(self) -> QSize:
         """Return a stable preferred size to prevent dock layout jitter.
@@ -693,7 +813,13 @@ class MapGraphicsView(QGraphicsView):
         marker.clicked.connect(self.marker_clicked.emit)
 
     def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
-        """Updates a marker's position to new normalized coordinates."""
+        """Update a marker's position to new normalized coordinates.
+
+        Args:
+            marker_id: Unique identifier for the marker to update.
+            x: New X coordinate (normalized 0-1).
+            y: New Y coordinate (normalized 0-1).
+        """
         if marker_id not in self.markers:
             logger.warning(f"Cannot update: marker {marker_id} not found")
             return
@@ -706,14 +832,18 @@ class MapGraphicsView(QGraphicsView):
         # logger.debug(f"Updated marker {marker_id} to normalized ({x:.3f}, {y:.3f})")
 
     def remove_marker(self, marker_id: str) -> None:
-        """Removes a marker from the map."""
+        """Remove a marker from the map.
+
+        Args:
+            marker_id: Unique identifier for the marker to remove.
+        """
         if marker_id in self.markers:
             self.scene.removeItem(self.markers[marker_id])
             del self.markers[marker_id]
             logger.debug(f"Removed marker {marker_id}")
 
     def clear_markers(self) -> None:
-        """Removes all markers from the map."""
+        """Remove all markers from the map."""
         for marker in list(self.markers.values()):
             self.scene.removeItem(marker)
         self.markers.clear()
@@ -761,6 +891,7 @@ class MapGraphicsView(QGraphicsView):
 
         if event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE):
             event.acceptProposedAction()
+            self._show_drop_hint()
         else:
             event.ignore()
 
@@ -781,11 +912,41 @@ class MapGraphicsView(QGraphicsView):
         item_pos = self.pixmap_item.mapFromScene(scene_pos)
         if self.pixmap_item.contains(item_pos):
             event.acceptProposedAction()
+            self._show_drop_hint()
         else:
             event.ignore()
+            self._hide_drop_hint()
+
+    def dragLeaveEvent(self, event: "QDragLeaveEvent") -> None:
+        """Handle drag leave event.
+
+        Args:
+            event: The drag leave event.
+        """
+        super().dragLeaveEvent(event)
+        self._hide_drop_hint()
+
+    def _show_drop_hint(self) -> None:
+        """Show the blue drag-and-drop overlay indicating valid drop zone."""
+        if self._drop_hint_overlay:
+            self._drop_hint_overlay.setGeometry(self.viewport().rect())
+            self._drop_hint_overlay.show()
+            self._drop_hint_overlay.raise_()
+
+    def _hide_drop_hint(self) -> None:
+        """Hide the blue drag-and-drop overlay."""
+        if self._drop_hint_overlay:
+            self._drop_hint_overlay.hide()
 
     def dropEvent(self, event: QDropEvent) -> None:
-        """Handle drop of item from Project Explorer to create a marker."""
+        """Handle drop of item from Project Explorer to create a marker.
+
+        Parses the dropped MIME data and creates a new marker at the drop position.
+
+        Args:
+            event: The drop event containing MIME data.
+        """
+        self._hide_drop_hint()
         from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
 
         if not event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE):
@@ -815,7 +976,11 @@ class MapGraphicsView(QGraphicsView):
             event.ignore()
 
     def contextMenuEvent(self, event: QContextMenuEvent) -> None:
-        """Handles context menu events for adding/removing markers."""
+        """Handle context menu events for adding/removing markers.
+
+        Args:
+            event: The context menu event.
+        """
         if not self.pixmap_item:
             return
 

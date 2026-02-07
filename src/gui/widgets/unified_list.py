@@ -8,7 +8,7 @@ import json
 import logging
 from typing import Any, Dict, List, Optional, Union
 
-from PySide6.QtCore import QMimeData, QSize, Qt, QTimer, Signal, Slot
+from PySide6.QtCore import QMimeData, QSize, Qt, Signal, Slot
 from PySide6.QtGui import QDrag
 from PySide6.QtWidgets import (
     QComboBox,
@@ -17,7 +17,6 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QListView,
     QMenu,
-    QMessageBox,
     QPushButton,
     QVBoxLayout,
     QWidget,
@@ -29,11 +28,10 @@ from src.core.events import Event
 from src.gui.models.explorer_filter_proxy import ExplorerFilterProxyModel
 from src.gui.models.explorer_model import ExplorerModel
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.auto_closing_message_box import AutoClosingMessageBox
 from src.gui.widgets.standard_buttons import DestructiveButton
 
 KRAKEN_ITEM_MIME_TYPE = "application/x-kraken-item"
-
-logger = logging.getLogger(__name__)
 
 
 class DraggableListView(QListView):
@@ -48,9 +46,14 @@ class DraggableListView(QListView):
         super().__init__(parent)
         self.setDragEnabled(True)
         self.setDragDropMode(QListView.DragOnly)
+        self._drag_pill = None  # Will be created during drag
+
+    drag_started = Signal()
 
     def startDrag(self, supportedActions: Qt.DropAction) -> None:
         """Override to provide custom MIME data for dragged items.
+
+        Also shows a drag pill widget that follows the cursor.
 
         Args:
             supportedActions: The drag actions supported.
@@ -59,6 +62,8 @@ class DraggableListView(QListView):
         index = self.currentIndex()
         if not index.isValid():
             return
+
+        self.drag_started.emit()
 
         # Get data from model using custom roles
         model = self.model()
@@ -90,58 +95,37 @@ class DraggableListView(QListView):
         # Also set plain text for debugging/compatibility
         mime_data.setText(f"{item_type}:{item_id}")
 
+        # Create drag pill widget to follow cursor
+        from src.gui.widgets.drag_pill import DragPill
+
+        # Create the pill but don't show it as a window
+        pill = DragPill(item_name=item_name, item_type=item_type)
+        # Force layout update to get correct size
+        pill.adjustSize()
+
+        # Render to pixmap
+        pixmap = pill.grab()
+
         # Create and execute drag
         drag = QDrag(self)
         drag.setMimeData(mime_data)
+        drag.setPixmap(pixmap)
+
+        # Set hotspot to the pill's defined offset (default 10, 10)
+        # This aligns the cursor with the defined hotspot on the pill
+        drag.setHotSpot(pill.cursor_offset)
+
         drag.exec(Qt.CopyAction)
 
+        # Clean up
+        pill.deleteLater()
 
-class AutoClosingMessageBox(QMessageBox):
-    """A QMessageBox that closes itself after a specified timeout."""
-
-    def __init__(
-        self,
-        title: str,
-        text: str,
-        timeout_ms: int = 1000,
-        icon: QMessageBox.Icon = QMessageBox.Icon.Information,
-        parent: Optional[QWidget] = None,
-    ) -> None:
-        """Initialize the message box.
-
-        Args:
-            title: Window title.
-            text: Message text.
-            timeout_ms: Timeout in milliseconds before closing.
-            icon: Icon to display.
-            parent: Parent widget.
-        """
-        super().__init__(parent)
-        self.setWindowTitle(title)
-        self.setText(text)
-        self.setIcon(icon)
-        self._timeout_ms = timeout_ms
-
-        # QMessageBox often requires at least one button to display correctly as a
-        # modal dialog. We add OK and hide it to maintain the "toast" look.
-        self.setStandardButtons(QMessageBox.StandardButton.Ok)
-        ok_button = self.button(QMessageBox.StandardButton.Ok)
-        if ok_button:
-            ok_button.hide()
-
-        # Center on parent if available
-        if parent:
-            self.setWindowModality(Qt.WindowModality.WindowModal)
-
-    def showEvent(self, event) -> None:
-        """Starts the auto-close timer when the dialog is shown."""
-        super().showEvent(event)
-        # Use an explicit timer object as a child of the dialog for maximum
-        # reliability in modal loops on Windows.
-        self.timer = QTimer(self)
-        self.timer.setSingleShot(True)
-        self.timer.timeout.connect(self.accept)
-        self.timer.start(self._timeout_ms)
+    def _on_drag_finished(self) -> None:
+        """Clean up drag pill when drag finishes."""
+        if self._drag_pill:
+            self._drag_pill.hide()
+            self._drag_pill.deleteLater()
+            self._drag_pill = None
 
 
 class UnifiedListWidget(QWidget):
@@ -161,6 +145,7 @@ class UnifiedListWidget(QWidget):
     show_filter_dialog_requested = Signal()  # Request to open filter dialog
     clear_filter_requested = Signal()  # Request to clear filters
     status_message_requested = Signal(str, int)  # message, timeout_ms (Toast-like)
+    drag_started = Signal()
 
     def __init__(self, parent: QWidget = None) -> None:
         """Initializes the UnifiedListWidget.
@@ -292,10 +277,12 @@ class UnifiedListWidget(QWidget):
         self.list_widget = DraggableListView()
         self.list_widget.setModel(self._proxy_model)
         self.list_widget.setStyleSheet(StyleHelper.get_checkbox_style())
-        self.list_widget.setSelectionMode(QListView.SelectionMode.ExtendedSelection)
+        # Use SingleSelection to prevent box-select interfering with drag operations
+        self.list_widget.setSelectionMode(QListView.SelectionMode.SingleSelection)
         self.list_widget.selectionModel().selectionChanged.connect(
             self._on_selection_changed
         )
+        self.list_widget.drag_started.connect(self.drag_started)
 
         main_layout.addWidget(self.list_widget)
 

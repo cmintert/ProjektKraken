@@ -11,8 +11,8 @@ from src.core.events import Event
 from src.gui.widgets.unified_list import UnifiedListWidget
 
 
-class TestUnifiedListMultiSelection:
-    """Tests for multi-selection with checkboxes."""
+class TestUnifiedListSelection:
+    """Tests for single-selection mode (required for drag-drop functionality)."""
 
     @pytest.fixture
     def list_widget(self, qtbot):
@@ -20,11 +20,11 @@ class TestUnifiedListMultiSelection:
         qtbot.addWidget(widget)
         return widget
 
-    def test_extended_selection_mode_enabled(self, list_widget):
-        """Verify that ExtendedSelection mode is enabled."""
+    def test_single_selection_mode_enabled(self, list_widget):
+        """Verify that SingleSelection mode is enabled (for drag-drop compatibility)."""
         assert (
             list_widget.list_widget.selectionMode()
-            == QListView.SelectionMode.ExtendedSelection
+            == QListView.SelectionMode.SingleSelection
         )
 
     def test_items_have_checkboxes(self, list_widget):
@@ -54,8 +54,8 @@ class TestUnifiedListMultiSelection:
         state = model.data(index, Qt.ItemDataRole.CheckStateRole)
         assert state == Qt.CheckState.Unchecked  # Model doesn't auto-check
 
-    def test_items_selected_signal_emits_multiple(self, list_widget, qtbot):
-        """Verify that items_selected signal emits list of selections."""
+    def test_items_selected_signal_emits_single(self, list_widget, qtbot):
+        """Verify that items_selected signal emits single selection."""
         event1 = Event(id="e1", name="Event 1", lore_date=100)
         event2 = Event(id="e2", name="Event 2", lore_date=200)
         entity1 = Entity(id="ent1", name="Entity 1", type="Character")
@@ -65,16 +65,15 @@ class TestUnifiedListMultiSelection:
         received_selections = []
         list_widget.items_selected.connect(lambda x: received_selections.append(x))
 
-        # Select multiple items via selection model
+        # Select item via selection model
         model = list_widget._proxy_model
         selection_model = list_widget.list_widget.selectionModel()
         selection_model.select(model.index(0, 0), selection_model.SelectionFlag.Select)
-        selection_model.select(model.index(1, 0), selection_model.SelectionFlag.Select)
 
-        # Should have received signals with multiple items
+        # Should have received signal with single item
         assert len(received_selections) > 0
-        # Last signal should have 2 items
-        assert len(received_selections[-1]) == 2
+        # Last signal should have 1 item (single selection mode)
+        assert len(received_selections[-1]) == 1
 
 
 class TestUnifiedListSorting:

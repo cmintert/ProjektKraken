@@ -725,3 +725,24 @@ class StyleHelper:
                 padding: 0 10px;
             }}
         """
+
+    @staticmethod
+    def get_drag_overlay_style() -> str:
+        """Returns QSS for drag-and-drop overlay hints.
+
+        Provides a consistent blue dashed overlay with semi-transparent background.
+
+        Returns:
+            str: QSS stylesheet string for drag overlays.
+        """
+        return """
+            QLabel {
+                background-color: rgba(51, 153, 255, 0.15);
+                border: 2px dashed #3399FF;
+                border-radius: 6px;
+                color: #3399FF;
+                font-size: 14px;
+                font-weight: bold;
+                padding: 12px;
+            }
+        """
