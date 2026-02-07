@@ -53,6 +53,7 @@ logs/
 *.sqlite3-shm
 *.sqlite3-wal
 docs/_build/
+docs/archive/
 .pytest_cache/
 .coverage
 htmlcov/
