@@ -242,15 +242,18 @@ def test_move_down_at_bottom_no_signal(outline_widget, sample_sequence, qtbot):
 
 
 def test_promote_top_level_no_signal(outline_widget, sample_sequence, qtbot):
-    """Test that promote does nothing for top-level items."""
+    """Test that promote signal is emitted even for top-level items.
+    
+    The widget emits the signal; the command layer validates and handles
+    items already at maximum promotion (depth 0).
+    """
     outline_widget.load_sequence(sample_sequence)
     
     # Select first top-level item (depth 0)
     item = outline_widget.topLevelItem(0)
     outline_widget.setCurrentItem(item)
     
-    # Try to promote - should still emit signal (command will validate)
-    # Actually, the widget will emit, but the command should handle depth check
+    # Widget emits signal, command will validate
     with qtbot.waitSignal(outline_widget.item_promoted, timeout=1000) as blocker:
         outline_widget._promote_selected()
     

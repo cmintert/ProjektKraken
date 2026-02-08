@@ -301,6 +301,42 @@ class LongformOutlineWidget(QTreeWidget):
                 table, row_id, _ = meta
                 self.item_selected.emit(table, row_id)
 
+    def _get_item_metadata(
+        self, item: QTreeWidgetItem
+    ) -> Optional[tuple[str, str, Dict[str, Any]]]:
+        """Get metadata for a tree widget item.
+        
+        Args:
+            item: Tree widget item.
+            
+        Returns:
+            Optional tuple of (table, row_id, metadata) or None if not found.
+        
+        """
+        return self._item_meta.get(id(item))
+
+    def _get_item_position_info(
+        self, item: QTreeWidgetItem
+    ) -> Optional[tuple[Optional[QTreeWidgetItem], int, int]]:
+        """Get position information for an item.
+        
+        Args:
+            item: Tree widget item.
+            
+        Returns:
+            Optional tuple of (parent, current_index, sibling_count) or None.
+        
+        """
+        parent = item.parent()
+        if parent:
+            current_index = parent.indexOfChild(item)
+            sibling_count = parent.childCount()
+        else:
+            current_index = self.indexOfTopLevelItem(item)
+            sibling_count = self.topLevelItemCount()
+        
+        return (parent, current_index, sibling_count)
+
     def _show_context_menu(self, pos: QPoint) -> None:
         """Show context menu for outline items.
         
@@ -312,7 +348,7 @@ class LongformOutlineWidget(QTreeWidget):
         if not item:
             return
         
-        meta_data = self._item_meta.get(id(item))
+        meta_data = self._get_item_metadata(item)
         if not meta_data:
             return
         
@@ -322,15 +358,13 @@ class LongformOutlineWidget(QTreeWidget):
         menu = QMenu(self)
         
         # Check if item can be moved up or down
-        parent = item.parent()
-        if parent:
-            index = parent.indexOfChild(item)
-            can_move_up = index > 0
-            can_move_down = index < parent.childCount() - 1
-        else:
-            index = self.indexOfTopLevelItem(item)
-            can_move_up = index > 0
-            can_move_down = index < self.topLevelItemCount() - 1
+        pos_info = self._get_item_position_info(item)
+        if not pos_info:
+            return
+        
+        parent, index, sibling_count = pos_info
+        can_move_up = index > 0
+        can_move_down = index < sibling_count - 1
         
         # Move Up action
         move_up_action = QAction("Move Up", self)
@@ -396,7 +430,7 @@ class LongformOutlineWidget(QTreeWidget):
             return
 
         item = items[0]
-        meta_data = self._item_meta.get(id(item))
+        meta_data = self._get_item_metadata(item)
         if meta_data:
             table, row_id, old_meta = meta_data
             self.item_promoted.emit(table, row_id, old_meta.copy())
@@ -408,7 +442,7 @@ class LongformOutlineWidget(QTreeWidget):
             return
 
         item = items[0]
-        meta_data = self._item_meta.get(id(item))
+        meta_data = self._get_item_metadata(item)
         if meta_data:
             table, row_id, old_meta = meta_data
             self.item_demoted.emit(table, row_id, old_meta.copy())
@@ -420,22 +454,20 @@ class LongformOutlineWidget(QTreeWidget):
             return
 
         item = items[0]
-        meta_data = self._item_meta.get(id(item))
+        meta_data = self._get_item_metadata(item)
         if not meta_data:
             return
 
         table, row_id, old_meta = meta_data
 
-        # Get parent and current index
-        parent = item.parent()
-        if parent:
-            current_index = parent.indexOfChild(item)
-            if current_index <= 0:
-                return  # Can't move up
-        else:
-            current_index = self.indexOfTopLevelItem(item)
-            if current_index <= 0:
-                return  # Can't move up
+        # Get position info
+        pos_info = self._get_item_position_info(item)
+        if not pos_info:
+            return
+        
+        parent, current_index, sibling_count = pos_info
+        if current_index <= 0:
+            return  # Can't move up
 
         # Emit signal - position calculation done in manager
         self.item_move_up.emit(table, row_id, old_meta.copy())
@@ -447,24 +479,20 @@ class LongformOutlineWidget(QTreeWidget):
             return
 
         item = items[0]
-        meta_data = self._item_meta.get(id(item))
+        meta_data = self._get_item_metadata(item)
         if not meta_data:
             return
 
         table, row_id, old_meta = meta_data
 
-        # Get parent and current index
-        parent = item.parent()
-        if parent:
-            current_index = parent.indexOfChild(item)
-            sibling_count = parent.childCount()
-            if current_index >= sibling_count - 1:
-                return  # Can't move down
-        else:
-            current_index = self.indexOfTopLevelItem(item)
-            sibling_count = self.topLevelItemCount()
-            if current_index >= sibling_count - 1:
-                return  # Can't move down
+        # Get position info
+        pos_info = self._get_item_position_info(item)
+        if not pos_info:
+            return
+        
+        parent, current_index, sibling_count = pos_info
+        if current_index >= sibling_count - 1:
+            return  # Can't move down
 
         # Emit signal - position calculation done in manager
         self.item_move_down.emit(table, row_id, old_meta.copy())
@@ -476,7 +504,7 @@ class LongformOutlineWidget(QTreeWidget):
             return
 
         item = items[0]
-        meta_data = self._item_meta.get(id(item))
+        meta_data = self._get_item_metadata(item)
         if meta_data:
             table, row_id, old_meta = meta_data
             self.item_removed.emit(table, row_id, old_meta.copy())
