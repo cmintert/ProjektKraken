@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-08
 ### Internal
-- Release 0.11.0
+- chore: Simplify changelog entries by removing specific numbers and delete the COMMIT_MSG file.
 
 
 *This changelog was automatically generated.*
