@@ -641,6 +641,30 @@ class ConnectionManager:
 
         if not self._connect_signal_safe(
             longform,
+            "delete_requested",
+            self.window.longform_manager.delete_longform_item,
+            "LongformEditor",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            longform,
+            "move_up_requested",
+            self.window.longform_manager.move_up_longform_entry,
+            "LongformEditor",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            longform,
+            "move_down_requested",
+            self.window.longform_manager.move_down_longform_entry,
+            "LongformEditor",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            longform,
             "link_clicked",
             self.window.navigation_coordinator.navigate_to_entity,
             "LongformEditor",

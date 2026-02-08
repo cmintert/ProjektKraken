@@ -15,7 +15,10 @@ from src.commands.longform_commands import (
     MoveLongformEntryCommand,
     PromoteLongformEntryCommand,
 )
+from src.commands.entity_commands import DeleteEntityCommand
+from src.commands.event_commands import DeleteEventCommand
 from src.core.logging_config import get_logger
+from src.services.longform_builder import DEFAULT_POSITION_GAP
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
@@ -135,6 +138,162 @@ class LongformManager(QObject):
             new_meta: New metadata with position/parent/depth.
 
         """
+        cmd = MoveLongformEntryCommand(table, row_id, old_meta, new_meta)
+        self.window.command_requested.emit(cmd)
+
+    def delete_longform_item(self, table: str, row_id: str) -> None:
+        """Delete an item completely (Event or Entity).
+
+        Args:
+            table: Table name ("events" or "entities").
+            row_id: ID of the item to delete.
+
+        """
+        if table == "events":
+            cmd = DeleteEventCommand(row_id)
+        elif table == "entities":
+            cmd = DeleteEntityCommand(row_id)
+        else:
+            logger.error(f"Unknown table type for deletion: {table}")
+            return
+        
+        self.window.command_requested.emit(cmd)
+
+    def move_up_longform_entry(self, table: str, row_id: str, old_meta: dict) -> None:
+        """Move a longform entry up in its sibling list.
+
+        Args:
+            table: Table name ("events" or "entities").
+            row_id: ID of the item to move up.
+            old_meta: Previous longform metadata for undo.
+
+        """
+        # Calculate new position - between previous sibling and the one before it
+        sequence = self.window._cached_longform_sequence
+        
+        # Find current item in sequence
+        current_idx = None
+        for idx, item in enumerate(sequence):
+            if item["table"] == table and item["id"] == row_id:
+                current_idx = idx
+                break
+        
+        if current_idx is None:
+            logger.warning(
+                f"Cannot move up: item {table}.{row_id} not found in sequence"
+            )
+            return
+        
+        if current_idx == 0:
+            logger.debug(f"Cannot move up: item {table}.{row_id} is already at top")
+            return  # Already at top
+        
+        # Get parent_id and depth from old_meta
+        parent_id = old_meta.get("parent_id")
+        depth = old_meta.get("depth", 0)
+        
+        # Find the previous sibling (same parent and depth)
+        prev_idx = None
+        for idx in range(current_idx - 1, -1, -1):
+            item = sequence[idx]
+            if item["meta"].get("parent_id") == parent_id and item["meta"].get("depth", 0) == depth:
+                prev_idx = idx
+                break
+        
+        if prev_idx is None:
+            return  # No previous sibling
+        
+        # Calculate new position between prev_sibling's predecessor and prev_sibling
+        prev_item = sequence[prev_idx]
+        prev_pos = prev_item["meta"].get("position", 0.0)
+        
+        # Find predecessor of prev_sibling
+        before_prev_idx = None
+        for idx in range(prev_idx - 1, -1, -1):
+            item = sequence[idx]
+            if item["meta"].get("parent_id") == parent_id and item["meta"].get("depth", 0) == depth:
+                before_prev_idx = idx
+                break
+        
+        if before_prev_idx is not None:
+            before_prev_pos = sequence[before_prev_idx]["meta"].get("position", 0.0)
+            new_pos = (before_prev_pos + prev_pos) / 2.0
+        else:
+            new_pos = prev_pos - DEFAULT_POSITION_GAP
+        
+        # Create new metadata
+        new_meta = old_meta.copy()
+        new_meta["position"] = new_pos
+        
+        cmd = MoveLongformEntryCommand(table, row_id, old_meta, new_meta)
+        self.window.command_requested.emit(cmd)
+
+    def move_down_longform_entry(self, table: str, row_id: str, old_meta: dict) -> None:
+        """Move a longform entry down in its sibling list.
+
+        Args:
+            table: Table name ("events" or "entities").
+            row_id: ID of the item to move down.
+            old_meta: Previous longform metadata for undo.
+
+        """
+        # Calculate new position - between next sibling and the one after it
+        sequence = self.window._cached_longform_sequence
+        
+        # Find current item in sequence
+        current_idx = None
+        for idx, item in enumerate(sequence):
+            if item["table"] == table and item["id"] == row_id:
+                current_idx = idx
+                break
+        
+        if current_idx is None:
+            logger.warning(
+                f"Cannot move down: item {table}.{row_id} not found in sequence"
+            )
+            return
+        
+        if current_idx >= len(sequence) - 1:
+            logger.debug(f"Cannot move down: item {table}.{row_id} is already at bottom")
+            return  # Already at bottom
+        
+        # Get parent_id and depth from old_meta
+        parent_id = old_meta.get("parent_id")
+        depth = old_meta.get("depth", 0)
+        
+        # Find the next sibling (same parent and depth)
+        next_idx = None
+        for idx in range(current_idx + 1, len(sequence)):
+            item = sequence[idx]
+            if item["meta"].get("parent_id") == parent_id and item["meta"].get("depth", 0) == depth:
+                next_idx = idx
+                break
+        
+        if next_idx is None:
+            return  # No next sibling
+        
+        # Calculate new position between next_sibling and its successor
+        next_item = sequence[next_idx]
+        next_pos = next_item["meta"].get("position", 0.0)
+        
+        # Find successor of next_sibling
+        after_next_idx = None
+        for idx in range(next_idx + 1, len(sequence)):
+            item = sequence[idx]
+            if item["meta"].get("parent_id") == parent_id and item["meta"].get("depth", 0) == depth:
+                after_next_idx = idx
+                break
+        
+        if after_next_idx is not None:
+            after_next_pos = sequence[after_next_idx]["meta"].get("position", 0.0)
+            new_pos = (next_pos + after_next_pos) / 2.0
+        else:
+            new_pos = next_pos + DEFAULT_POSITION_GAP
+        
+        # Create new metadata
+        new_meta = old_meta.copy()
+        new_meta["position"] = new_pos
+        
         cmd = MoveLongformEntryCommand(table, row_id, old_meta, new_meta)
         self.window.command_requested.emit(cmd)
 
