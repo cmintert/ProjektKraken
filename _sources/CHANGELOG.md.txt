@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-08
 ### Internal
-- Merge pull request #75 from cmintert/copilot/improve-docstring-and-type-hints
+- Merge pull request #76 from cmintert/copilot/add-context-menu-to-outline-widget
 
 
 *This changelog was automatically generated.*

@@ -3,10 +3,10 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="prev" title="services package" href="services.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
-        <title>Changelog - Project Kraken 0.11.0 documentation</title>
+        <title>Context Menu Visual Mockup - Project Kraken 0.11.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -219,8 +219,8 @@
 </li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
-<ul class="current">
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Changelog</a></li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
 </ul>
 
 </div>
@@ -241,7 +241,7 @@
         </a>
         <div class="content-icon-container">
           <div class="view-this-page">
-  <a class="muted-link" href="_sources/CHANGELOG.md.txt" title="View this page">
+  <a class="muted-link" href="_sources/CONTEXT_MENU_MOCKUP.md.txt" title="View this page">
     <svg><use href="#svg-eye"></use></svg>
     <span class="visually-hidden">View this page</span>
   </a>
@@ -259,18 +259,144 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="changelog">
-<h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">¶</a></h1>
-<p>All notable changes to this project will be documented in this file.</p>
-<section id="development-2026-02-08">
-<h2>[Development] - 2026-02-08<a class="headerlink" href="#development-2026-02-08" title="Link to this heading">¶</a></h2>
-<section id="internal">
-<h3>Internal<a class="headerlink" href="#internal" title="Link to this heading">¶</a></h3>
+          <section id="context-menu-visual-mockup">
+<h1>Context Menu Visual Mockup<a class="headerlink" href="#context-menu-visual-mockup" title="Link to this heading">¶</a></h1>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>┌─ Document Outline ─────────────┐
+│                                 │
+│  📄 Chapter 1                   │
+│    └─ 📝 Section 1.1 ◄──────────┼─ Right-click here
+│    └─ 📝 Section 1.2            │
+│  📄 Chapter 2                   │
+│    └─ 📝 Section 2.1            │
+│                                 │
+└─────────────────────────────────┘
+
+When right-clicking on &quot;Section 1.2&quot;:
+
+┌─────────────────────┐
+│ Move Up             │  ◄── Enabled (has sibling above)
+│ Move Down           │  ◄── Disabled (last child)
+├─────────────────────┤
+│ Promote             │  ◄── Enabled (depth &gt; 0)
+│ Demote              │  ◄── Enabled (has previous sibling)
+├─────────────────────┤
+│ Delete Item│  ◄── Always enabled
+└─────────────────────┘
+
+Context Menu States:
+=====================
+
+1. Top-level item (Chapter 1):
+   ┌─────────────────────┐
+   │ Move Up             │  ◄── Disabled (first item)
+   │ Move Down           │  ◄── Enabled
+   ├─────────────────────┤
+   │ Promote             │  ◄── Disabled (already top level)
+   │ Demote              │  ◄── Disabled (no previous sibling)
+   ├─────────────────────┤
+   │ Delete Item│  ◄── Enabled
+   └─────────────────────┘
+
+2. First child item (Section 1.1):
+   ┌─────────────────────┐
+   │ Move Up             │  ◄── Disabled (first child)
+   │ Move Down           │  ◄── Enabled
+   ├─────────────────────┤
+   │ Promote             │  ◄── Enabled (can become sibling of parent)
+   │ Demote              │  ◄── Disabled (no previous sibling)
+   ├─────────────────────┤
+   │ Delete Item│  ◄── Enabled
+   └─────────────────────┘
+
+3. Middle child item (Section 1.2 when multiple siblings exist):
+   ┌─────────────────────┐
+   │ Move Up             │  ◄── Enabled
+   │ Move Down           │  ◄── Enabled
+   ├─────────────────────┤
+   │ Promote             │  ◄── Enabled
+   │ Demote              │  ◄── Enabled (has previous sibling)
+   ├─────────────────────┤
+   │ Delete Item│  ◄── Enabled
+   └─────────────────────┘
+
+Action Examples:
+================
+
+Move Up:
+--------
+Before:                  After:
+Chapter 1               Chapter 1
+  Section 1.1             Section 1.2  ◄── Moved up
+  Section 1.2  ◄──       Section 1.1
+  Section 1.3             Section 1.3
+
+Move Down:
+----------
+Before:                  After:
+Chapter 1               Chapter 1
+  Section 1.1  ◄──       Section 1.2
+  Section 1.2             Section 1.1  ◄── Moved down
+  Section 1.3             Section 1.3
+
+Promote:
+--------
+Before:                  After:
+Chapter 1               Chapter 1
+  Section 1.1             Section 1.1
+  Section 1.2  ◄──     Section 1.2  ◄── Promoted to same level as Chapter 1
+  Section 1.3             Section 1.3
+
+Demote:
+-------
+Before:                  After:
+Chapter 1               Chapter 1
+  Section 1.1             Section 1.1
+  Section 1.2  ◄──          Section 1.2  ◄── Demoted (child of Section 1.1)
+  Section 1.3             Section 1.3
+
+Delete:
+-------
+Before:                  After:
+Chapter 1               Chapter 1
+  Section 1.1             Section 1.1
+  Section 1.2  ◄──       [removed from outline]
+  Section 1.3             Section 1.3
+
+Note: Deleted items remain in the database and can be:
+- Re-added to longform later
+- Undone with Ctrl+Z
+- Still accessed through Project Explorer
+</pre></div>
+</div>
+<section id="color-coding-in-actual-ui">
+<h2>Color Coding (in actual UI)<a class="headerlink" href="#color-coding-in-actual-ui" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p>Merge pull request #76 from cmintert/copilot/add-context-menu-to-outline-widget</p></li>
+<li><p><strong>Events</strong>: Blue text</p></li>
+<li><p><strong>Entities</strong>: Orange text</p></li>
+<li><p><strong>Disabled menu items</strong>: Gray text</p></li>
+<li><p><strong>Enabled menu items</strong>: White/Black text (depends on theme)</p></li>
+<li><p><strong>Separators</strong>: Subtle gray lines</p></li>
 </ul>
-<p><em>This changelog was automatically generated.</em></p>
 </section>
+<section id="keyboard-navigation">
+<h2>Keyboard Navigation<a class="headerlink" href="#keyboard-navigation" title="Link to this heading">¶</a></h2>
+<p>Once context menu is open:</p>
+<ul class="simple">
+<li><p><strong>↑/↓</strong>: Navigate between menu items</p></li>
+<li><p><strong>Enter/Space</strong>: Activate selected action</p></li>
+<li><p><strong>Esc</strong>: Close menu without action</p></li>
+<li><p><strong>Left-click</strong>: Activate action</p></li>
+<li><p><strong>Click outside</strong>: Close menu</p></li>
+</ul>
+</section>
+<section id="mouse-behavior">
+<h2>Mouse Behavior<a class="headerlink" href="#mouse-behavior" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Right-click on item</strong>: Show context menu at cursor position</p></li>
+<li><p><strong>Right-click on empty space</strong>: No menu displayed</p></li>
+<li><p><strong>Left-click during menu</strong>: Activate action or close menu</p></li>
+<li><p><strong>Click outside menu</strong>: Close menu without action</p></li>
+</ul>
 </section>
 </section>
 
@@ -280,17 +406,7 @@
         
         <div class="related-pages">
           
-          <a class="prev-page" href="services.html">
-              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
-              <div class="page-info">
-                <div class="context">
-                  <span>Previous</span>
-                </div>
-                
-                <div class="title">services package</div>
-                
-              </div>
-            </a>
+          
         </div>
         <div class="bottom-of-page">
           <div class="left-details">
@@ -321,11 +437,10 @@
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Changelog</a><ul>
-<li><a class="reference internal" href="#development-2026-02-08">[Development] - 2026-02-08</a><ul>
-<li><a class="reference internal" href="#internal">Internal</a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#">Context Menu Visual Mockup</a><ul>
+<li><a class="reference internal" href="#color-coding-in-actual-ui">Color Coding (in actual UI)</a></li>
+<li><a class="reference internal" href="#keyboard-navigation">Keyboard Navigation</a></li>
+<li><a class="reference internal" href="#mouse-behavior">Mouse Behavior</a></li>
 </ul>
 </li>
 </ul>
