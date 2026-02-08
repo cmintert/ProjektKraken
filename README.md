@@ -224,16 +224,24 @@ pytest --cov=src --cov-report=term-missing
 
 ## Documentation
 
-- **[CLI Tools](src/cli/README.md)** - Command-line interface reference
-- **[Database Architecture](docs/DATABASE.md)** - Schema and data model
-- **[Backup Strategy](docs/BACKUP_STRATEGY.md)** - Backup and restore guide
-- **[Temporal Relations](docs/TEMPORAL_RELATIONS.md)** - Timeline logic and staging system
-- **[Semantic Search](docs/SEMANTIC_SEARCH.md)** - AI search and embeddings setup
-- **[Fast Inject Guide](docs/FAST_INJECT.md)** - Fast Inject system architecture and usage
-- **[Import Strategy](docs/imports.md)** - JSON import system and two-pass resolution
-- **[Security Guidelines](docs/SECURITY.md)** - Security best practices
-- **[Wiki Linking](docs/WIKI_LINKING.md)** - Wiki syntax and navigation
-- **[Design Notes](Design.md)** - Architecture and design decisions
+**📚 [Complete Documentation Index](docs/INDEX.md)**
+
+### Quick Start
+- **[Installation Guide](docs/INSTALLATION.md)** - System requirements, installation methods, and setup
+- **[User Guide](docs/USER_GUIDE.md)** - Complete guide to using ProjektKraken
+- **[Workflows Guide](docs/WORKFLOWS.md)** - Step-by-step guides for common tasks
+- **[FAQ](docs/FAQ.md)** - Frequently asked questions and troubleshooting
+
+### For Developers
+- **[Architecture](docs/ARCHITECTURE.md)** - System design, patterns, and data flow
+- **[Development Guide](docs/DEVELOPMENT.md)** - Setup, coding standards, and workflow
+- **[Database Schema](docs/DATABASE.md)** - Complete database documentation
+- **[API Reference](docs/API_REFERENCE.md)** - Key classes, services, and methods
+- **[Testing Guide](docs/TESTING.md)** - Testing strategy and practices
+- **[Contributing Guide](docs/CONTRIBUTING.md)** - How to contribute to the project
+
+### Legacy Documentation
+Older feature-specific documentation has been archived to `docs/archive_2026_02_08/` for reference. The new consolidated documentation above covers all features comprehensively.
 
 ## Architecture
 
