@@ -123,13 +123,14 @@ Chapter 2
 2. Select "Promote"
 3. Section 1.2 becomes a top-level item
 
-### Cleaning Up the Outline
+### Deleting Items from the Project
 
-**To remove an item from longform without deleting it:**
+**To permanently delete an item:**
 1. Right-click on the item
-2. Select "Delete from Longform"
-3. Item is removed from outline but remains in database
-4. Can be re-added later or undone with Ctrl+Z
+2. Select "Delete Item"
+3. Item is completely deleted (Event or Entity removed from database)
+4. Can be undone with Ctrl+Z if you change your mind
+5. **Warning**: This deletes the actual item, not just its placement in the outline
 
 ## Testing
 

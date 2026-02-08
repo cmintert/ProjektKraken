@@ -499,20 +499,6 @@ class LongformOutlineWidget(QTreeWidget):
         # Emit signal - position calculation done in manager
         self.item_move_down.emit(table, row_id, old_meta.copy())
 
-    def _remove_selected(self) -> None:
-        """Remove the selected item from longform (deprecated - use _delete_selected)."""
-        items = self.selectedItems()
-        if not items:
-            return
-
-        item = items[0]
-        meta_data = self._get_item_metadata(item)
-        if meta_data:
-            table, row_id, old_meta = meta_data
-            # Still emit old signal for backward compatibility if needed
-            # but prefer using delete
-            self.item_deleted.emit(table, row_id)
-
     def _delete_selected(self) -> None:
         """Delete the selected item completely (Event or Entity)."""
         items = self.selectedItems()
