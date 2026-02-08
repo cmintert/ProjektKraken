@@ -26,7 +26,7 @@ All notable changes to this project will be documented in this file.
 - *(2026-02-07)* **UI**: multiple drag-and-drop regression fixes covering selection state preservation and delayed inspection logic.
 - *(2026-02-05)* **UI**: Fixed Project Explorer multi-select checkboxes not persisting correct state during filtering.
 - *(2026-02-04)* **Timeline**: Prevented playhead from accidentally moving selected events during scrub operations.
-- *(2026-02-03)* **Testing**: Resolved over 1000+ test failures by introducing compatibility layers and ensuring proper Qt library installation.
+- *(2026-02-03)* **Testing**: Resolved test failures by introducing compatibility layers and ensuring proper Qt library installation.
 
 ### Refactor
 - *(2026-02-07)* **Refactor**: Refactored UI "Magic Numbers" into constants and fixed duplicate relation creation logic.
@@ -34,7 +34,7 @@ All notable changes to this project will be documented in this file.
 - *(2026-02-03)* **Architecture**: Completed comprehensive "UX Audit" refactor including Model/View separation and async timeline layout.
 
 ### Documentation
-- *(2026-02-07)* **Docs**: Added comprehensive documentation for Sprint 0 (Drag & Drop) and Sprint 1 (Toast Notifications).
+- *(2026-02-07)* **Docs**: Added comprehensive documentation for Drag & Drop and Toast Notifications.
 - *(2026-02-05)* **Docs**: Added extensive documentation and research for Undo/Redo system and Code Review reports.
 
 
