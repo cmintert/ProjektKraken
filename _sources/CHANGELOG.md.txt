@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-08
-### Internal
-- Merge pull request #76 from cmintert/copilot/add-context-menu-to-outline-widget
+### Documentation
+- docs: Add a project screenshot to the README.
 
 
 *This changelog was automatically generated.*
