@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-08
-### Fixed
-- Fix duplicate End Date field in Event Inspector
+### Added
+- feat(gui): update keyboard shortcuts and refine help dialog
 
 
 *This changelog was automatically generated.*
