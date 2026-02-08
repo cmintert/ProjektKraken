@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-02-08
-**Commit:** `0.11.0`
+**Commit:** `6a493ec`
 ---
 
 # Changelog
@@ -10,6 +10,18 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Added
+- *(2026-02-08)* **UI**: Updated `ShortcutManager` and "Keyboard Shortcuts" dialog with new hotkeys (Navigate Link, Choose Relation Type, Deselect) and improved categorization.
+
+### Fixed
+- *(2026-02-08)* **Bug**: Fixed duplicate End Date field appearing in the Event Inspector.
+
+### Documentation
+- *(2026-02-08)* **Docs**: Completed major documentation overhaul, consolidating 62 legacy files into structured User and Technical guides (API Reference, Testing, Contributing, Architecture).
+
+### Cleanup
+- *(2026-02-08)* **Cleanup**: Removed temporary test output files and development-only documentation.
 
 ## [0.11.0]
 
