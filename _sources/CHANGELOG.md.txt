@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-08
 ### Internal
-- Merge pull request #74 from cmintert/copilot/rewrite-docs-and-archive-old
+- chore: remove temporary test output files and development documentation.
 
 
 *This changelog was automatically generated.*
