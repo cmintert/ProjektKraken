@@ -436,9 +436,15 @@ class GraphWidget(QWidget):
         self._all_edges = []
 
     def showEvent(self, event: QEvent) -> None:
+        """Handle widget show event by refreshing the graph view.
+        
+        Args:
+            event: The show event.
+        """
         self._logger.info("GraphWidget.showEvent — visible")
 
         def _refresh() -> None:
+            """Refresh the web view content."""
             try:
                 reload_fn = getattr(self._web_view, "reload", None)
                 if callable(reload_fn):
@@ -454,8 +460,18 @@ class GraphWidget(QWidget):
         QTimer.singleShot(0, _refresh)
 
     def hideEvent(self, event: QEvent) -> None:
+        """Handle widget hide event.
+        
+        Args:
+            event: The hide event.
+        """
         self._logger.info("GraphWidget.hideEvent — hidden")
 
     def resizeEvent(self, event: QEvent) -> None:
+        """Handle widget resize event.
+        
+        Args:
+            event: The resize event.
+        """
         s = event.size()
         self._logger.debug(f"GraphWidget.resizeEvent -> {s.width()}x{s.height()}")

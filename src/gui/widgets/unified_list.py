@@ -433,6 +433,14 @@ class UnifiedListWidget(QWidget):
         def get_sort_key(
             item_tuple: tuple[str, Union[Event, Entity]],
         ) -> Union[str, float]:
+            """Get sort key for an item based on current sort field.
+            
+            Args:
+                item_tuple: Tuple of (item_type, item_object).
+                
+            Returns:
+                Sort key value (string or float).
+            """
             item_type, obj = item_tuple
             if sort_field == "Name":
                 return obj.name.lower()
@@ -693,13 +701,16 @@ class UnifiedListWidget(QWidget):
         return True
 
     def _create_event_trigger(self) -> None:
+        """Trigger event creation if conditions are met."""
         if self._should_trigger_shortcut():
             self.create_event_requested.emit()
 
     def _create_entity_trigger(self) -> None:
+        """Trigger entity creation if conditions are met."""
         if self._should_trigger_shortcut():
             self.create_entity_requested.emit()
 
     def _create_map_trigger(self) -> None:
+        """Trigger map creation if conditions are met."""
         if self._should_trigger_shortcut():
             self.create_map_requested.emit()

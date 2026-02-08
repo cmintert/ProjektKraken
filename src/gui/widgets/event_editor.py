@@ -10,6 +10,7 @@ import traceback
 from typing import Any, Dict
 
 from PySide6.QtCore import QPoint, QSize, Qt, Signal, Slot
+from PySide6.QtGui import QDragEnterEvent, QDragLeaveEvent, QDragMoveEvent, QDropEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
@@ -388,7 +389,7 @@ class EventEditorWidget(QWidget):
         if self._drop_hint_label:
             self._drop_hint_label.hide()
 
-    def dragEnterEvent(self, event) -> None:
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """Handle drag enter event to accept MIME data from Project Explorer.
 
         Args:
@@ -409,7 +410,7 @@ class EventEditorWidget(QWidget):
         else:
             event.ignore()
 
-    def dragMoveEvent(self, event) -> None:
+    def dragMoveEvent(self, event: QDragMoveEvent) -> None:
         """Handle drag move event.
 
         Args:
@@ -429,7 +430,7 @@ class EventEditorWidget(QWidget):
         else:
             event.ignore()
 
-    def dragLeaveEvent(self, event) -> None:
+    def dragLeaveEvent(self, event: QDragLeaveEvent) -> None:
         """Handle drag leave event - hide drop hint and type picker.
 
         Args:
@@ -505,7 +506,7 @@ class EventEditorWidget(QWidget):
             logger.info(f"EventEditor: Relation type selected: {relation_type}")
             self._show_drop_hint(self._selected_relation_type)
 
-    def dropEvent(self, event) -> None:
+    def dropEvent(self, event: QDropEvent) -> None:
         """Handle drop event to create relation from dragged item to current event.
 
         Args:

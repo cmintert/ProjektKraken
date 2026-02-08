@@ -63,28 +63,59 @@ class NoLayoutLabel(QWidget):
     """
 
     def __init__(self, text: str = "", parent: QWidget | None = None) -> None:
+        """Initialize the scale indicator label.
+        
+        Args:
+            text: Initial text to display.
+            parent: Optional parent widget.
+        """
         super().__init__(parent)
         self._text = text
         self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
     def setText(self, text: str) -> None:
+        """Set the label text without triggering layout recalculation.
+        
+        Args:
+            text: New text to display.
+        """
         if self._text != text:
             self._text = text
             # Trigger paint directly - DO NOT call updateGeometry
             self.update()
 
     def text(self) -> str:
+        """Get the current label text.
+        
+        Returns:
+            The current text string.
+        """
         return self._text
 
     def sizeHint(self) -> QSize:
+        """Get the preferred size hint.
+        
+        Returns:
+            Fixed size of 50x20 pixels.
+        """
         # minimal fixed size
         return QSize(50, 20)
 
     def minimumSizeHint(self) -> QSize:
+        """Get the minimum size hint.
+        
+        Returns:
+            Minimum size of 50x20 pixels.
+        """
         return QSize(50, 20)
 
     def paintEvent(self, event: QPaintEvent) -> None:
+        """Paint the scale indicator text.
+        
+        Args:
+            event: The paint event.
+        """
         from PySide6.QtGui import QColor, QPainter
 
         painter = QPainter(self)
@@ -1027,6 +1058,11 @@ class OnboardingDialog(QDialog):
     """Onboarding dialog shown when the first keyframe is created."""
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
+        """Initialize the onboarding dialog.
+        
+        Args:
+            parent: Optional parent widget.
+        """
         super().__init__(parent)
         self.setWindowTitle("✨ Keyframe Created!")
         self.setFixedWidth(400)

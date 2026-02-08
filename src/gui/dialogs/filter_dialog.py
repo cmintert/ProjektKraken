@@ -1,3 +1,7 @@
+"""Filter Dialog Module.
+
+Provides a dialog for advanced filtering configuration.
+"""
 from typing import Any, Dict, List, Optional
 
 from PySide6.QtWidgets import (

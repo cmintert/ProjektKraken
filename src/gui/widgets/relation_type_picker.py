@@ -7,7 +7,7 @@ for selection during drag-and-drop operations.
 import logging
 from typing import List, Optional
 
-from PySide6.QtCore import QPoint, Qt, Signal
+from PySide6.QtCore import QEvent, QObject, QPoint, Qt, Signal
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -259,7 +259,7 @@ class RelationTypePicker(QWidget):
         # Hide the picker
         self.hide()
 
-    def eventFilter(self, obj: QWidget, event) -> bool:
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         """Filter events to handle Escape key.
 
         Args:

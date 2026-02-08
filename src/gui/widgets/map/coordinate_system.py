@@ -16,6 +16,7 @@ class MapCoordinateSystem:
     """Manages coordinate transformations for the map."""
 
     def __init__(self) -> None:
+        """Initialize the coordinate system."""
         self._scene_rect = QRectF()
 
     def set_scene_rect(self, rect: QRectF) -> None:

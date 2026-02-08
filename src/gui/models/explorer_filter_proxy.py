@@ -4,9 +4,10 @@ Provides sorting and filtering for the Explorer model.
 """
 
 import logging
-from typing import Union
+from typing import Optional, Union
 
 from PySide6.QtCore import QModelIndex, QSortFilterProxyModel, Qt
+from PySide6.QtWidgets import QWidget
 
 from src.core.entities import Entity
 from src.core.events import Event
@@ -22,7 +23,7 @@ class ExplorerFilterProxyModel(QSortFilterProxyModel):
     Supports filtering by search term, item type, and tags.
     """
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the filter proxy model.
 
         Args:

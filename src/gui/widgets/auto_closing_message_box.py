@@ -7,6 +7,7 @@ Used for transient notifications like toast messages.
 from typing import Optional
 
 from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import QMessageBox, QWidget
 
 
@@ -47,7 +48,7 @@ class AutoClosingMessageBox(QMessageBox):
         if parent:
             self.setWindowModality(Qt.WindowModality.WindowModal)
 
-    def showEvent(self, event) -> None:
+    def showEvent(self, event: QShowEvent) -> None:
         """Starts the auto-close timer when the dialog is shown."""
         super().showEvent(event)
         # Use an explicit timer object as a child of the dialog for maximum

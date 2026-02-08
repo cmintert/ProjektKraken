@@ -1,3 +1,7 @@
+"""Summary Widget Module.
+
+Provides a widget for displaying and managing AI-generated item summaries.
+"""
 from datetime import datetime
 
 from PySide6.QtCore import Signal
@@ -28,11 +32,17 @@ class SummaryWidget(QWidget):
     generate_requested = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
+        """Initialize the summary widget.
+        
+        Args:
+            parent: Optional parent widget.
+        """
         super().__init__(parent)
         self._setup_ui()
         self._apply_styles()
 
     def _setup_ui(self) -> None:
+        """Set up the user interface components."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
