@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 
 from PySide6.QtCore import QPoint, Qt, Signal, Slot
 from PySide6.QtGui import (
+    QAction,
     QBrush,
     QColor,
     QDrag,
@@ -16,6 +17,7 @@ from PySide6.QtGui import (
     QKeyEvent,
 )
 from PySide6.QtWidgets import (
+    QMenu,
     QTreeWidget,
     QTreeWidgetItem,
     QTreeWidgetItemIterator,
@@ -36,6 +38,9 @@ class LongformOutlineWidget(QTreeWidget):
     item_moved = Signal(str, str, dict, dict)  # table, id, old_meta, new_meta
     item_promoted = Signal(str, str, dict)  # table, id, old_meta
     item_demoted = Signal(str, str, dict)  # table, id, old_meta
+    item_removed = Signal(str, str, dict)  # table, id, old_meta
+    item_move_up = Signal(str, str, dict)  # table, id, old_meta
+    item_move_down = Signal(str, str, dict)  # table, id, old_meta
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the outline widget."""
@@ -297,9 +302,77 @@ class LongformOutlineWidget(QTreeWidget):
                 self.item_selected.emit(table, row_id)
 
     def _show_context_menu(self, pos: QPoint) -> None:
-        """Show context menu for outline items."""
-        # TODO: Implement context menu with promote/demote/remove options
-        pass
+        """Show context menu for outline items.
+        
+        Args:
+            pos: Position where context menu was requested.
+        
+        """
+        item = self.itemAt(pos)
+        if not item:
+            return
+        
+        meta_data = self._item_meta.get(id(item))
+        if not meta_data:
+            return
+        
+        table, row_id, old_meta = meta_data
+        
+        # Create context menu
+        menu = QMenu(self)
+        
+        # Check if item can be moved up or down
+        parent = item.parent()
+        if parent:
+            index = parent.indexOfChild(item)
+            can_move_up = index > 0
+            can_move_down = index < parent.childCount() - 1
+        else:
+            index = self.indexOfTopLevelItem(item)
+            can_move_up = index > 0
+            can_move_down = index < self.topLevelItemCount() - 1
+        
+        # Move Up action
+        move_up_action = QAction("Move Up", self)
+        move_up_action.setEnabled(can_move_up)
+        move_up_action.triggered.connect(lambda: self._move_up_selected())
+        menu.addAction(move_up_action)
+        
+        # Move Down action
+        move_down_action = QAction("Move Down", self)
+        move_down_action.setEnabled(can_move_down)
+        move_down_action.triggered.connect(lambda: self._move_down_selected())
+        menu.addAction(move_down_action)
+        
+        menu.addSeparator()
+        
+        # Promote action (can only promote if depth > 0)
+        promote_action = QAction("Promote", self)
+        current_depth = old_meta.get("depth", 0)
+        promote_action.setEnabled(current_depth > 0)
+        promote_action.triggered.connect(lambda: self._promote_selected())
+        menu.addAction(promote_action)
+        
+        # Demote action (can only demote if there's a previous sibling to become parent)
+        demote_action = QAction("Demote", self)
+        can_demote = False
+        if parent:
+            can_demote = parent.indexOfChild(item) > 0
+        else:
+            can_demote = self.indexOfTopLevelItem(item) > 0
+        demote_action.setEnabled(can_demote)
+        demote_action.triggered.connect(lambda: self._demote_selected())
+        menu.addAction(demote_action)
+        
+        menu.addSeparator()
+        
+        # Delete action
+        delete_action = QAction("Delete from Longform", self)
+        delete_action.triggered.connect(lambda: self._remove_selected())
+        menu.addAction(delete_action)
+        
+        # Show menu at global position
+        menu.exec(self.mapToGlobal(pos))
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Handle keyboard shortcuts for promote/demote operations."""
@@ -339,3 +412,145 @@ class LongformOutlineWidget(QTreeWidget):
         if meta_data:
             table, row_id, old_meta = meta_data
             self.item_demoted.emit(table, row_id, old_meta.copy())
+
+    def _move_up_selected(self) -> None:
+        """Move the selected item up in its sibling list."""
+        items = self.selectedItems()
+        if not items:
+            return
+
+        item = items[0]
+        meta_data = self._item_meta.get(id(item))
+        if not meta_data:
+            return
+
+        table, row_id, old_meta = meta_data
+
+        # Get parent and current index
+        parent = item.parent()
+        if parent:
+            current_index = parent.indexOfChild(item)
+            if current_index <= 0:
+                return  # Can't move up
+            prev_item = parent.child(current_index - 1)
+        else:
+            current_index = self.indexOfTopLevelItem(item)
+            if current_index <= 0:
+                return  # Can't move up
+            prev_item = self.topLevelItem(current_index - 1)
+
+        # Get the previous item's position
+        if id(prev_item) not in self._item_meta:
+            return
+
+        prev_meta = self._item_meta[id(prev_item)][2]
+        prev_pos = prev_meta.get("position", 0.0)
+        current_pos = old_meta.get("position", 0.0)
+
+        # Calculate position before previous item
+        # Look for item before prev_item
+        if parent:
+            if current_index > 1:
+                before_prev_item = parent.child(current_index - 2)
+                if id(before_prev_item) in self._item_meta:
+                    before_prev_pos = self._item_meta[id(before_prev_item)][2].get(
+                        "position", 0.0
+                    )
+                    new_pos = (before_prev_pos + prev_pos) / 2.0
+                else:
+                    new_pos = prev_pos - 100.0
+            else:
+                new_pos = prev_pos - 100.0
+        else:
+            if current_index > 1:
+                before_prev_item = self.topLevelItem(current_index - 2)
+                if id(before_prev_item) in self._item_meta:
+                    before_prev_pos = self._item_meta[id(before_prev_item)][2].get(
+                        "position", 0.0
+                    )
+                    new_pos = (before_prev_pos + prev_pos) / 2.0
+                else:
+                    new_pos = prev_pos - 100.0
+            else:
+                new_pos = prev_pos - 100.0
+
+        # Emit signal with new position
+        self.item_move_up.emit(table, row_id, old_meta.copy())
+
+    def _move_down_selected(self) -> None:
+        """Move the selected item down in its sibling list."""
+        items = self.selectedItems()
+        if not items:
+            return
+
+        item = items[0]
+        meta_data = self._item_meta.get(id(item))
+        if not meta_data:
+            return
+
+        table, row_id, old_meta = meta_data
+
+        # Get parent and current index
+        parent = item.parent()
+        if parent:
+            current_index = parent.indexOfChild(item)
+            sibling_count = parent.childCount()
+            if current_index >= sibling_count - 1:
+                return  # Can't move down
+            next_item = parent.child(current_index + 1)
+        else:
+            current_index = self.indexOfTopLevelItem(item)
+            sibling_count = self.topLevelItemCount()
+            if current_index >= sibling_count - 1:
+                return  # Can't move down
+            next_item = self.topLevelItem(current_index + 1)
+
+        # Get the next item's position
+        if id(next_item) not in self._item_meta:
+            return
+
+        next_meta = self._item_meta[id(next_item)][2]
+        next_pos = next_meta.get("position", 0.0)
+        current_pos = old_meta.get("position", 0.0)
+
+        # Calculate position after next item
+        # Look for item after next_item
+        if parent:
+            if current_index < sibling_count - 2:
+                after_next_item = parent.child(current_index + 2)
+                if id(after_next_item) in self._item_meta:
+                    after_next_pos = self._item_meta[id(after_next_item)][2].get(
+                        "position", 0.0
+                    )
+                    new_pos = (next_pos + after_next_pos) / 2.0
+                else:
+                    new_pos = next_pos + 100.0
+            else:
+                new_pos = next_pos + 100.0
+        else:
+            if current_index < sibling_count - 2:
+                after_next_item = self.topLevelItem(current_index + 2)
+                if id(after_next_item) in self._item_meta:
+                    after_next_pos = self._item_meta[id(after_next_item)][2].get(
+                        "position", 0.0
+                    )
+                    new_pos = (next_pos + after_next_pos) / 2.0
+                else:
+                    new_pos = next_pos + 100.0
+            else:
+                new_pos = next_pos + 100.0
+
+        # Emit signal with new position
+        self.item_move_down.emit(table, row_id, old_meta.copy())
+
+    def _remove_selected(self) -> None:
+        """Remove the selected item from longform."""
+        items = self.selectedItems()
+        if not items:
+            return
+
+        item = items[0]
+        meta_data = self._item_meta.get(id(item))
+        if meta_data:
+            table, row_id, old_meta = meta_data
+            self.item_removed.emit(table, row_id, old_meta.copy())
