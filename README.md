@@ -12,6 +12,10 @@ commit: 0.11.0
 **v0.11.0 (Beta)**
 **Projekt Kraken** is a desktop worldbuilding environment designed for the "Architect" persona. It treats history as the primary axis of the world, offering a timeline-first approach to lore creation.
 
+## Screenshot
+
+![Layout](<Screenshot 2026-02-08 174625.png>)
+
 ## Portable-Only Architecture
 
 ProjektKraken uses a **portable-only architecture** where all worlds are stored next to the executable in a `worlds/` directory. Each world is completely self-contained.
