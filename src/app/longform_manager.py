@@ -17,6 +17,7 @@ from src.commands.longform_commands import (
     RemoveLongformEntryCommand,
 )
 from src.core.logging_config import get_logger
+from src.services.longform_builder import DEFAULT_POSITION_GAP
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
@@ -204,7 +205,7 @@ class LongformManager(QObject):
             before_prev_pos = sequence[before_prev_idx]["meta"].get("position", 0.0)
             new_pos = (before_prev_pos + prev_pos) / 2.0
         else:
-            new_pos = prev_pos - 100.0
+            new_pos = prev_pos - DEFAULT_POSITION_GAP
         
         # Create new metadata
         new_meta = old_meta.copy()
@@ -266,7 +267,7 @@ class LongformManager(QObject):
             after_next_pos = sequence[after_next_idx]["meta"].get("position", 0.0)
             new_pos = (next_pos + after_next_pos) / 2.0
         else:
-            new_pos = next_pos + 100.0
+            new_pos = next_pos + DEFAULT_POSITION_GAP
         
         # Create new metadata
         new_meta = old_meta.copy()
