@@ -20,7 +20,7 @@ When right-clicking on "Section 1.2":
 │ Promote             │  ◄── Enabled (depth > 0)
 │ Demote              │  ◄── Enabled (has previous sibling)
 ├─────────────────────┤
-│ Delete from Longform│  ◄── Always enabled
+│ Delete Item│  ◄── Always enabled
 └─────────────────────┘
 
 Context Menu States:
@@ -34,7 +34,7 @@ Context Menu States:
    │ Promote             │  ◄── Disabled (already top level)
    │ Demote              │  ◄── Disabled (no previous sibling)
    ├─────────────────────┤
-   │ Delete from Longform│  ◄── Enabled
+   │ Delete Item│  ◄── Enabled
    └─────────────────────┘
 
 2. First child item (Section 1.1):
@@ -45,7 +45,7 @@ Context Menu States:
    │ Promote             │  ◄── Enabled (can become sibling of parent)
    │ Demote              │  ◄── Disabled (no previous sibling)
    ├─────────────────────┤
-   │ Delete from Longform│  ◄── Enabled
+   │ Delete Item│  ◄── Enabled
    └─────────────────────┘
 
 3. Middle child item (Section 1.2 when multiple siblings exist):
@@ -56,7 +56,7 @@ Context Menu States:
    │ Promote             │  ◄── Enabled
    │ Demote              │  ◄── Enabled (has previous sibling)
    ├─────────────────────┤
-   │ Delete from Longform│  ◄── Enabled
+   │ Delete Item│  ◄── Enabled
    └─────────────────────┘
 
 Action Examples:

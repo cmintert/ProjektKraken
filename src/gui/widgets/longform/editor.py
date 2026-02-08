@@ -45,7 +45,7 @@ class LongformEditorWidget(QWidget):
     # Signals
     promote_requested = Signal(str, str, dict)  # table, id, old_meta
     demote_requested = Signal(str, str, dict)  # table, id, old_meta
-    remove_requested = Signal(str, str, dict)  # table, id, old_meta
+    delete_requested = Signal(str, str)  # table, id - completely delete the item
     move_up_requested = Signal(str, str, dict)  # table, id, old_meta
     move_down_requested = Signal(str, str, dict)  # table, id, old_meta
     refresh_requested = Signal()
@@ -219,7 +219,7 @@ class LongformEditorWidget(QWidget):
         self.outline.item_promoted.connect(self.promote_requested.emit)
         self.outline.item_demoted.connect(self.demote_requested.emit)
         self.outline.item_moved.connect(self.item_moved.emit)
-        self.outline.item_removed.connect(self.remove_requested.emit)
+        self.outline.item_deleted.connect(self.delete_requested.emit)
         self.outline.item_move_up.connect(self.move_up_requested.emit)
         self.outline.item_move_down.connect(self.move_down_requested.emit)
 

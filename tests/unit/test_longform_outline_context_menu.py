@@ -150,13 +150,12 @@ def test_remove_signal_emitted(outline_widget, sample_sequence, qtbot):
     outline_widget.setCurrentItem(item)
     
     # Use signal spy
-    with qtbot.waitSignal(outline_widget.item_removed, timeout=1000) as blocker:
-        outline_widget._remove_selected()
+    with qtbot.waitSignal(outline_widget.item_deleted, timeout=1000) as blocker:
+        outline_widget._delete_selected()
     
     # Check signal data
     assert blocker.args[0] == "events"
     assert blocker.args[1] == "event1"
-    assert blocker.args[2]["depth"] == 0
 
 
 def test_move_up_signal_emitted(outline_widget, sample_sequence, qtbot):
@@ -314,4 +313,4 @@ def test_context_menu_actions_present(outline_widget, sample_sequence, qtbot, mo
     assert "Move Down" in action_texts
     assert "Promote" in action_texts
     assert "Demote" in action_texts
-    assert "Delete from Longform" in action_texts
+    assert "Delete Item" in action_texts

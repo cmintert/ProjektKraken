@@ -14,8 +14,9 @@ from src.commands.longform_commands import (
     DemoteLongformEntryCommand,
     MoveLongformEntryCommand,
     PromoteLongformEntryCommand,
-    RemoveLongformEntryCommand,
 )
+from src.commands.entity_commands import DeleteEntityCommand
+from src.commands.event_commands import DeleteEventCommand
 from src.core.logging_config import get_logger
 from src.services.longform_builder import DEFAULT_POSITION_GAP
 
@@ -140,16 +141,22 @@ class LongformManager(QObject):
         cmd = MoveLongformEntryCommand(table, row_id, old_meta, new_meta)
         self.window.command_requested.emit(cmd)
 
-    def remove_longform_entry(self, table: str, row_id: str, old_meta: dict) -> None:
-        """Remove a longform entry from the document.
+    def delete_longform_item(self, table: str, row_id: str) -> None:
+        """Delete an item completely (Event or Entity).
 
         Args:
             table: Table name ("events" or "entities").
-            row_id: ID of the item to remove.
-            old_meta: Previous longform metadata for undo.
+            row_id: ID of the item to delete.
 
         """
-        cmd = RemoveLongformEntryCommand(table, row_id, old_meta)
+        if table == "events":
+            cmd = DeleteEventCommand(row_id)
+        elif table == "entities":
+            cmd = DeleteEntityCommand(row_id)
+        else:
+            logger.error(f"Unknown table type for deletion: {table}")
+            return
+        
         self.window.command_requested.emit(cmd)
 
     def move_up_longform_entry(self, table: str, row_id: str, old_meta: dict) -> None:

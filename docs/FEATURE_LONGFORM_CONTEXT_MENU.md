@@ -36,11 +36,12 @@ Right-clicking on any item in the Longform Outline reveals a context menu with t
 - Disabled when there's no previous sibling to become parent of
 - **Keyboard Shortcut**: Ctrl+] (Cmd+] on Mac)
 
-#### 5. **Delete from Longform**
-- Removes the item from the longform document
-- Does not delete the underlying Event or Entity
-- Can be undone with Ctrl+Z
-- **Keyboard Alternative**: None (previously required manual removal)
+#### 5. **Delete Item**
+- Completely deletes the selected Event or Entity
+- This is a permanent deletion (can be undone with Ctrl+Z)
+- Use when you want to remove an item entirely from your project
+- **Warning**: This deletes the actual item, not just its placement in the outline
+- **Keyboard Alternative**: None
 
 ## User Experience Improvements
 

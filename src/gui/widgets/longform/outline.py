@@ -38,7 +38,7 @@ class LongformOutlineWidget(QTreeWidget):
     item_moved = Signal(str, str, dict, dict)  # table, id, old_meta, new_meta
     item_promoted = Signal(str, str, dict)  # table, id, old_meta
     item_demoted = Signal(str, str, dict)  # table, id, old_meta
-    item_removed = Signal(str, str, dict)  # table, id, old_meta
+    item_deleted = Signal(str, str)  # table, id - completely delete the item
     item_move_up = Signal(str, str, dict)  # table, id, old_meta
     item_move_down = Signal(str, str, dict)  # table, id, old_meta
 
@@ -402,9 +402,9 @@ class LongformOutlineWidget(QTreeWidget):
         
         menu.addSeparator()
         
-        # Delete action
-        delete_action = QAction("Delete from Longform", self)
-        delete_action.triggered.connect(lambda: self._remove_selected())
+        # Delete action - completely deletes the item
+        delete_action = QAction("Delete Item", self)
+        delete_action.triggered.connect(lambda: self._delete_selected())
         menu.addAction(delete_action)
         
         # Show menu at global position
@@ -500,7 +500,7 @@ class LongformOutlineWidget(QTreeWidget):
         self.item_move_down.emit(table, row_id, old_meta.copy())
 
     def _remove_selected(self) -> None:
-        """Remove the selected item from longform."""
+        """Remove the selected item from longform (deprecated - use _delete_selected)."""
         items = self.selectedItems()
         if not items:
             return
@@ -509,4 +509,18 @@ class LongformOutlineWidget(QTreeWidget):
         meta_data = self._get_item_metadata(item)
         if meta_data:
             table, row_id, old_meta = meta_data
-            self.item_removed.emit(table, row_id, old_meta.copy())
+            # Still emit old signal for backward compatibility if needed
+            # but prefer using delete
+            self.item_deleted.emit(table, row_id)
+
+    def _delete_selected(self) -> None:
+        """Delete the selected item completely (Event or Entity)."""
+        items = self.selectedItems()
+        if not items:
+            return
+
+        item = items[0]
+        meta_data = self._get_item_metadata(item)
+        if meta_data:
+            table, row_id, old_meta = meta_data
+            self.item_deleted.emit(table, row_id)

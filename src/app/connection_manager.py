@@ -641,8 +641,8 @@ class ConnectionManager:
 
         if not self._connect_signal_safe(
             longform,
-            "remove_requested",
-            self.window.longform_manager.remove_longform_entry,
+            "delete_requested",
+            self.window.longform_manager.delete_longform_item,
             "LongformEditor",
         ):
             failed_count += 1
