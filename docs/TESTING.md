@@ -1,149 +1,128 @@
----
-**Project:** ProjektKraken  
-**Document:** Testing Guide  
-**Last Updated:** 2026-01-17  
----
-
 # Testing Guide
 
-This document explains how to run tests for ProjektKraken, including setup requirements for different platforms.
+**Version:** 0.11.0 (Beta)  
+**Last Updated:** February 2026
 
-## Quick Start
+Comprehensive guide to testing in ProjektKraken.
 
-```bash
-# Install dependencies
-pip install -r requirements.txt
+---
 
-# Run all tests
-pytest
+## Table of Contents
 
-# Run with coverage
-pytest --cov=src --cov-report=term-missing
-```
+1. [Testing Overview](#testing-overview)
+2. [Test Structure](#test-structure)
+3. [Running Tests](#running-tests)
+4. [Writing Tests](#writing-tests)
+5. [Test Fixtures](#test-fixtures)
+6. [Testing Patterns](#testing-patterns)
+7. [Coverage](#coverage)
+8. [Continuous Integration](#continuous-integration)
+
+---
+
+## Testing Overview
+
+### Testing Framework
+
+ProjektKraken uses **pytest** as the primary testing framework with additional plugins:
+
+- **pytest**: Core testing framework
+- **pytest-qt**: Qt/PySide6 testing support
+- **pytest-cov**: Code coverage measurement
+- **pytest-mock**: Mocking support
+
+### Test Philosophy
+
+**Goals:**
+
+1. **Confidence**: Tests should give confidence that code works correctly
+2. **Speed**: Tests should run quickly for fast feedback
+3. **Isolation**: Tests should not depend on each other
+4. **Clarity**: Tests should be easy to read and understand
+
+**Coverage Target**: 95%+ overall, 100% for core business logic.
+
+---
 
 ## Test Structure
 
+### Directory Organization
+
 ```
 tests/
-├── conftest.py              # Shared fixtures and configuration
+├── conftest.py              # Shared fixtures
 ├── unit/                    # Fast unit tests
-└── integration/             # Integration tests
-    ├── test_main_window_initialization.py
-    ├── test_main_window_wiring.py
-    └── ...
+│   ├── test_events.py
+│   ├── test_entities.py
+│   ├── test_commands.py
+│   └── test_repositories.py
+├── integration/             # Integration tests
+│   ├── test_db_service.py
+│   ├── test_commands.py
+│   ├── test_main_window_initialization.py
+│   └── test_undo_redo_hotkeys.py
+├── gui/                     # GUI widget tests
+│   ├── test_entity_editor.py
+│   ├── test_event_editor.py
+│   └── test_timeline.py
+├── cli/                     # CLI command tests
+│   ├── test_event_cli.py
+│   └── test_entity_cli.py
+└── security/                # Security tests
+    └── test_sql_injection.py
 ```
 
-## Dependencies
+### Test Types
 
-### Python Dependencies
+| Type | Purpose | Speed | Dependencies |
+|------|---------|-------|--------------|
+| **Unit** | Test individual functions/classes | Fast (ms) | None |
+| **Integration** | Test component interactions | Medium (100ms) | Database |
+| **GUI** | Test widget behavior | Medium (100ms) | Qt, qtbot |
+| **CLI** | Test command-line interface | Fast (ms) | Minimal |
+| **Security** | Test for vulnerabilities | Fast (ms) | None |
 
-All Python dependencies are in `requirements.txt`:
+---
 
-- **Testing Framework**: pytest, pytest-qt, pytest-cov
-- **GUI Framework**: PySide6 (Qt 6)
-- **Web Server**: fastapi, uvicorn (for longform editor live preview)
-- **Graph Visualization**: pyvis, networkx
-- **Environment Config**: python-dotenv
-- And more...
+## Running Tests
 
-### System Dependencies (Linux/CI)
+### Basic Test Execution
 
-For headless testing (CI, Linux without display), you need Qt platform libraries:
+**Run all tests:**
 
 ```bash
-# Ubuntu/Debian
-sudo apt-get install -y \
-    libegl1 \
-    libxkbcommon-x11-0 \
-    libxcb-icccm4 \
-    libxcb-image0 \
-    libxcb-keysyms1 \
-    libxcb-randr0 \
-    libxcb-render-util0 \
-    libxcb-xinerama0 \
-    libxcb-xfixes0
+pytest
 ```
 
-These libraries are required for Qt to run in offscreen mode without a display.
-
-## Headless Testing
-
-### Automatic Configuration
-
-The test suite automatically configures Qt to run in offscreen mode via `tests/conftest.py`:
-
-```python
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-```
-
-This allows tests to run without a display server (X11, Wayland, etc.).
-
-### Manual Override
-
-If you need to run tests with a different Qt platform:
+**Run with output:**
 
 ```bash
-# Linux with display
-export QT_QPA_PLATFORM=xcb
-pytest
-
-# Force offscreen mode
-export QT_QPA_PLATFORM=offscreen
-pytest
-
-# Windows (no override needed)
-pytest
+pytest -v
 ```
 
-## Platform-Specific Notes
+**Run specific test file:**
 
-### Windows
-
-- Qt automatically uses the Windows native platform
-- No special configuration needed
-- System dependencies are included with PySide6
-
-### Linux with Display
-
-- Tests will use offscreen mode by default
-- To use the X11 display, set `QT_QPA_PLATFORM=xcb`
-- Useful for debugging GUI issues visually
-
-### macOS
-
-- Qt automatically uses the macOS native platform
-- No special configuration needed
-
-### CI/CD (GitHub Actions, etc.)
-
-The test suite is designed to work in headless CI environments:
-
-1. Install system dependencies (Linux only)
-2. Install Python dependencies from `requirements.txt`
-3. Run tests with `pytest`
-
-Example GitHub Actions workflow:
-
-```yaml
-- name: Install system dependencies
-  if: runner.os == 'Linux'
-  run: |
-    sudo apt-get update
-    sudo apt-get install -y libegl1 libxkbcommon-x11-0 \
-      libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
-      libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 \
-      libxcb-xfixes0
-
-- name: Install Python dependencies
-  run: pip install -r requirements.txt
-
-- name: Run tests
-  run: pytest --cov=src --cov-report=term-missing
+```bash
+pytest tests/unit/test_events.py
 ```
 
-## Test Markers
+**Run specific test function:**
 
-Tests can be filtered using pytest markers:
+```bash
+pytest tests/unit/test_events.py::test_event_creation
+```
+
+**Run specific test class:**
+
+```bash
+pytest tests/unit/test_events.py::TestEventCreation
+```
+
+---
+
+### Test Markers
+
+**Run by marker:**
 
 ```bash
 # Run only unit tests
@@ -156,243 +135,697 @@ pytest -m integration
 pytest -m "not slow"
 ```
 
-Available markers (defined in `pytest.ini`):
-- `unit` - Fast unit tests
-- `integration` - Integration tests
-- `slow` - Tests that take >1 second
+**Available markers** (defined in `pytest.ini`):
 
-## Known Issues
+- `unit`: Fast unit tests
+- `integration`: Integration tests with dependencies
+- `slow`: Tests that take >1 second
 
-### Segmentation Fault on Exit
+---
 
-You may see a segmentation fault after all tests pass:
+### Coverage Reports
 
-```
-12 passed in 1.32s
-Release of profile requested but WebEnginePage still not deleted. Expect troubles !
-Segmentation fault (core dumped)
-```
-
-This is a known issue with Qt WebEngine cleanup in headless mode. The tests themselves pass successfully; the crash occurs during cleanup. This does not affect test results.
-
-## Troubleshooting
-
-### Import Errors
-
-If you see `ModuleNotFoundError` for any package:
+**Run with coverage:**
 
 ```bash
-# Reinstall all dependencies
-pip install -r requirements.txt
+pytest --cov=src --cov-report=term-missing
 ```
 
-### Qt Platform Plugin Errors
+**Generate HTML coverage report:**
 
-If you see errors like "cannot open shared object file: No such file or directory":
+```bash
+pytest --cov=src --cov-report=html
+# Opens htmlcov/index.html
+```
 
-1. **Linux**: Install the system dependencies listed above
-2. **Windows**: Ensure PySide6 is properly installed
-3. **macOS**: Ensure PySide6 is properly installed
+**Coverage for specific module:**
 
-### QApplication Instance Errors
+```bash
+pytest --cov=src.commands tests/unit/test_commands.py
+```
 
-If you see errors about QApplication being instantiated multiple times:
+**Show missing lines:**
 
-- This is handled by the `qapp` fixture in `conftest.py`
-- Use the `qtbot` fixture from pytest-qt for GUI tests
-- Don't create QApplication instances directly in tests
+```bash
+pytest --cov=src --cov-report=term-missing
+```
+
+---
+
+### Useful Options
+
+| Option | Description |
+|--------|-------------|
+| `-v` | Verbose output |
+| `-s` | Show print statements |
+| `-x` | Stop on first failure |
+| `--lf` | Run last failed tests |
+| `--ff` | Run failed tests first |
+| `-k EXPRESSION` | Run tests matching expression |
+| `--pdb` | Drop into debugger on failure |
+| `-n NUM` | Run tests in parallel (requires pytest-xdist) |
+
+**Examples:**
+
+```bash
+# Run tests with "entity" in name
+pytest -k entity
+
+# Run tests, stop on first failure, show prints
+pytest -x -s
+
+# Run last failed tests with debugger
+pytest --lf --pdb
+```
+
+---
 
 ## Writing Tests
 
-### Unit Tests
+### Test Naming
 
-Unit tests should:
-- Be fast (< 100ms)
-- Test a single function or class
-- Use mocks for external dependencies
-- Be marked with `@pytest.mark.unit`
+**Convention**: `test_<method>_<scenario>_<expected_result>`
 
-Example:
+**Examples:**
+
+```python
+def test_create_event_with_valid_data_returns_event():
+    """Test creating an event with valid input."""
+    pass
+
+def test_create_event_with_invalid_date_raises_value_error():
+    """Test that invalid date raises ValueError."""
+    pass
+
+def test_update_entity_with_new_name_updates_database():
+    """Test entity name update persists to database."""
+    pass
+```
+
+---
+
+### Basic Test Structure
 
 ```python
 import pytest
 from src.core.events import Event
 
-@pytest.mark.unit
 def test_event_creation():
     """Test that Event instances are created correctly."""
-    event = Event(name="Test", lore_date=100.0)
-    assert event.name == "Test"
-    assert event.lore_date == 100.0
+    # Arrange
+    name = "Test Event"
+    lore_date = 100.0
+    
+    # Act
+    event = Event(name=name, lore_date=lore_date)
+    
+    # Assert
+    assert event.name == name
+    assert event.lore_date == lore_date
+    assert event.id is not None
+    assert event.type == "generic"
 ```
 
-### Integration Tests
+**AAA Pattern** (Arrange, Act, Assert):
 
-Integration tests should:
-- Test multiple components together
-- Use real database (in-memory SQLite)
-- Use the `db_service` fixture
-- Be marked with `@pytest.mark.integration`
+1. **Arrange**: Set up test data and preconditions
+2. **Act**: Execute the code being tested
+3. **Assert**: Verify the expected outcome
 
-Example:
+---
+
+### Testing with Database
+
+**Use in-memory database:**
 
 ```python
 import pytest
 from src.services.db_service import DatabaseService
 
-@pytest.mark.integration
-def test_event_persistence(db_service):
-    """Test that events are persisted to database."""
-    event_id = db_service.create_event("Test", 100.0)
-    event = db_service.get_event(event_id)
-    assert event.name == "Test"
+@pytest.fixture
+def db_service():
+    """Provide an in-memory database."""
+    service = DatabaseService(":memory:")
+    service.initialize_schema()
+    yield service
+    service.close()
+
+def test_event_repository_create(db_service):
+    """Test creating an event in the database."""
+    from src.services.repositories.event_repository import EventRepository
+    from src.core.events import Event
+    
+    repo = EventRepository(db_service)
+    event = Event(name="Test", lore_date=100.0)
+    
+    result = repo.create(event)
+    
+    assert result.id == event.id
+    assert result.name == "Test"
 ```
-
-### GUI Tests
-
-GUI tests should:
-- Use the `qtbot` fixture from pytest-qt
-- Test user interactions and UI state
-- Use in-memory database
-- Be marked with `@pytest.mark.integration`
-
-Example:
-
-```python
-import pytest
-from src.gui.widgets.entity_editor import EntityEditor
-
-@pytest.mark.integration
-def test_entity_editor_save(qtbot, db_service):
-    """Test that entity editor saves changes."""
-    editor = EntityEditor(db_service)
-    qtbot.addWidget(editor)
-    
-    # Simulate user input
-    editor.name_edit.setText("Test Entity")
-    editor.type_combo.setCurrentText("character")
-    
-    # Trigger save
-    qtbot.mouseClick(editor.save_button, Qt.LeftButton)
-    
-    # Verify database update
-    assert editor.entity_id is not None
-```
-
-## Coverage Requirements
-
-The project aims for **95%+ code coverage** for core business logic:
-
-```bash
-# Generate coverage report
-pytest --cov=src --cov-report=html
-
-# Open coverage report
-open htmlcov/index.html  # macOS
-xdg-open htmlcov/index.html  # Linux
-start htmlcov\index.html  # Windows
-```
-
-**Coverage Priorities:**
-1. **Core modules** (`src/core/`) - 100% coverage required
-2. **Commands** (`src/commands/`) - 100% coverage required
-3. **Services** (`src/services/`) - 95%+ coverage
-4. **GUI** (`src/gui/`) - 80%+ coverage (focus on logic, not UI boilerplate)
-
-## Continuous Integration
-
-Tests run automatically on:
-- Every push to main branch
-- Every pull request
-- Pre-commit hooks (optional subset)
-
-See `.github/workflows/` for CI configuration.
-
-## Test Fixtures
-
-Common fixtures are defined in `tests/conftest.py`:
-
-| Fixture | Purpose | Scope |
-|---------|---------|-------|
-| `qapp` | QApplication instance | Session |
-| `db_service` | In-memory DatabaseService | Function |
-| `sample_event` | Sample Event instance | Function |
-| `sample_entity` | Sample Entity instance | Function |
-
-## Performance Testing
-
-For performance-critical operations, use benchmarks:
-
-```python
-import pytest
-
-@pytest.mark.slow
-def test_large_dataset_performance(db_service):
-    """Test performance with 10,000 entities."""
-    import time
-    start = time.time()
-    
-    # Create 10,000 entities
-    for i in range(10000):
-        db_service.create_entity(f"Entity {i}", "character")
-    
-    elapsed = time.time() - start
-    assert elapsed < 5.0  # Should complete in under 5 seconds
-```
-
-## Best Practices
-
-1. **Isolate tests** - Each test should be independent
-2. **Use fixtures** - Avoid duplicating setup code
-3. **Clear names** - Test names should describe what they test
-4. **One assertion per test** - Keep tests focused (or use subtests)
-5. **Mock external services** - Don't hit real APIs in tests
-6. **Clean up resources** - Close files, connections, etc.
-
-## Related Documentation
-
-- **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development setup
-- **[DATABASE.md](DATABASE.md)** - Database architecture
-- **[QT_THREADING_SAFETY.md](QT_THREADING_SAFETY.md)** - Threading patterns
-- **[Design.md](../Design.md)** - Architecture specification
 
 ---
 
-**Test Count:** 118+ test files  
-**Coverage Target:** 95%+ for core modules  
-**Framework:** pytest + pytest-qt  
-**CI:** Automated on push/PR
+### Testing Commands
 
-### GUI Tests
-
-GUI tests should:
-- Use the `qtbot` fixture from pytest-qt
-- Use the `qapp` fixture for QApplication
-- Patch menu creation to avoid segfaults (see existing tests)
-
-Example:
+**Test execute and undo:**
 
 ```python
-from unittest.mock import patch
+def test_create_event_command_execute(db_service):
+    """Test CreateEventCommand execution."""
+    from src.commands.event_commands import CreateEventCommand
+    
+    cmd = CreateEventCommand(
+        service=db_service,
+        name="Test Event",
+        lore_date=100.0
+    )
+    
+    cmd.execute()
+    
+    # Verify event was created
+    repo = EventRepository(db_service)
+    event = repo.get(cmd.event_id)
+    assert event is not None
+    assert event.name == "Test Event"
 
-def test_main_window_creation(qtbot):
-    """Test that MainWindow can be created."""
-    with patch("src.app.ui_manager.UIManager.create_file_menu"):
-        from src.app.main_window import MainWindow
-        window = MainWindow()
-        qtbot.addWidget(window)
-        assert window is not None
+def test_create_event_command_undo(db_service):
+    """Test CreateEventCommand undo."""
+    from src.commands.event_commands import CreateEventCommand
+    
+    cmd = CreateEventCommand(
+        service=db_service,
+        name="Test Event",
+        lore_date=100.0
+    )
+    
+    cmd.execute()
+    cmd.undo()
+    
+    # Verify event was removed
+    repo = EventRepository(db_service)
+    event = repo.get(cmd.event_id)
+    assert event is None
 ```
 
-## Coverage Requirements
+---
 
-- **Minimum**: 95% code coverage
-- **Focus**: Core business logic should be 100% covered
-- **Exceptions**: GUI glue code, entry points
+### Testing Qt Widgets
 
-Run coverage report:
+**Use qtbot fixture:**
+
+```python
+import pytest
+from PySide6.QtCore import Qt
+
+def test_entity_editor_displays_entity(qtbot):
+    """Test EntityEditor displays entity data."""
+    from src.gui.widgets.entity_editor import EntityEditor
+    
+    # Create widget
+    editor = EntityEditor()
+    qtbot.addWidget(editor)
+    
+    # Set entity data
+    entity_data = {
+        "id": "ent_123",
+        "name": "Test Entity",
+        "type": "character"
+    }
+    editor.set_entity(entity_data)
+    
+    # Verify display
+    assert editor.name_field.text() == "Test Entity"
+    assert editor.type_combo.currentText() == "character"
+
+def test_button_click_emits_signal(qtbot):
+    """Test button click emits expected signal."""
+    from src.gui.widgets.my_widget import MyWidget
+    
+    widget = MyWidget()
+    qtbot.addWidget(widget)
+    
+    # Set up signal spy
+    with qtbot.waitSignal(widget.button_clicked, timeout=1000):
+        qtbot.mouseClick(widget.button, Qt.LeftButton)
+```
+
+---
+
+### Mocking
+
+**Use pytest-mock:**
+
+```python
+def test_backup_service_calls_database(mocker):
+    """Test BackupService calls database methods."""
+    from src.services.backup_service import BackupService
+    
+    # Mock database service
+    mock_db = mocker.Mock()
+    mock_db.get_connection.return_value = mocker.Mock()
+    
+    service = BackupService(mock_db)
+    service.create_backup("test.db")
+    
+    # Verify database was called
+    mock_db.get_connection.assert_called_once()
+```
+
+**Mock file operations:**
+
+```python
+def test_save_file(mocker):
+    """Test file saving."""
+    mock_open = mocker.patch("builtins.open", mocker.mock_open())
+    
+    save_data("test.txt", "content")
+    
+    mock_open.assert_called_once_with("test.txt", "w")
+```
+
+---
+
+## Test Fixtures
+
+### Common Fixtures
+
+Defined in `tests/conftest.py`:
+
+```python
+import pytest
+from src.services.db_service import DatabaseService
+
+@pytest.fixture
+def db_service():
+    """Provide in-memory database service."""
+    service = DatabaseService(":memory:")
+    service.initialize_schema()
+    yield service
+    service.close()
+
+@pytest.fixture
+def sample_event():
+    """Provide a sample event."""
+    from src.core.events import Event
+    return Event(
+        id="evt_test",
+        name="Test Event",
+        lore_date=100.0,
+        type="generic"
+    )
+
+@pytest.fixture
+def sample_entity():
+    """Provide a sample entity."""
+    from src.core.entities import Entity
+    return Entity(
+        id="ent_test",
+        name="Test Entity",
+        type="character"
+    )
+```
+
+### Fixture Scopes
+
+- **function** (default): New fixture per test function
+- **class**: One fixture per test class
+- **module**: One fixture per module
+- **session**: One fixture per test session
+
+```python
+@pytest.fixture(scope="module")
+def expensive_resource():
+    """Expensive resource shared across module."""
+    resource = create_expensive_resource()
+    yield resource
+    resource.cleanup()
+```
+
+---
+
+## Testing Patterns
+
+### Testing Exceptions
+
+```python
+def test_invalid_input_raises_value_error():
+    """Test that invalid input raises ValueError."""
+    from src.core.events import Event
+    
+    with pytest.raises(ValueError, match="Invalid date"):
+        Event(name="Test", lore_date=-1.0)
+```
+
+### Parametrized Tests
+
+```python
+@pytest.mark.parametrize("input_date,expected", [
+    (0.0, "Year 0, Day 0"),
+    (1.0, "Year 0, Day 1"),
+    (365.0, "Year 1, Day 0"),
+])
+def test_date_formatting(input_date, expected):
+    """Test date formatting with various inputs."""
+    result = format_date(input_date)
+    assert result == expected
+```
+
+### Testing Async Code
+
+```python
+import pytest
+
+@pytest.mark.asyncio
+async def test_async_function():
+    """Test async function."""
+    result = await async_operation()
+    assert result == expected_value
+```
+
+---
+
+## Coverage
+
+### Coverage Goals
+
+| Component | Target Coverage |
+|-----------|-----------------|
+| **Core Logic** | 100% |
+| **Commands** | 100% |
+| **Repositories** | 95%+ |
+| **Services** | 95%+ |
+| **GUI Widgets** | 80%+ |
+| **Overall** | 95%+ |
+
+### Measuring Coverage
+
+**Basic coverage:**
+
+```bash
+pytest --cov=src
+```
+
+**Detailed coverage with missing lines:**
+
+```bash
+pytest --cov=src --cov-report=term-missing
+```
+
+**HTML coverage report:**
 
 ```bash
 pytest --cov=src --cov-report=html
-# Open htmlcov/index.html in browser
+open htmlcov/index.html
 ```
+
+### Coverage Configuration
+
+In `pyproject.toml` or `.coveragerc`:
+
+```ini
+[coverage:run]
+source = src
+omit = 
+    */tests/*
+    */venv/*
+    */__pycache__/*
+
+[coverage:report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+```
+
+---
+
+## Continuous Integration
+
+### GitHub Actions
+
+Example workflow (`.github/workflows/test.yml`):
+
+```yaml
+name: Tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13'
+    
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install -r requirements-dev.txt
+    
+    - name: Run tests with coverage
+      run: |
+        pytest --cov=src --cov-report=xml
+    
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+```
+
+### Pre-commit Hooks
+
+Install pre-commit hooks to run tests before committing:
+
+```yaml
+# .pre-commit-config.yaml
+repos:
+  - repo: local
+    hooks:
+      - id: pytest-check
+        name: pytest-check
+        entry: pytest
+        language: system
+        pass_filenames: false
+        always_run: true
+```
+
+Install hooks:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+---
+
+## Best Practices
+
+### Do's
+
+✅ **Write tests first (TDD)**
+- Clarifies requirements
+- Ensures testability
+- Prevents over-engineering
+
+✅ **Use descriptive test names**
+- Name should describe what's being tested
+- Include expected behavior
+
+✅ **One assertion concept per test**
+- Test one thing at a time
+- Multiple asserts OK if testing same concept
+
+✅ **Use fixtures for setup**
+- Reduces code duplication
+- Improves test clarity
+
+✅ **Mock external dependencies**
+- File I/O, network, time
+- Keeps tests fast and deterministic
+
+✅ **Test edge cases**
+- Empty inputs, null values
+- Boundary conditions
+- Error conditions
+
+### Don'ts
+
+❌ **Don't test implementation details**
+- Test behavior, not internals
+- Tests should survive refactoring
+
+❌ **Don't use production database**
+- Always use in-memory database for tests
+- Never connect to production
+
+❌ **Don't write flaky tests**
+- No random values without seeds
+- No time dependencies without mocking
+- No network dependencies
+
+❌ **Don't skip test cleanup**
+- Always clean up resources
+- Use fixtures with yield
+
+❌ **Don't test external libraries**
+- Trust that PySide6, SQLite work correctly
+- Test your code, not theirs
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+**Tests fail with "database is locked":**
+
+```python
+# Solution: Use in-memory database
+@pytest.fixture
+def db_service():
+    service = DatabaseService(":memory:")
+    yield service
+    service.close()
+```
+
+**Qt tests hang:**
+
+```python
+# Solution: Use qtbot properly
+def test_widget(qtbot):
+    widget = MyWidget()
+    qtbot.addWidget(widget)  # Important!
+    # Test widget
+```
+
+**Import errors:**
+
+```bash
+# Solution: Install package in development mode
+pip install -e .
+```
+
+**Coverage not tracking all files:**
+
+```bash
+# Solution: Specify source in pytest command
+pytest --cov=src --cov-report=term-missing
+```
+
+---
+
+## Example Test Suite
+
+### Complete Example
+
+```python
+"""
+tests/unit/test_event_repository.py
+
+Tests for EventRepository.
+"""
+
+import pytest
+from src.services.repositories.event_repository import EventRepository
+from src.core.events import Event
+
+@pytest.fixture
+def db_service():
+    """Provide in-memory database."""
+    from src.services.db_service import DatabaseService
+    service = DatabaseService(":memory:")
+    service.initialize_schema()
+    yield service
+    service.close()
+
+@pytest.fixture
+def event_repo(db_service):
+    """Provide EventRepository instance."""
+    return EventRepository(db_service)
+
+@pytest.fixture
+def sample_event():
+    """Provide sample event."""
+    return Event(
+        name="Test Event",
+        lore_date=100.0,
+        type="battle"
+    )
+
+class TestEventRepository:
+    """Tests for EventRepository."""
+    
+    def test_create_event_returns_event(self, event_repo, sample_event):
+        """Test creating an event returns the event."""
+        result = event_repo.create(sample_event)
+        
+        assert result.id == sample_event.id
+        assert result.name == sample_event.name
+    
+    def test_get_existing_event_returns_event(self, event_repo, sample_event):
+        """Test getting an existing event."""
+        event_repo.create(sample_event)
+        
+        result = event_repo.get(sample_event.id)
+        
+        assert result is not None
+        assert result.id == sample_event.id
+    
+    def test_get_nonexistent_event_returns_none(self, event_repo):
+        """Test getting a nonexistent event returns None."""
+        result = event_repo.get("nonexistent_id")
+        
+        assert result is None
+    
+    def test_update_event_persists_changes(self, event_repo, sample_event):
+        """Test updating an event persists changes."""
+        event_repo.create(sample_event)
+        
+        sample_event.name = "Updated Name"
+        event_repo.update(sample_event)
+        
+        result = event_repo.get(sample_event.id)
+        assert result.name == "Updated Name"
+    
+    def test_delete_event_removes_from_database(self, event_repo, sample_event):
+        """Test deleting an event removes it."""
+        event_repo.create(sample_event)
+        
+        success = event_repo.delete(sample_event.id)
+        
+        assert success is True
+        assert event_repo.get(sample_event.id) is None
+    
+    def test_list_all_returns_all_events(self, event_repo):
+        """Test listing all events."""
+        event1 = Event(name="Event 1", lore_date=100.0)
+        event2 = Event(name="Event 2", lore_date=200.0)
+        
+        event_repo.create(event1)
+        event_repo.create(event2)
+        
+        results = event_repo.list_all()
+        
+        assert len(results) == 2
+        assert any(e.id == event1.id for e in results)
+        assert any(e.id == event2.id for e in results)
+```
+
+---
+
+## Next Steps
+
+- **[Development Guide](DEVELOPMENT.md)** - Learn about development workflow
+- **[Contributing Guide](CONTRIBUTING.md)** - Contribute to the project
+- **[API Reference](API_REFERENCE.md)** - Understand the codebase
+
+---
+
+**Navigation:**  
+[← Database](DATABASE.md) • [Back to Index](INDEX.md) • [API Reference →](API_REFERENCE.md)

@@ -1,387 +1,663 @@
----
-**Project:** ProjektKraken  
-**Document:** Database Architecture and Best Practices  
-**Last Updated:** 2026-01-01  
-**Commit:** `d9e3f83`  
+# Database Documentation
+
+**Version:** 0.11.0 (Beta)  
+**Last Updated:** February 2026
+
+Complete database schema and data model documentation for ProjektKraken.
+
 ---
 
-# Database Architecture and Best Practices
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Database Configuration](#database-configuration)
+3. [Core Tables](#core-tables)
+4. [Supporting Tables](#supporting-tables)
+5. [JSON Attributes](#json-attributes)
+6. [Relationships and Foreign Keys](#relationships-and-foreign-keys)
+7. [Indexes](#indexes)
+8. [Migrations](#migrations)
+
+---
 
 ## Overview
 
-ProjektKraken uses SQLite as its database engine with a hybrid schema approach that combines strict SQL columns for searchable/sortable fields with flexible JSON attributes for custom data.
+### Database Technology
 
-## Architecture
+- **Engine**: SQLite 3.35+
+- **File Format**: Single `.kraken` file per world
+- **Journal Mode**: WAL (Write-Ahead Logging)
+- **Foreign Keys**: Enabled
 
-### Database Service (`src/services/db_service.py`)
+### Design Philosophy
 
-The `DatabaseService` class is the single point of interaction with the SQLite database. It implements:
+**Hybrid Schema Approach:**
 
-- **Connection Management**: Persistent connection with lazy initialization
-- **Transaction Safety**: Context manager for ACID compliance
-- **Hybrid Schema**: SQL columns + JSON attributes
-- **Parameterized Queries**: SQL injection prevention
-- **Automatic Rollback**: Error handling with transaction rollback
+- **Strict SQL Columns**: Searchable, sortable, indexed fields
+- **JSON Attributes**: Flexible, world-specific custom properties
 
-### Schema Design
+This combines the reliability of structured data with the flexibility of document storage.
 
-> [!NOTE]
-> For a complete visual representation of the database schema with all tables, columns, and relationships, see the [Schema Reference](SCHEMA_REFERENCE.md) (auto-generated from code).
+---
 
-#### Core Tables
+## Database Configuration
 
-1. **events** - Timeline events (points or spans in time)
-   - Strict columns: `id`, `type`, `name`, `lore_date`, `lore_duration`, `description`
-   - Flexible: `attributes` (JSON)
-   - Metadata: `created_at`, `modified_at`
+### Initialization
 
-2. **entities** - Timeless objects (characters, locations, artifacts)
-   - Strict columns: `id`, `type`, `name`, `description`
-   - Flexible: `attributes` (JSON)
-   - Metadata: `created_at`, `modified_at`
+```sql
+-- Enable WAL mode for concurrency
+PRAGMA journal_mode = WAL;
 
-3. **relations** - Directed relationships between objects
-   - Columns: `id`, `source_id`, `target_id`, `rel_type`
-   - Flexible: `attributes` (JSON)
-   - Metadata: `created_at`
+-- Enforce foreign key constraints
+PRAGMA foreign_keys = ON;
 
-4. **system_meta** - Application metadata
-   - Key-value store for settings
-
-#### Indexes
-
-Performance indexes are automatically created:
-- `idx_events_date` - Chronological event queries
-- `idx_relations_source` - Outgoing relation lookups
-- `idx_relations_target` - Incoming relation lookups
-
-### Connection Management
-
-#### Connection Lifecycle
-
-```python
-# Automatic connection on first use
-service = DatabaseService("path/to/world.kraken")
-service.connect()  # Explicit connection
-
-# Lazy connection on first query
-event = service.get_event(event_id)  # Auto-connects if needed
-
-# Cleanup
-service.close()
+-- Performance optimizations
+PRAGMA synchronous = NORMAL;
+PRAGMA temp_store = MEMORY;
+PRAGMA mmap_size = 268435456;  -- 256MB memory-mapped I/O
 ```
 
-#### Thread Safety
+### WAL Mode Benefits
 
-**Important**: SQLite connections are NOT thread-safe. The codebase uses a Worker thread pattern:
+**Write-Ahead Logging** enables:
 
-- Main thread: UI operations only
-- Worker thread: All database operations via `DatabaseWorker`
-- Communication: Qt signals/slots with queued connections
+1. **Concurrent Reads**: Multiple readers don't block each other
+2. **Non-Blocking Reads**: Readers don't block writers
+3. **Better Performance**: Reduced disk I/O for commits
+4. **Atomic Commits**: Multiple changes in single transaction
 
-**Never** access the database service directly from the UI thread in production code.
-
-### Transaction Management
-
-All write operations use the transaction context manager:
+**Usage Pattern:**
 
 ```python
-with db_service.transaction() as conn:
-    conn.execute(sql, params)
-    # Automatic commit on success
-    # Automatic rollback on exception
+# Worker thread has write access
+# Main thread has read-only connections
+# WAL ensures isolation between threads
 ```
 
-#### Transaction Guarantees
+---
 
-- **Atomicity**: All operations succeed or all fail
-- **Consistency**: Database constraints are enforced
-- **Isolation**: Default SQLite isolation level
-- **Durability**: Changes persisted to disk
+## Core Tables
 
-#### Error Handling
+### Events Table
+
+Stores timeline events.
+
+```sql
+CREATE TABLE events (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    type TEXT,
+    lore_date REAL NOT NULL,
+    lore_duration REAL DEFAULT 0.0,
+    description TEXT,
+    attributes TEXT DEFAULT '{}',
+    created_at REAL,
+    modified_at REAL
+);
+
+CREATE INDEX idx_events_date ON events(lore_date);
+```
+
+**Columns:**
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | TEXT | UUID primary key |
+| `name` | TEXT | Event title (required) |
+| `type` | TEXT | Event category (e.g., "battle", "political") |
+| `lore_date` | REAL | Timeline date (float: 1.0 = 1 day) |
+| `lore_duration` | REAL | Event duration in days |
+| `description` | TEXT | Rich text description with wiki links |
+| `attributes` | TEXT | JSON for custom properties |
+| `created_at` | REAL | Unix timestamp of creation |
+| `modified_at` | REAL | Unix timestamp of last modification |
+
+**Example Data:**
+
+```json
+{
+  "id": "evt_123",
+  "name": "The Fall of Atlantis",
+  "type": "disaster",
+  "lore_date": 450123.5,
+  "description": "The [[City of Atlantis]] sank beneath the waves.",
+  "attributes": {
+    "severity": "catastrophic",
+    "casualties": 10000,
+    "custom_field": "custom_value"
+  }
+}
+```
+
+---
+
+### Entities Table
+
+Stores persistent world elements.
+
+```sql
+CREATE TABLE entities (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    type TEXT,
+    description TEXT,
+    attributes TEXT DEFAULT '{}',
+    created_at REAL,
+    modified_at REAL
+);
+```
+
+**Columns:**
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | TEXT | UUID primary key |
+| `name` | TEXT | Entity name (required) |
+| `type` | TEXT | Entity type (character, location, faction, item, concept) |
+| `description` | TEXT | Rich text description with wiki links |
+| `attributes` | TEXT | JSON for custom properties |
+| `created_at` | REAL | Creation timestamp |
+| `modified_at` | REAL | Last modification timestamp |
+
+**Entity Types:**
+
+- **character**: People, sentient beings
+- **location**: Places, regions
+- **faction**: Groups, organizations
+- **item**: Objects, artifacts
+- **concept**: Abstract ideas
+
+**Example Data:**
+
+```json
+{
+  "id": "ent_456",
+  "name": "Gandalf the Grey",
+  "type": "character",
+  "description": "A powerful [[Wizard]] from [[Middle Earth]].",
+  "attributes": {
+    "race": "Maia",
+    "alignment": "Good",
+    "skills": ["Magic", "Wisdom", "Swordsmanship"]
+  }
+}
+```
+
+---
+
+### Relations Table
+
+Stores directed relationships between entities and events.
+
+```sql
+CREATE TABLE relations (
+    id TEXT PRIMARY KEY,
+    source_id TEXT NOT NULL,
+    target_id TEXT NOT NULL,
+    rel_type TEXT NOT NULL,
+    attributes TEXT DEFAULT '{}',
+    created_at REAL,
+    FOREIGN KEY (source_id) REFERENCES entities(id) ON DELETE CASCADE,
+    FOREIGN KEY (target_id) REFERENCES entities(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_relations_source ON relations(source_id);
+CREATE INDEX idx_relations_target ON relations(target_id);
+```
+
+**Columns:**
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | TEXT | UUID primary key |
+| `source_id` | TEXT | Source entity/event ID |
+| `target_id` | TEXT | Target entity/event ID |
+| `rel_type` | TEXT | Relationship type |
+| `attributes` | TEXT | JSON metadata for relation |
+| `created_at` | REAL | Creation timestamp |
+
+**Common Relation Types:**
+
+| Type | Description | Example |
+|------|-------------|---------|
+| `caused` | Causal relationship | Event A caused Event B |
+| `involved` | Participation | Event involved Entity |
+| `influenced` | Indirect effect | A influenced B |
+| `located_at` | Spatial | Entity at Location |
+| `member_of` | Membership | Character in Faction |
+| `owns` | Ownership | Character owns Item |
+| `parent_of` | Family | Parent of Child |
+
+**Example Data:**
+
+```json
+{
+  "id": "rel_789",
+  "source_id": "evt_fall_of_empire",
+  "target_id": "evt_civil_war",
+  "rel_type": "caused",
+  "attributes": {
+    "certainty": "confirmed",
+    "time_lag": 30.0
+  }
+}
+```
+
+---
+
+## Supporting Tables
+
+### Maps Table
+
+Geographic maps with images.
+
+```sql
+CREATE TABLE maps (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    image_path TEXT,
+    scale_pixels_per_km REAL,
+    attributes TEXT DEFAULT '{}',
+    created_at REAL,
+    modified_at REAL
+);
+```
+
+**Purpose**: Store map metadata and calibration.
+
+---
+
+### Markers Table
+
+Points on maps.
+
+```sql
+CREATE TABLE markers (
+    id TEXT PRIMARY KEY,
+    map_id TEXT NOT NULL,
+    entity_id TEXT,
+    name TEXT,
+    x REAL NOT NULL,
+    y REAL NOT NULL,
+    icon TEXT,
+    color TEXT,
+    attributes TEXT DEFAULT '{}',
+    FOREIGN KEY (map_id) REFERENCES maps(id) ON DELETE CASCADE,
+    FOREIGN KEY (entity_id) REFERENCES entities(id) ON DELETE SET NULL
+);
+
+CREATE INDEX idx_markers_map ON markers(map_id);
+```
+
+**Purpose**: Link entities to geographic locations on maps.
+
+---
+
+### Moving Features Table
+
+Temporal trajectories on maps.
+
+```sql
+CREATE TABLE moving_features (
+    id TEXT PRIMARY KEY,
+    marker_id TEXT NOT NULL,
+    name TEXT,
+    keyframes TEXT,  -- JSON: [[time, x, y], ...]
+    attributes TEXT DEFAULT '{}',
+    FOREIGN KEY (marker_id) REFERENCES markers(id) ON DELETE CASCADE
+);
+```
+
+**Purpose**: Track how markers move over time (4D mapping).
+
+**Keyframe Format:**
+
+```json
+{
+  "keyframes": [
+    [0.0, 100.0, 200.0],     // At time 0, position (100, 200)
+    [1000.0, 150.0, 250.0],  // At time 1000, position (150, 250)
+    [2000.0, 200.0, 300.0]   // At time 2000, position (200, 300)
+  ]
+}
+```
+
+---
+
+### Tags Tables
+
+Normalized tag system.
+
+```sql
+CREATE TABLE tags (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    color TEXT DEFAULT '#888888',
+    created_at REAL
+);
+
+CREATE TABLE event_tags (
+    event_id TEXT NOT NULL,
+    tag_id TEXT NOT NULL,
+    PRIMARY KEY (event_id, tag_id),
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+);
+
+CREATE TABLE entity_tags (
+    entity_id TEXT NOT NULL,
+    tag_id TEXT NOT NULL,
+    PRIMARY KEY (entity_id, tag_id),
+    FOREIGN KEY (entity_id) REFERENCES entities(id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+);
+```
+
+**Purpose**: Many-to-many tagging with consistent tag definitions.
+
+---
+
+### Calendar Config Table
+
+Custom calendar configurations.
+
+```sql
+CREATE TABLE calendar_config (
+    id INTEGER PRIMARY KEY,
+    config_json TEXT NOT NULL
+);
+```
+
+**Purpose**: Store custom fantasy calendar definitions.
+
+**Config Structure:**
+
+```json
+{
+  "months": [
+    {"name": "Coldmoon", "days": 30},
+    {"name": "Springrise", "days": 28}
+  ],
+  "week_days": ["Moonday", "Starday", "Fireday"],
+  "leap_years": {"interval": 5, "extra_day_month": 1}
+}
+```
+
+---
+
+### Image Attachments Table
+
+Image links to entities/events.
+
+```sql
+CREATE TABLE image_attachments (
+    id TEXT PRIMARY KEY,
+    owner_type TEXT NOT NULL,
+    owner_id TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    thumbnail_path TEXT,
+    created_at REAL
+);
+
+CREATE INDEX idx_attachments_owner ON image_attachments(owner_type, owner_id);
+```
+
+**Purpose**: Link images to any entity or event.
+
+---
+
+### Embeddings Table
+
+Semantic search vectors.
+
+```sql
+CREATE TABLE embeddings (
+    object_id TEXT NOT NULL,
+    embedding_model TEXT NOT NULL,
+    vector_dim INTEGER NOT NULL,
+    vector_data BLOB NOT NULL,
+    text_hash TEXT NOT NULL,
+    created_at REAL NOT NULL,
+    PRIMARY KEY (object_id, embedding_model)
+);
+
+CREATE INDEX idx_embeddings_object ON embeddings(object_id);
+CREATE INDEX idx_embeddings_model ON embeddings(embedding_model);
+CREATE INDEX idx_embeddings_created_at ON embeddings(created_at);
+```
+
+**Purpose**: Store AI embedding vectors for semantic search.
+
+---
+
+### Command History Tables
+
+Persistent undo/redo.
+
+```sql
+CREATE TABLE command_history (
+    id TEXT PRIMARY KEY,
+    world_id TEXT NOT NULL,
+    session_id TEXT NOT NULL,
+    command_type TEXT NOT NULL,
+    command_data TEXT NOT NULL,
+    is_aggregate INTEGER DEFAULT 0,
+    created_at REAL NOT NULL
+);
+
+CREATE INDEX idx_ch_world_time ON command_history(world_id, created_at);
+CREATE INDEX idx_ch_session ON command_history(session_id);
+CREATE INDEX idx_ch_aggregate ON command_history(is_aggregate);
+
+CREATE TABLE edit_sessions (
+    id TEXT PRIMARY KEY,
+    world_id TEXT NOT NULL,
+    started_at REAL NOT NULL,
+    ended_at REAL,
+    app_version TEXT
+);
+```
+
+**Purpose**: Persist command history across app restarts.
+
+---
+
+## JSON Attributes
+
+All core tables use `attributes TEXT DEFAULT '{}'` for flexible custom properties.
+
+### Why JSON Attributes?
+
+1. **Flexibility**: World-specific properties without schema migrations
+2. **Extension**: Users can add custom fields
+3. **Backward Compatibility**: Old code ignores unknown fields
+
+### Common Attribute Patterns
+
+**Events:**
+
+```json
+{
+  "severity": "high",
+  "participants": ["ent_1", "ent_2"],
+  "weather": "stormy",
+  "custom_notes": "Additional context"
+}
+```
+
+**Entities:**
+
+```json
+{
+  "age": 32,
+  "appearance": "Dark hair, green eyes",
+  "skills": ["Magic", "Swordsmanship"],
+  "inventory": ["item_1", "item_2"]
+}
+```
+
+**Relations:**
+
+```json
+{
+  "since": "Year 1234",
+  "until": "Year 1240",
+  "strength": "strong",
+  "public": false
+}
+```
+
+### Accessing Attributes
+
+**In Python:**
 
 ```python
-try:
-    with db_service.transaction() as conn:
-        # ... database operations ...
-except sqlite3.Error as e:
-    # Transaction automatically rolled back
-    logger.error(f"Database error: {e}")
-    # Handle error appropriately
+event = Event.from_dict(row)
+severity = event.attributes.get("severity", "unknown")
+
+entity.attributes["age"] = 33
+repo.update(entity)
 ```
 
-### Performance Optimization
+**In SQL (JSON functions):**
 
-#### Bulk Operations
+```sql
+-- Filter by attribute
+SELECT * FROM events 
+WHERE json_extract(attributes, '$.severity') = 'high';
 
-For inserting multiple records, use bulk methods:
-
-```python
-# Inefficient: Multiple transactions
-for event in events:
-    db_service.insert_event(event)
-
-# Efficient: Single transaction with executemany
-db_service.insert_events_bulk(events)
+-- Update attribute
+UPDATE events
+SET attributes = json_set(attributes, '$.severity', 'critical')
+WHERE id = 'evt_123';
 ```
 
-#### Query Optimization
+---
 
-1. **Use Indexes**: Queries on `lore_date`, `source_id`, `target_id` are indexed
-2. **Limit Results**: Use SQL `LIMIT` for pagination when needed
-3. **Avoid N+1 Queries**: Fetch related data in single query when possible
+## Relationships and Foreign Keys
 
-#### Database Locking
+### Foreign Key Cascade Rules
 
-SQLite uses file-level locking:
+**ON DELETE CASCADE:**
 
-- **Readers**: Multiple concurrent readers allowed
-- **Writers**: Exclusive lock required
-- **Busy Timeout**: Not explicitly set (uses SQLite defaults)
+- Deleting a map deletes all its markers
+- Deleting an entity deletes all its tags
+- Deleting an event deletes all its tags
+- Deleting a marker deletes its moving features
 
-For high-concurrency scenarios, consider:
-- Using WAL (Write-Ahead Logging) mode
-- Implementing retry logic for locked database
-- Keeping transactions short
+**ON DELETE SET NULL:**
 
-## Security Best Practices
+- Deleting an entity sets `entity_id` to NULL in markers (orphaned markers remain)
 
-### SQL Injection Prevention
+### Relationship Diagram
 
-**All queries use parameterized statements:**
+```
+entities ←──────┐
+    ↑           │
+    │           │
+    │      relations (many-to-many)
+    │           │
+    ↓           │
+events ─────────┘
 
-✅ **Correct** - Parameterized query:
-```python
-cursor.execute("SELECT * FROM events WHERE id = ?", (event_id,))
+entities ←── entity_tags ──→ tags
+events ←──── event_tags ───→ tags
+
+maps ←─── markers ←─── moving_features
+           ↓
+        entities (optional link)
 ```
 
-❌ **Wrong** - String interpolation (SQL injection risk):
-```python
-cursor.execute(f"SELECT * FROM events WHERE id = '{event_id}'")
-cursor.execute("SELECT * FROM events WHERE id = {}".format(event_id))
+---
+
+## Indexes
+
+### Purpose of Each Index
+
+| Index | Table | Purpose |
+|-------|-------|---------|
+| `idx_events_date` | events | Fast temporal queries |
+| `idx_relations_source` | relations | Fast source → targets lookup |
+| `idx_relations_target` | relations | Fast target → sources lookup |
+| `idx_markers_map` | markers | List markers for a map |
+| `idx_attachments_owner` | image_attachments | Find images for entity/event |
+| `idx_embeddings_*` | embeddings | Fast vector search |
+| `idx_ch_*` | command_history | Session and time-based queries |
+
+### Query Optimization
+
+**Good Query (uses index):**
+
+```sql
+SELECT * FROM events WHERE lore_date > 1000.0 ORDER BY lore_date;
+-- Uses idx_events_date
 ```
 
-### Data Validation
+**Bad Query (full table scan):**
 
-1. **Input Validation**: Validate data before database operations
-2. **Type Safety**: Use type hints and dataclasses
-3. **Constraint Enforcement**: Database constraints (PRIMARY KEY, NOT NULL, etc.)
-
-### Sensitive Data
-
-1. **No Passwords in Database**: Not applicable for this app
-2. **No API Keys in Code**: Use environment variables
-3. **File Permissions**: Database files should have appropriate OS permissions
-
-### Backup and Recovery
-
-1. **File-based Backup**: Copy `.kraken` file when app is closed
-2. **Export**: Implement JSON export for data portability
-3. **Version Control**: Never commit `.kraken` files to git (see `.gitignore`)
-
-## Testing Best Practices
-
-### In-Memory Testing
-
-Always use `:memory:` for tests:
-
-```python
-@pytest.fixture
-def db_service():
-    service = DatabaseService(":memory:")
-    service.connect()
-    yield service
-    service.close()
+```sql
+SELECT * FROM events WHERE name LIKE '%battle%';
+-- No index on name, full scan required
 ```
 
-### Test Coverage
+---
 
-Ensure tests cover:
-- ✅ CRUD operations (Create, Read, Update, Delete)
-- ✅ Transaction rollback on errors
-- ✅ Edge cases (empty data, nonexistent IDs)
-- ✅ Bulk operations
-- ✅ Concurrent access (if applicable)
-- ✅ Data integrity (foreign keys, constraints)
+## Migrations
 
-### Example Test
+### Schema Versioning
 
-```python
-def test_transaction_rollback(db_service):
-    """Test that failed transactions rollback changes."""
-    event = Event(name="Test", lore_date=1.0)
-    db_service.insert_event(event)
-    
-    try:
-        with db_service.transaction() as conn:
-            conn.execute("INSERT INTO events ...")  # Valid
-            conn.execute("INVALID SQL")  # Causes rollback
-    except sqlite3.Error:
-        pass
-    
-    # First insert should still exist
-    assert db_service.get_event(event.id) is not None
-```
+Currently, ProjektKraken uses **schema initialization** rather than migrations:
 
-## Common Patterns
+1. On first run, full schema created
+2. If schema exists, it's used as-is
+3. No automated migrations between versions
 
-### CRUD Operations
+### Future Migration Strategy
 
-```python
-# Create
-event = Event(name="Battle", lore_date=1066.0)
-db_service.insert_event(event)
+For schema changes in future versions:
 
-# Read
-event = db_service.get_event(event_id)
-events = db_service.get_all_events()
+1. **Add Schema Version Table**
 
-# Update (via upsert)
-event.name = "Updated Name"
-db_service.insert_event(event)
+   ```sql
+   CREATE TABLE schema_version (
+       version INTEGER PRIMARY KEY,
+       applied_at REAL
+   );
+   ```
 
-# Delete
-db_service.delete_event(event_id)
-```
+2. **Migration Scripts**
 
-### Relations
+   ```python
+   def migrate_v1_to_v2(db: DatabaseService):
+       db.execute("ALTER TABLE events ADD COLUMN new_field TEXT")
+       db.execute("INSERT INTO schema_version VALUES (2, ?)", (time.time(),))
+   ```
 
-Relations store flexible metadata in their `attributes` JSON field. Common attributes include:
-- `weight`: Numeric strength (float, for graph analysis, e.g., 0.0-1.0)
-- `start_date`: When relationship began (float, lore_date format)
-- `end_date`: When relationship ended (float, lore_date format)
-- `confidence`: Certainty level (float, 0.0-1.0)
-- `source`: Citation or reference (str)
-- `notes`: Additional context (str)
+3. **Apply Migrations on Startup**
 
-```python
-# Create relation with attributes
-rel_id = db_service.insert_relation(
-    source_id=event1.id,
-    target_id=event2.id,
-    rel_type="caused",
-    attributes={
-        "weight": 0.9,
-        "confidence": 0.8,
-        "source": "Chapter 3, page 42",
-        "notes": "Direct causal relationship confirmed"
-    }
-)
+   ```python
+   current_version = get_schema_version(db)
+   if current_version < 2:
+       migrate_v1_to_v2(db)
+   ```
 
-# Create relation without attributes (defaults to empty dict)
-rel_id = db_service.insert_relation(
-    source_id=character.id,
-    target_id=location.id,
-    rel_type="located_in"
-)
+### Backward Compatibility
 
-# Query relations
-outgoing = db_service.get_relations(source_id)
-incoming = db_service.get_incoming_relations(target_id)
+**Best Practices:**
 
-# Access attributes from returned relations
-for rel in outgoing:
-    weight = rel["attributes"].get("weight", 1.0)
-    confidence = rel["attributes"].get("confidence", 1.0)
-    print(f"Relation {rel['rel_type']} (weight={weight}, confidence={confidence})")
+- **Additive Changes**: Add new tables/columns, don't remove
+- **Optional Fields**: New columns should be nullable or have defaults
+- **Preserve Data**: Never destructive migrations without user consent
 
-# Update relation with new attributes
-db_service.update_relation(
-    rel_id=rel_id,
-    target_id=new_target.id,
-    rel_type="prevented",
-    attributes={
-        "weight": 0.5,
-        "confidence": 0.6,
-        "notes": "Updated based on new evidence"
-    }
-)
+---
 
-# Delete relation
-db_service.delete_relation(rel_id)
+## Next Steps
 
-# Example: Temporal relations
-db_service.insert_relation(
-    source_id=character.id,
-    target_id=faction.id,
-    rel_type="member_of",
-    attributes={
-        "start_date": 100.0,  # Joined on day 100
-        "end_date": 500.0,    # Left on day 500
-        "role": "Commander",
-        "confidence": 1.0
-    }
-)
+- **[API Reference](API_REFERENCE.md)** - Learn about data access APIs
+- **[Development Guide](DEVELOPMENT.md)** - Contribute to the project
+- **[Testing Guide](TESTING.md)** - Test database code
 
-# Example: Weighted network relations (for graph analysis)
-db_service.insert_relation(
-    source_id=kingdom_a.id,
-    target_id=kingdom_b.id,
-    rel_type="allied_with",
-    attributes={
-        "weight": 0.75,  # Strength of alliance
-        "start_date": 1000.0,
-        "treaty": "Treaty of Westfall"
-    }
-)
-```
+---
 
-## Migration Strategy
-
-For schema changes:
-
-1. **Version System Metadata**: Track schema version in `system_meta` table
-2. **Migration Scripts**: Create upgrade functions
-3. **Backup First**: Always backup before migration
-4. **Test Migration**: Test on copy of production data
-
-Example:
-```python
-def migrate_v1_to_v2(db_service):
-    """Migrate database from v1 to v2."""
-    with db_service.transaction() as conn:
-        # Add new column
-        conn.execute("ALTER TABLE events ADD COLUMN new_field TEXT")
-        # Update version
-        conn.execute(
-            "INSERT OR REPLACE INTO system_meta VALUES (?, ?)",
-            ("schema_version", "2")
-        )
-```
-
-## Troubleshooting
-
-### Database Locked
-
-**Symptom**: `sqlite3.OperationalError: database is locked`
-
-**Solutions**:
-1. Ensure transactions are short
-2. Close connections properly
-3. Use WAL mode for better concurrency
-4. Implement retry logic with exponential backoff
-
-### Disk Full
-
-**Symptom**: `sqlite3.OperationalError: disk I/O error`
-
-**Solutions**:
-1. Check available disk space
-2. Implement size monitoring
-3. Regular cleanup of old data
-
-### Corrupted Database
-
-**Symptom**: `sqlite3.DatabaseError: database disk image is malformed`
-
-**Solutions**:
-1. Restore from backup
-2. Use SQLite's `PRAGMA integrity_check`
-3. Export data if partially readable
-
-## References
-
-- [SQLite Documentation](https://www.sqlite.org/docs.html)
-- [SQLite Best Practices](https://www.sqlite.org/bestpractice.html)
-- [Python sqlite3 Module](https://docs.python.org/3/library/sqlite3.html)
+**Navigation:**  
+[← Development](DEVELOPMENT.md) • [Back to Index](INDEX.md) • [API Reference →](API_REFERENCE.md)
