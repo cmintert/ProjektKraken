@@ -6,6 +6,7 @@ Displays all available keyboard shortcuts in the application.
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -36,23 +37,29 @@ class KeyboardShortcutsDialog(QDialog):
         self.setStyleSheet(StyleHelper.get_dialog_base_style())
 
         layout = QVBoxLayout(self)
+        layout.setSpacing(20)
+        layout.setContentsMargins(30, 30, 30, 30)
 
         # Header
         header = QLabel("Keyboard Shortcuts")
-        header.setStyleSheet(StyleHelper.get_content_header_style() + "padding: 10px;")
+        header.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        header.setStyleSheet(StyleHelper.get_content_header_style())
         layout.addWidget(header)
 
-        # Scrollable content area
+        # Scroll Area for many shortcuts
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
         scroll.setStyleSheet(StyleHelper.get_scroll_area_style())
 
-        content_widget = QWidget()
-        content_layout = QVBoxLayout(content_widget)
-        content_layout.setSpacing(20)
+        content = QWidget()
+        content_layout = QVBoxLayout(content)
+        StyleHelper.apply_standard_list_spacing(content_layout)
+        content_layout.setSpacing(10)
 
-        # Add shortcut categories
+        # --- Categories ---
+
+        # Creation
         self._add_category(
             content_layout,
             "Creation",
@@ -63,14 +70,36 @@ class KeyboardShortcutsDialog(QDialog):
             ],
         )
 
+        # Edit
+        self._add_category(
+            content_layout,
+            "Edit",
+            [
+                ShortcutManager.UNDO,
+                ShortcutManager.REDO,
+            ],
+        )
+
+        # Search & Navigation
         self._add_category(
             content_layout,
             "Search & Navigation",
             [
                 ShortcutManager.FIND,
+                ShortcutManager.NAVIGATE_LINK,
             ],
         )
 
+        # Drag & Drop
+        self._add_category(
+            content_layout,
+            "Drag & Drop",
+            [
+                ShortcutManager.DROP_CHOOSE_TYPE,
+            ],
+        )
+
+        # Text Formatting
         self._add_category(
             content_layout,
             "Text Formatting",
@@ -84,6 +113,7 @@ class KeyboardShortcutsDialog(QDialog):
             ],
         )
 
+        # Outline Editor
         self._add_category(
             content_layout,
             "Outline Editor",
@@ -93,25 +123,28 @@ class KeyboardShortcutsDialog(QDialog):
             ],
         )
 
-        # Add note about Ctrl+Click
-        note_label = QLabel("\nNote: Ctrl+Click on entity/event names to navigate")
-        note_label.setStyleSheet(StyleHelper.get_preview_label_style())
-        content_layout.addWidget(note_label)
+        # General
+        self._add_category(
+            content_layout,
+            "General",
+            [
+                ShortcutManager.DESELECT,
+            ],
+        )
 
         content_layout.addStretch()
-        scroll.setWidget(content_widget)
+        scroll.setWidget(content)
         layout.addWidget(scroll)
 
-        # Close button
+        # Close Button
         button_layout = QHBoxLayout()
         button_layout.addStretch()
-
         close_btn = QPushButton("Close")
         close_btn.setMinimumWidth(100)
         close_btn.setStyleSheet(StyleHelper.get_primary_button_style())
         close_btn.clicked.connect(self.accept)
         button_layout.addWidget(close_btn)
-
+        button_layout.addStretch()
         layout.addLayout(button_layout)
 
     def _add_category(

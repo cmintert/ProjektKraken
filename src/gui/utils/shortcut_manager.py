@@ -36,8 +36,16 @@ class ShortcutManager:
 
     CREATE_MAP = KeyboardShortcut("Create Map", "Ctrl+M", "Create a new map")
 
-    # Search
+    # Search & Navigation
     FIND = KeyboardShortcut("Find", "Ctrl+F", "Find text in document")
+    NAVIGATE_LINK = KeyboardShortcut(
+        "Navigate Link", "Ctrl+Click", "Open linked entity or event"
+    )
+
+    # Drag & Drop
+    DROP_CHOOSE_TYPE = KeyboardShortcut(
+        "Choose Relation Type", "Shift+Drop", "Choose relation type on drop"
+    )
 
     # Formatting Shortcuts (WikiTextEdit)
     FORMAT_BOLD = KeyboardShortcut("Bold", "Ctrl+B", "Toggle bold")
@@ -52,6 +60,9 @@ class ShortcutManager:
         "Promote Item", "Ctrl+[", "Promote item in outline"
     )
     OUTLINE_DEMOTE = KeyboardShortcut("Demote Item", "Ctrl+]", "Demote item in outline")
+
+    # General
+    DESELECT = KeyboardShortcut("Deselect/Cancel", "Esc", "Deselect items or cancel")
 
     @classmethod
     def get_tooltip(cls, shortcut: KeyboardShortcut) -> str:
