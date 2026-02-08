@@ -608,6 +608,14 @@ class WikiTextEditView(QTextEdit):
             theme_data = theme.get_theme()
 
             def _parse_size(val: str | int | float) -> float:
+                """Parse a size value to float.
+                
+                Args:
+                    val: Size value as string, int, or float.
+                    
+                Returns:
+                    Parsed size as float.
+                """
                 if isinstance(val, (int, float)):
                     return float(val)
                 return (
@@ -1188,6 +1196,11 @@ class WikiTextEdit(QFrame):
     link_added = Signal(str, str)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
+        """Initialize the wiki text edit wrapper widget.
+        
+        Args:
+            parent: Optional parent widget.
+        """
         super().__init__(parent)
         self.setObjectName("WikiTextEditWrapper")  # For debugging/styling
 
@@ -1216,6 +1229,7 @@ class WikiTextEdit(QFrame):
         ThemeManager().theme_changed.connect(self._on_theme_changed)
 
     def _apply_style(self) -> None:
+        """Apply the current theme styling to the widget."""
         from src.gui.utils.style_helper import StyleHelper
 
         self.setStyleSheet(
@@ -1227,35 +1241,85 @@ class WikiTextEdit(QFrame):
         )
 
     def _on_theme_changed(self, theme: dict) -> None:
+        """Handle theme change event by reapplying styles.
+        
+        Args:
+            theme: The new theme dictionary.
+        """
         self._apply_style()
 
     # --- Proxy Methods ---
 
     def set_wiki_text(self, text: str) -> None:
+        """Set the wiki-formatted text content.
+        
+        Args:
+            text: Wiki-formatted text to set.
+        """
         self.editor.set_wiki_text(text)
 
     def get_wiki_text(self) -> str:
+        """Get the wiki-formatted text content.
+        
+        Returns:
+            Current wiki-formatted text.
+        """
         return self.editor.get_wiki_text()
 
     def setText(self, text: str) -> None:
+        """Set the plain text content.
+        
+        Args:
+            text: Plain text to set.
+        """
         self.editor.setText(text)
 
     def toPlainText(self) -> str:
+        """Get the plain text content.
+        
+        Returns:
+            Current plain text.
+        """
         return self.editor.toPlainText()
 
     def setReadOnly(self, ro: bool) -> None:
+        """Set whether the editor is read-only.
+        
+        Args:
+            ro: True to make read-only, False to make editable.
+        """
         self.editor.setReadOnly(ro)
 
     def setPlaceholderText(self, text: str) -> None:
+        """Set the placeholder text shown when editor is empty.
+        
+        Args:
+            text: Placeholder text to display.
+        """
         self.editor.setPlaceholderText(text)
 
     def document(self) -> Any:
+        """Get the underlying QTextDocument.
+        
+        Returns:
+            The text document.
+        """
         return self.editor.document()
 
     def textCursor(self) -> Any:
+        """Get the current text cursor.
+        
+        Returns:
+            The current QTextCursor.
+        """
         return self.editor.textCursor()
 
     def setTextCursor(self, cursor: Any) -> None:
+        """Set the text cursor position.
+        
+        Args:
+            cursor: The QTextCursor to set.
+        """
         self.editor.setTextCursor(cursor)
 
     def set_completer(
@@ -1265,12 +1329,25 @@ class WikiTextEdit(QFrame):
         items: Optional[list] = None,
         names: Optional[list] = None,
     ) -> None:
+        """Set the autocompleter for wiki links.
+        
+        Args:
+            items_or_names: Legacy parameter for items or names list.
+            items: List of item objects for completion.
+            names: List of item names for completion.
+        """
         self.editor.set_completer(items_or_names, items=items, names=names)
 
     def set_link_resolver(self, resolver: Any) -> None:
+        """Set the link resolver for wiki links.
+        
+        Args:
+            resolver: The link resolver callable.
+        """
         self.editor.set_link_resolver(resolver)
 
     def toggle_view_mode(self) -> None:
+        """Toggle between edit and view mode."""
         self.editor.toggle_view_mode()
 
     def __getattr__(self, name: str) -> Any:

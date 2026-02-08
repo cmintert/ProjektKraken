@@ -126,6 +126,7 @@ class LayoutGuardMixin:
         # 3. Schedule reset of constraints (allow user to resize later)
         # We need the event loop to process the layout change first
         def reset_constraints() -> None:
+            """Reset dock widget size constraints after a brief delay."""
             dock.setMinimumWidth(original_min_w)
             dock.setMinimumHeight(original_min_h)
             logger.debug(f"Reset constraints for {dock.objectName()}")

@@ -152,6 +152,14 @@ class LongformContentWidget(QTextBrowser):
         pattern = re.compile(r"\[\[([^]|]+)(?:\|([^]]+))?\]\]")
 
         def replace_link(match: re.Match) -> str:
+            """Replace wiki link with markdown link.
+            
+            Args:
+                match: Regex match object for wiki link.
+                
+            Returns:
+                Markdown-formatted link string.
+            """
             target = match.group(1).strip()
             label = match.group(2).strip() if match.group(2) else target
             # Convert to standard Markdown link

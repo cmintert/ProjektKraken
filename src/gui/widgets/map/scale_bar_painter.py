@@ -11,6 +11,7 @@ class ScaleBarPainter:
     """Helper class to render a map scale bar."""
 
     def __init__(self) -> None:
+        """Initialize the scale bar painter."""
         self.font = QFont("Sans Serif", 9)
         self.font.setBold(True)
         self.pen_black = QPen(Qt.GlobalColor.black, 2)

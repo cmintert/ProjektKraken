@@ -192,6 +192,7 @@ class FastInjectDialog(QDialog):
         )
 
     def _populate_list(self) -> None:
+        """Populate the template list widget with available templates."""
         self.list_widget.clear()
         for t in self.templates:
             item = QListWidgetItem(t.name)
@@ -201,6 +202,12 @@ class FastInjectDialog(QDialog):
     def _on_template_selected(
         self, current: QListWidgetItem, previous: QListWidgetItem
     ) -> None:
+        """Handle template selection change in the list.
+        
+        Args:
+            current: Currently selected list item.
+            previous: Previously selected list item.
+        """
         if not current:
             self.selected_template = None
             self.btn_apply.setEnabled(False)
@@ -284,6 +291,7 @@ class FastInjectDialog(QDialog):
             QMessageBox.critical(self, "Error", f"Failed to save: {e}")
 
     def _clear_configure_ui(self) -> None:
+        """Clear the configuration UI form."""
         self.lbl_name.setText("Select a template")
         self.lbl_desc.setText("")
         while self.form_layout.count():
@@ -292,6 +300,11 @@ class FastInjectDialog(QDialog):
                 child.widget().deleteLater()
 
     def _update_configure_ui(self, template: FastInjectTemplate) -> None:
+        """Update the configuration UI with template details.
+        
+        Args:
+            template: The template to display configuration for.
+        """
         self.lbl_name.setText(template.name)
         self.lbl_desc.setText(template.description)
         self._build_form(template)
@@ -472,6 +485,14 @@ class FastInjectDialog(QDialog):
         var_pattern = re.compile(r"\{\{([A-Za-z0-9_]+)(?::([^}]+))?\}\}")
 
         def replacer(match: re.Match[str]) -> str:
+            """Replace template variable with actual value.
+            
+            Args:
+                match: Regex match object for template variable.
+                
+            Returns:
+                Replacement value from form widgets.
+            """
             v_name = match.group(1)
             if v_name in sub_vars:
                 widget = sub_vars[v_name]
@@ -565,6 +586,7 @@ class FastInjectDialog(QDialog):
         self.accept()
 
     def _on_import_clicked(self) -> None:
+        """Handle import button click to load templates from files."""
         from pathlib import Path
 
         file_paths, _ = QFileDialog.getOpenFileNames(

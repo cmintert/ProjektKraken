@@ -791,6 +791,7 @@ class AISettingsDialog(QDialog):
                 self._show_save_status(f"Error: {e}")
 
     def _new_template(self) -> None:
+        """Handle new template action."""
         self._on_new_template()
 
     @Slot(int)

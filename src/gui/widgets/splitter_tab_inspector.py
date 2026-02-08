@@ -131,6 +131,7 @@ class DraggableTabBar(QTabBar):
                 tab_widget.hide()
 
                 def _maybe_delete() -> None:
+                    """Check conditions and delete empty pane if appropriate."""
                     # Re-check conditions before deleting
                     if (
                         tab_widget.count() == 0
@@ -256,6 +257,7 @@ class DraggableTabWidget(QTabWidget):
             tab_widget.hide()
 
             def _maybe_delete() -> None:
+                """Check conditions and delete empty pane if appropriate."""
                 # Re-check conditions before deleting
                 if (
                     tab_widget.count() == 0

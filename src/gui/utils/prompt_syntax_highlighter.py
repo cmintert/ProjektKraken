@@ -1,3 +1,7 @@
+"""Prompt Syntax Highlighter Module.
+
+Provides syntax highlighting for prompt template variables in braces.
+"""
 import re
 
 from PySide6.QtGui import (
@@ -13,6 +17,11 @@ class PromptSyntaxHighlighter(QSyntaxHighlighter):
     """Syntax highlighter for prompt variables in braces {variable}."""
 
     def __init__(self, parent: QTextDocument) -> None:
+        """Initialize the syntax highlighter.
+        
+        Args:
+            parent: The QTextDocument to highlight.
+        """
         super().__init__(parent)
         self._highlighting_rules = []
 

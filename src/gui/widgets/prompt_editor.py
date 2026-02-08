@@ -1,3 +1,7 @@
+"""Prompt Editor Widget Module.
+
+Provides a widget for editing AI prompts with syntax highlighting and variable insertion.
+"""
 from typing import List, Optional
 
 from PySide6.QtCore import Signal, Slot
@@ -23,6 +27,11 @@ class PromptEditorWidget(QWidget):
     textChanged = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
+        """Initialize the prompt editor widget.
+        
+        Args:
+            parent: Optional parent widget.
+        """
         super().__init__(parent)
 
         self._default_text = ""
@@ -87,12 +96,27 @@ class PromptEditorWidget(QWidget):
         self.highlighter = PromptSyntaxHighlighter(self.editor.document())
 
     def setPlainText(self, text: str) -> None:
+        """Set the editor text content.
+        
+        Args:
+            text: Text to set in the editor.
+        """
         self.editor.setPlainText(text)
 
     def setPlaceholderText(self, text: str) -> None:
+        """Set the editor placeholder text.
+        
+        Args:
+            text: Placeholder text to display when editor is empty.
+        """
         self.editor.setPlaceholderText(text)
 
     def toPlainText(self) -> str:
+        """Get the current editor text content.
+        
+        Returns:
+            The current text in the editor.
+        """
         return self.editor.toPlainText()
 
     def clear(self) -> None:
@@ -115,14 +139,29 @@ class PromptEditorWidget(QWidget):
         self.var_combo.show()
 
     def set_default_text(self, text: str) -> None:
+        """Set the default prompt text for restoration.
+        
+        Args:
+            text: Default text to restore to when restore_default is called.
+        """
         self._default_text = text
 
     def insert_variable(self, variable: str) -> None:
+        """Insert a variable at the current cursor position.
+        
+        Args:
+            variable: Variable text to insert.
+        """
         self.editor.insertPlainText(variable)
         self.editor.setFocus()
 
     @Slot(int)
     def _on_variable_selected(self, index: int) -> None:
+        """Handle variable selection from dropdown.
+        
+        Args:
+            index: Index of selected variable in combo box.
+        """
         if index <= 0:
             return
 
@@ -133,6 +172,7 @@ class PromptEditorWidget(QWidget):
 
     @Slot()
     def restore_default(self) -> None:
+        """Restore the editor to the default prompt text."""
         if self._default_text:
             self.editor.setPlainText(self._default_text)
 

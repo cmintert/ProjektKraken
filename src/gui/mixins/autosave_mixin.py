@@ -17,8 +17,17 @@ logger = logging.getLogger(__name__)
 class AutoSaveSource(Protocol):
     """Protocol defining requirements for AutoSaveManager target."""
 
-    def has_unsaved_changes(self) -> bool: ...
-    def _on_save(self) -> None: ...
+    def has_unsaved_changes(self) -> bool:
+        """Check if there are unsaved changes.
+        
+        Returns:
+            True if there are unsaved changes, False otherwise.
+        """
+        ...
+
+    def _on_save(self) -> None:
+        """Perform the save operation."""
+        ...
 
 
 class AutoSaveManager(QObject):

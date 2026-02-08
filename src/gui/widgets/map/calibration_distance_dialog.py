@@ -18,6 +18,11 @@ class CalibrationDistanceDialog(QDialog):
     """Dialog to enter real-world distance for a measured segment."""
 
     def __init__(self, parent: QWidget = None) -> None:
+        """Initialize the calibration distance dialog.
+        
+        Args:
+            parent: Optional parent widget.
+        """
         super().__init__(parent)
         self.setWindowTitle("Calibration Measurement")
         self.setModal(True)

@@ -34,6 +34,15 @@ class CreateTemplateDialog(QDialog):
         default_name: str = "New Template",
         parent: Optional[QWidget] = None,
     ) -> None:
+        """Initialize the create template dialog.
+        
+        Args:
+            source_tags: List of tags from the source entity/event.
+            source_attributes: Attributes from the source entity/event.
+            source_type: Type of the source entity/event.
+            default_name: Default name for the template.
+            parent: Optional parent widget.
+        """
         super().__init__(parent)
         self.setWindowTitle("Save Selection as Template")
         self.resize(500, 600)
@@ -49,6 +58,11 @@ class CreateTemplateDialog(QDialog):
         self._setup_ui(default_name)
 
     def _setup_ui(self, default_name: str) -> None:
+        """Set up the user interface.
+        
+        Args:
+            default_name: Default name to populate in the name field.
+        """
         layout = QVBoxLayout(self)
         StyleHelper.apply_standard_list_spacing(layout)
         self.setStyleSheet(StyleHelper.get_dialog_base_style())
