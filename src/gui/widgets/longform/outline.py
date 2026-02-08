@@ -432,49 +432,12 @@ class LongformOutlineWidget(QTreeWidget):
             current_index = parent.indexOfChild(item)
             if current_index <= 0:
                 return  # Can't move up
-            prev_item = parent.child(current_index - 1)
         else:
             current_index = self.indexOfTopLevelItem(item)
             if current_index <= 0:
                 return  # Can't move up
-            prev_item = self.topLevelItem(current_index - 1)
 
-        # Get the previous item's position
-        if id(prev_item) not in self._item_meta:
-            return
-
-        prev_meta = self._item_meta[id(prev_item)][2]
-        prev_pos = prev_meta.get("position", 0.0)
-        current_pos = old_meta.get("position", 0.0)
-
-        # Calculate position before previous item
-        # Look for item before prev_item
-        if parent:
-            if current_index > 1:
-                before_prev_item = parent.child(current_index - 2)
-                if id(before_prev_item) in self._item_meta:
-                    before_prev_pos = self._item_meta[id(before_prev_item)][2].get(
-                        "position", 0.0
-                    )
-                    new_pos = (before_prev_pos + prev_pos) / 2.0
-                else:
-                    new_pos = prev_pos - 100.0
-            else:
-                new_pos = prev_pos - 100.0
-        else:
-            if current_index > 1:
-                before_prev_item = self.topLevelItem(current_index - 2)
-                if id(before_prev_item) in self._item_meta:
-                    before_prev_pos = self._item_meta[id(before_prev_item)][2].get(
-                        "position", 0.0
-                    )
-                    new_pos = (before_prev_pos + prev_pos) / 2.0
-                else:
-                    new_pos = prev_pos - 100.0
-            else:
-                new_pos = prev_pos - 100.0
-
-        # Emit signal with new position
+        # Emit signal - position calculation done in manager
         self.item_move_up.emit(table, row_id, old_meta.copy())
 
     def _move_down_selected(self) -> None:
@@ -497,50 +460,13 @@ class LongformOutlineWidget(QTreeWidget):
             sibling_count = parent.childCount()
             if current_index >= sibling_count - 1:
                 return  # Can't move down
-            next_item = parent.child(current_index + 1)
         else:
             current_index = self.indexOfTopLevelItem(item)
             sibling_count = self.topLevelItemCount()
             if current_index >= sibling_count - 1:
                 return  # Can't move down
-            next_item = self.topLevelItem(current_index + 1)
 
-        # Get the next item's position
-        if id(next_item) not in self._item_meta:
-            return
-
-        next_meta = self._item_meta[id(next_item)][2]
-        next_pos = next_meta.get("position", 0.0)
-        current_pos = old_meta.get("position", 0.0)
-
-        # Calculate position after next item
-        # Look for item after next_item
-        if parent:
-            if current_index < sibling_count - 2:
-                after_next_item = parent.child(current_index + 2)
-                if id(after_next_item) in self._item_meta:
-                    after_next_pos = self._item_meta[id(after_next_item)][2].get(
-                        "position", 0.0
-                    )
-                    new_pos = (next_pos + after_next_pos) / 2.0
-                else:
-                    new_pos = next_pos + 100.0
-            else:
-                new_pos = next_pos + 100.0
-        else:
-            if current_index < sibling_count - 2:
-                after_next_item = self.topLevelItem(current_index + 2)
-                if id(after_next_item) in self._item_meta:
-                    after_next_pos = self._item_meta[id(after_next_item)][2].get(
-                        "position", 0.0
-                    )
-                    new_pos = (next_pos + after_next_pos) / 2.0
-                else:
-                    new_pos = next_pos + 100.0
-            else:
-                new_pos = next_pos + 100.0
-
-        # Emit signal with new position
+        # Emit signal - position calculation done in manager
         self.item_move_down.emit(table, row_id, old_meta.copy())
 
     def _remove_selected(self) -> None:
