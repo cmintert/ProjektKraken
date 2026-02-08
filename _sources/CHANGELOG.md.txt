@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-08
-### Added
-- feat(gui): update keyboard shortcuts and refine help dialog
+### Internal
+- chore: Update changelog to reflect new UI hotkeys, a bug fix, major documentation overhaul, and cleanup.
 
 
 *This changelog was automatically generated.*
