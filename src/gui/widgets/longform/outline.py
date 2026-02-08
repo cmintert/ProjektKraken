@@ -380,7 +380,9 @@ class LongformOutlineWidget(QTreeWidget):
         
         menu.addSeparator()
         
-        # Promote action (can only promote if depth > 0)
+        # Promote action
+        # Note: Context menu disables this for depth 0 as UX improvement,
+        # but keyboard shortcut (Ctrl+[) still works and command validates
         promote_action = QAction("Promote", self)
         current_depth = old_meta.get("depth", 0)
         promote_action.setEnabled(current_depth > 0)

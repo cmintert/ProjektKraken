@@ -171,7 +171,14 @@ class LongformManager(QObject):
                 current_idx = idx
                 break
         
-        if current_idx is None or current_idx == 0:
+        if current_idx is None:
+            logger.warning(
+                f"Cannot move up: item {table}.{row_id} not found in sequence"
+            )
+            return
+        
+        if current_idx == 0:
+            logger.debug(f"Cannot move up: item {table}.{row_id} is already at top")
             return  # Item not found or already at top
         
         # Get parent_id and depth from old_meta
@@ -233,7 +240,14 @@ class LongformManager(QObject):
                 current_idx = idx
                 break
         
-        if current_idx is None or current_idx >= len(sequence) - 1:
+        if current_idx is None:
+            logger.warning(
+                f"Cannot move down: item {table}.{row_id} not found in sequence"
+            )
+            return
+        
+        if current_idx >= len(sequence) - 1:
+            logger.debug(f"Cannot move down: item {table}.{row_id} is already at bottom")
             return  # Item not found or already at bottom
         
         # Get parent_id and depth from old_meta
